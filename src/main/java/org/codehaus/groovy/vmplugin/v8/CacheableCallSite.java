@@ -22,6 +22,7 @@ import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
+import java.io.Serial;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -52,7 +53,7 @@ public class CacheableCallSite extends MutableCallSite {
     private MethodHandle fallbackTarget;
     private final Map<String, SoftReference<MethodHandleWrapper>> lruCache =
             new LinkedHashMap<String, SoftReference<MethodHandleWrapper>>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
-                private static final long serialVersionUID = 7785958879964294463L;
+                @Serial private static final long serialVersionUID = 7785958879964294463L;
 
                 @Override
                 protected boolean removeEldestEntry(Map.Entry eldest) {

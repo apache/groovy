@@ -21,7 +21,6 @@ package org.codehaus.groovy.vmplugin.v8;
 import groovy.lang.GroovySystem;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 
 import java.lang.invoke.CallSite;
@@ -31,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -320,46 +320,47 @@ public class IndyInterface {
      */
     private static MethodHandle fromCacheHandle(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
-
-        MethodHandleWrapper mhw;
-        if (bypassCache(spreadCall, arguments)) {
-            mhw = NULL_METHOD_HANDLE_WRAPPER;
-        } else {
-            Object receiver = arguments[0];
-            String receiverClassName = receiver != null ? receiver.getClass().getName() : NULL_OBJECT_CLASS_NAME;
-
-            mhw = callSite.getAndPut(receiverClassName, (theName) -> {
-                MethodHandleWrapper fallback = fallbackSupplier.get();
-                if (fallback.isCanSetTarget()) return fallback;
-                return NULL_METHOD_HANDLE_WRAPPER;
-            });
-        }
+        Object receiver = arguments[0];
+        String receiverClassName = receiverCacheKey(receiver);
+        MethodHandleWrapper mhw = callSite.getAndPut(receiverClassName, (theName) -> {
+            MethodHandleWrapper fallback = fallbackSupplier.get();
+            if (fallback.isCanSetTarget()) return fallback;
+            return NULL_METHOD_HANDLE_WRAPPER;
+        });
 
         if (mhw == NULL_METHOD_HANDLE_WRAPPER) {
+            // The PIC stores a sentinel to remember "do not relink this receiver shape";
+            // execution still needs a real handle for the current invocation.
             mhw = fallbackSupplier.get();
         }
 
-        if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD)) {
-            if (callSite.getFallbackRound().get() > INDY_FALLBACK_CUTOFF) {
-                if (callSite.getTarget() != callSite.getDefaultTarget()) {
-                    // reset the call site target to default forever to avoid JIT deoptimization storm further
-                    callSite.setTarget(callSite.getDefaultTarget());
+        if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
+            // GROOVY-11935: Set invokedynamic call site target immediately to enable earlier JIT inlining.
+            if (callSite.type().parameterType(0) == Class.class) {
+                var method = mhw.getMethod();
+                if (method != null && Modifier.isStatic(method.getModifiers())) {
+                    callSite.setTarget(mhw.getTargetMethodHandle());
                 }
-            } else {
-                callSite.setTarget(mhw.getTargetMethodHandle());
-                if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
             }
 
-            mhw.resetLatestHitCount();
+            if (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD) {
+                if (callSite.getFallbackRound().get() > INDY_FALLBACK_CUTOFF) {
+                    if (callSite.getTarget() != callSite.getDefaultTarget()) {
+                        // reset the call site target to default forever to avoid JIT deoptimization storm further
+                        callSite.setTarget(callSite.getDefaultTarget());
+                    }
+                } else {
+                    if (callSite.getTarget() != mhw.getTargetMethodHandle()) {
+                        callSite.setTarget(mhw.getTargetMethodHandle());
+                        if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
+                    }
+                }
+
+                mhw.resetLatestHitCount();
+            }
         }
 
         return mhw.getCachedMethodHandle();
-    }
-
-    private static boolean bypassCache(Boolean spreadCall, Object[] arguments) {
-        if (spreadCall) return true;
-        Object receiver = arguments[0];
-        return receiver != null && ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
     }
 
     /**
@@ -390,11 +391,24 @@ public class IndyInterface {
             // correct the stale methodHandle in the inline cache of callsite
             // it is important but impacts the performance somehow when cache misses frequently
             Object receiver = arguments[0];
-            String key = receiver != null ? receiver.getClass().getName() : NULL_OBJECT_CLASS_NAME;
-            callSite.put(key, mhw);
+
+            // Avoid PIC pollution: don't write back uncached wrappers, e.g. for instance-level metaClass dispatches.
+            callSite.put(receiverCacheKey(receiver), mhw.isCanSetTarget() ? mhw : NULL_METHOD_HANDLE_WRAPPER);
         }
 
         return mhw.getCachedMethodHandle();
+    }
+
+    /**
+     * Computes the PIC cache key for the given receiver.
+     * Different {@code Class} objects (e.g. {@code A} vs {@code B}) share the same runtime class
+     * ({@code java.lang.Class}) but dispatch to different methods. Including the represented class
+     * name avoids PIC cache collisions for static-method call sites.
+     */
+    private static String receiverCacheKey(Object receiver) {
+        if (receiver == null) return NULL_OBJECT_CLASS_NAME;
+        if (receiver instanceof Class<?> c) return "java.lang.Class:" + c.getName();
+        return receiver.getClass().getName();
     }
 
     private static MethodHandleWrapper fallback(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
@@ -404,6 +418,7 @@ public class IndyInterface {
         return new MethodHandleWrapper(
                 selector.handle.asSpreader(Object[].class, arguments.length).asType(MethodType.methodType(Object.class, Object[].class)),
                 selector.handle,
+                selector.method,
                 selector.cache
         );
     }
