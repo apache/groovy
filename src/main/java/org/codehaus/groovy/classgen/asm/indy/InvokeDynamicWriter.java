@@ -141,10 +141,11 @@ public class InvokeDynamicWriter extends InvocationWriter {
         // Fast probe: measure chain depth without allocating the deque.
         int depth = 0;
         Expression probe = receiver;
-        while (probe instanceof MethodCallExpression mce
-                && !mce.isSpreadSafe() && !mce.isImplicitThis()
-                && !isSuperExpression(mce.getObjectExpression())
-                && !isThisExpression(mce.getObjectExpression())) {
+        while (probe instanceof MethodCallExpression
+                && !((MethodCallExpression) probe).isSpreadSafe() && !((MethodCallExpression) probe).isImplicitThis()
+                && !isSuperExpression(((MethodCallExpression) probe).getObjectExpression())
+                && !isThisExpression(((MethodCallExpression) probe).getObjectExpression())) {
+            MethodCallExpression mce = (MethodCallExpression) probe;
             String name = getMethodName(mce.getMethod());
             if (name == null || "call".equals(name)) break;
             depth++;
