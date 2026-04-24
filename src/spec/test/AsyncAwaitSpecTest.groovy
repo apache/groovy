@@ -18,8 +18,6 @@
  */
 
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -412,7 +410,6 @@ final class AsyncAwaitSpecTest {
     // === JDK Integration ===
 
     @Test
-    @DisabledOnOs(OS.WINDOWS)
     void testJdkIntegration() {
         assertScript '''
         import com.sun.net.httpserver.HttpServer
@@ -436,11 +433,16 @@ final class AsyncAwaitSpecTest {
         server.start()
         def bankUrl = "http://127.0.0.1:${server.address.port}"
 
+        // setup: portable echo command (Windows has no echo executable — it's a cmd built-in)
+        def echoCmd = System.getProperty('os.name').toLowerCase().startsWith('windows')
+            ? ['cmd', '/c', 'echo Hello from Groovy']
+            : ['echo', 'Hello from Groovy']
+
         try {
         // tag::jdk_integration[]
         // Task 1: Run a process and await its completion
         def proc = async {
-            def p = 'echo Hello from Groovy'.execute()
+            def p = echoCmd.execute() // echo Hello from Groovy
             await p.onExit()
             p.text.trim()
         }
