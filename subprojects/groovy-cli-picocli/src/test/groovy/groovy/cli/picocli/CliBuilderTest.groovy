@@ -79,11 +79,11 @@ class CliBuilderTest {
   -h, --help                 usage information
   -i=[<extension>]           modify files in place, create backup if extension
                                is specified (e.g. '.bak')""".toString()
-        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
+        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
         resetPrintWriter()
         cli.writer = printWriter
         if (options.help) { cli.usage() }
-        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
+        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
         assert options.hasOption('c')
         assert options.c
         assert options.hasOption('encoding')
