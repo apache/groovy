@@ -22,6 +22,8 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import picocli.CommandLine.DuplicateOptionAnnotationsException
@@ -45,8 +47,29 @@ class CliBuilderTest {
     /** Commons-cli constant that specifies the number of argument values is infinite */
     private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
 
+    private static final String PICOCLI_ANSI_PROP = 'picocli.ansi'
+    private static String priorPicocliAnsi
+
     private StringWriter stringWriter
     private PrintWriter printWriter
+
+    @BeforeAll
+    static void disablePicocliAnsi() {
+        // picocli's Help.Ansi.AUTO can resolve to ON on terminals that advertise ANSI support
+        // (e.g. Windows CI runners with WT_SESSION/TERM set), which injects escape codes into the
+        // captured usage output and breaks exact-string assertions below. Force it off here so the
+        // test is self-defending regardless of where it runs.
+        priorPicocliAnsi = System.setProperty(PICOCLI_ANSI_PROP, 'false')
+    }
+
+    @AfterAll
+    static void restorePicocliAnsi() {
+        if (priorPicocliAnsi == null) {
+            System.clearProperty(PICOCLI_ANSI_PROP)
+        } else {
+            System.setProperty(PICOCLI_ANSI_PROP, priorPicocliAnsi)
+        }
+    }
 
     @BeforeEach
     void setUp() {
