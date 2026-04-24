@@ -65,8 +65,12 @@ tasks.named('jmhClasses') {
     dependsOn tasks.named('clean')
 }
 
+var indy = (project.findProperty('indy') ?: 'true').toBoolean()
+
 tasks.named('compileJmhGroovy') {
     classpath += compileJmhJava.classpath
+    groovyOptions.optimizationOptions.indy = indy
+    inputs.property('indy', indy)
 }
 
 tasks.register('displayJmhResults') {
@@ -80,4 +84,13 @@ tasks.register("performanceTests", PerformanceTestSummary)
 
 sonarqube {
     skipProject = true
+}
+
+tasks.named('jmh') {
+    inputs.property('benchInclude', project.findProperty('benchInclude') ?: '')
+    dependsOn tasks.named('jmhClasses')
+}
+
+tasks.named('jmhJar') {
+    from(sourceSets.jmh.output)
 }
