@@ -99,9 +99,9 @@ class CliBuilderTest {
         assertEquals(false, options.hasOption('x'))
     }
 
-    private static void assertEqualsNormalized(String expected, String actual) {
-        def normalized = actual.normalize().trim()
-        assertEquals(expected, normalized, "expected:\n$expected.bytes\nactual:\n$normalized.bytes")
+    private static void assertEqualsNormalized(String expected, String raw) {
+        def actual = raw.normalize().trim()
+        assertEquals(expected, actual, "expected:\n$expected\nexpected bytes:\n$expected.bytes\nactual:\n$actual\nactual bytes:\n$actual.bytes")
     }
 
     private void resetPrintWriter() {
