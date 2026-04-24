@@ -54,8 +54,11 @@ final class Groovy5359 {
             assert C.method() == 'A'
             assert count == 0
 
-            assert measure(1e6) { B.method() } < 1500 // was ~26000 with property check
-            assert measure(1e6) { C.method() } < 1500 // was ~26000 with property check
+            // Loose upper bound — the real regression check is `count == 0` below.
+            // Pre-fix path was ~26000ms for 1e6 calls; threshold tolerates CI variance
+            // (observed up to ~2000ms on macOS ARM64 runners) while still catching a regression.
+            assert measure(1e6) { B.method() } < 3000
+            assert measure(1e6) { C.method() } < 3000
             assert count == 0
         } finally {
             ExpandoMetaClass.disableGlobally()
