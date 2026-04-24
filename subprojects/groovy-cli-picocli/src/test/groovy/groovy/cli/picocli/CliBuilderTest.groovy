@@ -78,12 +78,12 @@ class CliBuilderTest {
   -c, --encoding=<charset>   character encoding
   -h, --help                 usage information
   -i=[<extension>]           modify files in place, create backup if extension
-                               is specified (e.g. '.bak')"""
-        assertEquals(expectedUsage.toString(), stringWriter.toString().tokenize('\r\n').join('\n'))
+                               is specified (e.g. '.bak')""".toString()
+        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
         resetPrintWriter()
         cli.writer = printWriter
         if (options.help) { cli.usage() }
-        assertEquals(expectedUsage.toString(), stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
         assert options.hasOption('c')
         assert options.c
         assert options.hasOption('encoding')
@@ -172,10 +172,11 @@ class CliBuilderTest {
         cli.x(required: true, 'message')
         cli.parse([])
         // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
-        assert stringWriter.toString() == String.format(
-                "error: Missing required option: '-x'%n" +\
-                "Usage: groovy -x%n" +\
-                "  -x     message%n")
+
+        assert stringWriter.toString().normalize() ==
+                "error: Missing required option: '-x'\n" +
+                "Usage: groovy -x\n" +
+                "  -x     message\n"
     }
 
     @Test
@@ -357,12 +358,12 @@ class CliBuilderTest {
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter)
         def options = cli.parse(['-v'])
-        assertEquals('''''', stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals('''''', stringWriter.toString().normalize())
         assert !options.v
     }
 
     private void checkNoOutput() {
-        assert stringWriter.toString().tokenize('\r\n').join('\n') == ''''''
+        assert stringWriter.toString().normalize() == ''''''
     }
 
     @Test
@@ -1100,7 +1101,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [-configscript=PARAM]
       -pr, -enable-preview, --enable-preview
                             cli.option.preview.description
   -V, -version, --version   cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
 
         resetPrintWriter()
         cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: false, writer: printWriter)
@@ -1125,7 +1126,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
       -pa, --parameters      cli.option.parameters.description
       -pr, --enable-preview  cli.option.preview.description
   -V, --version              cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
     }
 
     @Test
