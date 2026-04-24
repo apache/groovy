@@ -33,9 +33,12 @@ jobs:
         include:
           - java: 17
             os: windows-latest
+            env-no-color: '1'
           - java: 17
             os: macos-latest
     runs-on: ${{ matrix.os }}
+    env:
+      NO_COLOR: ${{ matrix.env-no-color }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-java@v5
