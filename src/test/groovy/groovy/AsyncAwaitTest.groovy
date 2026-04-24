@@ -3252,9 +3252,9 @@ final class AsyncAwaitTest {
     @Test
     void testWrapAsyncDirect() {
         assertScript '''
-            import org.apache.groovy.runtime.async.AsyncSupport
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
 
-            def wrapped = AsyncSupport.wrapAsync({ 'hello-wrap' })
+            def wrapped = AsyncClosureUtils.wrapAsync({ 'hello-wrap' })
             def awaitable = wrapped()
             assert await(awaitable) == 'hello-wrap'
         '''
@@ -3263,9 +3263,9 @@ final class AsyncAwaitTest {
     @Test
     void testWrapAsyncWithArgs() {
         assertScript '''
-            import org.apache.groovy.runtime.async.AsyncSupport
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
 
-            def wrapped = AsyncSupport.wrapAsync({ Object[] args -> args[0] + args[1] })
+            def wrapped = AsyncClosureUtils.wrapAsync({ Object[] args -> args[0] + args[1] })
             def awaitable = wrapped(10, 20)
             assert await(awaitable) == 30
         '''
@@ -3274,9 +3274,9 @@ final class AsyncAwaitTest {
     @Test
     void testWrapAsyncWithException() {
         assertScript '''
-            import org.apache.groovy.runtime.async.AsyncSupport
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
 
-            def wrapped = AsyncSupport.wrapAsync({ throw new RuntimeException('wrap-err') })
+            def wrapped = AsyncClosureUtils.wrapAsync({ throw new RuntimeException('wrap-err') })
             def awaitable = wrapped()
             try {
                 await(awaitable)
@@ -3290,10 +3290,10 @@ final class AsyncAwaitTest {
     @Test
     void testWrapAsyncGeneratorDirect() {
         assertScript '''
-            import org.apache.groovy.runtime.async.AsyncSupport
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
             import org.apache.groovy.runtime.async.GeneratorBridge
 
-            def wrapped = AsyncSupport.wrapAsyncGenerator({ GeneratorBridge bridge ->
+            def wrapped = AsyncClosureUtils.wrapAsyncGenerator({ GeneratorBridge bridge ->
                 bridge.yield(10)
                 bridge.yield(20)
                 bridge.yield(30)
@@ -3310,10 +3310,10 @@ final class AsyncAwaitTest {
     @Test
     void testWrapAsyncGeneratorWithBreak() {
         assertScript '''
-            import org.apache.groovy.runtime.async.AsyncSupport
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
             import org.apache.groovy.runtime.async.GeneratorBridge
 
-            def wrapped = AsyncSupport.wrapAsyncGenerator({ GeneratorBridge bridge ->
+            def wrapped = AsyncClosureUtils.wrapAsyncGenerator({ GeneratorBridge bridge ->
                 bridge.yield('a')
                 bridge.yield('b')
                 bridge.yield('c')
@@ -3331,10 +3331,10 @@ final class AsyncAwaitTest {
     @Test
     void testWrapAsyncGeneratorWithException() {
         assertScript '''
-            import org.apache.groovy.runtime.async.AsyncSupport
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
             import org.apache.groovy.runtime.async.GeneratorBridge
 
-            def wrapped = AsyncSupport.wrapAsyncGenerator({ GeneratorBridge bridge ->
+            def wrapped = AsyncClosureUtils.wrapAsyncGenerator({ GeneratorBridge bridge ->
                 bridge.yield(1)
                 throw new RuntimeException('gen-err')
             })
@@ -3354,16 +3354,16 @@ final class AsyncAwaitTest {
     @Test
     void testWrapAsyncNullThrows() {
         shouldFail(NullPointerException, '''
-            import org.apache.groovy.runtime.async.AsyncSupport
-            AsyncSupport.wrapAsync(null)
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            AsyncClosureUtils.wrapAsync(null)
         ''')
     }
 
     @Test
     void testWrapAsyncGeneratorNullThrows() {
         shouldFail(NullPointerException, '''
-            import org.apache.groovy.runtime.async.AsyncSupport
-            AsyncSupport.wrapAsyncGenerator(null)
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            AsyncClosureUtils.wrapAsyncGenerator(null)
         ''')
     }
 
