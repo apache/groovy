@@ -35,7 +35,9 @@ final class TargetJavaHomeSupport {
 
     /** Returns the {@code java} executable path for the given Java home directory. */
     static String javaExecutable(String javaHome) {
-        return javaHome ? "${javaHome}/bin/java" : null
+        if (!javaHome) return null
+        boolean windows = System.getProperty('os.name').toLowerCase(Locale.ROOT).startsWith('windows')
+        return "${javaHome}/bin/java${windows ? '.exe' : ''}"
     }
 
     /**
