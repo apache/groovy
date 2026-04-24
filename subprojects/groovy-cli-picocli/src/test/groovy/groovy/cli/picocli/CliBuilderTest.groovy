@@ -79,11 +79,12 @@ class CliBuilderTest {
   -h, --help                 usage information
   -i=[<extension>]           modify files in place, create backup if extension
                                is specified (e.g. '.bak')""".toString()
-        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
+
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
         resetPrintWriter()
         cli.writer = printWriter
         if (options.help) { cli.usage() }
-        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
         assert options.hasOption('c')
         assert options.c
         assert options.hasOption('encoding')
@@ -96,6 +97,11 @@ class CliBuilderTest {
         assertEquals(false, options.hasOption('noSuchOptionGiven'))
         assertEquals(false, options.x)
         assertEquals(false, options.hasOption('x'))
+    }
+
+    private static void assertEqualsNormalized(String expected, String actual) {
+        def normalized = actual.normalize().trim()
+        assertEquals(expected, normalized, "expected:\n$expected.bytes\nactual:\n$normalized.bytes")
     }
 
     private void resetPrintWriter() {
@@ -173,10 +179,10 @@ class CliBuilderTest {
         cli.parse([])
         // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
 
-        assert stringWriter.toString().normalize().trim() ==
-                "error: Missing required option: '-x'\n" +
-                "Usage: groovy -x\n" +
-                "  -x     message"
+        def expected = "error: Missing required option: '-x'\n" +
+            "Usage: groovy -x\n" +
+            "  -x     message"
+        assertEqualsNormalized(expected, stringWriter.toString())
     }
 
     @Test
@@ -358,12 +364,12 @@ class CliBuilderTest {
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter)
         def options = cli.parse(['-v'])
-        assertEquals('''''', stringWriter.toString().normalize())
+        assertEquals('', stringWriter.toString().normalize())
         assert !options.v
     }
 
     private void checkNoOutput() {
-        assert stringWriter.toString().normalize() == ''''''
+        assert stringWriter.toString().normalize() == ''
     }
 
     @Test
@@ -1101,7 +1107,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [-configscript=PARAM]
       -pr, -enable-preview, --enable-preview
                             cli.option.preview.description
   -V, -version, --version   cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
 
         resetPrintWriter()
         cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: false, writer: printWriter)
@@ -1126,7 +1132,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
       -pa, --parameters      cli.option.parameters.description
       -pr, --enable-preview  cli.option.preview.description
   -V, --version              cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
     }
 
     @Test
