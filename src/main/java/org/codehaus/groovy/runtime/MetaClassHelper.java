@@ -433,7 +433,7 @@ public class MetaClassHelper {
         //                     VArgs_penalty(A)<VArgs_penalty(D)
         //                     VArgs_penalty(D)<VArgs_penalty(B)
 
-        /**
+        /*
          * In general we want to match the signature that allows us to use
          * as less arguments for the vargs part as possible. That means the
          * longer signature usually wins if both signatures are vargs, while

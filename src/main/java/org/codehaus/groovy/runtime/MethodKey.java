@@ -117,7 +117,7 @@ public abstract class MethodKey {
         int answer = name.hashCode();
         int size = getParameterCount();
 
-        /** @todo we should use the real Josh Bloch algorithm here */
+        /* @todo we should use the real Josh Bloch algorithm here */
 
         // can't remember the exact Josh Bloch algorithm and I've not got the book handy
         // but it's something like this IIRC

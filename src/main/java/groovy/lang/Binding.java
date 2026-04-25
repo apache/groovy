@@ -109,7 +109,7 @@ public class Binding extends GroovyObjectSupport {
      */
     @Override
     public Object getProperty(String property) {
-        /** @todo we should check if we have the property with the metaClass instead of try/catch  */
+        /* @todo we should check if we have the property with the metaClass instead of try/catch  */
         try {
             return super.getProperty(property);
         }
@@ -123,7 +123,7 @@ public class Binding extends GroovyObjectSupport {
      */
     @Override
     public void setProperty(String property, Object newValue) {
-        /** @todo we should check if we have the property with the metaClass instead of try/catch  */
+        /* @todo we should check if we have the property with the metaClass instead of try/catch  */
         try {
             super.setProperty(property, newValue);
         }
