@@ -17,7 +17,7 @@
  *  under the License.
  */
 plugins {
-    id 'com.github.ben-manes.versions' version '0.53.0'
+    id 'com.github.ben-manes.versions' version '0.54.0'
     id 'io.github.goooler.osgi' version '0.8.6'
     id 'com.github.jk1.dependency-license-report' version '3.1.2'
     id 'org.sonarqube' version '7.0.1.6134'
