@@ -84,12 +84,13 @@ final class FlowPublisherAdapterTest {
     void testForAwaitIteratesAllValues() {
         assertScript '''
             import java.util.concurrent.SubmissionPublisher
+            import groovy.concurrent.Awaitable
 
             def publisher = new SubmissionPublisher<Integer>()
             async {
                 // SubmissionPublisher only delivers submitted items to existing subscribers.
                 for (int i = 0; i < 100 && !publisher.hasSubscribers(); i++) {
-                    Thread.sleep(50)
+                    await Awaitable.delay(50)
                 }
 
                 (1..5).each { publisher.submit(it) }
@@ -122,12 +123,13 @@ final class FlowPublisherAdapterTest {
     void testForAwaitPropagatesError() {
         def thrown = shouldFail RuntimeException, '''
             import java.util.concurrent.SubmissionPublisher
+            import groovy.concurrent.Awaitable
 
             def publisher = new SubmissionPublisher<Integer>()
             async {
                 // SubmissionPublisher only delivers submitted items to existing subscribers.
                 for (int i = 0; i < 100 && !publisher.hasSubscribers(); i++) {
-                    Thread.sleep(50)
+                    await Awaitable.delay(50)
                 }
 
                 publisher.submit(1)
