@@ -296,13 +296,11 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
                         // them without a regex match.
                         String content = src.substring(i + 3, close).trim();
                         LiftDecision decision = decideLift(src, close + 2);
-                        switch (decision) {
-                            case LIFT: return content;
-                            case SKIP: return "";
-                            case CHECK_CLAIM:
-                                return isClaimedByMember(scriptNode, content) ? "" : content;
-                        }
-                        return "";
+                        return switch (decision) {
+                            case LIFT -> content;
+                            case SKIP -> "";
+                            case CHECK_CLAIM -> isClaimedByMember(scriptNode, content) ? "" : content;
+                        };
                     }
                     i = close + 2;
                     continue;

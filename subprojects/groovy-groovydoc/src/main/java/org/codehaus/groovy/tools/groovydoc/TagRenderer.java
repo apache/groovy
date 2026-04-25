@@ -473,39 +473,20 @@ final class TagRenderer {
         int dot = fileName.lastIndexOf('.');
         if (dot < 0) return "";
         String ext = fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
-        switch (ext) {
-            case "groovy":
-            case "gvy":
-            case "gy":
-            case "gsh":
-                return "groovy";
-            case "java":
-                return "java";
-            case "json":
-                return "json";
-            case "sql":
-                return "sql";
-            case "xml":
-            case "html":
-            case "htm":
-                return "xml-doc";
-            case "md":
-            case "markdown":
-                return "markdown";
-            case "yaml":
-            case "yml":
-                return "yaml";
-            case "toml":
-                return "toml";
-            case "csv":
-                return "csv";
-            case "properties":
-                return "properties";
-            case "js":
-                return "javascript";
-            default:
-                return "";
-        }
+        return switch (ext) {
+            case "groovy", "gvy", "gy", "gsh" -> "groovy";
+            case "java" -> "java";
+            case "json" -> "json";
+            case "sql" -> "sql";
+            case "xml", "html", "htm" -> "xml-doc";
+            case "md", "markdown" -> "markdown";
+            case "yaml", "yml" -> "yaml";
+            case "toml" -> "toml";
+            case "csv" -> "csv";
+            case "properties" -> "properties";
+            case "js" -> "javascript";
+            default -> "";
+        };
     }
 
     /**
@@ -776,12 +757,11 @@ final class TagRenderer {
         switch (d.name) {
             case "highlight": {
                 String type = d.attrs.getOrDefault("type", "bold");
-                switch (type) {
-                    case "italic":      return "<i>" + match + "</i>";
-                    case "highlighted": return "<mark>" + match + "</mark>";
-                    case "bold":
-                    default:            return "<b>" + match + "</b>";
-                }
+                return switch (type) {
+                    case "italic" -> "<i>" + match + "</i>";
+                    case "highlighted" -> "<mark>" + match + "</mark>";
+                    default -> "<b>" + match + "</b>";
+                };
             }
             case "replace": {
                 String replacement = d.attrs.getOrDefault("replacement", "");
@@ -849,20 +829,11 @@ final class TagRenderer {
     }
 
     private static boolean isKnownInlineTag(String name, Config cfg) {
-        switch (name) {
-            case "link":
-            case "see":
-            case "code":
-            case "interface":
-            case "value":
-            case "inheritDoc":
-            case "snippet":
-                return true;
-            case "literal":
-                return cfg.literalEnabled;
-            default:
-                return false;
-        }
+        return switch (name) {
+            case "link", "see", "code", "interface", "value", "inheritDoc", "snippet" -> true;
+            case "literal" -> cfg.literalEnabled;
+            default -> false;
+        };
     }
 
     private static void renderInlineTag(String name, String body, StringBuilder out,
