@@ -37,6 +37,7 @@ import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Name;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
@@ -131,6 +132,8 @@ public class GroovydocJavaVisitor
         currentClassDoc.addEnumConstant(enumConstantDoc);
         processAnnotations(enumConstantDoc, n);
         applyJavadocComment(n.getJavadocComment(), enumConstantDoc);
+        // Per-constant class bodies are anonymous implementation details.
+        if (!n.getClassBody().isEmpty()) return;
         super.visit(n, arg);
     }
 
@@ -437,6 +440,13 @@ public class GroovydocJavaVisitor
         applyJavadocComment(f.getJavadocComment(), field);
         currentClassDoc.add(field);
         super.visit(f, arg);
+    }
+
+    @Override
+    public void visit(ObjectCreationExpr n, Object arg) {
+        // Anonymous class bodies must not contribute members to the enclosing type doc.
+        if (n.getAnonymousClassBody().isPresent()) return;
+        super.visit(n, arg);
     }
 
     public Map<String, GroovyClassDoc> getGroovyClassDocs() {

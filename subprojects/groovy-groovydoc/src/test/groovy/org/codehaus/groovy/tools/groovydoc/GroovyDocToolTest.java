@@ -1495,7 +1495,50 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
         String classWithAnonymousInnerClassDoc = output.getText(MOCK_DIR + "/" + base + ".html");
         assertNotNull("No GroovyDoc found for " + base, classWithAnonymousInnerClassDoc);
-        assertFalse("innerClassMethod found in: \"" + classWithAnonymousInnerClassDoc + "\"", classWithAnonymousInnerClassDoc.contains("innerClassMethod"));
+        assertTrue("visibleMethod missing from: \"" + classWithAnonymousInnerClassDoc + "\"",
+                classWithAnonymousInnerClassDoc.contains("name=\"visibleMethod\""));
+        assertEquals("Anonymous class getType() leaked into outer doc:\n" + classWithAnonymousInnerClassDoc,
+                0, StringGroovyMethods.count(classWithAnonymousInnerClassDoc, "name=\"getType\""));
+        assertEquals("Anonymous class getValue() leaked into outer doc:\n" + classWithAnonymousInnerClassDoc,
+                0, StringGroovyMethods.count(classWithAnonymousInnerClassDoc, "name=\"getValue\""));
+        assertFalse("Anonymous field leaked into outer doc:\n" + classWithAnonymousInnerClassDoc,
+                classWithAnonymousInnerClassDoc.contains("hiddenField"));
+        assertFalse("Anonymous-body local type leaked into outer doc:\n" + classWithAnonymousInnerClassDoc,
+                classWithAnonymousInnerClassDoc.contains("HiddenType"));
+
+        String namedNestedDoc = output.getText(MOCK_DIR + "/" + base + ".NamedNested.html");
+        assertNotNull("Expected GroovyDoc for named nested class " + base + ".NamedNested", namedNestedDoc);
+        assertTrue("visibleNestedMethod missing from named nested doc:\n" + namedNestedDoc,
+                namedNestedDoc.contains("name=\"visibleNestedMethod\""));
+    }
+
+    public void testJavaEnumConstantBodyMethodsNotIncluded() throws Exception {
+        List<String> srcList = new ArrayList<>();
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles/JavaEnumWithConstantBodies";
+        srcList.add(base + ".java");
+        xmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String javaEnumDoc = output.getText(MOCK_DIR + "/" + base + ".html");
+        assertNotNull("No GroovyDoc found for " + base, javaEnumDoc);
+        assertEquals("Per-constant enum class bodies leaked draw() implementations into enum doc:\n" + javaEnumDoc,
+                1, StringGroovyMethods.count(javaEnumDoc, "name=\"draw\""));
+    }
+
+    public void testSqlAnonymousParameterImplementationsDoNotLeakIntoClassDoc() throws Exception {
+        GroovyDocTool sqlXmlTool = makeXmlTool(new ArrayList<>(), new Properties(),
+                new String[]{"subprojects/groovy-sql/src/main/java", "../groovy-sql/src/main/java"});
+        sqlXmlTool.add(List.of("groovy/sql/Sql.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        sqlXmlTool.renderToOutput(output, MOCK_DIR);
+
+        String sqlDoc = output.getText(MOCK_DIR + "/groovy/sql/Sql.html");
+        assertNotNull("Expected GroovyDoc for groovy/sql/Sql", sqlDoc);
+        assertEquals("Sql doc should not expose getType() from anonymous parameter implementations:\n" + sqlDoc,
+                0, StringGroovyMethods.count(sqlDoc, "name=\"getType\""));
+        assertEquals("Sql doc should not expose getValue() from anonymous parameter implementations:\n" + sqlDoc,
+                0, StringGroovyMethods.count(sqlDoc, "name=\"getValue\""));
     }
 
     public void testJavaClassWithDiamondOperator() throws Exception {
