@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -980,7 +981,7 @@ final class TagRenderer {
             for (int i = 0; i < params.length; i++) {
                 String a = params[i].typeName();
                 String b = targetParams[i].typeName();
-                if (a == null ? b != null : !a.equals(b)) { allMatch = false; break; }
+                if (!Objects.equals(a, b)) { allMatch = false; break; }
             }
             if (allMatch) return m;
         }
