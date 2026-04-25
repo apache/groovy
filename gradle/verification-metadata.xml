@@ -58,20 +58,45 @@
          <trust group="org.jruby" reason="JRuby runtime pulled in by the asciidoctor toolchain"/>
       </trusted-artifacts>
       <ignored-keys>
+         <ignored-key id="012579464D01C06A" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0C27E8FAC93B3B19" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="0CA7139CBC7026F9" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="1063FE98BCECB758" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="156E8DA37ABC7C91" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="1861C322C56014B2" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="1C8D5EF0DF2B70D4" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="1DE461528F1F1B2A" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="254E9C64C264C176" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="25A73BFC746E1035" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="2C7B12F2A511E325" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="2D0E1FB8FE4B68B4" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="2F732027B9B0B96C" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="38362FD5CFA2668B" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="385EF0846E5CF3F3" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="38EE757D69184620" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="3B14D24C5988C977" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="3C1381C7D09AF9E1" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="3FAAD2CD5ECBB314" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="4783A0225D80620F" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="4ECE492B63E38ACF" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="55101494C452D7A2" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="631ECF66932B28BA" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="70F09CC6B876884A" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="74DAFDFD6DAE2441" reason="Key not available on any key server"/>
+         <ignored-key id="79E193516BE7998F" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="7C25280EAE63EBE5" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="7D713008CC07E9AD" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="86E02C5A42196CA8" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="99CA0918C37E2AE4" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="AB049DF4AB24C1EF" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="AECDB81D38EA9C89" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="B16698A4ADF4D638" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="B7E2662A7640A051" reason="Key not available on any key server"/>
          <ignored-key id="B83A12A027FC6962" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="BE84D764623A3644" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="BEDE11EAF1164480" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="C1D3063467F1EBD1" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="D1031D14464180E0" reason="Key couldn't be downloaded from any key server"/>
       </ignored-keys>
       <trusted-keys>
          <trusted-key id="0181A4828FA27B6BE6F1F5A68611CD28F472E006">
@@ -89,7 +114,10 @@
             <trusting group="io.github.x-stream"/>
          </trusted-key>
          <trusted-key id="051927E24FA091722E05A3B23C03136EA34A60F7" group="org.asciidoctor"/>
-         <trusted-key id="073F7A9345756F3B40CDB99E6C70A3B7599C5736" group="org.fusesource.jansi" name="jansi" version="2.4.2"/>
+         <trusted-key id="073F7A9345756F3B40CDB99E6C70A3B7599C5736">
+            <trusting group="org.codehaus.plexus"/>
+            <trusting group="org.fusesource.jansi" name="jansi" version="2.4.2"/>
+         </trusted-key>
          <trusted-key id="077E8893A6DCC33DD4A4D5B256E73BA9A0B592D0" group="org.apache.logging.log4j"/>
          <trusted-key id="0785B3EFF60B1B1BEA94E0BB7C25280EAE63EBE5" group="^org[.]apache[.]httpcomponents($|([.].*))" regex="true"/>
          <trusted-key id="0A123C1ED3F13A6A0140E166C71FB765CD9DE313" group="org.apache.ant"/>
@@ -349,10 +377,6 @@
             <sha512 value="1a47b012447bc8c3d0bc603b95fce1640d7fe7ead08bc33c106c0de811f061a1eda871863e4e1411e9c0c9c716d47c69960f7e492f54e8610f3e40c99f5c3962" origin="Generated by Gradle"/>
          </artifact>
       </component>
-      <component group="com.fasterxml.jackson.dataformat" name="jackson-dataformat-csv" version="2.21.2">
-         <artifact name="jackson-dataformat-csv-2.21.2.jar">
-         </artifact>
-      </component>
       <component group="com.fasterxml.jackson.dataformat" name="jackson-dataformat-toml" version="2.21.0">
          <artifact name="jackson-dataformat-toml-2.21.0.jar">
             <sha512 value="f56f7121605d788dad1f32a5479471f72374676dd57af285726c3f6aaba5c5b60736478d77cc95629decd4ab93d63f3cc671191f4da202264a27dcc8e55fd051" origin="Generated by Gradle"/>
@@ -414,6 +438,11 @@
             <sha512 value="c28e3bcf6d8e8cd54086d52665474156962d211e9861785ef0b1ecab3272f8baba5ba9900293362f788163381276d9d2f502a69a05cd07eccb51d015ae36419a" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
+      <component group="com.github.ben-manes" name="gradle-versions-plugin" version="0.54.0">
+         <artifact name="gradle-versions-plugin-0.54.0.jar">
+            <sha512 value="193dac94efd25201f3a01d30167e43c2b74929cbd33d8796c3018745b16a5b2138616da913c65a596837871b5550c15ed82c7b17088a304a88b3d9bb81e5409e" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
       <component group="com.github.javaparser" name="javaparser-core" version="3.28.0">
          <artifact name="javaparser-core-3.28.0.jar">
             <pgp value="6DE9B8077FBB2F8A019F4904BD17A565509DEE20"/>
@@ -455,7 +484,7 @@
       </component>
       <component group="com.github.jnr" name="jnr-enxio" version="0.32.18">
          <artifact name="jnr-enxio-0.32.18.jar">
-            <sha512 value="9dcc59ff72b1f9f397feda7690ae648fe7bdf64eb608aa4a8bf5f48354285652e70617dab72973e84dd0a8b9f8c2bb64625ff8299ee277478272dfebb97ef1f6" origin="Generated by Gradle"/>
+            <sha512 value="9dcc59ff72b1f9f397feda7690ae648fe7bdf64eb608aa4a8bf5f48354285652e70617dab72973e84dd0a8b9f8c2bb64625ff8299ee277478272dfebb97ef1f6" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.github.jnr" name="jnr-ffi" version="2.2.16">
@@ -465,7 +494,7 @@
       </component>
       <component group="com.github.jnr" name="jnr-ffi" version="2.2.17">
          <artifact name="jnr-ffi-2.2.17.jar">
-            <sha512 value="43aeb2c08f92045d44d852f4cfc31f9094134e856f5bd27e8d1625704395e338371a889061ea0aef8a4303dad4320987904eb9c3f313fe97aef65fe3ac97fc3e" origin="Generated by Gradle"/>
+            <sha512 value="43aeb2c08f92045d44d852f4cfc31f9094134e856f5bd27e8d1625704395e338371a889061ea0aef8a4303dad4320987904eb9c3f313fe97aef65fe3ac97fc3e" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.github.jnr" name="jnr-netdb" version="1.2.0">
@@ -480,7 +509,7 @@
       </component>
       <component group="com.github.jnr" name="jnr-posix" version="3.1.20">
          <artifact name="jnr-posix-3.1.20.jar">
-            <sha512 value="1bcb26600291a8684825d092d318447fbb56f069adbf8765d3fba208fc90e394e2d792dea0e9ce319bcc09a9a3f35f99678f8c8a3cd03365ddbb23e2545911b0" origin="Generated by Gradle"/>
+            <sha512 value="1bcb26600291a8684825d092d318447fbb56f069adbf8765d3fba208fc90e394e2d792dea0e9ce319bcc09a9a3f35f99678f8c8a3cd03365ddbb23e2545911b0" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.github.jnr" name="jnr-unixsocket" version="0.38.22">
@@ -490,7 +519,7 @@
       </component>
       <component group="com.github.jnr" name="jnr-unixsocket" version="0.38.23">
          <artifact name="jnr-unixsocket-0.38.23.jar">
-            <sha512 value="d2dfbe0e5a5d86d102903af1d55ce1211d2f602d73262f080d3917723a18a673890b0ec8786ee7ae9ac378595cf2ad260ac28495ef6f971f542f4ffe4dc76b43" origin="Generated by Gradle"/>
+            <sha512 value="d2dfbe0e5a5d86d102903af1d55ce1211d2f602d73262f080d3917723a18a673890b0ec8786ee7ae9ac378595cf2ad260ac28495ef6f971f542f4ffe4dc76b43" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.github.jnr" name="jnr-x86asm" version="1.0.2">
@@ -708,7 +737,7 @@
       <component group="com.h3xstream.findsecbugs" name="findsecbugs-plugin" version="1.14.0">
          <artifact name="findsecbugs-plugin-1.14.0.jar">
             <pgp value="CFC10B69382CBCF5387E51484ECE492B63E38ACF"/>
-            <sha512 value="9eb87ea65584d6ab9e79cfcc9a2ffe3519adab9356084c74aaead8b3c7ca1e025ae2c2ba1aa70fab701fcd2f960e044ab467da6199d3a7feb64da5db42bc7991" origin="Generated by Gradle"/>
+            <sha512 value="9eb87ea65584d6ab9e79cfcc9a2ffe3519adab9356084c74aaead8b3c7ca1e025ae2c2ba1aa70fab701fcd2f960e044ab467da6199d3a7feb64da5db42bc7991" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.headius" name="backport9" version="1.13">
@@ -751,7 +780,7 @@
       <component group="com.puppycrawl.tools" name="checkstyle" version="12.3.1">
          <artifact name="checkstyle-12.3.1.jar">
             <pgp value="06D34ED6FF73DE368A772A781063FE98BCECB758"/>
-            <sha512 value="945f9bc646ffeda72cc3bdc28f229e26eac63b2c127a14b724d501701c61211f538122d0924c0d31df6c266f374abb791045b749d02a54005903b8771ad900a5" origin="Generated by Gradle"/>
+            <sha512 value="945f9bc646ffeda72cc3bdc28f229e26eac63b2c127a14b724d501701c61211f538122d0924c0d31df6c266f374abb791045b749d02a54005903b8771ad900a5" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.shapesecurity" name="salvation2" version="3.0.1">
@@ -762,6 +791,7 @@
       <component group="com.sleepycat" name="je" version="18.3.12">
          <artifact name="je-18.3.12.jar">
             <pgp value="E6A04C98C11CA6FD765BE838156E8DA37ABC7C91"/>
+            <sha512 value="cead82e35e8fa24a6ad6dfffe33d36542a3395b9c4615bbc34e47b696b20d0dfad7f1f34d0ad4aa0fe7ac2681a5c39382b416c6bd7bf4f9d41962ad24224d694" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="com.squareup.moshi" name="moshi" version="1.12.0">
@@ -904,6 +934,7 @@
       <component group="commons-httpclient" name="commons-httpclient" version="3.1">
          <artifact name="commons-httpclient-3.1.jar">
             <pgp value="0785B3EFF60B1B1BEA94E0BB7C25280EAE63EBE5"/>
+            <sha512 value="85e79d4fdb266861910ef95bcd6e82a7f091c9bfbc63dbe2112383ea4d53a5b7a378b54e7c472fbdfde923f30c72d9cad626f8fabb0b9c70d1dfb095add73359" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="commons-io" name="commons-io" version="2.11.0">
@@ -931,9 +962,15 @@
             <sha512 value="7ac1aa4d834cd7cdecaee223a64c63d481810c73dfdb5109f402234a05cadf754e414cead99072f5140d4f7042ee084161935fb28129a631d908d989c5bbac5d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="commons-io" name="commons-io" version="2.22.0">
+         <artifact name="commons-io-2.22.0.jar">
+            <pgp value="F4DD59C90148BDC52BEB90A4530AA5F25C25011F"/>
+         </artifact>
+      </component>
       <component group="commons-lang" name="commons-lang" version="2.6">
          <artifact name="commons-lang-2.6.jar">
             <pgp value="D196A5E3E70732EEB2E5007F1861C322C56014B2"/>
+            <sha512 value="4a5a3dbe4941c645e2cca068cca5c1882cfe988b02e7cd981d1e51784900767d1deab0e0e0566f559c9fcabb4a180e436d5bb948902d4f4106f37360466afb42" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="commons-logging" name="commons-logging" version="1.2">
@@ -950,6 +987,7 @@
       <component group="dnsjava" name="dnsjava" version="3.6.4">
          <artifact name="dnsjava-3.6.4.jar">
             <pgp value="E06A36F67D8C1BD13F1F278D0CA7139CBC7026F9"/>
+            <sha512 value="6a60c2dec294ba289f00afb5d919e90abea72f79067e4934bee164392f2200b292c3f004f6171ce87a7e869295c6b1a6a7e4a9880bdb1728d7661f18863f9ec8" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="hsqldb" name="hsqldb" version="1.8.0.10">
@@ -1110,7 +1148,7 @@
       <component group="log4j" name="log4j" version="1.2.17">
          <artifact name="log4j-1.2.17.jar">
             <pgp value="9D23533896A9784703585B6286E02C5A42196CA8"/>
-            <sha512 value="3f12937a69ba60d0f5e86265168d6a0d069ce20d95b99a3ace463987655e7c63053f4d7e36e32f2b53f86992b888ca477bf81253ad04c721896b397f94ee57fc" origin="Generated by Gradle"/>
+            <sha512 value="3f12937a69ba60d0f5e86265168d6a0d069ce20d95b99a3ace463987655e7c63053f4d7e36e32f2b53f86992b888ca477bf81253ad04c721896b397f94ee57fc" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="log4j" name="log4j" version="1.2.9">
@@ -1233,6 +1271,32 @@
       <component group="net.sourceforge.expectj" name="expectj" version="2.0.7">
          <artifact name="expectj-2.0.7.jar">
             <pgp value="B59102FF59B40A5528ADEADB99CA0918C37E2AE4"/>
+            <sha512 value="d9024bd88a2b7bad711bb71b862d9b1699f5db3af3b9e0ef78036b079be8b5ff161522a89963672556287576e65d5474190a99cc62a29970b83917640d675b0c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="net.sourceforge.htmlunit" name="htmlunit" version="2.70.0">
+         <artifact name="htmlunit-2.70.0.jar">
+            <sha512 value="5493642b618a74c9d697fa9882a27d8d68b3f1387f0a93c4cc8f215cb293deef5abe1372200c856b39c083bc2c71b88940b8c3c1fd5cb3ac8e6d651cae2019cc" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="net.sourceforge.htmlunit" name="htmlunit-core-js" version="2.70.0">
+         <artifact name="htmlunit-core-js-2.70.0.jar">
+            <sha512 value="b340ea6f41d9fd3c0fa25df445896c3075fe6fb50d6653c4e05ed6fd7c34c775bba6d202f580a84ba8fc02f8db393b8d133ec5280d716b18c36dc4dde25a4ab6" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="net.sourceforge.htmlunit" name="htmlunit-cssparser" version="1.14.0">
+         <artifact name="htmlunit-cssparser-1.14.0.jar">
+            <sha512 value="63343e0f7de5455755cb1fc1bce7c9a9408acb9ebd52503d1f8a2d6a2d9a1741576f7e4d2cd504a342cc66da5edb5d9a1d9121960006cef69030482a0fea67b7" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="net.sourceforge.htmlunit" name="htmlunit-xpath" version="2.70.0">
+         <artifact name="htmlunit-xpath-2.70.0.jar">
+            <sha512 value="dca98a28fd348dd5d168e34bb0f8187642b19c7cfd5f7b9e49a550ac0bc9cd243b8bb79ad012f0f25911454ea82627081f31b5d76c8a5f3ccb8a091336ea5cd3" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="net.sourceforge.htmlunit" name="neko-htmlunit" version="2.70.0">
+         <artifact name="neko-htmlunit-2.70.0.jar">
+            <sha512 value="0ece64225cf8fd8743e0b20284336b18d52766799b9f5646e0626b83a2091285e9757cc51f4855cc0daad58d5ceeb6e6a3a8651959293ae63343f5fba9547573" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.abego.treelayout" name="org.abego.treelayout.core" version="1.0.3">
@@ -1325,7 +1389,7 @@
       </component>
       <component group="org.apache.commons" name="commons-lang3" version="3.8.1">
          <artifact name="commons-lang3-3.8.1.jar">
-            <sha512 value="fb0fe98385496a565678a000c26a3245082abfbf879cc29a35112b4bf18c966697a7a63bb1fd2fae4a42512cd3de5a2e6dc9d1df4a4058332a6ddeae06cdf667" origin="Generated by Gradle"/>
+            <sha512 value="fb0fe98385496a565678a000c26a3245082abfbf879cc29a35112b4bf18c966697a7a63bb1fd2fae4a42512cd3de5a2e6dc9d1df4a4058332a6ddeae06cdf667" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.apache.commons" name="commons-math3" version="3.6.1">
@@ -1362,7 +1426,7 @@
       </component>
       <component group="org.apache.httpcomponents" name="httpclient" version="4.5.14">
          <artifact name="httpclient-4.5.14.jar">
-            <sha512 value="a084ef30fb0a2a25397d8fab439fe68f67e294bf53153e2e1355b8df92886d40fe6abe35dc84f014245f7158e92641bcbd98019b4fbbd9e5a0db495b160b4ced" origin="Generated by Gradle"/>
+            <sha512 value="a084ef30fb0a2a25397d8fab439fe68f67e294bf53153e2e1355b8df92886d40fe6abe35dc84f014245f7158e92641bcbd98019b4fbbd9e5a0db495b160b4ced" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.apache.httpcomponents" name="httpcore" version="4.4.14">
@@ -1372,7 +1436,12 @@
       </component>
       <component group="org.apache.httpcomponents" name="httpcore" version="4.4.16">
          <artifact name="httpcore-4.4.16.jar">
-            <sha512 value="168026436a6bcf5e96c0c59606638abbdc30de4b405ae55afde70fdf2895e267a3d48bba6bdadc5a89f38e31da3d9a9dc91e1cab7ea76f5e04322cf1ec63b838" origin="Generated by Gradle"/>
+            <sha512 value="168026436a6bcf5e96c0c59606638abbdc30de4b405ae55afde70fdf2895e267a3d48bba6bdadc5a89f38e31da3d9a9dc91e1cab7ea76f5e04322cf1ec63b838" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="org.apache.httpcomponents" name="httpmime" version="4.5.14">
+         <artifact name="httpmime-4.5.14.jar">
+            <sha512 value="884b062028f68278389b74ccfbc35142caae489ceda5df01d2c60df884b9604cd4055bf4e1524e0358661fa0e88e93e614fb6be590cb940510b07a37c0b0a20c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.apache.httpcomponents.client5" name="httpclient5" version="5.1.3">
@@ -1769,6 +1838,11 @@
             <sha512 value="3717b97ceebf62a3e4ba4e72491de0c3ac5993bc99ac3af990e9b5ac0ed2fad333bd904b7fec61b17ee0c4bbcf8622a1ed5519cec8ca915387634d48b93c1bc7" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.maven.shared" name="maven-filtering" version="3.5.0">
+         <artifact name="maven-filtering-3.5.0.jar">
+            <pgp value="88BE34F94BDB2B5357044E2E3A387D43964143E3"/>
+         </artifact>
+      </component>
       <component group="org.apache.maven.shared" name="maven-shared-utils" version="3.4.2">
          <artifact name="maven-shared-utils-3.4.2.jar">
             <sha512 value="71db8a485a6436cb305276ea9d748f578e1a8ffa1346c8570f7038684ce53d320584174634aeffa1b51629af0171a2d6572854eb07236a83236ad1d9949988e9" origin="Generated by Gradle" reason="Artifact is not signed"/>
@@ -1876,10 +1950,6 @@
             <sha512 value="93ff1b8fc521b6a570a2bd354ec0c1aff40ca01c2b07d06cb931568f912ecdd2c60f35a035fecf9b5f607675eb268935debb027f932117c69d67965a7b8e6056" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
-      <component group="org.asciidoctor" name="asciidoctorj-api" version="2.5.7">
-         <artifact name="asciidoctorj-api-2.5.7.jar">
-         </artifact>
-      </component>
       <component group="org.asciidoctor" name="asciidoctorj-api" version="3.0.0">
          <artifact name="asciidoctorj-api-3.0.0.jar">
             <sha512 value="4340fe15492346712807805c17157012b1574b05929bebcba5c0ea06c293a5e31cbe3469d6b4d1c1e6c4dbdbd0577cbf4c9b11ae626cc522d0ebbffb75dc475c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
@@ -1960,7 +2030,7 @@
       </component>
       <component group="org.checkerframework" name="checker-qual" version="3.52.1">
          <artifact name="checker-qual-3.52.1.jar">
-            <sha512 value="ded69c9467955169ca6f80d0b50911ed89261c1b515ad8ddd506641f05c47767fa3fab64843949afe7cc90c89cc3d5f927e4bbad8412fc1b6608e62eaefe95a3" origin="Generated by Gradle"/>
+            <sha512 value="ded69c9467955169ca6f80d0b50911ed89261c1b515ad8ddd506641f05c47767fa3fab64843949afe7cc90c89cc3d5f927e4bbad8412fc1b6608e62eaefe95a3" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.codehaus.gpars" name="gpars" version="1.2.1">
@@ -2061,7 +2131,7 @@
       </component>
       <component group="org.codehaus.plexus" name="plexus-utils" version="3.3.0">
          <artifact name="plexus-utils-3.3.0.jar">
-            <sha512 value="a93038005cd9793476c913beaea7c8c170d1853dddf39bf6794ad6446165eaf538c2c3c2314baa9d919d6b0bda78e5ea3cd987d5dbacf8e3b98e315bcfa7db64" origin="Generated by Gradle"/>
+            <sha512 value="a93038005cd9793476c913beaea7c8c170d1853dddf39bf6794ad6446165eaf538c2c3c2314baa9d919d6b0bda78e5ea3cd987d5dbacf8e3b98e315bcfa7db64" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.codehaus.plexus" name="plexus-utils" version="3.6.0">
@@ -2106,7 +2176,7 @@
       <component group="org.codenarc" name="CodeNarc" version="3.7.0">
          <artifact name="CodeNarc-3.7.0.jar">
             <pgp value="851264C36365D4FF9427625F38362FD5CFA2668B"/>
-            <sha512 value="50cc6a6ae143ce6a7e42d21d7fc049a252c63ee8f1cb7ceff6a7a97bc4a0f4b4dda646d108e175b7fe2eaa3214b04c75672c6abee7fafb5b587809a916500215" origin="Generated by Gradle"/>
+            <sha512 value="50cc6a6ae143ce6a7e42d21d7fc049a252c63ee8f1cb7ceff6a7a97bc4a0f4b4dda646d108e175b7fe2eaa3214b04c75672c6abee7fafb5b587809a916500215" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.commonmark" name="commonmark" version="0.28.0">
@@ -2121,7 +2191,7 @@
       </component>
       <component group="org.crac" name="crac" version="1.5.0">
          <artifact name="crac-1.5.0.jar">
-            <sha512 value="062f49bbabcf2d56e171ff988d21437fbf98b1734b3704bfdcfbcca98fadfbb10e9bfbae6d3f74f1bf04e9190cfe87686174b30f8c58592f9721fdef8827c99d" origin="Generated by Gradle"/>
+            <sha512 value="062f49bbabcf2d56e171ff988d21437fbf98b1734b3704bfdcfbcca98fadfbb10e9bfbae6d3f74f1bf04e9190cfe87686174b30f8c58592f9721fdef8827c99d" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.cyberneko" name="html" version="1.9.8">
@@ -2148,7 +2218,7 @@
       <component group="org.dom4j" name="dom4j" version="2.2.0">
          <artifact name="dom4j-2.2.0.jar">
             <pgp value="8F9A3C6D105B9F57844A721D79E193516BE7998F"/>
-            <sha512 value="9e69d8c53b82d62d6589d56c6861455963ac64ea1c74a73b2e677be5297c104ea1ac26eb871ac92f2ee54116b3011304481070ae21a570d3b241be1cc13390ab" origin="Generated by Gradle"/>
+            <sha512 value="9e69d8c53b82d62d6589d56c6861455963ac64ea1c74a73b2e677be5297c104ea1ac26eb871ac92f2ee54116b3011304481070ae21a570d3b241be1cc13390ab" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.eclipse.jetty" name="jetty-client" version="9.4.50.v20221201">
@@ -2240,7 +2310,7 @@
       <component group="org.gmetrics" name="GMetrics" version="2.1.0">
          <artifact name="GMetrics-2.1.0.jar">
             <pgp value="851264C36365D4FF9427625F38362FD5CFA2668B"/>
-            <sha512 value="f13b47b1ae01bdc2f1450d26728ef03029c138345313d8e389d7e470cd8f06ea9d47847a9053e896fe37d9114ea6d8fb4086febd5ee2d7f48f641dcfde4f3e3d" origin="Generated by Gradle"/>
+            <sha512 value="f13b47b1ae01bdc2f1450d26728ef03029c138345313d8e389d7e470cd8f06ea9d47847a9053e896fe37d9114ea6d8fb4086febd5ee2d7f48f641dcfde4f3e3d" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.gmetrics" name="GMetrics-Groovy4" version="2.1.0">
@@ -2250,12 +2320,12 @@
       </component>
       <component group="org.hamcrest" name="hamcrest" version="2.2">
          <artifact name="hamcrest-2.2.jar">
-            <sha512 value="6b1141329b83224f69f074cb913dbff6921d6b8693ede8d2599acb626481255dae63de42eb123cbd5f59a261ac32faae012be64e8e90406ae9215543fbca5546" origin="Generated by Gradle"/>
+            <sha512 value="6b1141329b83224f69f074cb913dbff6921d6b8693ede8d2599acb626481255dae63de42eb123cbd5f59a261ac32faae012be64e8e90406ae9215543fbca5546" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.hamcrest" name="hamcrest" version="3.0">
          <artifact name="hamcrest-3.0.jar">
-            <sha512 value="c09968882d8467d43576444b3fab868e175f0826e1d6e2015d1efec8934cdd5ffce8f285a7fc072306711ee0645dea92783a97a9e1dd8206e5e1de5de1ea8e7f" origin="Generated by Gradle"/>
+            <sha512 value="c09968882d8467d43576444b3fab868e175f0826e1d6e2015d1efec8934cdd5ffce8f285a7fc072306711ee0645dea92783a97a9e1dd8206e5e1de5de1ea8e7f" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.hamcrest" name="hamcrest-core" version="1.3">
@@ -2266,13 +2336,13 @@
       </component>
       <component group="org.hamcrest" name="hamcrest-core" version="2.2">
          <artifact name="hamcrest-core-2.2.jar">
-            <sha512 value="e6c3f02e25070177f8101f9ca265046f8c9569f82560051dbfb1e6a28c9937b1a7453f68e9a37bfce0eb69bacf45a743d16e78add931e98195d260b8a516557e" origin="Generated by Gradle"/>
+            <sha512 value="e6c3f02e25070177f8101f9ca265046f8c9569f82560051dbfb1e6a28c9937b1a7453f68e9a37bfce0eb69bacf45a743d16e78add931e98195d260b8a516557e" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.hsqldb" name="hsqldb" version="2.7.4">
          <artifact name="hsqldb-2.7.4.jar">
             <pgp value="D76260C72DF74E66268F7770AB049DF4AB24C1EF"/>
-            <sha512 value="d30681058778d0d89339781052c3da30cbb817a9f4f79a8ca3fbd2b4fb83f5b797c10415df66028fa2a16f267dd06a2330632ce9cd577e0cb959d8de815fe46e" origin="Generated by Gradle"/>
+            <sha512 value="d30681058778d0d89339781052c3da30cbb817a9f4f79a8ca3fbd2b4fb83f5b797c10415df66028fa2a16f267dd06a2330632ce9cd577e0cb959d8de815fe46e" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.javassist" name="javassist" version="3.28.0-GA">
@@ -2288,6 +2358,11 @@
       <component group="org.jboss.bridger" name="bridger" version="1.6.Final">
          <artifact name="bridger-1.6.Final.jar">
             <sha512 value="d5d27b85a1290a31cb1752b315a0c88f8aa025de29418b7d300ac92c516ff1cf20aed1ef7aa78b6dec663433c72257d9a984a4d5eca14f27d1795fa0a2916a83" origin="Generated by Gradle" reason="Artifact is not signed"/>
+         </artifact>
+      </component>
+      <component group="org.jboss.bridger" name="bridger" version="1.8">
+         <artifact name="bridger-1.8.jar">
+            <sha512 value="b4befcc3fb746fb6e4cbf8249578db198986d2c3b467631015ef3e2daf378e0ef2fc0a30073f7de126326895525d221762d85e5a5b6b5c6d7e05ed099fcc5aeb" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.jcommander" name="jcommander" version="1.83">
@@ -2533,7 +2608,7 @@
       </component>
       <component group="org.jruby.jcodings" name="jcodings" version="1.0.63">
          <artifact name="jcodings-1.0.63.jar">
-            <sha512 value="280e989a1af7679da82bb9adb27a8c4e08c8da09f0bb93c380a36bfe7071c62bc9e7248b634d9e04f3ab275ec0672a44f8ab41dca8c10128c4351b6302275e84" origin="Generated by Gradle"/>
+            <sha512 value="280e989a1af7679da82bb9adb27a8c4e08c8da09f0bb93c380a36bfe7071c62bc9e7248b634d9e04f3ab275ec0672a44f8ab41dca8c10128c4351b6302275e84" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.jruby.joni" name="joni" version="2.2.1">
@@ -2543,7 +2618,7 @@
       </component>
       <component group="org.jruby.joni" name="joni" version="2.2.5">
          <artifact name="joni-2.2.5.jar">
-            <sha512 value="8723a3d245c39d289c409b4be7b8ab6071c1aa459b9b73562b316b829096335bea51df98df15d9bcabc9eb5bc0437f90ecfa269089faf34ca81daf81659f254d" origin="Generated by Gradle"/>
+            <sha512 value="8723a3d245c39d289c409b4be7b8ab6071c1aa459b9b73562b316b829096335bea51df98df15d9bcabc9eb5bc0437f90ecfa269089faf34ca81daf81659f254d" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.jsoup" name="jsoup" version="1.22.1">
@@ -2673,6 +2748,7 @@
       <component group="org.mnode.mstor" name="mstor" version="1.0.3">
          <artifact name="mstor-1.0.3.jar">
             <pgp value="D71534DDED75B2DA189E14DF385EF0846E5CF3F3"/>
+            <sha512 value="a81f6023bc9e40d3adbc271b3f661d0b4ea5f839b780f0247bb3ef932f5fe2bc50071d17cc4e546b4039c1f4f674240536353db8458abd7bf366b2404213bd9f" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.multiverse" name="multiverse" version="0.7.0">
@@ -2916,7 +2992,7 @@
       <component group="org.reactivestreams" name="reactive-streams" version="1.0.4">
          <artifact name="reactive-streams-1.0.4.jar">
             <pgp value="50A628FFAF58480736B1079FD1031D14464180E0"/>
-            <sha512 value="cdab6bd156f39106cd6bbfd47df1f4b0a89dc4aa28c68c31ef12a463193c688897e415f01b8d7f0d487b0e6b5bd2f19044bf8605704b024f26d6aa1f4f9a2471" origin="Generated by Gradle"/>
+            <sha512 value="cdab6bd156f39106cd6bbfd47df1f4b0a89dc4aa28c68c31ef12a463193c688897e415f01b8d7f0d487b0e6b5bd2f19044bf8605704b024f26d6aa1f4f9a2471" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.reflections" name="reflections" version="0.10.2">
@@ -2925,15 +3001,25 @@
             <sha512 value="d04700d4b6d3f28faa611e10ce863df1d6c82dfc6dd1b27cb910e44c19089ca08bef939e2bca7bc79274836f8e9d8801c4326232d24a38dba0a4893a20c7c42c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="org.slf4j" name="jcl-over-slf4j" version="1.7.32">
+         <artifact name="jcl-over-slf4j-1.7.32.jar">
+            <sha512 value="55b0678cbe5359d7fabcec55f305997170b0d45264b5cc0577cc9137ac2388a459b86c5438b5850d6e7247d3a00486f83f4b7e305b0eb756a52d3e5c5466ddbd" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="org.slf4j" name="jcl-over-slf4j" version="2.0.17">
          <artifact name="jcl-over-slf4j-2.0.17.jar">
             <sha512 value="7efb2771bad2e643b0e814cd78ab4f9af3ea166643700776618c397e9755ca11f4b7c00030562a619932c9d2ec5114fd253ece3abbc3db2f1a064431d8990733" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="org.slf4j" name="jul-to-slf4j" version="1.7.32">
+         <artifact name="jul-to-slf4j-1.7.32.jar">
+            <sha512 value="b87e398ec42ea9948c295f18edc0cd65031132a18b6fa77bf299d897e7bae7a07ec34eb223025794070002f107dc7b708e6bea0c595ec32f1212c767c9e3240b" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="org.slf4j" name="slf4j-api" version="1.7.36">
          <artifact name="slf4j-api-1.7.36.jar">
             <pgp value="475F3B8E59E6E63AA78067482C7B12F2A511E325"/>
-            <sha512 value="f9b033fc019a44f98b16048da7e2b59edd4a6a527ba60e358f65ab88e0afae03a9340f1b3e8a543d49fa542290f499c5594259affa1ff3e6e7bf3b428d4c610b" origin="Generated by Gradle"/>
+            <sha512 value="f9b033fc019a44f98b16048da7e2b59edd4a6a527ba60e358f65ab88e0afae03a9340f1b3e8a543d49fa542290f499c5594259affa1ff3e6e7bf3b428d4c610b" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.slf4j" name="slf4j-api" version="2.0.13">
@@ -3003,6 +3089,11 @@
             <sha512 value="62efa617e564958a2b427acc4fcd6b8ad407620857774827222840bbd0d349e96deceb20925a29cce3933306bdbed01abebf9b80f050d43830ce44cb86a40c23" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
+      <component group="org.sonatype.plexus" name="plexus-build-api" version="0.0.7">
+         <artifact name="plexus-build-api-0.0.7.jar">
+            <pgp value="2BCBDD0F23EA1CAFCC11D4860374CF2E8DD1BDFD"/>
+         </artifact>
+      </component>
       <component group="org.sonatype.plexus" name="plexus-cipher" version="1.4">
          <artifact name="plexus-cipher-1.4.jar">
             <pgp value="9FFED7A118D45A44E4A1E47130E6F80434A72A7F"/>
@@ -3032,6 +3123,7 @@
       <component group="org.tukaani" name="xz" version="1.6">
          <artifact name="xz-1.6.jar">
             <pgp value="3690C240CE51B4670D30AD1C38EE757D69184620"/>
+            <sha512 value="81b6b4b2cc8036334859a9503abecbefc2ebaeca0cd2deecac69e4b7bd375fe4e6d7eebe25cbd06eab433796e574fe6c9c38d3770e887b133671d74368c46920" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="org.webjars" name="jquery" version="3.6.1">
@@ -3166,6 +3258,7 @@
       <component group="xerces" name="xercesImpl" version="2.12.2">
          <artifact name="xercesImpl-2.12.2.jar">
             <pgp value="6CB87B18A453990EAC9453F87D713008CC07E9AD"/>
+            <sha512 value="bfd21f2350bf0bb546a68d3303f28c6a15cee1e630138c169344c3f65fe39a15e61c6ff4e5239f38f2f1f9e488eff4d5565a4a0774263064ab6a30aa9fcaaed3" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="xml-apis" name="xml-apis" version="1.0.b2">
