@@ -87,6 +87,11 @@ final class FlowPublisherAdapterTest {
 
             def publisher = new SubmissionPublisher<Integer>()
             async {
+                // SubmissionPublisher only delivers submitted items to existing subscribers.
+                for (int i = 0; i < 100 && !publisher.hasSubscribers(); i++) {
+                    Thread.sleep(50)
+                }
+
                 (1..5).each { publisher.submit(it) }
                 publisher.close()
             }
@@ -120,6 +125,11 @@ final class FlowPublisherAdapterTest {
 
             def publisher = new SubmissionPublisher<Integer>()
             async {
+                // SubmissionPublisher only delivers submitted items to existing subscribers.
+                for (int i = 0; i < 100 && !publisher.hasSubscribers(); i++) {
+                    Thread.sleep(50)
+                }
+
                 publisher.submit(1)
                 publisher.submit(2)
                 publisher.closeExceptionally(new RuntimeException('mid-stream'))
