@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.ImportNode;
+import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModifierNode;
@@ -2205,16 +2206,56 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public List<Expression> visitTypeNamePairs(final TypeNamePairsContext ctx) {
-        return ctx.typeNamePair().stream().map(this::visitTypeNamePair).collect(Collectors.toList());
+        if (asBoolean(ctx.keyedPair())) { // GEP-20 map-style: def (name: n, age: a) = person
+            return ctx.keyedPair().stream().map(this::visitKeyedPair).collect(Collectors.toList());
+        }
+        List<Expression> pairs = ctx.typeNamePair().stream().map(this::visitTypeNamePair).collect(Collectors.toList());
+        // GEP-20: at most one rest binding (*) per parens form
+        boolean seenRest = false;
+        for (Expression e : pairs) {
+            if (Boolean.TRUE.equals(e.getNodeMetaData(MultipleAssignmentMetadata.REST_BINDING))) {
+                if (seenRest) {
+                    throw createParsingFailedException("Only one rest binding (*) is allowed in a multi-assignment", e);
+                }
+                seenRest = true;
+            }
+        }
+        return pairs;
     }
 
     @Override
     public VariableExpression visitTypeNamePair(final TypeNamePairContext ctx) {
-        return configureAST(
+        boolean isRest = asBoolean(ctx.MUL());
+        // GEP-20: typed rest (e.g. `def (h, List<Integer> *t) = list`) is accepted; the
+        // declared container type is honoured by static type checking and runtime coercion.
+        // `def` and `var` are also accepted in place of a type (equivalent to omitting it),
+        // for symmetry with switch case patterns and the bracket-form declaration grammar.
+        VariableExpression ve = configureAST(
                 new VariableExpression(
                         this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName(),
-                        this.visitType(ctx.type())),
+                        binderType(ctx.DEF(), ctx.VAR(), ctx.type())),
                 ctx);
+        if (isRest) {
+            ve.putNodeMetaData(MultipleAssignmentMetadata.REST_BINDING, Boolean.TRUE);
+        }
+        return ve;
+    }
+
+    @Override
+    public VariableExpression visitKeyedPair(final KeyedPairContext ctx) {
+        VariableExpression ve = configureAST(
+                new VariableExpression(
+                        this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName(),
+                        binderType(ctx.DEF(), ctx.VAR(), ctx.type())),
+                ctx);
+        ve.putNodeMetaData(MultipleAssignmentMetadata.MAP_KEY, this.visitIdentifier(ctx.key));
+        return ve;
+    }
+
+    /** GEP-20: resolve a binder's declared type — `def`/`var` produce the dynamic type, same as omitting a type. */
+    private ClassNode binderType(final TerminalNode defNode, final TerminalNode varNode, final TypeContext typeCtx) {
+        if (asBoolean(defNode) || asBoolean(varNode)) return ClassHelper.dynamicType();
+        return this.visitType(typeCtx);
     }
 
     @Override

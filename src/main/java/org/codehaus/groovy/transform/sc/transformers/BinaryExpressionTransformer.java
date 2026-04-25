@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform.sc.transformers;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -111,7 +112,12 @@ public class BinaryExpressionTransformer {
             if (expr != null) return expr;
             if (leftExpression instanceof TupleExpression
                     && rightExpression instanceof ListExpression) {
-                return transformMultipleAssignment(bin);
+                // GEP-20: rest and map-style binders can't be flattened into per-position
+                // single assignments — leave them for the regular codegen path
+                // (BinaryExpressionHelper.evaluateEqual) which knows how to slice / lookup.
+                if (!hasGep20Binder((TupleExpression) leftExpression)) {
+                    return transformMultipleAssignment(bin);
+                }
             }
             break;
           case Types.KEYWORD_IN:
@@ -341,6 +347,15 @@ public class BinaryExpressionTransformer {
         }
 
         return null;
+    }
+
+    /** GEP-20: detect a rest binder ({@code *t}) or map-style binder ({@code key: x}) on the LHS. */
+    private static boolean hasGep20Binder(final TupleExpression tuple) {
+        for (Expression e : tuple.getExpressions()) {
+            if (Boolean.TRUE.equals(e.getNodeMetaData(MultipleAssignmentMetadata.REST_BINDING))) return true;
+            if (e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY) != null) return true;
+        }
+        return false;
     }
 
     private Expression transformMultipleAssignment(final BinaryExpression bin) {

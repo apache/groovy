@@ -1328,11 +1328,15 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     @Test
     void testMultipleAssignmentFromVariable() {
-        shouldFailWithMessages '''
+        // GEP-20: declared-type RHS is accepted when the type has a statically-resolvable
+        // getAt(int). The previous "Multiple assignments without list or tuple" restriction
+        // has been lifted for this case.
+        assertScript '''
             def list = [1,2,3]
             def (x,y) = list
-        ''',
-        'Multiple assignments without list or tuple on the right-hand side are unsupported in static type checking mode'
+            assert x == 1
+            assert y == 2
+        '''
     }
 
     // GROOVY-8223, GROOVY-8887, GROOVY-10063

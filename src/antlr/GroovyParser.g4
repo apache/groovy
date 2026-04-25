@@ -578,10 +578,15 @@ variableDeclaration[int t]
 
 typeNamePairs
     :   LPAREN typeNamePair (COMMA typeNamePair)* RPAREN
+    |   LPAREN keyedPair (COMMA keyedPair)* RPAREN
     ;
 
 typeNamePair
-    :   type? variableDeclaratorId
+    :   (DEF | VAR | type)? MUL? variableDeclaratorId
+    ;
+
+keyedPair
+    :   key=identifier COLON (DEF | VAR | type)? variableDeclaratorId
     ;
 
 variableNames
