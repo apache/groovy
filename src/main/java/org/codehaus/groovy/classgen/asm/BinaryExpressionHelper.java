@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -43,6 +44,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
+import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Label;
@@ -53,10 +55,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
@@ -498,6 +502,101 @@ public class BinaryExpressionHelper {
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength() - mark);
         } else { // multiple declaration or assignment
+            TupleExpression tuple = (TupleExpression) leftExpression;
+            java.util.List<Expression> elements = tuple.getExpressions();
+            int tupleSize = elements.size();
+            int restIndex = -1;
+            for (int idx = 0; idx < tupleSize; idx++) {
+                if (Boolean.TRUE.equals(elements.get(idx).getNodeMetaData(MultipleAssignmentMetadata.REST_BINDING))) {
+                    restIndex = idx;
+                    break;
+                }
+            }
+            boolean hasRest = (restIndex >= 0);
+            boolean tailRest = hasRest && restIndex == tupleSize - 1;
+            boolean isMapStyle = !elements.isEmpty()
+                    && elements.get(0).getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY) != null;
+
+            // GEP-20 map-style destructuring: def (name: n, age: a) = person
+            // Each binder is emitted as a property access on the RHS, dispatched via the MOP
+            // (Map → key lookup, bean → getter, GroovyObject → getProperty).
+            if (isMapStyle) {
+                for (Expression e : elements) {
+                    String key = (String) e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
+                    // Property access is a read here; the surrounding pushLHS(true) above would
+                    // otherwise mark it as a store target.
+                    compileStack.popLHS();
+                    propX(rhsValueLoader, key).visit(acg);
+                    compileStack.pushLHS(true);
+                    assignOneMultiAssignSlot(e, defineVariable, operandStack, compileStack, acg);
+                }
+                compileStack.popLHS();
+                if (returnRightValue) rhsValueLoader.visit(acg);
+                compileStack.removeVar(rhsValueId);
+                return;
+            }
+
+            // GEP-20 degenerate case: `def (*t) = rhs` — single rest binder; equivalent to `def t = rhs`.
+            if (tailRest && tupleSize == 1) {
+                rhsValueLoader.visit(acg);
+                if (defineVariable) {
+                    Variable v = (Variable) elements.get(0);
+                    operandStack.doGroovyCast(v);
+                    compileStack.defineVariable(v, true);
+                    operandStack.remove(1);
+                } else {
+                    elements.get(0).visit(acg);
+                }
+                compileStack.popLHS();
+                if (returnRightValue) rhsValueLoader.visit(acg);
+                compileStack.removeVar(rhsValueId);
+                return;
+            }
+
+            // GEP-20 head/middle rest: def (*f, last) = list, def (l, *m, r) = list, etc.
+            // Requires a sized, indexable RHS (Path B only — no iterator fallback).
+            // Load-bearing ordering (GEP lines 177-186): the IntRange call for the rest slot
+            // must be emitted BEFORE any negative-index call, so that an iterator/stream RHS
+            // fails fast with MissingMethodException instead of hanging via materialisation.
+            if (hasRest && !tailRest) {
+                // 1. Emit the IntRange call for the rest slot first, via the helper that
+                //    returns an empty slice for inverted ranges (short RHS) and fails fast
+                //    for non-indexable RHS (iterator/stream/set), per GEP lines 177-186.
+                // Number of fixed slots after the rest = tupleSize - restIndex - 1; their negative
+                // indices span [-k, -1]; the rest slice therefore ends at -(k+1) = -(tupleSize - restIndex).
+                // e.g. def (*f,last): -2; def (l,*m,r): -2; def (a,b,*m,y,z): -3
+                int toIdx = -(tupleSize - restIndex);
+                MethodCallExpression sliceCall = callX(
+                        classX(MultipleAssignmentSupport.class),
+                        "nonTailRestSlice",
+                        args(rhsValueLoader, constX(restIndex, true), constX(toIdx, true)));
+                sliceCall.setImplicitThis(false);
+                sliceCall.visit(acg);
+                assignOneMultiAssignSlot(elements.get(restIndex), defineVariable, operandStack, compileStack, acg);
+
+                // 2. Positive-index fixed slots (before rest), left-to-right.
+                for (int idx = 0; idx < restIndex; idx++) {
+                    MethodCallExpression call = callX(rhsValueLoader, "getAt", constX(idx, true));
+                    call.setImplicitThis(false);
+                    call.visit(acg);
+                    assignOneMultiAssignSlot(elements.get(idx), defineVariable, operandStack, compileStack, acg);
+                }
+
+                // 3. Negative-index fixed slots (after rest), left-to-right.
+                for (int idx = restIndex + 1; idx < tupleSize; idx++) {
+                    int negIdx = -(tupleSize - idx);
+                    MethodCallExpression call = callX(rhsValueLoader, "getAt", constX(negIdx, true));
+                    call.setImplicitThis(false);
+                    call.visit(acg);
+                    assignOneMultiAssignSlot(elements.get(idx), defineVariable, operandStack, compileStack, acg);
+                }
+
+                compileStack.popLHS();
+                if (returnRightValue) rhsValueLoader.visit(acg);
+                compileStack.removeVar(rhsValueId);
+                return;
+            }
+
             MethodCallExpression iterator = callX(rhsValueLoader, "iterator");
             iterator.setImplicitThis(false);
             iterator.visit(acg);
@@ -522,9 +621,17 @@ public class BinaryExpressionHelper {
             mv.visitJumpInsn(IF_ACMPEQ, useGetAt);
 
             boolean first = true;
-            for (Expression e : (TupleExpression) leftExpression) {
-                if (first) {
-                    first = false;
+            for (int idx = 0; idx < tupleSize; idx++) {
+                Expression e = elements.get(idx);
+                if (idx == restIndex) { // tail rest: dispatch Path B (slice) vs Path C (iterator) at runtime
+                    MethodCallExpression restCall = callX(
+                            classX(MultipleAssignmentSupport.class),
+                            "tailRest",
+                            args(rhsValueLoader, constX(idx, true), seq));
+                    restCall.setImplicitThis(false);
+                    restCall.visit(acg);
+                } else if (first) {
+                    first = false; // value already on stack from next() above
                 } else {
                     ternaryX(hasNext, next, nullX()).visit(acg);
                 }
@@ -546,11 +653,19 @@ public class BinaryExpressionHelper {
 
             mv.visitLabel(useGetAt_noPop);
 
-            int i = 0;
-            for (Expression e : (TupleExpression) leftExpression) {
-                MethodCallExpression getAt = callX(rhsValueLoader, "getAt", constX(i++, true));
-                getAt.setImplicitThis(false);
-                getAt.visit(acg);
+            for (int idx = 0; idx < tupleSize; idx++) {
+                Expression e = elements.get(idx);
+                MethodCallExpression call;
+                if (idx == restIndex) { // tail rest: dispatch via helper so empty RHS / non-indexable cases are handled uniformly
+                    call = callX(
+                            classX(MultipleAssignmentSupport.class),
+                            "tailRest",
+                            args(rhsValueLoader, constX(idx, true), seq));
+                } else {
+                    call = callX(rhsValueLoader, "getAt", constX(idx, true));
+                }
+                call.setImplicitThis(false);
+                call.visit(acg);
 
                 if (defineVariable) {
                     Variable v = (Variable) e;
@@ -576,6 +691,20 @@ public class BinaryExpressionHelper {
             rhsValueLoader.visit(acg);
 
         compileStack.removeVar(rhsValueId);
+    }
+
+    /** GEP-20: assign the single value currently on the operand stack to the given declarator slot. */
+    private void assignOneMultiAssignSlot(final Expression e, final boolean defineVariable,
+                                          final OperandStack operandStack, final CompileStack compileStack,
+                                          final AsmClassGenerator acg) {
+        if (defineVariable) {
+            Variable v = (Variable) e;
+            operandStack.doGroovyCast(v);
+            compileStack.defineVariable(v, true);
+            operandStack.remove(1);
+        } else {
+            e.visit(acg);
+        }
     }
 
     protected void evaluateCompareExpression(final MethodCaller compareMethod, final BinaryExpression expression) {

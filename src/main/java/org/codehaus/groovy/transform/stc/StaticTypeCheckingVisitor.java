@@ -46,6 +46,7 @@ import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -1317,7 +1318,28 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         target.setGenericsTypes(genericsTypes);
     }
 
-    private boolean typeCheckMultipleAssignmentAndContinue(final Expression leftExpression, Expression rightExpression) {
+    private boolean typeCheckMultipleAssignmentAndContinue(final Expression leftExpression, final Expression rightExpression) {
+        // GEP-20 dispatch by LHS shape. Detect rest binders and map-style binders up front;
+        // the existing literal-RHS pathway lives inside typeCheckMultipleAssignmentPositional.
+        // The rest- and map-style helpers are currently scaffolding that delegates back to the
+        // positional path; subsequent slices fill them in (rest-aware size handling, container-
+        // type inference, property-typed map-style binders, declared-type RHS support).
+        TupleExpression tuple = (TupleExpression) leftExpression;
+        boolean hasRest = false, hasMapKey = false;
+        for (Expression e : tuple.getExpressions()) {
+            if (Boolean.TRUE.equals(e.getNodeMetaData(MultipleAssignmentMetadata.REST_BINDING))) hasRest = true;
+            if (e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY) != null) hasMapKey = true;
+        }
+        if (hasMapKey) {
+            return typeCheckMultipleAssignmentMapStyle(leftExpression, rightExpression);
+        }
+        if (hasRest) {
+            return typeCheckMultipleAssignmentRest(leftExpression, rightExpression);
+        }
+        return typeCheckMultipleAssignmentPositional(leftExpression, rightExpression);
+    }
+
+    private boolean typeCheckMultipleAssignmentPositional(final Expression leftExpression, Expression rightExpression) {
         if (rightExpression instanceof VariableExpression || rightExpression instanceof PropertyExpression || rightExpression instanceof MethodCall) {
             ClassNode inferredType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
             GenericsType[] genericsTypes = inferredType.getGenericsTypes();
@@ -1331,6 +1353,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             if (!listExpression.getExpressions().isEmpty()) {
                 rightExpression = listExpression;
+            } else {
+                rightExpression = synthesizeIndexableRhs(leftExpression, rightExpression, inferredType);
             }
         } else if (rightExpression instanceof RangeExpression) {
             ListExpression listExpression = new ListExpression();
@@ -1345,6 +1369,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (!listExpression.getExpressions().isEmpty()) {
                 rightExpression = listExpression;
             }
+        }
+
+        // Final indexable-RHS fallback: anything still not a ListExpression (e.g. String /
+        // GString constants, closure-call results that didn't match Tuple1..16) — try the
+        // indexable synthesis based on the RHS's static type.
+        if (!(rightExpression instanceof ListExpression)) {
+            ClassNode rhsType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+            rightExpression = synthesizeIndexableRhs(leftExpression, rightExpression, rhsType);
         }
 
         if (!(rightExpression instanceof ListExpression values)) {
@@ -1372,6 +1404,297 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
 
         return true;
+    }
+
+    /**
+     * GEP-20 rest binding under static checking. Handles both list-literal RHS and
+     * declared-type RHS (List, array, String, Range, Set, Iterator, Stream — anything with a
+     * typed {@code getAt(int)} or {@code iterator()} inferable element type). The rest
+     * variable's inferred type tracks the runtime dispatch in
+     * {@code MultipleAssignmentSupport.tailRest}: {@code List<T>} for Path B receivers
+     * (those that support {@code getAt(IntRange)}); {@code Stream<T>} for {@code Stream}
+     * RHS (Path A, tail rest only); {@code Iterator<T>} for any other Path C receiver
+     * (tail rest only). Head and middle rest reject Path C and Path A receivers as a
+     * static type error.
+     */
+    private boolean typeCheckMultipleAssignmentRest(final Expression leftExpression, final Expression rightExpression) {
+        if (rightExpression instanceof ListExpression values) {
+            return typeCheckRestAgainstListLiteral((TupleExpression) leftExpression, values, rightExpression);
+        }
+        // Any RHS with a statically-resolvable getAt(int) (or known shape via declared type)
+        // routes through the declared-type path; this covers variables, properties, method
+        // calls, constants (e.g. String literals), closure invocations, etc.
+        return typeCheckRestAgainstDeclaredType((TupleExpression) leftExpression, rightExpression);
+    }
+
+    private boolean typeCheckRestAgainstListLiteral(final TupleExpression tuple, final ListExpression values, final Expression rightExpression) {
+        List<Expression> tupleExpressions = tuple.getExpressions();
+        List<Expression> valueExpressions = values.getExpressions();
+        int tupleSize = tupleExpressions.size();
+        int valueSize = valueExpressions.size();
+
+        int restIndex = restIndexOf(tuple);
+        int fixedAfter = tupleSize - restIndex - 1;
+
+        // Per GEP-20: lower sizes are forgiving (getAt(int) returns null for OOB,
+        // getAt(IntRange) returns empty for inverted ranges). Skip the strict size check.
+
+        // Fixed slots before the rest binding: pairwise from index 0.
+        for (int i = 0; i < restIndex; i++) {
+            if (i >= valueSize) break;
+            ClassNode valueType = getType(valueExpressions.get(i));
+            ClassNode targetType = getType(tupleExpressions.get(i));
+            if (!isAssignableTo(valueType, targetType)) {
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(valueType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
+                return false;
+            }
+            storeType(tupleExpressions.get(i), valueType);
+        }
+
+        // Fixed slots after the rest binding: anchored to the right of the value list.
+        for (int j = 0; j < fixedAfter; j++) {
+            int lhsIdx = restIndex + 1 + j;
+            int rhsIdx = valueSize - fixedAfter + j;
+            if (rhsIdx < 0 || rhsIdx >= valueSize) continue;
+            ClassNode valueType = getType(valueExpressions.get(rhsIdx));
+            ClassNode targetType = getType(tupleExpressions.get(lhsIdx));
+            if (!isAssignableTo(valueType, targetType)) {
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(valueType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
+                return false;
+            }
+            storeType(tupleExpressions.get(lhsIdx), valueType);
+        }
+
+        // Rest position: container type derived from the LUB of absorbed value types.
+        int restFromIdx = Math.min(restIndex, valueSize);
+        int restToIdx = Math.max(restFromIdx, valueSize - fixedAfter);
+        Expression restExpr = tupleExpressions.get(restIndex);
+        ClassNode elementType;
+        if (restToIdx > restFromIdx) {
+            elementType = getType(valueExpressions.get(restFromIdx));
+            for (int k = restFromIdx + 1; k < restToIdx; k++) {
+                elementType = lowestUpperBound(elementType, getType(valueExpressions.get(k)));
+            }
+        } else {
+            // Rest absorbs zero values (e.g. `def (Integer a, List<Integer> *t, Integer b) = [1, 2]`).
+            // Default to OBJECT_TYPE, but if the rest binder is typed with a single generic
+            // argument, use that as the element type so `List<Integer> *t` doesn't get rejected
+            // as `List<Object>` not assignable to `List<Integer>`.
+            elementType = OBJECT_TYPE;
+            if (restExpr instanceof Variable v) {
+                ClassNode declared = v.getOriginType();
+                if (declared != null && !ClassHelper.isDynamicTyped(declared) && !declared.equals(OBJECT_TYPE)) {
+                    GenericsType[] gts = declared.getGenericsTypes();
+                    if (gts != null && gts.length == 1) {
+                        elementType = getCombinedBoundType(gts[0]);
+                    }
+                }
+            }
+        }
+        // Generics can't take primitives; box (int → Integer) so List<Integer> matches.
+        elementType = ClassHelper.getWrapper(elementType);
+        ClassNode restType = GenericsUtils.makeClassSafeWithGenerics(LIST_TYPE, new GenericsType(elementType));
+        if (!checkRestAssignability(restExpr, restType, rightExpression)) return false;
+        storeType(restExpr, restType);
+
+        return true;
+    }
+
+    private boolean typeCheckRestAgainstDeclaredType(final TupleExpression tuple, final Expression rightExpression) {
+        ClassNode rhsType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+        ClassNode elementType = inferComponentType(rhsType, int_TYPE);
+        if (elementType == null) {
+            // Non-indexable RHS — let positional surface the existing rejection.
+            return typeCheckMultipleAssignmentPositional(tuple, rightExpression);
+        }
+
+        List<Expression> tupleExpressions = tuple.getExpressions();
+        int tupleSize = tupleExpressions.size();
+        int restIndex = restIndexOf(tuple);
+        boolean tailRest = restIndex == tupleSize - 1;
+        // Path B is now defined by capability, not class membership: anything with a resolvable
+        // getAt(IntRange) participates. Probe and reuse the inferred slice type as the rest's
+        // declared type so it matches the actual runtime return (BitSet → BitSet, String →
+        // String, MyContainer → MyContainer, List<T>/T[] → List<T>, ...).
+        ClassNode pathASliceType = inferRangeSliceType(rhsType);
+        boolean pathA = pathASliceType != null;
+
+        if (!tailRest && !pathA) {
+            addStaticTypeError("Head or middle rest binding requires an indexable right-hand side; "
+                    + prettyPrintType(rhsType) + " does not support getAt(IntRange)", rightExpression);
+            return false;
+        }
+
+        // Non-rest positions all share the element type derived from getAt(int).
+        for (int i = 0; i < tupleSize; i++) {
+            if (i == restIndex) continue;
+            ClassNode targetType = getType(tupleExpressions.get(i));
+            if (!isAssignableTo(elementType, targetType)) {
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(elementType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
+                return false;
+            }
+            storeType(tupleExpressions.get(i), elementType);
+        }
+
+        // Rest type tracks runtime dispatch:
+        //   Path B     → the actual getAt(IntRange) return type (probed above).
+        //   Stream RHS → Stream<T> (Path A, tail rest only — laziness + onClose preserved).
+        //   Path C     → Iterator<T> (tail rest only).
+        // Box primitives so generic containers match (e.g. List<Integer>, not List<int>).
+        ClassNode restType;
+        if (pathA) {
+            restType = pathASliceType;
+        } else if (GeneralUtils.isOrImplements(rhsType, STREAM_TYPE)) {
+            restType = GenericsUtils.makeClassSafeWithGenerics(STREAM_TYPE,
+                    new GenericsType(ClassHelper.getWrapper(elementType)));
+        } else {
+            restType = GenericsUtils.makeClassSafeWithGenerics(Iterator_TYPE,
+                    new GenericsType(ClassHelper.getWrapper(elementType)));
+        }
+        Expression restExpr = tupleExpressions.get(restIndex);
+        if (!checkRestAssignability(restExpr, restType, rightExpression)) return false;
+        storeType(restExpr, restType);
+
+        return true;
+    }
+
+    /**
+     * GEP-20 typed rest support: when the user pins a type on a rest binder
+     * ({@code def (h, List<Integer> *t) = list}), verify that the runtime container type
+     * (derived from RHS shape and Path B/C selection) is assignable to it. Untyped rest
+     * binders ({@code originType == dynamicType}) skip the check.
+     */
+    private boolean checkRestAssignability(final Expression restExpr, final ClassNode inferredRestType, final Expression rightExpression) {
+        if (!(restExpr instanceof Variable v)) return true;
+        ClassNode declared = v.getOriginType();
+        if (declared == null || ClassHelper.isDynamicTyped(declared) || declared.equals(OBJECT_TYPE)) return true;
+        if (!isAssignableTo(inferredRestType, declared)) {
+            addStaticTypeError("Cannot assign rest value of type " + prettyPrintType(inferredRestType)
+                    + " to variable of type " + prettyPrintType(declared), rightExpression);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Build a synthesised ListExpression of {@code rhs.getAt(i)} accesses, one per LHS slot,
+     * tagged with the inferred element type. Used by {@link #typeCheckMultipleAssignmentPositional}
+     * when the RHS isn't a literal list/range/Tuple-typed expression. Returns the original
+     * RHS unchanged if its static type doesn't support {@code getAt(int)}.
+     */
+    private Expression synthesizeIndexableRhs(final Expression leftExpression, final Expression rightExpression, final ClassNode rhsType) {
+        ClassNode elementType = inferComponentType(rhsType, int_TYPE);
+        if (elementType == null) return rightExpression;
+        TupleExpression tuple = (TupleExpression) leftExpression;
+        ListExpression synth = new ListExpression();
+        synth.setSourcePosition(rightExpression);
+        for (int i = 0; i < tuple.getExpressions().size(); i++) {
+            Expression idxExpr = indexX(rightExpression, constX(i, true));
+            idxExpr.putNodeMetaData(INFERRED_TYPE, elementType);
+            synth.addExpression(idxExpr);
+        }
+        return synth;
+    }
+
+    private static int restIndexOf(final TupleExpression tuple) {
+        List<Expression> tupleExpressions = tuple.getExpressions();
+        for (int i = 0; i < tupleExpressions.size(); i++) {
+            if (Boolean.TRUE.equals(tupleExpressions.get(i).getNodeMetaData(MultipleAssignmentMetadata.REST_BINDING))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * GEP-20 map-style destructuring under static checking. Handles both {@code MapExpression}
+     * literal RHS and declared-type RHS:
+     * <ul>
+     *   <li>{@code Map<K, V>} (and subtypes) — binder type derived from the map's V generic.</li>
+     *   <li>Bean / class with declared properties — resolved via STC's existing property lookup.</li>
+     *   <li>{@code GroovyObject} / dynamic — STC reports the standard "No such property" error
+     *       for keys that aren't statically declared (matches GEP failure-modes table for the
+     *       static case).</li>
+     * </ul>
+     */
+    private boolean typeCheckMultipleAssignmentMapStyle(final Expression leftExpression, final Expression rightExpression) {
+        if (rightExpression instanceof MapExpression mapExpr) {
+            return typeCheckMapStyleAgainstMapLiteral((TupleExpression) leftExpression, mapExpr, rightExpression);
+        }
+        // Any RHS with a statically-resolvable type (variable, parameter, method call,
+        // closure invocation, constant) routes through the declared-type path so STC's
+        // property-resolution machinery can resolve the map keys against it.
+        return typeCheckMapStyleAgainstDeclaredType((TupleExpression) leftExpression, rightExpression);
+    }
+
+    private boolean typeCheckMapStyleAgainstMapLiteral(final TupleExpression tuple, final MapExpression mapExpr, final Expression rightExpression) {
+        // Build key→value lookup from constant-key entries; non-constant keys are skipped
+        // so the binder falls through to the missing-key path (Object).
+        Map<String, Expression> rhsByKey = new HashMap<>();
+        for (MapEntryExpression entry : mapExpr.getMapEntryExpressions()) {
+            if (entry.getKeyExpression() instanceof ConstantExpression key) {
+                rhsByKey.put(String.valueOf(key.getValue()), entry.getValueExpression());
+            }
+        }
+        for (Expression e : tuple.getExpressions()) {
+            String mapKey = (String) e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
+            Expression valueExpr = rhsByKey.get(mapKey);
+            ClassNode targetType = getType(e);
+            if (valueExpr != null) {
+                ClassNode valueType = getType(valueExpr);
+                if (!isAssignableTo(valueType, targetType)) {
+                    addStaticTypeError("Cannot assign value of type " + prettyPrintType(valueType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
+                    return false;
+                }
+                storeType(e, valueType);
+            } else {
+                // Missing key — runtime semantics give null. Store Object as inferred type so
+                // any read uses the broadest type; declared types on binders are preserved.
+                storeType(e, OBJECT_TYPE);
+            }
+        }
+        return true;
+    }
+
+    private boolean typeCheckMapStyleAgainstDeclaredType(final TupleExpression tuple, final Expression rightExpression) {
+        ClassNode rhsType = Optional.ofNullable(getType(rightExpression)).orElseGet(rightExpression::getType);
+
+        // Map<K, V> RHS: every binder resolves to V. STC won't complain about static "missing keys"
+        // because Map keys aren't statically known.
+        if (isOrImplements(rhsType, MAP_TYPE)) {
+            ClassNode parameterized = rhsType.equals(MAP_TYPE) ? rhsType : GenericsUtils.parameterizeType(rhsType, MAP_TYPE);
+            GenericsType[] gts = parameterized.getGenericsTypes();
+            ClassNode valueType = (gts != null && gts.length == 2) ? getCombinedBoundType(gts[1]) : OBJECT_TYPE;
+            for (Expression e : tuple.getExpressions()) {
+                ClassNode targetType = getType(e);
+                if (!isAssignableTo(valueType, targetType)) {
+                    addStaticTypeError("Cannot assign value of type " + prettyPrintType(valueType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
+                    return false;
+                }
+                storeType(e, valueType);
+            }
+            return true;
+        }
+
+        // Bean / GroovyObject / arbitrary class RHS: resolve each MAP_KEY as a property on the
+        // RHS's static type. STC's normal property-resolution path handles bean accessors and
+        // surfaces "No such property" errors for keys that aren't statically declared.
+        boolean ok = true;
+        for (Expression e : tuple.getExpressions()) {
+            String mapKey = (String) e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
+            PropertyExpression pexp = new PropertyExpression(rightExpression, mapKey);
+            pexp.setSourcePosition(e);
+            visitPropertyExpression(pexp); // resolves type or records "No such property"
+            ClassNode resolvedType = getType(pexp);
+            ClassNode targetType = getType(e);
+            if (resolvedType != null && !isAssignableTo(resolvedType, targetType)) {
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(resolvedType) + " to variable of type " + prettyPrintType(targetType), rightExpression);
+                ok = false;
+                continue;
+            }
+            storeType(e, resolvedType != null ? resolvedType : OBJECT_TYPE);
+        }
+        return ok;
     }
 
     private ClassNode adjustTypeForSpreading(final ClassNode rightExpressionType, final Expression leftExpression) {
@@ -4941,6 +5264,49 @@ trying: for (ClassNode[] signature : signatures) {
         if (isPrimitiveChar(a) || isPrimitiveChar(b)) return char_TYPE;
         if (isWrapperCharacter(a) || isWrapperCharacter(b)) return Character_TYPE;
         return Number_TYPE;
+    }
+
+    /**
+     * GEP-20: probe the static return type of {@code rhs.getAt(IntRange)} on
+     * {@code receiverType}, so the rest binder can be typed against the actual
+     * slice type rather than a hard-coded {@code List<T>}. Returns the resolved
+     * slice type (e.g. {@code String} for a String receiver, {@code BitSet} for
+     * a BitSet receiver, the user-declared return type for custom classes), or
+     * {@code null} if the receiver has no resolvable {@code getAt(IntRange)}.
+     *
+     * <p>Mirrors {@link #inferComponentType} but for the IntRange overload.
+     * Method resolution runs under a swallowed error collector so a missing
+     * overload doesn't surface as a static-type error.</p>
+     */
+    protected ClassNode inferRangeSliceType(final ClassNode receiverType) {
+        if (receiverType == null || receiverType.equals(OBJECT_TYPE)) return null;
+        // Stream has a getAt(IntRange) extension that materialises eagerly into a List —
+        // antithetical to GEP-20's "no silent materialisation of unbounded sources" rule.
+        // Stream RHS routes through Path A (lazy iterator wrap) instead, so exclude it
+        // from Path B here regardless of getAt(IntRange) availability.
+        if (GeneralUtils.isOrImplements(receiverType, STREAM_TYPE)) return null;
+        if (receiverType.isArray()) {
+            // Arrays don't carry a getAt(IntRange) method per se — it's a DGM extension
+            // (ArrayGroovyMethods.getAt(T[], IntRange)) returning List<T>. Mirror that
+            // here so we don't depend on STC catching the extension on array types.
+            return GenericsUtils.makeClassSafeWithGenerics(LIST_TYPE,
+                    new GenericsType(ClassHelper.getWrapper(receiverType.getComponentType())));
+        }
+        MethodCallExpression mce = callX(varX("#", receiverType), "getAt",
+                varX("range", ClassHelper.make(IntRange.class)));
+        mce.setImplicitThis(false);
+        typeCheckingContext.pushErrorCollector();
+        try {
+            visitMethodCallExpression(mce);
+        } finally {
+            typeCheckingContext.popErrorCollector();
+        }
+        MethodNode target = mce.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        // No matching overload, or resolved to a too-generic catch-all on Object — punt.
+        if (target == null || target.getDeclaringClass().equals(OBJECT_TYPE)) return null;
+        ClassNode sliceType = getType(mce);
+        if (sliceType == null || sliceType.equals(OBJECT_TYPE)) return null;
+        return sliceType;
     }
 
     protected ClassNode inferComponentType(final ClassNode receiverType, final ClassNode subscriptType) {
