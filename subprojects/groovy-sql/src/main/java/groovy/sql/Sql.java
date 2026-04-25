@@ -754,70 +754,283 @@ public class Sql implements AutoCloseable {
         }
     }
 
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#ARRAY ARRAY}. */
     public static final OutParameter ARRAY         = () -> Types.ARRAY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BIGINT BIGINT}. */
     public static final OutParameter BIGINT        = () -> Types.BIGINT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BINARY BINARY}. */
     public static final OutParameter BINARY        = () -> Types.BINARY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BIT BIT}. */
     public static final OutParameter BIT           = () -> Types.BIT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BLOB BLOB}. */
     public static final OutParameter BLOB          = () -> Types.BLOB;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BOOLEAN BOOLEAN}. */
     public static final OutParameter BOOLEAN       = () -> Types.BOOLEAN;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#CHAR CHAR}. */
     public static final OutParameter CHAR          = () -> Types.CHAR;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#CLOB CLOB}. */
     public static final OutParameter CLOB          = () -> Types.CLOB;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DATALINK DATALINK}. */
     public static final OutParameter DATALINK      = () -> Types.DATALINK;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DATE DATE}. */
     public static final OutParameter DATE          = () -> Types.DATE;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DECIMAL DECIMAL}. */
     public static final OutParameter DECIMAL       = () -> Types.DECIMAL;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DISTINCT DISTINCT}. */
     public static final OutParameter DISTINCT      = () -> Types.DISTINCT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DOUBLE DOUBLE}. */
     public static final OutParameter DOUBLE        = () -> Types.DOUBLE;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#FLOAT FLOAT}. */
     public static final OutParameter FLOAT         = () -> Types.FLOAT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#INTEGER INTEGER}. */
     public static final OutParameter INTEGER       = () -> Types.INTEGER;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#JAVA_OBJECT JAVA_OBJECT}. */
     public static final OutParameter JAVA_OBJECT   = () -> Types.JAVA_OBJECT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#LONGVARBINARY LONGVARBINARY}. */
     public static final OutParameter LONGVARBINARY = () -> Types.LONGVARBINARY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#LONGVARCHAR LONGVARCHAR}. */
     public static final OutParameter LONGVARCHAR   = () -> Types.LONGVARCHAR;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#NULL NULL}. */
     public static final OutParameter NULL          = () -> Types.NULL;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#NUMERIC NUMERIC}. */
     public static final OutParameter NUMERIC       = () -> Types.NUMERIC;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#OTHER OTHER}. */
     public static final OutParameter OTHER         = () -> Types.OTHER;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#REAL REAL}. */
     public static final OutParameter REAL          = () -> Types.REAL;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#REF REF}. */
     public static final OutParameter REF           = () -> Types.REF;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#SMALLINT SMALLINT}. */
     public static final OutParameter SMALLINT      = () -> Types.SMALLINT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#STRUCT STRUCT}. */
     public static final OutParameter STRUCT        = () -> Types.STRUCT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#TIME TIME}. */
     public static final OutParameter TIME          = () -> Types.TIME;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#TIMESTAMP TIMESTAMP}. */
     public static final OutParameter TIMESTAMP     = () -> Types.TIMESTAMP;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#TINYINT TINYINT}. */
     public static final OutParameter TINYINT       = () -> Types.TINYINT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#VARBINARY VARBINARY}. */
     public static final OutParameter VARBINARY     = () -> Types.VARBINARY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#VARCHAR VARCHAR}. */
     public static final OutParameter VARCHAR       = () -> Types.VARCHAR;
 
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#ARRAY ARRAY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter ARRAY(Object value) { return in(Types.ARRAY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BIGINT BIGINT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BIGINT(Object value) { return in(Types.BIGINT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BINARY BINARY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BINARY(Object value) { return in(Types.BINARY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BIT BIT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BIT(Object value) { return in(Types.BIT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BLOB BLOB}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BLOB(Object value) { return in(Types.BLOB, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BOOLEAN BOOLEAN}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BOOLEAN(Object value) { return in(Types.BOOLEAN, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#CHAR CHAR}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter CHAR(Object value) { return in(Types.CHAR, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#CLOB CLOB}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter CLOB(Object value) { return in(Types.CLOB, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DATALINK DATALINK}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DATALINK(Object value) { return in(Types.DATALINK, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DATE DATE}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DATE(Object value) { return in(Types.DATE, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DECIMAL DECIMAL}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DECIMAL(Object value) { return in(Types.DECIMAL, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DISTINCT DISTINCT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DISTINCT(Object value) { return in(Types.DISTINCT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DOUBLE DOUBLE}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DOUBLE(Object value) { return in(Types.DOUBLE, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#FLOAT FLOAT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter FLOAT(Object value) { return in(Types.FLOAT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#INTEGER INTEGER}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter INTEGER(Object value) { return in(Types.INTEGER, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#JAVA_OBJECT JAVA_OBJECT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter JAVA_OBJECT(Object value) { return in(Types.JAVA_OBJECT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#LONGVARBINARY LONGVARBINARY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter LONGVARBINARY(Object value) { return in(Types.LONGVARBINARY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#LONGVARCHAR LONGVARCHAR}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter LONGVARCHAR(Object value) { return in(Types.LONGVARCHAR, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#NULL NULL}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter NULL(Object value) { return in(Types.NULL, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#NUMERIC NUMERIC}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter NUMERIC(Object value) { return in(Types.NUMERIC, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#OTHER OTHER}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter OTHER(Object value) { return in(Types.OTHER, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#REAL REAL}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter REAL(Object value) { return in(Types.REAL, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#REF REF}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter REF(Object value) { return in(Types.REF, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#SMALLINT SMALLINT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter SMALLINT(Object value) { return in(Types.SMALLINT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#STRUCT STRUCT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter STRUCT(Object value) { return in(Types.STRUCT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#TIME TIME}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter TIME(Object value) { return in(Types.TIME, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#TIMESTAMP TIMESTAMP}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter TIMESTAMP(Object value) { return in(Types.TIMESTAMP, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#TINYINT TINYINT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter TINYINT(Object value) { return in(Types.TINYINT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#VARBINARY VARBINARY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter VARBINARY(Object value) { return in(Types.VARBINARY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#VARCHAR VARCHAR}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter VARCHAR(Object value) { return in(Types.VARCHAR, value); }
 
+    /** Indicates that stored-procedure helpers should ignore any returned result sets. */
     public static final int NO_RESULT_SETS = 0;
+    /** Indicates that stored-procedure helpers should collect only the first returned result set. */
     public static final int FIRST_RESULT_SET = 1;
+    /** Indicates that stored-procedure helpers should collect every returned result set. */
     public static final int ALL_RESULT_SETS = 2;
 
     /**
@@ -985,6 +1198,12 @@ public class Sql implements AutoCloseable {
         this.useConnection = connection;
     }
 
+    /**
+     * Constructs an {@code Sql} instance backed by the same {@link DataSource}
+     * or {@link Connection} as the supplied parent.
+     *
+     * @param parent the Sql instance to copy the connection source from
+     */
     public Sql(Sql parent) {
         this.dataSource = parent.dataSource;
         this.useConnection = parent.useConnection;
@@ -994,10 +1213,23 @@ public class Sql implements AutoCloseable {
         // supports Map style newInstance method
     }
 
+    /**
+     * Creates a {@link DataSet} facade for the named table.
+     *
+     * @param table the table name to expose as a {@code DataSet}
+     * @return a {@code DataSet} backed by the supplied table
+     */
     public DataSet dataSet(String table) {
         return new DataSet(this, table);
     }
 
+    /**
+     * Creates a {@link DataSet} facade using the table mapping implied by the
+     * supplied type.
+     *
+     * @param type the type describing the table to expose
+     * @return a {@code DataSet} backed by the supplied type
+     */
     public DataSet dataSet(Class<?> type) {
         return new DataSet(this, type);
     }
@@ -3660,6 +3892,12 @@ public class Sql implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the {@link DataSource} backing this instance.
+     *
+     * @return the configured data source, or {@code null} when this instance
+     *         was created directly from a {@link Connection}
+     */
     public DataSource getDataSource() {
         return dataSource;
     }
@@ -4310,6 +4548,20 @@ public class Sql implements AutoCloseable {
         return asList(sql, rs, 0, 0, metaClosure);
     }
 
+    /**
+     * Hook to allow derived classes to override paged result collection behavior.
+     * The default behavior applies the optional metadata callback, moves to the
+     * requested offset, and converts up to {@code maxRows} rows into
+     * {@link GroovyRowResult} instances.
+     *
+     * @param sql         query to execute
+     * @param rs          the {@link ResultSet} to process
+     * @param offset      the 1-based row offset, or {@code 0} to start at the beginning
+     * @param maxRows     the maximum number of rows to collect, or {@code 0} for no limit
+     * @param metaClosure called once with metadata before any rows are read; may be {@code null}
+     * @return the resulting list of rows, or {@code null} if the offset is beyond the available rows
+     * @throws SQLException if a database error occurs
+     */
     protected List<GroovyRowResult> asList(String sql, ResultSet rs, int offset, int maxRows,
                                            @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         List<GroovyRowResult> results = new ArrayList<>();
@@ -4781,6 +5033,15 @@ public class Sql implements AutoCloseable {
         return statement;
     }
 
+    /**
+     * Rewrites named or named-ordinal parameter SQL into JDBC positional form
+     * and aligns the supplied parameters with the rewritten placeholders.
+     *
+     * @param sql    the SQL statement to inspect
+     * @param params the original parameter values or parameter carrier objects
+     * @return the rewritten SQL and ordered parameters, or the original SQL and
+     *         params when no named-parameter processing is required
+     */
     public SqlWithParams checkForNamedParams(String sql, List<?> params) {
         SqlWithParams preCheck = buildSqlWithIndexedProps(sql);
         if (preCheck == null) {
@@ -4841,6 +5102,15 @@ public class Sql implements AutoCloseable {
         return new SqlWithParams(newSql, indexPropList);
     }
 
+    /**
+     * Resolves the positional parameter list required by a named-parameter query.
+     *
+     * @param params         the original parameter carrier objects
+     * @param indexPropList  indexed property descriptors produced by
+     *                       {@link #buildSqlWithIndexedProps(String)}
+     * @return the flattened parameter values in JDBC binding order
+     * @throws IllegalArgumentException if a referenced parameter index or property is invalid
+     */
     public List<Object> getUpdatedParams(List<?> params, List<Tuple> indexPropList) {
         List<Object> updatedParams = new ArrayList<>();
         for (Tuple tuple : indexPropList) {
@@ -4943,9 +5213,16 @@ public class Sql implements AutoCloseable {
         }
     }
 
-    // Detects a JDBC-style stored proc call prefix: optional whitespace, optional "{",
-    // optional "?", optional "=", then "call" (case-insensitive). Hand-rolled to avoid
-    // catastrophic regex backtracking on whitespace-heavy input (GROOVY-9992).
+    /**
+     * Detects a JDBC-style stored proc call prefix: optional whitespace, optional "{",
+     * optional "?", optional "=", then "call" (case-insensitive). Hand-rolled to avoid
+     * catastrophic regex backtracking on whitespace-heavy input (GROOVY-9992).
+     *
+     * @param sql the SQL text to inspect
+     * @return {@code true} if the statement starts with an optional opening
+     *         brace character, optional return placeholder, and the
+     *         {@code call} keyword
+     */
     static boolean appearsLikeStoredProc(String sql) {
         int i = skipWhitespace(sql, 0);
         if (i < sql.length() && sql.charAt(i) == '{') {
