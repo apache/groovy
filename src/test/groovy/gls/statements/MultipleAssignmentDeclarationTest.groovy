@@ -151,6 +151,38 @@ final class MultipleAssignmentDeclarationTest {
         '''
     }
 
+    @Test // GROOVY-11959
+    void testMultiAssignFromInteger() {
+        shouldFail MissingMethodException, '''
+            Integer z = 42
+            def (x, y) = z
+        '''
+    }
+
+    @Test // GROOVY-11959
+    void testMultiAssignFromPrimitiveInt() {
+        shouldFail MissingMethodException, '''
+            int z = 42
+            def (x, y) = z
+        '''
+    }
+
+    @Test // GROOVY-11959
+    void testMultiAssignFromPrimitiveLong() {
+        shouldFail MissingMethodException, '''
+            long z = 42L
+            def (x, y) = z
+        '''
+    }
+
+    @Test // GROOVY-11959
+    void testMultiAssignFromPrimitiveDouble() {
+        shouldFail MissingMethodException, '''
+            double z = 4.2d
+            def (x, y) = z
+        '''
+    }
+
     @Test
     void testMultiAssignFromCalendar() {
         assertScript '''
