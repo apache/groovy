@@ -375,7 +375,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
     }
 
-    private /****/ void registerASTTransformations(final ClassNode helper) {
+    private void registerASTTransformations(final ClassNode helper) {
         ASTTransformationVisitor.addNewPhaseOperation(compilationUnit, sourceUnit, helper);
         // perform an additional operation which has to be done *after* static type checking
         compilationUnit.addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {

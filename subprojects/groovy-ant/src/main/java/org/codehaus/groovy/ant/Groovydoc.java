@@ -468,16 +468,6 @@ public class Groovydoc extends Task {
     }
 
     /**
-     * Add the directories matched by the nested dirsets to the resulting
-     * packages list and the base directories of the dirsets to the Path.
-     * It also handles the packages and excludepackages attributes and
-     * elements.
-     *
-     * @param resultantPackages a list to which we add the packages found
-     * @param sourcePath        a path to which we add each basedir found
-     * @since 1.5
-     */
-    /**
      * Whether {@code relativeDir} (file-separator-delimited path) has every
      * segment a valid Java/Groovy package identifier. Rejects empty segments
      * and segments containing characters illegal in identifiers, which

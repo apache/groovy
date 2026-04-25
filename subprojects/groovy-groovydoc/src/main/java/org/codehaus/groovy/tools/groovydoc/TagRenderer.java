@@ -921,17 +921,6 @@ final class TagRenderer {
     }
 
     /**
-     * Resolve a {@code {@value}} tag body to the target field's source-form
-     * constant value, or {@code null} if the reference couldn't be resolved.
-     *
-     * <p>Body forms:
-     * <ul>
-     *   <li>{@code #FIELD} — field {@code FIELD} in {@code classDoc}</li>
-     *   <li>{@code Class#FIELD} / {@code pkg.Class#FIELD} — field in another class</li>
-     *   <li>empty — not supported here (needs current-member context); returns {@code null}</li>
-     * </ul>
-     */
-    /**
      * GROOVY-3782: resolve {@code {@inheritDoc}} to the parent method's
      * already-rendered comment text. Walks the superclass chain, then
      * declared interfaces, looking for a method with the same name and
