@@ -477,6 +477,13 @@ public class BinaryExpressionHelper {
             return;
         }
 
+        // GROOVY-11959: box primitive RHS so the temp slot holds an object reference
+        // (the multi-assignment path ALOADs it for IF_ACMPEQ and dispatches iterator/getAt on it)
+        if (!singleAssignment && ClassHelper.isPrimitiveType(rhsType)) {
+            operandStack.box();
+            rhsType = operandStack.getTopOperand();
+        }
+
         int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         // TODO: if RHS is already a VariableSlotLoader, then skip creating a new one
         Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
