@@ -907,8 +907,7 @@ final class TagRenderer {
     private static String resolveInheritDoc(GroovyMemberDoc memberDoc,
                                             SimpleGroovyClassDoc classDoc,
                                             Set<GroovyMethodDoc> visited) {
-        if (!(memberDoc instanceof GroovyMethodDoc)) return null;
-        GroovyMethodDoc thisMethod = (GroovyMethodDoc) memberDoc;
+        if (!(memberDoc instanceof GroovyMethodDoc thisMethod)) return null;
         if (!visited.add(thisMethod)) return null; // cycle
         if (classDoc == null) return null;
 

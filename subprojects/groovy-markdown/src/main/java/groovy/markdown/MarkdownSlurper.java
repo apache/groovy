@@ -147,8 +147,7 @@ public class MarkdownSlurper {
 
     private Map<String, Object> nodeToMap(Node node) {
         Map<String, Object> m = new LinkedHashMap<>();
-        if (node instanceof Heading) {
-            Heading h = (Heading) node;
+        if (node instanceof Heading h) {
             m.put("type", "heading");
             m.put("level", h.getLevel());
             m.put("text", textOf(h));
@@ -156,8 +155,7 @@ public class MarkdownSlurper {
         } else if (node instanceof Paragraph) {
             m.put("type", "paragraph");
             m.put("children", blocksToList(node));
-        } else if (node instanceof FencedCodeBlock) {
-            FencedCodeBlock fcb = (FencedCodeBlock) node;
+        } else if (node instanceof FencedCodeBlock fcb) {
             m.put("type", "code_block");
             m.put("lang", fcb.getInfo() == null ? "" : fcb.getInfo());
             m.put("text", fcb.getLiteral());
@@ -169,8 +167,7 @@ public class MarkdownSlurper {
             m.put("type", "list");
             m.put("ordered", false);
             m.put("items", listItems(node));
-        } else if (node instanceof OrderedList) {
-            OrderedList ol = (OrderedList) node;
+        } else if (node instanceof OrderedList ol) {
             m.put("type", "list");
             m.put("ordered", true);
             Integer start = ol.getMarkerStartNumber();
@@ -203,15 +200,13 @@ public class MarkdownSlurper {
         } else if (node instanceof StrongEmphasis) {
             m.put("type", "strong");
             m.put("children", blocksToList(node));
-        } else if (node instanceof Link) {
-            Link l = (Link) node;
+        } else if (node instanceof Link l) {
             m.put("type", "link");
             m.put("href", l.getDestination());
             m.put("title", l.getTitle());
             m.put("text", textOf(l));
             m.put("children", blocksToList(l));
-        } else if (node instanceof Image) {
-            Image img = (Image) node;
+        } else if (node instanceof Image img) {
             m.put("type", "image");
             m.put("src", img.getDestination());
             m.put("title", img.getTitle());

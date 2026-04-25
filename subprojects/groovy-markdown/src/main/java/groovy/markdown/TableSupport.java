@@ -64,8 +64,7 @@ final class TableSupport {
                 TableRow headRow = firstChildOfType(child, TableRow.class);
                 if (headRow != null) {
                     for (Node cell = headRow.getFirstChild(); cell != null; cell = cell.getNext()) {
-                        if (cell instanceof TableCell) {
-                            TableCell tc = (TableCell) cell;
+                        if (cell instanceof TableCell tc) {
                             headers.add(MarkdownSlurper.textOf(tc));
                             TableCell.Alignment a = tc.getAlignment();
                             alignments.add(a == null ? null : a.name().toLowerCase(Locale.ROOT));
