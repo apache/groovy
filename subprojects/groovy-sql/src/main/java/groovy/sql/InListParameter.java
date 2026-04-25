@@ -29,5 +29,10 @@ import java.util.Collection;
  * @since 6.0.0
  */
 public interface InListParameter {
+    /**
+     * Returns the values that should be expanded into positional placeholders.
+     *
+     * @return the values for the expanded {@code IN} list
+     */
     Collection<?> getValues();
 }

@@ -35,6 +35,11 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
 
     private final Map<String, Object> result;
 
+    /**
+     * Creates a row wrapper backed by the supplied map.
+     *
+     * @param result the backing column-name-to-value map
+     */
     public GroovyRowResult(Map<String, Object> result) {
         this.result = result;
     }
@@ -102,6 +107,11 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         }
     }
 
+    /**
+     * Returns this row in standard map form.
+     *
+     * @return the row contents as a string
+     */
     @Override
     public String toString() {
         return result.toString();
@@ -112,6 +122,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
      * They are mostly delegating the request to the provided Map.
      */
 
+    /** {@inheritDoc} */
     @Override
     public void clear() {
         result.clear();
@@ -128,16 +139,19 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         return lookupKeyIgnoringCase(key) != null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean containsValue(Object value) {
         return result.containsValue(value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Set<Map.Entry<String, Object>> entrySet() {
         return result.entrySet();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object o) {
         return result.equals(o);
@@ -156,16 +170,19 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return result.hashCode();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isEmpty() {
         return result.isEmpty();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Set<String> keySet() {
         return result.keySet();
@@ -205,16 +222,24 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         }
     }
 
+    /**
+     * Removes the mapping for the supplied key using case-insensitive key matching.
+     *
+     * @param rawKey the key to remove
+     * @return the removed value, or {@code null} if no matching key existed
+     */
     @Override
     public Object remove(Object rawKey) {
         return result.remove(lookupKeyIgnoringCase(rawKey));
     }
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
         return result.size();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Collection<Object> values() {
         return result.values();

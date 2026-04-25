@@ -20,19 +20,39 @@ package groovy.sql;
 
 import java.util.List;
 
+/**
+ * Holds an SQL string together with the positional parameters that should be
+ * bound to it.
+ */
 public class SqlWithParams {
     private final String sql;
     private final List<?> params;
 
+    /**
+     * Creates an SQL-and-parameters pair.
+     *
+     * @param sql the SQL text
+     * @param params the corresponding positional parameters
+     */
     public SqlWithParams(String sql, List<?> params) {
         this.sql = sql;
         this.params = params;
     }
 
+    /**
+     * Returns the SQL text.
+     *
+     * @return the SQL text
+     */
     public String getSql() {
         return sql;
     }
 
+    /**
+     * Returns the positional parameters.
+     *
+     * @return the positional parameters
+     */
     @SuppressWarnings("unchecked")
     public List<Object> getParams() {
         return (List<Object>) params;

@@ -72,10 +72,20 @@ class ExtractIndexAndSql {
         this.sql = sql;
     }
 
+    /**
+     * Returns the indexed property descriptors extracted from the original SQL.
+     *
+     * @return the indexed property descriptors in placeholder order
+     */
     List<Tuple<?>> getIndexPropList() {
         return indexPropList;
     }
 
+    /**
+     * Returns the SQL rewritten to use JDBC positional placeholders.
+     *
+     * @return the rewritten SQL
+     */
     String getNewSql() {
         return newSql;
     }

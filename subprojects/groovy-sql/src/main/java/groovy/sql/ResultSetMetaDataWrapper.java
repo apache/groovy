@@ -46,6 +46,12 @@ public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
     private final ResultSetMetaData target;
     private final int index;
 
+    /**
+     * Creates a wrapper for a single metadata column.
+     *
+     * @param target the metadata instance to wrap
+     * @param index the 1-based column index represented by this wrapper
+     */
     public ResultSetMetaDataWrapper(ResultSetMetaData target, int index) {
         this.target = target;
         this.index = index;
@@ -60,6 +66,13 @@ public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
         return result;
     }
 
+    /**
+     * Invokes a metadata method after prepending this wrapper's column index.
+     *
+     * @param name the metadata method name
+     * @param args the original method arguments
+     * @return the delegated result
+     */
     @Override
     public Object invokeMethod(String name, Object args) {
         Object[] indexedArgs = getIndexedArgs((Object[]) args);
@@ -73,11 +86,23 @@ public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
         return "get" + prop.substring(0, 1).toUpperCase() + prop.substring(1);
     }
 
+    /**
+     * Resolves a metadata property by invoking the corresponding getter for this wrapper's column.
+     *
+     * @param property the property name
+     * @return the resolved property value
+     */
     @Override
     public Object getProperty(String property) {
         return invokeMethod(getPropertyGetterName(property), EMPTY_OBJECT_ARRAY);
     }
 
+    /**
+     * Always rejects property writes because result-set metadata is read-only.
+     *
+     * @param property the property name
+     * @param newValue the requested value
+     */
     @Override
     public void setProperty(String property, Object newValue) {
         throw new ReadOnlyPropertyException(property, target.getClass());

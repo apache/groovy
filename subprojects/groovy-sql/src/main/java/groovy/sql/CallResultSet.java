@@ -31,12 +31,24 @@ class CallResultSet extends GroovyResultSetExtension {
     ResultSet resultSet;
     boolean firstCall = true;
 
+    /**
+     * Creates a lazy {@link ResultSet} view over a callable-statement out parameter.
+     *
+     * @param call the callable statement that owns the out parameter
+     * @param indx the zero-based out-parameter index
+     */
     CallResultSet(CallableStatement call, int indx) {
         super(null);
         this.call = call;
         this.indx = indx;
     }
 
+    /**
+     * Returns the lazily fetched result set for the out parameter.
+     *
+     * @return the out-parameter result set
+     * @throws SQLException if the result set cannot be retrieved
+     */
     @Override
     protected ResultSet getResultSet() throws SQLException {
         if (firstCall) {
@@ -46,6 +58,13 @@ class CallResultSet extends GroovyResultSetExtension {
         return resultSet;
     }
 
+    /**
+     * Creates a proxy-backed {@link GroovyResultSet} for the specified callable-statement out parameter.
+     *
+     * @param call the callable statement that owns the out parameter
+     * @param idx the zero-based out-parameter index
+     * @return a Groovy result-set view for the out parameter
+     */
     protected static GroovyResultSet getImpl(CallableStatement call, int idx) {
         GroovyResultSetProxy proxy = new GroovyResultSetProxy(new CallResultSet(call, idx));
         return proxy.getImpl();

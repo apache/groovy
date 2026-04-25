@@ -39,6 +39,14 @@ final class InListExpander {
 
     private InListExpander() {}
 
+    /**
+     * Expands any {@link InListParameter} values in the supplied parameter list
+     * into positional placeholders and flattened parameter values.
+     *
+     * @param sql the SQL text to rewrite
+     * @param params the original parameter values
+     * @return the rewritten SQL and expanded parameter list
+     */
     static SqlWithParams expand(String sql, List<?> params) {
         if (!containsInList(params)) {
             return new SqlWithParams(sql, params);
