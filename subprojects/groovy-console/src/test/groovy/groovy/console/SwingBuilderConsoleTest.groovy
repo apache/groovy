@@ -440,7 +440,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
             console.inputArea.text = 'throw new Exception()'
             console.runScript(new EventObject([:]))
-            sleep 100
+            waitForScriptCompletion(console)
 
             def doc = console.outputArea.document
             def txt = doc.getText(0, doc.length)
@@ -552,21 +552,21 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
             console1.inputArea.text = 'println "test1"'
             console1.runScript()
-            sleep 100
+            waitForScriptCompletion(console1)
 
             assert doc1.getText(0, doc1.length).trim() == 'test1'
             assert doc2.getText(0, doc2.length).trim() == ''
 
             console2.inputArea.text = 'println "test2"'
             console2.runScript()
-            sleep 100
+            waitForScriptCompletion(console2)
 
             assert doc1.getText(0, doc1.length).trim() == 'test1'
             assert doc2.getText(0, doc2.length).trim() == 'test2'
 
             console2.inputArea.text = 'System.err.println "error2"'
             console2.runScript()
-            sleep 100
+            waitForScriptCompletion(console2)
 
             assert doc1.getText(0, doc1.length).trim() == 'test1'
             assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
@@ -598,17 +598,23 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             console.inputEditor.textEditor.text = scriptSource
 
             console.runScript(new EventObject([:]))
-            sleep 100
+            waitForScriptCompletion(console)
 
             assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
             assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
 
             console.outputArea.text = ''
             console.runScript(new EventObject([:]))
-            sleep 100
+            waitForScriptCompletion(console)
 
             assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
             assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
         }
+    }
+
+    private static void waitForScriptCompletion(Console console) {
+        Thread thread = console.runThread
+        thread?.join(5000)
+        assert thread == null || !thread.alive
     }
 }
