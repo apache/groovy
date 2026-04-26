@@ -18,18 +18,29 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 class ListExpressionTransformer {
 
@@ -57,5 +68,59 @@ class ListExpressionTransformer {
         }
 
         return scTransformer.superTransform(le);
+    }
+
+    //--------------------------------------------------------------------------
+
+    private static final ClassNode ArrayList_TYPE = ClassHelper.makeWithoutCaching(ArrayList.class);
+
+    private static final MethodNode ArrayList_NEW = ArrayList_TYPE.getDeclaredConstructor(new Parameter[] {new Parameter(ClassHelper.int_TYPE, "capacity")});
+
+    private static class NewListExpression extends ListExpression {
+
+        NewListExpression(final List<Expression> values) {
+            super(values);
+        }
+
+        @Override
+        public Expression transformExpression(final ExpressionTransformer transformer) {
+            var list = new NewListExpression(transformExpressions(getExpressions(), transformer));
+            list.setSourcePosition(this);
+            list.copyNodeMetaData(this);
+            return list;
+        }
+
+        @Override
+        public void visit(final GroovyCodeVisitor visitor) {
+            if (!(visitor instanceof AsmClassGenerator)) {
+                super.visit(visitor);
+            } else {
+                AsmClassGenerator g = (AsmClassGenerator) visitor;
+                var mv = g.getController().getMethodVisitor();
+                var os = g.getController().getOperandStack ();
+
+                var list = new ConstructorCallExpression(ArrayList_TYPE, new ConstantExpression(getExpressions().size(), true));
+                list.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, ArrayList_NEW);
+                list.visit(visitor);
+                // GROOVY-11967: when the constructor goes through a dynamic call
+                // site (indy or non-indy), the call leaves Object on the JVM stack
+                // and the following INVOKEVIRTUAL ArrayList.add fails verification
+                // unless preceded by CHECKCAST. The direct INVOKESPECIAL path of
+                // StaticInvocationWriter already leaves ArrayList on the stack, so
+                // there the cast is unnecessary.
+                if (!ArrayList_TYPE.equals(os.getTopOperand())) {
+                    mv.visitTypeInsn(CHECKCAST, "java/util/ArrayList");
+                    os.replace(ArrayList_TYPE);
+                }
+
+                for (Expression li : getExpressions()) {
+                    mv.visitInsn(DUP);
+                    li.visit(visitor);
+                    os.box();
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/ArrayList", "add", "(Ljava/lang/Object;)Z", false);
+                    os.pop(); // boolean return value
+                }
+            }
+        }
     }
 }
