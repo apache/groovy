@@ -89,7 +89,6 @@ public class StaticMethodCallIndyColdBench {
         return javaSum(n);
     }
 
-/* remove comment when GROOVY-11935 lands
     @Benchmark
     public int staticSum_groovy() {
         return StaticMethodCallIndy.staticSum(n);
@@ -104,7 +103,6 @@ public class StaticMethodCallIndyColdBench {
     public int instanceSum_groovy() {
         return new StaticMethodCallIndy().instanceSum(n);
     }
-*/
 
     private static int javaSum(int n) {
         int s = 0;
