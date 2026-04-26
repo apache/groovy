@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 /**
  * Gradle complains if we have no tests, so this keeps it happy
