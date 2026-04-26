@@ -110,6 +110,11 @@ public class JsonDelegate extends GroovyObjectSupport {
         return delegate.getContent();
     }
 
+    /**
+     * Returns the JSON object content accumulated by this delegate.
+     *
+     * @return the collected key/value pairs
+     */
     public Map<String, Object> getContent() {
         return content;
     }

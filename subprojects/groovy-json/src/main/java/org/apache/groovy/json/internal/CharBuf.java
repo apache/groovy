@@ -26,13 +26,20 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Growable character buffer used by the JSON internals.
+ */
 public class CharBuf extends Writer implements CharSequence {
 
+    /** Current backing-array capacity. */
     protected int capacity = 16;
+    /** Next write position in {@link #buffer}. */
     protected int location = 0;
 
+    /** Backing storage for buffered characters. */
     protected char[] buffer;
 
+    /** Wraps an existing character buffer. */
     public CharBuf(char[] buffer) {
         __init__(buffer);
     }
@@ -42,14 +49,17 @@ public class CharBuf extends Writer implements CharSequence {
         this.capacity = buffer.length;
     }
 
+    /** Decodes UTF-8 bytes into the backing character buffer. */
     public CharBuf(byte[] bytes) {
         this.buffer = null;
         String str = new String(bytes, StandardCharsets.UTF_8);
         __init__(FastStringUtils.toCharArray(str));
     }
 
+    /** Creates a buffer sized exactly for the requested capacity. */
     public static CharBuf createExact(final int capacity) {
         return new CharBuf(capacity) {
+            /** {@inheritDoc} */
             @Override
             public CharBuf add(char[] chars) {
                 Chr._idx(buffer, location, chars);
@@ -59,23 +69,28 @@ public class CharBuf extends Writer implements CharSequence {
         };
     }
 
+    /** Creates a growable buffer with the supplied capacity. */
     public static CharBuf create(int capacity) {
         return new CharBuf(capacity);
     }
 
+    /** Wraps the supplied character buffer. */
     public static CharBuf create(char[] buffer) {
         return new CharBuf(buffer);
     }
 
+    /** Creates a growable buffer with the supplied initial capacity. */
     protected CharBuf(int capacity) {
         this.capacity = capacity;
         init();
     }
 
+    /** Creates a growable buffer with the default capacity. */
     protected CharBuf() {
         init();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void write(char[] cbuf, int off, int len) {
         if (off == 0 && cbuf.length == len) {
@@ -86,28 +101,34 @@ public class CharBuf extends Writer implements CharSequence {
         }
     }
 
+    /** No-op for this in-memory buffer. */
     @Override
     public void flush() throws IOException {
     }
 
+    /** No-op for this in-memory buffer. */
     @Override
     public void close() throws IOException {
     }
 
+    /** Allocates the backing array from the current capacity. */
     public void init() {
         buffer = new char[capacity];
     }
 
+    /** Appends a string. */
     public final CharBuf add(String str) {
         add(FastStringUtils.toCharArray(str));
         return this;
     }
 
+    /** Appends a string. */
     public final CharBuf addString(String str) {
         add(FastStringUtils.toCharArray(str));
         return this;
     }
 
+    /** Appends an int value. */
     public final CharBuf add(int i) {
         add(Integer.toString(i));
         return this;
@@ -115,6 +136,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     private Cache<Integer, char[]> icache;
 
+    /** Appends an int value using cached character data when available. */
     public final CharBuf addInt(int i) {
         switch (i) {
             case 0:
@@ -133,6 +155,7 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends an {@link Integer} using cached character data. */
     public final CharBuf addInt(Integer key) {
         if (icache == null) {
             icache = new SimpleCache<Integer, char[]>(20);
@@ -149,44 +172,54 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Cached characters for the JSON literal {@code true}. */
     final char[] trueChars = "true".toCharArray();
+    /** Cached characters for the JSON literal {@code false}. */
     final char[] falseChars = "false".toCharArray();
 
+    /** Appends a boolean value using cached JSON literals. */
     public final CharBuf add(boolean b) {
         addChars(b ? trueChars : falseChars);
         return this;
     }
 
+    /** Appends a boolean value. */
     public final CharBuf addBoolean(boolean b) {
         add(Boolean.toString(b));
         return this;
     }
 
+    /** Appends a byte value. */
     public final CharBuf add(byte i) {
         add(Byte.toString(i));
         return this;
     }
 
+    /** Appends a byte value as a character digit sequence. */
     public final CharBuf addByte(byte i) {
         addInt(i);
         return this;
     }
 
+    /** Appends a short value. */
     public final CharBuf add(short i) {
         add(Short.toString(i));
         return this;
     }
 
+    /** Appends a short value as a character digit sequence. */
     public final CharBuf addShort(short i) {
         addInt(i);
         return this;
     }
 
+    /** Appends a long value. */
     public final CharBuf add(long l) {
         add(Long.toString(l));
         return this;
     }
 
+    /** Appends a double value. */
     public final CharBuf add(double d) {
         add(Double.toString(d));
         return this;
@@ -194,11 +227,13 @@ public class CharBuf extends Writer implements CharSequence {
 
     private Cache<Double, char[]> dcache;
 
+    /** Appends a double value using cached character data when available. */
     public final CharBuf addDouble(double d) {
         addDouble(Double.valueOf(d));
         return this;
     }
 
+    /** Appends a {@link Double} using cached character data. */
     public final CharBuf addDouble(Double key) {
         if (dcache == null) {
             dcache = new SimpleCache<Double, char[]>(20);
@@ -215,6 +250,7 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a float value. */
     public final CharBuf add(float d) {
         add(Float.toString(d));
         return this;
@@ -222,11 +258,13 @@ public class CharBuf extends Writer implements CharSequence {
 
     private Cache<Float, char[]> fcache;
 
+    /** Appends a float value using cached character data when available. */
     public final CharBuf addFloat(float d) {
         addFloat(Float.valueOf(d));
         return this;
     }
 
+    /** Appends a {@link Float} using cached character data. */
     public final CharBuf addFloat(Float key) {
         if (fcache == null) {
             fcache = new SimpleCache<Float, char[]>(20);
@@ -244,21 +282,25 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a byte as a single character. */
     public final CharBuf addChar(byte i) {
         add((char) i);
         return this;
     }
 
+    /** Appends an int as a single character. */
     public final CharBuf addChar(int i) {
         add((char) i);
         return this;
     }
 
+    /** Appends a short as a single character. */
     public final CharBuf addChar(short i) {
         add((char) i);
         return this;
     }
 
+    /** Appends a character. */
     public final CharBuf addChar(final char ch) {
         int _location = location;
         char[] _buffer = buffer;
@@ -278,18 +320,21 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a line followed by a newline character. */
     public CharBuf addLine(String str) {
         add(str.toCharArray());
         add('\n');
         return this;
     }
 
+    /** Appends a character sequence followed by a newline character. */
     public CharBuf addLine(CharSequence str) {
         add(str.toString());
         add('\n');
         return this;
     }
 
+    /** Appends a character array. */
     public CharBuf add(char[] chars) {
         if (chars.length + location > capacity) {
             buffer = Chr.grow(buffer, buffer.length * 2 + chars.length);
@@ -301,6 +346,7 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a character array using {@link System#arraycopy(Object, int, Object, int, int)}. */
     public final CharBuf addChars(char[] chars) {
         if (chars.length + location > capacity) {
             buffer = Chr.grow(buffer, buffer.length * 2 + chars.length);
@@ -312,6 +358,7 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a quoted character array without escaping. */
     public final CharBuf addQuoted(char[] chars) {
         int _location = location;
         char[] _buffer = buffer;
@@ -337,10 +384,12 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a quoted JSON string with escaping enabled. */
     public final CharBuf addJsonEscapedString(String jsonString) {
         return addJsonEscapedString(jsonString, false);
     }
 
+    /** Appends a quoted JSON string. */
     public final CharBuf addJsonEscapedString(String jsonString, boolean disableUnicodeEscaping) {
         char[] charArray = FastStringUtils.toCharArray(jsonString);
         return addJsonEscapedString(charArray, disableUnicodeEscaping);
@@ -372,10 +421,12 @@ public class CharBuf extends Writer implements CharSequence {
         }
     }
 
+    /** Appends a quoted JSON string with escaping enabled. */
     public final CharBuf addJsonEscapedString(final char[] charArray) {
         return addJsonEscapedString(charArray, false);
     }
 
+    /** Appends a quoted JSON string from a character array. */
     public final CharBuf addJsonEscapedString(final char[] charArray, boolean disableUnicodeEscaping) {
         if (charArray.length == 0) return this;
         if (hasAnyJSONControlChars(charArray, disableUnicodeEscaping)) {
@@ -385,8 +436,10 @@ public class CharBuf extends Writer implements CharSequence {
         }
     }
 
+    /** Scratch buffer used while encoding hexadecimal escape bytes. */
     final byte[] encoded = new byte[2];
 
+    /** Scratch buffer used to split a UTF-16 character into bytes. */
     final byte[] charTo = new byte[2];
 
     private CharBuf doAddJsonEscapedString(char[] charArray, boolean disableUnicodeEscaping) {
@@ -516,20 +569,24 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a quoted JSON field name followed by a colon. */
     public final CharBuf addJsonFieldName(String str) {
         return addJsonFieldName(str, false);
     }
 
+    /** Appends a quoted JSON field name followed by a colon. */
     public final CharBuf addJsonFieldName(String str, boolean disableUnicodeEscaping) {
         return addJsonFieldName(FastStringUtils.toCharArray(str), disableUnicodeEscaping);
     }
 
     private static final char[] EMPTY_STRING_CHARS = Chr.array('"', '"');
 
+    /** Appends a quoted JSON field name followed by a colon. */
     public final CharBuf addJsonFieldName(char[] chars) {
         return addJsonFieldName(chars, false);
     }
 
+    /** Appends a quoted JSON field name followed by a colon. */
     public final CharBuf addJsonFieldName(char[] chars, boolean disableUnicodeEscaping) {
         if (chars.length > 0) {
             addJsonEscapedString(chars, disableUnicodeEscaping);
@@ -540,12 +597,14 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a quoted string without escaping. */
     public final CharBuf addQuoted(String str) {
         final char[] chars = FastStringUtils.toCharArray(str);
         addQuoted(chars);
         return this;
     }
 
+    /** Appends a fixed-length prefix of a character array. */
     public CharBuf add(char[] chars, final int length) {
         if (length + location < capacity) {
             Chr._idx(buffer, location, chars, length);
@@ -558,6 +617,7 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a byte array as characters. */
     public CharBuf add(byte[] chars) {
         if (chars.length + location < capacity) {
             Chr._idx(buffer, location, chars);
@@ -570,6 +630,7 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a byte subrange as characters. */
     public CharBuf add(byte[] bytes, int start, int end) {
         int charsLength = end - start;
         if (charsLength + location > capacity) {
@@ -581,6 +642,7 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Appends a single character. */
     public final CharBuf add(char ch) {
         if (1 + location < capacity) {
             buffer[location] = ch;
@@ -593,26 +655,31 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int length() {
         return len();
     }
 
+    /** {@inheritDoc} */
     @Override
     public char charAt(int index) {
         return buffer[index];
     }
 
+    /** {@inheritDoc} */
     @Override
     public CharSequence subSequence(int start, int end) {
         return new String(buffer, start, end - start);
     }
 
+    /** Returns the buffered characters as a string. */
     @Override
     public String toString() {
         return new String(buffer, 0, location);
     }
 
+    /** Returns a debug view of the current buffer state. */
     public String toDebugString() {
         return "CharBuf{" +
                 "capacity=" + capacity +
@@ -620,57 +687,70 @@ public class CharBuf extends Writer implements CharSequence {
                 '}';
     }
 
+    /** Returns the buffered text and resets the write position. */
     public String toStringAndRecycle() {
         String str = new String(buffer, 0, location);
         location = 0;
         return str;
     }
 
+    /** Returns the current buffer length. */
     public int len() {
         return location;
     }
 
+    /** Returns the backing character array. */
     public char[] toCharArray() {
         return this.buffer;
     }
 
+    /** Sets the current logical buffer length. */
     public void _len(int location) {
         this.location = location;
     }
 
+    /** Returns the backing array and resets the write position. */
     public char[] readForRecycle() {
         this.location = 0;
         return this.buffer;
     }
 
+    /** Resets the write position without clearing the backing array. */
     public void recycle() {
         this.location = 0;
     }
 
+    /** Parses the buffered characters as a {@code double}. */
     public double doubleValue() {
         return CharScanner.parseDouble(this.buffer, 0, location);
     }
 
+    /** Parses the buffered characters as a {@code float}. */
     public float floatValue() {
         return CharScanner.parseFloat(this.buffer, 0, location);
     }
 
+    /** Parses the buffered characters as an {@code int}. */
     public int intValue() {
         return CharScanner.parseIntFromTo(buffer, 0, location);
     }
 
+    /** Parses the buffered characters as a {@code long}. */
     public long longValue() {
         return CharScanner.parseLongFromTo(buffer, 0, location);
     }
 
+    /** Parses the buffered characters as a {@code byte}. */
     public byte byteValue() {
         return (byte) intValue();
     }
 
+    /** Parses the buffered characters as a {@code short}. */
     public short shortValue() {
         return (short) intValue();
     }
 
+    /** Parses the buffered characters as either an {@code Integer} or {@code Long}. */
     public Number toIntegerWrapper() {
         if (CharScanner.isInteger(buffer, 0, location)) {
             return intValue();
@@ -679,18 +759,22 @@ public class CharBuf extends Writer implements CharSequence {
         }
     }
 
+    /** Cached characters for the JSON literal {@code null}. */
     static final char[] nullChars = "null".toCharArray();
 
+    /** Appends the JSON literal {@code null}. */
     public final void addNull() {
         this.add(nullChars);
     }
 
+    /** Removes the last character when the buffer is not empty. */
     public void removeLastChar() {
         if (location > 0) {
             location--;
         }
     }
 
+    /** Removes the last character when it matches the expected value. */
     public void removeLastChar(char expect) {
         if (location == 0 || buffer[location-1] != expect) {
             return;
@@ -700,6 +784,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     private Cache<BigDecimal, char[]> bigDCache;
 
+    /** Appends a {@link BigDecimal} using cached character data. */
     public CharBuf addBigDecimal(BigDecimal key) {
         if (bigDCache == null) {
             bigDCache = new SimpleCache<BigDecimal, char[]>(20);
@@ -719,6 +804,7 @@ public class CharBuf extends Writer implements CharSequence {
 
     private Cache<BigInteger, char[]> bigICache;
 
+    /** Appends a {@link BigInteger} using cached character data. */
     public CharBuf addBigInteger(BigInteger key) {
         if (bigICache == null) {
             bigICache = new SimpleCache<BigInteger, char[]>(20);
@@ -738,11 +824,13 @@ public class CharBuf extends Writer implements CharSequence {
 
     private Cache<Long, char[]> lcache;
 
+    /** Appends a long value using cached character data when available. */
     public final CharBuf addLong(long l) {
         addLong(Long.valueOf(l));
         return this;
     }
 
+    /** Appends a {@link Long} using cached character data. */
     public final CharBuf addLong(Long key) {
         if (lcache == null) {
             lcache = new SimpleCache<Long, char[]>(20);
@@ -760,10 +848,12 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 
+    /** Decodes a JSON string fragment into this buffer. */
     public final CharBuf decodeJsonString(char[] chars) {
         return decodeJsonString(chars, 0, chars.length);
     }
 
+    /** Decodes a JSON string subrange into this buffer. */
     public final CharBuf decodeJsonString(char[] chars, int start, int to) {
         int len = to - start;
 
@@ -839,5 +929,3 @@ public class CharBuf extends Writer implements CharSequence {
         return this;
     }
 }
-
-

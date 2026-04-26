@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
+/**
+ * Buffered {@link CharacterSource} implementation backed by a {@link Reader}.
+ */
 public class ReaderCharacterSource implements CharacterSource {
 
     private static final int MAX_TOKEN_SIZE = 5;
@@ -38,21 +41,40 @@ public class ReaderCharacterSource implements CharacterSource {
 
     private int length;
 
+    /**
+     * Whether additional characters may still be read.
+     */
     boolean more = true;
     private boolean done = false;
 
+    /**
+     * Creates a buffered character source.
+     *
+     * @param reader reader supplying characters
+     * @param readAheadSize number of characters to read per buffer refill
+     */
     public ReaderCharacterSource(final Reader reader, final int readAheadSize) {
         this.reader = reader;
         this.readBuf = new char[readAheadSize + MAX_TOKEN_SIZE];
         this.readAheadSize = readAheadSize;
     }
 
+    /**
+     * Creates a buffered character source with the default read-ahead size.
+     *
+     * @param reader reader supplying characters
+     */
     public ReaderCharacterSource(final Reader reader) {
         this.reader = reader;
         this.readAheadSize = 10000;
         this.readBuf = new char[readAheadSize + MAX_TOKEN_SIZE];
     }
 
+    /**
+     * Creates a character source over an in-memory string.
+     *
+     * @param string JSON content to expose as characters
+     */
     public ReaderCharacterSource(final String string) {
         this(new StringReader(string));
     }
@@ -92,24 +114,45 @@ public class ReaderCharacterSource implements CharacterSource {
         }
     }
 
+    /**
+     * Advances to the next character.
+     *
+     * @return next character code
+     */
     @Override
     public final int nextChar() {
         ensureBuffer();
         return ch = readBuf[index++];
     }
 
+    /**
+     * Returns the current character without advancing.
+     *
+     * @return current character code
+     */
     @Override
     public final int currentChar() {
         ensureBuffer();
         return readBuf[index];
     }
 
+    /**
+     * Checks whether another character is available.
+     *
+     * @return {@code true} when more input remains
+     */
     @Override
     public final boolean hasChar() {
         ensureBuffer();
         return more;
     }
 
+    /**
+     * Consumes the supplied character sequence when it matches the current position.
+     *
+     * @param match character sequence to test
+     * @return {@code true} when the sequence was consumed
+     */
     @Override
     public final boolean consumeIfMatch(char[] match) {
         try {
@@ -139,11 +182,21 @@ public class ReaderCharacterSource implements CharacterSource {
         }
     }
 
+    /**
+     * Returns the current buffer index for diagnostics.
+     *
+     * @return current character index
+     */
     @Override
     public final int location() {
         return index;
     }
 
+    /**
+     * Advances when possible and returns {@code -1} at end of input.
+     *
+     * @return next character code or {@code -1} when no more input remains
+     */
     @Override
     public final int safeNextChar() {
         try {
@@ -157,6 +210,13 @@ public class ReaderCharacterSource implements CharacterSource {
 
     private static final char[] EMPTY_CHARS = new char[0];
 
+    /**
+     * Collects characters until the next unescaped match character.
+     *
+     * @param match terminating character to search for
+     * @param esc escape character that shields the following character
+     * @return collected characters between the current position and the terminator
+     */
     @Override
     public char[] findNextChar(int match, int esc) {
         try {
@@ -220,11 +280,19 @@ public class ReaderCharacterSource implements CharacterSource {
         }
     }
 
+    /**
+     * Reports whether the last string scan encountered an escape sequence.
+     *
+     * @return {@code true} when an escape was seen
+     */
     @Override
     public boolean hadEscape() {
         return foundEscape;
     }
 
+    /**
+     * Advances past whitespace characters.
+     */
     @Override
     public void skipWhiteSpace() {
         try {
@@ -240,6 +308,11 @@ public class ReaderCharacterSource implements CharacterSource {
         }
     }
 
+    /**
+     * Reads a numeric token from the current position.
+     *
+     * @return characters that form the numeric token
+     */
     @Override
     public char[] readNumber() {
         try {
@@ -265,6 +338,12 @@ public class ReaderCharacterSource implements CharacterSource {
         }
     }
 
+    /**
+     * Builds an error message using the current reader context.
+     *
+     * @param message parser-specific message
+     * @return formatted error details
+     */
     @Override
     public String errorDetails(String message) {
         return CharScanner.errorDetails(message, readBuf, index, ch);

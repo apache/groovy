@@ -520,16 +520,32 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      */
     public static class StreamingJsonDelegate extends GroovyObjectSupport {
 
+        /** Writer receiving the streamed JSON output. */
         protected final Writer writer;
+        /** Indicates whether the next entry is the first one in the current context. */
         protected boolean first;
+        /** Tracks whether the next token should be a JSON name or value. */
         protected State state;
 
         private final JsonGenerator generator;
 
+        /**
+         * Creates a delegate backed by the default generator.
+         *
+         * @param w the writer receiving JSON output
+         * @param first whether the next entry is the first entry
+         */
         public StreamingJsonDelegate(Writer w, boolean first) {
             this(w, first, null);
         }
 
+        /**
+         * Creates a delegate backed by the supplied generator.
+         *
+         * @param w the writer receiving JSON output
+         * @param first whether the next entry is the first entry
+         * @param generator the generator used to serialize scalar values
+         */
         public StreamingJsonDelegate(Writer w, boolean first, JsonGenerator generator) {
             this.writer = w;
             this.first = first;
@@ -543,6 +559,13 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             return writer;
         }
 
+        /**
+         * Handles builder-style method calls for nested JSON output.
+         *
+         * @param name the JSON name being written
+         * @param args the value, values, or closure associated with the name
+         * @return this delegate
+         */
         @SuppressWarnings("unchecked")
         @Override
         public Object invokeMethod(String name, Object args) {
@@ -752,6 +775,9 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writeCollectionWithClosure(writer, coll, c, generator);
         }
 
+        /**
+         * Verifies that the current output state expects a JSON value next.
+         */
         protected void verifyValue() {
             if(state == State.VALUE) {
                 throw new IllegalStateException("Cannot write value when value has just been written. Write a name first!");
@@ -761,6 +787,12 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             }
         }
 
+        /**
+         * Writes a JSON name and the following colon separator.
+         *
+         * @param name the JSON name to write
+         * @throws IOException if writing fails
+         */
         protected void writeName(String name) throws IOException {
             if (generator.isExcludingFieldsNamed(name)) {
                 return;
@@ -780,6 +812,12 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writer.write(JsonOutput.COLON);
         }
 
+        /**
+         * Writes a scalar JSON value.
+         *
+         * @param value the value to write
+         * @throws IOException if writing fails
+         */
         protected void writeValue(Object value) throws IOException {
             if (generator.isExcludingValues(value)) {
                 return;
@@ -788,15 +826,36 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writer.write(generator.toJson(value));
         }
 
+        /**
+         * Writes a JSON array value.
+         *
+         * @param list the list to serialize
+         * @throws IOException if writing fails
+         */
         protected void writeArray(List<Object> list) throws IOException {
             verifyValue();
             writer.write(generator.toJson(list));
         }
 
+        /**
+         * Indicates whether the supplied arguments represent a collection and closure pair.
+         *
+         * @param args the arguments to inspect
+         * @return {@code true} if the arguments are a collection plus closure pair
+         */
         public static boolean isCollectionWithClosure(Object[] args) {
             return args.length == 2 && args[0] instanceof Iterable && args[1] instanceof Closure;
         }
 
+        /**
+         * Writes a JSON array by applying a closure to each element in the collection.
+         *
+         * @param writer the destination writer
+         * @param coll the collection to serialize
+         * @param closure the closure used to build each JSON object entry
+         * @return the supplied writer
+         * @throws IOException if writing fails
+         */
         @SuppressWarnings("unchecked")
         public static Object writeCollectionWithClosure(Writer writer, Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure closure) throws IOException {
             return writeCollectionWithClosure(writer, (Iterable) coll, closure, JsonOutput.DEFAULT_GENERATOR);
@@ -825,10 +884,23 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writer.write(JsonOutput.CLOSE_BRACE);
         }
 
+        /**
+         * Clones a closure, assigns this delegate model, and writes its JSON content.
+         *
+         * @param w the destination writer
+         * @param c the closure describing the JSON object
+         */
         public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) {
             cloneDelegateAndGetContent(w, c, true);
         }
 
+        /**
+         * Clones a closure, assigns this delegate model, and writes its JSON content.
+         *
+         * @param w the destination writer
+         * @param c the closure describing the JSON object
+         * @param first whether the next entry is the first entry
+         */
         public static void cloneDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, boolean first) {
             cloneDelegateAndGetContent(w, c, first, JsonOutput.DEFAULT_GENERATOR);
         }
@@ -841,10 +913,25 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             cloned.call();
         }
 
+        /**
+         * Curries an object into a closure, assigns this delegate model, and writes its JSON content.
+         *
+         * @param w the destination writer
+         * @param c the closure describing the JSON object
+         * @param o the object to curry into the closure
+         */
         public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, Object o) {
             curryDelegateAndGetContent(w, c, o, true);
         }
 
+        /**
+         * Curries an object into a closure, assigns this delegate model, and writes its JSON content.
+         *
+         * @param w the destination writer
+         * @param c the closure describing the JSON object
+         * @param o the object to curry into the closure
+         * @param first whether the next entry is the first entry
+         */
         public static void curryDelegateAndGetContent(Writer w, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c, Object o, boolean first) {
             curryDelegateAndGetContent(w, c, o, first, JsonOutput.DEFAULT_GENERATOR);
         }
@@ -858,7 +945,10 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         }
 
         private enum State {
-            NAME, VALUE
+            /** Indicates that the next token written must be a property name. */
+            NAME,
+            /** Indicates that the next token written must be a property value. */
+            VALUE
         }
     }
 }

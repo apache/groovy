@@ -113,6 +113,11 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
         this.generator = generator;
     }
 
+    /**
+     * Returns the current root JSON structure managed by this builder.
+     *
+     * @return the current JSON object, array, or scalar content
+     */
     public Object getContent() {
         return content;
     }

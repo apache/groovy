@@ -119,19 +119,33 @@ public interface JsonGenerator {
      */
     class Options {
 
+        /** Default date format pattern used for JSON date values. */
         protected static final String JSON_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+        /** Default locale used with the JSON date format pattern. */
         protected static final Locale JSON_DATE_FORMAT_LOCALE = Locale.US;
+        /** Default time zone ID used for JSON date values. */
         protected static final String DEFAULT_TIMEZONE = "GMT";
 
+        /** Indicates whether {@code null} values should be omitted. */
         protected boolean excludeNulls;
+        /** Indicates whether Unicode escaping should be disabled. */
         protected boolean disableUnicodeEscaping;
+        /** Date format pattern used when serializing dates. */
         protected String dateFormat = JSON_DATE_FORMAT;
+        /** Locale used when serializing dates. */
         protected Locale dateLocale = JSON_DATE_FORMAT_LOCALE;
+        /** Time zone used when serializing dates. */
         protected TimeZone timezone = TimeZone.getTimeZone(DEFAULT_TIMEZONE);
+        /** Registered converters applied before default serialization. */
         protected final Set<Converter> converters = new LinkedHashSet<Converter>();
+        /** Field names excluded from generated JSON objects. */
         protected final Set<String> excludedFieldNames = new HashSet<String>();
+        /** Field types excluded from generated JSON objects. */
         protected final Set<Class<?>> excludedFieldTypes = new HashSet<Class<?>>();
 
+        /**
+         * Creates an options builder with the default JSON serialization settings.
+         */
         public Options() {}
 
         /**

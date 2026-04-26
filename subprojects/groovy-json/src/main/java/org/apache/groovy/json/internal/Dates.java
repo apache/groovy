@@ -26,10 +26,19 @@ import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Date helpers used by the JSON parser for supported timestamp formats.
+ */
 public class Dates {
 
     private static TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
+    /**
+     * Returns the epoch milliseconds for the supplied instant using a UTC-based calendar.
+     *
+     * @param time epoch milliseconds
+     * @return UTC-normalized epoch milliseconds
+     */
     public static long utc(long time) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(time);
@@ -55,20 +64,62 @@ public class Dates {
         return calendar.getTime();
     }
 
+    /**
+     * Creates a {@link Date} from date-time fields in the supplied time zone.
+     *
+     * @param tz time zone to apply
+     * @param year year value
+     * @param month month value from {@code 1} to {@code 12}
+     * @param day day of month
+     * @param hour hour of day
+     * @param minute minute of hour
+     * @param second second of minute
+     * @return created date
+     */
     public static Date toDate(TimeZone tz, int year, int month, int day,
                               int hour, int minute, int second) {
         return internalDate(tz, year, month, day, hour, minute, second, 0);
     }
 
+    /**
+     * Creates a {@link Date} from date-time fields including milliseconds.
+     *
+     * @param tz time zone to apply
+     * @param year year value
+     * @param month month value from {@code 1} to {@code 12}
+     * @param day day of month
+     * @param hour hour of day
+     * @param minute minute of hour
+     * @param second second of minute
+     * @param milliseconds millisecond value
+     * @return created date
+     */
     public static Date toDate(TimeZone tz, int year, int month, int day,
                               int hour, int minute, int second, int milliseconds) {
         return internalDate(tz, year, month, day, hour, minute, second, milliseconds);
     }
 
+    /**
+     * Length of an ISO-8601 timestamp that ends with {@code Z}.
+     */
     static final int SHORT_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30Z".length();
+    /**
+     * Length of an ISO-8601 timestamp that carries a numeric offset.
+     */
     static final int LONG_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30-05:00".length();
+    /**
+     * Length of a JSON timestamp with millisecond precision.
+     */
     public static final int JSON_TIME_LENGTH = "2013-12-14T01:55:33.412Z".length();
 
+    /**
+     * Parses a supported ISO-8601 timestamp without milliseconds.
+     *
+     * @param charArray source character buffer
+     * @param from inclusive start index
+     * @param to exclusive end index
+     * @return parsed date, or {@code null} when the slice is not a supported ISO-8601 value
+     */
     public static Date fromISO8601(char[] charArray, int from, int to) {
         try {
             if (isISO8601(charArray, from, to)) {
@@ -97,6 +148,14 @@ public class Dates {
         }
     }
 
+    /**
+     * Parses a supported JSON timestamp with millisecond precision.
+     *
+     * @param charArray source character buffer
+     * @param from inclusive start index
+     * @param to exclusive end index
+     * @return parsed date, or {@code null} when the slice is not a supported JSON date value
+     */
     public static Date fromJsonDate(char[] charArray, int from, int to) {
         try {
             if (isJsonDate(charArray, from, to)) {
@@ -122,6 +181,14 @@ public class Dates {
         }
     }
 
+    /**
+     * Checks whether a slice matches the parser's supported ISO-8601 layouts.
+     *
+     * @param charArray source character buffer
+     * @param start inclusive start index
+     * @param to exclusive end index
+     * @return {@code true} when the slice matches a supported ISO-8601 layout
+     */
     public static boolean isISO8601(char[] charArray, int start, int to) {
         boolean valid = true;
         final int length = to - start;
@@ -147,6 +214,14 @@ public class Dates {
         return valid;
     }
 
+    /**
+     * Performs a quick length and separator check for ISO-8601-like values.
+     *
+     * @param charArray source character buffer
+     * @param start inclusive start index
+     * @param to exclusive end index
+     * @return {@code true} when the slice looks like an ISO-8601 value
+     */
     public static boolean isISO8601QuickCheck(char[] charArray, int start, int to) {
         final int length = to - start;
 
@@ -163,6 +238,14 @@ public class Dates {
         }
     }
 
+    /**
+     * Checks whether a slice matches the parser's JSON date layout.
+     *
+     * @param charArray source character buffer
+     * @param start inclusive start index
+     * @param to exclusive end index
+     * @return {@code true} when the slice matches the JSON date layout
+     */
     public static boolean isJsonDate(char[] charArray, int start, int to) {
         boolean valid = true;
         final int length = to - start;

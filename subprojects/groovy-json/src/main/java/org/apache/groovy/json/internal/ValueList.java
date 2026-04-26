@@ -23,17 +23,37 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * List implementation that lazily converts overlay {@link Value} instances on access.
+ */
 public class ValueList extends AbstractList<Object> {
 
+    /**
+     * Backing storage for parsed elements.
+     */
     List<Object> list = new ArrayList<Object>(5);
 
     private final boolean lazyChop;
+    /**
+     * Tracks whether all entries have already been materialized.
+     */
     boolean converted = false;
 
+    /**
+     * Creates a lazy list wrapper.
+     *
+     * @param lazyChop whether nested values should be chopped when touched
+     */
     public ValueList(boolean lazyChop) {
         this.lazyChop = lazyChop;
     }
 
+    /**
+     * Converts the indexed element on demand and optionally chops nested containers.
+     *
+     * @param index element index
+     * @return the materialized element
+     */
     @Override
     public Object get(int index) {
         Object obj = list.get(index);
@@ -51,11 +71,19 @@ public class ValueList extends AbstractList<Object> {
         return value.toValue();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         return list.size();
     }
 
+    /**
+     * Returns an iterator after materializing all pending {@link Value} entries.
+     *
+     * @return iterator over hydrated elements
+     */
     @Override
     public Iterator<Object> iterator() {
         convertAllIfNeeded();
@@ -71,16 +99,28 @@ public class ValueList extends AbstractList<Object> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void clear() {
         list.clear();
     }
 
+    /**
+     * Adds a parsed element without forcing conversion.
+     *
+     * @param obj element to append
+     * @return {@code true}
+     */
     @Override
     public boolean add(Object obj) {
         return list.add(obj);
     }
 
+    /**
+     * Chops every overlay-backed element currently stored in the list.
+     */
     public void chopList() {
         for (Object obj : list) {
             if (obj == null) continue;
@@ -105,6 +145,11 @@ public class ValueList extends AbstractList<Object> {
         }
     }
 
+    /**
+     * Chops a nested container value without forcing unrelated branches.
+     *
+     * @param value container value to chop
+     */
     static void chopContainer(Value value) {
         Object obj = value.toValue();
         if (obj instanceof LazyValueMap map) {
@@ -114,6 +159,11 @@ public class ValueList extends AbstractList<Object> {
         }
     }
 
+    /**
+     * Exposes the raw backing list used during lazy parsing.
+     *
+     * @return the mutable backing list
+     */
     public List<Object> list() {
         return this.list;
     }

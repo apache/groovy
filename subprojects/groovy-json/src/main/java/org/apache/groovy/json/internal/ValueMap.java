@@ -20,9 +20,19 @@ package org.apache.groovy.json.internal;
 
 import java.util.Map;
 
+/**
+ * Map contract used by the lazy JSON object implementations.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public interface ValueMap<K, V> extends Map<K, V> {
 
-    /* add a map item value. */
+    /**
+     * Adds a parsed entry without forcing full map hydration.
+     *
+     * @param miv entry to append
+     */
     void add(MapItemValue miv);
 
     /**

@@ -22,11 +22,17 @@ package org.apache.groovy.json;
  * Internal class for fast processing of Strings during JSON parsing - default version
  */
 public class DefaultFastStringService implements FastStringService {
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public char[] toCharArray(String string) {
         return string.toCharArray();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String noCopyStringFromChars(char[] chars) {
         return new String(chars);

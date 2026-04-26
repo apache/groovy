@@ -24,6 +24,9 @@ import java.util.regex.Pattern;
 
 import static java.lang.System.Logger.Level.WARNING;
 
+/**
+ * JVM version helpers used by the JSON parser internals.
+ */
 class Sys {
 
     private static final System.Logger LOGGER = System.getLogger(Sys.class.getName());
@@ -69,18 +72,38 @@ class Sys {
         is1_8 = v.compareTo(new BigDecimal("1.8")) == 0;
     }
 
+    /**
+     * Reports whether the runtime is Java 7 or later.
+     *
+     * @return always {@code true} on supported runtimes
+     */
     public static boolean is1_7OrLater() {
         return true;
     }
 
+    /**
+     * Reports whether the runtime is Java 8 or later.
+     *
+     * @return {@code true} when the detected runtime version is at least 1.8
+     */
     public static boolean is1_8OrLater() {
         return is1_8OrLater;
     }
 
+    /**
+     * Reports whether the runtime version is Java 7.
+     *
+     * @return {@code true} when the detected runtime version is 1.7
+     */
     public static boolean is1_7() {
         return is1_7;
     }
 
+    /**
+     * Reports whether the runtime version is Java 8.
+     *
+     * @return {@code true} when the detected runtime version is 1.8
+     */
     public static boolean is1_8() {
         return is1_8;
     }

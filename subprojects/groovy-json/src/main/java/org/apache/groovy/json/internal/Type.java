@@ -18,8 +18,26 @@
  */
 package org.apache.groovy.json.internal;
 
+/**
+ * Token classifications used by the lazy JSON parser.
+ */
 public enum Type {
 
-    INTEGER, STRING, DOUBLE, TRUE, FALSE, NULL, MAP, LIST
+    /** Integer numeric token. */
+    INTEGER,
+    /** String token. */
+    STRING,
+    /** Decimal numeric token. */
+    DOUBLE,
+    /** Boolean {@code true} token. */
+    TRUE,
+    /** Boolean {@code false} token. */
+    FALSE,
+    /** {@code null} token. */
+    NULL,
+    /** Object container token. */
+    MAP,
+    /** Array container token. */
+    LIST
 
 }

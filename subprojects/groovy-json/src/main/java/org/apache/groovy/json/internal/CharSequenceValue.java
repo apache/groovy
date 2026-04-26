@@ -31,6 +31,9 @@ import static org.apache.groovy.json.internal.CharScanner.parseIntFromTo;
 import static org.apache.groovy.json.internal.CharScanner.parseLongFromTo;
 import static org.apache.groovy.json.internal.Exceptions.die;
 
+/**
+ * Overlay-backed {@link Value} that keeps a character slice until conversion is required.
+ */
 public class CharSequenceValue implements Value, CharSequence {
 
     private final Type type;
@@ -43,6 +46,17 @@ public class CharSequenceValue implements Value, CharSequence {
     private int endIndex;
     private Object value;
 
+    /**
+     * Creates a value view over a character buffer slice.
+     *
+     * @param chop whether to copy the slice immediately
+     * @param type token type
+     * @param startIndex slice start
+     * @param endIndex slice end
+     * @param buffer backing buffer
+     * @param encoded whether string decoding should be applied
+     * @param checkDate whether string values should be probed for date conversion
+     */
     public CharSequenceValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer,
                              boolean encoded, boolean checkDate) {
         this.type = type;
@@ -65,6 +79,11 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
+    /**
+     * Returns the current character slice without additional decoding.
+     *
+     * @return the raw slice text
+     */
     @Override
     public String toString() {
         if (startIndex == 0 && endIndex == buffer.length) {
@@ -74,11 +93,17 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public final Object toValue() {
         return value != null ? value : (value = doToValue());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T extends Enum> T toEnum(Class<T> cls) {
         switch (type) {
@@ -93,6 +118,14 @@ public class CharSequenceValue implements Value, CharSequence {
         return null;
     }
 
+    /**
+     * Resolves an enum constant from the decoded token text.
+     *
+     * @param cls enum type
+     * @param value decoded token text
+     * @param <T> enum type
+     * @return the matching enum constant
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static <T extends Enum> T toEnum(Class<T> cls, String value) {
         try {
@@ -102,6 +135,14 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
+    /**
+     * Resolves an enum constant from its ordinal.
+     *
+     * @param cls enum type
+     * @param value ordinal value
+     * @param <T> enum type
+     * @return the matching enum constant
+     */
     public static <T extends Enum> T toEnum(Class<T> cls, int value) {
         T[] enumConstants = cls.getEnumConstants();
         for (T e : enumConstants) {
@@ -113,6 +154,9 @@ public class CharSequenceValue implements Value, CharSequence {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isContainer() {
         return false;
@@ -153,6 +197,12 @@ public class CharSequenceValue implements Value, CharSequence {
         return null;
     }
 
+    /**
+     * Compares the overlay state and cached value.
+     *
+     * @param o other object
+     * @return {@code true} when the overlays match
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -168,6 +218,11 @@ public class CharSequenceValue implements Value, CharSequence {
 
     }
 
+    /**
+     * Returns a hash code for the overlay state and cached value.
+     *
+     * @return hash code for this value view
+     */
     @Override
     public int hashCode() {
         int result = type != null ? type.hashCode() : 0;
@@ -178,31 +233,58 @@ public class CharSequenceValue implements Value, CharSequence {
         return result;
     }
 
+    /**
+     * Returns the length of the current backing buffer.
+     *
+     * @return backing buffer length
+     */
     @Override
     public final int length() {
         return buffer.length;
     }
 
+    /**
+     * Returns the character at the supplied backing-buffer index.
+     *
+     * @param index backing-buffer index
+     * @return the character at {@code index}
+     */
     @Override
     public final char charAt(int index) {
         return buffer[index];
     }
 
+    /**
+     * Creates another overlay view over the same backing buffer.
+     *
+     * @param start subsequence start in the backing buffer
+     * @param end subsequence end in the backing buffer
+     * @return a new overlay view
+     */
     @Override
     public final CharSequence subSequence(int start, int end) {
         return new CharSequenceValue(false, type, start, end, buffer, decodeStrings, checkDate);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public BigDecimal bigDecimalValue() {
         return new BigDecimal(buffer, startIndex, endIndex - startIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public BigInteger bigIntegerValue() {
         return new BigInteger(toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String stringValue() {
         if (this.decodeStrings) {
@@ -212,11 +294,17 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String stringValueEncoded() {
         return JsonStringDecoder.decode(buffer, startIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Date dateValue() {
         if (type == Type.STRING) {
@@ -239,6 +327,9 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int intValue() {
         int sign = 1;
@@ -249,6 +340,9 @@ public class CharSequenceValue implements Value, CharSequence {
         return parseIntFromTo(buffer, startIndex, endIndex) * sign;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long longValue() {
         if (isInteger(buffer, startIndex, endIndex - startIndex)) {
@@ -258,31 +352,49 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public byte byteValue() {
         return (byte) intValue();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public short shortValue() {
         return (short) intValue();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double doubleValue() {
         return CharScanner.parseDouble(this.buffer, startIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean booleanValue() {
         return Boolean.parseBoolean(toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public float floatValue() {
         return CharScanner.parseFloat(this.buffer, startIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public final void chop() {
         if (!chopped) {
@@ -293,6 +405,9 @@ public class CharSequenceValue implements Value, CharSequence {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public char charValue() {
         return buffer[startIndex];

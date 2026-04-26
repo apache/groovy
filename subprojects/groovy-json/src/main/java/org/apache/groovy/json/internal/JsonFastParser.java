@@ -32,22 +32,51 @@ public class JsonFastParser extends JsonParserCharArray {
     private final boolean lazyChop;
     private final boolean checkDates;
 
+    /**
+     * Creates a parser with eager value containers and lazy chopping.
+     */
     public JsonFastParser() {
         this(true);
     }
 
+    /**
+     * Creates a parser with the supplied value-container mode.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     */
     public JsonFastParser(boolean useValues) {
         this(useValues, false);
     }
 
+    /**
+     * Creates a parser with explicit chopping behavior.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     * @param chop whether to eagerly copy overlay slices
+     */
     public JsonFastParser(boolean useValues, boolean chop) {
         this(useValues, chop, !chop);
     }
 
+    /**
+     * Creates a parser with explicit lazy chopping behavior.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     * @param chop whether to eagerly copy overlay slices
+     * @param lazyChop whether to defer chopping until values are accessed
+     */
     public JsonFastParser(boolean useValues, boolean chop, boolean lazyChop) {
         this(useValues, chop, lazyChop, true);
     }
 
+    /**
+     * Creates a parser with full overlay configuration.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     * @param chop whether to eagerly copy overlay slices
+     * @param lazyChop whether to defer chopping until values are accessed
+     * @param checkDates whether strings should be tested for supported date formats
+     */
     public JsonFastParser(boolean useValues, boolean chop, boolean lazyChop, boolean checkDates) {
         this.useValues = useValues;
         this.chop = chop;
@@ -55,6 +84,11 @@ public class JsonFastParser extends JsonParserCharArray {
         this.checkDates = checkDates;
     }
 
+    /**
+     * Decodes an object using overlay values and deferred materialization.
+     *
+     * @return parsed object value container
+     */
     @SuppressWarnings("unchecked")
     protected final Value decodeJsonObjectLazyFinalParse() {
         char[] array = charArray;
@@ -106,6 +140,11 @@ public class JsonFastParser extends JsonParserCharArray {
         return value;
     }
 
+    /**
+     * Decodes the next JSON value as an overlay {@link Value}.
+     *
+     * @return parsed overlay value
+     */
     @Override
     protected Value decodeValue() {
         return decodeValueOverlay();
@@ -299,6 +338,12 @@ public class JsonFastParser extends JsonParserCharArray {
         return value;
     }
 
+    /**
+     * Parses a character buffer and unwraps top-level container values.
+     *
+     * @param cs JSON content to parse
+     * @return parsed Groovy JSON value
+     */
     @Override
     protected final Object decodeFromChars(char[] cs) {
         Value value = ((Value) super.decodeFromChars(cs));

@@ -24,5 +24,10 @@ package org.apache.groovy.json;
  * disable the service.
  */
 public interface FastStringServiceFactory {
+    /**
+     * Returns a fast string service, or {@code null} when the implementation is unavailable.
+     *
+     * @return the fast string service to use, or {@code null}
+     */
     FastStringService getService();
 }

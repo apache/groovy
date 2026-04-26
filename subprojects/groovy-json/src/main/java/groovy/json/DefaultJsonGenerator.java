@@ -67,15 +67,28 @@ import static java.lang.reflect.Modifier.isStatic;
  */
 public class DefaultJsonGenerator implements JsonGenerator {
 
+    /** Indicates whether {@code null} values are omitted from the output. */
     protected final boolean excludeNulls;
+    /** Indicates whether Unicode characters are emitted without escaping. */
     protected final boolean disableUnicodeEscaping;
+    /** Date format pattern used when serializing {@link Date} values. */
     protected final String dateFormat;
+    /** Locale used when formatting {@link Date} values. */
     protected final Locale dateLocale;
+    /** Time zone used when formatting {@link Date} values. */
     protected final TimeZone timezone;
+    /** Converters consulted before applying the default JSON serialization rules. */
     protected final Set<Converter> converters = new LinkedHashSet<Converter>();
+    /** Field names excluded from generated JSON objects. */
     protected final Set<String> excludedFieldNames = new HashSet<String>();
+    /** Field types excluded from generated JSON objects. */
     protected final Set<Class<?>> excludedFieldTypes = new HashSet<Class<?>>();
 
+    /**
+     * Creates a generator from the supplied serialization options.
+     *
+     * @param options configured generator options
+     */
     protected DefaultJsonGenerator(Options options) {
         excludeNulls = options.excludeNulls;
         disableUnicodeEscaping = options.disableUnicodeEscaping;
@@ -164,6 +177,12 @@ public class DefaultJsonGenerator implements JsonGenerator {
         }
     }
 
+    /**
+     * Serializes an unnamed value and writes it into the specified buffer.
+     *
+     * @param object the value to serialize
+     * @param buffer the output buffer
+     */
     protected void writeObject(Object object, CharBuf buffer) {
         writeObject(null, object, buffer);
     }
@@ -237,6 +256,12 @@ public class DefaultJsonGenerator implements JsonGenerator {
         }
     }
 
+    /**
+     * Collects the public readable properties of the given object for JSON object serialization.
+     *
+     * @param object the object whose properties should be collected
+     * @return a map of property names to values
+     */
     protected Map<?, ?> getObjectProperties(final Object object) {
         List<MetaProperty> metaProperties = org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(object).getProperties();
 
@@ -462,10 +487,19 @@ public class DefaultJsonGenerator implements JsonGenerator {
      */
     protected static class ClosureConverter implements Converter {
 
+        /** Type accepted by this converter. */
         protected final Class<?> type;
+        /** Closure used to convert matching values. */
         protected final Closure<?> closure;
+        /** Number of parameters expected by the conversion closure. */
         protected final int paramCount;
 
+        /**
+         * Creates a converter backed by the supplied closure.
+         *
+         * @param type the type handled by the converter
+         * @param closure the closure performing the conversion
+         */
         protected ClosureConverter(Class<?> type, Closure<?> closure) {
             if (type == null) {
                 throw new NullPointerException("Type parameter must not be null");
@@ -540,11 +574,21 @@ public class DefaultJsonGenerator implements JsonGenerator {
             return this.type == ((ClosureConverter)o).type;
         }
 
+        /**
+         * Returns a hash code based on the handled type.
+         *
+         * @return the hash code for this converter
+         */
         @Override
         public int hashCode() {
             return this.type.hashCode();
         }
 
+        /**
+         * Returns a string form that includes the handled type.
+         *
+         * @return a string representation of this converter
+         */
         @Override
         public String toString() {
             return super.toString() + "<" + this.type.toString() + ">";

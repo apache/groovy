@@ -30,13 +30,78 @@ import java.io.Reader;
  */
 public interface JsonParser {
 
+    /**
+     * Parses JSON text from a {@link String}.
+     *
+     * @param jsonString the JSON text to parse
+     * @return the parsed JSON data structure
+     */
     Object parse(String jsonString);
+
+    /**
+     * Parses JSON text from a byte array.
+     *
+     * @param bytes the JSON bytes to parse
+     * @return the parsed JSON data structure
+     */
     Object parse(byte[] bytes);
+
+    /**
+     * Parses JSON text from a byte array using the supplied charset.
+     *
+     * @param bytes the JSON bytes to parse
+     * @param charset the charset used to decode the bytes
+     * @return the parsed JSON data structure
+     */
     Object parse(byte[] bytes, String charset);
+
+    /**
+     * Parses JSON text from a character sequence.
+     *
+     * @param charSequence the JSON text to parse
+     * @return the parsed JSON data structure
+     */
     Object parse(CharSequence charSequence);
+
+    /**
+     * Parses JSON text from a character array.
+     *
+     * @param chars the JSON characters to parse
+     * @return the parsed JSON data structure
+     */
     Object parse(char[] chars);
+
+    /**
+     * Parses JSON text read from a {@link Reader}.
+     *
+     * @param reader the reader supplying JSON text
+     * @return the parsed JSON data structure
+     */
     Object parse(Reader reader);
+
+    /**
+     * Parses JSON content read from an input stream.
+     *
+     * @param input the input stream supplying JSON content
+     * @return the parsed JSON data structure
+     */
     Object parse(InputStream input);
+
+    /**
+     * Parses JSON content read from an input stream using the supplied charset.
+     *
+     * @param input the input stream supplying JSON content
+     * @param charset the charset used to decode the stream
+     * @return the parsed JSON data structure
+     */
     Object parse(InputStream input, String charset);
+
+    /**
+     * Parses JSON content read from a file using the supplied charset.
+     *
+     * @param file the file supplying JSON content
+     * @param charset the charset used to decode the file
+     * @return the parsed JSON data structure
+     */
     Object parse(File file, String charset);
 }

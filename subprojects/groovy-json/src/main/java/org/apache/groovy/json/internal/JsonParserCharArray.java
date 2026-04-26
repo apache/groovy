@@ -30,13 +30,28 @@ import java.util.List;
  */
 public class JsonParserCharArray extends BaseJsonParser {
 
+    /**
+     * Character buffer currently being parsed.
+     */
     protected char[] charArray;
+    /**
+     * Current position within {@link #charArray}.
+     */
     protected int __index;
+    /**
+     * Character at the current parser position.
+     */
     protected char __currentChar;
 
     private int lastIndex;
     private int openLeftCurlyBraces;
 
+    /**
+     * Initializes parser state and decodes a character buffer.
+     *
+     * @param cs JSON content to parse
+     * @return parsed Groovy JSON value
+     */
     protected Object decodeFromChars(char[] cs) {
         __index = 0;
         charArray = cs;
@@ -49,14 +64,27 @@ public class JsonParserCharArray extends BaseJsonParser {
         return result;
     }
 
+    /**
+     * Checks whether more characters remain after the current index.
+     *
+     * @return {@code true} when another character can be consumed
+     */
     protected final boolean hasMore() {
         return __index < lastIndex;
     }
 
+    /**
+     * Checks whether the current index is still within the buffer.
+     *
+     * @return {@code true} when the current position is valid
+     */
     protected final boolean hasCurrent() {
         return __index <= lastIndex;
     }
 
+    /**
+     * Advances past JSON whitespace characters.
+     */
     protected final void skipWhiteSpace() {
         int ix = __index;
 
@@ -71,6 +99,11 @@ public class JsonParserCharArray extends BaseJsonParser {
         }
     }
 
+    /**
+     * Advances to the next character in the input buffer.
+     *
+     * @return next character, or {@code 0} when the buffer is exhausted
+     */
     protected final char nextChar() {
         try {
             if (hasMore()) {
@@ -84,6 +117,12 @@ public class JsonParserCharArray extends BaseJsonParser {
         }
     }
 
+    /**
+     * Builds an error message using the current parser position.
+     *
+     * @param message parser-specific message
+     * @return formatted error details
+     */
     protected String exceptionDetails(String message) {
         return CharScanner.errorDetails(message, charArray, __index, __currentChar);
     }
@@ -99,6 +138,11 @@ public class JsonParserCharArray extends BaseJsonParser {
         return index - 1;
     }
 
+    /**
+     * Decodes a JSON object from the current position.
+     *
+     * @return parsed object as a {@link LazyMap}
+     */
     protected final Object decodeJsonObject() {
         if (__currentChar == '{') {
             if (hasCurrent()) {
@@ -157,10 +201,20 @@ public class JsonParserCharArray extends BaseJsonParser {
         return map;
     }
 
+    /**
+     * Throws a {@link groovy.json.JsonException} for the current location.
+     *
+     * @param complaint message describing the parse failure
+     */
     protected final void complain(String complaint) {
         throw new JsonException(exceptionDetails(complaint));
     }
 
+    /**
+     * Decodes the next JSON value.
+     *
+     * @return parsed Groovy JSON value
+     */
     protected Object decodeValue() {
         return decodeValueInternal();
     }
@@ -187,6 +241,9 @@ public class JsonParserCharArray extends BaseJsonParser {
         return value;
     }
 
+    /**
+     * Reusable holder for the index returned by number parsing.
+     */
     int[] endIndex = new int[1];
 
     private Object decodeNumber() {
@@ -196,8 +253,16 @@ public class JsonParserCharArray extends BaseJsonParser {
         return num;
     }
 
+    /**
+     * Character buffer for the {@code null} literal.
+     */
     protected static final char[] NULL = Chr.chars("null");
 
+    /**
+     * Consumes the {@code null} literal.
+     *
+     * @return {@code null}
+     */
     protected final Object decodeNull() {
         if (__index + NULL.length <= charArray.length) {
             if (charArray[__index] == 'n' &&
@@ -211,8 +276,16 @@ public class JsonParserCharArray extends BaseJsonParser {
         throw new JsonException(exceptionDetails("null not parse properly"));
     }
 
+    /**
+     * Character buffer for the {@code true} literal.
+     */
     protected static final char[] TRUE = Chr.chars("true");
 
+    /**
+     * Consumes the {@code true} literal.
+     *
+     * @return {@code true}
+     */
     protected final boolean decodeTrue() {
         if (__index + TRUE.length <= charArray.length) {
             if (charArray[__index] == 't' &&
@@ -228,8 +301,16 @@ public class JsonParserCharArray extends BaseJsonParser {
         throw new JsonException(exceptionDetails("true not parsed properly"));
     }
 
+    /**
+     * Character buffer for the {@code false} literal.
+     */
     protected static char[] FALSE = Chr.chars("false");
 
+    /**
+     * Consumes the {@code false} literal.
+     *
+     * @return {@code false}
+     */
     protected final boolean decodeFalse() {
         if (__index + FALSE.length <= charArray.length) {
             if (charArray[__index] == 'f' &&
@@ -276,6 +357,11 @@ public class JsonParserCharArray extends BaseJsonParser {
         return value;
     }
 
+    /**
+     * Decodes a JSON array from the current position.
+     *
+     * @return parsed array contents
+     */
     protected final List decodeJsonArray() {
         ArrayList<Object> list = null;
 
@@ -349,6 +435,11 @@ public class JsonParserCharArray extends BaseJsonParser {
         return list;
     }
 
+    /**
+     * Returns the current character in the input buffer.
+     *
+     * @return current character, or {@code 0} when the index is past the end
+     */
     protected final char currentChar() {
         if (__index > lastIndex) {
             return 0;
@@ -357,6 +448,12 @@ public class JsonParserCharArray extends BaseJsonParser {
         }
     }
 
+    /**
+     * Parses JSON from a character array.
+     *
+     * @param chars JSON content to parse
+     * @return parsed Groovy JSON value
+     */
     @Override
     public Object parse(char[] chars) {
         return this.decodeFromChars(chars);

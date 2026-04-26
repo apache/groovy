@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.json;
 
+/**
+ * Service for fast string-to-character conversion used by JSON parsing internals.
+ */
 public interface FastStringService {
     /**
      * @param string string to grab array from.

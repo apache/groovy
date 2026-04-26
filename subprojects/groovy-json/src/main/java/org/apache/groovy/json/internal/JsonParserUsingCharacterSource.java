@@ -34,10 +34,21 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
 
     private CharacterSource characterSource;
 
+    /**
+     * Builds an error message using the current character source state.
+     *
+     * @param message parser-specific message
+     * @return formatted error details
+     */
     protected String exceptionDetails(String message) {
         return characterSource.errorDetails(message);
     }
 
+    /**
+     * Decodes a JSON object from the current character source position.
+     *
+     * @return parsed object as a {@link LazyMap}
+     */
     protected final Object decodeJsonObject() {
         LazyMap map = new LazyMap();
 
@@ -101,6 +112,11 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         return map;
     }
 
+    /**
+     * Throws a {@link groovy.json.JsonException} for the current source location.
+     *
+     * @param complaint message describing the parse failure
+     */
     protected final void complain(String complaint) {
         throw new JsonException(exceptionDetails(complaint));
     }
@@ -141,8 +157,16 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         return value;
     }
 
+    /**
+     * Character buffer for the {@code null} literal.
+     */
     protected static final char[] NULL = Chr.chars("null");
 
+    /**
+     * Consumes the {@code null} literal.
+     *
+     * @return {@code null}
+     */
     protected final Object decodeNull() {
         if (!characterSource.consumeIfMatch(NULL)) {
             throw new JsonException(exceptionDetails("null not parse properly"));
@@ -150,8 +174,16 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         return null;
     }
 
+    /**
+     * Character buffer for the {@code true} literal.
+     */
     protected static final char[] TRUE = Chr.chars("true");
 
+    /**
+     * Consumes the {@code true} literal.
+     *
+     * @return {@code true}
+     */
     protected final boolean decodeTrue() {
         if (characterSource.consumeIfMatch(TRUE)) {
             return true;
@@ -160,8 +192,16 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         }
     }
 
+    /**
+     * Character buffer for the {@code false} literal.
+     */
     protected static char[] FALSE = Chr.chars("false");
 
+    /**
+     * Consumes the {@code false} literal.
+     *
+     * @return {@code false}
+     */
     protected final boolean decodeFalse() {
         if (characterSource.consumeIfMatch(FALSE)) {
             return false;
@@ -190,6 +230,11 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         return value;
     }
 
+    /**
+     * Decodes a JSON array from the current character source position.
+     *
+     * @return parsed array contents
+     */
     protected final List decodeJsonArray() {
         ArrayList<Object> list = null;
 
@@ -250,12 +295,24 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         return list;
     }
 
+    /**
+     * Parses JSON from a reader-backed character source.
+     *
+     * @param reader reader supplying JSON content
+     * @return parsed Groovy JSON value
+     */
     @Override
     public Object parse(Reader reader) {
         characterSource = new ReaderCharacterSource(reader);
         return this.decodeValue();
     }
 
+    /**
+     * Parses JSON from a character array.
+     *
+     * @param chars JSON content to parse
+     * @return parsed Groovy JSON value
+     */
     @Override
     public Object parse(char[] chars) {
         return parse(new StringReader(new String(chars)));
