@@ -44,7 +44,7 @@ public class CompileUnit implements NodeMetaDataHandler {
     private final CompilerConfiguration config;
     private final GroovyClassLoader loader;
     private final CodeSource codeSource;
-    private Map<?, ?> metaDataMap;
+    private volatile Map<?, ?> metaDataMap;
 
     private final List<ModuleNode> modules = new ArrayList<>();
     private final Map<String, ClassNode> classes = new LinkedHashMap<>();

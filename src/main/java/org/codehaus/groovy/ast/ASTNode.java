@@ -46,7 +46,7 @@ public class ASTNode implements NodeMetaDataHandler {
     private int lastLineNumber = -1;
     private int lastColumnNumber = -1;
 
-    private Map<?, ?> metaDataMap;
+    private volatile Map<?, ?> metaDataMap;
 
     public void visit(final GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
