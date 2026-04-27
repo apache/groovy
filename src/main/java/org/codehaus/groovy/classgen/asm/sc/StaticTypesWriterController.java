@@ -19,9 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.BinaryExpressionHelper;
@@ -51,6 +57,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLU
 public class StaticTypesWriterController extends DelegatingController {
 
     protected boolean isInStaticallyCheckedMethod;
+    private boolean methodHasDynamicResolution; // GROOVY-11968
 
     private LambdaWriter lambdaWriter;
     private ClosureWriter closureWriter;
@@ -87,13 +94,75 @@ public class StaticTypesWriterController extends DelegatingController {
     @Override
     public void setMethodNode(final MethodNode mn) {
         isInStaticallyCheckedMethod = isStaticallyCompiled(mn);
+        methodHasDynamicResolution = isInStaticallyCheckedMethod && hasDynamicResolution(mn);
         super.setMethodNode(mn);
     }
 
     @Override
     public void setConstructorNode(final ConstructorNode cn) {
         isInStaticallyCheckedMethod = isStaticallyCompiled(cn);
+        methodHasDynamicResolution = isInStaticallyCheckedMethod && hasDynamicResolution(cn);
         super.setConstructorNode(cn);
+    }
+
+    /**
+     * GROOVY-11968: returns {@code true} when the current statically compiled method
+     * contains one or more sub-expressions that will be routed through the regular
+     * (non-static) call site writer via {@link #getCallSiteWriterFor}. The regular
+     * writer's per-method state must then be initialized at method entry.
+     */
+    public boolean methodHasDynamicResolution() {
+        return methodHasDynamicResolution;
+    }
+
+    private static boolean hasDynamicResolution(final MethodNode mn) {
+        if (mn == null) return false;
+        if (mn.getNodeMetaData(DYNAMIC_RESOLUTION) != null) return true;
+        if (mn.getCode() == null) return false;
+        var scanner = new DynamicResolutionScanner();
+        mn.getCode().visit(scanner);
+        return scanner.found;
+    }
+
+    private static class DynamicResolutionScanner extends CodeVisitorSupport {
+        boolean found;
+
+        @Override
+        public void visitMethodCallExpression(final MethodCallExpression call) {
+            if (isMarked(call)) return;
+            super.visitMethodCallExpression(call);
+        }
+
+        @Override
+        public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
+            if (isMarked(call)) return;
+            super.visitStaticMethodCallExpression(call);
+        }
+
+        @Override
+        public void visitPropertyExpression(final PropertyExpression expression) {
+            if (isMarked(expression)) return;
+            super.visitPropertyExpression(expression);
+        }
+
+        @Override
+        public void visitAttributeExpression(final AttributeExpression expression) {
+            if (isMarked(expression)) return;
+            super.visitAttributeExpression(expression);
+        }
+
+        @Override
+        public void visitVariableExpression(final VariableExpression expression) {
+            if (isMarked(expression)) return;
+            super.visitVariableExpression(expression);
+        }
+
+        private boolean isMarked(final Expression e) {
+            if (!found && e.getNodeMetaData(DYNAMIC_RESOLUTION) != null) {
+                found = true;
+            }
+            return found;
+        }
     }
 
     @Override
