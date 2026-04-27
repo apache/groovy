@@ -507,6 +507,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     @Override
     public void makeSiteEntry() {
+        // GROOVY-11968: when the statically compiled method body contains any
+        // sub-expression marked DYNAMIC_RESOLUTION, codegen will delegate that
+        // sub-expression to the regular CallSiteWriter via getCallSiteWriterFor.
+        // The regular writer's per-method state (callSiteArrayVarIndex and the
+        // $getCallSiteArray() prologue) must be set up at method entry; otherwise
+        // its prepareCallSite() emits ALOAD against an unallocated local slot.
+        if (controller.methodHasDynamicResolution()) {
+            controller.getRegularCallSiteWriter().makeSiteEntry();
+        }
     }
 
     @Override
