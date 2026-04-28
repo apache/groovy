@@ -207,6 +207,10 @@ public class WideningCategories {
      * @since 2.0.0
      */
     public static ClassNode lowestUpperBound(final ClassNode a, final ClassNode b) {
+        return lowestUpperBound(new LowestUpperBoundContext(), a, b);
+    }
+
+    private static ClassNode lowestUpperBound(final LowestUpperBoundContext ctx, final ClassNode a, final ClassNode b) {
         ClassNode lub = lowestUpperBound(a, b, null, null);
         if (lub == null || !lub.isUsingGenerics()
                 || lub.isGenericsPlaceHolder()) { // GROOVY-10330
@@ -222,20 +226,20 @@ public class WideningCategories {
             // plus the interfaces
             ClassNode superClass = lub.getSuperClass();
             if (superClass.redirect().getGenericsTypes() != null) {
-                superClass = parameterizeLowestUpperBound(superClass, a, b, lub);
+                superClass = parameterizeLowestUpperBound(ctx, superClass, a, b, lub);
             }
 
             ClassNode[] interfaces = lub.getInterfaces().clone();
             for (int i = 0, n = interfaces.length; i < n; i += 1) {
                 ClassNode icn = interfaces[i];
                 if (icn.redirect().getGenericsTypes() != null) {
-                    interfaces[i] = parameterizeLowestUpperBound(icn, a, b, lub);
+                    interfaces[i] = parameterizeLowestUpperBound(ctx, icn, a, b, lub);
                 }
             }
 
             return new LowestUpperBoundClassNode(lub.getUnresolvedName(), superClass, interfaces);
         } else {
-            return parameterizeLowestUpperBound(lub, a, b, lub);
+            return parameterizeLowestUpperBound(ctx, lub, a, b, lub);
         }
     }
 
@@ -246,13 +250,14 @@ public class WideningCategories {
      *
      * For example, if LUB is Set&lt;T&gt; and a is Set&lt;String&gt; and b is Set&lt;StringBuffer&gt;, this
      * will return a LUB which parameterized type matches Set&lt;? extends CharSequence&gt;
+     * @param ctx tracks (t1, t2) pairs whose LUB is currently being computed, so this method can detect recursive calls (GROOVY-11770)
      * @param lub the type to be parameterized
      * @param a parameterized type a
      * @param b parameterized type b
      * @param fallback if we detect a recursive call, use this LUB as the parameterized type instead of computing a value
      * @return the class node representing the parameterized lowest upper bound
      */
-    private static ClassNode parameterizeLowestUpperBound(final ClassNode lub, final ClassNode a, final ClassNode b, final ClassNode fallback) {
+    private static ClassNode parameterizeLowestUpperBound(final LowestUpperBoundContext ctx, final ClassNode lub, final ClassNode a, final ClassNode b, final ClassNode fallback) {
         if (a.toString(false).equals(b.toString(false))) return lub;
         // a common super type exists, all we have to do is to parameterize
         // it according to the types provided by the two class nodes
@@ -273,11 +278,16 @@ public class WideningCategories {
             if (areEqualWithGenerics(t1, isPrimitiveType(a)?getWrapper(a):a) && areEqualWithGenerics(t2, isPrimitiveType(b)?getWrapper(b):b)) {
                 // "String implements Comparable<String>" and "StringBuffer implements Comparable<StringBuffer>"
                 basicType = fallback; // do not loop
+            } else if (ctx.isExpanding(t1, t2)) {
+                // GROOVY-11770: recursion guard for an already-expanding type pair, or depth cap reached
+                // (e.g. LUB(B, D) where B extends A<W<B>>, D extends A<W<D>>)
+                basicType = fallback;
             } else {
+                ctx.enter(t1, t2);
                 try {
-                    basicType = lowestUpperBound(t1, t2);
-                } catch (StackOverflowError ignore) {
-                    basicType = fallback; // best we can do for now
+                    basicType = lowestUpperBound(ctx, t1, t2);
+                } finally {
+                    ctx.exit(t1, t2);
                 }
             }
             if (agt[i].isWildcard() || bgt[i].isWildcard() || !t1.equals(t2)) {
@@ -287,6 +297,57 @@ public class WideningCategories {
             }
         }
         return GenericsUtils.makeClassSafe0(lub, lubGTs);
+    }
+
+    /**
+     * Tracks pairs of types whose LUB is currently being computed by
+     * {@link #lowestUpperBound(ClassNode, ClassNode)}, so the recursion can
+     * break cycles caused by F-bounded type parameters that route a subtype
+     * back through itself (GROOVY-11770). Pair equality is identity-based and
+     * order-insensitive, since LUB is symmetric. A depth cap acts as a
+     * backstop in case generics rewriting yields fresh {@code ClassNode}
+     * instances for logically identical types, which would defeat identity
+     * tracking.
+     */
+    private static final class LowestUpperBoundContext {
+        private static final int MAX_DEPTH = 64;
+        private final Set<TypePair> inflight = new HashSet<>();
+        private int depth;
+
+        boolean isExpanding(final ClassNode a, final ClassNode b) {
+            return depth >= MAX_DEPTH || inflight.contains(new TypePair(a, b));
+        }
+
+        void enter(final ClassNode a, final ClassNode b) {
+            inflight.add(new TypePair(a, b));
+            depth++;
+        }
+
+        void exit(final ClassNode a, final ClassNode b) {
+            inflight.remove(new TypePair(a, b));
+            depth--;
+        }
+
+        private static final class TypePair {
+            final ClassNode a, b;
+
+            TypePair(final ClassNode a, final ClassNode b) {
+                this.a = a;
+                this.b = b;
+            }
+
+            @Override
+            public boolean equals(final Object o) {
+                if (!(o instanceof TypePair)) return false;
+                TypePair p = (TypePair) o;
+                return (a == p.a && b == p.b) || (a == p.b && b == p.a);
+            }
+
+            @Override
+            public int hashCode() {
+                return System.identityHashCode(a) ^ System.identityHashCode(b);
+            }
+        }
     }
 
     private static ClassNode findGenericsTypeHolderForClass(ClassNode source, final ClassNode target) {
