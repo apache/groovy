@@ -55,11 +55,13 @@ import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1769,19 +1771,52 @@ public abstract class StaticTypeCheckingSupport {
         return type.getGenericsTypes();
     }
 
+    /**
+     * Tracks placeholder names whose bounds are currently being expanded by
+     * {@link #applyGenericsContext}, so the recursion can break cycles caused
+     * by F-bounded type parameters whose self-reference appears inside a
+     * wildcard bound (GROOVY-11022). The backing deque is allocated lazily —
+     * the cycle-breaking machinery is only needed when an F-bounded
+     * placeholder is actually encountered, which is rare on the STC hot path.
+     */
+    private static final class BoundExpansionContext {
+        private Deque<GenericsTypeName> expanding;
+
+        boolean isExpanding(final GenericsTypeName name) {
+            return expanding != null && expanding.contains(name);
+        }
+
+        void enter(final GenericsTypeName name) {
+            if (expanding == null) expanding = new ArrayDeque<>();
+            expanding.push(name);
+        }
+
+        void exit() {
+            expanding.pop();
+        }
+    }
+
     static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
         if (gts == null || spec == null || spec.isEmpty()) return gts;
+        return applyGenericsContext(new BoundExpansionContext(), spec, gts);
+    }
 
+    private static GenericsType applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
+        return applyGenericsContext(new BoundExpansionContext(), spec, gt);
+    }
+
+    private static GenericsType[] applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
+        if (gts == null) return null;
         int n = gts.length;
         if (n == 0) return gts;
         GenericsType[] newGTs = new GenericsType[n];
         for (int i = 0; i < n; i += 1) {
-            newGTs[i] = applyGenericsContext(spec, gts[i]);
+            newGTs[i] = applyGenericsContext(ctx, spec, gts[i]);
         }
         return newGTs;
     }
 
-    private static GenericsType applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
+    private static GenericsType applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
         ClassNode type = gt.getType();
 
         if (gt.isPlaceholder()) {
@@ -1789,16 +1824,25 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType specType = spec.get(name);
             if (specType != null) return specType;
             if (hasNonTrivialBounds(gt)) {
-                GenericsType newGT = new GenericsType(type, applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
-                newGT.setPlaceholder(true);
-                return newGT;
+                // GROOVY-11022: avoid infinite recursion on F-bounded type
+                // parameters whose self-reference appears inside a wildcard
+                // bound (e.g. `<K extends Comparable<? super K>>`)
+                if (ctx.isExpanding(name)) return gt;
+                ctx.enter(name);
+                try {
+                    GenericsType newGT = new GenericsType(type, applyGenericsContext(ctx, spec, gt.getUpperBounds()), applyGenericsContext(ctx, spec, gt.getLowerBound()));
+                    newGT.setPlaceholder(true);
+                    return newGT;
+                } finally {
+                    ctx.exit();
+                }
             }
             return gt;
         }
 
         if (gt.isWildcard()) { // TODO: What if a bound itself resolves to a wildcard?
-            ClassNode[] upperBounds = applyGenericsContext(spec, gt.getUpperBounds());
-            ClassNode   lowerBound = applyGenericsContext(spec, gt.getLowerBound());
+            ClassNode[] upperBounds = applyGenericsContext(ctx, spec, gt.getUpperBounds());
+            ClassNode   lowerBound = applyGenericsContext(ctx, spec, gt.getLowerBound());
             GenericsType newGT = new GenericsType(type, upperBounds, lowerBound);
             newGT.setWildcard(true);
             return newGT;
@@ -1806,20 +1850,20 @@ public abstract class StaticTypeCheckingSupport {
 
         ClassNode newType;
         if (type.isArray()) {
-            newType = applyGenericsContext(spec, type.getComponentType()).makeArray();
+            newType = applyGenericsContext(ctx, spec, type.getComponentType()).makeArray();
         } else if (type.getGenericsTypes() == null//type.isGenericsPlaceHolder()
                 && type.getOuterClass() == null) {
             return gt;
         } else {
             newType = type.getPlainNodeReference();
             newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
-            newType.setGenericsTypes(applyGenericsContext(spec, type.getGenericsTypes()));
+            newType.setGenericsTypes(applyGenericsContext(ctx, spec, type.getGenericsTypes()));
 
             // GROOVY-10646: non-static inner class + outer class type parameter
             if ((type.getModifiers() & Opcodes.ACC_STATIC) == 0) {
                 Optional.ofNullable(type.getOuterClass())
                     .filter(oc -> oc.getGenericsTypes()!=null)
-                    .map(oc -> applyGenericsContext(spec, oc))
+                    .map(oc -> applyGenericsContext(ctx, spec, oc))
                     .ifPresent(oc -> newType.putNodeMetaData("outer.class", oc));
             }
         }
@@ -1842,10 +1886,15 @@ public abstract class StaticTypeCheckingSupport {
 
     static ClassNode[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] types) {
         if (types == null) return null;
+        return applyGenericsContext(new BoundExpansionContext(), spec, types);
+    }
+
+    private static ClassNode[] applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] types) {
+        if (types == null) return null;
         final int nTypes = types.length;
         ClassNode[] newTypes = new ClassNode[nTypes];
         for (int i = 0; i < nTypes; i += 1) {
-            newTypes[i] = applyGenericsContext(spec, types[i]);
+            newTypes[i] = applyGenericsContext(ctx, spec, types[i]);
         }
         return newTypes;
     }
@@ -1854,13 +1903,20 @@ public abstract class StaticTypeCheckingSupport {
         if (type == null || !isUsingGenericsOrIsArrayUsingGenerics(type)) {
             return type;
         }
+        return applyGenericsContext(new BoundExpansionContext(), spec, type);
+    }
+
+    private static ClassNode applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final ClassNode type) {
+        if (type == null || !isUsingGenericsOrIsArrayUsingGenerics(type)) {
+            return type;
+        }
         if (type.isArray()) {
-            return applyGenericsContext(spec, type.getComponentType()).makeArray();
+            return applyGenericsContext(ctx, spec, type.getComponentType()).makeArray();
         }
 
         GenericsType[] gt = type.getGenericsTypes();
         if (asBoolean(spec)) {
-            gt = applyGenericsContext(spec, gt);
+            gt = applyGenericsContext(ctx, spec, gt);
         }
         if (!type.isGenericsPlaceHolder()) { // convert Type<T> to Type<...>
             ClassNode cn = type.getPlainNodeReference();

@@ -4616,6 +4616,43 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11022
+    @Test
+    void testNoStackOverflow3() {
+        // F-bounded type parameter with self-reference inside a `? super` wildcard
+        assertScript '''
+            class C<K, V> {
+                public static <K extends Comparable<? super K>, V> C<K, V> m(K k, V v) {
+                    new C<K, V>()
+                }
+            }
+            class Main {
+                @groovy.transform.TypeChecked
+                static test() {
+                    C.<Integer, Integer>m(null, 1)
+                }
+            }
+            Main.test()
+        '''
+
+        // self-reference inside a `? extends` wildcard
+        assertScript '''
+            class Self implements Iterable<Self> {
+                Iterator<Self> iterator() { Collections.emptyIterator() }
+            }
+            class C<K> {
+                public static <K extends Iterable<? extends K>> C<K> m(K k) {
+                    new C<K>()
+                }
+            }
+            @groovy.transform.TypeChecked
+            void test() {
+                C.<Self>m(null)
+            }
+            test()
+        '''
+    }
+
     @Test
     void testRegressionInConstructorCheck() {
         assertScript '''
