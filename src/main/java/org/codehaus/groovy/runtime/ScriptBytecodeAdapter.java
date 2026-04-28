@@ -998,4 +998,24 @@ public class ScriptBytecodeAdapter {
             throw unwrap(gre);
         }
     }
+
+    /**
+     * GEP-15: dispatcher for compound-assignment operators in dynamic Groovy.
+     * If {@code receiver} responds to {@code assignName} with the supplied argument,
+     * invoke it and return {@code receiver} (so the caller's STORE assigns the same
+     * reference back, leaving the in-place mutation visible). Otherwise fall back to
+     * {@code baseName} and return its result for the caller to assign.
+     */
+    public static Object compoundAssign(final Object receiver, final Object arg,
+                                        final String assignName, final String baseName) throws Throwable {
+        if (receiver != null) {
+            MetaClass mc = InvokerHelper.getMetaClass(receiver);
+            if (!mc.respondsTo(receiver, assignName, new Object[]{arg}).isEmpty()) {
+                invokeMethodN(ScriptBytecodeAdapter.class, receiver, assignName, new Object[]{arg});
+                return receiver;
+            }
+        }
+        return invokeMethodN(ScriptBytecodeAdapter.class, receiver, baseName, new Object[]{arg});
+    }
+
 }

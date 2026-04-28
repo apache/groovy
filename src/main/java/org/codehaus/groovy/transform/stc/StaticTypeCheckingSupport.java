@@ -526,6 +526,31 @@ public abstract class StaticTypeCheckingSupport {
         };
     }
 
+    /**
+     * GEP-15: returns the dedicated compound-assignment method name for a compound-assign
+     * operator token (e.g. {@code PLUS_EQUAL} -> {@code "plusAssign"}), or {@code null} if
+     * the token is not one of the twelve operators in scope. {@code INTDIV_EQUAL},
+     * {@code MOD_EQUAL}, {@code ELVIS_EQUAL}, {@code LOGICAL_OR_EQUAL} and
+     * {@code LOGICAL_AND_EQUAL} are intentionally excluded.
+     */
+    public static String getAssignOperationName(final int op) {
+        return switch (op) {
+            case PLUS_EQUAL                 -> "plusAssign";
+            case MINUS_EQUAL                -> "minusAssign";
+            case MULTIPLY_EQUAL             -> "multiplyAssign";
+            case DIVIDE_EQUAL               -> "divAssign";
+            case REMAINDER_EQUAL            -> "remainderAssign";
+            case POWER_EQUAL                -> "powerAssign";
+            case LEFT_SHIFT_EQUAL           -> "leftShiftAssign";
+            case RIGHT_SHIFT_EQUAL          -> "rightShiftAssign";
+            case RIGHT_SHIFT_UNSIGNED_EQUAL -> "rightShiftUnsignedAssign";
+            case BITWISE_AND_EQUAL          -> "andAssign";
+            case BITWISE_OR_EQUAL           -> "orAssign";
+            case BITWISE_XOR_EQUAL          -> "xorAssign";
+            default                         -> null;
+        };
+    }
+
     static boolean isShiftOperation(final String name) {
         return "leftShift".equals(name) || "rightShift".equals(name) || "rightShiftUnsigned".equals(name);
     }

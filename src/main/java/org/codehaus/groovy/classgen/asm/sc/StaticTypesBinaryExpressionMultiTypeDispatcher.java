@@ -67,6 +67,7 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIS
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssignment;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -136,6 +137,28 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
 
     @Override
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
+        if (tryStaticCompoundAssignPaths(method, expression)) return;
+        super.evaluateBinaryExpressionWithAssignment(method, expression);
+    }
+
+    @Override
+    protected void evaluateCompoundAssign(final String assignName, final String baseName, final BinaryExpression expression) {
+        if (tryStaticCompoundAssignPaths(baseName, expression)) return;
+        super.evaluateCompoundAssign(assignName, baseName, expression);
+    }
+
+    /**
+     * GEP-15 + legacy setter fast-path. Returns true when codegen has been emitted
+     * (no further dispatch required).
+     */
+    private boolean tryStaticCompoundAssignPaths(final String baseName, final BinaryExpression expression) {
+        MethodNode assignTarget = expression.getNodeMetaData(COMPOUND_ASSIGN_TARGET);
+        if (assignTarget != null) {
+            // GEP-15: receiver.<assignMethod>(arg); receiver remains the expression value.
+            // The setter (for property LHS) is intentionally skipped.
+            emitCompoundAssignCall(assignTarget, expression);
+            return true;
+        }
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof PropertyExpression pexp
                 && !(leftExpression instanceof AttributeExpression)) {
@@ -161,10 +184,31 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     pexp.isSpreadSafe(),
                     pexp.isImplicitThis(),
                     true)) { // TODO: GROOVY-11843
-                return;
+                return true;
             }
         }
-        super.evaluateBinaryExpressionWithAssignment(method, expression);
+        return false;
+    }
+
+    private void emitCompoundAssignCall(final MethodNode target, final BinaryExpression expression) {
+        OperandStack operandStack = controller.getOperandStack();
+        Expression leftExpression = expression.getLeftExpression();
+        Expression rightExpression = expression.getRightExpression();
+
+        leftExpression.visit(controller.getAcg());
+        ClassNode receiverType = operandStack.getTopOperand();
+        int slot = controller.getCompileStack().defineTemporaryVariable("$gep15recv", receiverType, true);
+
+        VariableSlotLoader callReceiver = new VariableSlotLoader(receiverType, slot, operandStack);
+        MethodCallExpression call = callX(callReceiver, target.getName(), rightExpression);
+        call.setMethodTarget(target);
+        call.setImplicitThis(false);
+        call.setSourcePosition(expression);
+        call.visit(controller.getAcg());
+        operandStack.pop(); // discard the *Assign return value
+
+        new VariableSlotLoader(receiverType, slot, operandStack).visit(controller.getAcg());
+        controller.getCompileStack().removeVar(slot);
     }
 
     @Override

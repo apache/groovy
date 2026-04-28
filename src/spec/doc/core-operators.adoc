@@ -1007,3 +1007,41 @@ Here is a complete list of the operators and their corresponding methods:
 | `~a`
 | a.bitwiseNegate()
 |====
+
+[[Compound-Assignment-Overloading]]
+=== Compound assignment operator overloading
+
+Compound assignment operators (`+=`, `-=`, `\*=`, ...) normally desugar to `x = x.op(y)`,
+which creates a new value and reassigns the variable. Since Groovy 5.0 (GEP-15), classes can
+define dedicated *Assign methods to override compound-assign independently of the base operator.
+When a `*Assign` method exists on the receiver type and the compiler can resolve it directly
+(for example, under `@CompileStatic` or `@TypeChecked`), it is called directly: the receiver is
+mutated in place, no reassignment occurs (so `final` fields and variables can use compound
+assignment in that case), and for property LHS the setter is *not* invoked. In purely dynamic
+code the dispatch happens at runtime; the in-place behaviour still applies but the
+`final`-reassignment check cannot be relaxed because the compiler does not yet know whether
+a `*Assign` method will respond at runtime.
+
+If no `*Assign` method matches, the legacy `x = x.op(y)` desugar still applies.
+
+[cols="1,2,2" options="header"]
+|====
+| Operator | Assign method | Fallback method
+
+| `+=`   | `plusAssign`               | `plus`
+| `-=`   | `minusAssign`              | `minus`
+| `*=`   | `multiplyAssign`           | `multiply`
+| `/=`   | `divAssign`                | `div`
+| `%=`   | `remainderAssign`          | `remainder`
+| `\**=` | `powerAssign`              | `power`
+| `<<=`  | `leftShiftAssign`          | `leftShift`
+| `>>=`  | `rightShiftAssign`         | `rightShift`
+| `>>>=` | `rightShiftUnsignedAssign` | `rightShiftUnsigned`
+| `&=`   | `andAssign`                | `and`
+| `\|=`  | `orAssign`                 | `or`
+| `^=`   | `xorAssign`                | `xor`
+|====
+
+When `*Assign` is called, the expression value of `x op= y` is the (mutated) `x`, not the
+return value of `*Assign`. `*Assign` is also discoverable as an extension method or category,
+and its name can be remapped via `@OperatorRename(plusAssign="addInPlace")`.
