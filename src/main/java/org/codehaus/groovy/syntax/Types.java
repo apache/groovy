@@ -415,7 +415,8 @@ public class Types {
             case ASSIGNMENT_OPERATOR:
                 return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                         || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL)
-                        || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
+                        || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL)
+                        || specific == REMAINDER_EQUAL;
 
             case COMPARISON_OPERATOR:
                 return specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO;

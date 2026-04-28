@@ -296,6 +296,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDG
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolve;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getAssignOperationName;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCombinedBoundType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCombinedGenericsType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getGenericsWithoutArray;
@@ -326,6 +327,7 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.toMeth
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodArgumentWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.typeCheckMethodsWithGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DECLARATION_INFERRED_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DELEGATION_METADATA;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
@@ -828,6 +830,46 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression rightExpression = expression.getRightExpression();
 
             if (isAssignment(op) && op != EQUAL) {
+                // GEP-15: try a dedicated *Assign method on the LHS type before the legacy desugar.
+                // When found, the receiver is mutated in place — no reassignment, setter is skipped.
+                String assignName = getAssignOperationName(op);
+                if (assignName != null) {
+                    // Visit a clone of the LHS so that the property/variable visitor doesn't
+                    // treat it as the assignment target (which would steer it to the setter and
+                    // leave the type unresolved on the read side).
+                    ExpressionTransformer readSideCloner = new ExpressionTransformer() {
+                        @Override
+                        public Expression transform(final Expression expr) {
+                            if (expr instanceof VariableExpression) {
+                                return ((VariableExpression) expr).clone();
+                            }
+                            return expr.transformExpression(this);
+                        }
+                    };
+                    Expression lhsRead = readSideCloner.transform(leftExpression);
+                    lhsRead.visit(this);
+                    ClassNode lhsType = getType(lhsRead);
+                    if (!isPrimitiveType(lhsType)) {
+                        rightExpression.visit(this);
+                        ClassNode rhsType = isNullConstant(rightExpression)
+                                ? UNKNOWN_PARAMETER_TYPE
+                                : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
+                        List<MethodNode> candidates = findMethod(lhsType, assignName, rhsType);
+                        if (candidates.size() == 1) {
+                            MethodNode target = candidates.get(0);
+                            expression.putNodeMetaData(COMPOUND_ASSIGN_TARGET, target);
+                            storeType(expression, lhsType);
+                            // Visit the actual LHS now (without the cloned read-side context) so its
+                            // own metadata is populated for codegen, but skip its setterInfo since
+                            // *Assign mutates the receiver in place rather than going through a setter.
+                            leftExpression.visit(this);
+                            removeSetterInfo(leftExpression);
+                            typeCheckMethodsWithGenericsOrFail(lhsType, new ClassNode[]{rhsType}, target, rightExpression);
+                            return;
+                        }
+                    }
+                }
+
                 ExpressionTransformer cloneMaker = new ExpressionTransformer() {
                     @Override
                     public Expression transform(final Expression expr) {

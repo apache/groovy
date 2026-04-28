@@ -126,6 +126,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.COMPOUND_ASSIGN_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 
 /**
@@ -348,6 +349,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             public void variableNotFinal(Variable var, final Expression bexp) {
                 if (var instanceof VariableExpression) {
                     var = ((VariableExpression) var).getAccessedVariable();
+                }
+                // GEP-15: a compound-assign that resolved to a *Assign method (e.g. plusAssign)
+                // mutates the receiver in place rather than reassigning the variable, so the
+                // final-reassignment check must not fire for it.
+                if (bexp instanceof BinaryExpression be && be.getNodeMetaData(COMPOUND_ASSIGN_TARGET) != null) {
+                    return;
                 }
                 if (var instanceof VariableExpression && isFinal(var.getModifiers())) {
                     throw new RuntimeParserException("The variable [" + var.getName() + "] is declared final but is reassigned", bexp);

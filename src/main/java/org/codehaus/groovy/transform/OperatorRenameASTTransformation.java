@@ -27,11 +27,15 @@ import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Arrays;
@@ -80,6 +84,7 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private SourceUnit sourceUnit;
     private Map<String, String> nameTable = new HashMap<>();
+    private Map<String, String> assignNameTable = new HashMap<>();
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -103,6 +108,20 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
         addIfFound(anno, nameTable, "or");
         addIfFound(anno, nameTable, "xor");
         addIfFound(anno, nameTable, "compareTo");
+        // GEP-15: dedicated compound-assignment renames; when present, take precedence over
+        // the base-method rename for the matching compound-assign operator.
+        addIfFound(anno, assignNameTable, "plusAssign");
+        addIfFound(anno, assignNameTable, "minusAssign");
+        addIfFound(anno, assignNameTable, "multiplyAssign");
+        addIfFound(anno, assignNameTable, "divAssign");
+        addIfFound(anno, assignNameTable, "remainderAssign");
+        addIfFound(anno, assignNameTable, "powerAssign");
+        addIfFound(anno, assignNameTable, "leftShiftAssign");
+        addIfFound(anno, assignNameTable, "rightShiftAssign");
+        addIfFound(anno, assignNameTable, "rightShiftUnsignedAssign");
+        addIfFound(anno, assignNameTable, "andAssign");
+        addIfFound(anno, assignNameTable, "orAssign");
+        addIfFound(anno, assignNameTable, "xorAssign");
         if (parent instanceof ClassNode) {
             super.visitClass((ClassNode) parent);
         } else if (parent instanceof ConstructorNode) {
@@ -122,9 +141,33 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
         if (expr == null) return null;
         if (expr instanceof BinaryExpression be) {
             int type = be.getOperation().getType();
+            boolean isEqualOperator = removeAssignment(type) != type;
+            // GEP-15: a *Assign rename takes precedence over the base rename for compound-assign tokens.
+            // Routed through ScriptBytecodeAdapter.compoundAssign with the renamed method as both the
+            // assign and fallback name, so the expression value of `x op= y` is the (mutated) receiver
+            // `x`, matching the contract for non-renamed *Assign overloads, rather than the (possible
+            // void/null) return of the renamed method.
+            if (isEqualOperator) {
+                String assignOldName = getAssignOperationName(type);
+                if (assignOldName != null && assignNameTable.containsKey(assignOldName)) {
+                    Expression left = transform(be.getLeftExpression());
+                    Expression right = transform(be.getRightExpression());
+                    ConstantExpression renamed = new ConstantExpression(assignNameTable.get(assignOldName));
+                    Expression result = new StaticMethodCallExpression(
+                            make(ScriptBytecodeAdapter.class),
+                            "compoundAssign",
+                            new ArgumentListExpression(new Expression[]{
+                                    left,
+                                    right,
+                                    renamed,
+                                    renamed
+                            }));
+                    result.setSourcePosition(be);
+                    return result;
+                }
+            }
             String oldName = getOperationName(type);
             if (nameTable.containsKey(oldName)) {
-                boolean isEqualOperator = removeAssignment(type) != type;
                 Expression left = transform(be.getLeftExpression());
                 Expression right = transform(be.getRightExpression());
                 Expression result = callX(left, nameTable.get(oldName), right);
@@ -138,6 +181,24 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
             ce.getCode().visit(this);
         }
         return expr.transformExpression(this);
+    }
+
+    static String getAssignOperationName(final int op) {
+        return switch (op) {
+            case PLUS_EQUAL                 -> "plusAssign";
+            case MINUS_EQUAL                -> "minusAssign";
+            case MULTIPLY_EQUAL             -> "multiplyAssign";
+            case DIVIDE_EQUAL               -> "divAssign";
+            case REMAINDER_EQUAL            -> "remainderAssign";
+            case POWER_EQUAL                -> "powerAssign";
+            case LEFT_SHIFT_EQUAL           -> "leftShiftAssign";
+            case RIGHT_SHIFT_EQUAL          -> "rightShiftAssign";
+            case RIGHT_SHIFT_UNSIGNED_EQUAL -> "rightShiftUnsignedAssign";
+            case BITWISE_AND_EQUAL          -> "andAssign";
+            case BITWISE_OR_EQUAL           -> "orAssign";
+            case BITWISE_XOR_EQUAL          -> "xorAssign";
+            default                         -> null;
+        };
     }
 
     @Override

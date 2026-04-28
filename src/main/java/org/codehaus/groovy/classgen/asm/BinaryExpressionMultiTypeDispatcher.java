@@ -332,6 +332,15 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         super.evaluateBinaryExpressionWithAssignment(method, binExp);
     }
 
+    @Override
+    protected void evaluateCompoundAssign(final String assignName, final String baseName, final BinaryExpression binExp) {
+        // GEP-15: keep the primitive-int/long/float/double fast paths for int i += j etc.;
+        // they cannot have a *Assign override anyway since primitives are excluded.
+        if (doAssignmentToArray(binExp)) return;
+        if (doAssignmentToLocalVariable(baseName, binExp)) return;
+        super.evaluateCompoundAssign(assignName, baseName, binExp);
+    }
+
     private boolean doAssignmentToLocalVariable(final String method, final BinaryExpression binExp) {
         Expression left = binExp.getLeftExpression();
         if (left instanceof VariableExpression ve) {
