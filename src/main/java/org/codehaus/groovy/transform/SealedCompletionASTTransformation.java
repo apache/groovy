@@ -52,11 +52,11 @@ public class SealedCompletionASTTransformation extends AbstractASTTransformation
         if (!SEALED_TYPE.equals(anno.getClassNode())) return;
 
         if (parent instanceof ClassNode) {
-            addDetectedSealedClasses((ClassNode) parent);
+            addDetectedSealedClasses((ClassNode) parent, anno);
         }
     }
 
-    private void addDetectedSealedClasses(ClassNode node) {
+    private void addDetectedSealedClasses(ClassNode node, AnnotationNode anno) {
         boolean sealed = Boolean.TRUE.equals(node.getNodeMetaData(SEALED_CLASS));
         List<ClassNode> permitted = node.getPermittedSubclasses();
         if (!sealed || !permitted.isEmpty() || node.getModule() == null) return;
@@ -70,11 +70,11 @@ public class SealedCompletionASTTransformation extends AbstractASTTransformation
                 }
             }
         }
+        if (permitted.isEmpty()) return;
         List<Expression> names = new ArrayList<>();
         for (ClassNode next : permitted) {
             names.add(classX(ClassHelper.make(next.getName())));
         }
-        AnnotationNode an = node.getAnnotations(SEALED_TYPE).get(0);
-        an.addMember("permittedSubclasses", new ListExpression(names));
+        anno.addMember("permittedSubclasses", new ListExpression(names));
     }
 }

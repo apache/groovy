@@ -177,6 +177,60 @@ final class ASTTransformationCustomizerTest {
         '''
     }
 
+    @Test
+    void testForAnnotationSealed() {
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(*ASTTransformationCustomizer.forAnnotation(Sealed))
+        def shell = new GroovyShell(config)
+        def result = shell.evaluate '''
+            class Shape { }
+            class Circle extends Shape { }
+            class Square extends Shape { }
+            [Shape, Circle, Square]
+        '''
+        assert result[0].permittedSubclasses*.simpleName.toSet() == ['Circle', 'Square'] as Set
+    }
+
+    @Test
+    void testForAnnotationWithSingleTransform() {
+        // single-transform annotations should also work via the factory
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(*ASTTransformationCustomizer.forAnnotation(Log))
+        def shell = new GroovyShell(config)
+        def result = shell.evaluate '''
+            class MyClass { }
+            new MyClass()
+        '''
+        assert result.log.class == java.util.logging.Logger
+    }
+
+    @Test
+    void testForAnnotationCollector() {
+        // @AutoExternalize is an @AnnotationCollector bundling @ExternalizeMethods + @ExternalizeVerifier
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(*ASTTransformationCustomizer.forAnnotation(AutoExternalize))
+        def shell = new GroovyShell(config)
+        def result = shell.evaluate '''
+            class Person {
+                String first, last
+            }
+            new Person(first: 'a', last: 'b')
+        '''
+        assert result instanceof Externalizable
+    }
+
+    @Test
+    void testForAnnotationWithParams() {
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(*ASTTransformationCustomizer.forAnnotation([value: 'logger'], Log))
+        def shell = new GroovyShell(config)
+        def result = shell.evaluate '''
+            class MyClass { }
+            new MyClass()
+        '''
+        assert result.logger.class == java.util.logging.Logger
+    }
+
     //--------------------------------------------------------------------------
 
     @Test
