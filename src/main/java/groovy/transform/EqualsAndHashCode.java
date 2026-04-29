@@ -227,7 +227,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.EqualsAndHashCodeASTStubber",
+        "org.codehaus.groovy.transform.EqualsAndHashCodeASTTransformation"
+})
 public @interface EqualsAndHashCode {
     /**
      * List of property names (and field names if includeFields is true) to exclude from the equals and hashCode calculations.

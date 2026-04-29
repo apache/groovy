@@ -197,10 +197,20 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     @SuppressWarnings('ClassForName')
     private static Class<ASTTransformation> findASTTransformationClass(Class<? extends Annotation> anAnnotationClass, ClassLoader transformationClassLoader) {
         List<Class<ASTTransformation>> classes = findASTTransformationClasses(anAnnotationClass, transformationClassLoader)
-        if (classes.size() > 1) {
-            throw new IllegalArgumentException("AST transformation customizer doesn't support AST transforms with multiple classes; use ASTTransformationCustomizer.forAnnotation(...) to obtain one customizer per transform class")
+        if (classes.size() == 1) return classes[0]
+        // Multi-class annotation: pick the authoritative (non-CONVERSION) transform.
+        // Shape C joint-compile-aware annotations pair a CONVERSION-phase stubber
+        // with a later authoritative pass; the customizer mechanism doesn't fire
+        // CONVERSION-phase transforms in pure-Groovy compilation (no invoker
+        // exists outside JavaAwareCompilationUnit), so the authoritative one is
+        // the meaningful choice for a single-customizer construction. Callers
+        // wanting all transform classes (e.g. for joint-compile setups) should
+        // use forAnnotation(...) which returns the full list.
+        Class<ASTTransformation> authoritative = classes.find { Class<ASTTransformation> c ->
+            GroovyASTTransformation gat = c.getAnnotation(GroovyASTTransformation)
+            gat == null || gat.phase() != CompilePhase.CONVERSION
         }
-        classes[0]
+        return authoritative ?: classes[0]
     }
 
     @SuppressWarnings('ClassForName')

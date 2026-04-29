@@ -82,6 +82,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         ClassNode declaringClass = nodes[1].declaringClass
         ClassNode parentClass = field.type
 
+        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
+        // the conflict checks in addAddListener / addRemoveListener / etc.
+        // catch only genuine user-written method conflicts, not the stubber's
+        // own placeholders. Use removeMethod() rather than removeIf() on the
+        // list, since ClassNode keeps a parallel name->methods map.
+        def stubs = declaringClass.methods.findAll { org.codehaus.groovy.transform.StubberSupport.isStub(it) }
+        stubs.each { declaringClass.removeMethod(it) }
+
         boolean isCollection = parentClass.isDerivedFrom(COLLECTION_TYPE) || parentClass.implementsInterface(COLLECTION_TYPE)
 
         if (!isCollection) {

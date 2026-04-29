@@ -154,7 +154,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.SortableASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.SortableASTStubber",
+        "org.codehaus.groovy.transform.SortableASTTransformation"
+})
 public @interface Sortable {
     /**
      * Property names to include in the comparison algorithm.

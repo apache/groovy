@@ -45,7 +45,7 @@ class LocalASTTransformTest extends GroovyShellTestCase {
 
             import org.codehaus.groovy.control.CompilePhase
 
-            @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
+            @GroovyASTTransformation(phase = CompilePhase.PARSING)
             public class LocalTransformASTTransformation extends AbstractASTTransformation {
                 void visit(org.codehaus.groovy.ast.ASTNode[] nodes, org.codehaus.groovy.control.SourceUnit source) {}
             }
@@ -68,7 +68,7 @@ class LocalASTTransformTest extends GroovyShellTestCase {
 
                 import org.codehaus.groovy.control.CompilePhase
 
-                @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
+                @GroovyASTTransformation(phase = CompilePhase.PARSING)
                 public class LocalTransformASTTransformation1 extends AbstractASTTransformation {
                     void visit(org.codehaus.groovy.ast.ASTNode[] nodes, org.codehaus.groovy.control.SourceUnit source) {}
                 }
@@ -79,7 +79,7 @@ class LocalASTTransformTest extends GroovyShellTestCase {
 
                         import org.codehaus.groovy.control.CompilePhase
 
-                        @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
+                        @GroovyASTTransformation(phase = CompilePhase.PARSING)
                         public class LocalTransformASTTransformation2 extends AbstractASTTransformation {
                             void visit(org.codehaus.groovy.ast.ASTNode[] nodes, org.codehaus.groovy.control.SourceUnit source) {}
                         }

@@ -167,12 +167,22 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingHashCode = hasDeclaredMethod(cNode, HASH_CODE, 0);
+        // GEP-21 Shape C: a stubber may have inserted a placeholder hashCode at
+        // CONVERSION so the @EqualsAndHashCode-generated override appears in
+        // the joint compilation stub. Treat that placeholder as "not yet
+        // generated" so we replace its body below.
+        MethodNode stubberHashCodePlaceholder = null;
         if (hasExistingHashCode) {
             // no point in the private method if one with that name already exists
             if (hasDeclaredMethod(cNode, UNDER_HASH_CODE, 0)) return;
-            // an existing generated method also takes precedence
             MethodNode hashCode = cNode.getDeclaredMethod(HASH_CODE, Parameter.EMPTY_ARRAY);
-            if (AnnotatedNodeUtils.isGenerated(hashCode)) return;
+            if (StubberSupport.isStub(hashCode)) {
+                stubberHashCodePlaceholder = hashCode;
+                hasExistingHashCode = false;
+            } else if (AnnotatedNodeUtils.isGenerated(hashCode)) {
+                // an existing non-stub generated method also takes precedence
+                return;
+            }
         }
 
         final BlockStatement body = new BlockStatement();
@@ -190,13 +200,18 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, useGetter));
         }
 
-        addGeneratedMethod(cNode,
-                hasExistingHashCode ? UNDER_HASH_CODE : HASH_CODE,
-                hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.int_TYPE,
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                body);
+        if (stubberHashCodePlaceholder != null) {
+            stubberHashCodePlaceholder.setCode(body);
+            StubberSupport.clearStub(stubberHashCodePlaceholder);
+        } else {
+            addGeneratedMethod(cNode,
+                    hasExistingHashCode ? UNDER_HASH_CODE : HASH_CODE,
+                    hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
+                    ClassHelper.int_TYPE,
+                    Parameter.EMPTY_ARRAY,
+                    ClassNode.EMPTY_ARRAY,
+                    body);
+        }
     }
 
     private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
@@ -321,12 +336,22 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingEquals = hasDeclaredMethod(cNode, EQUALS, 1);
+        // GEP-21 Shape C: a stubber may have inserted a placeholder equals at
+        // CONVERSION so the @EqualsAndHashCode-generated override appears in
+        // the joint compilation stub. Treat that placeholder as "not yet
+        // generated" so we replace its body below.
+        MethodNode stubberEqualsPlaceholder = null;
         if (hasExistingEquals) {
             // no point in the private method if one with that name already exists
             if (hasDeclaredMethod(cNode, UNDER_EQUALS, 1)) return;
-            // an existing generated method also takes precedence
             MethodNode equals = findDeclaredMethod(cNode, EQUALS, 1);
-            if (AnnotatedNodeUtils.isGenerated(equals)) return;
+            if (StubberSupport.isStub(equals)) {
+                stubberEqualsPlaceholder = equals;
+                hasExistingEquals = false;
+            } else if (AnnotatedNodeUtils.isGenerated(equals)) {
+                // an existing non-stub generated method also takes precedence
+                return;
+            }
         }
         if (hasExistingEquals && hasDeclaredMethod(cNode, UNDER_EQUALS, 1)) return;
 
@@ -410,13 +435,20 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // default
         body.addStatement(returnS(constX(Boolean.TRUE,true)));
 
-        MethodNode equal = addGeneratedMethod(cNode,
-                hasExistingEquals ? UNDER_EQUALS : EQUALS,
-                hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.boolean_TYPE,
-                params(param(OBJECT_TYPE, other.getName())),
-                ClassNode.EMPTY_ARRAY,
-                body);
+        MethodNode equal;
+        if (stubberEqualsPlaceholder != null) {
+            stubberEqualsPlaceholder.setCode(body);
+            StubberSupport.clearStub(stubberEqualsPlaceholder);
+            equal = stubberEqualsPlaceholder;
+        } else {
+            equal = addGeneratedMethod(cNode,
+                    hasExistingEquals ? UNDER_EQUALS : EQUALS,
+                    hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
+                    ClassHelper.boolean_TYPE,
+                    params(param(OBJECT_TYPE, other.getName())),
+                    ClassNode.EMPTY_ARRAY,
+                    body);
+        }
         // don't null check this: prefer false to IllegalArgumentException
         NullCheckASTTransformation.markAsProcessed(equal);
     }

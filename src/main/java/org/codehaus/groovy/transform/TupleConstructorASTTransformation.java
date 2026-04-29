@@ -132,6 +132,10 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
 
         if (parent instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
+            // GEP-21 Shape C: discard any stubber-emitted placeholder constructors
+            // (added at CONVERSION so they appear in the joint-compilation stub).
+            // The full transform below is authoritative for the runtime surface.
+            cNode.getDeclaredConstructors().removeIf(StubberSupport::isStub);
             boolean includeFields = memberHasValue(anno, "includeFields", Boolean.TRUE);
             boolean includeProperties = !memberHasValue(anno, "includeProperties", Boolean.FALSE);
             boolean includeSuperFields = memberHasValue(anno, "includeSuperFields", Boolean.TRUE);
@@ -174,33 +178,90 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
     }
 
+    /**
+     * Result of {@link #selectTupleProperties}: the super-class properties
+     * and self properties that pass the annotation's filters
+     * (includes / excludes / allNames / includeProperties / includeFields /
+     * includeSuperProperties / includeSuperFields / allProperties).
+     *
+     * <p>{@code superList} and {@code list} are in source-declaration order
+     * (with super first), suitable for body iteration that needs to know
+     * super vs. self membership. {@code ordered} is the constructor
+     * parameter order — concatenation of super + self with the
+     * {@code includes}-attribute reordering applied if {@code includes} is
+     * non-null.
+     *
+     * <p>Both the full transform's
+     * {@link #createConstructor(AbstractASTTransformation, AnnotationNode, ClassNode, boolean, boolean, boolean, boolean, List, List, boolean, boolean, SourceUnit, PropertyHandler, ClosureExpression, ClosureExpression)}
+     * and {@code TupleConstructorASTStubber} consume the same selection so
+     * the joint-compilation stub's constructor signature is a strict subset
+     * of the runtime's, never a superset.
+     */
+    public record SelectedTupleProperties(List<PropertyNode> superList, List<PropertyNode> list, List<PropertyNode> ordered) {}
+
+    /**
+     * Resolves the property nodes the {@code @TupleConstructor} runtime
+     * transform would use as constructor parameters. Honours
+     * {@code includes}, {@code excludes}, {@code allNames},
+     * {@code includeProperties}, {@code includeFields},
+     * {@code includeSuperProperties}, {@code includeSuperFields}, and
+     * {@code allProperties} attributes the same way the full transform does
+     * so the joint-compilation stubber stays in lockstep.
+     */
+    public static SelectedTupleProperties selectTupleProperties(
+            final AbstractASTTransformation xform, final ClassNode cNode, final AnnotationNode anno) {
+        boolean includeFields = xform.memberHasValue(anno, "includeFields", Boolean.TRUE);
+        boolean includeProperties = !xform.memberHasValue(anno, "includeProperties", Boolean.FALSE);
+        boolean includeSuperFields = xform.memberHasValue(anno, "includeSuperFields", Boolean.TRUE);
+        boolean includeSuperProperties = xform.memberHasValue(anno, "includeSuperProperties", Boolean.TRUE);
+        boolean allProperties = xform.memberHasValue(anno, "allProperties", Boolean.TRUE);
+        List<String> excludes = xform.getMemberStringList(anno, "excludes");
+        List<String> includes = xform.getMemberStringList(anno, "includes");
+        boolean allNames = xform.memberHasValue(anno, "allNames", Boolean.TRUE);
+
+        boolean includePseudoGetters = false, includePseudoSetters = allProperties, skipReadOnly = true;
+        Set<String> names = new HashSet<>();
+        List<PropertyNode> rawSuper;
+        if (includeSuperProperties || includeSuperFields) {
+            rawSuper = getAllProperties(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, includePseudoGetters, includePseudoSetters, /*super*/true, skipReadOnly);
+        } else {
+            rawSuper = new ArrayList<>();
+        }
+        List<PropertyNode> rawSelf = getAllProperties(names, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, /*super*/false, skipReadOnly);
+
+        List<PropertyNode> filteredSuper = new ArrayList<>(rawSuper.size());
+        for (PropertyNode p : rawSuper) {
+            if (!shouldSkipUndefinedAware(p, excludes, includes, allNames)) filteredSuper.add(p);
+        }
+        List<PropertyNode> filteredSelf = new ArrayList<>(rawSelf.size());
+        for (PropertyNode p : rawSelf) {
+            if (!shouldSkipUndefinedAware(p, excludes, includes, allNames)) filteredSelf.add(p);
+        }
+        List<PropertyNode> ordered = new ArrayList<>(filteredSuper.size() + filteredSelf.size());
+        ordered.addAll(filteredSuper);
+        ordered.addAll(filteredSelf);
+        if (includes != null) {
+            ordered.sort(Comparator.comparingInt(p -> includes.indexOf(p.getName())));
+        }
+        return new SelectedTupleProperties(filteredSuper, filteredSelf, ordered);
+    }
+
     private static void createConstructor(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final boolean includeFields,
                                           final boolean includeProperties, final boolean includeSuperFields, final boolean includeSuperProperties,
                                           final List<String> excludes, final List<String> includes, final boolean allNames, final boolean allProperties,
                                           final SourceUnit sourceUnit, final PropertyHandler handler, final ClosureExpression pre, final ClosureExpression post) {
         boolean namedVariant = xform.memberHasValue(anno, "namedVariant", Boolean.TRUE);
         boolean callSuper = xform.memberHasValue(anno, "callSuper", Boolean.TRUE);
-        DefaultsMode defaultsMode = maybeDefaultsMode(anno, "defaultsMode");
-        if (defaultsMode == null) {
-            boolean defaults = anno.getMember("defaults") == null
-                    || !xform.memberHasValue(anno, "defaults", Boolean.FALSE);
-            defaultsMode = defaults ? ON : OFF;
-        }
+        DefaultsMode defaultsMode = resolveDefaultsMode(anno, xform);
         boolean force = xform.memberHasValue(anno, "force", Boolean.TRUE);
         boolean makeImmutable = makeImmutable(cNode);
 
         // no processing if explicit constructor(s) found, unless forced or ImmutableBase is in play
         if (!force && !makeImmutable && hasExplicitConstructor(null, cNode)) return;
 
-        boolean includePseudoGetters = false, includePseudoSetters = allProperties, skipReadOnly = true;
-        Set<String> names = new HashSet<>();
-        List<PropertyNode> superList;
-        if (includeSuperProperties || includeSuperFields) {
-            superList = getAllProperties(names, cNode.getSuperClass(), includeSuperProperties, includeSuperFields, includePseudoGetters, includePseudoSetters, /*super*/true, skipReadOnly);
-        } else {
-            superList = new ArrayList<>();
-        }
-        List<PropertyNode> list = getAllProperties(names, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, /*super*/false, skipReadOnly);
+        SelectedTupleProperties selected = selectTupleProperties(xform, cNode, anno);
+        List<PropertyNode> superList = selected.superList();
+        List<PropertyNode> list = selected.list();
 
         List<Parameter> params = new ArrayList<>();
         List<Expression> superParams = new ArrayList<>();
@@ -222,18 +283,17 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         boolean specialNamedArgCase = (superList.isEmpty() && ImmutableASTTransformation.isSpecialNamedArgCase(list, defaultsMode == OFF))
                 || (list.isEmpty() && ImmutableASTTransformation.isSpecialNamedArgCase(superList, defaultsMode == OFF));
 
+        // Build body statements iterating super then self in source order;
+        // parameter signature comes from selected.ordered() (already sorted
+        // per the includes attribute by the helper).
         for (PropertyNode pNode : superList) {
             String name = pNode.getName();
-            FieldNode fNode = pNode.getField();
-            if (!shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) {
-                params.add(createParam(fNode, name, defaultsMode, xform, makeImmutable));
-                if (callSuper) {
-                    superParams.add(varX(name));
-                } else if (!superInPre && !specialNamedArgCase) {
-                    Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
-                    if (propInit != null) {
-                        body.addStatement(propInit);
-                    }
+            if (callSuper) {
+                superParams.add(varX(name));
+            } else if (!superInPre && !specialNamedArgCase) {
+                Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
+                if (propInit != null) {
+                    body.addStatement(propInit);
                 }
             }
         }
@@ -244,27 +304,27 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             body.addStatements(preBody.getStatements());
         }
         for (PropertyNode pNode : list) {
-            String name = pNode.getName();
-            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
             if (propInit != null) {
                 body.addStatement(propInit);
             }
+        }
+        if (post != null) {
+            body.addStatement(post.getCode());
+        }
+
+        // Parameter signature in the order the runtime will use it: super
+        // properties first, then self, with includes-attribute ordering
+        // applied by the helper.
+        for (PropertyNode pNode : selected.ordered()) {
             FieldNode fNode = pNode.getField();
-            Parameter param = createParam(fNode, name, defaultsMode, xform, makeImmutable);
+            Parameter param = createParam(fNode, pNode.getName(), defaultsMode, xform, makeImmutable);
             if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
                 param.addAnnotations(pNode.getAnnotations());
                 param.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
                 fNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             }
             params.add(param);
-        }
-        if (post != null) {
-            body.addStatement(post.getCode());
-        }
-
-        if (includes != null) {
-            params.sort(Comparator.comparingInt(p -> includes.indexOf(p.getName())));
         }
 
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
@@ -383,6 +443,22 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         boolean pojo = !cNode.getAnnotations(POJO_TYPE).isEmpty();
         block.addStatement(checkPropNamesS(namedArgs, pojo, props));
         return block;
+    }
+
+    /**
+     * Resolves the effective {@code DefaultsMode} for a {@code @TupleConstructor}-style
+     * annotation, honouring {@code defaultsMode} first and falling back to the
+     * legacy {@code defaults} boolean. Shared between the full transform and
+     * {@link TupleConstructorASTStubber}.
+     */
+    static DefaultsMode resolveDefaultsMode(final AnnotationNode anno, final AbstractASTTransformation xform) {
+        DefaultsMode mode = maybeDefaultsMode(anno, "defaultsMode");
+        if (mode == null) {
+            boolean defaults = anno.getMember("defaults") == null
+                    || !xform.memberHasValue(anno, "defaults", Boolean.FALSE);
+            mode = defaults ? ON : OFF;
+        }
+        return mode;
     }
 
     private static DefaultsMode maybeDefaultsMode(final AnnotationNode node, final String name) {

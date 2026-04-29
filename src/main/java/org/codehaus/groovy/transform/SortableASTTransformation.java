@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -122,16 +123,8 @@ public class SortableASTTransformation extends AbstractASTTransformation {
             addError(MY_TYPE_NAME + " cannot be applied to interface " + classNode.getName(), anno);
         }
         List<PropertyNode> properties = findProperties(anno, classNode, includes, excludes, allProperties, includeSuperProperties, allNames);
-        implementComparable(classNode);
 
-        addGeneratedMethod(classNode,
-                "compareTo",
-                ACC_PUBLIC,
-                ClassHelper.int_TYPE,
-                params(param(newClass(classNode), OTHER)),
-                ClassNode.EMPTY_ARRAY,
-                createCompareToMethodBody(properties, reversed)
-        );
+        addOrUpdateCompareTo(classNode, properties, reversed);
 
         for (PropertyNode property : properties) {
             createComparatorFor(classNode, property, reversed);
@@ -139,9 +132,44 @@ public class SortableASTTransformation extends AbstractASTTransformation {
         new VariableScopeVisitor(sourceUnit, true).visitClass(classNode);
     }
 
-    private static void implementComparable(ClassNode classNode) {
+    /**
+     * Ensures {@code classNode} implements {@code Comparable<Self>} and adds a
+     * {@code compareTo(Self)} method with {@code body} when none is already
+     * declared. Returns the newly added method, or {@code null} if a matching
+     * {@code compareTo} was already present.
+     *
+     * <p>Shared between {@link SortableASTStubber} (CONVERSION-phase placeholder
+     * body) and the full transform here at CANONICALIZATION (real body).
+     */
+    static MethodNode addComparableSurface(final ClassNode classNode, final Statement body) {
         if (!classNode.implementsInterface(COMPARABLE_TYPE)) {
             classNode.addInterface(makeClassSafeWithGenerics(Comparable.class, classNode));
+        }
+        Parameter[] parameters = params(param(newClass(classNode), OTHER));
+        if (classNode.getDeclaredMethod("compareTo", parameters) != null) {
+            return null;
+        }
+        return addGeneratedMethod(classNode,
+                "compareTo",
+                ACC_PUBLIC,
+                ClassHelper.int_TYPE,
+                parameters,
+                ClassNode.EMPTY_ARRAY,
+                body);
+    }
+
+    private static void addOrUpdateCompareTo(final ClassNode classNode, final List<PropertyNode> properties, final boolean reversed) {
+        Statement body = createCompareToMethodBody(properties, reversed);
+        if (addComparableSurface(classNode, body) != null) return; // freshly added with the real body
+
+        // GEP-21 Shape C: a stubber piece may have inserted a placeholder
+        // compareTo body during CONVERSION so it appears in the joint
+        // compilation stub. Replace that placeholder with the real body.
+        Parameter[] parameters = params(param(newClass(classNode), OTHER));
+        MethodNode existing = classNode.getDeclaredMethod("compareTo", parameters);
+        if (StubberSupport.isStub(existing)) {
+            existing.setCode(body);
+            StubberSupport.clearStub(existing);
         }
     }
 

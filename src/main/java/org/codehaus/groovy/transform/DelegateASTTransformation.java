@@ -141,6 +141,17 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
 
         if (delegate != null) {
+            // GEP-21 Shape C: discard any stubber-emitted placeholder methods
+            // on the owner so the existing-method filter below sees the
+            // genuine user-declared surface and we add fresh real methods
+            // without tripping duplicate-method detection. Use removeMethod()
+            // rather than removeIf() since ClassNode keeps a parallel
+            // name->methods map.
+            List<MethodNode> stubs = new ArrayList<>();
+            for (MethodNode m : delegate.owner.getMethods()) {
+                if (StubberSupport.isStub(m)) stubs.add(m);
+            }
+            stubs.forEach(delegate.owner::removeMethod);
             if (isObjectType(delegate.type) || isGroovyObjectType(delegate.type)) {
                 addError(MY_TYPE_NAME + " " + delegate.origin + " '" + delegate.name + "' has an inappropriate type: " + delegate.type.getName() +
                         ". Please add an explicit type but not java.lang.Object or groovy.lang.GroovyObject.", parent);
@@ -217,7 +228,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static Collection<MethodNode> collectMethods(final ClassNode type) {
+    static Collection<MethodNode> collectMethods(final ClassNode type) {
         List<MethodNode> methods = getAllMethods(type);
 
         // GROOVY-4320, GROOVY-4516
@@ -261,7 +272,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         return methods;
     }
 
-    private static Collection<MethodNode> filterMethods(final Collection<MethodNode> methods, final DelegateDescription delegate, final boolean allNames, final boolean includeDeprecated) {
+    static Collection<MethodNode> filterMethods(final Collection<MethodNode> methods, final DelegateDescription delegate, final boolean allNames, final boolean includeDeprecated) {
         Set<String> groovyObjectMethods = ClassHelper.GROOVY_OBJECT_TYPE.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
         Set<String> javaObjectMethods = ClassHelper.OBJECT_TYPE.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
         Set<String> ownClassMethods = delegate.owner.getMethods().stream().map(MethodNode::getTypeDescriptor).collect(toSet());
@@ -378,7 +389,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static void extractAccessorInfo(final ClassNode owner, final String name, final Reference<Boolean> willHaveGetAccessor, final Reference<Boolean> willHaveIsAccessor) {
+    static void extractAccessorInfo(final ClassNode owner, final String name, final Reference<Boolean> willHaveGetAccessor, final Reference<Boolean> willHaveIsAccessor) {
         boolean hasGetAccessor = owner.getGetterMethod(getGetterName(name)) != null;
         boolean hasIsAccessor  = owner.getGetterMethod(getGetterName(name, Boolean.TYPE)) != null;
         PropertyNode prop = owner.getProperty(name);
@@ -386,7 +397,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         willHaveIsAccessor.set(hasIsAccessor || (prop != null && !hasGetAccessor && isPrimitiveBoolean(prop.getOriginType())));
     }
 
-    private static boolean shouldSkipPropertyMethod(final PropertyNode prop, final String methodName, final List<String> excludes, final List<String> includes, final boolean allNames) {
+    static boolean shouldSkipPropertyMethod(final PropertyNode prop, final String methodName, final List<String> excludes, final List<String> includes, final boolean allNames) {
         String propertyName = prop.getName();
         return ((!allNames && deemedInternal(prop))
                     || excludes != null && (excludes.contains(propertyName) || excludes.contains(methodName))
@@ -453,7 +464,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
     }
 
-    private static List<String> getGenericPlaceholderNames(final MethodNode candidate) {
+    static List<String> getGenericPlaceholderNames(final MethodNode candidate) {
         GenericsType[] candidateGenericsTypes = candidate.getGenericsTypes();
         List<String> names = new ArrayList<>();
         if (candidateGenericsTypes != null) {
@@ -464,7 +475,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         return names;
     }
 
-    private static String getParamName(final Parameter[] params, final int i, final String fieldName) {
+    static String getParamName(final Parameter[] params, final int i, final String fieldName) {
         String name = params[i].getName();
         while(name.equals(fieldName) || clashesWithOtherParams(name, params, i)) {
             name = "_" + name;

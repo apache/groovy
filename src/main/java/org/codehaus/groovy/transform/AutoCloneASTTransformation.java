@@ -50,6 +50,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
@@ -114,6 +115,16 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
 
         if (parent instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
+            // GEP-21 Shape C: discard any stubber-emitted placeholder methods
+            // (e.g. the placeholder clone()) so the create*Clone paths add
+            // fresh real methods without tripping duplicate-method detection.
+            // Use removeMethod() rather than removeIf() on the list, since
+            // ClassNode keeps a parallel name->methods map.
+            List<MethodNode> stubs = new ArrayList<>();
+            for (MethodNode m : cNode.getMethods()) {
+                if (StubberSupport.isStub(m)) stubs.add(m);
+            }
+            stubs.forEach(cNode::removeMethod);
             cNode.addInterface(CLONEABLE_TYPE);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
             AutoCloneStyle style = getStyle(anno, "style");

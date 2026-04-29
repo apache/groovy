@@ -148,6 +148,16 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void addListenerToClass(SourceUnit source, ClassNode classNode) {
+        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
+        // needsPropertyChangeSupport() correctly detects "no existing
+        // user-written support" and the field + real bodies get installed.
+        // Use removeMethod() rather than removeIf() on the list, since
+        // ClassNode keeps a parallel name->methods map.
+        java.util.List<org.codehaus.groovy.ast.MethodNode> stubs = new java.util.ArrayList<>();
+        for (org.codehaus.groovy.ast.MethodNode m : classNode.getMethods()) {
+            if (org.codehaus.groovy.transform.StubberSupport.isStub(m)) stubs.add(m);
+        }
+        stubs.forEach(classNode::removeMethod);
         if (needsPropertyChangeSupport(classNode, source)) {
             addPropertyChangeSupport(classNode);
         }

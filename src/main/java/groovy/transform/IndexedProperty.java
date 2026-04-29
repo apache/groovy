@@ -103,6 +103,9 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.IndexedPropertyASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.IndexedPropertyASTStubber",
+        "org.codehaus.groovy.transform.IndexedPropertyASTTransformation"
+})
 public @interface IndexedProperty {
 }

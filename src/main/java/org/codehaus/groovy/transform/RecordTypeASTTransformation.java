@@ -26,6 +26,7 @@ import groovy.transform.RecordOptions;
 import groovy.transform.RecordTypeMode;
 import groovy.transform.options.PropertyHandler;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
+import org.codehaus.groovy.ast.MethodNode;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -131,7 +132,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
 
     private static final ClassNode ILLEGAL_ARGUMENT = makeWithoutCaching(IllegalArgumentException.class);
     private static final ClassNode NAMED_PARAM_TYPE = make(NamedParam.class);
-    private static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
+    static final ClassNode RECORD_OPTIONS_TYPE = make(RecordOptions.class);
     private static final ClassNode SIMPLE_BEAN_INFO_TYPE = make(SimpleBeanInfo.class);
     private static final ClassNode BEAN_DESCRIPTOR_TYPE = make(BeanDescriptor.class);
     private static final ClassNode COLLECTIONS_TYPE = makeWithoutCaching(Collections.class, false);
@@ -143,14 +144,14 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static final ClassNode METHOD_DESCRIPTOR_ARRAY_TYPE = make(MethodDescriptor[].class);
     private static final ClassNode IMAGE_TYPE = make(Image.class);
 
-    private static final String COMPONENTS = "components";
-    private static final String COPY_WITH = "copyWith";
-    private static final String GET_AT = "getAt";
-    private static final String NAMED_ARGS = "namedArgs";
+    static final String COMPONENTS = "components";
+    static final String COPY_WITH = "copyWith";
+    static final String GET_AT = "getAt";
+    static final String NAMED_ARGS = "namedArgs";
     private static final String RECORD_CLASS_NAME = "java.lang.Record";
-    private static final String SIZE = "size";
-    private static final String TO_LIST = "toList";
-    private static final String TO_MAP = "toMap";
+    static final String SIZE = "size";
+    static final String TO_LIST = "toList";
+    static final String TO_MAP = "toMap";
 
     public static final ClassNode MY_TYPE = makeWithoutCaching(RecordBase.class, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
@@ -202,9 +203,50 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         if (cNode == null || cNode.getAnnotations(MY_TYPE).isEmpty()) return false;
         if (targetBytecode == null || targetBytecode.trim().isEmpty()) return false;
         if (!isAtLeast(targetBytecode, CompilerConfiguration.JDK16)) return false;
-        List<AnnotationNode> opts = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
-        AnnotationNode options = opts.isEmpty() ? null : opts.get(0);
+        AnnotationNode options = getRecordOptions(cNode);
         return getMode(options, "mode") != RecordTypeMode.EMULATE;
+    }
+
+    /** Returns the {@code @RecordOptions} annotation on {@code cNode}, or {@code null}. */
+    static AnnotationNode getRecordOptions(final ClassNode cNode) {
+        List<AnnotationNode> opts = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
+        return opts.isEmpty() ? null : opts.get(0);
+    }
+
+    private static boolean memberIs(final AnnotationNode anno, final String name, final Object value) {
+        if (anno == null) return false;
+        Expression m = anno.getMember(name);
+        return m instanceof ConstantExpression && value.equals(((ConstantExpression) m).getValue());
+    }
+
+    /** Whether the {@code getAt(int)} method should be added per {@code @RecordOptions}. */
+    static boolean shouldAddGetAt(final ClassNode cNode, final AnnotationNode options) {
+        return !memberIs(options, GET_AT, Boolean.FALSE) && !hasDeclaredMethod(cNode, GET_AT, 1);
+    }
+
+    /** Whether the {@code toList()} method should be added per {@code @RecordOptions}. */
+    static boolean shouldAddToList(final ClassNode cNode, final AnnotationNode options) {
+        return !memberIs(options, TO_LIST, Boolean.FALSE) && !hasDeclaredMethod(cNode, TO_LIST, 0);
+    }
+
+    /** Whether the {@code toMap()} method should be added per {@code @RecordOptions}. */
+    static boolean shouldAddToMap(final ClassNode cNode, final AnnotationNode options) {
+        return !memberIs(options, TO_MAP, Boolean.FALSE) && !hasDeclaredMethod(cNode, TO_MAP, 0);
+    }
+
+    /** Whether the {@code size()} method should be added per {@code @RecordOptions}. */
+    static boolean shouldAddSize(final ClassNode cNode, final AnnotationNode options) {
+        return !memberIs(options, SIZE, Boolean.FALSE) && !hasDeclaredMethod(cNode, SIZE, 0);
+    }
+
+    /** Whether the {@code copyWith(Map)} method should be added (opt-in via {@code @RecordOptions}). */
+    static boolean shouldAddCopyWith(final ClassNode cNode, final AnnotationNode options) {
+        return memberIs(options, COPY_WITH, Boolean.TRUE) && !hasDeclaredMethod(cNode, COPY_WITH, 1);
+    }
+
+    /** Whether the {@code components()} method should be added (opt-in via {@code @RecordOptions}). */
+    static boolean shouldAddComponents(final ClassNode cNode, final AnnotationNode options) {
+        return memberIs(options, COMPONENTS, Boolean.TRUE) && !hasDeclaredMethod(cNode, COMPONENTS, 0);
     }
 
     @Override
@@ -226,8 +268,16 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         if (cNode.getNodeMetaData("_RECORD_HEADER") != null) {
             cNode.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
         }
-        List<AnnotationNode> annotations = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
-        AnnotationNode options = annotations.isEmpty() ? null : annotations.get(0);
+        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
+        // the existence checks below (hasDeclaredMethod) see only user-declared
+        // methods and we add the real bodies. Use removeMethod() rather than
+        // removeIf() since ClassNode keeps a parallel name->methods map.
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode m : cNode.getMethods()) {
+            if (StubberSupport.isStub(m)) stubs.add(m);
+        }
+        stubs.forEach(cNode::removeMethod);
+        AnnotationNode options = getRecordOptions(cNode);
         RecordTypeMode mode = getMode(options, "mode");
         String targetBytecode = (sourceUnit != null) ? sourceUnit.getConfiguration().getTargetBytecode() : null;
         String message = (targetBytecode != null)
@@ -314,27 +364,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             if (unsupportedTupleAttribute(tupleConstructor, "includeSuperFields")) return;
         }
 
-        if (options != null && memberHasValue(options, COPY_WITH, Boolean.TRUE) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
-            createCopyWith(cNode, pList);
-        }
-
-        if ((options == null || !memberHasValue(options, GET_AT, Boolean.FALSE)) && !hasDeclaredMethod(cNode, GET_AT, 1)) {
-            createGetAt(cNode, pList);
-        }
-
-        if ((options == null || !memberHasValue(options, TO_LIST, Boolean.FALSE)) && !hasDeclaredMethod(cNode, TO_LIST, 0)) {
-            createToList(cNode, pList);
-        }
-
-        if ((options == null || !memberHasValue(options, TO_MAP, Boolean.FALSE)) && !hasDeclaredMethod(cNode, TO_MAP, 0)) {
-            createToMap(cNode, pList);
-        }
-
-        if (options != null && memberHasValue(options, COMPONENTS, Boolean.TRUE) && !hasDeclaredMethod(cNode, COMPONENTS, 0)) {
-            createComponents(cNode, pList);
-        }
-
-        if ((options == null || !memberHasValue(options, SIZE, Boolean.FALSE)) && !hasDeclaredMethod(cNode, SIZE, 0)) {
+        if (shouldAddCopyWith(cNode, options))   createCopyWith(cNode, pList);
+        if (shouldAddGetAt(cNode, options))      createGetAt(cNode, pList);
+        if (shouldAddToList(cNode, options))     createToList(cNode, pList);
+        if (shouldAddToMap(cNode, options))      createToMap(cNode, pList);
+        if (shouldAddComponents(cNode, options)) createComponents(cNode, pList);
+        if (shouldAddSize(cNode, options)) {
             addGeneratedMethod(cNode, SIZE, ACC_PUBLIC | ACC_FINAL, int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, returnS(constX(pList.size(), true)));
         }
     }

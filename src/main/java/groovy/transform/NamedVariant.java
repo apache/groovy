@@ -102,6 +102,13 @@ import java.lang.annotation.Target;
  * The generated method/constructor retains the visibility and return type of the original method/constructor
  * but the {@link VisibilityOptions} annotation can be added to customize the visibility. You could have the
  * annotated method/constructor private for instance but have the generated one be public.
+ * <p>
+ * Joint compilation note: the variant exposed to Java callers in the same compilation unit is the
+ * simple all-Map form ({@code returnType methodName(Map namedArgs)}, or {@code ClassName(Map)} for
+ * constructors). Mixed configurations using {@code @NamedParam} or {@code @NamedDelegate} alongside
+ * positional parameters produce a richer positional-plus-Map signature at runtime; the stub form is a
+ * strict subset. Java callers using the all-Map form compile and run; callers needing the
+ * positional-plus-Map form should call from Groovy or supply a hand-written delegating method.
  *
  * @see VisibilityOptions
  * @see NamedParam
@@ -111,7 +118,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.NamedVariantASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.NamedVariantASTStubber",
+        "org.codehaus.groovy.transform.NamedVariantASTTransformation"
+})
 public @interface NamedVariant {
     /**
      * If specified, must match the optional "id" attribute in an applicable {@code VisibilityOptions} annotation.

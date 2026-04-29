@@ -110,7 +110,14 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         Parameter[] params = new Parameter[1];
         params[0] = new Parameter(ClassHelper.int_TYPE, "index");
         body.addStatement(stmt(indexX(varX(fNode), varX(params[0]))));
-        addGeneratedMethod(cNode, makeName(fNode, "get"), getModifiers(fNode), componentType, params, null, body);
+        // GEP-21 Shape C: replace the stubber's placeholder body if present.
+        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod(makeName(fNode, "get"), params);
+        if (StubberSupport.isStub(existing)) {
+            existing.setCode(body);
+            StubberSupport.clearStub(existing);
+        } else {
+            addGeneratedMethod(cNode, makeName(fNode, "get"), getModifiers(fNode), componentType, params, null, body);
+        }
     }
 
     private static void addSetter(FieldNode fNode, ClassNode componentType) {
@@ -120,10 +127,21 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
                 new Parameter(ClassHelper.int_TYPE, "index"),
                 new Parameter(componentType, "value"));
         body.addStatement(assignS(indexX(varX(fNode), varX(theParams[0])), varX(theParams[1])));
-        addGeneratedMethod(cNode, getSetterName(fNode.getName()), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
+        // GEP-21 Shape C: replace the stubber's placeholder body if present.
+        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod(getSetterName(fNode.getName()), theParams);
+        if (StubberSupport.isStub(existing)) {
+            existing.setCode(body);
+            StubberSupport.clearStub(existing);
+        } else {
+            addGeneratedMethod(cNode, getSetterName(fNode.getName()), getModifiers(fNode), ClassHelper.VOID_TYPE, theParams, null, body);
+        }
     }
 
-    private static ClassNode getComponentTypeForList(ClassNode fType) {
+    /**
+     * Returns the component type of a {@code List<T>} field type. Falls back
+     * to {@code Object} for raw lists. Shared with {@link IndexedPropertyASTStubber}.
+     */
+    static ClassNode getComponentTypeForList(ClassNode fType) {
         if (fType.isUsingGenerics() && fType.getGenericsTypes().length == 1) {
             return fType.getGenericsTypes()[0].getType();
         } else {
@@ -131,13 +149,21 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         }
     }
 
-    private static int getModifiers(FieldNode fNode) {
+    /**
+     * Computes the access-modifier bitmask for accessor methods generated
+     * for an indexed-property field. Shared with {@link IndexedPropertyASTStubber}.
+     */
+    static int getModifiers(FieldNode fNode) {
         int mods = ACC_PUBLIC;
         if (fNode.isStatic()) mods |= ACC_STATIC;
         return mods;
     }
 
-    private static String makeName(FieldNode fNode, String prefix) {
+    /**
+     * Builds an accessor method name (e.g. {@code "get" + capitalize(name)}).
+     * Shared with {@link IndexedPropertyASTStubber}.
+     */
+    static String makeName(FieldNode fNode, String prefix) {
         return prefix + capitalize(fNode.getName());
     }
 }

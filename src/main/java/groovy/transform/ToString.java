@@ -257,7 +257,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.ToStringASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.ToStringASTStubber",
+        "org.codehaus.groovy.transform.ToStringASTTransformation"
+})
 public @interface ToString {
     /**
      * List of field and/or property names to exclude from generated toString.

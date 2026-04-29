@@ -303,8 +303,12 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
 
         CompilePhase specifiedCompilePhase = transformationClass.phase();
-        if (specifiedCompilePhase.getPhaseNumber() < CompilePhase.SEMANTIC_ANALYSIS.getPhaseNumber()) {
-            String error = annotation.getClassNode().getName() + " is defined to be run in compile phase " + specifiedCompilePhase + ". Local AST transformations must run in SEMANTIC_ANALYSIS or later!";
+        // CONVERSION-phase local transforms only fire during joint compilation
+        // (JavaAwareCompilationUnit invokes them before stub generation). They
+        // are silently inert in pure-Groovy compilation, so authors of split
+        // transforms must ensure a later piece is authoritative.
+        if (specifiedCompilePhase.getPhaseNumber() < CompilePhase.CONVERSION.getPhaseNumber()) {
+            String error = annotation.getClassNode().getName() + " is defined to be run in compile phase " + specifiedCompilePhase + ". Local AST transformations must run in CONVERSION or later!";
             source.getErrorCollector().addError(new SimpleMessage(error, source));
             return;
         }

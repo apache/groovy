@@ -238,7 +238,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoCloneASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.AutoCloneASTStubber",
+        "org.codehaus.groovy.transform.AutoCloneASTTransformation"
+})
 public @interface AutoClone {
     /**
      * Comma separated list of property (and/or field) names to exclude from cloning.

@@ -141,6 +141,16 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
 
     private void addListenerToClass(SourceUnit source, ClassNode classNode) {
+        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
+        // needsVetoableChangeSupport() correctly detects "no existing
+        // user-written support" and the real bodies get installed.
+        // Use removeMethod() rather than removeIf() on the list, since
+        // ClassNode keeps a parallel name->methods map.
+        java.util.List<org.codehaus.groovy.ast.MethodNode> stubs = new java.util.ArrayList<>();
+        for (org.codehaus.groovy.ast.MethodNode m : classNode.getMethods()) {
+            if (org.codehaus.groovy.transform.StubberSupport.isStub(m)) stubs.add(m);
+        }
+        stubs.forEach(classNode::removeMethod);
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
         for (PropertyNode propertyNode : classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())

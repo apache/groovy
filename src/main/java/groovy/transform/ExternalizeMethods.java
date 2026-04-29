@@ -73,7 +73,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.ExternalizeMethodsASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.ExternalizeMethodsASTStubber",
+        "org.codehaus.groovy.transform.ExternalizeMethodsASTTransformation"
+})
 public @interface ExternalizeMethods {
     /**
      * Comma separated list of property names to exclude from externalizing.

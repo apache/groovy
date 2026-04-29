@@ -93,6 +93,20 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         this.context = context;
     }
 
+    /**
+     * Invokes any AST transformations registered for {@code phase} on the given class
+     * using the standard {@code ASTTransformationVisitor} walk. Intended for callers
+     * that need to drive transform invocation outside the standard phase wiring (for
+     * example, {@code JavaAwareCompilationUnit} runs CONVERSION-phase transforms
+     * before the stub generator emits stubs — see GEP-21).
+     */
+    public static void invokeTransformsForClass(final CompilePhase phase, final ASTTransformationsContext context,
+                                                final SourceUnit source, final ClassNode classNode) {
+        ASTTransformationVisitor visitor = new ASTTransformationVisitor(phase, context);
+        visitor.source = source;
+        visitor.visitClass(classNode);
+    }
+
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
@@ -247,11 +261,10 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     break;
 
                 default:
-                    compilationUnit.addPhaseOperation((final SourceUnit source, final GeneratorContext ignore, final ClassNode classNode) -> {
-                        ASTTransformationVisitor visitor = new ASTTransformationVisitor(phase, context);
-                        visitor.source = source;
-                        visitor.visitClass(classNode);
-                    }, phase.getPhaseNumber());
+                    compilationUnit.addPhaseOperation(
+                            (final SourceUnit source, final GeneratorContext gc, final ClassNode classNode) ->
+                                    invokeTransformsForClass(phase, context, source, classNode),
+                            phase.getPhaseNumber());
             }
         }
     }

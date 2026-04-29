@@ -208,6 +208,13 @@ import java.lang.annotation.Target;
  * combining with other AST transforms which create constructors (e.g. {@code @InheritConstructors});
  * the order in which the particular transforms are processed becomes important in that case.
  * See the {@code defaults} attribute for further details about customizing this behavior.</li>
+ * <li>Under joint compilation, the constructor surface visible to Java callers is built from
+ * directly-declared properties (and fields, with {@code includeFields=true}). Trait-injected and
+ * super-class properties (used with {@code includeSuperProperties=true} or {@code includeSuperFields=true})
+ * are not visible at stub generation time; the stub's constructor signatures are a strict subset
+ * of the runtime's in those configurations. Calls using only the directly-declared property prefix
+ * compile and run; calls relying on trait or super positions need to be made from Groovy or via
+ * a hand-written constructor.</li>
  * </ul>
  *
  * @see PropertyOptions
@@ -217,7 +224,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.TupleConstructorASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.TupleConstructorASTStubber",
+        "org.codehaus.groovy.transform.TupleConstructorASTTransformation"
+})
 public @interface TupleConstructor {
     /**
      * List of field and/or property names to exclude from the constructor.

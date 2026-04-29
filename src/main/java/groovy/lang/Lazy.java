@@ -148,7 +148,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.LazyASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.LazyASTStubber",
+        "org.codehaus.groovy.transform.LazyASTTransformation"
+})
 public @interface Lazy {
     /**
      * @return if field should be soft referenced instead of hard referenced

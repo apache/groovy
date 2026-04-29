@@ -45,7 +45,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.SingletonASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.SingletonASTStubber",
+        "org.codehaus.groovy.transform.SingletonASTTransformation"
+})
 public @interface Singleton {
     /**
      * @return if this singleton should be lazy

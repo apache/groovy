@@ -59,6 +59,15 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
  * }
  * </pre>
  * so you might not find value in using the builder transform at all. But if you need Java integration or in some cases improved type safety, the {@code @Builder} transform might prove very useful.
+ * <p>
+ * Joint compilation note: not every strategy is exposed to Java callers in the same compilation unit.
+ * {@link DefaultStrategy} (the default) renders the inner builder class, fluent setters, {@code build()},
+ * and the static factory in the stub. {@link SimpleStrategy} with a non-default {@code prefix} (e.g.
+ * {@code prefix = "with"}) renders the chained setters on the buildee. The default-prefix
+ * {@link SimpleStrategy} (where the chained setter would collide with the auto-generated void setter),
+ * {@link InitializerStrategy}, {@link ExternalStrategy}, method-level and constructor-level use, and
+ * {@code forClass} are not currently exposed in the stub — Java callers wanting those paths need to
+ * call from Groovy or hand-write the surface they expect.
  *
  * @see groovy.transform.builder.SimpleStrategy
  * @see groovy.transform.builder.ExternalStrategy
@@ -68,7 +77,10 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.BuilderASTTransformation")
+@GroovyASTTransformationClass({
+        "groovy.transform.builder.BuilderASTStubber",
+        "org.codehaus.groovy.transform.BuilderASTTransformation"
+})
 public @interface Builder {
 
     /**

@@ -102,6 +102,22 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
             return;
         }
 
+        // GEP-21 Shape C: discard any stubber-emitted placeholder Map-variant
+        // for this method/constructor so the createMapVariant duplicate-method
+        // check sees only genuine user-declared overloads.
+        ClassNode declaringClass = mNode.getDeclaringClass();
+        if (declaringClass != null) {
+            if (mNode instanceof ConstructorNode) {
+                declaringClass.getDeclaredConstructors().removeIf(StubberSupport::isStub);
+            } else {
+                java.util.List<MethodNode> stubs = new java.util.ArrayList<>();
+                for (MethodNode m : declaringClass.getMethods()) {
+                    if (StubberSupport.isStub(m)) stubs.add(m);
+                }
+                stubs.forEach(declaringClass::removeMethod);
+            }
+        }
+
         boolean autoDelegate = memberHasValue(anno, "autoDelegate", Boolean.TRUE);
         boolean coerce = memberHasValue(anno, "coerce", Boolean.TRUE);
         Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), "namedArgs");

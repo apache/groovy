@@ -27,11 +27,13 @@ import org.codehaus.groovy.control.AnnotationConstantsVisitor;
 import org.codehaus.groovy.control.ClassNodeResolver;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
+import org.codehaus.groovy.transform.ASTTransformationVisitor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -104,6 +106,18 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             GroovyClassVisitor visitor = new ASTTransformationCollectorCodeVisitor(source, getTransformLoader());
             visitor.visitClass(classNode);
+        }, Phases.CONVERSION);
+
+        // GEP-21: invoke any local AST transforms registered for the CONVERSION phase so
+        // they can contribute to the joint-compilation stub before it is written out.
+        // Uses the standard ASTTransformationVisitor to walk the class (so field-level
+        // and method-level annotations are dispatched to their actual parents, not the
+        // enclosing class).
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            if (!javaSources.isEmpty()) {
+                ASTTransformationVisitor.invokeTransformsForClass(
+                        CompilePhase.CONVERSION, getASTTransformationsContext(), source, classNode);
+            }
         }, Phases.CONVERSION);
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {

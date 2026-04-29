@@ -126,12 +126,23 @@ import java.lang.annotation.Target;
  * if you want the {@code deprecated} attribute to be used). Otherwise, the resulting class would
  * not compile anyway without manually adding in any deprecated methods in the interface.</li>
  * <li>{@code @Delegate} can work in combination with {@code @Lazy} when annotating a field (or property)</li>
+ * <li>Under joint compilation, the delegated method surface visible to Java callers honours the
+ * same {@code includes} / {@code excludes} / {@code includeTypes} / {@code excludeTypes} /
+ * {@code deprecated} / {@code allNames} filters as the runtime, and adds the delegate's
+ * interfaces (when {@code interfaces=true}) to the owner. Two cases need source order or hand
+ * declaration to be reachable from Java: (a) when the delegate type is a Groovy class in the
+ * same compilation unit and gains methods from another transform that runs after stub
+ * generation, and (b) the prefix-overload chain produced from delegate methods that have
+ * default argument values. The runtime is unaffected; the stub is a strict subset.</li>
  * </ul>
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.DelegateASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.DelegateASTStubber",
+        "org.codehaus.groovy.transform.DelegateASTTransformation"
+})
 public @interface Delegate {
     /**
      * @return true if owner class should implement interfaces implemented by delegate type

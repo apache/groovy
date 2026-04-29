@@ -176,12 +176,22 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingToString = hasDeclaredMethod(cNode, TO_STRING, 0);
+        // GEP-21 Shape C: a stubber may have inserted a placeholder toString at
+        // CONVERSION so the @ToString-generated override appears in the joint
+        // compilation stub. Treat that placeholder as "not yet generated" so we
+        // replace its body below.
+        MethodNode stubberPlaceholder = null;
         if (hasExistingToString) {
             // no point in the private method if one with that name already exists
             if (hasDeclaredMethod(cNode, UNDER_TO_STRING, 0)) return;
-            // an existing generated method also takes precedence
             MethodNode toString = cNode.getDeclaredMethod(TO_STRING, Parameter.EMPTY_ARRAY);
-            if (AnnotatedNodeUtils.isGenerated(toString)) return;
+            if (StubberSupport.isStub(toString)) {
+                stubberPlaceholder = toString;
+                hasExistingToString = false;
+            } else if (AnnotatedNodeUtils.isGenerated(toString)) {
+                // an existing non-stub generated method also takes precedence
+                return;
+            }
         }
 
         final BlockStatement body = new BlockStatement();
@@ -199,8 +209,13 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         }
         body.addStatement(returnS(tempToString));
 
-        addGeneratedMethod(cNode, hasExistingToString ? UNDER_TO_STRING : TO_STRING, hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        if (stubberPlaceholder != null) {
+            stubberPlaceholder.setCode(body);
+            StubberSupport.clearStub(stubberPlaceholder);
+        } else {
+            addGeneratedMethod(cNode, hasExistingToString ? UNDER_TO_STRING : TO_STRING, hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
+                    ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
+        }
     }
 
     private static class ToStringElement {

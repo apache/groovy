@@ -111,6 +111,9 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD, ElementType.TYPE})
-@GroovyASTTransformationClass("groovy.beans.BindableASTTransformation")
+@GroovyASTTransformationClass({
+        "groovy.beans.BindableASTStubber",
+        "groovy.beans.BindableASTTransformation"
+})
 public @interface Bindable {
 }

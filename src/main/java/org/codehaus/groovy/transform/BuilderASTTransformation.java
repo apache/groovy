@@ -104,6 +104,21 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
             final BuilderStrategy strategy = createBuilderStrategy(anno, classLoader);
             if (strategy == null) return;
+
+            // GEP-21 Shape C: discard any stubber-emitted placeholders before
+            // the strategy runs — covers the inner builder class added to the
+            // module, the placeholder methods on it, and the static factory
+            // on the buildee. Use removeMethod() rather than removeIf() on
+            // method lists, since ClassNode keeps a parallel name->methods map.
+            if (parent instanceof ClassNode buildee) {
+                buildee.getModule().getClasses().removeIf(StubberSupport::isStub);
+                java.util.List<MethodNode> stubs = new java.util.ArrayList<>();
+                for (MethodNode m : buildee.getMethods()) {
+                    if (StubberSupport.isStub(m)) stubs.add(m);
+                }
+                stubs.forEach(buildee::removeMethod);
+            }
+
             strategy.build(this, parent, anno);
         }
     }
