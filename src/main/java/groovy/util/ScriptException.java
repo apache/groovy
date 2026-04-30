@@ -20,34 +20,43 @@ package groovy.util;
 
 import java.io.Serial;
 
+/**
+ * Indicates an error while processing a script.
+ */
 public class ScriptException extends Exception {
 
     @Serial private static final long serialVersionUID = 3447547760007143671L;
 
     /**
-     *
+     * Creates a script exception with no detail message.
      */
     public ScriptException() {
         super();
     }
 
     /**
-     * @param message
+     * Creates a script exception with the supplied detail message.
+     *
+     * @param message the detail message
      */
     public ScriptException(String message) {
         super(message);
     }
 
     /**
-     * @param message
-     * @param cause
+     * Creates a script exception with the supplied detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause the underlying cause
      */
     public ScriptException(String message, Throwable cause) {
         super(message, cause);
     }
 
     /**
-     * @param cause
+     * Creates a script exception with the supplied cause.
+     *
+     * @param cause the underlying cause
      */
     public ScriptException(Throwable cause) {
         super(cause);

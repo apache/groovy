@@ -41,13 +41,26 @@ public class NodeList extends ArrayList {
         setMetaClass(NodeList.class, GroovySystem.getMetaClassRegistry().getMetaClass(NodeList.class));
     }
 
+    /**
+     * Creates an empty node list.
+     */
     public NodeList() {
     }
 
+    /**
+     * Creates a node list containing the supplied elements.
+     *
+     * @param collection the initial elements
+     */
     public NodeList(Collection collection) {
         super(collection);
     }
 
+    /**
+     * Creates an empty node list with the supplied initial capacity.
+     *
+     * @param size the initial capacity
+     */
     public NodeList(int size) {
         super(size);
     }
@@ -72,53 +85,70 @@ public class NodeList extends ArrayList {
         return result;
     }
 
+    /**
+     * Installs the metaclass used for property and attribute shortcuts on node lists.
+     *
+     * @param nodeListClass the class whose metaclass should be replaced
+     * @param metaClass the original metaclass
+     */
     protected static void setMetaClass(final Class nodeListClass, final MetaClass metaClass) {
-        GroovySystem.getMetaClassRegistry().setMetaClass(nodeListClass, new DelegatingMetaClass(metaClass) {
+        GroovySystem.getMetaClassRegistry().setMetaClass(nodeListClass, new NodeListMetaClass(metaClass));
+    }
 
-            @Override
-            public Object getAttribute(final Object object, final String attribute) {
-                NodeList list = (NodeList) object;
-                var result = new ArrayList<Object>(list.size());
-                for (Object node : list) {
-                    var attributes = ((Node) node).attributes();
-                    result.add(attributes.get(attribute));
-                }
-                return result;
-            }
+    private static final class NodeListMetaClass extends DelegatingMetaClass {
+        private NodeListMetaClass(final MetaClass metaClass) {
+            super(metaClass);
+        }
 
-            @Override
-            public Object getAttribute(Class sender, Object object, String attribute, boolean isSuper) {
-                return getAttribute(object, attribute);
+        /** {@inheritDoc} */
+        @Override
+        public Object getAttribute(final Object object, final String attribute) {
+            NodeList list = (NodeList) object;
+            var result = new ArrayList<Object>(list.size());
+            for (Object node : list) {
+                var attributes = ((Node) node).attributes();
+                result.add(attributes.get(attribute));
             }
+            return result;
+        }
 
-            @Override
-            public void setAttribute(final Object object, final String attribute, final Object newValue) {
-                for (Object node : (NodeList) object) {
-                    ((Node) node).attributes().put(attribute, newValue);
-                }
-            }
+        /** {@inheritDoc} */
+        @Override
+        public Object getAttribute(Class sender, Object object, String attribute, boolean isSuper) {
+            return getAttribute(object, attribute);
+        }
 
-            @Override
-            public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
-                setAttribute(object, attribute, newValue);
+        /** {@inheritDoc} */
+        @Override
+        public void setAttribute(final Object object, final String attribute, final Object newValue) {
+            for (Object node : (NodeList) object) {
+                ((Node) node).attributes().put(attribute, newValue);
             }
+        }
 
-            @Override
-            public Object getProperty(final Object object, final String property) {
-                if (object instanceof NodeList) {
-                    return ((NodeList) object).getAt(property);
-                }
-                return super.getProperty(object, property);
-            }
+        /** {@inheritDoc} */
+        @Override
+        public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
+            setAttribute(object, attribute, newValue);
+        }
 
-            @Override
-            public Object getProperty(final Class sender, final Object object, final String property, final boolean isSuper, final boolean isInner) {
-                if (object instanceof NodeList) {
-                    return ((NodeList) object).getAt(property);
-                }
-                return super.getProperty(sender, object, property, isSuper, isInner);
+        /** {@inheritDoc} */
+        @Override
+        public Object getProperty(final Object object, final String property) {
+            if (object instanceof NodeList) {
+                return ((NodeList) object).getAt(property);
             }
-        });
+            return super.getProperty(object, property);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public Object getProperty(final Class sender, final Object object, final String property, final boolean isSuper, final boolean isInner) {
+            if (object instanceof NodeList) {
+                return ((NodeList) object).getAt(property);
+            }
+            return super.getProperty(sender, object, property, isSuper, isInner);
+        }
     }
 
     /**
@@ -195,6 +225,12 @@ public class NodeList extends ArrayList {
         return "";
     }
 
+    /**
+     * Replaces the sole node in this list using the supplied builder closure.
+     *
+     * @param c the closure defining replacement nodes
+     * @return the original node that was replaced
+     */
     public Node replaceNode(Closure c) {
         if (size() != 1) {
             throw new GroovyRuntimeException(
@@ -203,6 +239,11 @@ public class NodeList extends ArrayList {
         return ((Node)get(0)).replaceNode(c);
     }
 
+    /**
+     * Appends sibling nodes after each node in this list.
+     *
+     * @param c the closure defining the sibling nodes
+     */
     public void plus(Closure c) {
         for (Object o : this) {
             ((Node) o).plus(c);

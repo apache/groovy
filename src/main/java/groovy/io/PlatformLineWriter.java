@@ -33,14 +33,33 @@ import java.io.Writer;
 public class PlatformLineWriter extends Writer {
     private final BufferedWriter writer;
 
+    /**
+     * Creates a writer that normalizes line endings for the platform.
+     *
+     * @param out the underlying writer
+     */
     public PlatformLineWriter(Writer out) {
         writer = new BufferedWriter(out);
     }
 
+    /**
+     * Creates a writer that normalizes line endings for the platform.
+     *
+     * @param out the underlying writer
+     * @param sz the output buffer size
+     */
     public PlatformLineWriter(Writer out, int sz) {
         writer = new BufferedWriter(out, sz);
     }
 
+    /**
+     * Writes characters while converting line endings to the platform format.
+     *
+     * @param cbuf the source buffer
+     * @param off the buffer offset
+     * @param len the number of characters to write
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
         for (; len > 0; len--) {
@@ -53,11 +72,13 @@ public class PlatformLineWriter extends Writer {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void flush() throws IOException {
         writer.flush();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void close() throws IOException {
         writer.close();

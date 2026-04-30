@@ -114,6 +114,12 @@ public final class ChannelSelect {
         private final int index;
         private final Object value;
 
+        /**
+         * Creates a selection result.
+         *
+         * @param index the zero-based index of the selected channel
+         * @param value the received value
+         */
         Result(int index, Object value) {
             this.index = index;
             this.value = value;
@@ -126,6 +132,11 @@ public final class ChannelSelect {
         @SuppressWarnings("unchecked")
         public <T> T getValue() { return (T) value; }
 
+        /**
+         * Returns a diagnostic representation of this selection result.
+         *
+         * @return the selection result description
+         */
         @Override
         public String toString() {
             return "SelectResult[channel=" + index + ", value=" + value + "]";

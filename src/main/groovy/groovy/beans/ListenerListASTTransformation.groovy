@@ -71,6 +71,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
     private static final Class MY_CLASS = groovy.beans.ListenerList
     private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection)
 
+    /** {@inheritDoc} */
     @SuppressWarnings('Instanceof')
     void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {

@@ -150,5 +150,11 @@ import java.lang.annotation.Target;
 @ExtendedTarget(ExtendedElementType.IMPORT)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.BaseScriptASTTransformation")
 public @interface BaseScript {
+    /**
+     * Returns the base script class to use for the annotated script.
+     * Defaults to {@link Script}.
+     *
+     * @return the base script class
+     */
     Class value() default Script.class;
 }

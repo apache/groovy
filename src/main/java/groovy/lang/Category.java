@@ -100,5 +100,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.CategoryASTTransformation")
 public @interface Category {
+    /**
+     * Specifies the self type for the generated category methods.
+     *
+     * @return the category target type
+     */
     Class value () default Object.class;
 }

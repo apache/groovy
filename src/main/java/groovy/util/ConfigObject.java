@@ -47,8 +47,10 @@ import java.util.Set;
  */
 public class ConfigObject extends GroovyObjectSupport implements Writable, Map, Cloneable {
 
+    /** Groovy keywords that require quoting when rendered. */
     static final Collection<String> KEYWORDS = Types.getKeywords();
 
+    /** Single indentation unit used for formatted output. */
     static final String TAB_CHARACTER = "\t";
 
     /**
@@ -58,18 +60,36 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
     private HashMap delegateMap = new LinkedHashMap();
 
+    /**
+     * Creates a config object associated with the supplied source.
+     *
+     * @param file the parsed config resource, or {@code null}
+     */
     public ConfigObject(URL file) {
         this.configFile = file;
     }
 
+    /**
+     * Creates an empty config object with no associated source.
+     */
     public ConfigObject() {
         this(null);
     }
 
+    /**
+     * Returns the config resource that produced this object.
+     *
+     * @return the originating config resource, or {@code null}
+     */
     public URL getConfigFile() {
         return configFile;
     }
 
+    /**
+     * Updates the config resource associated with this object.
+     *
+     * @param configFile the originating config resource
+     */
     public void setConfigFile(URL configFile) {
         this.configFile = configFile;
     }
@@ -310,61 +330,73 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
         return delegateMap.size();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isEmpty() {
         return delegateMap.isEmpty();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean containsKey(Object key) {
         return delegateMap.containsKey(key);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean containsValue(Object value) {
         return delegateMap.containsValue(value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object get(Object key) {
         return delegateMap.get(key);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object put(Object key, Object value) {
         return delegateMap.put(key, value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object remove(Object key) {
         return delegateMap.remove(key);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void putAll(Map m) {
         delegateMap.putAll(m);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void clear() {
         delegateMap.clear();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Set keySet() {
         return delegateMap.keySet();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Collection values() {
         return delegateMap.values();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Set entrySet() {
         return delegateMap.entrySet();
@@ -411,6 +443,11 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         return Boolean.FALSE;
     }
 
+    /**
+     * Renders this config object using config-script syntax.
+     *
+     * @return a formatted config representation
+     */
     public String prettyPrint() {
         Writer sw = new StringBuilderWriter();
         try {
@@ -422,6 +459,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
         return sw.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         Writer sw = new StringBuilderWriter();

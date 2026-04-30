@@ -43,10 +43,30 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 @Incubating
 public abstract class PropertyHandler {
     private static final Class<? extends Annotation> PROPERTY_OPTIONS_CLASS = PropertyOptions.class;
+
+    /**
+     * Class node for {@link PropertyOptions}.
+     */
     public static final ClassNode PROPERTY_OPTIONS_TYPE = makeWithoutCaching(PROPERTY_OPTIONS_CLASS, false);
 
+    /**
+     * Validates annotation attributes supported by this handler.
+     *
+     * @param xform the active transform
+     * @param anno the property options annotation
+     * @return {@code true} if validation succeeds
+     */
     public abstract boolean validateAttributes(AbstractASTTransformation xform, AnnotationNode anno);
 
+    /**
+     * Validates the properties selected for processing.
+     *
+     * @param xform the active transform
+     * @param body the statement block being generated
+     * @param cNode the owning class
+     * @param props the candidate properties
+     * @return {@code true} if validation succeeds
+     */
     public boolean validateProperties(final AbstractASTTransformation xform, final BlockStatement body, final ClassNode cNode, final List<PropertyNode> props) {
         return true;
     }
@@ -80,6 +100,14 @@ public abstract class PropertyHandler {
         return pNode.getSetterBlock();
     }
 
+    /**
+     * Checks whether the named annotation attribute is unsupported for this handler.
+     *
+     * @param xform the active transform
+     * @param anno the annotation being processed
+     * @param memberName the attribute name to validate
+     * @return {@code true} if the attribute is valid for this handler
+     */
     protected boolean isValidAttribute(final AbstractASTTransformation xform, final AnnotationNode anno, final String memberName) {
         if (xform.getMemberValue(anno, memberName) != null) {
             xform.addError("Error during " + xform.getAnnotationName() + " processing: Annotation attribute '" + memberName +
@@ -89,6 +117,14 @@ public abstract class PropertyHandler {
         return true;
     }
 
+    /**
+     * Creates the property handler configured for the supplied class.
+     *
+     * @param xform the active transform
+     * @param loader the class loader used to instantiate custom handlers
+     * @param cNode the class being transformed
+     * @return the configured property handler, or {@code null} if one could not be created
+     */
     public static PropertyHandler createPropertyHandler(final AbstractASTTransformation xform, final GroovyClassLoader loader, final ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(PROPERTY_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);

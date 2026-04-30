@@ -33,6 +33,13 @@ public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
     private final Object arguments;
     private final Class[] expected;
 
+    /**
+     * Creates an exception describing mismatched closure arguments.
+     *
+     * @param closure the target closure
+     * @param arguments the supplied arguments
+     * @param expected the expected parameter types
+     */
     public IncorrectClosureArgumentsException(Closure closure, Object arguments, Class[] expected) {
         super(
             "Incorrect arguments to closure: "
@@ -46,14 +53,29 @@ public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
         this.expected = expected;
     }
 
+    /**
+     * Returns the supplied arguments.
+     *
+     * @return the supplied arguments
+     */
     public Object getArguments() {
         return arguments;
     }
 
+    /**
+     * Returns the target closure.
+     *
+     * @return the target closure
+     */
     public Closure getClosure() {
         return closure;
     }
 
+    /**
+     * Returns the expected parameter types.
+     *
+     * @return the expected parameter types
+     */
     public Class[] getExpected() {
         return expected;
     }

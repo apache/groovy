@@ -67,5 +67,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.PackageScopeASTTransformation")
 public @interface PackageScope {
+    /**
+     * Returns the declaration kinds whose visibility should remain package-private.
+     * Defaults to {@link PackageScopeTarget#CLASS}.
+     *
+     * @return the targeted declaration kinds
+     */
     PackageScopeTarget[] value() default {PackageScopeTarget.CLASS};
 }

@@ -91,6 +91,9 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     private static final Expression DEFAULT_INITIAL_VALUE = null;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (!(annotatedNode instanceof ClassNode builder)) {

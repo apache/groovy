@@ -49,17 +49,107 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.OperatorRenameASTTransformation")
 public @interface OperatorRename {
+    /**
+     * Returns the replacement method name for the {@code +} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String plus() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code -} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String minus() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code *} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String multiply() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code /} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String div() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code %} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String remainder() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code **} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String power() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code <<} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String leftShift() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code >>} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String rightShift() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code >>>} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String rightShiftUnsigned() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code &} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String and() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code |} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String or() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the {@code ^} operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String xor() default Undefined.STRING;
+
+    /**
+     * Returns the replacement method name for the spaceship operator.
+     * Defaults to {@link Undefined#STRING}, meaning no rename.
+     *
+     * @return the replacement method name
+     */
     String compareTo() default Undefined.STRING;
 }

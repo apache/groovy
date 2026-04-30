@@ -299,62 +299,75 @@ public class Node implements Serializable, Cloneable {
     protected static void setMetaClass(final MetaClass metaClass, final Class nodeClass) {
         // TODO Is protected static a bit of a smell?
         // TODO perhaps set nodeClass to be Class<? extends Node>
-        GroovySystem.getMetaClassRegistry().setMetaClass(nodeClass, new DelegatingMetaClass(metaClass) {
+        GroovySystem.getMetaClassRegistry().setMetaClass(nodeClass, new NodeMetaClass(metaClass));
+    }
 
-            @Override
-            public Object getAttribute(final Object object, final String attribute) {
-                return ((Node) object).get("@" + attribute);
-            }
+    private static final class NodeMetaClass extends DelegatingMetaClass {
+        private NodeMetaClass(final MetaClass metaClass) {
+            super(metaClass);
+        }
 
-            @Override
-            public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean isSuper) {
-                return getAttribute(object, attribute);
-            }
+        /** {@inheritDoc} */
+        @Override
+        public Object getAttribute(final Object object, final String attribute) {
+            return ((Node) object).get("@" + attribute);
+        }
 
-            @Override
-            public void setAttribute(final Object object, final String attribute, final Object newValue) {
-                ((Node) object).attributes().put(attribute, newValue);
-            }
+        /** {@inheritDoc} */
+        @Override
+        public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean isSuper) {
+            return getAttribute(object, attribute);
+        }
 
-            @Override
-            public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
-                setAttribute(object, attribute, newValue);
-            }
+        /** {@inheritDoc} */
+        @Override
+        public void setAttribute(final Object object, final String attribute, final Object newValue) {
+            ((Node) object).attributes().put(attribute, newValue);
+        }
 
-            @Override
-            public Object getProperty(final Object object, final String property) {
-                if (object instanceof Node) {
-                    return ((Node) object).get(property);
-                }
-                return super.getProperty(object, property);
-            }
+        /** {@inheritDoc} */
+        @Override
+        public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
+            setAttribute(object, attribute, newValue);
+        }
 
-            @Override
-            public Object getProperty(final Class sender, final Object object, final String property, final boolean isSuper, final boolean isInner) {
-                if (object instanceof Node) {
-                    return ((Node) object).get(property);
-                }
-                return super.getProperty(sender, object, property, isSuper, isInner);
+        /** {@inheritDoc} */
+        @Override
+        public Object getProperty(final Object object, final String property) {
+            if (object instanceof Node) {
+                return ((Node) object).get(property);
             }
+            return super.getProperty(object, property);
+        }
 
-            @Override
-            public void setProperty(final Object object, final String property, final Object newValue) {
-                if (property.startsWith("@")) {
-                    setAttribute(object, property.substring(1), newValue);
-                } else {
-                    super.setProperty(object, property, newValue);
-                }
+        /** {@inheritDoc} */
+        @Override
+        public Object getProperty(final Class sender, final Object object, final String property, final boolean isSuper, final boolean isInner) {
+            if (object instanceof Node) {
+                return ((Node) object).get(property);
             }
+            return super.getProperty(sender, object, property, isSuper, isInner);
+        }
 
-            @Override
-            public void setProperty(final Class sender, final Object object, final String property, final Object newValue, final boolean isSuper, final boolean isInner) {
-                if (property.startsWith("@")) {
-                    setAttribute(object, property.substring(1), newValue);
-                } else {
-                    super.setProperty(sender, object, property, newValue, isSuper, isInner);
-                }
+        /** {@inheritDoc} */
+        @Override
+        public void setProperty(final Object object, final String property, final Object newValue) {
+            if (property.startsWith("@")) {
+                setAttribute(object, property.substring(1), newValue);
+            } else {
+                super.setProperty(object, property, newValue);
             }
-        });
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void setProperty(final Class sender, final Object object, final String property, final Object newValue, final boolean isSuper, final boolean isInner) {
+            if (property.startsWith("@")) {
+                setAttribute(object, property.substring(1), newValue);
+            } else {
+                super.setProperty(sender, object, property, newValue, isSuper, isInner);
+            }
+        }
     }
 
     /**
@@ -785,6 +798,7 @@ public class Node implements Serializable, Cloneable {
         return answer;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return name + "[attributes=" + attributes + "; value=" + value + "]";

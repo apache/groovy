@@ -49,6 +49,9 @@ import java.util.Map;
  */
 public class BenchmarkInterceptor implements Interceptor {
 
+    /**
+     * Recorded call timings keyed by method name.
+     */
     protected Map calls = new LinkedHashMap(); // keys to list of invocation times and before and after
 
     /**

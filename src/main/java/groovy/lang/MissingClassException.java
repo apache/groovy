@@ -34,11 +34,24 @@ public class MissingClassException extends GroovyRuntimeException {
     @Serial private static final long serialVersionUID = -4059735896182191589L;
     private final String type;
 
+    /**
+     * Creates an exception for an unresolved class name.
+     *
+     * @param type the unresolved class name
+     * @param node the related AST node
+     * @param message additional context
+     */
     public MissingClassException(String type, ASTNode node, String message) {
         super("No such class: " + type + " " + message, node);
         this.type = type;
     }
 
+    /**
+     * Creates an exception for an unresolved class node.
+     *
+     * @param type the unresolved class node
+     * @param message additional context
+     */
     public MissingClassException(ClassNode type, String message){
         super("No such class: " + type.getName() + " " + message);
         this.type = type.getName();

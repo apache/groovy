@@ -43,10 +43,24 @@ public class TimeCategory {
      * Methods to allow Date Duration arithmetic
      */
 
+    /**
+     * Adds a duration to a date.
+     *
+     * @param date the base date
+     * @param duration the duration to add
+     * @return the adjusted date
+     */
     public static Date plus(final Date date, final BaseDuration duration) {
         return duration.plus(date);
     }
 
+    /**
+     * Subtracts a duration from a date.
+     *
+     * @param date the base date
+     * @param duration the duration to subtract
+     * @return the adjusted date
+     */
     public static Date minus(final Date date, final BaseDuration duration) {
         final Calendar cal = Calendar.getInstance();
 
@@ -89,6 +103,12 @@ public class TimeCategory {
         return new TimeDuration(0, 0, 0, millis);
     }
 
+    /**
+     * Gets the daylight savings offset for the supplied duration interpreted as a date.
+     *
+     * @param self the duration to inspect
+     * @return the DST offset as a duration
+     */
     public static Duration getDaylightSavingsOffset(BaseDuration self) {
         return getDaylightSavingsOffset(new Date(self.toMilliseconds() + 1));
     }
@@ -133,18 +153,42 @@ public class TimeCategory {
     * Methods on Integer to implement 1.month, 4.years etc.
     */
 
+    /**
+     * Returns a month-based duration for the supplied number of months.
+     *
+     * @param self the number of months
+     * @return the corresponding duration
+     */
     public static DatumDependentDuration getMonths(final Integer self) {
         return new DatumDependentDuration(0, self, 0, 0, 0, 0, 0);
     }
 
+    /**
+     * Alias for {@link #getMonths(Integer)}.
+     *
+     * @param self the number of months
+     * @return the corresponding duration
+     */
     public static DatumDependentDuration getMonth(final Integer self) {
         return getMonths(self);
     }
 
+    /**
+     * Returns a year-based duration for the supplied number of years.
+     *
+     * @param self the number of years
+     * @return the corresponding duration
+     */
     public static DatumDependentDuration getYears(final Integer self) {
         return new DatumDependentDuration(self, 0, 0, 0, 0, 0, 0);
     }
 
+    /**
+     * Alias for {@link #getYears(Integer)}.
+     *
+     * @param self the number of years
+     * @return the corresponding duration
+     */
     public static DatumDependentDuration getYear(final Integer self) {
         return getYears(self);
     }
@@ -153,50 +197,122 @@ public class TimeCategory {
     * Methods on Integer to implement 1.week, 4.days etc.
     */
 
+    /**
+     * Returns a week-based duration for the supplied number of weeks.
+     *
+     * @param self the number of weeks
+     * @return the corresponding duration
+     */
     public static Duration getWeeks(final Integer self) {
         return new Duration(self * 7, 0, 0, 0, 0);
     }
 
+    /**
+     * Alias for {@link #getWeeks(Integer)}.
+     *
+     * @param self the number of weeks
+     * @return the corresponding duration
+     */
     public static Duration getWeek(final Integer self) {
         return getWeeks(self);
     }
 
+    /**
+     * Returns a day-based duration for the supplied number of days.
+     *
+     * @param self the number of days
+     * @return the corresponding duration
+     */
     public static Duration getDays(final Integer self) {
         return new Duration(self, 0, 0, 0, 0);
     }
 
+    /**
+     * Alias for {@link #getDays(Integer)}.
+     *
+     * @param self the number of days
+     * @return the corresponding duration
+     */
     public static Duration getDay(final Integer self) {
         return getDays(self);
     }
 
+    /**
+     * Returns an hour-based duration for the supplied number of hours.
+     *
+     * @param self the number of hours
+     * @return the corresponding duration
+     */
     public static TimeDuration getHours(final Integer self) {
         return new TimeDuration(0, self, 0, 0, 0);
     }
 
+    /**
+     * Alias for {@link #getHours(Integer)}.
+     *
+     * @param self the number of hours
+     * @return the corresponding duration
+     */
     public static TimeDuration getHour(final Integer self) {
         return getHours(self);
     }
 
+    /**
+     * Returns a minute-based duration for the supplied number of minutes.
+     *
+     * @param self the number of minutes
+     * @return the corresponding duration
+     */
     public static TimeDuration getMinutes(final Integer self) {
         return new TimeDuration(0, 0, self, 0, 0);
     }
 
+    /**
+     * Alias for {@link #getMinutes(Integer)}.
+     *
+     * @param self the number of minutes
+     * @return the corresponding duration
+     */
     public static TimeDuration getMinute(final Integer self) {
         return getMinutes(self);
     }
 
+    /**
+     * Returns a second-based duration for the supplied number of seconds.
+     *
+     * @param self the number of seconds
+     * @return the corresponding duration
+     */
     public static TimeDuration getSeconds(final Integer self) {
         return new TimeDuration(0, 0, 0, self, 0);
     }
 
+    /**
+     * Alias for {@link #getSeconds(Integer)}.
+     *
+     * @param self the number of seconds
+     * @return the corresponding duration
+     */
     public static TimeDuration getSecond(final Integer self) {
         return getSeconds(self);
     }
 
+    /**
+     * Returns a millisecond-based duration for the supplied number of milliseconds.
+     *
+     * @param self the number of milliseconds
+     * @return the corresponding duration
+     */
     public static TimeDuration getMilliseconds(final Integer self) {
         return new TimeDuration(0, 0, 0, 0, self);
     }
 
+    /**
+     * Alias for {@link #getMilliseconds(Integer)}.
+     *
+     * @param self the number of milliseconds
+     * @return the corresponding duration
+     */
     public static TimeDuration getMillisecond(final Integer self) {
         return getMilliseconds(self);
     }

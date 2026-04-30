@@ -28,10 +28,20 @@ public class StringWriterIOException extends RuntimeException {
 
     @Serial private static final long serialVersionUID = -504499949457372681L;
 
+    /**
+     * Wraps the supplied {@link IOException}.
+     *
+     * @param e the wrapped exception
+     */
     public StringWriterIOException(IOException e) {
         super(e);
     }
 
+    /**
+     * Returns the wrapped {@link IOException}.
+     *
+     * @return the wrapped exception
+     */
     public IOException getIOException() {
         return (IOException) getCause();
     }

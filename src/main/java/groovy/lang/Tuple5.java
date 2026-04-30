@@ -34,6 +34,15 @@ public final class Tuple5<T1, T2, T3, T4, T5> extends Tuple {
     private final T4 v4;
     private final T5 v5;
 
+    /**
+     * Creates a tuple containing the supplied elements.
+     *
+     * @param v1 the first element
+     * @param v2 the second element
+     * @param v3 the third element
+     * @param v4 the fourth element
+     * @param v5 the fifth element
+     */
     public Tuple5(T1 v1, T2 v2, T3 v3, T4 v4, T5 v5) {
         super(v1, v2, v3, v4, v5);
 
@@ -44,55 +53,113 @@ public final class Tuple5<T1, T2, T3, T4, T5> extends Tuple {
         this.v5 = v5;
     }
 
+    /**
+     * Creates a tuple from the supplied tuple.
+     *
+     * @param tuple the source tuple
+     */
     public Tuple5(Tuple5<T1, T2, T3, T4, T5> tuple) {
         this(tuple.v1, tuple.v2, tuple.v3, tuple.v4, tuple.v5);
     }
 
+    /**
+     * Returns the first element.
+     *
+     * @return the first element
+     */
     @Deprecated
     public T1 getFirst() {
         return v1;
     }
 
+    /**
+     * Returns the second element.
+     *
+     * @return the second element
+     */
     @Deprecated
     public T2 getSecond() {
         return v2;
     }
 
+    /**
+     * Returns the third element.
+     *
+     * @return the third element
+     */
     @Deprecated
     public T3 getThird() {
         return v3;
     }
 
+    /**
+     * Returns the fourth element.
+     *
+     * @return the fourth element
+     */
     @Deprecated
     public T4 getFourth() {
         return v4;
     }
 
+    /**
+     * Returns the fifth element.
+     *
+     * @return the fifth element
+     */
     @Deprecated
     public T5 getFifth() {
         return v5;
     }
 
+    /**
+     * Returns the first element.
+     *
+     * @return the first element
+     */
     public T1 getV1() {
         return v1;
     }
 
+    /**
+     * Returns the second element.
+     *
+     * @return the second element
+     */
     public T2 getV2() {
         return v2;
     }
 
+    /**
+     * Returns the third element.
+     *
+     * @return the third element
+     */
     public T3 getV3() {
         return v3;
     }
 
+    /**
+     * Returns the fourth element.
+     *
+     * @return the fourth element
+     */
     public T4 getV4() {
         return v4;
     }
 
+    /**
+     * Returns the fifth element.
+     *
+     * @return the fifth element
+     */
     public T5 getV5() {
         return v5;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Tuple5<T1, T2, T3, T4, T5> clone() {
         return new Tuple5<>(this);

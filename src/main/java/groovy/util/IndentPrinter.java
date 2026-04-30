@@ -198,30 +198,59 @@ public class IndentPrinter {
         }
     }
 
+    /**
+     * Increases the indentation level by one.
+     */
     public void incrementIndent() {
         ++indentLevel;
     }
 
+    /**
+     * Decreases the indentation level by one.
+     */
     public void decrementIndent() {
         --indentLevel;
     }
 
+    /**
+     * Returns the current indentation level.
+     *
+     * @return the indentation level
+     */
     public int getIndentLevel() {
         return indentLevel;
     }
 
+    /**
+     * Sets the indentation level.
+     *
+     * @param indentLevel the new indentation level
+     */
     public void setIndentLevel(int indentLevel) {
         this.indentLevel = indentLevel;
     }
 
+    /**
+     * Indicates whether {@link #println(String)} should emit indentation automatically.
+     *
+     * @return {@code true} if automatic indentation is enabled
+     */
     public boolean getAutoIndent(){
         return this.autoIndent;
     }
 
+    /**
+     * Enables or disables automatic indentation for {@link #println(String)}.
+     *
+     * @param autoIndent {@code true} to enable automatic indentation
+     */
     public void setAutoIndent(boolean autoIndent){
         this.autoIndent = autoIndent;
     }
 
+    /**
+     * Flushes the underlying writer.
+     */
     public void flush() {
         try {
             out.flush();

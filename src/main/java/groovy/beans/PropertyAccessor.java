@@ -18,5 +18,8 @@
  */
 package groovy.beans;
 
+/**
+ * Strategy for reading and writing named properties.
+ */
 public interface PropertyAccessor extends PropertyReader, PropertyWriter {
 }

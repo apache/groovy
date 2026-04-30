@@ -34,5 +34,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface ExtendedTarget {
+    /**
+     * Returns the Groovy-specific element types accepted by the annotated annotation.
+     *
+     * @return the extended target element types
+     */
     ExtendedElementType[] value();
 }

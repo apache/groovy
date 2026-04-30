@@ -191,6 +191,7 @@ public final class BroadcastChannel<T> {
     }
 
     private final class BroadcastFlowPublisher implements Flow.Publisher<T> {
+        /** {@inheritDoc} */
         @Override
         public void subscribe(Flow.Subscriber<? super T> downstream) {
             Objects.requireNonNull(downstream, "subscriber must not be null");
@@ -206,8 +207,13 @@ public final class BroadcastChannel<T> {
         }
     }
 
+    /**
+     * No-op subscription used when a subscriber cannot be attached.
+     */
     private static final Flow.Subscription NOOP_SUBSCRIPTION = new Flow.Subscription() {
+        /** {@inheritDoc} */
         @Override public void request(long n) { }
+        /** {@inheritDoc} */
         @Override public void cancel() { }
     };
 
@@ -224,17 +230,32 @@ public final class BroadcastChannel<T> {
         private final AtomicReference<Throwable> terminalError = new AtomicReference<>();
         private final Object lock = new Object();
 
+        /**
+         * Creates a subscription bridge for one downstream subscriber.
+         *
+         * @param owner the owning broadcast channel
+         * @param channel the backing subscriber channel
+         * @param subscriber the downstream subscriber
+         */
         BroadcastFlowSubscription(BroadcastChannel<T> owner, AsyncChannel<T> channel, Flow.Subscriber<? super T> subscriber) {
             this.owner = owner;
             this.channel = channel;
             this.subscriber = subscriber;
         }
 
+        /**
+         * Starts signal delivery to the downstream subscriber.
+         */
         void start() {
             subscriber.onSubscribe(this);
             AsyncSupport.getExecutor().execute(this::drain);
         }
 
+        /**
+         * Requests the given number of items from the backing channel.
+         *
+         * @param n the requested demand
+         */
         @Override
         public void request(long n) {
             if (n <= 0) {
@@ -256,6 +277,9 @@ public final class BroadcastChannel<T> {
             synchronized (lock) { lock.notifyAll(); }
         }
 
+        /**
+         * Cancels this subscription and closes its backing channel.
+         */
         @Override
         public void cancel() {
             if (!cancelled.compareAndSet(false, true)) return;

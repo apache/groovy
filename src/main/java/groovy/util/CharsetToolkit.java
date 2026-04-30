@@ -102,6 +102,11 @@ public class CharsetToolkit {
         this.defaultCharset = Objects.requireNonNullElseGet(defaultCharset, CharsetToolkit::getDefaultSystemCharset);
     }
 
+    /**
+     * Returns the detected charset, computing it on first access.
+     *
+     * @return the detected charset
+     */
     public Charset getCharset() {
         if (this.charset == null)
             this.charset = guessEncoding();

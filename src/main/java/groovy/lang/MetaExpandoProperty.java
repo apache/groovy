@@ -25,8 +25,16 @@ import java.util.Map.Entry;
  */
 public class MetaExpandoProperty extends MetaProperty {
 
+    /**
+     * Current value stored for the expando property.
+     */
     Object value = null;
 
+    /**
+     * Creates an expando property from a map entry.
+     *
+     * @param entry the entry whose key becomes the property name and whose value becomes the property value
+     */
     public MetaExpandoProperty(Entry entry) {
         super((String) entry.getKey(), Object.class);
 

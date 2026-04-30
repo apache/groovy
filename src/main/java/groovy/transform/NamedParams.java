@@ -33,5 +33,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface NamedParams {
+    /**
+     * Returns the named-parameter declarations collected by this annotation.
+     *
+     * @return the named-parameter declarations
+     */
     NamedParam[] value();
 }

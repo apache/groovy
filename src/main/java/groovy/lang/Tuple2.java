@@ -28,6 +28,12 @@ public final class Tuple2<T1, T2> extends Tuple {
     private final T1 v1;
     private final T2 v2;
 
+    /**
+     * Creates a tuple containing the supplied elements.
+     *
+     * @param v1 the first element
+     * @param v2 the second element
+     */
     public Tuple2(T1 v1, T2 v2) {
         super(v1, v2);
 
@@ -35,28 +41,56 @@ public final class Tuple2<T1, T2> extends Tuple {
         this.v2 = v2;
     }
 
+    /**
+     * Creates a tuple from the supplied tuple.
+     *
+     * @param tuple the source tuple
+     */
     public Tuple2(Tuple2<T1, T2> tuple) {
         this(tuple.v1, tuple.v2);
     }
 
+    /**
+     * Returns the first element.
+     *
+     * @return the first element
+     */
     @Deprecated
     public T1 getFirst() {
         return v1;
     }
 
+    /**
+     * Returns the second element.
+     *
+     * @return the second element
+     */
     @Deprecated
     public T2 getSecond() {
         return v2;
     }
 
+    /**
+     * Returns the first element.
+     *
+     * @return the first element
+     */
     public T1 getV1() {
         return v1;
     }
 
+    /**
+     * Returns the second element.
+     *
+     * @return the second element
+     */
     public T2 getV2() {
         return v2;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Tuple2<T1, T2> clone() {
         return new Tuple2<>(this);

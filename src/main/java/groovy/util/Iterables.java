@@ -79,6 +79,7 @@ public class Iterables {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean hasNext() {
             if (!loaded) {
@@ -88,6 +89,7 @@ public class Iterables {
             return !exhausted;
         }
 
+        /** {@inheritDoc} */
         @Override
         public Map<K, T> next() {
             if (!hasNext()) {

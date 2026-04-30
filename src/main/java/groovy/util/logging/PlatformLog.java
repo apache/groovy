@@ -67,8 +67,20 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface PlatformLog {
+    /**
+     * Returns the injected logger field name.
+     * Defaults to {@code "log"}.
+     *
+     * @return the logger field name
+     */
     String value() default "log";
 
+    /**
+     * Returns the logger category name.
+     * Defaults to {@link LogASTTransformation#DEFAULT_CATEGORY_NAME}, which uses the host class name.
+     *
+     * @return the logger category name
+     */
     String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
 
     /**
@@ -76,6 +88,12 @@ public @interface PlatformLog {
      */
     String visibilityId() default Undefined.STRING;
 
+    /**
+     * Returns the logging strategy implementation used by this transform.
+     * Defaults to {@link JavaUtilLoggingStrategy}.
+     *
+     * @return the logging strategy type
+     */
     Class<? extends LoggingStrategy> loggingStrategy() default JavaUtilLoggingStrategy.class;
 
     /**
@@ -86,10 +104,18 @@ public @interface PlatformLog {
         private static final ClassNode LOGGER_CLASSNODE = ClassHelper.make(System.Logger.class);
         private static final ClassNode LOGGER_FINDER_CLASSNODE = ClassHelper.make(System.LoggerFinder.class);
 
+        /**
+         * Creates a Java platform logging strategy.
+         *
+         * @param loader the class loader used to resolve logger classes
+         */
         protected JavaUtilLoggingStrategy(final GroovyClassLoader loader) {
             super(loader);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName, int fieldModifiers) {
             Expression module = callX(classX(classNode), "getModule");
@@ -98,12 +124,18 @@ public @interface PlatformLog {
             return classNode.addField(logFieldName, fieldModifiers, LOGGER_CLASSNODE, initialValue);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean isLoggingMethod(String methodName) {
 //            return methodName.matches("error|warn|info|debug|trace");
             return false;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             // no shortcut

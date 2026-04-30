@@ -31,12 +31,22 @@ import java.util.Comparator;
 public class ClosureComparator<T> implements Comparator<T>, Serializable {
 
     @Serial private static final long serialVersionUID = -4593521535656429522L;
+
+    /**
+     * Closure used to compare two values.
+     */
     Closure closure;
 
+    /**
+     * Creates a comparator backed by the supplied closure.
+     *
+     * @param closure the comparison closure
+     */
     public ClosureComparator(Closure closure) {
         this.closure = closure;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int compare(T object1, T object2) {
         Object value = closure.call(object1, object2);

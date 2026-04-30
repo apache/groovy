@@ -159,6 +159,13 @@ public interface MetaClassRegistry {
             }
         }
 
+        /**
+         * Creates the standard meta class implementation for the supplied type.
+         *
+         * @param theClass the class that requires a meta class
+         * @param registry the registry creating the meta class
+         * @return the default meta class implementation for the type
+         */
         protected MetaClass createNormalMetaClass(Class theClass,MetaClassRegistry registry) {
             if (GeneratedClosure.class.isAssignableFrom(theClass)) {
                 return new ClosureMetaClass(registry,theClass);

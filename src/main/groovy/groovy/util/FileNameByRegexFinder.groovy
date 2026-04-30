@@ -24,10 +24,12 @@ package groovy.util
  */
 class FileNameByRegexFinder implements IFileNameFinder {
 
+    /** {@inheritDoc} */
     List<String> getFileNames(String basedir, String pattern) {
         getFileNames(basedir, pattern, '')
     }
 
+    /** {@inheritDoc} */
     List<String> getFileNames(String basedir, String pattern, String excludesPattern) {
         def result = []
         new File(basedir).eachFileRecurse {

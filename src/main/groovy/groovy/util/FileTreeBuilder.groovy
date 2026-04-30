@@ -77,8 +77,16 @@ import groovy.transform.stc.FromString
 @CompileStatic
 class FileTreeBuilder {
 
+    /**
+     * The base directory for created files and directories.
+     */
     File baseDir
 
+    /**
+     * Creates a builder rooted at the specified base directory.
+     *
+     * @param baseDir the base directory
+     */
     FileTreeBuilder(File baseDir = new File('.')) {
         this.baseDir = baseDir
     }
@@ -158,6 +166,12 @@ class FileTreeBuilder {
         newBase
     }
 
+    /**
+     * Applies the supplied tree specification to the current base directory.
+     *
+     * @param spec the directory tree specification
+     * @return the current base directory
+     */
     File call(@DelegatesTo(value = FileTreeBuilder, strategy = Closure.DELEGATE_FIRST) Closure spec) {
         def clone = (Closure) spec.clone()
         clone.delegate = this
@@ -166,6 +180,13 @@ class FileTreeBuilder {
         baseDir
     }
 
+    /**
+     * Supports shorthand directory and file creation syntax.
+     *
+     * @param name the directory or file name
+     * @param args the shorthand arguments describing what to create
+     * @return the created file or directory, or {@code null} if the arguments are unsupported
+     */
     def methodMissing(String name, Object args) {
         if (args instanceof Object[] && args.length == 1) {
             def arg = args[0]

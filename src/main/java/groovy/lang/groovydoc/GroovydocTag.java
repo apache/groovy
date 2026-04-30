@@ -28,24 +28,49 @@ public class GroovydocTag {
     private String content;
     private Groovydoc groovydoc;
 
+    /**
+     * Creates a tag backed by the supplied groovydoc.
+     *
+     * @param name the tag name without the leading {@code @}
+     * @param content the tag body
+     * @param groovydoc the owning groovydoc
+     */
     public GroovydocTag(String name, String content, Groovydoc groovydoc) {
         this.name = name;
         this.content = content;
         this.groovydoc = groovydoc;
     }
 
+    /**
+     * Returns the tag name.
+     *
+     * @return the tag name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the tag content.
+     *
+     * @return the tag content
+     */
     public String getContent() {
         return content;
     }
 
+    /**
+     * Returns the owning groovydoc.
+     *
+     * @return the owning groovydoc
+     */
     public Groovydoc getGroovydoc() {
         return groovydoc;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -56,11 +81,17 @@ public class GroovydocTag {
                 Objects.equals(groovydoc, that.groovydoc);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return Objects.hash(name, content, groovydoc);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return content;

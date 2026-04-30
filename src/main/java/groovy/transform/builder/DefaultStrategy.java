@@ -167,6 +167,9 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     private static final Expression DEFAULT_INITIAL_VALUE = null;
     private static final int PUBLIC_STATIC = ACC_PUBLIC | ACC_STATIC;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
@@ -178,6 +181,13 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         }
     }
 
+    /**
+     * Builds a helper builder class for an annotated factory method.
+     *
+     * @param transform the active transform
+     * @param mNode the annotated method
+     * @param anno the {@code @Builder} annotation
+     */
     public void buildMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno) {
         if (transform.getMemberValue(anno, "includes") != null || transform.getMemberValue(anno, "excludes") != null) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
@@ -193,6 +203,13 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         addGeneratedMethod(builder, createBuildMethodForMethod(anno, buildee, mNode, mNode.getParameters()));
     }
 
+    /**
+     * Builds a helper builder class for an annotated type.
+     *
+     * @param transform the active transform
+     * @param buildee the annotated type
+     * @param anno the {@code @Builder} annotation
+     */
     public void buildClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();

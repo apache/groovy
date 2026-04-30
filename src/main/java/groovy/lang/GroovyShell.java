@@ -47,6 +47,9 @@ import static org.codehaus.groovy.runtime.InvokerHelper.MAIN_METHOD_NAME;
  */
 public class GroovyShell extends GroovyObjectSupport {
 
+    /**
+     * Default code base used for scripts evaluated by the shell.
+     */
     public static final String DEFAULT_CODE_BASE = "/groovy/shell";
     private static final String CONFIGURATION_CUSTOMIZER = "org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder";
 
@@ -55,6 +58,11 @@ public class GroovyShell extends GroovyObjectSupport {
     private final CompilerConfiguration config;
     private final GroovyClassLoader loader;
 
+    /**
+     * Runs the standard {@code groovysh}-style command-line entry point.
+     *
+     * @param args command-line arguments passed to {@link GroovyMain}
+     */
     public static void main(final String[] args) {
         GroovyMain.main(args);
     }
@@ -77,34 +85,77 @@ public class GroovyShell extends GroovyObjectSupport {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Creates a shell with a new {@link Binding} and the default compiler configuration.
+     */
     public GroovyShell() {
         this(null, new Binding());
     }
 
+    /**
+     * Creates a shell with the supplied binding and the default compiler configuration.
+     *
+     * @param binding the binding used as the shell context
+     */
     public GroovyShell(Binding binding) {
         this(null, binding);
     }
 
+    /**
+     * Creates a shell with the supplied parent class loader and compiler configuration.
+     *
+     * @param parent the parent class loader
+     * @param config the compiler configuration to use
+     */
     public GroovyShell(ClassLoader parent, CompilerConfiguration config) {
         this(parent, new Binding(), config);
     }
 
+    /**
+     * Creates a shell with a new {@link Binding} and the supplied compiler configuration.
+     *
+     * @param config the compiler configuration to use
+     */
     public GroovyShell(CompilerConfiguration config) {
         this(new Binding(), config);
     }
 
+    /**
+     * Creates a shell with the supplied binding and compiler configuration.
+     *
+     * @param binding the binding used as the shell context
+     * @param config the compiler configuration to use
+     */
     public GroovyShell(Binding binding, CompilerConfiguration config) {
         this(null, binding, config);
     }
 
+    /**
+     * Creates a shell with the supplied parent class loader and binding.
+     *
+     * @param parent the parent class loader
+     * @param binding the binding used as the shell context
+     */
     public GroovyShell(ClassLoader parent, Binding binding) {
         this(parent, binding, CompilerConfiguration.DEFAULT);
     }
 
+    /**
+     * Creates a shell with the supplied parent class loader, a new binding and the default compiler configuration.
+     *
+     * @param parent the parent class loader
+     */
     public GroovyShell(ClassLoader parent) {
         this(parent, new Binding(), CompilerConfiguration.DEFAULT);
     }
 
+    /**
+     * Creates a shell with explicit class loader, binding and compiler configuration.
+     *
+     * @param parent the parent class loader, or {@code null} to use the shell class loader
+     * @param binding the binding used as the shell context
+     * @param config the compiler configuration to use
+     */
     public GroovyShell(ClassLoader parent, Binding binding, final CompilerConfiguration config) {
         if (binding == null) {
             throw new IllegalArgumentException("Binding must not be null.");
@@ -124,6 +175,9 @@ public class GroovyShell extends GroovyObjectSupport {
         this.config = config;
     }
 
+    /**
+     * Clears classes previously loaded by this shell class loader.
+     */
     public void resetLoadedClasses() {
         loader.clearCache();
     }
@@ -138,14 +192,25 @@ public class GroovyShell extends GroovyObjectSupport {
         this(shell.loader, shell.context);
     }
 
+    /**
+     * Returns the binding used as this shell's execution context.
+     *
+     * @return the current binding
+     */
     public Binding getContext() {
         return context;
     }
 
+    /**
+     * Returns the class loader used to parse and load scripts.
+     *
+     * @return the shell class loader
+     */
     public GroovyClassLoader getClassLoader() {
         return loader;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object getProperty(String property) {
         Object answer = getVariable(property);
@@ -155,6 +220,7 @@ public class GroovyShell extends GroovyObjectSupport {
         return answer;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setProperty(String property, Object newValue) {
         setVariable(property, newValue);
@@ -447,14 +513,31 @@ public class GroovyShell extends GroovyObjectSupport {
         return runScriptOrMainOrTestOrRunnable(scriptClass, args);
     }
 
+    /**
+     * Returns the value of a variable from the shell binding.
+     *
+     * @param name the variable name
+     * @return the current variable value, or {@code null} if it is not bound
+     */
     public Object getVariable(String name) {
         return context.getVariables().get(name);
     }
 
+    /**
+     * Stores a variable in the shell binding.
+     *
+     * @param name the variable name
+     * @param value the value to bind
+     */
     public void setVariable(String name, Object value) {
         context.setVariable(name, value);
     }
 
+    /**
+     * Removes a variable from the shell binding.
+     *
+     * @param name the variable name
+     */
     public void removeVariable(String name) {
         context.removeVariable(name);
     }
@@ -644,11 +727,28 @@ public class GroovyShell extends GroovyObjectSupport {
         return parse(scriptText, context);
     }
 
+    /**
+     * Parses script text using an explicit logical name and binding.
+     *
+     * @param scriptText the Groovy source text
+     * @param fileName the logical script name
+     * @param binding the binding to associate with the parsed script
+     * @return the parsed script instance
+     * @throws CompilationFailedException if compilation fails
+     */
     public Script parse(final String scriptText, final String fileName, Binding binding) throws CompilationFailedException {
         GroovyCodeSource gcs = new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
         return parse(gcs, binding);
     }
 
+    /**
+     * Parses script text using an explicit logical name and this shell's binding.
+     *
+     * @param scriptText the Groovy source text
+     * @param fileName the logical script name
+     * @return the parsed script instance
+     * @throws CompilationFailedException if compilation fails
+     */
     public Script parse(final String scriptText, final String fileName) throws CompilationFailedException {
         return parse(scriptText, fileName, context);
     }
@@ -672,6 +772,11 @@ public class GroovyShell extends GroovyObjectSupport {
         return parse(in, generateScriptName(), binding);
     }
 
+    /**
+     * Generates a unique logical script name for anonymous shell evaluations.
+     *
+     * @return a unique script name ending in {@code .groovy}
+     */
     protected String generateScriptName() {
         return "Script" + counter.incrementAndGet() + ".groovy";
     }

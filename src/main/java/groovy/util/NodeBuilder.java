@@ -26,34 +26,49 @@ import java.util.Map;
  */
 public class NodeBuilder extends BuilderSupport {
 
+    /**
+     * Creates a new {@code NodeBuilder}.
+     *
+     * @return a new builder instance
+     */
     public static NodeBuilder newInstance() {
         return new NodeBuilder();
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void setParent(Object parent, Object child) {
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Object createNode(Object name) {
         return new Node(getCurrentNode(), name);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Object createNode(Object name, Object value) {
         return new Node(getCurrentNode(), name, value);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Object createNode(Object name, Map attributes) {
         return new Node(getCurrentNode(), name, attributes);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         return new Node(getCurrentNode(), name, attributes, value);
     }
 
+    /**
+     * Returns the current node being built.
+     *
+     * @return the current node, or {@code null} if none is active
+     */
     protected Node getCurrentNode() {
         return (Node) getCurrent();
     }

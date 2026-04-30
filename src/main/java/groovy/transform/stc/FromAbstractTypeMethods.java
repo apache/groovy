@@ -39,6 +39,9 @@ import java.util.List;
  * @since 2.3.0
  */
 public class FromAbstractTypeMethods extends ClosureSignatureHint {
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
         String className = options[0];

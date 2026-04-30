@@ -48,7 +48,12 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE,ElementType.METHOD,ElementType.CONSTRUCTOR})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.sc.StaticCompileTransformation")
 public @interface CompileStatic {
-
+    /**
+     * Controls whether static compilation is applied or skipped.
+     * Defaults to {@link TypeCheckingMode#PASS}.
+     *
+     * @return the static compilation mode
+     */
     TypeCheckingMode value() default TypeCheckingMode.PASS;
 
     /**

@@ -37,7 +37,27 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 @Repeatable(NamedParams.class)
 public @interface NamedParam {
+    /**
+     * Returns the accepted named-argument key.
+     * Defaults to {@link Undefined#STRING}, which indicates the annotated parameter name.
+     *
+     * @return the named-argument key
+     */
     String value() default Undefined.STRING;
+
+    /**
+     * Returns the expected value type for the named argument.
+     * Defaults to {@link Object}.
+     *
+     * @return the named-argument type
+     */
     Class type() default Object.class;
+
+    /**
+     * Indicates whether the named argument must be supplied.
+     * Defaults to {@code false}.
+     *
+     * @return {@code true} if the named argument is required
+     */
     boolean required() default false;
 }

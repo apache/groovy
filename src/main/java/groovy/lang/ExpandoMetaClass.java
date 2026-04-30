@@ -258,17 +258,26 @@ import static org.codehaus.groovy.runtime.MetaClassHelper.EMPTY_TYPE_ARRAY;
 public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     private static final String CLASS_PROPERTY = "class";
+    /**
+     * Pseudo-property used by the expando DSL to define constructors.
+     */
     public  static final String CONSTRUCTOR = "constructor";
     private static final String GROOVY_CONSTRUCTOR = "<init>";
     private static final String META_CLASS_PROPERTY = "metaClass";
     private static final String META_METHODS = "metaMethods";
     private static final String METHODS = "methods";
     private static final String PROPERTIES = "properties";
+    /**
+     * Pseudo-property used by the expando DSL to define static members.
+     */
     public  static final String STATIC_QUALIFIER = "static";
 
     private final    boolean allowChangesAfterInit;
     private volatile boolean initialized;
     private volatile boolean initCalled;
+    /**
+     * Indicates whether this expando meta class is registered in the global registry.
+     */
     public           boolean inRegistry;
     private volatile boolean modified;
 
@@ -291,10 +300,27 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
     private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<>();
 
+    /**
+     * Creates an expando meta class with explicit registry behaviour and additional methods.
+     *
+     * @param theClass the enhanced class
+     * @param register whether the meta class should be registered globally
+     * @param allowChangesAfterInit whether mutation is allowed after initialization
+     * @param add additional meta methods to seed the meta class with
+     */
     public ExpandoMetaClass(Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
         this(GroovySystem.getMetaClassRegistry(), theClass, register, allowChangesAfterInit, add);
     }
 
+    /**
+     * Creates an expando meta class bound to a specific registry.
+     *
+     * @param registry the meta class registry to work with
+     * @param theClass the enhanced class
+     * @param register whether the meta class should be registered globally
+     * @param allowChangesAfterInit whether mutation is allowed after initialization
+     * @param add additional meta methods to seed the meta class with
+     */
     public ExpandoMetaClass(MetaClassRegistry registry, Class theClass, boolean register, boolean allowChangesAfterInit, MetaMethod[] add) {
         super(registry, theClass, add);
         this.myMetaClass = InvokerHelper.getMetaClass(getClass());
@@ -311,6 +337,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this(theClass, false, false, null);
     }
 
+    /**
+     * Creates an unregistered expando meta class with additional initial methods.
+     *
+     * @param theClass the enhanced class
+     * @param add additional meta methods to seed the meta class with
+     */
     public ExpandoMetaClass(Class theClass, MetaMethod [] add) {
         this(theClass, false, false, add);
     }
@@ -326,6 +358,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this(theClass, register, false, null);
     }
 
+    /**
+     * Creates an expando meta class with optional global registration and additional initial methods.
+     *
+     * @param theClass the enhanced class
+     * @param register whether the meta class should be registered globally
+     * @param add additional meta methods to seed the meta class with
+     */
     public ExpandoMetaClass(Class theClass, boolean register, MetaMethod [] add) {
         this(theClass, register, false, add);
     }
@@ -342,6 +381,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this(theClass, register, allowChangesAfterInit, null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public MetaMethod findMixinMethod(String methodName, Class[] arguments) {
         for (MixinInMetaClass mixin : mixinClasses) {
@@ -384,36 +424,49 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void onInvokeMethodFoundInHierarchy(MetaMethod method) {
         this.invokeMethodMethod = method;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void onSuperMethodFoundInHierarchy(MetaMethod method) {
         addSuperMethodIfNotOverridden(method);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
         addMetaBeanProperty(property);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void onSetPropertyFoundInHierarchy(MetaMethod method) {
         this.setPropertyMethod = method;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void onGetPropertyFoundInHierarchy(MetaMethod method) {
         this.getPropertyMethod = method;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isModified() {
         return this.modified;
     }
 
+    /**
+     * Registers an instance method contribution that only applies to the supplied subclass.
+     *
+     * @param name the method name
+     * @param klazz the subclass receiving the method
+     * @param closure the implementation closure
+     */
     public void registerSubclassInstanceMethod(String name, Class klazz, Closure closure) {
         final List<MetaMethod> list = ClosureMetaMethod.createMethodList(name, klazz, closure);
         for (MetaMethod metaMethod : list) {
@@ -421,6 +474,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
+    /**
+     * Registers a subclass-scoped meta method.
+     *
+     * @param metaMethod the method to register
+     */
     public void registerSubclassInstanceMethod(MetaMethod metaMethod) {
         modified = true;
 
@@ -438,6 +496,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
+    /**
+     * Legacy bridge retained for binary compatibility with earlier expando mixin APIs.
+     *
+     * @param mixin the mixin definition to add
+     * @deprecated use {@link #addMixinClass(MixinInMetaClass)}
+     */
     @Deprecated
     public void addMixinClass$$bridge(MixinInMetaClass mixin) {
         addMixinClass(mixin);
@@ -450,6 +514,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return mixinClasses.add(mixin);
     }
 
+    /**
+     * Returns the mixed-in view of an object for the requested mixin type.
+     *
+     * @param obj the receiver object
+     * @param type the requested mixin type
+     * @return the mixin instance, or {@code null} if the type is not mixed in
+     */
     public Object castToMixedType(Object obj, Class type) {
         for (MixinInMetaClass mixin : mixinClasses) {
             if (type.isAssignableFrom(mixin.getMixinClass().getTheClass())) {
@@ -512,6 +583,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void setInitialized(boolean b) {
         this.initialized = b;
@@ -519,6 +591,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     private void addSuperMethodIfNotOverridden(final MetaMethod metaMethodFromSuper) {
         performOperationOnMetaClass(new Runnable() {
+            /** {@inheritDoc} */
             @Override
             public void run() {
                 MetaMethod existing = null;
@@ -567,26 +640,59 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      */
     protected class ExpandoMetaProperty extends GroovyObjectSupport {
 
+        /**
+         * Current expando member name being defined.
+         */
         protected String propertyName;
+        /**
+         * Indicates whether the current expando member is static.
+         */
         protected boolean isStatic;
 
+        /**
+         * Creates an instance-member expando property helper.
+         *
+         * @param name the member name being defined
+         */
         protected ExpandoMetaProperty(String name) {
             this(name, false);
         }
 
+        /**
+         * Creates an expando property helper.
+         *
+         * @param name the member name being defined
+         * @param isStatic whether static members are being defined
+         */
         protected ExpandoMetaProperty(String name, boolean isStatic) {
             this.propertyName = name;
             this.isStatic = isStatic;
         }
 
+        /**
+         * Returns the expando member name currently being configured.
+         *
+         * @return the current member name
+         */
         public String getPropertyName() {
             return this.propertyName;
         }
 
+        /**
+         * Indicates whether this helper is defining static members.
+         *
+         * @return {@code true} for static definitions
+         */
         public boolean isStatic() {
             return this.isStatic;
         }
 
+        /**
+         * Appends a new expando method definition using the {@code <<} DSL operator.
+         *
+         * @param arg the closure defining the method body
+         * @return this helper for fluent use
+         */
         public Object leftShift(Object arg) {
             registerIfClosure(arg, false);
             return this;
@@ -640,18 +746,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             return foundMethod;
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.GroovyObjectSupport#getProperty(java.lang.String)
-         */
+        /** {@inheritDoc} */
         @Override
         public Object getProperty(String property) {
             this.propertyName = property;
             return this;
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.GroovyObjectSupport#setProperty(java.lang.String, java.lang.Object)
-         */
+        /** {@inheritDoc} */
         @Override
         public void setProperty(String property, Object newValue) {
             this.propertyName = property;
@@ -659,9 +761,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClassImpl#invokeConstructor(java.lang.Object[])
-     */
+    /** {@inheritDoc} */
     @Override
     public Object invokeConstructor(Object[] arguments) {
         // TODO This is the only area where this MetaClass needs to do some interception because Groovy's current
@@ -680,6 +780,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * Handles the ability to use the left shift operator to append new constructors
      */
     protected class ExpandoMetaConstructor extends GroovyObjectSupport {
+        /**
+         * Appends a constructor definition using the {@code <<} DSL operator.
+         *
+         * @param c the closure implementing the constructor body
+         * @return this helper for fluent use
+         */
         public Object leftShift(Closure c) {
             if (c != null) {
                 final List<MetaMethod> list = ClosureMetaMethod.createMethodList(GROOVY_CONSTRUCTOR, theClass, c);
@@ -697,17 +803,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.GroovyObject#getMetaClass()
-     */
+    /** {@inheritDoc} */
     @Override
     public MetaClass getMetaClass() {
         return myMetaClass;
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
-     */
+    /** {@inheritDoc} */
     @Override
     public Object getProperty(String property) {
         if (isValidExpandoProperty(property)) {
@@ -722,6 +824,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return myMetaClass.getProperty(this, property);
     }
 
+    /**
+     * Checks whether a property name is available for the expando DSL.
+     *
+     * @param property the property name to test
+     * @return {@code true} if the name can be used by the expando DSL
+     */
     public static boolean isValidExpandoProperty(String property) {
         return switch (property) {
             case META_CLASS_PROPERTY, CLASS_PROPERTY, META_METHODS, METHODS, PROPERTIES -> false;
@@ -729,9 +837,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         };
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
-     */
+    /** {@inheritDoc} */
     @Override
     public Object invokeMethod(String name, Object args) {
         final Object[] argsArr = args instanceof Object[] ? (Object[]) args : new Object[]{args};
@@ -761,17 +867,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         throw new MissingMethodException(name, getClass(), argsArr);
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
-     */
+    /** {@inheritDoc} */
     @Override
     public void setMetaClass(MetaClass metaClass) {
         this.myMetaClass = metaClass;
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
-     */
+    /** {@inheritDoc} */
     @Override
     public void setProperty(String property, Object newValue) {
         if (newValue instanceof Closure closure) {
@@ -781,6 +883,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
+    /**
+     * Executes the expando definition DSL against this meta class.
+     *
+     * @param closure the definition closure
+     * @return this meta class
+     */
     public ExpandoMetaClass define(@ClosureParams(value=SimpleType.class, options="java.lang.Object")
             @DelegatesTo(value=DefiningClosure.class, strategy=Closure.DELEGATE_ONLY) Closure closure) {
         final DefiningClosure definer = new DefiningClosure();
@@ -794,6 +902,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return this;
     }
 
+    /**
+     * Performs a mutating expando operation while coordinating initialization state and locks.
+     *
+     * @param runner the operation to execute
+     */
     protected synchronized void performOperationOnMetaClass(Runnable runner) {
         try {
             writeLock.lock();
@@ -812,6 +925,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void checkInitalised() {
         try {
@@ -907,6 +1021,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return methodList;
     }
 
+    /** {@inheritDoc} */
     @Override
     public List<MetaProperty> getProperties() {
         List<MetaProperty> propertyList = new ArrayList<>(super.getProperties());
@@ -965,6 +1080,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         addMetaBeanProperty(beanProperty);
     }
 
+    /**
+     * Registers a new static expando method using the closure's declared parameter types.
+     *
+     * @param name the method name
+     * @param callable the implementation closure
+     */
     protected void registerStaticMethod(final String name, final Closure callable) {
         registerStaticMethod(name, callable, null);
     }
@@ -1019,6 +1140,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         });
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Object getSubclassMetaMethods(String methodName) {
         if (!isModified())
@@ -1077,6 +1199,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return Collections.unmodifiableList(DefaultGroovyMethods.toList(expandoMethods.values()));
     }
 
+    /**
+     * Returns the subclass-scoped expando methods registered on this meta class.
+     *
+     * @return an unmodifiable view of the registered subclass method entries
+     */
     public Collection getExpandoSubclassMethods() {
         return Collections.unmodifiableCollection(expandoSubclassMethods.values());
     }
@@ -1268,6 +1395,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return null;
     }
 
+    /**
+     * Determines whether the supplied method signature represents a Groovy bean setter.
+     *
+     * @param name the candidate method name
+     * @param args the candidate parameter types
+     * @return {@code true} if the signature represents a setter
+     */
     public boolean isSetter(String name, CachedClass[] args) {
         if (name == null || name.isEmpty() || args == null) return false;
 
@@ -1280,6 +1414,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         if (invokeMethodMethod != null)
@@ -1288,6 +1423,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.createPojoCallSite(site, receiver, args);
     }
 
+    /** {@inheritDoc} */
     @Override
     public CallSite createStaticSite(CallSite site, Object[] args) {
         if (invokeStaticMethodMethod != null)
@@ -1296,9 +1432,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.createStaticSite(site, args);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasCustomStaticInvokeMethod() {return invokeStaticMethodMethod!=null; }
 
+    /** {@inheritDoc} */
     @Override
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (invokeMethodMethod != null)
@@ -1306,12 +1444,22 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.createPogoCallSite(site, args);
     }
 
+    /**
+     * Creates a call site for current-scope POGO dispatch that honours expando {@code invokeMethod}.
+     *
+     * @param site the original call site
+     * @param sender the calling class
+     * @param name the method name being invoked
+     * @param args the invocation arguments
+     * @return the adapted call site
+     */
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, String name, Object[] args) {
         if (invokeMethodMethod != null)
             return new PogoMetaClassSite(site, this);
         return super.createPogoCallCurrentSite(site, sender, args);
     }
 
+    /** {@inheritDoc} */
     @Override
     public MetaMethod retrieveConstructor(Object[] args) {
         Class<?>[] params = MetaClassHelper.convertToTypeArray(args);
@@ -1320,6 +1468,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.retrieveConstructor(args);
     }
 
+    /** {@inheritDoc} */
     @Override
     public CallSite createConstructorSite(CallSite site, Object[] args) {
         Class<?>[] params = MetaClassHelper.convertToTypeArray(args);
@@ -1340,6 +1489,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             this.klazz = klazz;
         }
 
+        /** {@inheritDoc} */
         @Override
         public Object invokeMethod(String name, Object obj) {
             if (obj instanceof Object[] args) {
@@ -1354,20 +1504,44 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     private class DefiningClosure extends GroovyObjectSupport {
+        /**
+         * Tracks whether the closure is still defining members rather than resolving them.
+         */
         boolean definition = true;
 
+        /**
+         * Mixes a single category class into the enclosing expando meta class.
+         *
+         * @param category the category to mix in
+         */
         public void mixin(Class category) {
             mixin(Collections.singletonList(category));
         }
 
+        /**
+         * Mixes multiple category classes into the enclosing expando meta class.
+         *
+         * @param categories the categories to mix in
+         */
         public void mixin(List categories) {
             DefaultGroovyMethods.mixin(ExpandoMetaClass.this, categories);
         }
 
+        /**
+         * Mixes an array of category classes into the enclosing expando meta class.
+         *
+         * @param categories the categories to mix in
+         */
         public void mixin(Class[] categories) {
             DefaultGroovyMethods.mixin(ExpandoMetaClass.this, categories);
         }
 
+        /**
+         * Defines subclass-specific expando members using the supplied closure.
+         *
+         * @param subClass the subclass receiving the members
+         * @param closure the definition closure
+         */
         public void define(Class subClass, Closure closure) {
             final SubClassDefiningClosure definer = new SubClassDefiningClosure(subClass);
             closure.setDelegate(definer);
@@ -1375,6 +1549,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             closure.call((Object)null);
         }
 
+        /** {@inheritDoc} */
         @Override
         public Object invokeMethod(String name, Object obj) {
             try {
@@ -1404,11 +1579,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public void setProperty(String property, Object newValue) {
             ExpandoMetaClass.this.setProperty(property, newValue);
         }
 
+        /** {@inheritDoc} */
         @Override
         public Object getProperty(String property) {
             if (STATIC_QUALIFIER.equals(property))
@@ -1422,10 +1599,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     private class StaticDefiningClosure extends ExpandoMetaProperty {
+        /**
+         * Creates a helper for defining static members within the expando DSL.
+         */
         protected StaticDefiningClosure() {
             super(STATIC_QUALIFIER, true);
         }
 
+        /** {@inheritDoc} */
         @Override
         public Object invokeMethod(String name, Object obj) {
             if (obj instanceof Object[] args) {
@@ -1448,17 +1629,25 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             this.mixinClasses = mixinClasses;
         }
 
+        /**
+         * Returns the mixed-in view associated with the supplied type.
+         *
+         * @param key the mixin type to access
+         * @return the mixed-in view for the type
+         */
         public Object getAt(Class key) {
             if (key.isAssignableFrom(object.getClass())) {
                 return new GroovyObjectSupport() {
                     {
                         final MetaClass ownMetaClass = InvokerHelper.getMetaClass(object.getClass());
                         setMetaClass(new OwnedMetaClass(ownMetaClass) {
+                            /** {@inheritDoc} */
                             @Override
                             protected Object getOwner() {
                                 return object;
                             }
 
+                            /** {@inheritDoc} */
                             @Override
                             protected MetaClass getOwnerMetaClass(Object owner) {
                                 return getAdaptee();
@@ -1474,11 +1663,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                         {
                             final Object mixedInInstance = mixin.getMixinInstance(object);
                             setMetaClass(new OwnedMetaClass(InvokerHelper.getMetaClass(mixedInInstance)) {
+                                /** {@inheritDoc} */
                                 @Override
                                 protected Object getOwner() {
                                     return mixedInInstance;
                                 }
 
+                                /** {@inheritDoc} */
                                 @Override
                                 protected MetaClass getOwnerMetaClass(Object owner) {
                                     return ((MixedInMetaClass) getAdaptee()).getAdaptee();
@@ -1492,6 +1683,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             throw new RuntimeException("Class " + key + " isn't mixed in " + object.getClass());
         }
 
+        /**
+         * Replaces the mixed-in instance associated with the supplied type.
+         *
+         * @param key the mixin type to update
+         * @param value the replacement mixed-in instance
+         */
         public void putAt(Class key, Object value) {
             for (MixinInMetaClass mixin : mixinClasses)
                 if (mixin.getMixinClass().getTheClass() == key) {

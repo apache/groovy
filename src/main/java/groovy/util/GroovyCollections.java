@@ -35,6 +35,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * Utility methods for working with combinations, subsequences, and aggregate collection operations.
+ */
 public class GroovyCollections {
 
     /**

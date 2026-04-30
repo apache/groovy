@@ -18,6 +18,16 @@
  */
 package groovy.beans;
 
+/**
+ * Strategy for writing a named property on an object.
+ */
 public interface PropertyWriter {
+    /**
+     * Writes the named property on the supplied owner.
+     *
+     * @param owner the object that owns the property
+     * @param propertyName the property name
+     * @param value the value to assign
+     */
     void write(Object owner, String propertyName, Object value);
 }

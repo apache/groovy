@@ -44,27 +44,78 @@ import java.util.List;
  * information that can be determined by introspection.
  */
 public class Inspector {
+    /**
+     * Object currently being inspected.
+     */
     protected Object objectUnderInspection;
 
     // Indexes to retrieve Class Property information
+    /**
+     * Index for package information.
+     */
     public static final int CLASS_PACKAGE_IDX = 0;
+    /**
+     * Index for class information.
+     */
     public static final int CLASS_CLASS_IDX = 1;
+    /**
+     * Index for implemented interface information.
+     */
     public static final int CLASS_INTERFACE_IDX = 2;
+    /**
+     * Index for superclass information.
+     */
     public static final int CLASS_SUPERCLASS_IDX = 3;
+    /**
+     * Index for other class information.
+     */
     public static final int CLASS_OTHER_IDX = 4;
 
     // Indexes to retrieve field and method information
+    /**
+     * Index for member origin information.
+     */
     public static final int MEMBER_ORIGIN_IDX = 0;
+    /**
+     * Index for member modifier information.
+     */
     public static final int MEMBER_MODIFIER_IDX = 1;
+    /**
+     * Index for member declarer information.
+     */
     public static final int MEMBER_DECLARER_IDX = 2;
+    /**
+     * Index for member type information.
+     */
     public static final int MEMBER_TYPE_IDX = 3;
+    /**
+     * Index for member name information.
+     */
     public static final int MEMBER_NAME_IDX = 4;
+    /**
+     * Index for member parameter information.
+     */
     public static final int MEMBER_PARAMS_IDX = 5;
+    /**
+     * Index for member value information.
+     */
     public static final int MEMBER_VALUE_IDX = 5;
+    /**
+     * Index for member exception information.
+     */
     public static final int MEMBER_EXCEPTIONS_IDX = 6;
 
+    /**
+     * Placeholder for unavailable information.
+     */
     public static final String NOT_APPLICABLE = "n/a";
+    /**
+     * Origin label for Groovy members.
+     */
     public static final String GROOVY = "GROOVY";
+    /**
+     * Origin label for Java members.
+     */
     public static final String JAVA = "JAVA";
 
     /**
@@ -100,6 +151,11 @@ public class Inspector {
         return result;
     }
 
+    /**
+     * Indicates whether the inspected type implements {@link GroovyObject}.
+     *
+     * @return {@code true} if the inspected type is Groovy-aware
+     */
     public boolean isGroovy() {
         return GroovyObject.class.isAssignableFrom(getClassUnderInspection());
     }
@@ -216,6 +272,12 @@ public class Inspector {
         return result;
     }
 
+    /**
+     * Builds descriptive information for a Java field.
+     *
+     * @param field the field to describe
+     * @return the field information array
+     */
     protected String[] fieldInfo(Field field) {
         String[] result = new String[MEMBER_VALUE_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = JAVA;
@@ -231,10 +293,21 @@ public class Inspector {
         return withoutNulls(result);
     }
 
+    /**
+     * Builds descriptive information for a Groovy property value.
+     *
+     * @param pv the property value to describe
+     * @return the property information array
+     */
     protected String[] fieldInfo(PropertyValue pv) {
         return fieldWithInfo(pv).getV2();
     }
 
+    /**
+     * Gets properties together with their values and formatted metadata.
+     *
+     * @return the property/value tuples
+     */
     public Object[] getPropertiesWithInfo() {
         List<PropertyValue> props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
         Object[] result = new Object[props.size()];
@@ -245,6 +318,12 @@ public class Inspector {
         return result;
     }
 
+    /**
+     * Builds the value and metadata tuple for a Groovy property.
+     *
+     * @param pv the property value to describe
+     * @return the property tuple
+     */
     protected Tuple2<Object, String[]> fieldWithInfo(PropertyValue pv) {
         String[] info = new String[MEMBER_VALUE_IDX + 1];
         info[MEMBER_ORIGIN_IDX] = GROOVY;
@@ -263,10 +342,21 @@ public class Inspector {
         return new Tuple2<>(field, info);
     }
 
+    /**
+     * Gets the class of the inspected object.
+     *
+     * @return the inspected class
+     */
     protected Class getClassUnderInspection() {
         return objectUnderInspection.getClass();
     }
 
+    /**
+     * Returns the class name without its package prefix.
+     *
+     * @param clazz the class to shorten
+     * @return the shortened class name, or {@link #NOT_APPLICABLE}
+     */
     public static String shortName(Class clazz) {
         if (null == clazz) return NOT_APPLICABLE;
         String className = clazz.getName();
@@ -296,6 +386,12 @@ public class Inspector {
         return makeTypesInfo(exceptions);
     }
 
+    /**
+     * Builds descriptive information for a Java method.
+     *
+     * @param method the method to describe
+     * @return the method information array
+     */
     protected String[] methodInfo(Method method) {
         String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = JAVA;
@@ -309,6 +405,12 @@ public class Inspector {
         return withoutNulls(result);
     }
 
+    /**
+     * Builds descriptive information for a constructor.
+     *
+     * @param ctor the constructor to describe
+     * @return the constructor information array
+     */
     protected String[] methodInfo(Constructor ctor) {
         String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = JAVA;
@@ -322,6 +424,12 @@ public class Inspector {
         return withoutNulls(result);
     }
 
+    /**
+     * Builds descriptive information for a Groovy meta-method.
+     *
+     * @param method the meta-method to describe
+     * @return the method information array
+     */
     protected String[] methodInfo(MetaMethod method) {
         String[] result = new String[MEMBER_EXCEPTIONS_IDX + 1];
         result[MEMBER_ORIGIN_IDX] = GROOVY;
@@ -334,6 +442,12 @@ public class Inspector {
         return withoutNulls(result);
     }
 
+    /**
+     * Replaces {@code null} entries with {@link #NOT_APPLICABLE}.
+     *
+     * @param toNormalize the array to normalize
+     * @return the normalized array
+     */
     protected String[] withoutNulls(String[] toNormalize) {
         for (int i = 0; i < toNormalize.length; i++) {
             String s = toNormalize[i];
@@ -342,10 +456,21 @@ public class Inspector {
         return toNormalize;
     }
 
+    /**
+     * Prints member information to {@link System#out}.
+     *
+     * @param memberInfo the member information to print
+     */
     public static void print(Object[] memberInfo) {
         print(System.out, memberInfo);
     }
 
+    /**
+     * Prints member information to the supplied stream.
+     *
+     * @param out the destination stream
+     * @param memberInfo the member information to print
+     */
     static void print(final PrintStream out, Object[] memberInfo) {
         for (int i = 0; i < memberInfo.length; i++) {
             String[] metaMethod = (String[]) memberInfo[i];
@@ -357,19 +482,36 @@ public class Inspector {
         }
     }
 
+    /**
+     * Sorts member information using the default comparator.
+     *
+     * @param memberInfo the member information to sort
+     * @return the sorted collection
+     */
     public static Collection sort(List<Object> memberInfo) {
         return sort(memberInfo, new MemberComparator());
     }
 
+    /**
+     * Sorts member information using the supplied comparator.
+     *
+     * @param memberInfo the member information to sort
+     * @param comparator the comparator to apply
+     * @return the sorted collection
+     */
     public static Collection sort(List<Object> memberInfo, Comparator<Object> comparator) {
         memberInfo.sort(comparator);
         return memberInfo;
     }
 
+    /**
+     * Comparator for member information arrays.
+     */
     public static class MemberComparator implements Comparator<Object>, Serializable {
         @Serial
         private static final long serialVersionUID = -7691851726606749541L;
 
+        /** {@inheritDoc} */
         @Override
         public int compare(Object a, Object b) {
             String[] aStr = (String[]) a;
@@ -389,11 +531,22 @@ public class Inspector {
         }
     }
 
+    /**
+     * Comparator for property tuples that include values.
+     */
     public static class MemberComparatorWithValue implements Comparator<Object>, Serializable {
         @Serial
         private static final long serialVersionUID = 294298614093394525L;
         private static final MemberComparator delegate = new MemberComparator();
 
+        /**
+         * Compares two property tuples using the underlying property metadata.
+         *
+         * @param a the first tuple to compare
+         * @param b the second tuple to compare
+         * @return a negative value, zero, or a positive value as the first tuple is less than,
+         *         equal to, or greater than the second
+         */
         @Override
         public int compare(Object a, Object b) {
             Tuple2<Object, String[]> aTuple = (Tuple2<Object, String[]>) a;

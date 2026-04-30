@@ -35,45 +35,105 @@ import java.io.Writer;
  * @since 1.6
  */
 public class GroovyPrintWriter extends PrintWriter {
+    /**
+     * Creates a writer for the supplied file.
+     *
+     * @param file the target file
+     * @throws FileNotFoundException if the file cannot be opened
+     */
     public GroovyPrintWriter(File file) throws FileNotFoundException {
         super(file);
     }
 
+    /**
+     * Creates a writer for the supplied file using the given charset name.
+     *
+     * @param file the target file
+     * @param csn the charset name
+     * @throws FileNotFoundException if the file cannot be opened
+     * @throws UnsupportedEncodingException if the charset is unsupported
+     */
     public GroovyPrintWriter(File file, String csn)
             throws FileNotFoundException, UnsupportedEncodingException {
         super(file, csn);
     }
 
+    /**
+     * Creates a writer that delegates to the supplied writer.
+     *
+     * @param out the underlying writer
+     */
     public GroovyPrintWriter(Writer out) {
         super(out);
     }
 
+    /**
+     * Creates a writer that delegates to the supplied writer.
+     *
+     * @param out the underlying writer
+     * @param autoflush whether println operations flush automatically
+     */
     public GroovyPrintWriter(Writer out, boolean autoflush) {
         super(out, autoflush);
     }
 
+    /**
+     * Creates a writer for the supplied output stream.
+     *
+     * @param out the underlying output stream
+     */
     public GroovyPrintWriter(OutputStream out) {
         super(out);
     }
 
+    /**
+     * Creates a writer for the supplied output stream.
+     *
+     * @param out the underlying output stream
+     * @param autoflush whether println operations flush automatically
+     */
     public GroovyPrintWriter(OutputStream out, boolean autoflush) {
         super(out, autoflush);
     }
 
+    /**
+     * Creates a writer for the supplied file name.
+     *
+     * @param filename the target file name
+     * @throws FileNotFoundException if the file cannot be opened
+     */
     public GroovyPrintWriter(String filename) throws FileNotFoundException {
         super(filename);
     }
 
+    /**
+     * Creates a writer for the supplied file name using the given charset name.
+     *
+     * @param filename the target file name
+     * @param csn the charset name
+     * @throws FileNotFoundException if the file cannot be opened
+     * @throws UnsupportedEncodingException if the charset is unsupported
+     */
     public GroovyPrintWriter(String filename, String csn)
             throws FileNotFoundException, UnsupportedEncodingException {
         super(filename, csn);
     }
 
+    /**
+     * Prints an object using Groovy formatting.
+     *
+     * @param x the value to print
+     */
     @Override
     public void print(Object x) {
         write(FormatHelper.toString(x));
     }
 
+    /**
+     * Prints an object followed by a line separator using Groovy formatting.
+     *
+     * @param x the value to print
+     */
     @Override
     public void println(Object x) {
         // JDK 1.6 has changed the implementation to do a

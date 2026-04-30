@@ -28,13 +28,46 @@ import java.io.Serial;
  */
 public final class Undefined {
     private Undefined() {}
+
+    /**
+     * Sentinel string value used when an annotation member has no explicit string value.
+     */
     public static final String STRING = "<DummyUndefinedMarkerString-DoNotUse>";
+
+    /**
+     * Sentinel type used when an annotation member has no explicit class value.
+     */
     public static final class CLASS {}
+
+    /**
+     * Sentinel exception type used when an annotation member has no explicit exception value.
+     */
     public static final class EXCEPTION extends RuntimeException {
         @Serial
         private static final long serialVersionUID = -3960500360386581172L;
     }
+
+    /**
+     * Tests whether the supplied string is the undefined sentinel.
+     *
+     * @param other the value to test
+     * @return {@code true} if the value is undefined
+     */
     public static boolean isUndefined(String other) { return STRING.equals(other); }
+
+    /**
+     * Tests whether the supplied class node is the undefined class sentinel.
+     *
+     * @param other the class node to test
+     * @return {@code true} if the value is undefined
+     */
     public static boolean isUndefined(ClassNode other) { return CLASS.class.getName().equals(other.getName()); }
+
+    /**
+     * Tests whether the supplied class node is the undefined exception sentinel.
+     *
+     * @param other the class node to test
+     * @return {@code true} if the value is undefined
+     */
     public static boolean isUndefinedException(ClassNode other) { return EXCEPTION.class.getName().equals(other.getName()); }
 }

@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 
-/*
+/**
  * This {@link Interceptor} traces method calls on the proxied object to a log.
  * By default, the log is simply <pre>System.out</pre>; however, that can be
  * changed with the <pre>setWriter(Writer)</pre> method.
@@ -51,6 +51,9 @@ import java.io.Writer;
  */
 public class TracingInterceptor implements Interceptor {
 
+    /**
+     * Writer used to emit trace output.
+     */
     protected Writer writer = new PrintWriter(System.out);
     private int indent = 0;
 
@@ -68,6 +71,9 @@ public class TracingInterceptor implements Interceptor {
         this.writer = writer;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         write(object, methodName, arguments, "before");
@@ -75,6 +81,9 @@ public class TracingInterceptor implements Interceptor {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
         indent--;
@@ -82,6 +91,9 @@ public class TracingInterceptor implements Interceptor {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean doInvoke() {
         return true;
@@ -90,6 +102,14 @@ public class TracingInterceptor implements Interceptor {
         return "  ".repeat(Math.max(0, indent));
     }
 
+    /**
+     * Writes a formatted trace line for the supplied invocation stage.
+     *
+     * @param object the receiver object
+     * @param methodName the invoked method name
+     * @param arguments the invocation arguments
+     * @param origin the trace prefix to write
+     */
     protected void write(Object object, String methodName, Object[] arguments, final String origin) {
         try {
             writer.write(indent());
@@ -104,6 +124,14 @@ public class TracingInterceptor implements Interceptor {
         }
     }
 
+    /**
+     * Writes a trace line describing the intercepted method invocation.
+     *
+     * @param aClass the declaring or receiver class to report
+     * @param methodName the intercepted method name
+     * @param arguments the intercepted arguments
+     * @throws IOException if the trace output cannot be written
+     */
     protected void writeInfo(final Class aClass, final String methodName, final Object[] arguments) throws IOException {
         String argumentTypes = java.util.stream.Stream.of(arguments)
                 .map(arg -> arg != null ? arg.getClass().getName() : "java.lang.Object") // GROOVY-10009

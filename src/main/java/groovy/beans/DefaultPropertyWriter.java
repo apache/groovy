@@ -20,9 +20,16 @@ package groovy.beans;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+/**
+ * Default {@link PropertyWriter} implementation using Groovy property access.
+ */
 public class DefaultPropertyWriter implements PropertyWriter {
+    /**
+     * Shared property writer instance.
+     */
     public static final PropertyWriter INSTANCE = new DefaultPropertyWriter();
 
+    /** {@inheritDoc} */
     @Override
     public void write(Object owner, String propertyName, Object value) {
         InvokerHelper.setProperty(owner, propertyName, value);

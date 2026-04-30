@@ -37,14 +37,28 @@ public class Sequence extends ArrayList implements GroovyObject {
     private final Class type;
     private int hashCode;
 
+    /**
+     * Creates a sequence with no type restriction.
+     */
     public Sequence() {
         this(null);
     }
 
+    /**
+     * Creates a sequence constrained to the supplied type.
+     *
+     * @param type the allowed element type
+     */
     public Sequence(Class type) {
         this.type = type;
     }
 
+    /**
+     * Creates a sequence initialized with the supplied content.
+     *
+     * @param type the allowed element type
+     * @param content the initial content
+     */
     public Sequence(Class type, List content) {
         super(content.size());
         this.type = type;
@@ -61,6 +75,9 @@ public class Sequence extends ArrayList implements GroovyObject {
         addAll(collection);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object that) {
         if (that instanceof Sequence) {
@@ -69,6 +86,12 @@ public class Sequence extends ArrayList implements GroovyObject {
         return false;
     }
 
+    /**
+     * Compares this sequence with another sequence using Groovy equality.
+     *
+     * @param that the other sequence
+     * @return {@code true} if the sequences are equal
+     */
     public boolean equals(Sequence that) {
         if (size() == that.size()) {
             for (int i = 0; i < size(); i++) {
@@ -81,6 +104,9 @@ public class Sequence extends ArrayList implements GroovyObject {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         if (hashCode == 0) {
@@ -96,6 +122,11 @@ public class Sequence extends ArrayList implements GroovyObject {
         return hashCode;
     }
 
+    /**
+     * Returns the minimum allowed size for this sequence.
+     *
+     * @return the minimum size
+     */
     public int minimumSize() {
         return 0;
     }
@@ -108,6 +139,9 @@ public class Sequence extends ArrayList implements GroovyObject {
         return type;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void add(int index, Object element) {
         checkType(element);
@@ -115,6 +149,9 @@ public class Sequence extends ArrayList implements GroovyObject {
         super.add(index, element);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean add(Object element) {
         checkType(element);
@@ -122,6 +159,9 @@ public class Sequence extends ArrayList implements GroovyObject {
         return super.add(element);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean addAll(Collection c) {
         checkCollectionType(c);
@@ -129,6 +169,9 @@ public class Sequence extends ArrayList implements GroovyObject {
         return super.addAll(c);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean addAll(int index, Collection c) {
         checkCollectionType(c);
@@ -136,24 +179,36 @@ public class Sequence extends ArrayList implements GroovyObject {
         return super.addAll(index, c);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void clear() {
         hashCode = 0;
         super.clear();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object remove(int index) {
         hashCode = 0;
         return super.remove(index);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void removeRange(int fromIndex, int toIndex) {
         hashCode = 0;
         super.removeRange(fromIndex, toIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object set(int index, Object element) {
         hashCode = 0;
@@ -162,6 +217,9 @@ public class Sequence extends ArrayList implements GroovyObject {
 
     // GroovyObject interface
     //-------------------------------------------------------------------------
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object invokeMethod(String name, Object args) {
         try {
@@ -177,21 +235,33 @@ public class Sequence extends ArrayList implements GroovyObject {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object getProperty(String property) {
         return getMetaClass().getProperty(this, property);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setProperty(String property, Object newValue) {
         getMetaClass().setProperty(this, property, newValue);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public MetaClass getMetaClass() {
         return metaClass;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setMetaClass(MetaClass metaClass) {
         this.metaClass = metaClass;

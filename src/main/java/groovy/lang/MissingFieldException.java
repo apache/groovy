@@ -32,18 +32,38 @@ public class MissingFieldException extends GroovyRuntimeException {
     private final String field;
     private final Class type;
 
+    /**
+     * Creates an exception for a missing field.
+     *
+     * @param field the missing field name
+     * @param type the target type
+     */
     public MissingFieldException(String field, Class type) {
         super("No such field: " + field + " for class: " + type.getName());
         this.field = field;
         this.type = type;
     }
 
+    /**
+     * Creates an exception for a missing field with an underlying cause.
+     *
+     * @param field the missing field name
+     * @param type the target type
+     * @param e the underlying cause
+     */
     public MissingFieldException(String field, Class type, Throwable e) {
         super("No such field: " + field + " for class: " + type.getName() + ". Reason: " + e, e);
         this.field = field;
         this.type = type;
     }
 
+    /**
+     * Creates an exception with a custom message for a missing field.
+     *
+     * @param message the detail message
+     * @param field the missing field name
+     * @param type the target type
+     */
     public MissingFieldException(String message, String field, Class type) {
         super(message);
         this.field = field;

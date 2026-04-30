@@ -21,9 +21,19 @@ package groovy.cli;
 import java.io.Serial;
 import java.util.HashMap;
 
+/**
+ * Map-backed command-line option metadata with a typed default value.
+ *
+ * @param <T> the option value type
+ */
 public class TypedOption<T> extends HashMap<String, T> {
     @Serial private static final long serialVersionUID = 8931624081859777854L;
 
+    /**
+     * Returns the configured default value.
+     *
+     * @return the default value, if any
+     */
     public T defaultValue() {
         return (T) super.get("defaultValue");
     }

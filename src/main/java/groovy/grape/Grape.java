@@ -37,8 +37,17 @@ public class Grape {
 
     private static final System.Logger LOGGER = System.getLogger(Grape.class.getName());
 
+    /**
+     * Argument key for the auto-download setting.
+     */
     public static final String AUTO_DOWNLOAD_SETTING = "autoDownload";
+    /**
+     * Argument key for the disable-checksums setting.
+     */
     public static final String DISABLE_CHECKSUMS_SETTING = "disableChecksums";
+    /**
+     * Argument key for additional system properties.
+     */
     public static final String SYSTEM_PROPERTIES_SETTING = "systemProperties";
     private static final String GRAPE_IMPL_SYSTEM_PROPERTY = "groovy.grape.impl";
     private static final String DEFAULT_GRAPE_ENGINE = "groovy.grape.ivy.GrapeIvy";
@@ -48,6 +57,9 @@ public class Grape {
     private static boolean enableGrapes = Boolean.parseBoolean(System.getProperty("groovy.grape.enable", "true"));
     private static boolean enableAutoDownload = Boolean.parseBoolean(System.getProperty("groovy.grape.autoDownload", "true"));
     private static boolean disableChecksums = Boolean.parseBoolean(System.getProperty("groovy.grape.disableChecksums", "false"));
+    /**
+     * Lazily created grape engine instance.
+     */
     protected static GrapeEngine instance;
 
     /**
@@ -126,6 +138,11 @@ public class Grape {
         Grape.disableChecksums = disableChecksums;
     }
 
+    /**
+     * Returns the shared grape engine instance.
+     *
+     * @return the shared engine, or {@code null} if grapes are unavailable
+     */
     public static synchronized GrapeEngine getInstance() {
         if (instance == null) {
             String configuredImpl = System.getProperty(GRAPE_IMPL_SYSTEM_PROPERTY);
@@ -208,6 +225,11 @@ public class Grape {
         }
     }
 
+    /**
+     * Grabs a dependency expressed using the endorsed module shorthand.
+     *
+     * @param endorsed the endorsed module notation
+     */
     public static void grab(String endorsed) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
@@ -217,6 +239,11 @@ public class Grape {
         }
     }
 
+    /**
+     * Grabs a single dependency.
+     *
+     * @param dependency the dependency descriptor
+     */
     public static void grab(Map<String, Object> dependency) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
@@ -232,6 +259,12 @@ public class Grape {
         }
     }
 
+    /**
+     * Grabs one or more dependencies using the supplied arguments.
+     *
+     * @param args grab arguments
+     * @param dependencies dependency descriptors
+     */
     public static void grab(final Map<String, Object> args, final Map... dependencies) {
         if (enableGrapes) {
             GrapeEngine instance1 = getInstance();
@@ -250,6 +283,11 @@ public class Grape {
         }
     }
 
+    /**
+     * Enumerates locally available grapes.
+     *
+     * @return grapes grouped by organization and module
+     */
     public static Map<String, Map<String, List<String>>> enumerateGrapes() {
         Map<String, Map<String, List<String>>> grapes = null;
         if (enableGrapes) {
@@ -264,10 +302,25 @@ public class Grape {
         return grapes;
     }
 
+    /**
+     * Resolves dependency coordinates to URIs.
+     *
+     * @param args resolve arguments
+     * @param dependencies dependency descriptors
+     * @return the resolved artifact URIs
+     */
     public static URI[] resolve(Map<String, Object> args, Map... dependencies) {
         return resolve(args, null, dependencies);
     }
 
+    /**
+     * Resolves dependency coordinates to URIs while optionally collecting dependency information.
+     *
+     * @param args resolve arguments
+     * @param depsInfo optional dependency metadata sink
+     * @param dependencies dependency descriptors
+     * @return the resolved artifact URIs
+     */
     public static URI[] resolve(Map<String, Object> args, List depsInfo, Map... dependencies) {
         URI[] uris = null;
         if (enableGrapes) {
@@ -288,6 +341,12 @@ public class Grape {
         return uris;
     }
 
+    /**
+     * Lists dependencies associated with the supplied class loader.
+     *
+     * @param cl the class loader to inspect
+     * @return the dependency descriptors
+     */
     public static Map[] listDependencies(ClassLoader cl) {
         Map[] maps = null;
         if (enableGrapes) {
@@ -302,6 +361,11 @@ public class Grape {
         return maps;
     }
 
+    /**
+     * Adds a resolver to the shared grape engine.
+     *
+     * @param args the resolver descriptor
+     */
     public static void addResolver(Map<String, Object> args) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();

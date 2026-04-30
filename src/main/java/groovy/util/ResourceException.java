@@ -20,35 +20,43 @@ package groovy.util;
 
 import java.io.Serial;
 
+/**
+ * Indicates a problem loading or accessing a resource.
+ */
 public class ResourceException extends Exception {
 
     @Serial private static final long serialVersionUID = -4640685456255837192L;
 
     /**
-     *
+     * Creates a resource exception with no detail message.
      */
     public ResourceException() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
     /**
-     * @param message
+     * Creates a resource exception with the supplied detail message.
+     *
+     * @param message the detail message
      */
     public ResourceException(String message) {
         super(message);
     }
 
     /**
-     * @param message
-     * @param cause
+     * Creates a resource exception with the supplied detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause the underlying cause
      */
     public ResourceException(String message, Throwable cause) {
         super(message, cause);
     }
 
     /**
-     * @param cause
+     * Creates a resource exception with the supplied cause.
+     *
+     * @param cause the underlying cause
      */
     public ResourceException(Throwable cause) {
         super(cause);

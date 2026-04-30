@@ -38,10 +38,25 @@ public class MissingMethodException extends GroovyRuntimeException {
     private final boolean isStatic;
     private final Object[] arguments;
 
+    /**
+     * Creates an exception for a missing instance method.
+     *
+     * @param method the missing method name
+     * @param type the target type
+     * @param arguments the supplied arguments
+     */
     public MissingMethodException(String method, Class<?> type, Object[] arguments) {
         this(method, type, arguments, false);
     }
 
+    /**
+     * Creates an exception for a missing method.
+     *
+     * @param method the missing method name
+     * @param type the target type
+     * @param arguments the supplied arguments
+     * @param isStatic whether the missing method was called statically
+     */
     public MissingMethodException(String method, Class<?> type, Object[] arguments, boolean isStatic) {
         super();
         this.method = method;
@@ -50,10 +65,20 @@ public class MissingMethodException extends GroovyRuntimeException {
         this.arguments = arguments != null ? arguments : new Object[0];
     }
 
+    /**
+     * Returns the supplied arguments.
+     *
+     * @return the supplied arguments
+     */
     public Object[] getArguments() {
         return arguments;
     }
 
+    /**
+     * Returns a detailed message including argument and suggestion information.
+     *
+     * @return the formatted error message
+     */
     @Override
     public String getMessage() {
         Class<?> type = getType();

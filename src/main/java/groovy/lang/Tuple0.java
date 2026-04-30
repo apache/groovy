@@ -26,11 +26,22 @@ import java.io.Serial;
  * @since 3.0.0
  */
 public final class Tuple0 extends Tuple {
+    /**
+     * Shared empty tuple instance.
+     */
     @Serial private static final long serialVersionUID = -3791115121904072346L;
+    /**
+     * Shared empty tuple instance.
+     */
     public static final Tuple0 INSTANCE = new Tuple0();
 
     private Tuple0() {}
 
+    /**
+     * Returns the shared empty tuple instance.
+     *
+     * @return {@link #INSTANCE}
+     */
     @Override
     public Tuple0 clone() {
         return INSTANCE;

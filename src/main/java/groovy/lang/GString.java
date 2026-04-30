@@ -41,7 +41,14 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     @Serial private static final long serialVersionUID = -2638020355892246323L;
 
+    /**
+     * Shared empty string array.
+     */
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+    /**
+     * Shared empty object array.
+     */
     public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     /**
@@ -51,11 +58,17 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         @Serial private static final long serialVersionUID = -7676746462783374250L;
         private static final String EMPTY_STRING = "";
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public String[] getStrings() {
             return new String[]{EMPTY_STRING};
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public String toString() {
             return EMPTY_STRING;
@@ -64,16 +77,31 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     private final Object[] values;
 
+    /**
+     * Creates a GString from the supplied values array reference.
+     *
+     * @param values the interpolated values
+     */
     public GString(Object values) {
         this.values = (Object[]) values;
     }
 
+    /**
+     * Creates a GString from the supplied values.
+     *
+     * @param values the interpolated values
+     */
     public GString(Object[] values) {
         this.values = values;
     }
 
     // will be static in an instance
 
+    /**
+     * Returns the string segments surrounding the interpolated values.
+     *
+     * @return the string segments
+     */
     public abstract String[] getStrings();
 
     /**
@@ -91,26 +119,57 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         }
     }
 
+    /**
+     * Returns the interpolated values.
+     *
+     * @return the interpolated values
+     */
     public Object[] getValues() {
         return values;
     }
 
+    /**
+     * Concatenates this GString with another GString.
+     *
+     * @param that the other GString
+     * @return the concatenated GString
+     */
     public GString plus(GString that) {
         return GStringUtil.plusImpl(values, that.values, getStrings(), that.getStrings());
     }
 
+    /**
+     * Concatenates this GString with a String.
+     *
+     * @param that the string to append
+     * @return the concatenated GString
+     */
     public GString plus(String that) {
         return plus(new GStringImpl(EMPTY_OBJECT_ARRAY, new String[]{that}));
     }
 
+    /**
+     * Returns the number of interpolated values.
+     *
+     * @return the value count
+     */
     public int getValueCount() {
         return values.length;
     }
 
+    /**
+     * Returns the interpolated value at the supplied index.
+     *
+     * @param idx the value index
+     * @return the interpolated value
+     */
     public Object getValue(int idx) {
         return values[idx];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         Writer buffer = new StringBuilderWriter(calcInitialCapacity());
@@ -123,28 +182,42 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return buffer.toString();
     }
 
+    /**
+     * Calculates the initial buffer capacity for rendering this GString.
+     *
+     * @return the initial capacity
+     */
     protected int calcInitialCapacity() {
         return GStringUtil.calcInitialCapacityImpl(values, getStrings());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Writer writeTo(Writer out) throws IOException {
         return GStringUtil.writeToImpl(out, values, getStrings());
     }
 
-    /* (non-Javadoc)
-     * @see groovy.lang.Buildable#build(groovy.lang.GroovyObject)
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void build(final GroovyObject builder) {
         GStringUtil.buildImpl(builder, values, getStrings());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return 37 + toString().hashCode();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object that) {
         if (this == that) return true;
@@ -153,25 +226,43 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return equals((GString) that);
     }
 
+    /**
+     * Compares this GString with another GString by rendered content.
+     *
+     * @param that the other GString
+     * @return {@code true} if the rendered strings are equal
+     */
     public boolean equals(GString that) {
         return toString().equals(that.toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(Object that) {
         return toString().compareTo(that.toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public char charAt(int index) {
         return toString().charAt(index);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int length() {
         return toString().length();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CharSequence subSequence(int start, int end) {
         return toString().subSequence(start, end);
@@ -186,10 +277,22 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return StringGroovyMethods.bitwiseNegate(toString());
     }
 
+    /**
+     * Returns the rendered string as a byte array using the platform default charset.
+     *
+     * @return the rendered bytes
+     */
     public byte[] getBytes() {
         return toString().getBytes();
     }
 
+    /**
+     * Returns the rendered string as a byte array using the supplied charset.
+     *
+     * @param charset the charset name
+     * @return the rendered bytes
+     * @throws UnsupportedEncodingException if the charset is unsupported
+     */
     public byte[] getBytes(String charset) throws UnsupportedEncodingException {
         return toString().getBytes(charset);
     }

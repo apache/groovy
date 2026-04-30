@@ -30,7 +30,14 @@ public class Groovydoc {
     private final String content;
     private List<GroovydocTag> tagList = Collections.emptyList();
     private GroovydocHolder holder;
+
+    /**
+     * Shared empty groovydoc instance.
+     */
     public static final Groovydoc EMPTY_GROOVYDOC = new Groovydoc("") {
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public List<GroovydocTag> getTagList() {
             return Collections.emptyList();
@@ -41,19 +48,37 @@ public class Groovydoc {
         this.content = content;
     }
 
+    /**
+     * Creates a groovydoc for the supplied content and holder.
+     *
+     * @param content the doc text
+     * @param groovydocHolder the owning holder
+     */
     public Groovydoc(String content, GroovydocHolder groovydocHolder) {
         this(content);
         this.holder = groovydocHolder;
     }
 
+    /**
+     * Creates a groovydoc for the supplied content and annotated element.
+     *
+     * @param content the doc text
+     * @param annotatedElement the owning annotated element
+     */
     public Groovydoc(final String content, final AnnotatedElement annotatedElement) {
         this(content);
         this.holder = new GroovydocHolder<AnnotatedElement>() {
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public Groovydoc getGroovydoc() {
                 return Groovydoc.this;
             }
 
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public AnnotatedElement getInstance() {
                 return annotatedElement;
@@ -94,6 +119,9 @@ public class Groovydoc {
         return holder;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -103,11 +131,17 @@ public class Groovydoc {
                 Objects.equals(holder, groovydoc.holder);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return Objects.hash(content, holder);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return this.content;

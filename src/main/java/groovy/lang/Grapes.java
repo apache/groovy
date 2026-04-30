@@ -68,6 +68,11 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.SOURCE)
 @ExtendedTarget(ExtendedElementType.IMPORT)
 public @interface Grapes {
+    /**
+     * Lists the grab-related annotations to apply together.
+     *
+     * @return the grouped grab annotations
+     */
     Grab[] value();
 
     /**

@@ -18,6 +18,11 @@
  */
 package groovy.transform;
 
+/**
+ * Conflict resolution modes for {@link AnnotationCollector}.
+ *
+ * @since 2.0.0
+ */
 public enum AnnotationCollectorMode {
     /**
      * Annotations from the annotation collection will always be inserted. After all transforms have been run, it will

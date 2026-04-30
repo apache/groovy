@@ -33,6 +33,9 @@ import org.codehaus.groovy.control.SourceUnit;
  * @since 2.3.0
  */
 public class SecondParam extends PickAnyArgumentHint {
+    /**
+     * Creates a hint that selects the second parameter type.
+     */
     public SecondParam() {
         super(1,-1);
     }
@@ -44,6 +47,9 @@ public class SecondParam extends PickAnyArgumentHint {
      * @since 2.3.0
      */
     public static class FirstGenericType extends PickAnyArgumentHint {
+        /**
+         * Creates a hint that selects the first generic type of the second parameter.
+         */
         public FirstGenericType() {
             super(1,0);
         }
@@ -56,6 +62,9 @@ public class SecondParam extends PickAnyArgumentHint {
      * @since 2.3.0
      */
     public static class SecondGenericType extends PickAnyArgumentHint {
+        /**
+         * Creates a hint that selects the second generic type of the second parameter.
+         */
         public SecondGenericType() {
             super(1,1);
         }
@@ -68,6 +77,9 @@ public class SecondParam extends PickAnyArgumentHint {
      * @since 2.3.0
      */
     public static class ThirdGenericType extends PickAnyArgumentHint {
+        /**
+         * Creates a hint that selects the third generic type of the second parameter.
+         */
         public ThirdGenericType() {
             super(1,2);
         }
@@ -79,6 +91,9 @@ public class SecondParam extends PickAnyArgumentHint {
      * <code>void &lt;T&gt; doWithArray(String first, T[] array, @ClosureParams(FirstParam.Component.class) Closure c) { ... }</code>
      */
     public static class Component extends SecondParam {
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage) {
             final ClassNode[] parameterTypes = super.getParameterTypes(node, options, sourceUnit, unit, usage);

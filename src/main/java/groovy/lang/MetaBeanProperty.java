@@ -33,6 +33,14 @@ public class MetaBeanProperty extends MetaProperty {
     private MetaMethod setter;
     private CachedField field;
 
+    /**
+     * Creates a bean-style meta property backed by optional accessor methods.
+     *
+     * @param name the Groovy property name
+     * @param type the declared property type
+     * @param getter the getter meta method, or {@code null}
+     * @param setter the setter meta method, or {@code null}
+     */
     public MetaBeanProperty(final String name, final Class type, final MetaMethod getter, final MetaMethod setter) {
         super(name, type);
         this.getter = getter;

@@ -19,6 +19,14 @@
 package groovy.lang;
 
 
+/**
+ * Defines a type that can render itself into a builder.
+ */
 public interface Buildable {
+    /**
+     * Builds this object into the supplied builder.
+     *
+     * @param builder the target builder
+     */
     void build(GroovyObject builder);
 }

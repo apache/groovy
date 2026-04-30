@@ -35,10 +35,21 @@ public class DeprecationException extends RuntimeException {
 
     @Serial private static final long serialVersionUID = 8828016729085737697L;
 
+    /**
+     * Creates a deprecation exception with the supplied message.
+     *
+     * @param message the detail message
+     */
     public DeprecationException(String message) {
         super(message);
     }
 
+    /**
+     * Creates a deprecation exception with the supplied message and cause.
+     *
+     * @param message the detail message
+     * @param cause the underlying cause
+     */
     public DeprecationException(String message, Throwable cause) {
         super(message, cause);
     }

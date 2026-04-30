@@ -27,10 +27,22 @@ public class ReadOnlyPropertyException extends MissingPropertyException {
 
     @Serial private static final long serialVersionUID = -1800912081930896077L;
 
+    /**
+     * Creates an exception for a read-only property on the supplied type.
+     *
+     * @param property the property name
+     * @param type the target type
+     */
     public ReadOnlyPropertyException(final String property, final Class type) {
         super("Cannot set read-only property: " + property + " for class: " + type.getName(), property, type);
     }
 
+    /**
+     * Creates an exception for a read-only property on the supplied class name.
+     *
+     * @param property the property name
+     * @param classname the target class name
+     */
     public ReadOnlyPropertyException(final String property, final String classname) {
         super("Cannot set read-only property: " + property + " for class: " + classname);
     }

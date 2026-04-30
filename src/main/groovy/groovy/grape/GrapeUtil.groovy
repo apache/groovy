@@ -150,10 +150,21 @@ class GrapeUtil {
         }
     }
 
+    /**
+     * Checks whether the discovered services include a Groovy runner provider.
+     *
+     * @param services the discovered service descriptors
+     * @return {@code true} if a Groovy runner provider was found
+     */
     static boolean checkForRunner(Collection<String> services) {
         services.contains(RUNNER_PROVIDER_CONFIG)
     }
 
+    /**
+     * Loads Groovy runners for the specified class loader.
+     *
+     * @param classLoader the class loader to inspect
+     */
     static void registryLoad(ClassLoader classLoader) {
         GroovyRunnerRegistry.instance.load(classLoader)
     }

@@ -81,6 +81,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
+/**
+ * Property handler used by immutable-style transforms.
+ *
+ * @since 2.5.0
+ */
 public class ImmutablePropertyHandler extends PropertyHandler {
     private static final ClassNode POJO_TYPE = make(POJO.class);
     private static final ClassNode SORTEDMAP_TYPE = make(SortedMap.class);
@@ -89,6 +94,9 @@ public class ImmutablePropertyHandler extends PropertyHandler {
     private static final ClassNode XFORM_TYPE = make(ImmutableASTTransformation.class);
     private static final ClassNode READONLYEXCEPTION_TYPE = make(ReadOnlyPropertyException.class);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Statement createPropGetter(final PropertyNode pNode) {
         FieldNode fNode = pNode.getField();
@@ -106,16 +114,25 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         return body;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Statement createPropSetter(final PropertyNode pNode) {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validateAttributes(final AbstractASTTransformation xform, final AnnotationNode anno) {
         return isValidAttribute(xform, anno, "useSuper");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validateProperties(final AbstractASTTransformation xform, final BlockStatement body, final ClassNode cNode, final List<PropertyNode> props) {
         if (xform instanceof MapConstructorASTTransformation) {
@@ -127,6 +144,9 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         return super.validateProperties(xform, body, cNode, props);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Statement createPropInit(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final PropertyNode pNode, final Parameter namedArgsMap) {
         FieldNode fNode = pNode.getField();
@@ -154,6 +174,13 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         return safeExpression(fieldExpr, expression);
     }
 
+    /**
+     * Returns an immutable defensive-copy expression for the supplied collection value.
+     *
+     * @param fieldExpr the original field expression
+     * @param type the declared property type
+     * @return an expression yielding an immutable collection view
+     */
     protected Expression cloneCollectionExpr(final Expression fieldExpr, final ClassNode type) {
         // priority is low to high -- SortedSet comes first and Collection is last
         Expression  asImmutableX = createAsImmutableX(fieldExpr, COLLECTION_TYPE);
@@ -169,10 +196,26 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         return ternaryX(isInstanceOfX(expr, type), createAsImmutableX(expr, type), elseStatement);
     }
 
+    /**
+     * Creates an {@code asImmutable()} call for the supplied expression and target type.
+     *
+     * @param expr the source expression
+     * @param type the type used for the cast before invoking {@code asImmutable()}
+     * @return the immutable-conversion expression
+     */
     protected Expression createAsImmutableX(final Expression expr, final ClassNode type) {
         return callX(DGM_TYPE, "asImmutable", castX(type, expr));
     }
 
+    /**
+     * Creates the constructor statement used to initialize an immutable property.
+     *
+     * @param xform the active transform
+     * @param cNode the owning class
+     * @param pNode the property being initialized
+     * @param namedArgsMap the named-argument map, or {@code null}
+     * @return the initialization statement
+     */
     protected Statement createConstructorStatement(final AbstractASTTransformation xform, final ClassNode cNode, final PropertyNode pNode, final Parameter namedArgsMap) {
         final List<String> knownImmutableClasses = ImmutablePropertyUtils.getKnownImmutableClasses(xform, cNode);
         final List<String> knownImmutables = ImmutablePropertyUtils.getKnownImmutables(xform, cNode);
@@ -326,6 +369,13 @@ public class ImmutablePropertyHandler extends PropertyHandler {
         return knownImmutables.contains(fieldName);
     }
 
+    /**
+     * Creates a statement that rejects overriding a final property value via constructor arguments.
+     *
+     * @param cNode the owning class
+     * @param fNode the final field
+     * @return the generated guard statement
+     */
     protected Statement checkFinalArgNotOverridden(final ClassNode cNode, final FieldNode fNode) {
         String name = fNode.getName();
         Expression value = findArg(name);

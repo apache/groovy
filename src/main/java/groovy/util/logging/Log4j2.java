@@ -65,7 +65,20 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log4j2 {
+    /**
+     * Returns the injected logger field name.
+     * Defaults to {@code "log"}.
+     *
+     * @return the logger field name
+     */
     String value() default "log";
+
+    /**
+     * Returns the logger category name.
+     * Defaults to {@link LogASTTransformation#DEFAULT_CATEGORY_NAME}, which uses the host class name.
+     *
+     * @return the logger category name
+     */
     String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
 
     /**
@@ -74,16 +87,33 @@ public @interface Log4j2 {
      */
     String visibilityId() default Undefined.STRING;
 
+    /**
+     * Returns the logging strategy implementation used by this transform.
+     * Defaults to {@link Log4j2LoggingStrategy}.
+     *
+     * @return the logging strategy type
+     */
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4j2LoggingStrategy.class;
 
     //
 
+    /**
+     * Logging strategy for Log4j 2.
+     */
     class Log4j2LoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
 
+        /**
+         * Creates a Log4j 2 logging strategy.
+         *
+         * @param loader the class loader used to resolve logger classes
+         */
         protected Log4j2LoggingStrategy(final GroovyClassLoader loader) {
             super(loader);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public FieldNode addLoggerFieldToClass(final ClassNode classNode, final String logFieldName, final String categoryName, final int fieldModifiers) {
             ClassNode fieldType = classNode("org.apache.logging.log4j.Logger"); // GROOVY-11798
@@ -97,11 +127,17 @@ public @interface Log4j2 {
             return classNode.addField(logFieldName, fieldModifiers, fieldType, fieldValue);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean isLoggingMethod(final String methodName) {
             return methodName.matches("fatal|error|warn|info|debug|trace");
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Expression wrapLoggingMethodCall(final Expression logVariable, final String methodName, final Expression originalExpression) {
             MethodCallExpression condition = new MethodCallExpression(

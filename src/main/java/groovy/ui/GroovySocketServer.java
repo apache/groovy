@@ -168,6 +168,9 @@ public class GroovySocketServer implements Runnable {
         }
     }
 
+    /**
+     * Handles a single client connection.
+     */
     static class GroovyClientConnection implements Runnable {
         private Script script;
         private Socket socket;
@@ -175,6 +178,14 @@ public class GroovySocketServer implements Runnable {
         private PrintWriter writer;
         private boolean autoOutputFlag;
 
+        /**
+         * Creates and starts a client connection handler.
+         *
+         * @param script the script to execute per line
+         * @param autoOutput whether non-null results should be written automatically
+         * @param socket the client socket
+         * @throws IOException if the socket streams cannot be opened
+         */
         GroovyClientConnection(Script script, boolean autoOutput,Socket socket) throws IOException {
             this.script = script;
             this.autoOutputFlag = autoOutput;
@@ -183,6 +194,9 @@ public class GroovySocketServer implements Runnable {
             writer = new PrintWriter(socket.getOutputStream());
             new Thread(this, "Groovy client connection - " + socket.getInetAddress().getHostAddress()).start();
         }
+        /**
+         * Processes incoming client lines until the connection closes.
+         */
         @Override
         public void run() {
             try {

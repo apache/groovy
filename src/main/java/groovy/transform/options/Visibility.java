@@ -26,18 +26,48 @@ import java.lang.reflect.Modifier;
  * @since 2.5.0
  */
 public enum Visibility {
+    /**
+     * Public visibility.
+     */
     PUBLIC(Modifier.PUBLIC),
+
+    /**
+     * Protected visibility.
+     */
     PROTECTED(Modifier.PROTECTED),
+
+    /**
+     * Package-private visibility.
+     */
     PACKAGE_PRIVATE(0),
+
+    /**
+     * Private visibility.
+     */
     PRIVATE(Modifier.PRIVATE),
+
+    /**
+     * Marker indicating that no explicit visibility was requested.
+     */
     UNDEFINED(-1);
 
     private final int modifier;
 
+    /**
+     * Creates a visibility value backed by the supplied JVM modifier flag.
+     *
+     * @param modifier the modifier flag, or {@code -1} for {@link #UNDEFINED}
+     */
     Visibility(final int modifier) {
         this.modifier = modifier;
     }
 
+    /**
+     * Returns the JVM modifier flag for this visibility.
+     *
+     * @return the modifier flag
+     * @throws UnsupportedOperationException if this value is {@link #UNDEFINED}
+     */
     public int getModifier() {
         if (modifier == -1) {
             throw new UnsupportedOperationException("getModifier() not supported for UNDEFINED");

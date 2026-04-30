@@ -232,6 +232,14 @@ class CliBuilderInternal {
         this.errorWriter = writer
     }
 
+    /**
+     * Creates a typed option from a Commons CLI-style option definition.
+     *
+     * @param args the option definition details
+     * @param type the target type for the option value
+     * @param description the option description
+     * @return the created typed option
+     */
     public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
         def name = args.opt ?: '_'
         args.type = type

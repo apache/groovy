@@ -49,9 +49,17 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
+/**
+ * Default implementation for validating and initializing transformed properties.
+ *
+ * @since 2.5.0
+ */
 public class DefaultPropertyHandler extends PropertyHandler {
     private static final ClassNode POJO_TYPE = make(POJO.class);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validateAttributes(final AbstractASTTransformation xform, final AnnotationNode anno) {
         boolean success = true;
@@ -59,6 +67,9 @@ public class DefaultPropertyHandler extends PropertyHandler {
         return success;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validateProperties(final AbstractASTTransformation xform, final BlockStatement body, final ClassNode cNode, final List<PropertyNode> props) {
         if (xform instanceof MapConstructorASTTransformation) {
@@ -70,6 +81,9 @@ public class DefaultPropertyHandler extends PropertyHandler {
         return super.validateProperties(xform, body, cNode, props);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Statement createPropInit(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final PropertyNode pNode, final Parameter namedArgsMap) {
         String name = pNode.getName();

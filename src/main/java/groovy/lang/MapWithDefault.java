@@ -76,21 +76,33 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
         return new MapWithDefault<>(map, initClosure, autoGrow, autoShrink);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         return delegate.size();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean containsKey(final Object key) {
         return delegate.containsKey(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean containsValue(final Object value) {
         return delegate.containsValue(value);
@@ -141,42 +153,66 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
         return delegate.put(key, value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public V remove(final Object key) {
         return delegate.remove(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void putAll(final Map<? extends K, ? extends V> map) {
         if (autoShrink) map.forEach(this::put);
         else delegate.putAll(map);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void clear() {
         delegate.clear();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Set<K> keySet() {
         return delegate.keySet();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Collection<V> values() {
         return delegate.values();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
         return delegate.entrySet();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(final Object object) {
         return delegate.equals(object);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return delegate.hashCode();

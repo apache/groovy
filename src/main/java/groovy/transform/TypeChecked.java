@@ -36,7 +36,12 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
 public @interface TypeChecked {
-
+    /**
+     * Controls whether type checking is applied or skipped.
+     * Defaults to {@link TypeCheckingMode#PASS}.
+     *
+     * @return the type-checking mode
+     */
     TypeCheckingMode value() default TypeCheckingMode.PASS;
 
     /**

@@ -31,12 +31,14 @@ public abstract class GroovyObjectSupport implements GroovyObject {
     // never persist the MetaClass
     private transient MetaClass metaClass = getDefaultMetaClass();
 
+    /** {@inheritDoc} */
     @Override
     @Transient
     public MetaClass getMetaClass() {
         return this.metaClass;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setMetaClass(/*@Nullable*/ final MetaClass metaClass) {
         this.metaClass = Optional.ofNullable(metaClass).orElseGet(this::getDefaultMetaClass);

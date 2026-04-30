@@ -80,6 +80,9 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
  * The other annotation attributes for the {@code @Builder} transform for configuring the building process aren't applicable for this strategy.
  */
 public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (!(annotatedNode instanceof ClassNode buildee)) {
@@ -126,6 +129,9 @@ public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStra
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected List<FieldNode> getFields(BuilderASTTransformation transform, AnnotationNode anno, ClassNode buildee) {
         return getInstancePropertyFields(buildee);

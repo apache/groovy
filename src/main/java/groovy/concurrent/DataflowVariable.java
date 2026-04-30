@@ -126,57 +126,72 @@ public class DataflowVariable<T> implements Awaitable<T> {
 
     // ---- Awaitable delegation -------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public T get() throws InterruptedException, ExecutionException {
         return awaitable.get();
     }
 
+    /** {@inheritDoc} */
     @Override
     public T get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         return awaitable.get(timeout, unit);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isDone() {
         return awaitable.isDone();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean cancel() {
         return awaitable.cancel();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isCancelled() {
         return awaitable.isCancelled();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isCompletedExceptionally() {
         return awaitable.isCompletedExceptionally();
     }
 
+    /** {@inheritDoc} */
     @Override
     public <U> Awaitable<U> then(Function<? super T, ? extends U> fn) {
         return awaitable.then(fn);
     }
 
+    /** {@inheritDoc} */
     @Override
     public <U> Awaitable<U> thenCompose(Function<? super T, ? extends Awaitable<U>> fn) {
         return awaitable.thenCompose(fn);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Awaitable<T> exceptionally(Function<Throwable, ? extends T> fn) {
         return awaitable.exceptionally(fn);
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompletableFuture<T> toCompletableFuture() {
         return future;
     }
 
+    /**
+     * Returns the current bound state in a diagnostic form.
+     *
+     * @return the current state description
+     */
     @Override
     public String toString() {
         if (future.isDone()) {

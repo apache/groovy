@@ -63,6 +63,9 @@ public class PickAnyArgumentHint extends SingleSignatureClosureHint {
         this.genericTypeIndex = genericTypeIndex;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit unit, final ASTNode usage) {
         ClassNode type = node.getParameters()[parameterIndex].getOriginType();

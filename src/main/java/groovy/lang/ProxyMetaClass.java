@@ -36,7 +36,13 @@ import java.util.function.Supplier;
  */
 public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
 
+    /**
+     * Wrapped meta class that performs the underlying dispatch.
+     */
     protected MetaClass adaptee;
+    /**
+     * Optional interceptor applied around meta-object protocol calls.
+     */
     protected Interceptor interceptor;
 
     /**
@@ -57,16 +63,19 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
         super.initialize();
     }
 
+    /** {@inheritDoc} */
     @Override
     public synchronized void initialize() {
         this.adaptee.initialize();
     }
 
+    /** {@inheritDoc} */
     @Override
     public MetaClass getAdaptee() {
         return this.adaptee;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setAdaptee(final MetaClass metaClass) {
         this.adaptee = metaClass;

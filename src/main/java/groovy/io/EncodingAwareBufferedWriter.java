@@ -28,6 +28,12 @@ import java.nio.charset.Charset;
  */
 public class EncodingAwareBufferedWriter extends BufferedWriter {
     private final OutputStreamWriter out;
+
+    /**
+     * Creates a buffered writer that exposes the wrapped writer's encoding.
+     *
+     * @param out the writer to wrap
+     */
     public EncodingAwareBufferedWriter(OutputStreamWriter out) {
         super(out);
         this.out = out;

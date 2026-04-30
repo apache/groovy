@@ -35,8 +35,21 @@ import java.util.List;
  */
 public abstract class SingleSignatureClosureHint extends ClosureSignatureHint {
 
+    /**
+     * Returns the single parameter signature accepted by the hinted closure.
+     *
+     * @param node the annotated method node
+     * @param options the hint options
+     * @param sourceUnit the current source unit
+     * @param unit the current compilation unit
+     * @param usage the closure expression or related AST node
+     * @return the inferred parameter types
+     */
     public abstract ClassNode[] getParameterTypes(MethodNode node, String[] options, SourceUnit sourceUnit, CompilationUnit unit, ASTNode usage);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
         return Collections.singletonList(getParameterTypes(node, options, sourceUnit, compilationUnit, usage));

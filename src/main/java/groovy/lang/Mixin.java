@@ -37,5 +37,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.ast.MixinASTTransformation")
 public @interface Mixin {
+    /**
+     * Lists the mixin types to apply.
+     *
+     * @return the mixin types
+     */
     Class[] value();
 }

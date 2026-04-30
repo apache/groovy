@@ -77,5 +77,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface SelfType {
+    /**
+     * Returns the types that an implementing class must extend or implement.
+     *
+     * @return the required self types
+     */
     Class[] value();
 }

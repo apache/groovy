@@ -257,6 +257,11 @@ public final class Agent<T> {
         return p;
     }
 
+    /**
+     * Returns the current value in a diagnostic form.
+     *
+     * @return the current value description
+     */
     @Override
     public String toString() {
         return "Agent[" + get() + "]";
@@ -310,10 +315,20 @@ public final class Agent<T> {
         private final java.util.concurrent.atomic.AtomicBoolean active = new java.util.concurrent.atomic.AtomicBoolean();
         private volatile boolean shutdown;
 
+        /**
+         * Creates a serial executor backed by the supplied delegate.
+         *
+         * @param delegate the executor used to run queued tasks
+         */
         SerialExecutor(Executor delegate) {
             this.delegate = delegate;
         }
 
+        /**
+         * Queues a task for serial execution.
+         *
+         * @param command the task to execute
+         */
         @Override
         public void execute(Runnable command) {
             if (shutdown) throw new java.util.concurrent.RejectedExecutionException("shutdown");
@@ -339,25 +354,57 @@ public final class Agent<T> {
             }
         }
 
+        /**
+         * Prevents further task submission.
+         */
         @Override
         public void shutdown() {
             shutdown = true;
         }
 
+        /**
+         * Prevents further task submission and returns no queued tasks.
+         *
+         * @return an empty task list
+         */
         @Override
         public java.util.List<Runnable> shutdownNow() {
             shutdown = true;
             return java.util.List.of();
         }
 
+        /**
+         * Indicates whether shutdown has been requested.
+         *
+         * @return {@code true} if shutdown was requested
+         */
         @Override public boolean isShutdown() { return shutdown; }
+        /**
+         * Indicates whether shutdown was requested and the queue is empty.
+         *
+         * @return {@code true} if this executor has terminated
+         */
         @Override public boolean isTerminated() { return shutdown && queue.isEmpty(); }
 
+        /**
+         * Checks the current termination state without blocking.
+         *
+         * @param timeout ignored
+         * @param unit ignored
+         * @return {@code true} if this executor is terminated
+         */
         @Override
         public boolean awaitTermination(long timeout, java.util.concurrent.TimeUnit unit) {
             return isTerminated();
         }
 
+        /**
+         * Submits a callable for serial execution.
+         *
+         * @param task the task to submit
+         * @param <T> the result type
+         * @return a future for the submitted task
+         */
         @Override
         public <T> java.util.concurrent.Future<T> submit(java.util.concurrent.Callable<T> task) {
             java.util.concurrent.FutureTask<T> ft = new java.util.concurrent.FutureTask<>(task);
@@ -365,6 +412,14 @@ public final class Agent<T> {
             return ft;
         }
 
+        /**
+         * Submits a runnable for serial execution with a preset result.
+         *
+         * @param task the task to submit
+         * @param result the result to return on completion
+         * @param <T> the result type
+         * @return a future for the submitted task
+         */
         @Override
         public <T> java.util.concurrent.Future<T> submit(Runnable task, T result) {
             java.util.concurrent.FutureTask<T> ft = new java.util.concurrent.FutureTask<>(task, result);
@@ -372,6 +427,12 @@ public final class Agent<T> {
             return ft;
         }
 
+        /**
+         * Submits a runnable for serial execution.
+         *
+         * @param task the task to submit
+         * @return a future for the submitted task
+         */
         @Override
         public java.util.concurrent.Future<?> submit(Runnable task) {
             java.util.concurrent.FutureTask<Void> ft = new java.util.concurrent.FutureTask<>(task, null);
@@ -379,21 +440,57 @@ public final class Agent<T> {
             return ft;
         }
 
+        /**
+         * This serial executor does not support bulk invocation.
+         *
+         * @param tasks ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
         @Override
         public <T> java.util.List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) {
             throw new UnsupportedOperationException();
         }
 
+        /**
+         * This serial executor does not support timed bulk invocation.
+         *
+         * @param tasks ignored
+         * @param timeout ignored
+         * @param unit ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
         @Override
         public <T> java.util.List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) {
             throw new UnsupportedOperationException();
         }
 
+        /**
+         * This serial executor does not support invoking any task from a batch.
+         *
+         * @param tasks ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
         @Override
         public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) {
             throw new UnsupportedOperationException();
         }
 
+        /**
+         * This serial executor does not support timed invoke-any operations.
+         *
+         * @param tasks ignored
+         * @param timeout ignored
+         * @param unit ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
         @Override
         public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) {
             throw new UnsupportedOperationException();

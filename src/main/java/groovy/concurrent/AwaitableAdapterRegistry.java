@@ -132,7 +132,16 @@ public final class AwaitableAdapterRegistry {
     }
 
     private static ClassValue<AwaitableAdapter> buildAwaitableCache() {
+        /**
+         * Cache of awaitable adapters by source type.
+         */
         return new ClassValue<>() {
+            /**
+             * Resolves the first adapter supporting the supplied type.
+             *
+             * @param type the source type
+             * @return the matching adapter, or {@code null} if none match
+             */
             @Override
             protected AwaitableAdapter computeValue(Class<?> type) {
                 for (AwaitableAdapter adapter : adapters) {
@@ -150,12 +159,14 @@ public final class AwaitableAdapterRegistry {
      */
     private static final class BuiltInAdapter implements AwaitableAdapter {
 
+        /** {@inheritDoc} */
         @Override
         public boolean supportsAwaitable(Class<?> type) {
             return CompletionStage.class.isAssignableFrom(type)
                     || Future.class.isAssignableFrom(type);
         }
 
+        /** {@inheritDoc} */
         @Override
         @SuppressWarnings("unchecked")
         public <T> Awaitable<T> toAwaitable(Object source) {

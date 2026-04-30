@@ -55,10 +55,10 @@ import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.plus;
  */
 public class NumberRange extends AbstractList<Comparable> implements Range<Comparable>, Serializable {
 
-    @Serial private static final long serialVersionUID = 5107424833653948484L;
     /**
      * The first value in the range.
      */
+    @Serial private static final long serialVersionUID = 5107424833653948484L;
     private final Comparable from;
 
     /**
@@ -247,11 +247,25 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         return new NumberRange(comparableNumber(from), comparableNumber(to), stepSize, inclusiveLeft, inclusiveRight);
     }
 
+    /**
+     * Casts the supplied comparable to a comparable number.
+     *
+     * @param c the comparable value
+     * @param <T> the numeric type
+     * @return the cast value
+     */
     @SuppressWarnings("unchecked")
     /* package private */ static <T extends Number & Comparable> T comparableNumber(Comparable c) {
         return (T) c;
     }
 
+    /**
+     * Casts the supplied number to a comparable number.
+     *
+     * @param n the numeric value
+     * @param <T> the numeric type
+     * @return the cast value
+     */
     @SuppressWarnings("unchecked")
     /* package private */ static <T extends Number & Comparable> T comparableNumber(Number n) {
         return (T) n;
@@ -384,25 +398,42 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
 //        return fastHashCodeCache;
 //    }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Comparable getFrom() {
         return from;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Comparable getTo() {
         return to;
     }
 
+    /**
+     * Returns the increment used when traversing this range.
+     *
+     * @return the step size between successive values
+     */
     public Comparable getStepSize() {
         return (Comparable) stepSize;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isReverse() {
         return reverse;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Comparable get(int index) {
         if (index < 0) {
@@ -444,6 +475,9 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         throw new UnsupportedOperationException("size must not be changed");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         if (size == -1) {
@@ -452,6 +486,13 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         return size;
     }
 
+    /**
+     * Calculates and caches the size for the supplied range parameters.
+     *
+     * @param from the lower bound
+     * @param to the upper bound
+     * @param stepSize the step size
+     */
     void calcSize(Comparable from, Comparable to, Number stepSize) {
         if (from == to && !inclusiveLeft && !inclusiveRight) {
             size = 0;
@@ -506,6 +547,9 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         return tempStepSize.equals(new BigDecimal(tempStepSize.toBigInteger()));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Comparable> subList(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
@@ -542,11 +586,17 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         return new NumberRange(comparableNumber(fromValue), comparableNumber(toValue), comparableNumber(stepSize), true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return getToString(to.toString(), from.toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String inspect() {
         return getToString(FormatHelper.inspect(to), FormatHelper.inspect(from));
@@ -611,6 +661,12 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
         private boolean isNextFetched = false;
         private Comparable next = null;
 
+        /**
+         * Creates an iterator over the supplied range and step.
+         *
+         * @param range the range to iterate
+         * @param step the step size
+         */
         StepIterator(NumberRange range, Number step) {
             if (compareEqual(step, 0) && compareNotEqual(range.getFrom(), range.getTo())) {
                 throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
@@ -626,6 +682,9 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean hasNext() {
             fetchNextIfNeeded();
@@ -643,6 +702,9 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
 
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Comparable next() {
             if (!hasNext()) {
@@ -670,12 +732,18 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Comparable> step(int numSteps) {
         final IteratorClosureAdapter<Comparable> adapter = new IteratorClosureAdapter<Comparable>(this);

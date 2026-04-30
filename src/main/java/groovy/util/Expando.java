@@ -38,9 +38,17 @@ public class Expando extends GroovyObjectSupport {
 
     private Map expandoProperties;
 
+    /**
+     * Creates an empty expando.
+     */
     public Expando() {
     }
 
+    /**
+     * Creates an expando backed by the supplied properties.
+     *
+     * @param expandoProperties the initial properties map
+     */
     public Expando(Map expandoProperties) {
         this.expandoProperties = expandoProperties;
     }
@@ -55,6 +63,11 @@ public class Expando extends GroovyObjectSupport {
         return expandoProperties;
     }
 
+    /**
+     * Returns meta-properties representing the current dynamic properties.
+     *
+     * @return the meta-property values
+     */
     public List getMetaPropertyValues() {
         // run through all our current properties and create MetaProperty objects
         List ret = new ArrayList();
@@ -66,6 +79,12 @@ public class Expando extends GroovyObjectSupport {
         return ret;
     }
 
+    /**
+     * Resolves a property from the dynamic property map before normal lookup.
+     *
+     * @param property the property name
+     * @return the property value, or {@code null} if it is not defined
+     */
     @Override
     public Object getProperty(String property) {
         // always use the expando properties first
@@ -80,12 +99,25 @@ public class Expando extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * Stores a dynamic property.
+     *
+     * @param property the property name
+     * @param newValue the property value
+     */
     @Override
     public void setProperty(String property, Object newValue) {
         // always use the expando properties
         getProperties().put(property, newValue);
     }
 
+    /**
+     * Invokes a declared method or a closure stored as a dynamic property.
+     *
+     * @param name the method name
+     * @param args the invocation arguments
+     * @return the invocation result
+     */
     @Override
     public Object invokeMethod(String name, Object args) {
         try {

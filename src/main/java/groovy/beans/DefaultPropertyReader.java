@@ -20,9 +20,16 @@ package groovy.beans;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+/**
+ * Default {@link PropertyReader} implementation using Groovy property access.
+ */
 public class DefaultPropertyReader implements PropertyReader {
+    /**
+     * Shared property reader instance.
+     */
     public static final PropertyReader INSTANCE = new DefaultPropertyReader();
 
+    /** {@inheritDoc} */
     @Override
     public Object read(Object owner, String propertyName) {
         return InvokerHelper.getPropertySafe(owner, propertyName);

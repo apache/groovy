@@ -77,11 +77,17 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
          */
         private int value = isReverse() ? getTo() : getFrom();
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean hasNext() {
             return index < size;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Integer next() {
             if (!hasNext()) {
@@ -253,10 +259,29 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return subListBorders(from, to, inclusiveLeft, inclusiveRight, size);
     }
 
+    /**
+     * Calculates sublist borders for a range with an inclusive left bound.
+     *
+     * @param from the raw start value
+     * @param to the raw end value
+     * @param inclusiveRight whether the right bound is inclusive
+     * @param size the indexed aggregate size
+     * @return the calculated range information
+     */
     static RangeInfo subListBorders(int from, int to, boolean inclusiveRight, int size) {
         return subListBorders(from, to, true, inclusiveRight, size);
     }
 
+    /**
+     * Calculates sublist borders for a range with explicit bound inclusivity.
+     *
+     * @param from the raw start value
+     * @param to the raw end value
+     * @param inclusiveLeft whether the left bound is inclusive
+     * @param inclusiveRight whether the right bound is inclusive
+     * @param size the indexed aggregate size
+     * @return the calculated range information
+     */
     static RangeInfo subListBorders(int from, int to, boolean inclusiveLeft, boolean inclusiveRight, int size) {
         int tempFrom = from;
         if (tempFrom < 0) {
@@ -306,6 +331,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer getFrom() {
         if (from <= to) {
@@ -314,6 +342,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return (inclusiveRight == null || inclusiveRight) ? to : to + 1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer getTo() {
         if (from <= to) {
@@ -361,16 +392,25 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return getTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isReverse() {
         return (inclusiveRight == null && inclusiveLeft == null) ? reverse : (from > to);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean containsWithinBounds(Object o) {
         return contains(o);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Integer get(int index) {
         if (index < 0) {
@@ -382,17 +422,26 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return isReverse() ? getTo() - index : index + getFrom();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         // If fully exclusive and borders are one apart, the size would be negative, take that into account
         return Math.max(getTo() - getFrom() + 1, 0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Iterator<Integer> iterator() {
         return new IntRangeIterator();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Integer> subList(int fromIndex, int toIndex) {
         if (fromIndex < 0) {
@@ -412,6 +461,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return new IntRange(fromIndex + getFrom(), toIndex + getFrom() - 1, isReverse());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         if (inclusiveRight == null && inclusiveLeft == null)  {
@@ -420,11 +472,17 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return from + (inclusiveLeft ? "" : "<") + ".." + (inclusiveRight ? "" : "<") + to;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String inspect() {
         return toString();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean contains(Object value) {
         if (value instanceof Integer) {
@@ -437,6 +495,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean containsAll(Collection other) {
         if (other instanceof IntRange range) {
@@ -445,6 +506,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return super.containsAll(other);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void step(int step, Closure closure) {
         if (step == 0) {
@@ -478,6 +542,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Integer> step(int step) {
         final IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<Integer>(this);
@@ -485,6 +552,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         return adapter.asList();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode(){
         int hashCode;

@@ -27,6 +27,9 @@ import org.codehaus.groovy.util.ReleaseInfo;
 
 import java.util.Map;
 
+/**
+ * Central access point for Groovy runtime-wide services and configuration.
+ */
 public final class GroovySystem {
     //
     //  TODO: make this initialization able to set useReflection true
@@ -62,19 +65,40 @@ public final class GroovySystem {
         // Do not allow this class to be instantiated
     }
 
+    /**
+     * Indicates whether the legacy reflection-only runtime mode is enabled.
+     *
+     * @return {@code true} when reflection-only dispatch is enabled
+     * @deprecated this flag is retained for compatibility
+     */
     @Deprecated
     public static boolean isUseReflection() {
         return USE_REFLECTION;
     }
 
+    /**
+     * Returns Groovy's global {@link MetaClassRegistry}.
+     *
+     * @return the runtime meta class registry
+     */
     public static MetaClassRegistry getMetaClassRegistry() {
         return META_CLASS_REGISTRY;
     }
 
+    /**
+     * Controls whether Java meta classes should be retained strongly by the runtime.
+     *
+     * @param keepJavaMetaClasses {@code true} to keep Java meta classes
+     */
     public static void setKeepJavaMetaClasses(boolean keepJavaMetaClasses) {
         GroovySystem.keepJavaMetaClasses = keepJavaMetaClasses;
     }
 
+    /**
+     * Indicates whether Java meta classes are retained strongly by the runtime.
+     *
+     * @return {@code true} if Java meta classes are kept
+     */
     public static boolean isKeepJavaMetaClasses() {
         return keepJavaMetaClasses;
     }

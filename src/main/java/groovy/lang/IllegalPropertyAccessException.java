@@ -39,10 +39,23 @@ public class IllegalPropertyAccessException extends MissingPropertyException {
         return  "Can not access the "+access+" "+propertyType+" "+propertyName+" in class "+clazz.getName();
     }
 
+    /**
+     * Creates an exception for an inaccessible property.
+     *
+     * @param propertyName the property name
+     * @param clazz the declaring class
+     * @param modifiers the member modifiers
+     */
     public IllegalPropertyAccessException(String propertyName, Class clazz, int modifiers) {
         super(makeMessage(propertyName,clazz,modifiers,false),propertyName,clazz);
     }
 
+    /**
+     * Creates an exception for an inaccessible field-backed property.
+     *
+     * @param field the inaccessible field
+     * @param clazz the declaring class
+     */
     public IllegalPropertyAccessException(Field field, Class clazz) {
         super(makeMessage(field.getName(),clazz,field.getModifiers(),true),field.getName(),clazz);
     }

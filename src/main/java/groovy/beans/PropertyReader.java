@@ -18,6 +18,16 @@
  */
 package groovy.beans;
 
+/**
+ * Strategy for reading a named property from an object.
+ */
 public interface PropertyReader {
+    /**
+     * Reads the named property from the supplied owner.
+     *
+     * @param owner the object that owns the property
+     * @param propertyName the property name
+     * @return the property value
+     */
     Object read(Object owner, String propertyName);
 }

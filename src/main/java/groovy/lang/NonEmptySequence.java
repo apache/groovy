@@ -29,18 +29,35 @@ public class NonEmptySequence extends Sequence {
 
     @Serial private static final long serialVersionUID = 1614604919062836998L;
 
+    /**
+     * Creates a non-empty sequence with no type restriction.
+     */
     public NonEmptySequence() {
         super(null);
     }
 
+    /**
+     * Creates a non-empty sequence constrained to the supplied type.
+     *
+     * @param type the allowed element type
+     */
     public NonEmptySequence(Class type) {
         super(type);
     }
 
+    /**
+     * Creates a non-empty sequence initialized with the supplied content.
+     *
+     * @param type the allowed element type
+     * @param content the initial content
+     */
     public NonEmptySequence(Class type, List content) {
         super(type, content);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int minimumSize() {
         return 1;

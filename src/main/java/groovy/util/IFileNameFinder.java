@@ -20,7 +20,26 @@ package groovy.util;
 
 import java.util.List;
 
+/**
+ * Locates file names matching Ant-style include and exclude patterns.
+ */
 public interface IFileNameFinder {
+    /**
+     * Finds file names under the supplied base directory.
+     *
+     * @param basedir the base directory to search
+     * @param pattern the include pattern
+     * @return the matching file names
+     */
     List<String> getFileNames(String basedir, String pattern);
+
+    /**
+     * Finds file names under the supplied base directory.
+     *
+     * @param basedir the base directory to search
+     * @param pattern the include pattern
+     * @param excludesPattern the exclude pattern
+     * @return the matching file names
+     */
     List<String> getFileNames(String basedir, String pattern, String excludesPattern);
 }

@@ -50,6 +50,9 @@ import java.util.List;
  */
 public class FromString extends ClosureSignatureHint {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ClassNode[]> getClosureSignatures(final MethodNode node, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final String[] options, final ASTNode usage) {
         List<ClassNode[]> list = new ArrayList<ClassNode[]>(options.length);

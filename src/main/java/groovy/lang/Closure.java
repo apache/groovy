@@ -200,11 +200,23 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      */
     public static final int TO_SELF = 4;
 
+    /**
+     * Directive constants indicating that processing should stop or skip the current item.
+     */
     public static final int DONE = 1, SKIP = 2;
     private static final Object[] EMPTY_OBJECT_ARRAY = {};
+    /**
+     * Identity closure returning its single argument.
+     */
     public static final Closure IDENTITY = new Closure<Object>(null) {
         @Serial private static final long serialVersionUID = 730973623329943963L;
 
+        /**
+         * Returns the supplied argument unchanged.
+         *
+         * @param args the argument to return
+         * @return the supplied argument
+         */
         public Object doCall(Object args) {
             return args;
         }
@@ -228,7 +240,16 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             "resolveStrategy", (closure, value) -> closure.setResolveStrategy((Integer) value)
     );
 
+    /**
+     * Lazily cached call overrides for closure subclasses.
+     */
     private static final ClassValue<CallOverride> CALL_OVERRIDES = new ClassValue<CallOverride>() {
+        /**
+         * Resolves cached call overrides for the supplied closure type.
+         *
+         * @param type the closure type
+         * @return the resolved call override metadata
+         */
         @Override
         protected CallOverride computeValue(Class<?> type) {
             return CallOverride.lookup(type);
@@ -241,11 +262,23 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private Object thisObject;
     private int resolveStrategy = OWNER_FIRST;
     private int directive;
+    /**
+     * Parameter types for the longest {@code doCall} method.
+     */
     protected Class<?>[] parameterTypes;
+    /**
+     * Maximum number of parameters accepted by this closure.
+     */
     protected int maximumNumberOfParameters;
     @Serial private static final long serialVersionUID = 4368710879820278874L;
     private BooleanClosureWrapper bcw;
 
+    /**
+     * Creates a closure with the supplied owner and lexical {@code this} object.
+     *
+     * @param owner the closure owner
+     * @param thisObject the lexical {@code this} object
+     */
     public Closure(Object owner, Object thisObject) {
         this.owner = owner;
         this.delegate = owner;
@@ -297,6 +330,11 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return resolveStrategy;
     }
 
+    /**
+     * Returns the lexical {@code this} object for this closure.
+     *
+     * @return the lexical {@code this} object
+     */
     public Object getThisObject() {
         return thisObject;
     }
@@ -314,6 +352,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return thisType;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object getProperty(final String property) {
         Function<Closure, Object> getter = PROPERTY_GETTERS.get(property);
@@ -324,6 +365,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return resolveGetProperty(property);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setProperty(final String property, final Object newValue) {
         BiConsumer<Closure, Object> setter = PROPERTY_SETTERS.get(property);
@@ -444,6 +488,12 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         }
     }
 
+    /**
+     * Evaluates this closure for Groovy switch/case matching.
+     *
+     * @param switchValue the switch value to test
+     * @return {@code true} if the case matches
+     */
     public boolean isCase(final Object switchValue) {
         if (bcw == null) {
             bcw = new BooleanClosureWrapper(this);
@@ -513,6 +563,12 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         }
     }
 
+    /**
+     * Throws the supplied throwable as a runtime exception, wrapping checked throwables.
+     *
+     * @param throwable the throwable to rethrow
+     * @return never returns normally
+     */
     protected static Object throwRuntimeException(Throwable throwable) {
         if (throwable instanceof RuntimeException) {
             throw (RuntimeException) throwable;
@@ -571,8 +627,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return new WritableClosure();
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Runnable#run()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void run() {
@@ -963,8 +1019,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return new TrampolineClosure<V>(this);
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#clone()
+    /**
+     * {@inheritDoc}
      */
     @Override
     public Object clone() {
@@ -992,8 +1048,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             super(Closure.this);
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Writable#writeTo(java.io.Writer)
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Writer writeTo(Writer out) throws IOException {
@@ -1002,8 +1058,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return out;
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Object invokeMethod(String method, Object arguments) {
@@ -1019,121 +1075,130 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return Closure.this.invokeMethod(method, arguments);
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Object getProperty(String property) {
             return Closure.this.getProperty(property);
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
+        /**
+         * {@inheritDoc}
          */
         @Override
         public void setProperty(String property, Object newValue) {
             Closure.this.setProperty(property, newValue);
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#call()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Object call() {
             return ((Closure) getOwner()).call();
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#call(java.lang.Object)
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Object call(Object arguments) {
             return ((Closure) getOwner()).call(arguments);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Object call(Object... args) {
             return ((Closure) getOwner()).call(args);
         }
 
+        /**
+         * Delegates to {@link #call(Object...)}.
+         *
+         * @param args the call arguments
+         * @return the call result
+         */
         public Object doCall(Object... args) {
             return call(args);
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#getDelegate()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Object getDelegate() {
             return Closure.this.getDelegate();
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#setDelegate(java.lang.Object)
+        /**
+         * {@inheritDoc}
          */
         @Override
         public void setDelegate(Object delegate) {
             Closure.this.setDelegate(delegate);
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#getParameterTypes()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Class[] getParameterTypes() {
             return Closure.this.getParameterTypes();
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#getParameterTypes()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public int getMaximumNumberOfParameters() {
             return Closure.this.getMaximumNumberOfParameters();
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#asWritable()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Closure asWritable() {
             return this;
         }
 
-        /* (non-Javadoc)
-         * @see java.lang.Runnable#run()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public void run() {
             Closure.this.run();
         }
 
-        /* (non-Javadoc)
-         * @see java.lang.Object#clone()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public Object clone() {
             return ((Closure) Closure.this.clone()).asWritable();
         }
 
-        /* (non-Javadoc)
-         * @see java.lang.Object#hashCode()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public int hashCode() {
             return Closure.this.hashCode();
         }
 
-        /* (non-Javadoc)
-         * @see java.lang.Object#equals(java.lang.Object)
+        /**
+         * {@inheritDoc}
          */
         @Override
         public boolean equals(Object arg0) {
             return Closure.this.equals(arg0);
         }
 
-        /* (non-Javadoc)
-         * @see java.lang.Object#toString()
+        /**
+         * {@inheritDoc}
          */
         @Override
         public String toString() {
@@ -1148,16 +1213,28 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return writer.toString();
         }
 
+        /**
+         * Returns a writable curried variant of this closure.
+         *
+         * @param arguments the arguments to bind
+         * @return the curried writable closure
+         */
         @Override
         public Closure curry(final Object... arguments) {
             return (new CurriedClosure(this, arguments)).asWritable();
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void setResolveStrategy(int resolveStrategy) {
             Closure.this.setResolveStrategy(resolveStrategy);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public int getResolveStrategy() {
             return Closure.this.getResolveStrategy();
@@ -1217,8 +1294,17 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     private static final class CallOverride {
+        /**
+         * Marker instance indicating that no call override exists.
+         */
         static final CallOverride NONE = new CallOverride(null, null);
+        /**
+         * Cached zero-argument call override.
+         */
         final Method zeroArg;
+        /**
+         * Cached single-argument call override.
+         */
         final Method oneArg;
 
         private CallOverride(Method zeroArg, Method oneArg) {
@@ -1226,6 +1312,12 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             this.oneArg = oneArg;
         }
 
+        /**
+         * Finds call overrides declared by the supplied closure subclass.
+         *
+         * @param type the closure subclass
+         * @return the resolved override metadata
+         */
         static CallOverride lookup(Class<?> type) {
             if (type == Closure.class) return NONE;
             Method zero = findOverride(type);

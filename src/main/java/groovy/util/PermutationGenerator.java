@@ -59,10 +59,18 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
         reset();
     }
 
+    /**
+     * Creates a generator from the supplied iterable.
+     *
+     * @param items the items to permute
+     */
     public PermutationGenerator(Iterable<E> items) {
         this(DefaultGroovyMethods.asCollection(items));
     }
 
+    /**
+     * Resets the generator to its initial state.
+     */
     public void reset() {
         for (int i = 0; i < a.length; i++) {
             a[i] = i;
@@ -70,10 +78,16 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
         numLeft = new BigInteger(total.toString());
     }
 
+    /**
+     * Returns the total number of permutations.
+     *
+     * @return the total permutation count
+     */
     public BigInteger getTotal() {
         return total;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return numLeft.compareTo(BigInteger.ZERO) > 0;
@@ -145,6 +159,7 @@ public class PermutationGenerator<E> implements Iterator<List<E>> {
         return ans;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException("remove() not allowed for PermutationGenerator");

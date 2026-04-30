@@ -32,6 +32,9 @@ import java.lang.reflect.Modifier;
  */
 public abstract class MetaMethod extends ParameterTypes implements MetaMember, Cloneable {
 
+    /**
+     * Shared empty array of meta methods.
+     */
     public static final MetaMethod[] EMPTY_ARRAY = new MetaMethod[0];
     private String signature;
     private String mopName;
@@ -113,6 +116,13 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
             && equal(getParameterTypes(), method.getParameterTypes());
     }
 
+    /**
+     * Compares cached parameter types against Java classes.
+     *
+     * @param a cached parameter types
+     * @param b Java parameter types
+     * @return {@code true} if the arrays describe the same parameter types
+     */
     protected static boolean equal(CachedClass[] a, Class[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
@@ -125,6 +135,13 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
         return false;
     }
 
+    /**
+     * Compares two cached parameter type arrays.
+     *
+     * @param a the first parameter type array
+     * @param b the second parameter type array
+     * @return {@code true} if both arrays describe the same parameter types
+     */
     protected static boolean equal(CachedClass[] a, CachedClass[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
@@ -137,6 +154,7 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return super.toString()
@@ -151,6 +169,7 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
             + "]";
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object clone() {
         try {
@@ -242,6 +261,11 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
         return signature;
     }
 
+    /**
+     * Returns the method name used by Groovy's MOP bridge methods.
+     *
+     * @return the synthetic MOP method name
+     */
     public String getMopName() {
         if (mopName == null) {
             mopName = (isPrivate() ? "this" : "super") + '$' + getDeclaringClass().getSuperClassDistance() + '$' + getName();

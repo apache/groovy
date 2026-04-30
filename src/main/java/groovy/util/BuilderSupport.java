@@ -38,23 +38,47 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
     private Closure nameMappingClosure;
     private final BuilderSupport proxyBuilder;
 
+    /**
+     * Creates a builder that manages its own node lifecycle.
+     */
     public BuilderSupport() {
         this.proxyBuilder = this;
     }
 
+    /**
+     * Creates a builder that delegates node operations to another builder.
+     *
+     * @param proxyBuilder the builder handling node creation callbacks
+     */
     public BuilderSupport(final BuilderSupport proxyBuilder) {
         this.proxyBuilder = proxyBuilder;
     }
 
+    /**
+     * Creates a builder with custom name mapping and delegated node operations.
+     *
+     * @param nameMappingClosure converts method names before node creation
+     * @param proxyBuilder the builder handling node creation callbacks
+     */
     public BuilderSupport(@ClosureParams(value=SimpleType.class, options="java.lang.String") final Closure nameMappingClosure, final BuilderSupport proxyBuilder) {
         this.nameMappingClosure = nameMappingClosure;
         this.proxyBuilder = proxyBuilder;
     }
 
+    /**
+     * Returns the current node on the builder stack.
+     *
+     * @return the current node, or {@code null} if none is active
+     */
     protected Object getCurrent() {
         return current;
     }
 
+    /**
+     * Updates the current node on the builder stack.
+     *
+     * @param current the current node
+     */
     protected void setCurrent(final Object current) {
         this.current = current;
     }
@@ -69,12 +93,21 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         return invokeMethod(methodName, null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object invokeMethod(final String methodName, final Object args) {
         Object name = getName(methodName);
         return doInvokeMethod(methodName, name, args);
     }
 
+    /**
+     * Creates a node for the given method invocation and processes any child closure.
+     *
+     * @param methodName the original method name
+     * @param name the mapped node name
+     * @param args the invocation arguments
+     * @return the created node, or a replacement from {@link #postNodeCompletion(Object, Object)}
+     */
     protected Object doInvokeMethod(final String methodName, final Object name, final Object args) {
         Object node = null;
         Closure closure = null;
@@ -177,14 +210,48 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         closure.setDelegate(this);
     }
 
+    /**
+     * Links a newly created child node to its parent.
+     *
+     * @param parent the parent node
+     * @param child the child node
+     */
     protected abstract void setParent(Object parent, Object child);
 
+    /**
+     * Creates a node with the given name.
+     *
+     * @param name the node name
+     * @return the created node
+     */
     protected abstract Object createNode(Object name);
 
+    /**
+     * Creates a node with the given name and value.
+     *
+     * @param name the node name
+     * @param value the node value
+     * @return the created node
+     */
     protected abstract Object createNode(Object name, Object value);
 
+    /**
+     * Creates a node with the given name and attributes.
+     *
+     * @param name the node name
+     * @param attributes the node attributes
+     * @return the created node
+     */
     protected abstract Object createNode(Object name, Map attributes);
 
+    /**
+     * Creates a node with the given name, attributes, and value.
+     *
+     * @param name the node name
+     * @param attributes the node attributes
+     * @param value the node value
+     * @return the created node
+     */
     protected abstract Object createNode(Object name, Map attributes, Object value);
 
     /**

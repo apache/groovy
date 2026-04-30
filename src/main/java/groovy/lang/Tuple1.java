@@ -29,25 +29,48 @@ public final class Tuple1<T1> extends Tuple {
     @Serial private static final long serialVersionUID = -4647790147461409603L;
     private final T1 v1;
 
+    /**
+     * Creates a tuple containing the supplied elements.
+     *
+     * @param t1 the first element
+     */
     public Tuple1(T1 t1) {
         super(t1);
 
         this.v1 = t1;
     }
 
+    /**
+     * Creates a tuple from the supplied tuple.
+     *
+     * @param tuple the source tuple
+     */
     public Tuple1(Tuple1<T1> tuple) {
         this(tuple.v1);
     }
 
+    /**
+     * Returns the first element.
+     *
+     * @return the first element
+     */
     @Deprecated
     public T1 getFirst() {
         return v1;
     }
 
+    /**
+     * Returns the first element.
+     *
+     * @return the first element
+     */
     public T1 getV1() {
         return v1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Tuple1<T1> clone() {
         return new Tuple1<>(this);
