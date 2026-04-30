@@ -24,6 +24,7 @@ import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
+import org.codehaus.groovy.groovydoc.GroovyMemberDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyParameter;
@@ -1095,7 +1096,17 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      * member context (e.g. {@code {@inheritDoc}} needs the current method
      * to find its overridden parent) can resolve.
      */
-    public String replaceTags(String comment, org.codehaus.groovy.groovydoc.GroovyMemberDoc memberDoc) {
+    public String replaceTags(String comment, GroovyMemberDoc memberDoc) {
+        return replaceTags(comment, memberDoc, null);
+    }
+
+    /**
+     * Variant of {@link #replaceTags(String, GroovyMemberDoc)}
+     * that reuses an {@code @inheritDoc} visited set across nested expansions.
+     */
+    String replaceTags(String comment,
+                       GroovyMemberDoc memberDoc,
+                       Set<GroovyMethodDoc> inheritDocVisited) {
         String relativeRootPath = getRelativeRootPath();
         if (!relativeRootPath.endsWith("/")) {
             relativeRootPath += "/";
@@ -1122,7 +1133,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         result = result.replaceAll(DOCROOT_PATTERN, relativeRootPath);
 
         // GROOVY-11939: single-pass tokenize + render for inline and block tags.
-        String rendered = TagRenderer.render(result, links, relativeRootPath, savedRootDoc, this, memberDoc);
+        String rendered = TagRenderer.render(result, links, relativeRootPath, savedRootDoc, this, memberDoc, inheritDocVisited);
         // GROOVY-11542: if the body came from a Markdown comment, swap the
         // brace masks MarkdownRenderer used to hide `{@...}` inside code
         // spans / code blocks back to numeric HTML entities. Safe on

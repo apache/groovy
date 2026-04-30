@@ -38,6 +38,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -486,6 +487,41 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // The literal `{@inheritDoc}` must not appear anymore.
         assertFalse("{@inheritDoc} should be substituted, not left literal in:\n" + doc,
                 doc.contains("{@inheritDoc}"));
+    }
+
+    // Cyclic inheritDoc references must collapse safely instead of
+    // recursing until the renderer overflows the stack.
+    public void testInheritDocCycleDoesNotOverflow() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        SimpleGroovyClassDoc left = new SimpleGroovyClassDoc(new ArrayList<>(), "LoopLeft");
+        left.setFullPathName(pkg + "/LoopLeft");
+        left.addInterfaceName(pkg + "/LoopRight");
+
+        SimpleGroovyClassDoc right = new SimpleGroovyClassDoc(new ArrayList<>(), "LoopRight");
+        right.setFullPathName(pkg + "/LoopRight");
+        right.addInterfaceName(pkg + "/LoopLeft");
+
+        SimpleGroovyMethodDoc leftPing = new SimpleGroovyMethodDoc("ping", left);
+        leftPing.setRawCommentText("{@inheritDoc}");
+        leftPing.setReturnType(new SimpleGroovyType("java.lang.String"));
+        left.add(leftPing);
+
+        SimpleGroovyMethodDoc rightPing = new SimpleGroovyMethodDoc("ping", right);
+        rightPing.setRawCommentText("{@inheritDoc}");
+        rightPing.setReturnType(new SimpleGroovyType("java.lang.String"));
+        right.add(rightPing);
+
+        SimpleGroovyRootDoc rootDoc = new SimpleGroovyRootDoc("root");
+        Map<String, GroovyClassDoc> classes = new LinkedHashMap<>();
+        classes.put(left.getFullPathName(), left);
+        classes.put(right.getFullPathName(), right);
+        rootDoc.putAllClasses(classes);
+
+        left.resolve(rootDoc);
+        right.resolve(rootDoc);
+
+        assertEquals("Cycle expansion should collapse safely to an empty string", "", leftPing.commentText());
+        assertEquals("Cycle expansion should collapse safely to an empty string", "", rightPing.commentText());
     }
 
     // GROOVY-6016: {@value #FIELD} inline tag resolves same-class constants.

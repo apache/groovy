@@ -174,7 +174,7 @@ final class TagRenderer {
                          String relPath,
                          GroovyRootDoc rootDoc,
                          SimpleGroovyClassDoc classDoc) {
-        return render(text, links, relPath, rootDoc, classDoc, null, CLASS_LEVEL);
+        return render(text, links, relPath, rootDoc, classDoc, null, CLASS_LEVEL, null);
     }
 
     static String render(String text,
@@ -183,7 +183,7 @@ final class TagRenderer {
                          GroovyRootDoc rootDoc,
                          SimpleGroovyClassDoc classDoc,
                          GroovyMemberDoc memberDoc) {
-        return render(text, links, relPath, rootDoc, classDoc, memberDoc, CLASS_LEVEL);
+        return render(text, links, relPath, rootDoc, classDoc, memberDoc, CLASS_LEVEL, null);
     }
 
     static String render(String text,
@@ -192,7 +192,17 @@ final class TagRenderer {
                          GroovyRootDoc rootDoc,
                          SimpleGroovyClassDoc classDoc,
                          Config cfg) {
-        return render(text, links, relPath, rootDoc, classDoc, null, cfg);
+        return render(text, links, relPath, rootDoc, classDoc, null, cfg, null);
+    }
+
+    static String render(String text,
+                         List<LinkArgument> links,
+                         String relPath,
+                         GroovyRootDoc rootDoc,
+                         SimpleGroovyClassDoc classDoc,
+                         GroovyMemberDoc memberDoc,
+                         Set<GroovyMethodDoc> inheritDocVisited) {
+        return render(text, links, relPath, rootDoc, classDoc, memberDoc, CLASS_LEVEL, inheritDocVisited);
     }
 
     static String render(String text,
@@ -202,6 +212,17 @@ final class TagRenderer {
                          SimpleGroovyClassDoc classDoc,
                          GroovyMemberDoc memberDoc,
                          Config cfg) {
+        return render(text, links, relPath, rootDoc, classDoc, memberDoc, cfg, null);
+    }
+
+    private static String render(String text,
+                                 List<LinkArgument> links,
+                                 String relPath,
+                                 GroovyRootDoc rootDoc,
+                                 SimpleGroovyClassDoc classDoc,
+                                 GroovyMemberDoc memberDoc,
+                                 Config cfg,
+                                 Set<GroovyMethodDoc> inheritDocVisited) {
         StringBuilder out = new StringBuilder(text.length() + 64);
         // Whitespace preceding a block tag must be dropped (matches the
         // prior regex's leading `\s*` before `@`). Buffer whitespace runs
@@ -217,11 +238,11 @@ final class TagRenderer {
             if (c == '{' && i + 1 < n && text.charAt(i + 1) == '@') {
                 out.append(pendingWs);
                 pendingWs.setLength(0);
-                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg);
+                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
                 if (consumed > 0) { i += consumed; continue; }
             }
             if (c == '@' && isBlockTagBoundary(text, i)) {
-                int consumed = renderBlockTagAt(text, i, out, collated, links, relPath, rootDoc, classDoc, memberDoc, cfg);
+                int consumed = renderBlockTagAt(text, i, out, collated, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
                 if (consumed > 0) {
                     pendingWs.setLength(0); // discard ws preceding the tag
                     anyBlockTag = true;
@@ -259,7 +280,8 @@ final class TagRenderer {
                                          List<LinkArgument> links, String relPath,
                                          GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                          GroovyMemberDoc memberDoc,
-                                         Config cfg) {
+                                         Config cfg,
+                                         Set<GroovyMethodDoc> inheritDocVisited) {
         int nameStart = start + 2; // skip '{@'
         int nameEnd = readTagName(text, nameStart);
         if (nameEnd == nameStart) return 0;
@@ -276,7 +298,7 @@ final class TagRenderer {
         int close = text.indexOf('}', bodyStart);
         if (close < 0) return 0;
         String body = text.substring(bodyStart, close);
-        renderInlineTag(name, body, out, links, relPath, rootDoc, classDoc, memberDoc, cfg);
+        renderInlineTag(name, body, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
         return close + 1 - start;
     }
 
@@ -852,7 +874,8 @@ final class TagRenderer {
                                         List<LinkArgument> links, String relPath,
                                         GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                         GroovyMemberDoc memberDoc,
-                                        Config cfg) {
+                                        Config cfg,
+                                        Set<GroovyMethodDoc> inheritDocVisited) {
         switch (name) {
             case "interface":
                 // Historical behaviour: swallow `{@interface ...}` so Javadoc-style
@@ -888,9 +911,10 @@ final class TagRenderer {
                 break; // unresolved — emit verbatim
             }
             case "inheritDoc": {
-                // GROOVY-3782: only meaningful on a method; pull the parent
-                // method's already-rendered comment text into this position.
-                String inherited = resolveInheritDoc(memberDoc, classDoc, new HashSet<>());
+                // GROOVY-3782: only meaningful on a method; render the parent
+                // method's doc in the same inheritDoc expansion context so
+                // cycles don't reset the visited set on re-entry.
+                String inherited = resolveInheritDoc(memberDoc, classDoc, links, relPath, rootDoc, inheritDocVisited);
                 if (inherited != null) {
                     out.append(inherited);
                     return;
@@ -913,22 +937,27 @@ final class TagRenderer {
      * method has no doc.
      *
      * <p>Recursion safety: the {@code visited} set tracks methods we've
-     * already expanded on this chain to prevent infinite loops (e.g. two
-     * interfaces with {@code {@inheritDoc}} pointing at each other).</p>
+     * already expanded on this chain and is reused when rendering parent
+     * docs so cyclic inheritDoc graphs collapse safely instead of re-entering
+     * with a fresh set.</p>
      */
     private static String resolveInheritDoc(GroovyMemberDoc memberDoc,
                                             SimpleGroovyClassDoc classDoc,
+                                            List<LinkArgument> links,
+                                            String relPath,
+                                            GroovyRootDoc rootDoc,
                                             Set<GroovyMethodDoc> visited) {
         if (!(memberDoc instanceof GroovyMethodDoc thisMethod)) return null;
-        if (!visited.add(thisMethod)) return null; // cycle
         if (classDoc == null) return null;
+        if (visited == null) visited = new HashSet<>();
+        if (!visited.add(thisMethod)) return ""; // cycle: suppress literal {@inheritDoc}
 
         GroovyMethodDoc parent = findInheritedMethod(thisMethod, classDoc, new HashSet<>());
         if (parent == null) return null;
-        // Calling commentText() on the parent runs it through the full
-        // replaceTags pipeline — so any {@inheritDoc} nested in the parent
-        // resolves recursively via its own ancestry, and our `visited` set
-        // blocks cycles.
+        if (parent instanceof SimpleGroovyMemberDoc parentMember
+                && parentMember.belongsToClass instanceof SimpleGroovyClassDoc parentClassDoc) {
+            return parentClassDoc.replaceTags(parentMember.getRawCommentText(), parentMember, visited);
+        }
         String rendered = parent.commentText();
         return rendered == null ? "" : rendered;
     }
@@ -1016,7 +1045,8 @@ final class TagRenderer {
                                         List<LinkArgument> links, String relPath,
                                         GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                         GroovyMemberDoc memberDoc,
-                                        Config cfg) {
+                                        Config cfg,
+                                        Set<GroovyMethodDoc> inheritDocVisited) {
         int nameStart = start + 1; // skip '@'
         int nameEnd = readTagName(text, nameStart);
         if (nameEnd == nameStart) return 0;
@@ -1030,7 +1060,7 @@ final class TagRenderer {
             trimmedEnd--;
         }
         String rawBody = text.substring(bodyStart, trimmedEnd);
-        handleBlockTag(name, rawBody, out, collated, links, relPath, rootDoc, classDoc, memberDoc, cfg);
+        handleBlockTag(name, rawBody, out, collated, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
         // Advance only past the trimmed body — trailing whitespace flows back
         // through the main loop as plain text so that any whitespace trailing
         // the overall input (for the last block tag) is preserved verbatim
@@ -1044,12 +1074,13 @@ final class TagRenderer {
                                        List<LinkArgument> links, String relPath,
                                        GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                        GroovyMemberDoc memberDoc,
-                                       Config cfg) {
+                                       Config cfg,
+                                       Set<GroovyMethodDoc> inheritDocVisited) {
         if ("interface".equals(name)) return; // swallow, matches prior behaviour
 
         // Block-tag bodies may embed inline tags like {@link ...}; render those
         // now so that collation sees fully-rendered HTML.
-        String body = renderInline(rawBody, links, relPath, rootDoc, classDoc, memberDoc, cfg);
+        String body = renderInline(rawBody, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
 
         if (cfg.collateBlockTags) {
             if ("see".equals(name) || "link".equals(name)) {
@@ -1086,14 +1117,15 @@ final class TagRenderer {
                                        List<LinkArgument> links, String relPath,
                                        GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                        GroovyMemberDoc memberDoc,
-                                       Config cfg) {
+                                       Config cfg,
+                                       Set<GroovyMethodDoc> inheritDocVisited) {
         StringBuilder out = new StringBuilder(text.length());
         int i = 0;
         int n = text.length();
         while (i < n) {
             char c = text.charAt(i);
             if (c == '{' && i + 1 < n && text.charAt(i + 1) == '@') {
-                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg);
+                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
                 if (consumed > 0) { i += consumed; continue; }
             }
             out.append(c);
