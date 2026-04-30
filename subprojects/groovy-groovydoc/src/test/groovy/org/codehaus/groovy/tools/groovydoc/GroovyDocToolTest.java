@@ -489,6 +489,100 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains("{@inheritDoc}"));
     }
 
+    public void testInheritDocSubstitutesMatchingParentBlockTagsInGroovy() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithInheritDocBlockTags.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/InheritDocTagChild.html");
+        assertNotNull(doc);
+        assertTrue("Child summary should remain in place:\n" + doc,
+                doc.contains("Child-specific summary."));
+        assertTrue("Parent @param text should be inherited into child in:\n" + doc,
+                doc.contains("parent parameter description"));
+        assertTrue("Parent @return text should be inherited into child in:\n" + doc,
+                doc.contains("parent return description"));
+        assertFalse("Method-level parent description must not be spliced into block tags:\n" + doc,
+                doc.contains("Base transform description."));
+        assertFalse("{@inheritDoc} should be substituted inside Groovy block tags in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocSubstitutesMatchingParentBlockTagsInJava() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaInheritDocTagChild.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/JavaInheritDocTagChild.html");
+        assertNotNull(doc);
+        assertTrue("Java child summary should remain in place:\n" + doc,
+                doc.contains("Java child summary."));
+        assertTrue("Java parent @param text should be inherited into child in:\n" + doc,
+                doc.contains("java parent parameter description"));
+        assertTrue("Java parent @return text should be inherited into child in:\n" + doc,
+                doc.contains("java parent return description"));
+        assertFalse("Java method-level parent description must not be spliced into block tags:\n" + doc,
+                doc.contains("Java base transform description."));
+        assertFalse("{@inheritDoc} should be substituted inside Java block tags in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocPreservesSurroundingTextAndExceptionTagsInGroovy() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithInheritDocRichBlockTags.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/InheritDocRichTagChild.html");
+        String normalized = normalizeWhitespace(doc);
+        assertNotNull(doc);
+        assertTrue("Groovy child summary should remain in place:\n" + doc,
+                normalized.contains("Groovy rich child summary."));
+        assertTrue("Groovy @param text should preserve surrounding child text and render inherited inline tags in:\n" + doc,
+                normalized.contains("child prefix groovy parent parameter description with <CODE>VALUE_TOKEN</CODE> child suffix"));
+        assertTrue("Groovy @return text should preserve surrounding child text and render inherited inline tags in:\n" + doc,
+                normalized.contains("leading groovy parent return description with <CODE>RETURN_TOKEN</CODE> trailing"));
+        assertTrue("Groovy @throws should match simple and qualified exception names in:\n" + doc,
+                normalized.contains("java.lang.IllegalArgumentException before groovy parent illegal-argument description with <CODE>BAD_VALUE_TOKEN</CODE> after"));
+        assertTrue("Groovy @exception should inherit matching parent exception text in:\n" + doc,
+                normalized.contains("IOException wrapped groovy parent IO description with <CODE>IO_VALUE_TOKEN</CODE> done"));
+        assertFalse("Groovy method-level parent description must not be spliced into block tags in:\n" + doc,
+                normalized.contains("Base transform description that should not leak into block tags."));
+        assertFalse("{@inheritDoc} should be substituted inside rich Groovy block tags in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocPreservesSurroundingTextAndExceptionTagsInJava() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaInheritDocRichTagChild.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/JavaInheritDocRichTagChild.html");
+        String normalized = normalizeWhitespace(doc);
+        assertNotNull(doc);
+        assertTrue("Java rich child summary should remain in place:\n" + doc,
+                normalized.contains("Java rich child summary."));
+        assertTrue("Java @param text should preserve surrounding child text and render inherited inline tags in:\n" + doc,
+                normalized.contains("child prefix java parent parameter description with <CODE>JAVA_VALUE_TOKEN</CODE> child suffix"));
+        assertTrue("Java @return text should preserve surrounding child text and render inherited inline tags in:\n" + doc,
+                normalized.contains("leading java parent return description with <CODE>JAVA_RETURN_TOKEN</CODE> trailing"));
+        assertTrue("Java @throws should match simple and qualified exception names in:\n" + doc,
+                normalized.contains("java.lang.IllegalArgumentException before java parent illegal-argument description with <CODE>JAVA_BAD_VALUE_TOKEN</CODE> after"));
+        assertTrue("Java @exception should inherit matching parent exception text in:\n" + doc,
+                normalized.contains("IOException wrapped java parent IO description with <CODE>JAVA_IO_VALUE_TOKEN</CODE> done"));
+        assertFalse("Java method-level parent description must not be spliced into block tags in:\n" + doc,
+                normalized.contains("Java base transform description that should not leak into block tags."));
+        assertFalse("{@inheritDoc} should be substituted inside rich Java block tags in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
     // Cyclic inheritDoc references must collapse safely instead of
     // recursing until the renderer overflows the stack.
     public void testInheritDocCycleDoesNotOverflow() throws Exception {
@@ -558,6 +652,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains("Default: {@value}."));
         assertTrue("FOUR: method-call initializer should stay verbatim in:\n" + doc,
                 doc.contains("Four is: {@value}."));
+    }
+
+    private static String normalizeWhitespace(String text) {
+        return text == null ? null : text.replaceAll("\\s+", " ").trim();
     }
 
     // GROOVY-8025: annotations whose members are closure expressions must

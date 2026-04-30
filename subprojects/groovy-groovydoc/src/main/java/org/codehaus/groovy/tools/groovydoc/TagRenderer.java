@@ -24,6 +24,7 @@ import org.codehaus.groovy.groovydoc.GroovyMemberDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyParameter;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.groovydoc.GroovyTag;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -74,10 +75,6 @@ import java.util.regex.PatternSyntaxException;
  *       not yet implemented — stage 3 of GROOVY-11938.</li>
  *   <li>Client-side syntax highlighting assets (Prism.js / highlight.js)
  *       not yet wired in — stage 4 of GROOVY-11938.</li>
- *   <li>{@code {@inheritDoc}} inherits the full parent comment rather than
- *       position-aware substitution inside specific block tags (e.g.
- *       {@code @param x {@inheritDoc}} inheriting just the parent's
- *       {@code @param x}). Reasonable initial implementation.</li>
  *   <li>JEP 467 Markdown reference links — GROOVY-11542, pending.</li>
  * </ul>
  *
@@ -147,6 +144,14 @@ final class TagRenderer {
             this.literalEnabled = literalEnabled;
             this.collateBlockTags = collateBlockTags;
         }
+    }
+
+    /**
+     * Rendering context for {@code {@inheritDoc}} when it appears inside a
+     * specific block tag such as {@code @param}, {@code @return}, or
+     * {@code @throws}.
+     */
+    private record InheritDocContext(String tagName, String target) {
     }
 
     /** Config used when rendering tags in a class-level doc comment. */
@@ -238,7 +243,7 @@ final class TagRenderer {
             if (c == '{' && i + 1 < n && text.charAt(i + 1) == '@') {
                 out.append(pendingWs);
                 pendingWs.setLength(0);
-                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
+                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited, null);
                 if (consumed > 0) { i += consumed; continue; }
             }
             if (c == '@' && isBlockTagBoundary(text, i)) {
@@ -281,7 +286,8 @@ final class TagRenderer {
                                          GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                          GroovyMemberDoc memberDoc,
                                          Config cfg,
-                                         Set<GroovyMethodDoc> inheritDocVisited) {
+                                         Set<GroovyMethodDoc> inheritDocVisited,
+                                         InheritDocContext inheritDocContext) {
         int nameStart = start + 2; // skip '{@'
         int nameEnd = readTagName(text, nameStart);
         if (nameEnd == nameStart) return 0;
@@ -298,7 +304,7 @@ final class TagRenderer {
         int close = text.indexOf('}', bodyStart);
         if (close < 0) return 0;
         String body = text.substring(bodyStart, close);
-        renderInlineTag(name, body, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
+        renderInlineTag(name, body, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited, inheritDocContext);
         return close + 1 - start;
     }
 
@@ -875,7 +881,8 @@ final class TagRenderer {
                                         GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                         GroovyMemberDoc memberDoc,
                                         Config cfg,
-                                        Set<GroovyMethodDoc> inheritDocVisited) {
+                                        Set<GroovyMethodDoc> inheritDocVisited,
+                                        InheritDocContext inheritDocContext) {
         switch (name) {
             case "interface":
                 // Historical behaviour: swallow `{@interface ...}` so Javadoc-style
@@ -914,7 +921,7 @@ final class TagRenderer {
                 // GROOVY-3782: only meaningful on a method; render the parent
                 // method's doc in the same inheritDoc expansion context so
                 // cycles don't reset the visited set on re-entry.
-                String inherited = resolveInheritDoc(memberDoc, classDoc, links, relPath, rootDoc, inheritDocVisited);
+                String inherited = resolveInheritDoc(memberDoc, classDoc, links, relPath, rootDoc, cfg, inheritDocVisited, inheritDocContext);
                 if (inherited != null) {
                     out.append(inherited);
                     return;
@@ -946,7 +953,9 @@ final class TagRenderer {
                                             List<LinkArgument> links,
                                             String relPath,
                                             GroovyRootDoc rootDoc,
-                                            Set<GroovyMethodDoc> visited) {
+                                            Config cfg,
+                                            Set<GroovyMethodDoc> visited,
+                                            InheritDocContext inheritDocContext) {
         if (!(memberDoc instanceof GroovyMethodDoc thisMethod)) return null;
         if (classDoc == null) return null;
         if (visited == null) visited = new HashSet<>();
@@ -956,10 +965,48 @@ final class TagRenderer {
         if (parent == null) return null;
         if (parent instanceof SimpleGroovyMemberDoc parentMember
                 && parentMember.belongsToClass instanceof SimpleGroovyClassDoc parentClassDoc) {
+            if (inheritDocContext != null) {
+                GroovyTag inheritedTag = findInheritedTag(parentMember, inheritDocContext);
+                if (inheritedTag == null) return null;
+                return renderInline(inheritedTag.text(), links, relPath, rootDoc, parentClassDoc, parentMember, cfg, visited, inheritDocContext);
+            }
             return parentClassDoc.replaceTags(parentMember.getRawCommentText(), parentMember, visited);
         }
         String rendered = parent.commentText();
         return rendered == null ? "" : rendered;
+    }
+
+    private static GroovyTag findInheritedTag(SimpleGroovyMemberDoc memberDoc, InheritDocContext inheritDocContext) {
+        GroovyTag[] tags = memberDoc.tags();
+        if (tags == null) return null;
+        for (GroovyTag tag : tags) {
+            if (matchesInheritedTag(tag, inheritDocContext)) return tag;
+        }
+        return null;
+    }
+
+    private static boolean matchesInheritedTag(GroovyTag tag, InheritDocContext inheritDocContext) {
+        if ("return".equals(inheritDocContext.tagName)) {
+            return "return".equals(tag.name());
+        }
+        if ("param".equals(inheritDocContext.tagName)) {
+            return "param".equals(tag.name()) && Objects.equals(inheritDocContext.target, tag.param());
+        }
+        if ("throws".equals(inheritDocContext.tagName)) {
+            return ("throws".equals(tag.name()) || "exception".equals(tag.name()))
+                    && sameExceptionType(inheritDocContext.target, tag.param());
+        }
+        return false;
+    }
+
+    private static boolean sameExceptionType(String left, String right) {
+        if (Objects.equals(left, right)) return true;
+        if (left == null || right == null) return false;
+        int leftDot = left.lastIndexOf('.');
+        int rightDot = right.lastIndexOf('.');
+        String leftSimple = leftDot >= 0 ? left.substring(leftDot + 1) : left;
+        String rightSimple = rightDot >= 0 ? right.substring(rightDot + 1) : right;
+        return leftSimple.equals(rightSimple);
     }
 
     private static GroovyMethodDoc findInheritedMethod(GroovyMethodDoc thisMethod,
@@ -1080,7 +1127,8 @@ final class TagRenderer {
 
         // Block-tag bodies may embed inline tags like {@link ...}; render those
         // now so that collation sees fully-rendered HTML.
-        String body = renderInline(rawBody, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
+        InheritDocContext inheritDocContext = inheritDocContextFor(name, rawBody);
+        String body = renderInline(rawBody, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited, inheritDocContext);
 
         if (cfg.collateBlockTags) {
             if ("see".equals(name) || "link".equals(name)) {
@@ -1118,20 +1166,45 @@ final class TagRenderer {
                                        GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc,
                                        GroovyMemberDoc memberDoc,
                                        Config cfg,
-                                       Set<GroovyMethodDoc> inheritDocVisited) {
+                                       Set<GroovyMethodDoc> inheritDocVisited,
+                                       InheritDocContext inheritDocContext) {
         StringBuilder out = new StringBuilder(text.length());
         int i = 0;
         int n = text.length();
         while (i < n) {
             char c = text.charAt(i);
             if (c == '{' && i + 1 < n && text.charAt(i + 1) == '@') {
-                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited);
+                int consumed = renderInlineTagAt(text, i, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited, inheritDocContext);
                 if (consumed > 0) { i += consumed; continue; }
             }
             out.append(c);
             i++;
         }
         return out.toString();
+    }
+
+    private static InheritDocContext inheritDocContextFor(String tagName, String rawBody) {
+        return switch (tagName) {
+            case "param" -> new InheritDocContext("param", leadingToken(rawBody));
+            case "return" -> new InheritDocContext("return", null);
+            case "throws", "exception" -> new InheritDocContext("throws", leadingToken(rawBody));
+            default -> null;
+        };
+    }
+
+    private static String leadingToken(String text) {
+        if (text == null) return null;
+        int start = 0;
+        int end = text.length();
+        while (start < end && Character.isWhitespace(text.charAt(start))) {
+            start += 1;
+        }
+        if (start >= end) return null;
+        int cursor = start;
+        while (cursor < end && !Character.isWhitespace(text.charAt(cursor))) {
+            cursor += 1;
+        }
+        return text.substring(start, cursor);
     }
 
     private static void appendCollatedOrTrailingSpace(StringBuilder out,

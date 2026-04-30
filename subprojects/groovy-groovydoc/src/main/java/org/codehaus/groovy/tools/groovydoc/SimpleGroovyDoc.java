@@ -181,7 +181,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
         List<GroovyTag> result = new ArrayList<>();
         for (String s : split) {
             String tagname = null;
-            if (s.startsWith("param") || s.startsWith("throws")) {
+            if (s.startsWith("param") || s.startsWith("throws") || s.startsWith("exception")) {
                 Matcher m = TAG3_PATTERN.matcher(s);
                 if (m.find()) {
                     tagname = m.group(1);
