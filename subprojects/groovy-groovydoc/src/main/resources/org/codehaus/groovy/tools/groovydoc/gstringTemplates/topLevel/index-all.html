@@ -24,14 +24,15 @@ def subtitle = 'Index'
 def title = subtitle + (props.windowTitle ? " (${props.windowTitle})" : "")
 def letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_' as char[]
 def elementTypes = [
-    "Method" : { it.methods() },
-    "Constructor" : { it.constructors() },
-    "Field" : { it.fields() },
-    "Property" : { it.properties() },
+    "Method" : { it.methods().findAll(isDocumented) },
+    "Constructor" : { it.constructors().findAll(isDocumented) },
+    "Field" : { it.fields().findAll(isDocumented) },
+    "Property" : { it.properties().findAll(isDocumented) },
     "Enum Constant" : { it.enumConstants() },
 ]
 def encode = { org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(it) }
 def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
+def isDocumented = { !(it.respondsTo('isHidden') && it.isHidden()) }
 def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> encode(param.isTypeAvailable()?param.type().typeName():param.typeName()) }.join(", ") }
 def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>

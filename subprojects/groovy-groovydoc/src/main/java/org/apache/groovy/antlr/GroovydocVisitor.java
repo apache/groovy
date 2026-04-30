@@ -522,8 +522,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitConstructor(ConstructorNode node) {
         if (node.isSynthetic()) return;
-        if (isInternal(node)) return;
         SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(currentClassDoc.simpleTypeName(), currentClassDoc);
+        cons.setHidden(isInternal(node));
         setConstructorOrMethodCommon(node, cons);
         currentClassDoc.add(cons);
         super.visitConstructor(node);
@@ -537,16 +537,18 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         if (currentClassDoc.isEnum() && "$INIT".equals(node.getName()))
             return;
         if (node.isSynthetic()) return;
-        if (isInternal(node)) return;
         if ("false".equals(properties.getProperty("includeMainForScripts", "true"))
                 && currentClassDoc.isScript() && "main".equals(node.getName()) && node.isStatic() && node.getParameters().length == 1)
             return;
 
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(node.getName(), currentClassDoc);
+        meth.setHidden(isInternal(node));
         meth.setReturnType(new SimpleGroovyType(makeType(node.getReturnType())));
         setConstructorOrMethodCommon(node, meth);
         currentClassDoc.add(meth);
-        processPropertiesFromGetterSetter(meth);
+        if (!meth.isHidden()) {
+            processPropertiesFromGetterSetter(meth);
+        }
         super.visitMethod(node);
         meth.setTypeParameters(genericTypesAsString(node.getGenericsTypes()));
     }
@@ -599,6 +601,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         }
 
         for (GroovyMethodDoc methodDoc : methods) {
+            if (methodDoc instanceof SimpleGroovyDoc doc && doc.isHidden()) continue;
             if (methodDoc.name().equals(expectedMethodName)) {
 
                 //extract the field name
@@ -627,9 +630,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
      */
     @Override
     public void visitProperty(PropertyNode node) {
-        if (isInternal(node.getField())) return;
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
+        fieldDoc.setHidden(isInternal(node.getField()));
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
         int mods = node.getModifiers();
         if (!hasAnno(node.getField(), "PackageScope")) {
@@ -705,9 +708,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitField(FieldNode node) {
         if (node.isSynthetic()) return;
-        if (isInternal(node)) return;
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
+        fieldDoc.setHidden(isInternal(node));
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
         processModifiers(fieldDoc, node, node.getModifiers());
         processAnnotations(fieldDoc, node);

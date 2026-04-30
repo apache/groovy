@@ -24,6 +24,7 @@ def subtitle = 'Deprecated API'
 def title = subtitle + (props.windowTitle ? " (${props.windowTitle})" : "")
 // TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
 def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
+def isDocumented = { !(it.respondsTo('isHidden') && it.isHidden()) }
 
 def classTypes = [
     "Interface" : { it.isInterface() && it.isDeprecated() },
@@ -40,16 +41,16 @@ classTypes.each{ k, v ->
 }
 
 def methodTypes = [
-    "Method" : { it.methods().findAll{ it.isDeprecated() } },
-    "Constructor" : { it.constructors().findAll{ it.isDeprecated() } },
+    "Method" : { it.methods().findAll{ isDocumented(it) && it.isDeprecated() } },
+    "Constructor" : { it.constructors().findAll{ isDocumented(it) && it.isDeprecated() } },
 ]
 methodTypes.each{ k, v ->
     deprecations[k] = rootDoc.classes().any{ isVisible(it) && v(it) }
 }
 
 def fieldTypes = [
-    "Field" : { it.fields().findAll{ it.isDeprecated() } },
-    "Property" : { it.properties().findAll{ it.isDeprecated() } },
+    "Field" : { it.fields().findAll{ isDocumented(it) && it.isDeprecated() } },
+    "Property" : { it.properties().findAll{ isDocumented(it) && it.isDeprecated() } },
     "Enum Constant" : { it.enumConstants().findAll{ it.isDeprecated() } },
 ]
 fieldTypes.each{ k, v ->

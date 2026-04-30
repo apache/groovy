@@ -641,6 +641,188 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 methodSection.contains("{@inheritDoc}"));
     }
 
+    public void testInheritDocResolvesForExpandoMetaClassRetrieveConstructorAtRootDocLevel() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaInternalInheritDocBase.java", base + "/JavaInternalInheritDocChild.java"));
+
+        SimpleGroovyRootDoc rootDoc = (SimpleGroovyRootDoc) htmlTool.getRootDoc();
+        GroovyClassDoc childClass = rootDoc.classNamedExact(base + "/JavaInternalInheritDocChild");
+        GroovyClassDoc baseClass = rootDoc.classNamedExact(base + "/JavaInternalInheritDocBase");
+        assertNotNull("Expected JavaInternalInheritDocChild in root doc", childClass);
+        assertNotNull("Expected JavaInternalInheritDocBase in root doc", baseClass);
+        assertEquals("Expected JavaInternalInheritDocChild to resolve JavaInternalInheritDocBase as its superclass",
+                base + "/JavaInternalInheritDocBase", childClass.superclass().getFullPathName());
+
+        GroovyMethodDoc child = findMethod(childClass, "retrieveConstructor", "Object");
+        GroovyMethodDoc parent = findMethod(baseClass, "retrieveConstructor", "Object");
+        assertNotNull("Expected JavaInternalInheritDocChild.retrieveConstructor(Object[]) in root doc. Available candidates: "
+                + describeMethods(childClass, "retrieveConstructor"), child);
+        assertNotNull("Expected JavaInternalInheritDocBase.retrieveConstructor(Object[]) in root doc. Available candidates: "
+                + describeMethods(baseClass, "retrieveConstructor"), parent);
+
+        String childComment = normalizeWhitespace(child.commentText());
+        assertTrue("Expected inherited summary on JavaInternalInheritDocChild.retrieveConstructor(Object[]).\nchild="
+                        + describeMethod(child) + "\nparent=" + describeMethod(parent) + "\ncomment=" + child.commentText(),
+                childComment.contains("This is a helper method which is used only by indy. It is for internal use."));
+        assertFalse("JavaInternalInheritDocChild.retrieveConstructor(Object[]) should not inherit the Class[] overload doc.\nchild="
+                        + describeMethod(child) + "\nparent=" + describeMethod(parent) + "\ncomment=" + child.commentText(),
+                childComment.contains("Resolves a constructor by parameter types."));
+        assertFalse("JavaInternalInheritDocChild.retrieveConstructor(Object[]) should not keep literal inheritDoc in commentText.\nchild="
+                        + describeMethod(child) + "\nparent=" + describeMethod(parent) + "\ncomment=" + child.commentText(),
+                child.commentText().contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocResolvesForExpandoMetaClassRetrieveConstructorInHtml() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaInternalInheritDocBase.java", base + "/JavaInternalInheritDocChild.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/JavaInternalInheritDocChild.html");
+        String parentDoc = output.getText(MOCK_DIR + "/" + base + "/JavaInternalInheritDocBase.html");
+        String methodSection = findMethodSection(doc, "retrieveConstructor", "Object");
+        String parentMethodSection = findMethodSection(parentDoc, "retrieveConstructor", "Object");
+        String normalized = normalizeWhitespace(methodSection);
+        assertNotNull("Expected JavaInternalInheritDocChild.html in output", doc);
+        assertNotNull("Expected JavaInternalInheritDocBase.html in output", parentDoc);
+        assertNotNull("Expected a dedicated HTML section for JavaInternalInheritDocChild.retrieveConstructor(Object[]):\n" + doc, methodSection);
+        assertNull("JavaInternalInheritDocBase.retrieveConstructor(Object[]) should remain hidden from published HTML",
+                parentMethodSection);
+        assertTrue("Expected inherited summary in JavaInternalInheritDocChild.retrieveConstructor(Object[]) HTML:\n" + doc,
+                normalized.contains("This is a helper method which is used only by indy. It is for internal use."));
+        assertFalse("JavaInternalInheritDocChild.retrieveConstructor(Object[]) HTML should not inherit the Class[] overload doc:\n" + doc,
+                normalized.contains("Resolves a constructor by parameter types."));
+        assertFalse("JavaInternalInheritDocChild.retrieveConstructor(Object[]) HTML should not keep literal inheritDoc:\n" + doc,
+                methodSection.contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocResolvesForInterfaceMethodsInheritedThroughSuperclassesAtRootDocLevel() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(
+                base + "/JavaHiddenInterfaceInheritDoc.java",
+                base + "/JavaHiddenInterfaceInheritDocSupport.java",
+                base + "/JavaHiddenInterfaceInheritDocPropertyBase.java",
+                base + "/JavaHiddenInterfaceInheritDocDefiningClosure.java",
+                base + "/JavaHiddenInterfaceInheritDocStaticDefiningClosure.java"
+        ));
+
+        SimpleGroovyRootDoc rootDoc = (SimpleGroovyRootDoc) htmlTool.getRootDoc();
+        GroovyClassDoc contract = rootDoc.classNamedExact(base + "/JavaHiddenInterfaceInheritDoc");
+        GroovyClassDoc definingClosure = rootDoc.classNamedExact(base + "/JavaHiddenInterfaceInheritDocDefiningClosure");
+        GroovyClassDoc staticDefiningClosure = rootDoc.classNamedExact(base + "/JavaHiddenInterfaceInheritDocStaticDefiningClosure");
+        assertNotNull("Expected JavaHiddenInterfaceInheritDoc in root doc", contract);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDocDefiningClosure in root doc", definingClosure);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDocStaticDefiningClosure in root doc", staticDefiningClosure);
+
+        GroovyMethodDoc parentGetProperty = findMethod(contract, "getProperty", "String");
+        GroovyMethodDoc parentSetProperty = findMethod(contract, "setProperty", "String", "Object");
+        GroovyMethodDoc parentInvokeMethod = findMethod(contract, "invokeMethod", "String", "Object");
+        GroovyMethodDoc childGetProperty = findMethod(definingClosure, "getProperty", "String");
+        GroovyMethodDoc childSetProperty = findMethod(definingClosure, "setProperty", "String", "Object");
+        GroovyMethodDoc childInvokeMethod = findMethod(staticDefiningClosure, "invokeMethod", "String", "Object");
+        assertNotNull("Expected JavaHiddenInterfaceInheritDoc#getProperty in root doc", parentGetProperty);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDoc#setProperty in root doc", parentSetProperty);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDoc#invokeMethod in root doc", parentInvokeMethod);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDocDefiningClosure#getProperty in root doc. Available candidates: "
+                + describeMethods(definingClosure, "getProperty"), childGetProperty);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDocDefiningClosure#setProperty in root doc. Available candidates: "
+                + describeMethods(definingClosure, "setProperty"), childSetProperty);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod in root doc. Available candidates: "
+                + describeMethods(staticDefiningClosure, "invokeMethod"), childInvokeMethod);
+
+        String getPropertyComment = normalizeWhitespace(childGetProperty.commentText());
+        String setPropertyComment = normalizeWhitespace(childSetProperty.commentText());
+        String invokeMethodComment = normalizeWhitespace(childInvokeMethod.commentText());
+        assertTrue("Expected inherited summary on JavaHiddenInterfaceInheritDocDefiningClosure#getProperty.\nchild="
+                        + describeMethod(childGetProperty) + "\nparent=" + describeMethod(parentGetProperty) + "\ncomment=" + childGetProperty.commentText(),
+                getPropertyComment.contains("Retrieves a property value."));
+        assertTrue("Expected inherited return text on JavaHiddenInterfaceInheritDocDefiningClosure#getProperty.\nchild="
+                        + describeMethod(childGetProperty) + "\nparent=" + describeMethod(parentGetProperty) + "\ncomment=" + childGetProperty.commentText(),
+                getPropertyComment.contains("the property value"));
+        assertFalse("JavaHiddenInterfaceInheritDocDefiningClosure#getProperty should not keep literal inheritDoc.\ncomment="
+                        + childGetProperty.commentText(),
+                childGetProperty.commentText().contains("{@inheritDoc}"));
+
+        assertTrue("Expected inherited summary on JavaHiddenInterfaceInheritDocDefiningClosure#setProperty.\nchild="
+                        + describeMethod(childSetProperty) + "\nparent=" + describeMethod(parentSetProperty) + "\ncomment=" + childSetProperty.commentText(),
+                setPropertyComment.contains("Sets the given property to the new value."));
+        assertTrue("Expected inherited parameter text on JavaHiddenInterfaceInheritDocDefiningClosure#setProperty.\nchild="
+                        + describeMethod(childSetProperty) + "\nparent=" + describeMethod(parentSetProperty) + "\ncomment=" + childSetProperty.commentText(),
+                setPropertyComment.contains("the new value for the property"));
+        assertFalse("JavaHiddenInterfaceInheritDocDefiningClosure#setProperty should not keep literal inheritDoc.\ncomment="
+                        + childSetProperty.commentText(),
+                childSetProperty.commentText().contains("{@inheritDoc}"));
+
+        assertTrue("Expected inherited summary on JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod.\nchild="
+                        + describeMethod(childInvokeMethod) + "\nparent=" + describeMethod(parentInvokeMethod) + "\ncomment=" + childInvokeMethod.commentText(),
+                invokeMethodComment.contains("Invokes the given method."));
+        assertTrue("Expected inherited return text on JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod.\nchild="
+                        + describeMethod(childInvokeMethod) + "\nparent=" + describeMethod(parentInvokeMethod) + "\ncomment=" + childInvokeMethod.commentText(),
+                invokeMethodComment.contains("the result of invoking the method"));
+        assertFalse("JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod should not keep literal inheritDoc.\ncomment="
+                        + childInvokeMethod.commentText(),
+                childInvokeMethod.commentText().contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocResolvesForInterfaceMethodsInheritedThroughSuperclassesInHtml() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(
+                base + "/JavaHiddenInterfaceInheritDoc.java",
+                base + "/JavaHiddenInterfaceInheritDocSupport.java",
+                base + "/JavaHiddenInterfaceInheritDocPropertyBase.java",
+                base + "/JavaHiddenInterfaceInheritDocDefiningClosure.java",
+                base + "/JavaHiddenInterfaceInheritDocStaticDefiningClosure.java"
+        ));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String contractDoc = output.getText(MOCK_DIR + "/" + base + "/JavaHiddenInterfaceInheritDoc.html");
+        String definingDoc = output.getText(MOCK_DIR + "/" + base + "/JavaHiddenInterfaceInheritDocDefiningClosure.html");
+        String staticDoc = output.getText(MOCK_DIR + "/" + base + "/JavaHiddenInterfaceInheritDocStaticDefiningClosure.html");
+        String getPropertySection = findMethodSection(definingDoc, "getProperty", "String");
+        String setPropertySection = findMethodSection(definingDoc, "setProperty", "java.lang.String, java.lang.Object");
+        String invokeMethodSection = findMethodSection(staticDoc, "invokeMethod", "java.lang.String, java.lang.Object");
+        assertNotNull("Expected JavaHiddenInterfaceInheritDoc.html in output", contractDoc);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDocDefiningClosure.html in output", definingDoc);
+        assertNotNull("Expected JavaHiddenInterfaceInheritDocStaticDefiningClosure.html in output", staticDoc);
+        assertNull("JavaHiddenInterfaceInheritDoc#getProperty should remain hidden from published HTML",
+                findMethodSection(contractDoc, "getProperty", "String"));
+        assertNull("JavaHiddenInterfaceInheritDoc#setProperty should remain hidden from published HTML",
+                findMethodSection(contractDoc, "setProperty", "java.lang.String, java.lang.Object"));
+        assertNull("JavaHiddenInterfaceInheritDoc#invokeMethod should remain hidden from published HTML",
+                findMethodSection(contractDoc, "invokeMethod", "java.lang.String, java.lang.Object"));
+
+        String normalizedGetProperty = normalizeWhitespace(getPropertySection);
+        String normalizedSetProperty = normalizeWhitespace(setPropertySection);
+        String normalizedInvokeMethod = normalizeWhitespace(invokeMethodSection);
+        assertNotNull("Expected a dedicated HTML section for JavaHiddenInterfaceInheritDocDefiningClosure#getProperty:\n" + definingDoc,
+                getPropertySection);
+        assertNotNull("Expected a dedicated HTML section for JavaHiddenInterfaceInheritDocDefiningClosure#setProperty:\n" + definingDoc,
+                setPropertySection);
+        assertNotNull("Expected a dedicated HTML section for JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod:\n" + staticDoc,
+                invokeMethodSection);
+        assertTrue("Expected inherited summary in JavaHiddenInterfaceInheritDocDefiningClosure#getProperty HTML:\n" + definingDoc,
+                normalizedGetProperty.contains("Retrieves a property value."));
+        assertTrue("Expected inherited return text in JavaHiddenInterfaceInheritDocDefiningClosure#getProperty HTML:\n" + definingDoc,
+                normalizedGetProperty.contains("the property value"));
+        assertFalse("JavaHiddenInterfaceInheritDocDefiningClosure#getProperty HTML should not keep literal inheritDoc:\n" + definingDoc,
+                getPropertySection.contains("{@inheritDoc}"));
+        assertTrue("Expected inherited summary in JavaHiddenInterfaceInheritDocDefiningClosure#setProperty HTML:\n" + definingDoc,
+                normalizedSetProperty.contains("Sets the given property to the new value."));
+        assertTrue("Expected inherited parameter text in JavaHiddenInterfaceInheritDocDefiningClosure#setProperty HTML:\n" + definingDoc,
+                normalizedSetProperty.contains("the new value for the property"));
+        assertFalse("JavaHiddenInterfaceInheritDocDefiningClosure#setProperty HTML should not keep literal inheritDoc:\n" + definingDoc,
+                setPropertySection.contains("{@inheritDoc}"));
+        assertTrue("Expected inherited summary in JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod HTML:\n" + staticDoc,
+                normalizedInvokeMethod.contains("Invokes the given method."));
+        assertTrue("Expected inherited return text in JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod HTML:\n" + staticDoc,
+                normalizedInvokeMethod.contains("the result of invoking the method"));
+        assertFalse("JavaHiddenInterfaceInheritDocStaticDefiningClosure#invokeMethod HTML should not keep literal inheritDoc:\n" + staticDoc,
+                invokeMethodSection.contains("{@inheritDoc}"));
+    }
+
     // Cyclic inheritDoc references must collapse safely instead of
     // recursing until the renderer overflows the stack.
     public void testInheritDocCycleDoesNotOverflow() throws Exception {
@@ -725,6 +907,35 @@ public class GroovyDocToolTest extends GroovyTestCase {
         return null;
     }
 
+    private static GroovyMethodDoc findMethod(GroovyClassDoc classDoc, String name, String... parameterTypeFragments) {
+        for (GroovyMethodDoc method : classDoc.methods()) {
+            if (!name.equals(method.name())) continue;
+            GroovyParameter[] parameters = method.parameters();
+            if (parameters.length != parameterTypeFragments.length) continue;
+            boolean allMatch = true;
+            for (int i = 0; i < parameters.length; i++) {
+                if (!parameterMatches(parameters[i], parameterTypeFragments[i])) {
+                    allMatch = false;
+                    break;
+                }
+            }
+            if (allMatch) return method;
+        }
+        return null;
+    }
+
+    private static boolean parameterMatches(GroovyParameter parameter, String fragment) {
+        if (matchesText(parameter.typeName(), fragment)) return true;
+        if (parameter.type() == null) return false;
+        return matchesText(parameter.type().typeName(), fragment)
+                || matchesText(parameter.type().qualifiedTypeName(), fragment)
+                || matchesText(parameter.type().simpleTypeName(), fragment);
+    }
+
+    private static boolean matchesText(String text, String fragment) {
+        return text != null && fragment != null && text.contains(fragment);
+    }
+
     private static String describeMethod(GroovyMethodDoc method) {
         if (method == null) return "null";
         String owner = method.containingClass() == null ? "<no-owner>" : method.containingClass().qualifiedTypeName();
@@ -754,6 +965,20 @@ public class GroovyDocToolTest extends GroovyTestCase {
         int end = text.indexOf(endMarker, start + startMarker.length());
         if (end < 0) return text.substring(start);
         return text.substring(start, end);
+    }
+
+    private static String findMethodSection(String doc, String methodName, String signatureFragment) {
+        if (doc == null) return null;
+        Pattern anchorPattern = Pattern.compile("<a name=\"" + Pattern.quote(methodName)
+                + "\\([^\"<>]*" + Pattern.quote(signatureFragment) + "[^\"<>]*\\)\"><!-- --></a>");
+        Matcher matcher = anchorPattern.matcher(doc);
+        if (!matcher.find()) return null;
+        int start = matcher.start();
+        int nextAnchor = doc.indexOf("<a name=\"", matcher.end());
+        int endOfClass = doc.indexOf("<!-- ========= END OF CLASS DATA ========= -->", matcher.end());
+        int end = nextAnchor < 0 ? endOfClass : (endOfClass >= 0 ? Math.min(nextAnchor, endOfClass) : nextAnchor);
+        if (end < 0) end = doc.length();
+        return doc.substring(start, end);
     }
 
     // GROOVY-8025: annotations whose members are closure expressions must

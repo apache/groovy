@@ -70,6 +70,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
     private int definitionType;
     private boolean deprecated;
     private boolean isScript;
+    private boolean hidden;
     // GROOVY-11542 stage 1: marks a comment whose body is Markdown (/// runs
     // per JEP 467). The flag is set during AST visit; templates / renderers
     // inspect it to decide whether to route the body through a Markdown
@@ -162,6 +163,26 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
      */
     public void setMarkdown(boolean markdown) {
         this.markdown = markdown;
+    }
+
+    /**
+     * Indicates whether this doc element should be retained for internal model
+     * lookups but excluded from rendered output.
+     *
+     * @return {@code true} if this element is hidden from published docs
+     */
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    /**
+     * Sets whether this doc element should be hidden from rendered output while
+     * remaining available for internal resolution such as {@code inheritDoc}.
+     *
+     * @param hidden {@code true} if this element should be hidden
+     */
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
     }
 
     /**

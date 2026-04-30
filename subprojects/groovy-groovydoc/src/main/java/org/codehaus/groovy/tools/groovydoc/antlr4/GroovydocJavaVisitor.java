@@ -419,8 +419,9 @@ public class GroovydocJavaVisitor
      */
     @Override
     public void visit(MethodDeclaration m, Object arg) {
-        if (isInternal(m)) return;
+        boolean hidden = isInternal(m);
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(m.getNameAsString(), currentClassDoc);
+        meth.setHidden(hidden);
         meth.setTypeParameters(genericTypesAsString(m.getTypeParameters()));
         meth.setReturnType(makeType(m.getType()));
         setConstructorOrMethodCommon(m, meth);
@@ -437,8 +438,9 @@ public class GroovydocJavaVisitor
      */
     @Override
     public void visit(ConstructorDeclaration c, Object arg) {
-        if (isInternal(c)) return;
+        boolean hidden = isInternal(c);
         SimpleGroovyConstructorDoc meth = new SimpleGroovyConstructorDoc(c.getNameAsString(), currentClassDoc);
+        meth.setHidden(hidden);
         setConstructorOrMethodCommon(c, meth);
         currentClassDoc.add(meth);
         super.visit(c, arg);
@@ -482,9 +484,10 @@ public class GroovydocJavaVisitor
      */
     @Override
     public void visit(FieldDeclaration f, Object arg) {
-        if (isInternal(f)) return;
+        boolean hidden = isInternal(f);
         String name = f.getVariable(0).getNameAsString();
         SimpleGroovyFieldDoc field = new SimpleGroovyFieldDoc(name, currentClassDoc);
+        field.setHidden(hidden);
         field.setType(makeType(f.getVariable(0).getType()));
         setModifiers(f.getModifiers(), field);
         processAnnotations(field, f);

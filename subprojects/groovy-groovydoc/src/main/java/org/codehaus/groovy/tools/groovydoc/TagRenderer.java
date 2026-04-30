@@ -942,10 +942,10 @@ final class TagRenderer {
     /**
      * GROOVY-3782: resolve {@code {@inheritDoc}} to the parent method's
      * already-rendered comment text. Walks the superclass chain, then
-     * declared interfaces, looking for a method with the same name and
-     * matching parameter type names. Returns {@code null} if the current
-     * member isn't a method, no parent method is found, or the parent
-     * method has no doc.
+     * interfaces reachable from the current class or any superclass,
+     * looking for a method with the same name and matching parameter type
+     * names. Returns {@code null} if the current member isn't a method,
+     * no parent method is found, or the parent method has no doc.
      *
      * <p>Recursion safety: the {@code visited} set tracks methods we've
      * already expanded on this chain and is reused when rendering parent
@@ -1017,16 +1017,30 @@ final class TagRenderer {
                                                        GroovyClassDoc startingClass,
                                                        Set<GroovyClassDoc> seen) {
         // Javadoc's search order: superclass chain first, then interfaces.
+        List<GroovyClassDoc> superclasses = new ArrayList<>();
         for (GroovyClassDoc sup = startingClass.superclass(); sup != null; sup = sup.superclass()) {
             if (!seen.add(sup)) break;
+            superclasses.add(sup);
             GroovyMethodDoc match = findMatchingMethod(sup, thisMethod);
             if (match != null) return match;
         }
-        for (GroovyClassDoc iface : startingClass.interfaces()) {
+        GroovyMethodDoc match = findInheritedInterfaceMethod(thisMethod, startingClass, seen);
+        if (match != null) return match;
+        for (GroovyClassDoc sup : superclasses) {
+            match = findInheritedInterfaceMethod(thisMethod, sup, seen);
+            if (match != null) return match;
+        }
+        return null;
+    }
+
+    private static GroovyMethodDoc findInheritedInterfaceMethod(GroovyMethodDoc thisMethod,
+                                                                GroovyClassDoc type,
+                                                                Set<GroovyClassDoc> seen) {
+        for (GroovyClassDoc iface : type.interfaces()) {
             if (!seen.add(iface)) continue;
             GroovyMethodDoc match = findMatchingMethod(iface, thisMethod);
             if (match != null) return match;
-            GroovyMethodDoc deeper = findInheritedMethod(thisMethod, iface, seen);
+            GroovyMethodDoc deeper = findInheritedInterfaceMethod(thisMethod, iface, seen);
             if (deeper != null) return deeper;
         }
         return null;
