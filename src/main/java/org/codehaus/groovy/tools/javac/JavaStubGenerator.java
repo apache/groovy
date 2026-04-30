@@ -56,6 +56,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.VerifierCodeVisitor;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.tools.Utilities;
+import org.codehaus.groovy.transform.RecordTypeASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
@@ -106,6 +107,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isStaticConstantInitializerTyp
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.makeCached;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
@@ -337,6 +339,12 @@ public class JavaStubGenerator {
             boolean isEnum = classNode.isEnum();
             boolean isInterface = !isEnum && isInterfaceOrTrait(classNode);
             boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
+            // GROOVY-11974: render `record Foo(...)` syntax for native records so that
+            // the canonical constructor and component accessors are visible to javac
+            // through stub-side synthesis. Native-only; emulated records still render
+            // as plain classes (the existing behaviour).
+            boolean isRecordStub = !isEnum && !isInterface && !isAnnotationDefinition
+                    && isNativeRecordStub(classNode);
             printAnnotations(out, classNode);
 
             int flags = classNode.getModifiers();
@@ -344,6 +352,8 @@ public class JavaStubGenerator {
             if (isEnum || isInterface) flags &= ~Opcodes.ACC_ABSTRACT;
             if (classNode.isSyntheticPublic() && hasPackageScopeXform(classNode,
                         PackageScopeTarget.CLASS)) flags &= ~Opcodes.ACC_PUBLIC;
+            // a record is implicitly final; declaring it final is a javac error
+            if (isRecordStub) flags &= ~Opcodes.ACC_FINAL;
             printModifiers(out, flags);
 
             if (isInterface) {
@@ -353,6 +363,8 @@ public class JavaStubGenerator {
                 out.print("interface ");
             } else if (isEnum) {
                 out.print("enum ");
+            } else if (isRecordStub) {
+                out.print("record ");
             } else {
                 out.print("class ");
             }
@@ -363,9 +375,13 @@ public class JavaStubGenerator {
             out.println(className);
             printTypeParameters(out, classNode.getGenericsTypes());
 
+            if (isRecordStub) {
+                printRecordHeader(out, classNode);
+            }
+
             ClassNode superClass = classNode.getUnresolvedSuperClass(false);
 
-            if (!isInterface && !isEnum) {
+            if (!isInterface && !isEnum && !isRecordStub) {
                 out.print("  extends ");
                 printType(out, superClass);
             }
@@ -387,8 +403,8 @@ public class JavaStubGenerator {
             }
             out.println(" {");
 
-            printFields(out, classNode, isInterface);
-            printMethods(out, classNode, isEnum);
+            printFields(out, classNode, isInterface, isRecordStub);
+            printMethods(out, classNode, isEnum, isRecordStub);
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
                 // GROOVY-4004: clear the methods from the outer class so that they don't get duplicated in inner ones
@@ -404,7 +420,30 @@ public class JavaStubGenerator {
         }
     }
 
-    private void printFields(PrintWriter out, ClassNode classNode, boolean ifaceOrTrait) {
+    private boolean isNativeRecordStub(final ClassNode classNode) {
+        if (currentModule == null || currentModule.getContext() == null) return false;
+        String targetBytecode = currentModule.getContext().getConfiguration().getTargetBytecode();
+        return RecordTypeASTTransformation.wouldBeNativeRecord(classNode, targetBytecode);
+    }
+
+    private void printRecordHeader(final PrintWriter out, final ClassNode classNode) {
+        List<PropertyNode> components = getInstanceProperties(classNode);
+        out.print('(');
+        for (int i = 0, n = components.size(); i < n; i += 1) {
+            if (i > 0) out.print(", ");
+            PropertyNode pn = components.get(i);
+            // component-level annotations sit on the property at this point
+            for (AnnotationNode an : pn.getAnnotations()) {
+                printAnnotation(out, an);
+            }
+            printType(out, pn.getOriginType());
+            out.print(' ');
+            out.print(pn.getName());
+        }
+        out.print(')');
+    }
+
+    private void printFields(PrintWriter out, ClassNode classNode, boolean ifaceOrTrait, boolean isRecordStub) {
         List<FieldNode> fields = classNode.getFields();
         if (!fields.isEmpty()) {
             List<FieldNode> enumFields = new ArrayList<>();
@@ -418,6 +457,10 @@ public class JavaStubGenerator {
                     field.setDeclaringClass(classNode);
                     field.addAnnotations(annotations);
                 }
+
+                // native records cannot redeclare instance fields; only static fields
+                // such as serialVersionUID are valid in the body.
+                if (isRecordStub && (flags & Opcodes.ACC_STATIC) == 0) continue;
 
                 if ((flags & Opcodes.ACC_ENUM) != 0) {
                     enumFields.add(field);
@@ -498,8 +541,13 @@ public class JavaStubGenerator {
         out.println(';');
     }
 
-    private void printMethods(final PrintWriter out, final ClassNode classNode, final boolean isEnum) {
-        if (!isEnum) printConstructors(out, classNode);
+    private void printMethods(final PrintWriter out, final ClassNode classNode, final boolean isEnum, final boolean isRecordStub) {
+        // For native record stubs, let javac auto-synthesise the canonical
+        // constructor; we cannot reliably emit a placeholder body that
+        // satisfies record component definite-assignment rules. Non-canonical
+        // user-declared constructors are not visible in the stub (known
+        // limitation; stub-subset-of-runtime).
+        if (!isEnum && !isRecordStub) printConstructors(out, classNode);
 
         List<MethodNode> methods = new ArrayList<>(propertyMethods.values());
         methods.addAll(classNode.getMethods());

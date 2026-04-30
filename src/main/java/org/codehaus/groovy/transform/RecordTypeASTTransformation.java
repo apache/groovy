@@ -183,6 +183,32 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         return node.getUnresolvedSuperClass() != null && RECORD_CLASS_NAME.equals(node.getUnresolvedSuperClass().getName());
     }
 
+    /**
+     * Predicts whether {@code cNode} will be compiled as a native JVM record.
+     * Mirrors the decision logic in {@link #doProcessRecordType} (presence of
+     * {@code @RecordBase}, target bytecode {@code >= 16}, and
+     * {@code @RecordOptions(mode != EMULATE)}) so callers running before the
+     * transform itself fires can act on the same outcome.
+     * <p>
+     * The joint-compilation stub generator uses this at {@code Phases.CONVERSION}
+     * to decide whether to emit {@code record Foo(...)} syntax. Unlike
+     * {@link #recordNative(ClassNode)}, which inspects the post-transform
+     * super class, this predicate inspects only the source-level annotations.
+     *
+     * @param cNode          the candidate class node
+     * @param targetBytecode the target bytecode level
+     *                       (see {@link CompilerConfiguration#getTargetBytecode()})
+     */
+    @Incubating
+    public static boolean wouldBeNativeRecord(final ClassNode cNode, final String targetBytecode) {
+        if (cNode == null || cNode.getAnnotations(MY_TYPE).isEmpty()) return false;
+        if (targetBytecode == null || targetBytecode.trim().isEmpty()) return false;
+        if (!isAtLeast(targetBytecode, CompilerConfiguration.JDK16)) return false;
+        List<AnnotationNode> opts = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
+        AnnotationNode options = opts.isEmpty() ? null : opts.get(0);
+        return getMode(options, "mode") != RecordTypeMode.EMULATE;
+    }
+
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
@@ -205,16 +231,12 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         List<AnnotationNode> annotations = cNode.getAnnotations(RECORD_OPTIONS_TYPE);
         AnnotationNode options = annotations.isEmpty() ? null : annotations.get(0);
         RecordTypeMode mode = getMode(options, "mode");
-        boolean isAtLeastJDK16 = false;
-        String message = "Expecting JDK16+ but unable to determine target bytecode";
-        if (sourceUnit != null) {
-            CompilerConfiguration config = sourceUnit.getConfiguration();
-            String targetBytecode = config.getTargetBytecode();
-            isAtLeastJDK16 = isAtLeast(targetBytecode, CompilerConfiguration.JDK16);
-            message = "Expecting JDK16+ but found " + targetBytecode;
-        }
+        String targetBytecode = (sourceUnit != null) ? sourceUnit.getConfiguration().getTargetBytecode() : null;
+        String message = (targetBytecode != null)
+                ? "Expecting JDK16+ but found " + targetBytecode
+                : "Expecting JDK16+ but unable to determine target bytecode";
         List<PropertyNode> pList = Collections.unmodifiableList(getInstanceProperties(cNode));
-        boolean isNative = (isAtLeastJDK16 && mode != RecordTypeMode.EMULATE);
+        boolean isNative = wouldBeNativeRecord(cNode, targetBytecode);
         if (isNative) {
             String scName = cNode.getUnresolvedSuperClass().getName();
             // don't expect any parent to be set at this point but we only check at grammar
