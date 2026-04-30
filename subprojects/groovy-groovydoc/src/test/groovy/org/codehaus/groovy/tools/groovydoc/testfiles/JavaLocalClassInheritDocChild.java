@@ -18,19 +18,10 @@
  */
 package org.codehaus.groovy.tools.groovydoc.testfiles;
 
-import java.io.IOException;
-
-public class JavaInheritDocRichTagChild extends JavaInheritDocRichTagBase {
-    /**
-     * Java rich child summary.
-     *
-     * @param value child prefix {@inheritDoc} child suffix
-     * @return leading {@inheritDoc} trailing
-     * @throws java.lang.IllegalArgumentException before {@inheritDoc} after
-     * @exception IOException wrapped {@inheritDoc} done
-     */
+public class JavaLocalClassInheritDocChild extends JavaLocalClassInheritDocBase {
+    /** {@inheritDoc} */
     @Override
-    public String transform(String value) throws IOException {
-        return value.toLowerCase();
+    public Object findMixinMethod(String methodName, Class[] arguments) {
+        return null;
     }
 }

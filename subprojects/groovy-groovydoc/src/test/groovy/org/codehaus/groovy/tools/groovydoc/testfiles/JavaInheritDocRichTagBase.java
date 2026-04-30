@@ -20,17 +20,16 @@ package org.codehaus.groovy.tools.groovydoc.testfiles;
 
 import java.io.IOException;
 
-public class JavaInheritDocRichTagChild extends JavaInheritDocRichTagBase {
+class JavaInheritDocRichTagBase {
     /**
-     * Java rich child summary.
+     * Java base transform description that should not leak into block tags.
      *
-     * @param value child prefix {@inheritDoc} child suffix
-     * @return leading {@inheritDoc} trailing
-     * @throws java.lang.IllegalArgumentException before {@inheritDoc} after
-     * @exception IOException wrapped {@inheritDoc} done
+     * @param value java parent parameter description with {@code JAVA_VALUE_TOKEN}
+     * @return java parent return description with {@code JAVA_RETURN_TOKEN}
+     * @throws IllegalArgumentException java parent illegal-argument description with {@code JAVA_BAD_VALUE_TOKEN}
+     * @exception java.io.IOException java parent IO description with {@code JAVA_IO_VALUE_TOKEN}
      */
-    @Override
     public String transform(String value) throws IOException {
-        return value.toLowerCase();
+        return value.toUpperCase();
     }
 }

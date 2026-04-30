@@ -24,6 +24,7 @@ import com.github.javaparser.StaticJavaParser;
 import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
+import org.codehaus.groovy.groovydoc.GroovyParameter;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.antlr4.GroovyDocParser;
@@ -512,7 +513,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testInheritDocSubstitutesMatchingParentBlockTagsInJava() throws Exception {
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
-        htmlTool.add(List.of(base + "/JavaInheritDocTagChild.java"));
+        htmlTool.add(List.of(base + "/JavaInheritDocTagBase.java", base + "/JavaInheritDocTagChild.java"));
 
         MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -559,7 +560,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testInheritDocPreservesSurroundingTextAndExceptionTagsInJava() throws Exception {
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
-        htmlTool.add(List.of(base + "/JavaInheritDocRichTagChild.java"));
+        htmlTool.add(List.of(base + "/JavaInheritDocRichTagBase.java", base + "/JavaInheritDocRichTagChild.java"));
 
         MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -581,6 +582,63 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 normalized.contains("Java base transform description that should not leak into block tags."));
         assertFalse("{@inheritDoc} should be substituted inside rich Java block tags in:\n" + doc,
                 doc.contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocResolvesForJavaLocalClassRegressionAtRootDocLevel() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaLocalClassInheritDocBase.java", base + "/JavaLocalClassInheritDocChild.java"));
+
+        SimpleGroovyRootDoc rootDoc = (SimpleGroovyRootDoc) htmlTool.getRootDoc();
+        GroovyClassDoc childClass = rootDoc.classNamedExact(base + "/JavaLocalClassInheritDocChild");
+        GroovyClassDoc baseClass = rootDoc.classNamedExact(base + "/JavaLocalClassInheritDocBase");
+        assertNotNull("Expected JavaLocalClassInheritDocChild in root doc", childClass);
+        assertNotNull("Expected JavaLocalClassInheritDocBase in root doc", baseClass);
+        assertNull("Local helper class LocalMixinMethodTracker should not become a top-level doc node",
+                rootDoc.classNamedExact(base + "/LocalMixinMethodTracker"));
+        assertEquals("Expected JavaLocalClassInheritDocChild to resolve JavaLocalClassInheritDocBase as its superclass",
+                base + "/JavaLocalClassInheritDocBase", childClass.superclass().getFullPathName());
+
+        GroovyMethodDoc child = findMethod(childClass, "findMixinMethod", 2);
+        GroovyMethodDoc parent = findMethod(baseClass, "findMixinMethod", 2);
+        assertNotNull("Expected JavaLocalClassInheritDocChild.findMixinMethod in root doc. Available candidates: "
+                + describeMethods(childClass, "findMixinMethod"), child);
+        assertNotNull("Expected JavaLocalClassInheritDocBase.findMixinMethod in root doc. Available candidates: "
+                + describeMethods(baseClass, "findMixinMethod") + ". Anywhere in root: "
+                + describeClassesWithMethod(rootDoc, "findMixinMethod"), parent);
+
+        String childComment = normalizeWhitespace(child.commentText());
+        assertTrue("Expected inherited first sentence on JavaLocalClassInheritDocChild.findMixinMethod.\nchild="
+                        + describeMethod(child) + "\nparent=" + describeMethod(parent) + "\ncomment=" + child.commentText(),
+                childComment.contains("Searches for a matching mixin method."));
+        assertTrue("Expected inherited return description on JavaLocalClassInheritDocChild.findMixinMethod.\nchild="
+                        + describeMethod(child) + "\nparent=" + describeMethod(parent) + "\ncomment=" + child.commentText(),
+                childComment.contains("the matching mixin method, or <CODE>null</CODE> if none is found"));
+        assertFalse("JavaLocalClassInheritDocChild.findMixinMethod should not keep literal inheritDoc in commentText.\nchild="
+                        + describeMethod(child) + "\nparent=" + describeMethod(parent) + "\ncomment=" + child.commentText(),
+                child.commentText().contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocResolvesForJavaLocalClassRegressionInHtml() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaLocalClassInheritDocBase.java", base + "/JavaLocalClassInheritDocChild.java"));
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/JavaLocalClassInheritDocChild.html");
+        String methodSection = substringBetween(doc,
+                "<a name=\"findMixinMethod(java.lang.String, java.lang.Class)\"><!-- --></a>",
+                "<!-- ========= END OF CLASS DATA ========= -->");
+        String normalized = normalizeWhitespace(methodSection);
+        assertNotNull("Expected JavaLocalClassInheritDocChild.html in output", doc);
+        assertNull("Local helper class LocalMixinMethodTracker should not get its own HTML page",
+                output.getText(MOCK_DIR + "/" + base + "/LocalMixinMethodTracker.html"));
+        assertNotNull("Expected a dedicated HTML section for JavaLocalClassInheritDocChild.findMixinMethod:\n" + doc, methodSection);
+        assertTrue("Expected inherited summary in JavaLocalClassInheritDocChild.findMixinMethod HTML:\n" + doc,
+                normalized.contains("Searches for a matching mixin method."));
+        assertTrue("Expected inherited return text in JavaLocalClassInheritDocChild.findMixinMethod HTML:\n" + doc,
+                normalized.contains("the matching mixin method, or <CODE>null</CODE> if none is found"));
+        assertFalse("JavaLocalClassInheritDocChild.findMixinMethod HTML should not keep literal inheritDoc:\n" + doc,
+                methodSection.contains("{@inheritDoc}"));
     }
 
     // Cyclic inheritDoc references must collapse safely instead of
@@ -656,6 +714,46 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     private static String normalizeWhitespace(String text) {
         return text == null ? null : text.replaceAll("\\s+", " ").trim();
+    }
+
+    private static GroovyMethodDoc findMethod(GroovyClassDoc classDoc, String name, int parameterCount) {
+        for (GroovyMethodDoc method : classDoc.methods()) {
+            if (name.equals(method.name()) && method.parameters().length == parameterCount) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private static String describeMethod(GroovyMethodDoc method) {
+        if (method == null) return "null";
+        String owner = method.containingClass() == null ? "<no-owner>" : method.containingClass().qualifiedTypeName();
+        return owner + "#" + method.name() + "("
+                + Arrays.stream(method.parameters()).map(GroovyParameter::typeName).collect(Collectors.joining(", "))
+                + ")";
+    }
+
+    private static String describeMethods(GroovyClassDoc classDoc, String name) {
+        return Arrays.stream(classDoc.methods())
+                .filter(method -> name.equals(method.name()))
+                .map(GroovyDocToolTest::describeMethod)
+                .collect(Collectors.joining("; "));
+    }
+
+    private static String describeClassesWithMethod(GroovyRootDoc rootDoc, String name) {
+        return Arrays.stream(rootDoc.classes())
+                .map(classDoc -> classDoc.getFullPathName() + ": " + describeMethods(classDoc, name))
+                .filter(s -> !s.endsWith(": "))
+                .collect(Collectors.joining(" | "));
+    }
+
+    private static String substringBetween(String text, String startMarker, String endMarker) {
+        if (text == null) return null;
+        int start = text.indexOf(startMarker);
+        if (start < 0) return null;
+        int end = text.indexOf(endMarker, start + startMarker.length());
+        if (end < 0) return text.substring(start);
+        return text.substring(start, end);
     }
 
     // GROOVY-8025: annotations whose members are closure expressions must

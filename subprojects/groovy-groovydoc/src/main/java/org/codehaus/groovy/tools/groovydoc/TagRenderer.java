@@ -75,6 +75,10 @@ import java.util.regex.PatternSyntaxException;
  *       not yet implemented — stage 3 of GROOVY-11938.</li>
  *   <li>Client-side syntax highlighting assets (Prism.js / highlight.js)
  *       not yet wired in — stage 4 of GROOVY-11938.</li>
+ *   <li>{@code {@inheritDoc}} inherits the full parent comment rather than
+ *       position-aware substitution inside specific block tags (e.g.
+ *       {@code @param x {@inheritDoc}} inheriting just the parent's
+ *       {@code @param x}). Reasonable initial implementation.</li>
  *   <li>JEP 467 Markdown reference links — GROOVY-11542, pending.</li>
  * </ul>
  *

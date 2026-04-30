@@ -128,6 +128,7 @@ public class GroovydocJavaVisitor
      */
     @Override
     public void visit(EnumDeclaration n, Object arg) {
+        if (shouldSkipTypeDeclaration(n)) return;
         SimpleGroovyClassDoc parent = visit(n);
         currentClassDoc.setTokenType(SimpleGroovyDoc.ENUM_DEF);
         super.visit(n, arg);
@@ -161,6 +162,7 @@ public class GroovydocJavaVisitor
      */
     @Override
     public void visit(AnnotationDeclaration n, Object arg) {
+        if (shouldSkipTypeDeclaration(n)) return;
         SimpleGroovyClassDoc parent = visit(n);
         currentClassDoc.setTokenType(SimpleGroovyDoc.ANNOTATION_DEF);
         super.visit(n, arg);
@@ -201,6 +203,7 @@ public class GroovydocJavaVisitor
      */
     @Override
     public void visit(ClassOrInterfaceDeclaration n, Object arg) {
+        if (shouldSkipTypeDeclaration(n)) return;
         SimpleGroovyClassDoc parent = visit(n);
         if (n.isInterface()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.INTERFACE_DEF);
@@ -231,6 +234,7 @@ public class GroovydocJavaVisitor
      */
     @Override
     public void visit(final RecordDeclaration n, final Object arg) {
+        if (shouldSkipTypeDeclaration(n)) return;
         SimpleGroovyClassDoc parent = visit(n);
         if (n.isRecordDeclaration()) {
             currentClassDoc.setTokenType(SimpleGroovyDoc.RECORD_DEF);
@@ -263,6 +267,10 @@ public class GroovydocJavaVisitor
         if (typeParameters == null || typeParameters.isEmpty())
             return "";
         return "<" + DefaultGroovyMethods.join(typeParameters, ", ") + ">";
+    }
+
+    private static boolean shouldSkipTypeDeclaration(TypeDeclaration<?> n) {
+        return !n.isTopLevelType() && !n.isNestedType();
     }
 
     private SimpleGroovyClassDoc visit(TypeDeclaration<?> n) {

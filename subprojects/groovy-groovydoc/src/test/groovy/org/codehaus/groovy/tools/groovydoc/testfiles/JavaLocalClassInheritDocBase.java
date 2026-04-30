@@ -18,19 +18,24 @@
  */
 package org.codehaus.groovy.tools.groovydoc.testfiles;
 
-import java.io.IOException;
+class JavaLocalClassInheritDocBase {
+    void prepareMixinMethods() {
+        class LocalMixinMethodTracker {
+            void record() {
+            }
+        }
 
-public class JavaInheritDocRichTagChild extends JavaInheritDocRichTagBase {
+        new LocalMixinMethodTracker().record();
+    }
+
     /**
-     * Java rich child summary.
+     * Searches for a matching mixin method.
      *
-     * @param value child prefix {@inheritDoc} child suffix
-     * @return leading {@inheritDoc} trailing
-     * @throws java.lang.IllegalArgumentException before {@inheritDoc} after
-     * @exception IOException wrapped {@inheritDoc} done
+     * @param methodName the method name
+     * @param arguments the parameter types
+     * @return the matching mixin method, or {@code null} if none is found
      */
-    @Override
-    public String transform(String value) throws IOException {
-        return value.toLowerCase();
+    protected Object findMixinMethod(String methodName, Class[] arguments) {
+        return null;
     }
 }

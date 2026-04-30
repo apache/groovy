@@ -18,18 +18,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc.testfiles;
 
-class JavaInheritDocTagBase {
-    /**
-     * Java base transform description.
-     *
-     * @param value java parent parameter description
-     * @return java parent return description
-     */
-    public String transform(String value) {
-        return value.toUpperCase();
-    }
-}
-
 public class JavaInheritDocTagChild extends JavaInheritDocTagBase {
     /**
      * Java child summary.
