@@ -19,10 +19,11 @@
 
 -->
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<%
+<% 
 def subtitle = 'Index'
 def title = subtitle + (props.windowTitle ? " (${props.windowTitle})" : "")
 def letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_' as char[]
+def isDocumented = { !(it.respondsTo('isHidden') && it.isHidden()) }
 def elementTypes = [
     "Method" : { it.methods().findAll(isDocumented) },
     "Constructor" : { it.constructors().findAll(isDocumented) },
@@ -32,7 +33,6 @@ def elementTypes = [
 ]
 def encode = { org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(it) }
 def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
-def isDocumented = { !(it.respondsTo('isHidden') && it.isHidden()) }
 def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> encode(param.isTypeAvailable()?param.type().typeName():param.typeName()) }.join(", ") }
 def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>
