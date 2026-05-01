@@ -72,17 +72,52 @@ import java.util.logging.Logger;
  * @since 6.0.0
  */
 public abstract class ScopedLocal<T> {
+    /** Logger used for backend-detection diagnostics. */
     private static final Logger LOGGER = Logger.getLogger(ScopedLocal.class.getName());
+
+    /** Standard message used when an unbound scoped-local is queried without a default supplier. */
     private static final String UNBOUND_MESSAGE =
             "ScopedLocal is not bound and has no initial supplier";
 
+    /** Cached reflective view of the optional JDK {@code ScopedValue} API. */
     private static final ScopedValueBindings SCOPED_VALUE_BINDINGS = ScopedValueBindings.detect();
 
+    /**
+     * Whether the runtime provides a usable {@code ScopedValue} backend.
+     * <p>
+     * This field has package visibility so the test suite can verify backend
+     * selection without duplicating the detection logic.
+     */
     static final boolean SCOPED_VALUE_AVAILABLE = SCOPED_VALUE_BINDINGS.isAvailable();
+
+    /**
+     * Method handle for {@code ScopedValue.newInstance()}, adapted to the erased
+     * signature {@code ()Object} for stable {@code invokeExact} usage.
+     */
     static final MethodHandle SV_NEW_INSTANCE = SCOPED_VALUE_BINDINGS.newInstanceHandle();
+
+    /**
+     * Method handle for {@code ScopedValue.where(ScopedValue, Object)}, adapted
+     * to the erased signature {@code (Object, Object)Object}.
+     */
     static final MethodHandle SV_WHERE = SCOPED_VALUE_BINDINGS.whereHandle();
+
+    /**
+     * Method handle for {@code ScopedValue.get()}, adapted to the erased
+     * signature {@code (Object)Object}.
+     */
     static final MethodHandle SV_GET = SCOPED_VALUE_BINDINGS.getHandle();
+
+    /**
+     * Method handle for {@code ScopedValue.isBound()}, adapted to the erased
+     * signature {@code (Object)boolean}.
+     */
     static final MethodHandle SV_IS_BOUND = SCOPED_VALUE_BINDINGS.isBoundHandle();
+
+    /**
+     * Method handle for {@code ScopedValue.Carrier.run(Runnable)}, adapted to
+     * the erased signature {@code (Object, Runnable)void}.
+     */
     static final MethodHandle CARRIER_RUN = SCOPED_VALUE_BINDINGS.carrierRunHandle();
 
     /**
@@ -196,8 +231,23 @@ public abstract class ScopedLocal<T> {
         ScopedLocal.where(this, value).run(action);
     }
 
+    /**
+     * Applies {@code value} as the active binding for the duration of
+     * {@code action}, restoring any prior state when the action finishes.
+     *
+     * @param value  the value to bind; may be {@code null}
+     * @param action the action to execute with the binding active
+     */
     abstract void bind(Object value, Runnable action);
 
+    /**
+     * Rethrows {@code t} without wrapping it, preserving the original runtime
+     * type while satisfying the compiler's checked-exception rules.
+     *
+     * @param <E> the inferred exception type
+     * @param t   the throwable to rethrow
+     * @throws E always, as the original throwable
+     */
     @SuppressWarnings("unchecked")
     static <E extends Throwable> void sneakyThrow(Throwable t) throws E {
         throw (E) t;
@@ -210,10 +260,22 @@ public abstract class ScopedLocal<T> {
      * @since 6.0.0
      */
     public static final class Carrier {
+        /** Scoped-local key represented by this carrier node. */
         private final ScopedLocal<?> key;
+
+        /** Value bound to {@link #key} for this carrier node; may be {@code null}. */
         private final Object value;
+
+        /** Previous carrier node, allowing multiple bindings to be chained immutably. */
         private final Carrier prev;
 
+        /**
+         * Creates a carrier node for one binding in the immutable carrier chain.
+         *
+         * @param key   the scoped-local key for this node
+         * @param value the value bound for this node; may be {@code null}
+         * @param prev  the previously accumulated carrier chain, or {@code null}
+         */
         private Carrier(ScopedLocal<?> key, Object value, Carrier prev) {
             this.key = key;
             this.value = value;
@@ -261,6 +323,12 @@ public abstract class ScopedLocal<T> {
             return value;
         }
 
+        /**
+         * Composes the binding stack represented by this carrier around the
+         * supplied action and runs the resulting scoped execution.
+         *
+         * @param action the terminal action to run once all bindings are active
+         */
         private void execute(Runnable action) {
             Runnable scopedAction = action;
             for (Carrier carrier = this; carrier != null; carrier = carrier.prev) {
@@ -273,21 +341,39 @@ public abstract class ScopedLocal<T> {
         }
     }
 
+    /**
+     * {@link ThreadLocal}-backed implementation used when the platform does not
+     * provide {@code ScopedValue}.
+     */
     private static final class ThreadLocalImpl<T> extends ScopedLocal<T> {
+        /** Sentinel representing the absence of both an explicit binding and a cached initial value. */
         private static final Object UNSET = new Object();
+
+        /** Sentinel that lets the delegate distinguish a bound {@code null} from {@link #UNSET}. */
         private static final Object NULL_SENTINEL = new Object();
 
+        /** Per-thread storage for the current binding or cached initial value. */
         private final ThreadLocal<Object> delegate = ThreadLocal.withInitial(() -> UNSET);
+
+        /** Optional supplier used to lazily initialize a per-thread default value. */
         private final Supplier<? extends T> initialSupplier;
 
+        /** Creates an instance without a default supplier. */
         private ThreadLocalImpl() {
             this.initialSupplier = null;
         }
 
+        /**
+         * Creates an instance whose unbound reads are initialized from
+         * {@code initialSupplier} once per thread.
+         *
+         * @param initialSupplier supplies the per-thread default value
+         */
         private ThreadLocalImpl(Supplier<? extends T> initialSupplier) {
             this.initialSupplier = initialSupplier;
         }
 
+        /** {@inheritDoc} */
         @Override
         public T get() {
             Object value = delegate.get();
@@ -300,6 +386,7 @@ public abstract class ScopedLocal<T> {
             throw new NoSuchElementException(UNBOUND_MESSAGE);
         }
 
+        /** {@inheritDoc} */
         @Override
         public T orElse(T other) {
             Object value = delegate.get();
@@ -312,6 +399,7 @@ public abstract class ScopedLocal<T> {
             return other;
         }
 
+        /** {@inheritDoc} */
         @Override
         public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
             Objects.requireNonNull(exceptionSupplier, "exceptionSupplier must not be null");
@@ -325,11 +413,13 @@ public abstract class ScopedLocal<T> {
             throw exceptionSupplier.get();
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean isBound() {
             return delegate.get() != UNSET || initialSupplier != null;
         }
 
+        /** {@inheritDoc} */
         @Override
         void bind(Object value, Runnable action) {
             Object previous = delegate.get();
@@ -345,38 +435,73 @@ public abstract class ScopedLocal<T> {
             }
         }
 
+        /**
+         * Computes, stores, and returns this thread's lazily initialized value.
+         *
+         * @return the initialized value, which may be {@code null}
+         */
         private T initializeAndCache() {
             T initialValue = initialSupplier.get();
             delegate.set(encode(initialValue));
             return initialValue;
         }
 
+        /**
+         * Decodes an internal sentinel-backed representation into the user value.
+         *
+         * @param value the stored value
+         * @return the decoded user value, possibly {@code null}
+         */
         @SuppressWarnings("unchecked")
         private T decode(Object value) {
             return value == NULL_SENTINEL ? null : (T) value;
         }
 
+        /**
+         * Encodes {@code null} values using a sentinel so they can be stored in
+         * the {@link ThreadLocal} without being confused with an uninitialized slot.
+         *
+         * @param value the user value, possibly {@code null}
+         * @return the encoded storage form
+         */
         private Object encode(Object value) {
             return value == null ? NULL_SENTINEL : value;
         }
     }
 
+    /**
+     * {@code ScopedValue}-backed implementation used on runtimes that expose the
+     * JDK 25 API, with an auxiliary {@link ThreadLocal} only for
+     * {@link #withInitial(Supplier)} semantics.
+     */
     private static final class ScopedValueImpl<T> extends ScopedLocal<T> {
+        /** Sentinel that preserves explicit {@code null} bindings across the erased backend API. */
         private static final Object NULL_SENTINEL = new Object();
 
+        /** Backend-specific {@code ScopedValue} instance, stored as {@code Object} for cross-JDK compatibility. */
         private final Object scopedValue;
+
+        /** Optional per-thread fallback used only to cache values from {@link #withInitial(Supplier)}. */
         private final ThreadLocal<T> fallback;
 
+        /** Creates an instance without a default supplier. */
         private ScopedValueImpl() {
             this.scopedValue = newScopedValue();
             this.fallback = null;
         }
 
+        /**
+         * Creates an instance with lazily initialized per-thread fallback values
+         * for unbound reads.
+         *
+         * @param initialSupplier supplies the fallback value for each thread
+         */
         private ScopedValueImpl(Supplier<? extends T> initialSupplier) {
             this.scopedValue = newScopedValue();
             this.fallback = ThreadLocal.withInitial(initialSupplier::get);
         }
 
+        /** {@inheritDoc} */
         @Override
         public T get() {
             if (isScopedBindingPresent()) {
@@ -388,6 +513,7 @@ public abstract class ScopedLocal<T> {
             throw new NoSuchElementException(UNBOUND_MESSAGE);
         }
 
+        /** {@inheritDoc} */
         @Override
         public T orElse(T other) {
             if (isScopedBindingPresent()) {
@@ -399,6 +525,7 @@ public abstract class ScopedLocal<T> {
             return other;
         }
 
+        /** {@inheritDoc} */
         @Override
         public <X extends Throwable> T orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
             Objects.requireNonNull(exceptionSupplier, "exceptionSupplier must not be null");
@@ -411,11 +538,13 @@ public abstract class ScopedLocal<T> {
             throw exceptionSupplier.get();
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean isBound() {
             return isScopedBindingPresent() || fallback != null;
         }
 
+        /** {@inheritDoc} */
         @Override
         void bind(Object value, Runnable action) {
             try {
@@ -426,6 +555,12 @@ public abstract class ScopedLocal<T> {
             }
         }
 
+        /**
+         * Returns whether the underlying {@code ScopedValue} currently has an
+         * explicit binding on this thread.
+         *
+         * @return {@code true} if a scoped binding is active
+         */
         private boolean isScopedBindingPresent() {
             try {
                 return (boolean) SV_IS_BOUND.invokeExact(scopedValue);
@@ -435,6 +570,11 @@ public abstract class ScopedLocal<T> {
             }
         }
 
+        /**
+         * Reads the raw value from the underlying {@code ScopedValue}.
+         *
+         * @return the stored raw value, possibly the internal null sentinel
+         */
         private Object readScopedValue() {
             try {
                 return SV_GET.invokeExact(scopedValue);
@@ -444,15 +584,33 @@ public abstract class ScopedLocal<T> {
             }
         }
 
+        /**
+         * Decodes the erased backend value into the user-visible value.
+         *
+         * @param value the raw backend value
+         * @return the decoded value, possibly {@code null}
+         */
         @SuppressWarnings("unchecked")
         private T decode(Object value) {
             return value == NULL_SENTINEL ? null : (T) value;
         }
 
+        /**
+         * Encodes a user value for storage in the erased backend API.
+         *
+         * @param value the user value, possibly {@code null}
+         * @return the encoded backend value
+         */
         private Object encode(Object value) {
             return value == null ? NULL_SENTINEL : value;
         }
 
+        /**
+         * Creates a new backend {@code ScopedValue} instance through the adapted
+         * method handle.
+         *
+         * @return the newly created backend object
+         */
         private static Object newScopedValue() {
             try {
                 return SV_NEW_INSTANCE.invokeExact();
@@ -462,14 +620,34 @@ public abstract class ScopedLocal<T> {
         }
     }
 
+    /**
+     * Holder for optional method-handle bindings to the JDK {@code ScopedValue}
+     * API, allowing this class to link lazily and remain binary-compatible with
+     * earlier Java versions.
+     */
     private static final class ScopedValueBindings {
+        /** Whether all required {@code ScopedValue} entry points were discovered successfully. */
         private final boolean available;
+
+        /** Adapted handle for {@code ScopedValue.newInstance()}. */
         private final MethodHandle newInstance;
+
+        /** Adapted handle for {@code ScopedValue.where(ScopedValue, Object)}. */
         private final MethodHandle where;
+
+        /** Adapted handle for {@code ScopedValue.get()}. */
         private final MethodHandle get;
+
+        /** Adapted handle for {@code ScopedValue.isBound()}. */
         private final MethodHandle isBound;
+
+        /** Adapted handle for {@code ScopedValue.Carrier.run(Runnable)}. */
         private final MethodHandle carrierRun;
 
+        /**
+         * Creates a binding container for either the detected backend handles or
+         * the sentinel unavailable state.
+         */
         private ScopedValueBindings(boolean available, MethodHandle newInstance, MethodHandle where,
                                     MethodHandle get, MethodHandle isBound, MethodHandle carrierRun) {
             this.available = available;
@@ -480,6 +658,12 @@ public abstract class ScopedLocal<T> {
             this.carrierRun = carrierRun;
         }
 
+        /**
+         * Detects the availability of finalized {@code ScopedValue} support and,
+         * when present, prepares adapted method handles for exact invocation.
+         *
+         * @return the discovered bindings, or an unavailable marker on failure
+         */
         private static ScopedValueBindings detect() {
             if (Runtime.version().feature() < 25) {
                 return unavailable();
@@ -518,30 +702,66 @@ public abstract class ScopedLocal<T> {
             }
         }
 
+        /**
+         * Returns a binding container representing the absence of a usable
+         * {@code ScopedValue} backend.
+         *
+         * @return an unavailable binding descriptor
+         */
         private static ScopedValueBindings unavailable() {
             return new ScopedValueBindings(false, null, null, null, null, null);
         }
 
+        /**
+         * Returns whether the runtime supports the {@code ScopedValue} backend.
+         *
+         * @return {@code true} when the adapted handles are available
+         */
         private boolean isAvailable() {
             return available;
         }
 
+        /**
+         * Returns the adapted handle for creating new backend instances.
+         *
+         * @return the creation handle, or {@code null} when unavailable
+         */
         private MethodHandle newInstanceHandle() {
             return newInstance;
         }
 
+        /**
+         * Returns the adapted handle for binding a scoped value.
+         *
+         * @return the binding handle, or {@code null} when unavailable
+         */
         private MethodHandle whereHandle() {
             return where;
         }
 
+        /**
+         * Returns the adapted handle for reading a scoped value.
+         *
+         * @return the read handle, or {@code null} when unavailable
+         */
         private MethodHandle getHandle() {
             return get;
         }
 
+        /**
+         * Returns the adapted handle for checking whether a scoped value is bound.
+         *
+         * @return the bound-check handle, or {@code null} when unavailable
+         */
         private MethodHandle isBoundHandle() {
             return isBound;
         }
 
+        /**
+         * Returns the adapted handle for running a backend carrier.
+         *
+         * @return the carrier-run handle, or {@code null} when unavailable
+         */
         private MethodHandle carrierRunHandle() {
             return carrierRun;
         }
