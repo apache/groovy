@@ -19,12 +19,16 @@
 package org.codehaus.groovy.tools;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * This ClassLoader should be used as root of class loaders. Any
@@ -109,8 +113,16 @@ public class RootLoader extends URLClassLoader {
 
         Thread.currentThread().setContextClassLoader(this);
 
+        // Skip URLs already on the JVM startup (system) classpath: the launcher
+        // puts the core groovy jar on -classpath to start GroovyStarter, and
+        // groovy-starter.conf's "load lib/*.jar" then re-globs it. Adding the
+        // same jar to both loaders lets each define its own copy of every core
+        // class, and trips duplicate-resource detection.
+        Set<File> startup = startupClasspathFiles();
         for (URL url : lc.getClassPathUrls()) {
-            addURL(url);
+            if (!startup.contains(canonicalFile(url))) {
+                addURL(url);
+            }
         }
         // TODO M12N eventually defer this until later when we have a full Groovy
         // environment and use normal Grape.grab()
@@ -178,5 +190,34 @@ public class RootLoader extends URLClassLoader {
     @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name);
+    }
+
+    private static Set<File> startupClasspathFiles() {
+        Set<File> files = new HashSet<>();
+        String cp = System.getProperty("java.class.path");
+        if (cp == null || cp.isEmpty()) return files;
+        for (String entry : cp.split(File.pathSeparator)) {
+            if (entry.isEmpty()) continue;
+            File f = canonicalFile(new File(entry));
+            if (f != null) files.add(f);
+        }
+        return files;
+    }
+
+    private static File canonicalFile(URL url) {
+        if (!"file".equals(url.getProtocol())) return null;
+        try {
+            return canonicalFile(new File(url.toURI()));
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static File canonicalFile(File f) {
+        try {
+            return f.getCanonicalFile();
+        } catch (IOException e) {
+            return f.getAbsoluteFile();
+        }
     }
 }
