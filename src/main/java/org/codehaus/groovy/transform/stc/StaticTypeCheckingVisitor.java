@@ -24,7 +24,6 @@ import groovy.lang.IntRange;
 import groovy.lang.Tuple2;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
-import groovy.transform.RecordBase;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
 import groovy.transform.stc.ClosureParams;
@@ -116,6 +115,7 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
+import org.codehaus.groovy.transform.RecordTypeASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
@@ -365,7 +365,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = ClassHelper.make(ClosureParams.class);
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
     protected static final ClassNode NAMED_PARAM_CLASSNODE = ClassHelper.make(NamedParam.class);
-    protected static final ClassNode RECORD_BASE_CLASSNODE = ClassHelper.make(RecordBase.class);
     @Deprecated(forRemoval = true, since = "4.0.0")
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE;
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
@@ -1541,7 +1540,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!existsProperty(dummyExpression, /*read*/false, new PropertyLookup(receiverType, propertyTypes::add))) {
                     typeCheckingContext.popEnclosingBinaryExpression();
                     addStaticTypeError("No such property: " + propName + " for class: " + prettyPrintTypeName(receiverType), keyExpression);
-                } else if (receiverType.isRecord() || !receiverType.getAnnotations(RECORD_BASE_CLASSNODE).isEmpty() || !addedReadOnlyPropertyError(dummyExpression)) { // GROOVY-11956
+                } else if (isRecord(receiverType) || !addedReadOnlyPropertyError(dummyExpression)) { // GROOVY-11956
                     SetterInfo setterInfo = removeSetterInfo(keyExpression);
                     if (setterInfo != null) { // GROOVY-11451: select setter
                         ensureValidSetter(entryExpression, keyExpression, valueExpression, setterInfo);
@@ -1557,6 +1556,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
             }
         }
+    }
+
+    private static boolean isRecord(final ClassNode node) {
+        return node.isRecord() || !node.getAnnotations(RecordTypeASTTransformation.MY_TYPE).isEmpty();
     }
 
     @Deprecated(forRemoval = true, since = "4.0.0")

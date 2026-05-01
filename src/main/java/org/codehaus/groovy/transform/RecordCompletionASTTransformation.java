@@ -35,7 +35,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,8 +50,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class RecordCompletionASTTransformation extends AbstractASTTransformation {
 
-    private static final Class<? extends Annotation> MY_CLASS = RecordBase.class;
-    public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
+    public static final ClassNode MY_TYPE = makeWithoutCaching(RecordBase.class, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 
     @Override
