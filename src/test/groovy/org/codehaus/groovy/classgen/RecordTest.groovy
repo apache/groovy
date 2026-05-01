@@ -29,22 +29,34 @@ import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedClass
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
+@ParameterizedClass
+@ValueSource(classes=[
+    groovy.transform.TypeChecked,
+    groovy.transform.CompileStatic
+])
 final class RecordTest {
 
-    private final GroovyShell shell = GroovyShell.withConfig {
-        imports {
-            star 'groovy.transform'
-            staticStar 'java.lang.reflect.Modifier'
-            staticMember 'groovy.test.GroovyAssert', 'shouldFail'
-            staticMember 'org.codehaus.groovy.ast.ClassHelper', 'make'
+    private final GroovyShell shell
+
+    RecordTest(Class mode) {
+        shell = GroovyShell.withConfig {
+            ast(mode)
+            imports {
+                star 'groovy.transform'
+                staticStar 'java.lang.reflect.Modifier'
+                staticMember 'groovy.test.GroovyAssert', 'shouldFail'
+                staticMember 'org.codehaus.groovy.ast.ClassHelper', 'make'
+            }
         }
     }
 
@@ -273,7 +285,7 @@ final class RecordTest {
     }
 
     @Test
-    void testNonNativeRecordOnJDK16WhenEmulating() {
+    void testNonNativeRecordOnJDK16() {
         assumeTrue(isAtLeastJdk('16.0'))
 
         assertScript shell, '''
@@ -281,6 +293,19 @@ final class RecordTest {
             record Person(String name) {
             }
             assert Person.superclass != java.lang.Record
+            assert new Person('Frank').name() == 'Frank'
+        '''
+    }
+
+    @Test
+    void testNonNativeRecordType() {
+        assertScript shell, '''
+            @RecordType(mode=RecordTypeMode.EMULATE)
+            class Person {
+                String name
+            }
+            Person frank = new Person(name:'Frank')
+            assert frank.name() == 'Frank'
         '''
     }
 
@@ -289,7 +314,6 @@ final class RecordTest {
         assertScript shell, '''
             record Bar (String a = 'a', long b, Integer c = 24, short d, String e = 'e') {
             }
-
             short one = 1
             assert new Bar(3L, one).toString() == 'Bar[a=a, b=3, c=24, d=1, e=e]'
             assert new Bar('A', 3L, one).toString() == 'Bar[a=A, b=3, c=24, d=1, e=e]'
@@ -301,40 +325,46 @@ final class RecordTest {
     @Test
     void testInnerRecordIsImplicitlyStatic() {
         assertScript shell, '''
-            class Test {
-                record Point(int i, int j) {
+            class Outer {
+                record Point(int x, int y) {
                 }
             }
-            assert isStatic(Test$Point.modifiers)
+            assert isStatic(Outer$Point.modifiers)
         '''
     }
 
     @Test
     void testRecordWithDefaultParams() {
         assertScript shell, '''
-            record Point(int i = 5, int j = 10) {
+            record Point(int x = 5, int y = 10) {
             }
-            assert new Point().toString() == 'Point[i=5, j=10]'
-            assert new Point(50).toString() == 'Point[i=50, j=10]'
-            assert new Point(50, 100).toString() == 'Point[i=50, j=100]'
-            assert new Point([:]).toString() == 'Point[i=5, j=10]'
-            assert new Point(i: 50).toString() == 'Point[i=50, j=10]'
-            assert new Point(j: 100).toString() == 'Point[i=5, j=100]'
-            assert new Point(i: 50, j: 100).toString() == 'Point[i=50, j=100]'
+            assert new Point()             .toString() == 'Point[x=5, y=10]'
+            assert new Point(50)           .toString() == 'Point[x=50, y=10]'
+            assert new Point(50, 100)      .toString() == 'Point[x=50, y=100]'
+            assert new Point([:])          .toString() == 'Point[x=5, y=10]'
+            assert new Point(x: 50)        .toString() == 'Point[x=50, y=10]'
+            assert new Point(y: 100)       .toString() == 'Point[x=5, y=100]'
+            assert new Point(x: 50, y: 100).toString() == 'Point[x=50, y=100]'
         '''
     }
 
     @Test
     void testRecordWithDefaultParamsAndMissingRequiredParam() {
-        assertScript shell, '''
-            record Point(int i = 5, int j, int k = 10) {
+        def point = '''
+            record Point(int x = 5, int y, int z = 10) {
             }
-            assert new Point(j: 100).toString() == 'Point[i=5, j=100, k=10]'
-            def err = shouldFail {
-                new Point(i: 50)
-            }
-            assert err.message.contains("Missing required named argument 'j'")
         '''
+        assertScript shell, point + '''
+            assert new Point(y: 100).toString() == 'Point[x=5, y=100, z=10]'
+        '''
+        def err = shouldFail shell, point + '''
+            @TypeChecked(TypeCheckingMode.SKIP)
+            void test() {
+                new Point(x: 50)
+            }
+            test()
+        '''
+        assert err =~ /Missing required named argument 'y'/
     }
 
     @Test
@@ -344,119 +374,72 @@ final class RecordTest {
         assertScript shell, '''
             def cn = make(jdk.net.UnixDomainPrincipal)
             assert cn.isRecord()
-            def rcns = cn.getRecordComponents()
-            assert rcns.size() == 2
-            assert rcns[0].name == 'user' && rcns[0].type.name == 'java.nio.file.attribute.UserPrincipal'
-            assert rcns[1].name == 'group' && rcns[1].type.name == 'java.nio.file.attribute.GroupPrincipal'
+            def spec = cn.getRecordComponents()
+            assert spec.size() == 2
+            assert spec[0].name == 'user'  && spec[0].type.name == 'java.nio.file.attribute.UserPrincipal'
+            assert spec[1].name == 'group' && spec[1].type.name == 'java.nio.file.attribute.GroupPrincipal'
         '''
     }
 
     @Test
     void testManyRecordComponents() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        assertScript shell, '''
-            @CompileStatic
-            record Record(String name, int x0, int x1, int x2, int x3, int x4,
-                                    int x5, int x6, int x7, int x8, int x9, int x10, int x11, int x12, int x13, int x14,
-                                    int x15, int x16, int x17, int x18, int x19, int x20) {
+        def record = '''
+            record Record(String name, int x0, int x1, int x2, int x3, int x4, int x5, int x6, int x7, int x8, int x9, int x10, int x11, int x12, int x13, int x14, int x15, int x16, int x17, int x18, int x19, int x20) {
                 public Record {
                     x1 = -x1
                 }
             }
-
             def r = new Record('someRecord', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
-            def expected = 'Record[name=someRecord, x0=0, x1=-1, x2=2, x3=3, x4=4, x5=5, x6=6, x7=7, x8=8, x9=9, x10=10, x11=11, x12=12, x13=13, x14=14, x15=15, x16=16, x17=17, x18=18, x19=19, x20=20]'
-            assert r.toString() == expected
         '''
-
-        assertScript shell, '''
-            @CompileStatic
-            @ToString(includeNames=true)
-            record Record(String name, int x0, int x1, int x2, int x3, int x4,
-                                    int x5, int x6, int x7, int x8, int x9, int x10, int x11, int x12, int x13, int x14,
-                                    int x15, int x16, int x17, int x18, int x19, int x20) {
-                public Record {
-                    x1 = -x1
-                }
-            }
-
-            def r = new Record('someRecord', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
-            def expected = 'Record(name:someRecord, x0:0, x1:-1, x2:2, x3:3, x4:4, x5:5, x6:6, x7:7, x8:8, x9:9, x10:10, x11:11, x12:12, x13:13, x14:14, x15:15, x16:16, x17:17, x18:18, x19:19, x20:20)'
-            assert r.toString() == expected
+        assertScript shell, record + '''
+            assert r.toString() == 'Record[name=someRecord, x0=0, x1=-1, x2=2, x3=3, x4=4, x5=5, x6=6, x7=7, x8=8, x9=9, x10=10, x11=11, x12=12, x13=13, x14=14, x15=15, x16=16, x17=17, x18=18, x19=19, x20=20]'
+        '''
+        assertScript shell, '@ToString(includeNames=true)' + record + '''
+            assert r.toString() == 'Record(name:someRecord, x0:0, x1:-1, x2:2, x3:3, x4:4, x5:5, x6:6, x7:7, x8:8, x9:9, x10:10, x11:11, x12:12, x13:13, x14:14, x15:15, x16:16, x17:17, x18:18, x19:19, x20:20)'
         '''
     }
 
     @Test
     void testShallowImmutability() {
         assertScript shell, '''
-            record HasItems(List items) { }
-
-            def itemRec = new HasItems(['a', 'b'])
-            assert itemRec.items().size() == 2
-            itemRec.items().clear()
-            itemRec.items() << 'c'
-            assert itemRec.items() == ['c']
-            assert itemRec.toString() == 'HasItems[items=[c]]'
+            record HasItems(List items) {
+            }
+            def hasItems = new HasItems(['a', 'b'])
+            assert hasItems.items().size() == 2
+            hasItems.items().clear()
+            hasItems.items() << 'c'
+            assert hasItems.items() == ['c']
+            assert hasItems.toString() == 'HasItems[items=[c]]'
         '''
     }
 
     @Test
-    void testCoerce() {
+    void testCoerce1() {
         assertScript shell, '''
-            @CompileDynamic
-            record PersonDynamic(String name, int age) {
+            record Person(String name, int age) {
             }
-            @CompileStatic
-            record PersonStatic(String name, int age) {
-            }
-
-            void testDynamic() {
-                PersonDynamic p = ['Daniel', 37]
-                assert p.name() == 'Daniel'
-                assert p.age() == 37
-
-                PersonDynamic p2 = [age: 37, name: 'Daniel']
-                assert p2.name() == 'Daniel'
-                assert p2.age() == 37
-
-                PersonStatic p3 = ['Daniel', 37]
-                assert p3.name() == 'Daniel'
-                assert p3.age() == 37
-
-                PersonStatic p4 = [age: 37, name: 'Daniel']
-                assert p4.name() == 'Daniel'
-                assert p4.age() == 37
-            }
-            testDynamic()
-
-            @CompileStatic
-            void testStatic() {
-                PersonStatic p = ['Daniel', 37]
-                assert p.name() == 'Daniel'
-                assert p.age() == 37
-
-                PersonStatic p2 = [age: 37, name: 'Daniel']
-                assert p2.name() == 'Daniel'
-                assert p2.age() == 37
-
-                PersonDynamic p3 = ['Daniel', 37]
-                assert p3.name() == 'Daniel'
-                assert p3.age() == 37
-
-                PersonDynamic p4 = [age: 37, name: 'Daniel']
-                assert p4.name() == 'Daniel'
-                assert p4.age() == 37
-            }
-            testStatic()
+            Person p = ['Daniel', 37]
+            assert p.name() == 'Daniel'
+            assert p.age() == 37
         '''
     }
 
+    @Test
+    void testCoerce2() {
+        assertScript shell, '''
+            record Person(String name, int age) {
+            }
+            Person p = [age: 37, name: 'Daniel']
+            assert p.name() == 'Daniel'
+            assert p.age() == 37
+        '''
+    }
+
+    /**
+     * Inspired by: https://inside.java/2020/07/20/record-serialization/
+     */
     @Test
     void testClassSerialization() {
-        // inspired by:
-        // https://inside.java/2020/07/20/record-serialization/
-
         assertScript shell, '''
             @ToString(includeNames=true, includeFields=true)
             class RangeClass implements Serializable {
@@ -512,7 +495,7 @@ final class RecordTest {
     }
 
     @Test
-    void testCustomizedGetter() {
+    void testCustomizedAccessor() {
         assertScript shell, '''
             record Person(String name) {
                 String name() {
@@ -556,20 +539,22 @@ final class RecordTest {
 
             def person = new Person('Frank Grimes', new Date())
             def doppel = new Person(person)
-            shouldFail {
-                new Person(name:'Frank Grimes', dob:null)
+
+            @TypeChecked(TypeCheckingMode.SKIP)
+            void test() {
+                shouldFail {
+                    new Person('Frank Grimes')
+                }
+                shouldFail {
+                    new Person()
+                }
             }
-            shouldFail {
-                new Person('Frank Grimes')
-            }
-            shouldFail {
-                new Person()
-            }
+            test()
         """
     }
 
     @Test
-    void testMapConstructor() {
+    void testMapConstructor1() {
         assertScript shell, '''import static java.time.Month.NOVEMBER as NOV
 
             record Person(String name, LocalDate born) {
@@ -584,15 +569,27 @@ final class RecordTest {
             assert person.born().month == NOV
             assert person.born().year == 1955
 
-            shouldFail {
-                new Person(name:'', born:LocalDate.now())
-            }
-            shouldFail {
-                new Person(name:'John Doe')
-            }
-        '''
+            person = new Person(name: 'John Doe', born: (LocalDate) null)
+            assert person.name() == 'John Doe'
+            assert person.born() == null
 
-        // GROOVY-11644
+            shouldFail {
+                new Person(name: 'X', born: LocalDate.now())
+            }
+
+            @TypeChecked(TypeCheckingMode.SKIP)
+            void test() {
+                shouldFail {
+                    new Person(name: 'John Doe')
+                }
+            }
+            test()
+        '''
+    }
+
+    // GROOVY-11644
+    @Test
+    void testMapConstructor2() {
         assertScript shell, '''
             record Person(@NamedParam(value='name', required=true) Map map) {
                 Person {
@@ -604,21 +601,25 @@ final class RecordTest {
                 }
             }
 
-            def person = new Person(name:'Frank Grimes', hair:'brown')
-            assert person.name == 'Frank Grimes'
-            shouldFail {
-                new Person([:])
+            @TypeChecked(TypeCheckingMode.SKIP)
+            void test() { // STC would report "unexpected named arg: hair"
+                def person = new Person(name:'Frank Grimes', hair:'brown')
+                assert person.name == 'Frank Grimes'
+
+                shouldFail {
+                    new Person([:])
+                }
+                shouldFail {
+                    new Person()
+                }
             }
-            shouldFail {
-                new Person()
-            }
+            test()
         '''
     }
 
     @Test
     void testGenerics() {
         assertScript shell, '''
-            @CompileStatic
             record Person<T extends CharSequence>(T name, int age) {
                 Person {
                     if (name.length() == 0) throw new IllegalArgumentException("name can not be empty")
@@ -626,28 +627,23 @@ final class RecordTest {
                 }
             }
 
-            @CompileStatic
-            void test() {
-                def p = new Person<String>('Daniel', 37)
-                assert p.name().toLowerCase() == 'daniel'
-                assert p.toString() == 'Person[name=Daniel, age=37]'
+            def p = new Person<String>('Daniel', 37)
+            assert p.name().toLowerCase() == 'daniel'
+            assert p.toString() == 'Person[name=Daniel, age=37]'
 
-                def p2 = new Person<>('Daniel', 37)
-                assert p2.name().toLowerCase() == 'daniel'
-                assert p2.toString() == 'Person[name=Daniel, age=37]'
+            def p2 = new Person<>('Daniel', 37)
+            assert p2.name().toLowerCase() == 'daniel'
+            assert p2.toString() == 'Person[name=Daniel, age=37]'
 
-                def err = shouldFail(IllegalArgumentException) {
-                    new Person<String>('', 1)
-                }
-                assert err.message == 'name can not be empty'
-
-                err = shouldFail(IllegalArgumentException) {
-                    new Person<String>('Unknown', -1)
-                }
-                assert err.message == 'Invalid age: -1'
+            def err = shouldFail(IllegalArgumentException) {
+                new Person<String>('', 1)
             }
+            assert err.message == 'name can not be empty'
 
-            test()
+            err = shouldFail(IllegalArgumentException) {
+                new Person<String>('Unknown', -1)
+            }
+            assert err.message == 'Invalid age: -1'
         '''
     }
 
@@ -657,27 +653,22 @@ final class RecordTest {
         assertScript shell, '''
             record Person(String name) {
             }
-            @CompileStatic
-            void test() {
-                def person = new Person('Frank Grimes')
-                assert person.name == 'Frank Grimes'
-            }
-            test()
+            def person = new Person('Frank Grimes')
+            assert person.name == 'Frank Grimes'
         '''
     }
 
     // GROOVY-10679
     @Test
     void testAnnotationPropogation() {
-        assertScript shell, '''
-            import java.lang.annotation.*
-
+        assertScript shell, '''import java.lang.annotation.*
             @Target([ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.PARAMETER])
             @Retention(RetentionPolicy.RUNTIME)
-            public @interface MyAnno { }
-
+            @interface MyAnno {
+            }
             @MyAnno
-            record Car(String make, @MyAnno String model) { }
+            record Car(String make, @MyAnno String model) {
+            }
 
             assert !Car.getAnnotation(MyAnno)
             assert Car.getMethod('model').getAnnotation(MyAnno)

@@ -63,7 +63,6 @@ import java.beans.EventSetDescriptor;
 import java.beans.MethodDescriptor;
 import java.beans.PropertyDescriptor;
 import java.beans.SimpleBeanInfo;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -153,8 +152,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static final String TO_LIST = "toList";
     private static final String TO_MAP = "toMap";
 
-    private static final Class<? extends Annotation> MY_CLASS = RecordBase.class;
-    public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
+    public static final ClassNode MY_TYPE = makeWithoutCaching(RecordBase.class, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 
     private CompilationUnit compilationUnit;

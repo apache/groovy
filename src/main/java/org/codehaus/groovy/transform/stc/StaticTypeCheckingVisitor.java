@@ -116,6 +116,7 @@ import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenUtil;
+import org.codehaus.groovy.transform.RecordTypeASTTransformation;
 import org.codehaus.groovy.transform.StaticTypesTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
@@ -1861,7 +1862,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 if (!existsProperty(dummyExpression, /*read*/false, new PropertyLookup(receiverType, propertyTypes::add))) {
                     typeCheckingContext.popEnclosingBinaryExpression();
                     addStaticTypeError("No such property: " + propName + " for class: " + prettyPrintTypeName(receiverType), keyExpression);
-                } else if (receiverType.isRecord() || !addedReadOnlyPropertyError(dummyExpression)) { // GROOVY-11956
+                } else if (isRecord(receiverType) || !addedReadOnlyPropertyError(dummyExpression)) { // GROOVY-11956
                     SetterInfo setterInfo = removeSetterInfo(keyExpression);
                     if (setterInfo != null) { // GROOVY-11451: select setter
                         ensureValidSetter(entryExpression, keyExpression, valueExpression, setterInfo);
@@ -1877,6 +1878,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
             }
         }
+    }
+
+    private static boolean isRecord(final ClassNode node) {
+        return node.isRecord() || !node.getAnnotations(RecordTypeASTTransformation.MY_TYPE).isEmpty();
     }
 
     @Deprecated(forRemoval = true, since = "4.0.0")

@@ -20,7 +20,6 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
-import groovy.transform.RecordBase;
 import groovy.transform.builder.Builder;
 import groovy.transform.builder.DefaultStrategy;
 import org.codehaus.groovy.ast.ASTNode;
@@ -59,7 +58,6 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
     private static final Class<?> MY_CLASS = Builder.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
     public static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode RECORD_TYPE = make(RecordBase.class, false);
     public static final ClassNode[] NO_EXCEPTIONS = ClassNode.EMPTY_ARRAY;
     public static final Parameter[] NO_PARAMS = Parameter.EMPTY_ARRAY;
 
@@ -87,7 +85,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
                 if (!checkNotInterface(cn, MY_TYPE_NAME)) {
                     return;
                 }
-                if (hasAnnotation(cn, RECORD_TYPE)) {
+                if (hasAnnotation(cn, RecordTypeASTTransformation.MY_TYPE)) {
                     // we'll later create a tuple constructor and move the builder annotation
                     // to it but let's create a mock constructor node for now
                     int size = cn.getProperties().size();
