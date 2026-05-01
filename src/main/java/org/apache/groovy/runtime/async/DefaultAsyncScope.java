@@ -40,7 +40,7 @@ import java.util.function.Supplier;
  * concurrency with configurable failure policy.
  * <p>
  * A dedicated lock guards the child task list and the closed flag jointly,
- * ensuring that {@link #async(Closure)} and {@link #close()} cannot race.
+ * ensuring that {@link #async(Supplier)} and {@link #close()} cannot race.
  * Child futures are registered under the lock <em>before</em> task submission
  * (register-before-submit protocol), guaranteeing every child is joined or
  * cancelled by {@link #close()}.
