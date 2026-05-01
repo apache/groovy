@@ -38,6 +38,8 @@ public class DocLinkMacroProcessor extends InlineMacroProcessor {
     private final boolean directPath;
 
     /**
+     * Creates an inline macro processor for a specific documentation link family.
+     *
      * @param macroName     the macro name (e.g. "jdk", "gapi")
      * @param directPath    if true, appends the class path directly to the base URL
      *                      (for gapid); if false, appends via "?" query separator (for jdk/gjdk/gapi)

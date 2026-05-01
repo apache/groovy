@@ -27,6 +27,7 @@ groovyLibrary {
 
 dependencies {
     api rootProject // JUnit5Runner implements GroovyRunner...
+    compileOnly "org.apiguardian:apiguardian-api:${versions.apiguardian}"
     api "org.junit.jupiter:junit-jupiter-api:${versions.junit5}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
         exclude group: 'org.junit.platform', module: 'junit-platform-commons'
