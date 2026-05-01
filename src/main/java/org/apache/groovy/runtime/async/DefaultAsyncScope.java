@@ -61,6 +61,11 @@ public final class DefaultAsyncScope implements AsyncScope {
     private static final MethodHandle SV_IS_BOUND; // ScopedValue.isBound()
     private static final MethodHandle CARRIER_CALL; // Carrier.call(Callable)
     private static final Object SCOPED_VALUE;      // ScopedValue<AsyncScope> instance
+    private static final MethodType SCOPED_VALUE_WHERE_TYPE = MethodType.methodType(Object.class, Object.class, AsyncScope.class);
+    private static final MethodType SCOPED_VALUE_GET_TYPE = MethodType.methodType(AsyncScope.class, Object.class);
+    private static final MethodType SCOPED_VALUE_IS_BOUND_TYPE = MethodType.methodType(boolean.class, Object.class);
+    private static final MethodType CARRIER_CALL_TYPE =
+            MethodType.methodType(Object.class, Object.class, java.util.concurrent.Callable.class);
 
     private static final ThreadLocal<AsyncScope> CURRENT_TL = new ThreadLocal<>();
 
@@ -77,16 +82,20 @@ public final class DefaultAsyncScope implements AsyncScope {
             sv = newInstance.invoke();
             // ScopedValue.where(ScopedValue, Object) -> Carrier
             svWhere = MethodHandles.lookup().findStatic(svClass, "where",
-                    MethodType.methodType(carrierClass, svClass, Object.class));
+                    MethodType.methodType(carrierClass, svClass, Object.class))
+                    .asType(SCOPED_VALUE_WHERE_TYPE);
             // ScopedValue.get()
             svGet = MethodHandles.lookup().findVirtual(svClass, "get",
-                    MethodType.methodType(Object.class));
+                    MethodType.methodType(Object.class))
+                    .asType(SCOPED_VALUE_GET_TYPE);
             // ScopedValue.isBound()
             svIsBound = MethodHandles.lookup().findVirtual(svClass, "isBound",
-                    MethodType.methodType(boolean.class));
+                    MethodType.methodType(boolean.class))
+                    .asType(SCOPED_VALUE_IS_BOUND_TYPE);
             // Carrier.call(Callable) -> Object
             carrierCall = MethodHandles.lookup().findVirtual(carrierClass, "call",
-                    MethodType.methodType(Object.class, java.util.concurrent.Callable.class));
+                    MethodType.methodType(Object.class, java.util.concurrent.Callable.class))
+                    .asType(CARRIER_CALL_TYPE);
             available = true;
         } catch (Throwable ignored) {
             // JDK < 25 — ScopedValue not available
@@ -136,8 +145,8 @@ public final class DefaultAsyncScope implements AsyncScope {
     public static AsyncScope current() {
         if (SCOPED_VALUE_AVAILABLE) {
             try {
-                if ((boolean) SV_IS_BOUND.invoke(SCOPED_VALUE)) {
-                    return (AsyncScope) SV_GET.invoke(SCOPED_VALUE);
+                if ((boolean) SV_IS_BOUND.invokeExact(SCOPED_VALUE)) {
+                    return (AsyncScope) SV_GET.invokeExact(SCOPED_VALUE);
                 }
                 return null;
             } catch (Throwable e) {
@@ -158,8 +167,8 @@ public final class DefaultAsyncScope implements AsyncScope {
         Objects.requireNonNull(supplier, "supplier must not be null");
         if (SCOPED_VALUE_AVAILABLE) {
             try {
-                Object carrier = SV_WHERE.invoke(SCOPED_VALUE, scope);
-                return (T) CARRIER_CALL.invoke(carrier, (java.util.concurrent.Callable<T>) supplier::get);
+                Object carrier = (Object) SV_WHERE.invokeExact(SCOPED_VALUE, scope);
+                return (T) CARRIER_CALL.invokeExact(carrier, (java.util.concurrent.Callable<T>) supplier::get);
             } catch (RuntimeException | Error e) {
                 throw e;
             } catch (Throwable e) {

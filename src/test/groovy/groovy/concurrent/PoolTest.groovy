@@ -88,4 +88,50 @@ final class PoolTest {
             pool.close()
         '''
     }
+
+    @Test
+    void testPoolCurrentWithCurrentBinding() {
+        assertScript '''
+            import groovy.concurrent.Pool
+
+            def pool = Pool.fixed(1)
+            try {
+                assert Pool.current() == null
+                def captured = Pool.withCurrent(pool, { Pool.current() })
+                assert captured.is(pool)
+                assert Pool.current() == null
+            } finally {
+                pool.close()
+            }
+        '''
+    }
+
+    @Test
+    void testPoolWithCurrentNestedRestore() {
+        assertScript '''
+            import groovy.concurrent.Pool
+
+            def outer = Pool.fixed(1)
+            def inner = Pool.fixed(1)
+            try {
+                def outerSeen = null
+                def innerSeen = null
+
+                Pool.withCurrent(outer, {
+                    outerSeen = Pool.current()
+                    Pool.withCurrent(inner, {
+                        innerSeen = Pool.current()
+                    })
+                    assert Pool.current().is(outer)
+                })
+
+                assert outerSeen.is(outer)
+                assert innerSeen.is(inner)
+                assert Pool.current() == null
+            } finally {
+                outer.close()
+                inner.close()
+            }
+        '''
+    }
 }

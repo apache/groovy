@@ -46,13 +46,15 @@ public final class DefaultPool implements Pool {
     // ---- Virtual thread detection ----------------------------------------
 
     private static final MethodHandle NEW_VT_EXECUTOR;
+    private static final MethodType NEW_VT_EXECUTOR_TYPE = MethodType.methodType(ExecutorService.class);
 
     static {
         MethodHandle mh = null;
         try {
             mh = MethodHandles.lookup().findStatic(
                     Executors.class, "newVirtualThreadPerTaskExecutor",
-                    MethodType.methodType(ExecutorService.class));
+                    NEW_VT_EXECUTOR_TYPE)
+                    .asType(NEW_VT_EXECUTOR_TYPE);
         } catch (Throwable ignored) { }
         NEW_VT_EXECUTOR = mh;
     }
@@ -66,6 +68,11 @@ public final class DefaultPool implements Pool {
     private static final MethodHandle CARRIER_CALL;
     private static final Object SCOPED_VALUE;
     private static final ThreadLocal<Pool> CURRENT_TL = new ThreadLocal<>();
+    private static final MethodType SCOPED_VALUE_WHERE_TYPE = MethodType.methodType(Object.class, Object.class, Pool.class);
+    private static final MethodType SCOPED_VALUE_GET_TYPE = MethodType.methodType(Pool.class, Object.class);
+    private static final MethodType SCOPED_VALUE_IS_BOUND_TYPE = MethodType.methodType(boolean.class, Object.class);
+    private static final MethodType CARRIER_CALL_TYPE =
+            MethodType.methodType(Object.class, Object.class, java.util.concurrent.Callable.class);
 
     static {
         boolean available = false;
@@ -78,13 +85,17 @@ public final class DefaultPool implements Pool {
                     svClass, "newInstance", MethodType.methodType(svClass));
             sv = newInstance.invoke();
             svWhere = MethodHandles.lookup().findStatic(svClass, "where",
-                    MethodType.methodType(carrierClass, svClass, Object.class));
+                    MethodType.methodType(carrierClass, svClass, Object.class))
+                    .asType(SCOPED_VALUE_WHERE_TYPE);
             svGet = MethodHandles.lookup().findVirtual(svClass, "get",
-                    MethodType.methodType(Object.class));
+                    MethodType.methodType(Object.class))
+                    .asType(SCOPED_VALUE_GET_TYPE);
             svIsBound = MethodHandles.lookup().findVirtual(svClass, "isBound",
-                    MethodType.methodType(boolean.class));
+                    MethodType.methodType(boolean.class))
+                    .asType(SCOPED_VALUE_IS_BOUND_TYPE);
             carrierCall = MethodHandles.lookup().findVirtual(carrierClass, "call",
-                    MethodType.methodType(Object.class, java.util.concurrent.Callable.class));
+                    MethodType.methodType(Object.class, java.util.concurrent.Callable.class))
+                    .asType(CARRIER_CALL_TYPE);
             available = true;
         } catch (Throwable ignored) { }
         SCOPED_VALUE_AVAILABLE = available;
@@ -116,7 +127,7 @@ public final class DefaultPool implements Pool {
     public static Pool virtual() {
         if (NEW_VT_EXECUTOR != null) {
             try {
-                ExecutorService es = (ExecutorService) NEW_VT_EXECUTOR.invoke();
+                ExecutorService es = (ExecutorService) NEW_VT_EXECUTOR.invokeExact();
                 return new DefaultPool(es, Integer.MAX_VALUE, true);
             } catch (Throwable ignored) { }
         }
@@ -168,8 +179,8 @@ public final class DefaultPool implements Pool {
     public static Pool current() {
         if (SCOPED_VALUE_AVAILABLE) {
             try {
-                if ((boolean) SV_IS_BOUND.invoke(SCOPED_VALUE)) {
-                    return (Pool) SV_GET.invoke(SCOPED_VALUE);
+                if ((boolean) SV_IS_BOUND.invokeExact(SCOPED_VALUE)) {
+                    return (Pool) SV_GET.invokeExact(SCOPED_VALUE);
                 }
                 return null;
             } catch (Throwable e) {
@@ -187,8 +198,8 @@ public final class DefaultPool implements Pool {
         Objects.requireNonNull(supplier, "supplier must not be null");
         if (SCOPED_VALUE_AVAILABLE) {
             try {
-                Object carrier = SV_WHERE.invoke(SCOPED_VALUE, pool);
-                return (T) CARRIER_CALL.invoke(carrier,
+                Object carrier = (Object) SV_WHERE.invokeExact(SCOPED_VALUE, pool);
+                return (T) CARRIER_CALL.invokeExact(carrier,
                         (java.util.concurrent.Callable<T>) supplier::get);
             } catch (RuntimeException | Error e) {
                 throw e;
