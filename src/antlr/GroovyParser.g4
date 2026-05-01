@@ -134,6 +134,7 @@ modifier
           |   TRANSIENT
           |   VOLATILE
           |   DEF
+          |   VAL
           |   VAR
           )
     ;
@@ -175,6 +176,7 @@ variableModifier
     :   annotation
     |   m=( FINAL
           | DEF
+          | VAL
           | VAR
           // Groovy supports declaring local variables as instance/class fields,
           // e.g. import groovy.transform.*; @Field static List awe = [1, 2, 3]
@@ -706,7 +708,7 @@ enhancedForControl
     ;
 
 indexVariable
-    :   (BuiltInPrimitiveType | DEF | VAR)? identifier
+    :   (BuiltInPrimitiveType | DEF | VAL | VAR)? identifier
     ;
 
 originalForControl
@@ -1254,6 +1256,7 @@ identifier
     |   RECORD
     |   SEALED
     |   TRAIT
+    |   VAL
     |   VAR
     |   YIELD
     ;
@@ -1312,6 +1315,7 @@ keywords
     |   TRAIT
     |   THREADSAFE
     |   TRY
+    |   VAL
     |   VAR
     |   VOLATILE
     |   WHILE

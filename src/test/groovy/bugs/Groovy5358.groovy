@@ -71,25 +71,25 @@ final class Groovy5358 {
     void testSetPropertyOverrides() {
         assertScript '''
             class FooWorksAsMap {
-                def val
+                def stored
                 void setProperty(String name, value) {
-                    val = "OK:FooWorksAsMap.$value"
+                    stored = "OK:FooWorksAsMap.$value"
                 }
             }
             class BarWorksAsMap {
-                def val
+                def stored
             }
             @Category(BarWorksAsMap) class C {
                 void setProperty(String name, value) {
-                    setVal("OK:BarWorksAsMap.$value")
+                    setStored("OK:BarWorksAsMap.$value")
                 }
             }
             BarWorksAsMap.mixin C
             class BazWorksAsMap {
-                def val
+                def stored
             }
             BazWorksAsMap.metaClass.setProperty = { String name, value ->
-                    setVal("OK:BazWorksAsMap.$value")
+                    setStored("OK:BazWorksAsMap.$value")
             }
 
             def objects = [
@@ -99,10 +99,10 @@ final class Groovy5358 {
                 [:]
             ]
             for (def obj in objects) {
-                def which = "${obj.getClass().getSimpleName()}.val"
+                def which = "${obj.getClass().getSimpleName()}.stored"
                 try {
-                    obj.val = which.startsWith('LinkedHashMap') ? "OK:LinkedHashMap.bar" : 'bar'
-                    assert obj.val.startsWith('OK:') : "$which -> $obj.val"
+                    obj.stored = which.startsWith('LinkedHashMap') ? "OK:LinkedHashMap.bar" : 'bar'
+                    assert obj.stored.startsWith('OK:') : "$which -> $obj.stored"
                 } catch (any) {
                     assert false : "$which -> FAIL:$any"
                 }
