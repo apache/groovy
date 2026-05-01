@@ -111,8 +111,8 @@ public interface Pool extends Executor, AutoCloseable {
     /**
      * Returns the pool bound to the current scope, or {@code null}.
      * <p>
-     * Set by {@link ParallelScope#withPool} using {@code ScopedValue}
-     * on JDK 25+ or {@code ThreadLocal} on earlier JDKs.
+     * Set by {@link ParallelScope#withPool} using the runtime's scoped
+     * binding support.
      *
      * @return the current pool, or {@code null} if none is bound
      * @since 6.0.0

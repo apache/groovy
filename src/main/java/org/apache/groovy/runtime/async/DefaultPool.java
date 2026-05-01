@@ -59,52 +59,7 @@ public final class DefaultPool implements Pool {
         NEW_VT_EXECUTOR = mh;
     }
 
-    // ---- Pool.current() tracking: ScopedValue on JDK 25+, ThreadLocal fallback
-
-    private static final boolean SCOPED_VALUE_AVAILABLE;
-    private static final MethodHandle SV_WHERE;
-    private static final MethodHandle SV_GET;
-    private static final MethodHandle SV_IS_BOUND;
-    private static final MethodHandle CARRIER_CALL;
-    private static final Object SCOPED_VALUE;
-    private static final ThreadLocal<Pool> CURRENT_TL = new ThreadLocal<>();
-    private static final MethodType SCOPED_VALUE_WHERE_TYPE = MethodType.methodType(Object.class, Object.class, Pool.class);
-    private static final MethodType SCOPED_VALUE_GET_TYPE = MethodType.methodType(Pool.class, Object.class);
-    private static final MethodType SCOPED_VALUE_IS_BOUND_TYPE = MethodType.methodType(boolean.class, Object.class);
-    private static final MethodType CARRIER_CALL_TYPE =
-            MethodType.methodType(Object.class, Object.class, java.util.concurrent.Callable.class);
-
-    static {
-        boolean available = false;
-        MethodHandle svWhere = null, svGet = null, svIsBound = null, carrierCall = null;
-        Object sv = null;
-        try {
-            Class<?> svClass = Class.forName("java.lang.ScopedValue");
-            Class<?> carrierClass = Class.forName("java.lang.ScopedValue$Carrier");
-            MethodHandle newInstance = MethodHandles.lookup().findStatic(
-                    svClass, "newInstance", MethodType.methodType(svClass));
-            sv = newInstance.invoke();
-            svWhere = MethodHandles.lookup().findStatic(svClass, "where",
-                    MethodType.methodType(carrierClass, svClass, Object.class))
-                    .asType(SCOPED_VALUE_WHERE_TYPE);
-            svGet = MethodHandles.lookup().findVirtual(svClass, "get",
-                    MethodType.methodType(Object.class))
-                    .asType(SCOPED_VALUE_GET_TYPE);
-            svIsBound = MethodHandles.lookup().findVirtual(svClass, "isBound",
-                    MethodType.methodType(boolean.class))
-                    .asType(SCOPED_VALUE_IS_BOUND_TYPE);
-            carrierCall = MethodHandles.lookup().findVirtual(carrierClass, "call",
-                    MethodType.methodType(Object.class, java.util.concurrent.Callable.class))
-                    .asType(CARRIER_CALL_TYPE);
-            available = true;
-        } catch (Throwable ignored) { }
-        SCOPED_VALUE_AVAILABLE = available;
-        SV_WHERE = svWhere;
-        SV_GET = svGet;
-        SV_IS_BOUND = svIsBound;
-        CARRIER_CALL = carrierCall;
-        SCOPED_VALUE = sv;
-    }
+    private static final ScopedLocal<Pool> CURRENT_POOL = ScopedLocal.newInstance();
 
     // ---- Instance fields -------------------------------------------------
 
@@ -177,47 +132,15 @@ public final class DefaultPool implements Pool {
      * Returns the pool bound to the current scope, or {@code null}.
      */
     public static Pool current() {
-        if (SCOPED_VALUE_AVAILABLE) {
-            try {
-                if ((boolean) SV_IS_BOUND.invokeExact(SCOPED_VALUE)) {
-                    return (Pool) SV_GET.invokeExact(SCOPED_VALUE);
-                }
-                return null;
-            } catch (Throwable e) {
-                return null;
-            }
-        }
-        return CURRENT_TL.get();
+        return CURRENT_POOL.orElse(null);
     }
 
     /**
      * Executes the supplier with the given pool as current.
      */
-    @SuppressWarnings("unchecked")
     public static <T> T withCurrent(Pool pool, Supplier<T> supplier) {
         Objects.requireNonNull(supplier, "supplier must not be null");
-        if (SCOPED_VALUE_AVAILABLE) {
-            try {
-                Object carrier = (Object) SV_WHERE.invokeExact(SCOPED_VALUE, pool);
-                return (T) CARRIER_CALL.invokeExact(carrier,
-                        (java.util.concurrent.Callable<T>) supplier::get);
-            } catch (RuntimeException | Error e) {
-                throw e;
-            } catch (Throwable e) {
-                throw new RuntimeException(e);
-            }
-        }
-        Pool previous = CURRENT_TL.get();
-        CURRENT_TL.set(pool);
-        try {
-            return supplier.get();
-        } finally {
-            if (previous == null) {
-                CURRENT_TL.remove();
-            } else {
-                CURRENT_TL.set(previous);
-            }
-        }
+        return CURRENT_POOL.where(pool, supplier);
     }
 
     // ---- Pool interface -------------------------------------------------
