@@ -2583,22 +2583,17 @@ public class GroovyEngine implements ScriptEngine {
                             }
                         }
                         if (clazz.getCanonicalName().endsWith("[]")) {
-                            if (methodName.equals("sort") || methodName.equals("reverse")) {
-                                mainDesc.add(syntaxHighlighter.highlight(
-                                        clazz.getComponentType().getSimpleName() + "[] " + methodName + "()"));
-                            } else if (methodName.equals("first")
-                                    || methodName.equals("last")
-                                    || methodName.equals("min")
-                                    || methodName.equals("max")) {
-                                mainDesc.add(syntaxHighlighter.highlight(
-                                        clazz.getComponentType().getSimpleName() + " " + methodName + "()"));
-                            } else if (methodName.equals("size")) {
-                                mainDesc.add(syntaxHighlighter.highlight("int size()"));
-                            } else if (methodName.equals("toList")) {
-                                mainDesc.add(syntaxHighlighter.highlight("List toList()"));
-                            } else if (methodName.equals("count")) {
-                                mainDesc.add(syntaxHighlighter.highlight("int count(Object)"));
-                                mainDesc.add(syntaxHighlighter.highlight("int count(Closure)"));
+                            switch (methodName) {
+                                case "sort", "reverse" -> mainDesc.add(syntaxHighlighter.highlight(
+                                    clazz.getComponentType().getSimpleName() + "[] " + methodName + "()"));
+                                case "first", "last", "min", "max" -> mainDesc.add(syntaxHighlighter.highlight(
+                                    clazz.getComponentType().getSimpleName() + " " + methodName + "()"));
+                                case "size" -> mainDesc.add(syntaxHighlighter.highlight("int size()"));
+                                case "toList" -> mainDesc.add(syntaxHighlighter.highlight("List toList()"));
+                                case "count" -> {
+                                    mainDesc.add(syntaxHighlighter.highlight("int count(Object)"));
+                                    mainDesc.add(syntaxHighlighter.highlight("int count(Closure)"));
+                                }
                             }
                         }
                     }
