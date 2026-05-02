@@ -27,6 +27,8 @@ import java.lang.annotation.Documented;
  * Everything else is parallel in both visitors because their input AST
  * types are fundamentally different hierarchies and the adapter layer
  * needed to unify them would cost more than the duplication it saves.
+ *
+ * @since 6.0.0
  */
 public final class GroovydocAnnotationUtils {
 

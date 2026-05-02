@@ -26,6 +26,8 @@ import java.util.Map;
 /**
  * Internal helper for optional Jackson databinding support.
  * Uses reflection to avoid a compile-time dependency on jackson-databind.
+ *
+ * @since 6.0.0
  */
 public class JacksonHelper {
 

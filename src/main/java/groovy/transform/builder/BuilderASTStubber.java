@@ -76,6 +76,8 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * {@code includeSuperProperties} are also out of scope. The stubber walks
  * directly-declared properties only, mirroring the same Tier 1 limitation
  * other property-walking stubbers carry.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class BuilderASTStubber extends AbstractASTTransformation {

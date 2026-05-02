@@ -34,6 +34,8 @@ import static org.codehaus.groovy.transform.StubberSupport.tagAsStub;
 /**
  * Adds a minimal {@code Comparable} surface for {@link Sortable} classes in an
  * earlier phase so joint compilation can evolve independently from full Sortable codegen.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class SortableASTStubber extends AbstractASTTransformation {

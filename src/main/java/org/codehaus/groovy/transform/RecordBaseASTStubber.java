@@ -101,6 +101,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * applying property modifier flips or stubbing convenience methods on a
  * native-record AST would interfere with subsequent record-component
  * processing.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class RecordBaseASTStubber extends AbstractASTTransformation {

@@ -52,6 +52,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * <p>The placeholder bodies return safe defaults; the full
  * {@link EqualsAndHashCodeASTTransformation} at CANONICALIZATION recognises
  * the stubber metadata and replaces the bodies with the real implementations.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class EqualsAndHashCodeASTStubber extends AbstractASTTransformation {

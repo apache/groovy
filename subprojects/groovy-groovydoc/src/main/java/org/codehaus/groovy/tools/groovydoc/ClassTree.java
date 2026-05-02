@@ -48,6 +48,8 @@ import java.util.TreeMap;
  * <p>Traits are treated as interfaces for the purposes of grouping,
  * matching their JVM representation, but retain their {@code isTrait()}
  * flag so templates can render them with a distinct label.
+ *
+ * @since 6.0.0
  */
 public final class ClassTree {
 

@@ -47,6 +47,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
  *
  * <p>The renderer is stateless and thread-safe; a single {@link Parser} +
  * {@link HtmlRenderer} pair is cached per class.
+ *
+ * @since 6.0.0
  */
 public final class MarkdownRenderer {
 

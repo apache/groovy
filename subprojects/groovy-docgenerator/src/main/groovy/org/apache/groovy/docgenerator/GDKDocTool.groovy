@@ -32,6 +32,8 @@ import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInf
  * Uses {@link GroovyDocTool} directly rather than shelling out to
  * {@link org.codehaus.groovy.tools.groovydoc.Main} so template overrides and
  * link-arg wiring can be driven from Groovy code.
+ *
+ * @since 6.0.0
  */
 class GDKDocTool {
 

@@ -71,6 +71,8 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubConstructor;
  * for non-stubbed signatures rather than a stub/runtime divergence. The
  * full transform at CANONICALIZATION still produces the complete surface
  * at runtime.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class InheritConstructorsASTStubber extends AbstractASTTransformation {

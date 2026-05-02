@@ -51,6 +51,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * <p>The full {@link VetoableASTTransformation} at CANONICALIZATION
  * removes any stubber-tagged methods before installing the
  * {@code vetoableChangeSupport} field and the real method bodies.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class VetoableASTStubber extends AbstractASTTransformation {

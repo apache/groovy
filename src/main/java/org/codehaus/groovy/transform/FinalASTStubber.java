@@ -50,6 +50,8 @@ import static org.objectweb.asm.Opcodes.ACC_FINAL;
  * <p>Like {@link LazyASTStubber} this stubber adds no new members — it
  * only adjusts modifiers — so the typical {@code addStub*} +
  * metadata-key dance from {@link StubberSupport} doesn't apply.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class FinalASTStubber extends AbstractASTTransformation {

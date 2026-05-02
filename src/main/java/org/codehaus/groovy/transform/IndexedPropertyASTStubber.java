@@ -67,6 +67,8 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
  * check is a CONVERSION-time approximation that matches the typical
  * usage pattern. Less common configurations may produce a stub that
  * over-claims the setter — flagged in the GEP-21 spike notes.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class IndexedPropertyASTStubber extends AbstractASTTransformation {

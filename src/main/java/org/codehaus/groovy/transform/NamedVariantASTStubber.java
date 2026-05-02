@@ -64,6 +64,8 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
  * {@code @NamedVariant} on a hand-written method has the target visible
  * at CONVERSION. The Tier 3 deferral was overly cautious; this stubber
  * covers the common case.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class NamedVariantASTStubber extends AbstractASTTransformation {

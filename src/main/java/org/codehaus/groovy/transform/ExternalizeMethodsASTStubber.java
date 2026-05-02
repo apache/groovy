@@ -51,6 +51,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * {@link ExternalizeMethodsASTTransformation} at CANONICALIZATION
  * recognises the stubber metadata and replaces them with the real
  * field-by-field write/read implementations.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class ExternalizeMethodsASTStubber extends AbstractASTTransformation {

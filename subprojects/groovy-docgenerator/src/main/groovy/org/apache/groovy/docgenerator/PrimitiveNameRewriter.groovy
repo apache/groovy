@@ -33,6 +33,8 @@ import java.util.regex.Pattern
  * </ul>
  * Also rewrites the header text ({@code Class PrimitiveInt} → {@code Class int},
  * {@code Class ObjectArray} → {@code Class Object[]}) and {@code <title>} strings.
+ *
+ * @since 6.0.0
  */
 class PrimitiveNameRewriter {
 

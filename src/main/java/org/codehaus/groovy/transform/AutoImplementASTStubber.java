@@ -56,6 +56,8 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
  * installed by the full transform at CANONICALIZATION, which first discards
  * stubber-tagged placeholders so the walk over {@code isAbstract()} candidates
  * sees the true abstract surface again.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class AutoImplementASTStubber extends AbstractASTTransformation {

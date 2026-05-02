@@ -54,6 +54,8 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * and the {@code getInstance()} accessor is the canonical Java idiom.
  * Adding the field could be a follow-up if the spike's experience suggests
  * Java consumers commonly want field-level access.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class SingletonASTStubber extends AbstractASTTransformation {

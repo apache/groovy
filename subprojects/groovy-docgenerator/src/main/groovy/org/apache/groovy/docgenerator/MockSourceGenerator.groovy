@@ -40,6 +40,8 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods
  * javadoc as a {@code @displayName} tag and read by an override template;
  * a post-process pass renames generated HTML paths back to the historical
  * URLs (e.g. {@code primitives-and-primitive-arrays/int[].html}).
+ *
+ * @since 6.0.0
  */
 class MockSourceGenerator {
 

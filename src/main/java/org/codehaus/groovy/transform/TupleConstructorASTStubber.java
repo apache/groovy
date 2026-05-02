@@ -63,6 +63,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * transform are not visible at CONVERSION; the stubber may therefore see
  * a smaller surface than the runtime does for those configurations. The
  * resulting stub remains a strict subset.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class TupleConstructorASTStubber extends AbstractASTTransformation {

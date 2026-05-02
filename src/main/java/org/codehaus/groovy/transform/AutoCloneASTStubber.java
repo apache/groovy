@@ -49,6 +49,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * removes the stubber-tagged placeholder before installing whichever
  * {@code clone()} body the chosen {@code style} produces (CLONE,
  * COPY_CONSTRUCTOR, SERIALIZATION, or SIMPLE).
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class AutoCloneASTStubber extends AbstractASTTransformation {

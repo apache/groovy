@@ -38,6 +38,8 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * <p>All stubbers share a single metadata key — the runtime mapping between
  * a placeholder and the full transform that should complete it is given by
  * the member's signature, not by per-stubber namespacing.
+ *
+ * @since 6.0.0
  */
 public final class StubberSupport {
 

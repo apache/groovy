@@ -55,6 +55,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * stubbed: the visible API (the property's accessors) is unchanged, and
  * the property-write rewriting is body-internal to the generated setter
  * — invisible to the stub.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class BindableASTStubber extends AbstractASTTransformation {

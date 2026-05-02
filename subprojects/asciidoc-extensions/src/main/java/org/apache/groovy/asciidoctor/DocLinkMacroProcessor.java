@@ -31,6 +31,8 @@ import java.util.Map;
  * <p>
  * The base URL is read from a document attribute named "{macroName}-base-url".
  * For example, the "jdk" macro reads the "jdk-base-url" attribute.
+ *
+ * @since 6.0.0
  */
 public class DocLinkMacroProcessor extends InlineMacroProcessor {
 

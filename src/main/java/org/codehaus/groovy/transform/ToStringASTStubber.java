@@ -44,6 +44,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * <p>The placeholder body returns an empty string. The full
  * {@link ToStringASTTransformation} at CANONICALIZATION recognises the
  * stubber tag and replaces the body with the real implementation.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class ToStringASTStubber extends AbstractASTTransformation {

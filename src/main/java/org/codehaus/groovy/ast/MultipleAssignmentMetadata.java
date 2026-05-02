@@ -23,6 +23,8 @@ package org.codehaus.groovy.ast;
  * introduced in GEP-20. Each key is attached to a {@code VariableExpression}
  * appearing inside the {@code TupleExpression} on the LHS of a
  * {@code DeclarationExpression}.
+ *
+ * @since 6.0.0
  */
 public enum MultipleAssignmentMetadata {
     /** Marker on the rest binder (the {@code *ident} slot). Value is {@link Boolean#TRUE}. */

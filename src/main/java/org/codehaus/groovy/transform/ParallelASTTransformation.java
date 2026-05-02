@@ -55,6 +55,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
  * synthetic name (e.g. {@code $parallel_item}) to avoid scope conflicts
  * with the for loop's own variable declaration, then re-resolves variable
  * scopes to ensure the closure captures enclosing variables correctly.
+ *
+ * @since 6.0.0
  */
 @Incubating
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)

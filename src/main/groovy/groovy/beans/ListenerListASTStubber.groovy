@@ -56,6 +56,8 @@ import static org.codehaus.groovy.transform.StubberSupport.addStubMethod
  * removes stubber-tagged methods before its conflict check, so its
  * "method already declared" errors continue to catch user conflicts but
  * not stubber placeholders.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 class ListenerListASTStubber extends AbstractASTTransformation {

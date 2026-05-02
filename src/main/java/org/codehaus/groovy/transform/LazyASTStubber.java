@@ -43,6 +43,8 @@ import static org.objectweb.asm.Opcodes.ACC_FINAL;
  * later removes the property entirely (replacing it with a private backing
  * field plus an explicit getter), so the final flag does not survive into
  * the runtime class.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class LazyASTStubber extends AbstractASTTransformation {

@@ -24,6 +24,8 @@ import org.asciidoctor.jruby.extension.spi.ExtensionRegistry;
 /**
  * Automatically registers the documentation link inline macros
  * (jdk, gjdk, gapi, gapid) when this JAR is on the AsciidoctorJ classpath.
+ *
+ * @since 6.0.0
  */
 public class DocLinkExtensionRegistry implements ExtensionRegistry {
     /**

@@ -48,6 +48,8 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * <p>If {@code noArg = true} is set on the annotation, an empty no-arg
  * constructor is also emitted; this mirrors the second constructor the
  * full transform produces at CANONICALIZATION.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class MapConstructorASTStubber extends AbstractASTTransformation {

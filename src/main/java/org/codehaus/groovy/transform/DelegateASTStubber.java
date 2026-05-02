@@ -96,6 +96,8 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * delegate type is declared <em>after</em> the owner in source), those
  * methods are not visible to the stubber and not delegated in the stub.
  * The runtime still produces the full surface; the stub remains a subset.
+ *
+ * @since 6.0.0
  */
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class DelegateASTStubber extends AbstractASTTransformation {
