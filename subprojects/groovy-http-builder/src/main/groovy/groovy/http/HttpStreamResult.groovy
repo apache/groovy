@@ -109,12 +109,13 @@ record HttpStreamResult(
         return new LinePublisher(raw.body(), charset)
     }
 
+    // package-private for same-package unit testing
     /**
      * One-shot mapping {@link Flow.Publisher} that delegates subscription to a
      * source publisher and applies a transformer per signalled item.
+     *
+     * @since 6.0.0
      */
-    // package-private for same-package unit testing
-    /** @since 6.0.0 */
     static final class MappedPublisher implements Flow.Publisher<Object> {
         private final Flow.Publisher source
         private final Closure mapper
@@ -141,11 +142,12 @@ record HttpStreamResult(
         }
     }
 
+    // package-private for same-package unit testing
     /**
      * Subscriber that applies a mapping closure before forwarding items downstream.
+     *
+     * @since 6.0.0
      */
-    // package-private for same-package unit testing
-    /** @since 6.0.0 */
     static final class MappingSubscriber implements Flow.Subscriber<Object> {
         private final Flow.Subscriber<? super Object> downstream
         private final Closure mapper
@@ -218,14 +220,15 @@ record HttpStreamResult(
         }
     }
 
+    // package-private for same-package unit testing
     /**
      * Adapts a chunked byte publisher into a publisher of complete lines.
      * Buffers across chunk boundaries so multi-chunk lines emit correctly,
      * and honours downstream demand — a single upstream chunk containing
      * many newlines is drip-fed to the downstream one line per {@code request}.
+     *
+     * @since 6.0.0
      */
-    // package-private for same-package unit testing
-    /** @since 6.0.0 */
     static final class LinePublisher implements Flow.Publisher<String> {
         private final Flow.Publisher<List<ByteBuffer>> source
         private final Charset charset
