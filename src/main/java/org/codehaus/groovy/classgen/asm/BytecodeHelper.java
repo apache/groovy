@@ -476,7 +476,17 @@ public class BytecodeHelper {
         ret.append(end);
     }
 
-    /** @since 6.0.0 */
+    /**
+     * Generates bytecode for casting a value to the specified type.
+     *
+     * @param mv   the MethodVisitor used to generate bytecode instructions
+     * @param type the target Class type for the cast operation (must not be null)
+     *
+     * @see #doCast(MethodVisitor, ClassNode)
+     * @see #unbox(MethodVisitor, Class)
+     *
+     * @since 6.0.0
+     */
     public static void doCast(final MethodVisitor mv, final Class<?> type) {
         if (type.isPrimitive() && type != Void.TYPE) {
             unbox(mv, type);
@@ -487,6 +497,15 @@ public class BytecodeHelper {
         }
     }
 
+    /**
+     * Generates bytecode for casting a value to the specified type.
+     *
+     * @param mv   the MethodVisitor used to generate bytecode instructions
+     * @param type the target ClassNode type for the cast operation (must not be null)
+     *
+     * @see #doCast(MethodVisitor, Class)
+     * @see #unbox(MethodVisitor, ClassNode)
+     */
     public static void doCast(final MethodVisitor mv, final ClassNode type) {
         if (isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             unbox(mv, type);
