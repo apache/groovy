@@ -236,9 +236,15 @@ public class RootLoader extends URLClassLoader {
 
     private static File canonicalFile(File f) {
         try {
-            return f.getCanonicalFile();
+            // Path.toRealPath follows symlinks on every platform; File.getCanonicalFile
+            // only does so on UNIX, which is why we don't use it here.
+            return f.toPath().toRealPath().toFile();
         } catch (IOException e) {
-            return f.getAbsoluteFile();
+            try {
+                return f.getCanonicalFile();
+            } catch (IOException e2) {
+                return f.getAbsoluteFile();
+            }
         }
     }
 }

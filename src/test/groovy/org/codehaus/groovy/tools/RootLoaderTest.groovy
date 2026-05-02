@@ -39,12 +39,11 @@ class RootLoaderTest {
         def jar = createJar(tempDir, 'sample.jar', 'a')
         def url = jar.toURI().toURL()
 
-        def parent = new URLClassLoader([url] as URL[], null)
-        def loader = new RootLoader([url] as URL[], parent)
-
-        def found = Collections.list(loader.getResources(RESOURCE))
-        assert found.size() == 1
-        assert found[0].toString().endsWith("sample.jar!/$RESOURCE" as String)
+        withLoaders([url] as URL[], [url] as URL[]) { loader ->
+            def found = Collections.list(loader.getResources(RESOURCE))
+            assert found.size() == 1
+            assert found[0].toString().endsWith("sample.jar!/$RESOURCE" as String)
+        }
     }
 
     @Test
@@ -52,11 +51,10 @@ class RootLoaderTest {
         def parentJar = createJar(tempDir, 'parent.jar', 'a')
         def childJar  = createJar(tempDir, 'child.jar', 'b')
 
-        def parent = new URLClassLoader([parentJar.toURI().toURL()] as URL[], null)
-        def loader = new RootLoader([childJar.toURI().toURL()] as URL[], parent)
-
-        def found = Collections.list(loader.getResources(RESOURCE))
-        assert found.size() == 2
+        withLoaders([parentJar.toURI().toURL()] as URL[], [childJar.toURI().toURL()] as URL[]) { loader ->
+            def found = Collections.list(loader.getResources(RESOURCE))
+            assert found.size() == 2
+        }
     }
 
     @Test
@@ -66,14 +64,13 @@ class RootLoaderTest {
         try {
             Files.createSymbolicLink(link, real.toPath())
         } catch (UnsupportedOperationException | IOException ignore) {
-            return // platform doesn't support symlinks
+            return // platform doesn't support symlinks (e.g. Windows without dev mode)
         }
 
-        def parent = new URLClassLoader([real.toURI().toURL()] as URL[], null)
-        def loader = new RootLoader([link.toUri().toURL()] as URL[], parent)
-
-        def found = Collections.list(loader.getResources(RESOURCE))
-        assert found.size() == 1
+        withLoaders([real.toURI().toURL()] as URL[], [link.toUri().toURL()] as URL[]) { loader ->
+            def found = Collections.list(loader.getResources(RESOURCE))
+            assert found.size() == 1
+        }
     }
 
     @Test
@@ -81,11 +78,10 @@ class RootLoaderTest {
         def dir1 = createDirWithResource(tempDir, 'classes1', 'a')
         def dir2 = createDirWithResource(tempDir, 'classes2', 'b')
 
-        def parent = new URLClassLoader([dir1.toUri().toURL()] as URL[], null)
-        def loader = new RootLoader([dir2.toUri().toURL()] as URL[], parent)
-
-        def found = Collections.list(loader.getResources(RESOURCE))
-        assert found.size() == 2
+        withLoaders([dir1.toUri().toURL()] as URL[], [dir2.toUri().toURL()] as URL[]) { loader ->
+            def found = Collections.list(loader.getResources(RESOURCE))
+            assert found.size() == 2
+        }
     }
 
     @Test
@@ -93,13 +89,28 @@ class RootLoaderTest {
         def parentJar = createJar(tempDir, 'parent.jar', 'a')
         def childJar  = createJar(tempDir, 'child.jar', 'b')
 
-        def parent = new URLClassLoader([parentJar.toURI().toURL()] as URL[], null)
-        def loader = new RootLoader([childJar.toURI().toURL()] as URL[], parent)
+        withLoaders([parentJar.toURI().toURL()] as URL[], [childJar.toURI().toURL()] as URL[]) { loader ->
+            def found = Collections.list(loader.getResources(RESOURCE))
+            assert found.size() == 2
+            assert found[0].toString().contains('child.jar')
+            assert found[1].toString().contains('parent.jar')
+        }
+    }
 
-        def found = Collections.list(loader.getResources(RESOURCE))
-        assert found.size() == 2
-        assert found[0].toString().contains('child.jar')
-        assert found[1].toString().contains('parent.jar')
+    // Closing both loaders releases the JarFile handles URLClassLoader caches
+    // — required on Windows so @TempDir cleanup can delete the jar files.
+    private static void withLoaders(URL[] parentUrls, URL[] childUrls, Closure body) {
+        def parent = new URLClassLoader(parentUrls, null)
+        try {
+            def loader = new RootLoader(childUrls, parent)
+            try {
+                body(loader)
+            } finally {
+                loader.close()
+            }
+        } finally {
+            parent.close()
+        }
     }
 
     private static File createJar(Path dir, String name, String content) {
