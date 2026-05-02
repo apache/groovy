@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.util;
 
+/**
+ * Utility methods for working with JavaBean-style property names.
+ */
 public class BeanUtils {
 
     /**

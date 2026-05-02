@@ -22,9 +22,17 @@ import groovy.lang.GroovyRuntimeException;
 
 import java.io.Serial;
 
+/**
+ * Indicates that {@link JavaShell} could not compile the supplied Java source.
+ */
 public class JavaShellCompilationException extends GroovyRuntimeException {
     @Serial private static final long serialVersionUID = 8048143189569571714L;
 
+    /**
+     * Creates a new compilation exception with the compiler output.
+     *
+     * @param message the compiler diagnostics
+     */
     public JavaShellCompilationException(String message) {
         super(message);
     }

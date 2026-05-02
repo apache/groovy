@@ -175,41 +175,65 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   /** A queue that discards all entries. */
   static final Queue<?> DISCARDING_QUEUE = new DiscardingQueue();
 
+  /**
+   * Returns the smallest power of two greater than or equal to the supplied value.
+   *
+   * @param x the value to round up
+   * @return the rounded power of two
+   */
   static int ceilingNextPowerOfTwo(int x) {
     // From Hacker's Delight, Chapter 3, Harry S. Warren Jr.
     return 1 << (Integer.SIZE - Integer.numberOfLeadingZeros(x - 1));
   }
 
   // The backing data store holding the key-value associations
+  /** Backing store for key-to-node associations. */
   final ConcurrentMap<K, Node<K, V>> data;
+  /** Configured concurrency level for the backing map. */
   final int concurrencyLevel;
 
   // These fields provide support to bound the map by a maximum capacity
+  /** Number of reads drained from each read buffer. */
   @GuardedBy("evictionLock")
   final long[] readBufferReadCount;
+  /** Deque maintaining eviction order. */
   @GuardedBy("evictionLock")
   final LinkedDeque<Node<K, V>> evictionDeque;
 
+  /** Current combined weight of all live entries. */
   @GuardedBy("evictionLock") // must write under lock
   final AtomicLong weightedSize;
+  /** Maximum allowed combined weight. */
   @GuardedBy("evictionLock") // must write under lock
   final AtomicLong capacity;
 
+  /** Lock protecting eviction bookkeeping. */
   final Lock evictionLock;
+  /** Pending write tasks awaiting eviction bookkeeping. */
   final Queue<Runnable> writeBuffer;
+  /** Number of reads written to each read buffer. */
   final AtomicLong[] readBufferWriteCount;
+  /** Read-buffer write counts observed at the last drain. */
   final AtomicLong[] readBufferDrainAtWriteCount;
+  /** Read buffers holding recently accessed nodes. */
   final AtomicReference<Node<K, V>>[][] readBuffers;
 
+  /** Current drain state for the read and write buffers. */
   final AtomicReference<DrainStatus> drainStatus;
+  /** Strategy used to weigh entries. */
   final EntryWeigher<? super K, ? super V> weigher;
 
   // These fields provide support for notifying a listener.
+  /** Entries awaiting listener notification. */
   final Queue<Node<K, V>> pendingNotifications;
+  /** Listener notified when entries are evicted. */
   final EvictionListener<K, V> listener;
 
+  /** Lazily created key-set view. */
   transient Set<K> keySet;
+  /** Lazily created values view. */
   transient Collection<V> values;
+  /** Lazily created entry-set view. */
   transient Set<Entry<K, V>> entrySet;
 
   /**
@@ -548,14 +572,23 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** Adds the node to the page replacement policy. */
   final class AddTask implements Runnable {
+    /** Node affected by this task. */
     final Node<K, V> node;
+    /** Weight contributed by the node being added. */
     final int weight;
 
+    /**
+     * Creates a task that adds a node to the eviction structures.
+     *
+     * @param node the node to add
+     * @param weight the node weight
+     */
     AddTask(Node<K, V> node, int weight) {
       this.weight = weight;
       this.node = node;
     }
 
+    /** {@inheritDoc} */
     @Override
     @GuardedBy("evictionLock")
     public void run() {
@@ -571,12 +604,19 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** Removes a node from the page replacement policy. */
   final class RemovalTask implements Runnable {
+    /** Node affected by this task. */
     final Node<K, V> node;
 
+    /**
+     * Creates a task that removes a node from the eviction structures.
+     *
+     * @param node the node to remove
+     */
     RemovalTask(Node<K, V> node) {
       this.node = node;
     }
 
+    /** {@inheritDoc} */
     @Override
     @GuardedBy("evictionLock")
     public void run() {
@@ -588,14 +628,23 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** Updates the weighted size and evicts an entry on overflow. */
   final class UpdateTask implements Runnable {
+    /** Weight delta applied by this update task. */
     final int weightDifference;
+    /** Node affected by this task. */
     final Node<K, V> node;
 
+    /**
+     * Creates a task that updates a node weight within the eviction structures.
+     *
+     * @param node the node to update
+     * @param weightDifference the change in weight
+     */
     public UpdateTask(Node<K, V> node, int weightDifference) {
       this.weightDifference = weightDifference;
       this.node = node;
     }
 
+    /** {@inheritDoc} */
     @Override
     @GuardedBy("evictionLock")
     public void run() {
@@ -607,11 +656,13 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /* ---------------- Concurrent Map Support -------------- */
 
+  /** {@inheritDoc} */
   @Override
   public boolean isEmpty() {
     return data.isEmpty();
   }
 
+  /** {@inheritDoc} */
   @Override
   public int size() {
     return data.size();
@@ -626,6 +677,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     return Math.max(0, weightedSize.get());
   }
 
+  /** {@inheritDoc} */
   @Override
   public void clear() {
     evictionLock.lock();
@@ -654,11 +706,13 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean containsKey(Object key) {
     return data.containsKey(key);
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean containsValue(Object value) {
     checkNotNull(value);
@@ -671,6 +725,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     return false;
   }
 
+  /** {@inheritDoc} */
   @Override
   public V get(Object key) {
     final Node<K, V> node = data.get(key);
@@ -697,11 +752,13 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     return (node == null) ? null : node.getValue();
   }
 
+  /** {@inheritDoc} */
   @Override
   public V put(K key, V value) {
     return put(key, value, false);
   }
 
+  /** {@inheritDoc} */
   @Override
   public V putIfAbsent(K key, V value) {
     return put(key, value, true);
@@ -780,6 +837,14 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     return compute(key, mappingFunction, true);
   }
 
+  /**
+   * Computes and stores a value for the supplied key.
+   *
+   * @param key the key to compute
+   * @param mappingFunction the function used to compute a value
+   * @param onlyIfAbsent whether an existing mapping should be preserved
+   * @return the current value associated with the key
+   */
   V compute(final K key, final Function<? super K, ? extends V> mappingFunction, boolean onlyIfAbsent) {
     checkNotNull(key);
     checkNotNull(mappingFunction);
@@ -844,6 +909,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public V remove(Object key) {
     final Node<K, V> node = data.remove(key);
@@ -856,6 +922,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     return node.getValue();
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean remove(Object key, Object value) {
     final Node<K, V> node = data.get(key);
@@ -884,6 +951,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public V replace(K key, V value) {
     checkNotNull(key);
@@ -913,6 +981,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean replace(K key, V oldValue, V newValue) {
     checkNotNull(key);
@@ -943,6 +1012,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public Set<K> keySet() {
     final Set<K> ks = keySet;
@@ -1021,6 +1091,13 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     return orderedKeySet(false, limit);
   }
 
+  /**
+   * Creates an ordered snapshot of the keys currently retained by the map.
+   *
+   * @param ascending whether to iterate from least-recent to most-recent retention
+   * @param limit the maximum number of keys to include
+   * @return the ordered key snapshot
+   */
   Set<K> orderedKeySet(boolean ascending, int limit) {
     checkArgument(limit >= 0);
     evictionLock.lock();
@@ -1043,12 +1120,14 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public Collection<V> values() {
     final Collection<V> vs = values;
     return (vs == null) ? (values = new Values()) : vs;
   }
 
+  /** {@inheritDoc} */
   @Override
   public Set<Entry<K, V>> entrySet() {
     final Set<Entry<K, V>> es = entrySet;
@@ -1131,6 +1210,13 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     return orderedMap(false, limit);
   }
 
+  /**
+   * Creates an ordered snapshot of the mappings currently retained by the map.
+   *
+   * @param ascending whether to iterate from least-recent to most-recent retention
+   * @param limit the maximum number of entries to include
+   * @return the ordered mapping snapshot
+   */
   Map<K, V> orderedMap(boolean ascending, int limit) {
     checkArgument(limit >= 0);
     evictionLock.lock();
@@ -1159,6 +1245,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
     /** A drain is not taking place. */
     IDLE {
+      /** {@inheritDoc} */
       @Override boolean shouldDrainBuffers(boolean delayable) {
         return !delayable;
       }
@@ -1166,6 +1253,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
     /** A drain is required due to a pending write modification. */
     REQUIRED {
+      /** {@inheritDoc} */
       @Override boolean shouldDrainBuffers(boolean delayable) {
         return true;
       }
@@ -1173,6 +1261,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
     /** A drain is in progress. */
     PROCESSING {
+      /** {@inheritDoc} */
       @Override boolean shouldDrainBuffers(boolean delayable) {
         return false;
       }
@@ -1190,14 +1279,28 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   /** A value, its weight, and the entry's status. */
   @Immutable
   static final class WeightedValue<V> {
+    /** Encoded weight for the current value state. */
     final int weight;
+    /** Value associated with this weight record. */
     final V value;
 
+    /**
+     * Creates a weighted value state.
+     *
+     * @param value the stored value
+     * @param weight the encoded weight and state
+     */
     WeightedValue(V value, int weight) {
       this.weight = weight;
       this.value = value;
     }
 
+    /**
+     * Returns whether the supplied object matches the stored value.
+     *
+     * @param o the object to test
+     * @return {@code true} if the object matches the stored value
+     */
     boolean contains(Object o) {
       return (o == value) || value.equals(o);
     }
@@ -1233,11 +1336,15 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   @SuppressWarnings("serial")
   static final class Node<K, V> extends AtomicReference<WeightedValue<V>>
       implements Linked<Node<K, V>> {
+    /** Entry key. */
     final K key;
+    /** Previous node in eviction order. */
     @GuardedBy("evictionLock")
     Node<K, V> prev;
+    /** Next node in eviction order. */
     @GuardedBy("evictionLock")
     Node<K, V> next;
+    /** Initial weighted value assigned to this node. */
     WeightedValue<V> weightedValue;
 
     /** Creates a new, unlinked node. */
@@ -1247,24 +1354,28 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
       this.weightedValue = weightedValue;
     }
 
+    /** {@inheritDoc} */
     @Override
     @GuardedBy("evictionLock")
     public Node<K, V> getPrevious() {
       return prev;
     }
 
+    /** {@inheritDoc} */
     @Override
     @GuardedBy("evictionLock")
     public void setPrevious(Node<K, V> prev) {
       this.prev = prev;
     }
 
+    /** {@inheritDoc} */
     @Override
     @GuardedBy("evictionLock")
     public Node<K, V> getNext() {
       return next;
     }
 
+    /** {@inheritDoc} */
     @Override
     @GuardedBy("evictionLock")
     public void setNext(Node<K, V> next) {
@@ -1276,6 +1387,11 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
       return get().value;
     }
 
+    /**
+     * Returns the weighted value captured when this node was created.
+     *
+     * @return the initial weighted value
+     */
     WeightedValue<V> getWeightedValue() {
       return this.weightedValue;
     }
@@ -1283,38 +1399,46 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** An adapter to safely externalize the keys. */
   final class KeySet extends AbstractSet<K> {
+    /** Backing map for this view. */
     final ConcurrentLinkedHashMap<K, V> map = ConcurrentLinkedHashMap.this;
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
       return map.size();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void clear() {
       map.clear();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator<K> iterator() {
       return new KeyIterator();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean contains(Object obj) {
       return containsKey(obj);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean remove(Object obj) {
       return (map.remove(obj) != null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object[] toArray() {
       return map.data.keySet().toArray();
     }
 
+    /** {@inheritDoc} */
     @Override
     public <T> T[] toArray(T[] array) {
       return map.data.keySet().toArray(array);
@@ -1323,20 +1447,25 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** An adapter to safely externalize the key iterator. */
   final class KeyIterator implements Iterator<K> {
+    /** Delegate iterator over the backing key set. */
     final Iterator<K> iterator = data.keySet().iterator();
+    /** Most recently returned key. */
     K current;
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
       return iterator.hasNext();
     }
 
+    /** {@inheritDoc} */
     @Override
     public K next() {
       current = iterator.next();
       return current;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
       checkState(current != null);
@@ -1348,21 +1477,25 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   /** An adapter to safely externalize the values. */
   final class Values extends AbstractCollection<V> {
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
       return ConcurrentLinkedHashMap.this.size();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void clear() {
       ConcurrentLinkedHashMap.this.clear();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator<V> iterator() {
       return new ValueIterator();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean contains(Object o) {
       return containsValue(o);
@@ -1371,20 +1504,25 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** An adapter to safely externalize the value iterator. */
   final class ValueIterator implements Iterator<V> {
+    /** Delegate iterator over the backing values. */
     final Iterator<Node<K, V>> iterator = data.values().iterator();
+    /** Most recently returned node. */
     Node<K, V> current;
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
       return iterator.hasNext();
     }
 
+    /** {@inheritDoc} */
     @Override
     public V next() {
       current = iterator.next();
       return current.getValue();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
       checkState(current != null);
@@ -1395,23 +1533,28 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** An adapter to safely externalize the entries. */
   final class EntrySet extends AbstractSet<Entry<K, V>> {
+    /** Backing map for this view. */
     final ConcurrentLinkedHashMap<K, V> map = ConcurrentLinkedHashMap.this;
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
       return map.size();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void clear() {
       map.clear();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator<Entry<K, V>> iterator() {
       return new EntryIterator();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean contains(Object obj) {
       if (!(obj instanceof Entry<?, ?> entry)) {
@@ -1421,11 +1564,13 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
       return (node != null) && (node.getValue().equals(entry.getValue()));
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean add(Entry<K, V> entry) {
       return (map.putIfAbsent(entry.getKey(), entry.getValue()) == null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean remove(Object obj) {
       if (!(obj instanceof Entry<?, ?> entry)) {
@@ -1437,20 +1582,25 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** An adapter to safely externalize the entry iterator. */
   final class EntryIterator implements Iterator<Entry<K, V>> {
+    /** Delegate iterator over the backing values. */
     final Iterator<Node<K, V>> iterator = data.values().iterator();
+    /** Most recently returned node. */
     Node<K, V> current;
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
       return iterator.hasNext();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Entry<K, V> next() {
       current = iterator.next();
       return new WriteThroughEntry(current);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
       checkState(current != null);
@@ -1463,16 +1613,27 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   final class WriteThroughEntry extends SimpleEntry<K, V> {
       @Serial private static final long serialVersionUID = 1;
 
+    /**
+     * Creates a write-through entry backed by the supplied node.
+     *
+     * @param node the backing node
+     */
     WriteThroughEntry(Node<K, V> node) {
       super(node.key, node.getValue());
     }
 
+    /** {@inheritDoc} */
     @Override
     public V setValue(V value) {
       put(getKey(), value);
       return super.setValue(value);
     }
 
+    /**
+     * Returns the serial proxy for this object.
+     *
+     * @return the serial replacement
+     */
     @Serial
     Object writeReplace() {
       return new SimpleEntry<>(this);
@@ -1482,13 +1643,20 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   /** A weigher that enforces that the weight falls within a valid range. */
   static final class BoundedEntryWeigher<K, V> implements EntryWeigher<K, V>, Serializable {
       @Serial private static final long serialVersionUID = 1;
+    /** Delegate weigher to validate. */
     final EntryWeigher<? super K, ? super V> weigher;
 
+    /**
+     * Creates a validating entry weigher wrapper.
+     *
+     * @param weigher the delegate weigher
+     */
     BoundedEntryWeigher(EntryWeigher<? super K, ? super V> weigher) {
       checkNotNull(weigher);
       this.weigher = weigher;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(K key, V value) {
       int weight = weigher.weightOf(key, value);
@@ -1496,6 +1664,11 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
       return weight;
     }
 
+    /**
+     * Returns the serial proxy for this object.
+     *
+     * @return the serial replacement
+     */
     @Serial
     Object writeReplace() {
       return weigher;
@@ -1504,18 +1677,26 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** A queue that discards all additions and is always empty. */
   static final class DiscardingQueue extends AbstractQueue<Object> {
+    /** {@inheritDoc} */
     @Override public boolean add(Object e) { return true; }
+    /** {@inheritDoc} */
     @Override public boolean offer(Object e) { return true; }
+    /** {@inheritDoc} */
     @Override public Object poll() { return null; }
+    /** {@inheritDoc} */
     @Override public Object peek() { return null; }
+    /** {@inheritDoc} */
     @Override public int size() { return 0; }
+    /** {@inheritDoc} */
     @Override public Iterator<Object> iterator() { return Collections.emptyIterator(); }
   }
 
   /** A listener that ignores all notifications. */
   enum DiscardingListener implements EvictionListener<Object, Object> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override public void onEviction(Object key, Object value) {}
   }
 
@@ -1523,6 +1704,11 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
     @Serial private static final long serialVersionUID = 1;
 
+  /**
+   * Returns the serial proxy for this object.
+   *
+   * @return the serial replacement
+   */
   @Serial
   Object writeReplace() {
     return new SerializationProxy<>(this);
@@ -1541,12 +1727,22 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
    * used as a fast warm-up process.
    */
   static final class SerializationProxy<K, V> implements Serializable {
+    /** Entry weigher to restore after deserialization. */
     final EntryWeigher<? super K, ? super V> weigher;
+    /** Listener to restore after deserialization. */
     final EvictionListener<K, V> listener;
+    /** Configured concurrency level for the backing map. */
     final int concurrencyLevel;
+    /** Snapshot of entries to restore after deserialization. */
     final Map<K, V> data;
+    /** Maximum weighted capacity to restore after deserialization. */
     final long capacity;
 
+    /**
+     * Creates a serialization proxy for the supplied map.
+     *
+     * @param map the map to serialize
+     */
     SerializationProxy(ConcurrentLinkedHashMap<K, V> map) {
       concurrencyLevel = map.concurrencyLevel;
       data = new HashMap<>(map);
@@ -1555,6 +1751,11 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
       weigher = map.weigher;
     }
 
+    /**
+     * Restores a live map instance from this proxy.
+     *
+     * @return the restored map
+     */
     @Serial
     Object readResolve() {
       ConcurrentLinkedHashMap<K, V> map = new Builder<K, V>()
@@ -1584,16 +1785,26 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
    * }</pre>
    */
   public static final class Builder<K, V> {
+    /** Default concurrency level used by the builder. */
     static final int DEFAULT_CONCURRENCY_LEVEL = 16;
+    /** Default initial capacity used by the builder. */
     static final int DEFAULT_INITIAL_CAPACITY = 16;
 
+    /** Listener to notify when entries are evicted. */
     EvictionListener<K, V> listener;
+    /** Strategy used to weigh entries created by the builder. */
     EntryWeigher<? super K, ? super V> weigher;
 
+    /** Requested concurrency level for created maps. */
     int concurrencyLevel;
+    /** Requested initial capacity for created maps. */
     int initialCapacity;
+    /** Requested maximum weighted capacity for created maps. */
     long capacity;
 
+    /**
+     * Creates a builder with the default settings.
+     */
     @SuppressWarnings("unchecked")
     public Builder() {
       capacity = -1;

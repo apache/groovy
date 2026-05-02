@@ -33,16 +33,23 @@ public class IteratorBufferedIterator<T> implements BufferedIterator<T> {
     private boolean hasBuffered;
     private T buffered;
 
+    /**
+     * Creates a buffered iterator that can peek into the supplied iterator.
+     *
+     * @param iter the iterator to wrap
+     */
     public IteratorBufferedIterator(Iterator<T> iter) {
         this.iter = iter;
         this.hasBuffered = false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return hasBuffered || iter.hasNext();
     }
 
+    /** {@inheritDoc} */
     @Override
     public T next() {
         if (hasBuffered) {
@@ -55,6 +62,7 @@ public class IteratorBufferedIterator<T> implements BufferedIterator<T> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         if (hasBuffered) {
@@ -64,9 +72,7 @@ public class IteratorBufferedIterator<T> implements BufferedIterator<T> {
         }
     }
 
-    /**
-     * Return the next element to be returned by next() without consuming it.
-     */
+    /** {@inheritDoc} */
     @Override
     public T head() {
         if (!hasBuffered) {

@@ -34,6 +34,14 @@ public class FloatFloatArrayColumnIterator implements Iterator<float[]> {
     private int columnIndex = 0;
     private int numColumns;
 
+    /**
+     * Creates an iterator over the columns of the supplied matrix.
+     *
+     * <p>The iteration stops at the length of the shortest row.
+     *
+     * @param array the rows to traverse by column
+     * @throws NullPointerException if {@code array} is {@code null}
+     */
     public FloatFloatArrayColumnIterator(final float[][] array) {
         Objects.requireNonNull(array);
         this.array = array;
@@ -44,11 +52,13 @@ public class FloatFloatArrayColumnIterator implements Iterator<float[]> {
         if (numColumns == Integer.MAX_VALUE) numColumns = 0;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return columnIndex < numColumns;
     }
 
+    /** {@inheritDoc} */
     @Override
     public float[] next() {
         if (!hasNext()) {
@@ -62,6 +72,7 @@ public class FloatFloatArrayColumnIterator implements Iterator<float[]> {
         return col;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException("Remove not supported for arrays");

@@ -26,13 +26,21 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  */
 public class LockableObject extends AbstractQueuedSynchronizer {
     @Serial private static final long serialVersionUID = 2284470475073785118L;
+
+    /**
+     * Thread currently holding the exclusive lock, or {@code null} when unlocked.
+     */
     transient Thread owner;
 
+    /** {@inheritDoc} */
     @Override
     protected final boolean isHeldExclusively() {
         return getState() != 0 && owner == Thread.currentThread();
     }
 
+    /**
+     * Acquires the lock, blocking until it becomes available.
+     */
     public final void lock() {
         if (compareAndSetState(0, 1))
             owner = Thread.currentThread();
@@ -40,10 +48,14 @@ public class LockableObject extends AbstractQueuedSynchronizer {
             acquire(1);
     }
 
+    /**
+     * Releases one hold of the lock.
+     */
     public final void unlock() {
         release(1);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected final boolean tryAcquire(int acquires) {
         final Thread current = Thread.currentThread();
@@ -61,6 +73,7 @@ public class LockableObject extends AbstractQueuedSynchronizer {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected final boolean tryRelease(int releases) {
         int c = getState() - releases;

@@ -25,33 +25,73 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Resizable object array optimized for append-heavy internal use and lightweight list views.
+ */
 public class FastArray implements Cloneable, Serializable {
     @Serial private static final long serialVersionUID = -9143440116071577249L;
+
+    /**
+     * Shared empty instance with zero capacity.
+     */
     public static final FastArray EMPTY_LIST = new FastArray(0);
     private Object[] data;
+
+    /**
+     * Number of populated elements in the backing array.
+     */
     public int size;
 
+    /**
+     * Creates an empty array with the specified initial capacity.
+     *
+     * @param initialCapacity the initial storage size
+     */
     public FastArray(int initialCapacity) {
         data = new Object[initialCapacity];
     }
 
+    /**
+     * Creates an empty array with the default initial capacity.
+     */
     public FastArray() {
        this (8);
     }
 
+    /**
+     * Creates an array containing the elements of the supplied collection.
+     *
+     * @param c the values to copy
+     */
     public FastArray(Collection c) {
         this (c.toArray());
     }
 
+    /**
+     * Creates an array backed by the supplied object array.
+     *
+     * @param objects the backing storage containing the initial elements
+     */
     public FastArray(Object[] objects) {
         data = objects;
         size = objects.length;
     }
 
+    /**
+     * Returns the element at the specified index.
+     *
+     * @param index the populated index to read
+     * @return the stored element
+     */
     public Object get(int index) {
         return data [index];
     }
 
+    /**
+     * Appends an element to the end of this array, growing the backing storage when needed.
+     *
+     * @param o the element to append
+     */
     public void add(Object o) {
         if (size == data.length) {
             Object [] newData = new Object[size == 0 ? 8 : size*2];
@@ -61,23 +101,48 @@ public class FastArray implements Cloneable, Serializable {
         data [size++] = o;
     }
 
+    /**
+     * Replaces the element stored at the specified index.
+     *
+     * @param index the populated index to update
+     * @param o the replacement element
+     */
     public void set(int index, Object o) {
         data [index] = o;
     }
 
+    /**
+     * Returns the number of populated elements.
+     *
+     * @return the logical size of this array
+     */
     public int size() {
         return size;
     }
 
+    /**
+     * Removes all populated elements while preserving the current capacity.
+     */
     public void clear() {
         data = new Object[data.length];
         size = 0;
     }
 
+    /**
+     * Appends the populated contents of another {@code FastArray}.
+     *
+     * @param newData the source array to append
+     */
     public void addAll(FastArray newData) {
         addAll(newData.data, newData.size);
     }
 
+    /**
+     * Appends the first {@code size} elements from the supplied array.
+     *
+     * @param newData the source storage
+     * @param size the number of elements to append
+     */
     public void addAll(Object [] newData, int size) {
         if (size == 0)
           return;
@@ -91,21 +156,41 @@ public class FastArray implements Cloneable, Serializable {
         this.size = newSize;
     }
 
+    /**
+     * Returns a copy containing the populated elements of this array.
+     *
+     * @return a new {@code FastArray} with copied storage
+     */
     public FastArray copy() {
         final Object[] newData = new Object[size];
         System.arraycopy(data, 0, newData, 0, size);
         return new FastArray(newData);
     }
 
+    /**
+     * Indicates whether this array contains any populated elements.
+     *
+     * @return {@code true} if no elements are stored
+     */
     public boolean isEmpty() {
         return size == 0;
     }
 
+    /**
+     * Appends the contents of the supplied list.
+     *
+     * @param coll the values to append
+     */
     public void addAll(List coll) {
         final Object[] newData = coll.toArray();
         addAll(newData, newData.length);
     }
 
+    /**
+     * Removes the element at the specified index and compacts the populated range.
+     *
+     * @param index the populated index to remove
+     */
     public void remove(int index) {
         int numMoved = size - index - 1;
         if (numMoved > 0)
@@ -113,6 +198,11 @@ public class FastArray implements Cloneable, Serializable {
         data[--size] = null;
     }
 
+    /**
+     * Returns a list view of the populated elements.
+     *
+     * @return a list reflecting the current contents of this array
+     */
     public List toList () {
         if (size==0) {
             return Collections.emptyList();
@@ -121,11 +211,13 @@ public class FastArray implements Cloneable, Serializable {
         }
         return new AbstractList() {
 
+            /** {@inheritDoc} */
             @Override
             public Object get(int index) {
                 return FastArray.this.get(index);
             }
 
+            /** {@inheritDoc} */
             @Override
             public int size() {
                 return size;
@@ -133,16 +225,31 @@ public class FastArray implements Cloneable, Serializable {
         };
     }
 
+    /**
+     * Returns the backing storage array.
+     *
+     * @return the underlying array, including unused slots
+     */
     public Object[] getArray() {
         return data;
     }
 
+    /**
+     * Returns a list-style string containing the populated elements.
+     *
+     * @return the string form of the populated contents
+     */
     @Override
     public String toString() {
         if (size() == 0) return "[]";
         return toList().toString();
     }
 
+    /**
+     * Returns a shallow copy with duplicated backing storage.
+     *
+     * @return a cloned {@code FastArray}
+     */
     @Override
     public FastArray clone() {
         try {

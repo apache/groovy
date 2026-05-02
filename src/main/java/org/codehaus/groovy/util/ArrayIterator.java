@@ -29,15 +29,22 @@ public class ArrayIterator<T> implements Iterator<T> {
     private final T[] array;
     private int index;
 
+    /**
+     * Creates an iterator that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public ArrayIterator(final T[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return array.length > index;
     }
 
+    /** {@inheritDoc} */
     @Override
     public T next() {
         try {
@@ -47,6 +54,7 @@ public class ArrayIterator<T> implements Iterator<T> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException("Remove not supported for arrays");

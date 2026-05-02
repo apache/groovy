@@ -200,10 +200,17 @@ public class JavaShell {
         private Map<String, byte[]> classMap = Collections.emptyMap();
         private final Map<String, Class<?>> classCache = new ConcurrentHashMap<>();
 
+        /**
+         * Creates a class loader for compiled JavaShell classes.
+         *
+         * @param urls the class path URLs
+         * @param parent the parent class loader
+         */
         public JavaShellClassLoader(URL[] urls, ClassLoader parent) {
             super(urls, parent);
         }
 
+        /** {@inheritDoc} */
         @Override
         public Class<?> findClass(String name) throws ClassNotFoundException {
             final byte[] bytes = classMap.get(name);
@@ -215,10 +222,20 @@ public class JavaShell {
             return super.findClass(name);
         }
 
+        /**
+         * Returns the compiled class bytes keyed by class name.
+         *
+         * @return the compiled class bytes
+         */
         public Map<String, byte[]> getClassMap() {
             return classMap;
         }
 
+        /**
+         * Replaces the compiled class bytes available to this loader.
+         *
+         * @param classMap the compiled class bytes keyed by class name
+         */
         public void setClassMap(Map<String, byte[]> classMap) {
             this.classMap = classMap;
         }
@@ -228,14 +245,25 @@ public class JavaShell {
         private final Map<String, BytesJavaFileObject> fileObjectMap = new HashMap<>();
         private Map<String, byte[]> classMap;
 
+        /**
+         * Creates a file manager that stores compiled class bytes in memory.
+         *
+         * @param sjfm the standard file manager to delegate to
+         */
         public BytesJavaFileManager(StandardJavaFileManager sjfm) {
             super(sjfm);
         }
 
+        /**
+         * Returns whether no compiled classes have been captured yet.
+         *
+         * @return {@code true} when no class output has been recorded
+         */
         public boolean isEmpty() {
             return fileObjectMap.isEmpty();
         }
 
+        /** {@inheritDoc} */
         @Override
         public JavaFileObject getJavaFileForOutput(
                 JavaFileManager.Location location,
@@ -247,6 +275,11 @@ public class JavaShell {
             return bjfo;
         }
 
+        /**
+         * Returns the compiled class bytes captured by this file manager.
+         *
+         * @return an immutable view of the compiled class bytes
+         */
         public Map<String, byte[]> getClassMap() {
             if (classMap != null) return classMap;
 
@@ -260,15 +293,27 @@ public class JavaShell {
     private static class BytesJavaFileObject extends SimpleJavaFileObject {
         private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
+        /**
+         * Creates an in-memory class file for the supplied class name.
+         *
+         * @param name the binary class name
+         * @param kind the file object kind
+         */
         public BytesJavaFileObject(String name, Kind kind) {
             super(URI.create("string:///" + name.replace('.', '/') + kind.extension), kind);
         }
 
+        /** {@inheritDoc} */
         @Override
         public OutputStream openOutputStream() {
             return baos;
         }
 
+        /**
+         * Returns the bytes written to this class file.
+         *
+         * @return the compiled class bytes
+         */
         public byte[] getBytes() {
             return baos.toByteArray();
         }

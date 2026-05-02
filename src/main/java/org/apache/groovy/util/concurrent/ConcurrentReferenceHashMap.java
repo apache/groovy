@@ -291,6 +291,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         return segments[(hash >>> segmentShift) & segmentMask];
     }
 
+    /**
+     * Returns the spread hash for the supplied key.
+     *
+     * @param key the key to hash
+     * @return the spread hash
+     */
     protected int hashOf(Object key) {
         return hash(identityComparisons ? System.identityHashCode(key) : key.hashCode());
     }
@@ -298,8 +304,18 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
     /* ---------------- Inner Classes -------------- */
 
     private interface KeyReference {
+        /**
+         * Returns the cached hash of the referenced key.
+         *
+         * @return the cached hash
+         */
         int keyHash();
 
+        /**
+         * Returns the reference object used to identify the key.
+         *
+         * @return the key reference token
+         */
         Object keyRef();
     }
 
@@ -307,17 +323,27 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      * A weak-key reference which stores the key hash needed for reclamation.
      */
     private static final class WeakKeyReference<K> extends WeakReference<K> implements KeyReference {
+        /** Cached hash for the associated key. */
         final int hash;
 
+        /**
+         * Creates a weak key reference with its cached hash.
+         *
+         * @param key the referenced key
+         * @param hash the cached hash
+         * @param refQueue the queue receiving cleared references
+         */
         WeakKeyReference(K key, int hash, ReferenceQueue<Object> refQueue) {
             super(key, refQueue);
             this.hash = hash;
         }
 
+        /** {@inheritDoc} */
         public final int keyHash() {
             return hash;
         }
 
+        /** {@inheritDoc} */
         public final Object keyRef() {
             return this;
         }
@@ -327,55 +353,89 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      * A soft-key reference which stores the key hash needed for reclamation.
      */
     private static final class SoftKeyReference<K> extends SoftReference<K> implements KeyReference {
+        /** Cached hash for the associated key. */
         final int hash;
 
+        /**
+         * Creates a soft key reference with its cached hash.
+         *
+         * @param key the referenced key
+         * @param hash the cached hash
+         * @param refQueue the queue receiving cleared references
+         */
         SoftKeyReference(K key, int hash, ReferenceQueue<Object> refQueue) {
             super(key, refQueue);
             this.hash = hash;
         }
 
+        /** {@inheritDoc} */
         public final int keyHash() {
             return hash;
         }
 
+        /** {@inheritDoc} */
         public final Object keyRef() {
             return this;
         }
     }
 
     private static final class WeakValueReference<V> extends WeakReference<V> implements KeyReference {
+        /** Reference or direct key object used to identify the entry. */
         final Object keyRef;
+        /** Cached hash for the associated key. */
         final int hash;
 
+        /**
+         * Creates a weak value reference that retains the owning key identity.
+         *
+         * @param value the referenced value
+         * @param keyRef the key reference token
+         * @param hash the cached hash
+         * @param refQueue the queue receiving cleared references
+         */
         WeakValueReference(V value, Object keyRef, int hash, ReferenceQueue<Object> refQueue) {
             super(value, refQueue);
             this.keyRef = keyRef;
             this.hash = hash;
         }
 
+        /** {@inheritDoc} */
         public final int keyHash() {
             return hash;
         }
 
+        /** {@inheritDoc} */
         public final Object keyRef() {
             return keyRef;
         }
     }
 
     private static final class SoftValueReference<V> extends SoftReference<V> implements KeyReference {
+        /** Reference or direct key object used to identify the entry. */
         final Object keyRef;
+        /** Cached hash for the associated key. */
         final int hash;
 
+        /**
+         * Creates a soft value reference that retains the owning key identity.
+         *
+         * @param value the referenced value
+         * @param keyRef the key reference token
+         * @param hash the cached hash
+         * @param refQueue the queue receiving cleared references
+         */
         SoftValueReference(V value, Object keyRef, int hash, ReferenceQueue<Object> refQueue) {
             super(value, refQueue);
             this.keyRef = keyRef;
             this.hash = hash;
         }
 
+        /** {@inheritDoc} */
         public final int keyHash() {
             return hash;
         }
 
+        /** {@inheritDoc} */
         public final Object keyRef() {
             return keyRef;
         }
@@ -394,11 +454,26 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      * an unsynchronized access method.
      */
     private static final class HashEntry<K, V> {
+        /** Reference or direct key object used to identify the entry. */
         final Object keyRef;
+        /** Cached hash for the associated key. */
         final int hash;
+        /** Reference or direct value object stored by this entry. */
         volatile Object valueRef;
+        /** Next entry in the bucket chain. */
         final HashEntry<K, V> next;
 
+        /**
+         * Creates a hash entry with the supplied key, value, and linkage state.
+         *
+         * @param key the entry key
+         * @param hash the cached hash
+         * @param next the next entry in the bucket chain
+         * @param value the entry value
+         * @param keyType the reference strength used for keys
+         * @param valueType the reference strength used for values
+         * @param refQueue the reference queue for collected entries
+         */
         HashEntry(K key, int hash, HashEntry<K, V> next, V value,
                   ReferenceType keyType, ReferenceType valueType,
                   ReferenceQueue<Object> refQueue) {
@@ -408,6 +483,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             this.valueRef = newValueReference(value, valueType, refQueue);
         }
 
+        /**
+         * Creates the stored representation for the supplied key.
+         *
+         * @param key the key to store
+         * @param keyType the reference strength used for keys
+         * @param refQueue the reference queue for collected entries
+         * @return the stored key representation
+         */
         final Object newKeyReference(K key, ReferenceType keyType,
                                      ReferenceQueue<Object> refQueue) {
             if (keyType == ReferenceType.WEAK) {
@@ -420,6 +503,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return key;
         }
 
+        /**
+         * Creates the stored representation for the supplied value.
+         *
+         * @param value the value to store
+         * @param valueType the reference strength used for values
+         * @param refQueue the reference queue for collected entries
+         * @return the stored value representation
+         */
         final Object newValueReference(V value, ReferenceType valueType,
                                        ReferenceQueue<Object> refQueue) {
             if (valueType == ReferenceType.WEAK) {
@@ -432,6 +523,11 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return value;
         }
 
+        /**
+         * Returns the resolved key for this entry.
+         *
+         * @return the entry key, or {@code null} if it was reclaimed
+         */
         @SuppressWarnings("unchecked")
         final K key() {
             if (keyRef instanceof KeyReference) {
@@ -440,10 +536,21 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return (K) keyRef;
         }
 
+        /**
+         * Returns the resolved value for this entry.
+         *
+         * @return the entry value, or {@code null} if it was reclaimed
+         */
         final V value() {
             return dereferenceValue(valueRef);
         }
 
+        /**
+         * Resolves a stored value representation.
+         *
+         * @param value the stored value representation
+         * @return the resolved value
+         */
         @SuppressWarnings("unchecked")
         final V dereferenceValue(Object value) {
             if (value instanceof KeyReference) {
@@ -452,10 +559,23 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return (V) value;
         }
 
+        /**
+         * Replaces the stored value representation for this entry.
+         *
+         * @param value the new value
+         * @param valueType the reference strength used for values
+         * @param refQueue the reference queue for collected entries
+         */
         final void setValue(V value, ReferenceType valueType, ReferenceQueue<Object> refQueue) {
             this.valueRef = newValueReference(value, valueType, refQueue);
         }
 
+        /**
+         * Creates an entry array of the requested size.
+         *
+         * @param i the array size
+         * @return the new entry array
+         */
         @SuppressWarnings("unchecked")
         static final <K, V> HashEntry<K, V>[] newArray(int i) {
             return new HashEntry[i];
@@ -553,12 +673,24 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
          */
         transient volatile ReferenceQueue<Object> refQueue;
 
+        /** Reference strength used for keys in this segment. */
         final ReferenceType keyType;
 
+        /** Reference strength used for values in this segment. */
         final ReferenceType valueType;
 
+        /** Whether keys are compared by identity within this segment. */
         final boolean identityComparisons;
 
+        /**
+         * Creates a segment with the supplied sizing and reference settings.
+         *
+         * @param initialCapacity the initial table capacity
+         * @param lf the load factor
+         * @param keyType the reference strength used for keys
+         * @param valueType the reference strength used for values
+         * @param identityComparisons whether keys are compared by identity
+         */
         Segment(int initialCapacity, float lf, ReferenceType keyType,
                 ReferenceType valueType, boolean identityComparisons) {
             loadFactor = lf;
@@ -568,6 +700,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             setTable(HashEntry.<K, V>newArray(initialCapacity));
         }
 
+        /**
+         * Creates a segment array of the requested size.
+         *
+         * @param i the array size
+         * @return the new segment array
+         */
         @SuppressWarnings("unchecked")
         static final <K, V> Segment<K, V>[] newArray(int i) {
             return new Segment[i];
@@ -595,6 +733,15 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return tab[hash & (tab.length - 1)];
         }
 
+        /**
+         * Creates a new entry for this segment.
+         *
+         * @param key the entry key
+         * @param hash the cached hash
+         * @param next the next entry in the bucket chain
+         * @param value the entry value
+         * @return the created entry
+         */
         HashEntry<K, V> newHashEntry(K key, int hash, HashEntry<K, V> next, V value) {
             return new HashEntry<K, V>(key, hash, next, value, keyType, valueType, refQueue);
         }
@@ -618,6 +765,13 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 
         /* Specialized implementations of map methods */
 
+        /**
+         * Returns the value associated with the key in this segment.
+         *
+         * @param key the key to look up
+         * @param hash the cached hash
+         * @return the associated value, or {@code null} if absent
+         */
         V get(Object key, int hash) {
             // read-volatile
             if (count != 0) {
@@ -637,6 +791,13 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return null;
         }
 
+        /**
+         * Returns whether this segment contains the supplied key.
+         *
+         * @param key the key to test
+         * @param hash the cached hash
+         * @return {@code true} if the key is present
+         */
         boolean containsKey(Object key, int hash) {
             // read-volatile
             if (count != 0) {
@@ -651,6 +812,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return false;
         }
 
+        /**
+         * Returns whether this segment contains the supplied value.
+         *
+         * @param value the value to test
+         * @return {@code true} if the value is present
+         */
         boolean containsValue(Object value) {
             // read-volatile
             if (count != 0) {
@@ -675,6 +842,15 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return false;
         }
 
+        /**
+         * Replaces a value in this segment when the current value matches.
+         *
+         * @param key the key to update
+         * @param hash the cached hash
+         * @param oldValue the expected current value
+         * @param newValue the replacement value
+         * @return {@code true} if the replacement occurred
+         */
         boolean replace(K key, int hash, V oldValue, V newValue) {
             lock();
             try {
@@ -698,6 +874,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return replaced;
         }
 
+        /**
+         * Replaces the value for the supplied key in this segment.
+         *
+         * @param key the key to update
+         * @param hash the cached hash
+         * @param newValue the replacement value
+         * @return the previous value, or {@code null} if absent
+         */
         V replace(K key, int hash, V newValue) {
             lock();
             try {
@@ -721,6 +905,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return oldValue;
         }
 
+        /**
+         * Remaps an existing entry in this segment.
+         *
+         * @param key the key to update
+         * @param hash the cached hash
+         * @param remappingFunction the remapping function
+         * @return the new value, or {@code null} if the entry was removed
+         */
         V applyIfPresent(K key, int hash, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
             lock();
             try {
@@ -743,6 +935,14 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             }
         }
 
+        /**
+         * Remaps an entry in this segment, creating or removing it as needed.
+         *
+         * @param key the key to update
+         * @param hash the cached hash
+         * @param remappingFunction the remapping function
+         * @return the new value, or {@code null} if the entry was removed
+         */
         V apply(K key, int hash, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
             lock();
             try {
@@ -770,6 +970,15 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         }
 
 
+        /**
+         * Merges a value into this segment.
+         *
+         * @param key the key to update
+         * @param value the incoming value
+         * @param hash the cached hash
+         * @param remappingFunction the merge function
+         * @return the merged value, or {@code null} if the entry was removed
+         */
         V merge(K key, V value, int hash, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             lock();
             try {
@@ -840,10 +1049,23 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return resultValue;
         }
 
+        /**
+         * Obtains the value to store for the supplied key.
+         *
+         * @param key the key being stored
+         * @param value the explicit value, if any
+         * @param function the deferred value supplier
+         * @return the value to store
+         */
         V getValue(K key, V value, Function<? super K, ? extends V> function) {
             return value != null ? value : function.apply(key);
         }
 
+        /**
+         * Expands this segment table when its threshold is exceeded.
+         *
+         * @return the number of reclaimed entries skipped during rehashing
+         */
         int rehash() {
             HashEntry<K, V>[] oldTable = table;
             int oldCapacity = oldTable.length;
@@ -965,6 +1187,9 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return oldValue;
         }
 
+        /**
+         * Removes entries whose references have been reclaimed.
+         */
         final void removeStale() {
             KeyReference ref;
             while ((ref = (KeyReference) refQueue.poll()) != null) {
@@ -972,6 +1197,9 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             }
         }
 
+        /**
+         * Removes all entries from this segment.
+         */
         void clear() {
             if (count != 0) {
                 lock();
@@ -1468,6 +1696,13 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         return v == null ? segment.put(key, hash, null, mappingFunction, true) : v;
     }
 
+    /**
+     * Remaps the value for the supplied key when it is present.
+     *
+     * @param key the key to update
+     * @param remappingFunction the remapping function
+     * @return the remapped value, or {@code null} if the entry was absent or removed
+     */
     public V applyIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(remappingFunction);
@@ -1482,6 +1717,13 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         return segmentFor(hash).applyIfPresent(key, hash, remappingFunction);
     }
 
+    /**
+     * Remaps the value for the supplied key, creating or removing it as needed.
+     *
+     * @param key the key to update
+     * @param remappingFunction the remapping function
+     * @return the remapped value, or {@code null} if the entry was removed
+     */
     public V apply(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(remappingFunction);
@@ -1649,6 +1891,11 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         return (es != null) ? es : (entrySet = new EntrySet(false));
     }
 
+    /**
+     * Returns an entry set view that reuses a mutable entry instance during iteration.
+     *
+     * @return the cached entry set view
+     */
     public Set<Entry<K, V>> cachedEntrySet() {
         Set<Entry<K, V>> es = entrySet;
         return (es != null) ? es : (entrySet = new EntrySet(true));
@@ -1676,25 +1923,41 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
 
     /* ---------------- Iterator Support -------------- */
 
+    /**
+     * Base iterator implementation for traversing the map.
+     */
     protected abstract class HashIterator {
+        /** Index of the next segment to scan. */
         int nextSegmentIndex;
+        /** Index of the next bucket to scan within the current table. */
         int nextTableIndex;
+        /** Table currently being scanned. */
         HashEntry<K, V>[] currentTable;
+        /** Next entry candidate to return. */
         HashEntry<K, V> nextEntry;
+        /** Most recent entry returned by the iterator. */
         HashEntry<K, V> lastReturned;
         // Strong reference to weak key (prevents gc)
+        /** Strong reference to the current key while iterating. */
         K currentKey;
 
+        /**
+         * Creates an iterator positioned at the first available entry.
+         */
         HashIterator() {
             nextSegmentIndex = segments.length - 1;
             nextTableIndex = -1;
             advance();
         }
 
+        /** {@inheritDoc} */
         public boolean hasMoreElements() {
             return hasNext();
         }
 
+        /**
+         * Advances the iterator to the next entry candidate.
+         */
         final void advance() {
             if (nextEntry != null && (nextEntry = nextEntry.next) != null) {
                 return;
@@ -1718,6 +1981,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             }
         }
 
+        /** {@inheritDoc} */
         public boolean hasNext() {
             while (nextEntry != null) {
                 if (nextEntry.key() != null) {
@@ -1728,6 +1992,11 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return false;
         }
 
+        /**
+         * Returns the next live entry from the iteration.
+         *
+         * @return the next live entry
+         */
         HashEntry<K, V> nextEntry() {
             do {
                 if (nextEntry == null) {
@@ -1740,6 +2009,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return lastReturned;
         }
 
+        /** {@inheritDoc} */
         public void remove() {
             if (lastReturned == null) {
                 throw new IllegalStateException();
@@ -1750,20 +2020,24 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
     }
 
     private final class KeyIterator extends HashIterator implements Iterator<K>, Enumeration<K> {
+        /** {@inheritDoc} */
         public K next() {
             return super.nextEntry().key();
         }
 
+        /** {@inheritDoc} */
         public K nextElement() {
             return super.nextEntry().key();
         }
     }
 
     private final class ValueIterator extends HashIterator implements Iterator<V>, Enumeration<V> {
+        /** {@inheritDoc} */
         public V next() {
             return super.nextEntry().value();
         }
 
+        /** {@inheritDoc} */
         public V nextElement() {
             return super.nextEntry().value();
         }
@@ -1772,36 +2046,56 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
     /*
      * This class is needed for JDK5 compatibility.
      */
+    /**
+     * Simple mutable entry implementation used by the map views.
+     */
     protected static class SimpleEntry<K, V> implements Entry<K, V>, Serializable {
         @Serial private static final long serialVersionUID = -8499721149061103585L;
 
+        /** Entry key. */
         protected final K key;
+        /** Entry value. */
         protected V value;
 
+        /**
+         * Creates an entry with the supplied key and value.
+         *
+         * @param key the entry key
+         * @param value the entry value
+         */
         public SimpleEntry(K key, V value) {
             this.key = key;
             this.value = value;
         }
 
+        /**
+         * Creates an entry by copying another entry.
+         *
+         * @param entry the entry to copy
+         */
         public SimpleEntry(Entry<? extends K, ? extends V> entry) {
             this.key = entry.getKey();
             this.value = entry.getValue();
         }
 
+        /** {@inheritDoc} */
         public K getKey() {
             return key;
         }
 
+        /** {@inheritDoc} */
         public V getValue() {
             return value;
         }
 
+        /** {@inheritDoc} */
         public V setValue(V value) {
             V oldValue = this.value;
             this.value = value;
             return oldValue;
         }
 
+        /** {@inheritDoc} */
         public boolean equals(Object o) {
             if (!(o instanceof Map.Entry)) {
                 return false;
@@ -1811,10 +2105,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return eq(key, e.getKey()) && eq(value, e.getValue());
         }
 
+        /** {@inheritDoc} */
         public int hashCode() {
             return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
         }
 
+        /** {@inheritDoc} */
         public String toString() {
             return key + "=" + value;
         }
@@ -1832,6 +2128,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
     protected class WriteThroughEntry extends SimpleEntry<K, V> {
         @Serial private static final long serialVersionUID = -7900634345345313646L;
 
+        /**
+         * Creates a write-through entry backed by the supplied key and value.
+         *
+         * @param k the entry key
+         * @param v the entry value
+         */
         protected WriteThroughEntry(K k, V v) {
             super(k, v);
         }
@@ -1856,6 +2158,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
     }
 
     private final class EntryIterator extends HashIterator implements Iterator<Entry<K, V>> {
+        /** {@inheritDoc} */
         public Entry<K, V> next() {
             HashEntry<K, V> e = super.nextEntry();
             return new WriteThroughEntry(e.key(), e.value());
@@ -1865,81 +2168,109 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
     private final class CachedEntryIterator extends HashIterator implements Iterator<Entry<K, V>> {
         private InitializableEntry entry = new InitializableEntry();
 
+        /** {@inheritDoc} */
         public Entry<K, V> next() {
             HashEntry<K, V> e = super.nextEntry();
             return entry.init(e.key(), e.value());
         }
     }
 
+    /**
+     * Reusable entry implementation for cached entry iteration.
+     */
     protected static class InitializableEntry<K, V> implements Entry<K, V> {
         private K key;
         private V value;
 
+        /** {@inheritDoc} */
         @Override
+        /** {@inheritDoc} */
         public K getKey() {
             return key;
         }
 
+        /** {@inheritDoc} */
         @Override
+        /** {@inheritDoc} */
         public V getValue() {
             return value;
         }
 
+        /**
+         * Reinitializes this entry with the supplied key and value.
+         *
+         * @param key the entry key
+         * @param value the entry value
+         * @return this entry
+         */
         public Entry<K, V> init(K key, V value) {
             this.key = key;
             this.value = value;
             return this;
         }
 
+        /** {@inheritDoc} */
         @Override
+        /** {@inheritDoc} */
         public V setValue(V value) {
             throw new UnsupportedOperationException();
         }
     }
 
     private final class KeySet extends AbstractSet<K> {
+        /** {@inheritDoc} */
         public Iterator<K> iterator() {
             return new KeyIterator();
         }
 
+        /** {@inheritDoc} */
         public int size() {
             return ConcurrentReferenceHashMap.this.size();
         }
 
+        /** {@inheritDoc} */
         public boolean isEmpty() {
             return ConcurrentReferenceHashMap.this.isEmpty();
         }
 
+        /** {@inheritDoc} */
         public boolean contains(Object o) {
             return ConcurrentReferenceHashMap.this.containsKey(o);
         }
 
+        /** {@inheritDoc} */
         public boolean remove(Object o) {
             return ConcurrentReferenceHashMap.this.remove(o) != null;
         }
 
+        /** {@inheritDoc} */
         public void clear() {
             ConcurrentReferenceHashMap.this.clear();
         }
     }
 
     private final class Values extends AbstractCollection<V> {
+        /** {@inheritDoc} */
         public Iterator<V> iterator() {
             return new ValueIterator();
         }
 
+        /** {@inheritDoc} */
         public int size() {
             return ConcurrentReferenceHashMap.this.size();
         }
 
+        /** {@inheritDoc} */
         public boolean isEmpty() {
             return ConcurrentReferenceHashMap.this.isEmpty();
         }
 
+        /** {@inheritDoc} */
         public boolean contains(Object o) {
             return ConcurrentReferenceHashMap.this.containsValue(o);
         }
 
+        /** {@inheritDoc} */
         public void clear() {
             ConcurrentReferenceHashMap.this.clear();
         }
@@ -1948,14 +2279,21 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
     private final class EntrySet extends AbstractSet<Entry<K, V>> {
         private final boolean cached;
 
+        /**
+         * Creates an entry set view.
+         *
+         * @param cached whether iteration should reuse a cached entry instance
+         */
         public EntrySet(boolean cached) {
             this.cached = cached;
         }
 
+        /** {@inheritDoc} */
         public Iterator<Entry<K, V>> iterator() {
             return cached ? new CachedEntryIterator() : new EntryIterator();
         }
 
+        /** {@inheritDoc} */
         public boolean contains(Object o) {
             if (!(o instanceof Map.Entry)) {
                 return false;
@@ -1965,6 +2303,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return v != null && v.equals(e.getValue());
         }
 
+        /** {@inheritDoc} */
         public boolean remove(Object o) {
             if (!(o instanceof Map.Entry)) {
                 return false;
@@ -1973,14 +2312,17 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return ConcurrentReferenceHashMap.this.remove(e.getKey(), e.getValue());
         }
 
+        /** {@inheritDoc} */
         public int size() {
             return ConcurrentReferenceHashMap.this.size();
         }
 
+        /** {@inheritDoc} */
         public boolean isEmpty() {
             return ConcurrentReferenceHashMap.this.isEmpty();
         }
 
+        /** {@inheritDoc} */
         public void clear() {
             ConcurrentReferenceHashMap.this.clear();
         }

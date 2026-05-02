@@ -30,10 +30,20 @@ public abstract class LazyReference<T> extends LockableObject {
     private ManagedReference<T> reference = INIT;
     private final ReferenceBundle bundle;
 
+    /**
+     * Creates a lazily initialized reference that stores computed values using the supplied bundle.
+     *
+     * @param bundle the reference strategy to use after initialization
+     */
     public LazyReference(ReferenceBundle bundle) {
         this.bundle = bundle;
     }
 
+    /**
+     * Returns the current value, initializing or recreating it when necessary.
+     *
+     * @return the current value, which may be {@code null}
+     */
     public T get() {
         ManagedReference<T> resRef = reference;
         if (resRef == INIT) return getLocked(false);
@@ -61,12 +71,25 @@ public abstract class LazyReference<T> extends LockableObject {
         }
     }
 
+    /**
+     * Discards the cached state so the next {@link #get()} call recomputes it.
+     */
     public void clear() {
         reference = INIT;
     }
 
+    /**
+     * Computes the value to cache for future {@link #get()} calls.
+     *
+     * @return the value to cache, or {@code null} to cache a null result
+     */
     public abstract T initValue();
 
+    /**
+     * Returns the current cached value as a string, or {@code <null>} when no value is available.
+     *
+     * @return a string form of the cached value
+     */
     @Override
     public String toString() {
         T res = reference.get();

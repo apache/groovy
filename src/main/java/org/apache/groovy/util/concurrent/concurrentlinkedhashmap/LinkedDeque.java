@@ -152,11 +152,15 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean isEmpty() {
     return (first == null);
   }
 
+  /**
+   * Verifies that the deque contains at least one element.
+   */
   void checkNotEmpty() {
     if (isEmpty()) {
       throw new NoSuchElementException();
@@ -178,6 +182,7 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     return size;
   }
 
+  /** {@inheritDoc} */
   @Override
   public void clear() {
     for (E e = first; e != null;) {
@@ -189,12 +194,19 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     first = last = null;
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean contains(Object o) {
     return (o instanceof Linked<?>) && contains((Linked<?>) o);
   }
 
   // A fast-path containment check
+  /**
+   * Returns whether the linked element is currently attached to this deque.
+   *
+   * @param e the linked element to examine
+   * @return {@code true} if the element is linked into this deque
+   */
   boolean contains(Linked<?> e) {
     return (e.getPrevious() != null)
         || (e.getNext() != null)
@@ -227,43 +239,51 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public E peek() {
     return peekFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   public E peekFirst() {
     return first;
   }
 
+  /** {@inheritDoc} */
   @Override
   public E peekLast() {
     return last;
   }
 
+  /** {@inheritDoc} */
   @Override
   public E getFirst() {
     checkNotEmpty();
     return peekFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   public E getLast() {
     checkNotEmpty();
     return peekLast();
   }
 
+  /** {@inheritDoc} */
   @Override
   public E element() {
     return getFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean offer(E e) {
     return offerLast(e);
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean offerFirst(E e) {
     if (contains(e)) {
@@ -273,6 +293,7 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     return true;
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean offerLast(E e) {
     if (contains(e)) {
@@ -282,11 +303,13 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     return true;
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean add(E e) {
     return offerLast(e);
   }
 
+  /** {@inheritDoc} */
   @Override
   public void addFirst(E e) {
     if (!offerFirst(e)) {
@@ -294,6 +317,7 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public void addLast(E e) {
     if (!offerLast(e)) {
@@ -301,26 +325,31 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public E poll() {
     return pollFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   public E pollFirst() {
     return isEmpty() ? null : unlinkFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   public E pollLast() {
     return isEmpty() ? null : unlinkLast();
   }
 
+  /** {@inheritDoc} */
   @Override
   public E remove() {
     return removeFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   @SuppressWarnings("unchecked")
   public boolean remove(Object o) {
@@ -328,6 +357,12 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
   }
 
   // A fast-path removal
+  /**
+   * Removes the linked element when it is currently present in this deque.
+   *
+   * @param e the linked element to remove
+   * @return {@code true} if the element was removed
+   */
   boolean remove(E e) {
     if (contains(e)) {
       unlink(e);
@@ -336,28 +371,33 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     return false;
   }
 
+  /** {@inheritDoc} */
   @Override
   public E removeFirst() {
     checkNotEmpty();
     return pollFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean removeFirstOccurrence(Object o) {
     return remove(o);
   }
 
+  /** {@inheritDoc} */
   @Override
   public E removeLast() {
     checkNotEmpty();
     return pollLast();
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean removeLastOccurrence(Object o) {
     return remove(o);
   }
 
+  /** {@inheritDoc} */
   @Override
   public boolean removeAll(Collection<?> c) {
     boolean modified = false;
@@ -367,35 +407,45 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
     return modified;
   }
 
+  /** {@inheritDoc} */
   @Override
   public void push(E e) {
     addFirst(e);
   }
 
+  /** {@inheritDoc} */
   @Override
   public E pop() {
     return removeFirst();
   }
 
+  /** {@inheritDoc} */
   @Override
   public Iterator<E> iterator() {
     return new AbstractLinkedIterator(first) {
+      /** {@inheritDoc} */
       @Override E computeNext() {
         return cursor.getNext();
       }
     };
   }
 
+  /** {@inheritDoc} */
   @Override
   public Iterator<E> descendingIterator() {
     return new AbstractLinkedIterator(last) {
+      /** {@inheritDoc} */
       @Override E computeNext() {
         return cursor.getPrevious();
       }
     };
   }
 
+  /**
+   * Base iterator implementation for traversing the deque in link order.
+   */
   abstract class AbstractLinkedIterator implements Iterator<E> {
+    /** The next element to return. */
     E cursor;
 
     /**
@@ -407,11 +457,13 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
       cursor = start;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
       return (cursor != null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public E next() {
       if (!hasNext()) {
@@ -422,6 +474,7 @@ final class LinkedDeque<E extends Linked<E>> extends AbstractCollection<E> imple
       return e;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
       throw new UnsupportedOperationException();

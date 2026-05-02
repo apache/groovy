@@ -25,6 +25,9 @@ package org.apache.groovy.util.concurrent;
  * @since 3.0.0
  */
 public interface LazyInitializable {
+    /**
+     * Initializes this instance once on first access.
+     */
     default void lazyInit() {
         if (isInitialized()) return;
 

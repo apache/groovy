@@ -35,29 +35,35 @@ public class ListBufferedIterator<T> implements BufferedIterator<T> {
     private final List<T> list;
     private final ListIterator<T> iter;
 
+    /**
+     * Creates a buffered iterator that peeks into the supplied list.
+     *
+     * @param list the list to iterate
+     */
     public ListBufferedIterator(List<T> list) {
         this.list = list;
         this.iter = list.listIterator();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
 
+    /** {@inheritDoc} */
     @Override
     public T next() {
         return iter.next();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         iter.remove();
     }
 
-    /**
-     * Return the next element to be returned by next() without consuming it.
-     */
+    /** {@inheritDoc} */
     @Override
     public T head() {
         int index = iter.nextIndex();

@@ -18,11 +18,23 @@
  */
 package org.codehaus.groovy.util;
 
+/**
+ * Reference wrapper that couples a referent with a {@link ReferenceManager} cleanup lifecycle.
+ *
+ * @param <T> the referent type
+ */
 public class ManagedReference<T> implements Finalizable {
     private static final ReferenceManager NULL_MANAGER = new ReferenceManager(null){};
     private final Reference<T,ManagedReference<T>> ref;
     private final ReferenceManager manager;
 
+    /**
+     * Creates a managed reference using the supplied reference kind and manager.
+     *
+     * @param type the reference implementation to create
+     * @param rmanager the manager that processes collected references
+     * @param value the referent to store
+     */
     public ManagedReference(ReferenceType type, ReferenceManager rmanager, T value) {
         if (rmanager==null) rmanager = NULL_MANAGER;
         this.manager = rmanager;
@@ -30,19 +42,34 @@ public class ManagedReference<T> implements Finalizable {
         rmanager.afterReferenceCreation(ref);
     }
 
+    /**
+     * Creates a managed reference using the supplied bundle.
+     *
+     * @param bundle the reference bundle describing the type and manager to use
+     * @param value the referent to store
+     */
     public ManagedReference(ReferenceBundle bundle, T value) {
         this(bundle.getType(),bundle.getManager(),value);
     }
 
+    /**
+     * Returns the current referent.
+     *
+     * @return the referent, or {@code null} if it is no longer available
+     */
     public final T get() {
         return ref.get();
     }
 
+    /**
+     * Clears the referent and lets the manager process any queued stale entries.
+     */
     public final void clear() {
         ref.clear();
         manager.removeStallEntries();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void finalizeReference(){
         ref.clear();

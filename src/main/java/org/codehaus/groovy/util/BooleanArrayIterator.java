@@ -30,15 +30,22 @@ public class BooleanArrayIterator implements Iterator<Boolean> {
     private final boolean[] array;
     private int index;
 
+    /**
+     * Creates an iterator that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public BooleanArrayIterator(final boolean[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return array.length > index;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Boolean next() {
         try {
@@ -48,6 +55,7 @@ public class BooleanArrayIterator implements Iterator<Boolean> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException("Remove not supported for arrays");

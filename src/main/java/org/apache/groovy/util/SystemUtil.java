@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.util;
 
+/**
+ * Utility methods for interacting with system properties in a safe manner.
+ */
 public class SystemUtil {
     /**
      * Sets a system property from a {@code name=value} String.

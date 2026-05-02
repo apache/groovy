@@ -32,6 +32,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ManagedConcurrentValueMap<K,V> {
     private final ConcurrentHashMap<K,ManagedReference<V>> internalMap;
     private ReferenceBundle bundle;
+
+    /**
+     * Creates an empty map that stores values using the supplied reference bundle.
+     *
+     * @param bundle the reference strategy for subsequently stored values
+     */
     public ManagedConcurrentValueMap(ReferenceBundle bundle){
         this.bundle = bundle;
         internalMap = new ConcurrentHashMap<K, ManagedReference<V>>();
@@ -64,6 +70,7 @@ public class ManagedConcurrentValueMap<K,V> {
      */
     public void put(final K key, V value) {
         ManagedReference<V> ref = new ManagedReference<V>(bundle, value) {
+            /** {@inheritDoc} */
             @Override
             public void finalizeReference() {
                 internalMap.remove(key, this);

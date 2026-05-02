@@ -182,52 +182,82 @@ public final class Weighers {
     return (Weigher<Map<A, B>>) (Weigher<?>) MapWeigher.INSTANCE;
   }
 
+  /**
+   * Entry weigher adapter backed by a value weigher.
+   */
   static final class EntryWeigherView<K, V> implements EntryWeigher<K, V>, Serializable {
     @Serial
     private static final long serialVersionUID = 1;
+    /** Delegate used to weigh entry values. */
     final Weigher<? super V> weigher;
 
+    /**
+     * Creates an entry weigher that delegates to the supplied value weigher.
+     *
+     * @param weigher the value weigher to adapt
+     */
     EntryWeigherView(Weigher<? super V> weigher) {
       ConcurrentLinkedHashMap.checkNotNull(weigher);
       this.weigher = weigher;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(K key, V value) {
       return weigher.weightOf(value);
     }
   }
 
+  /**
+   * Entry weigher that assigns every entry a weight of one.
+   */
   enum SingletonEntryWeigher implements EntryWeigher<Object, Object> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(Object key, Object value) {
       return 1;
     }
   }
 
+  /**
+   * Value weigher that assigns every value a weight of one.
+   */
   enum SingletonWeigher implements Weigher<Object> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(Object value) {
       return 1;
     }
   }
 
+  /**
+   * Weigher that uses the byte array length as the weight.
+   */
   enum ByteArrayWeigher implements Weigher<byte[]> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(byte[] value) {
       return value.length;
     }
   }
 
+  /**
+   * Weigher that counts the elements exposed by an iterable.
+   */
   enum IterableWeigher implements Weigher<Iterable<?>> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(Iterable<?> values) {
       if (values instanceof Collection<?>) {
@@ -241,36 +271,56 @@ public final class Weighers {
     }
   }
 
+  /**
+   * Weigher that uses the collection size as the weight.
+   */
   enum CollectionWeigher implements Weigher<Collection<?>> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(Collection<?> values) {
       return values.size();
     }
   }
 
+  /**
+   * Weigher that uses the list size as the weight.
+   */
   enum ListWeigher implements Weigher<List<?>> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(List<?> values) {
       return values.size();
     }
   }
 
+  /**
+   * Weigher that uses the set size as the weight.
+   */
   enum SetWeigher implements Weigher<Set<?>> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(Set<?> values) {
       return values.size();
     }
   }
 
+  /**
+   * Weigher that uses the map size as the weight.
+   */
   enum MapWeigher implements Weigher<Map<?, ?>> {
+    /** Singleton instance. */
     INSTANCE;
 
+    /** {@inheritDoc} */
     @Override
     public int weightOf(Map<?, ?> values) {
       return values.size();
