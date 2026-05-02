@@ -35,20 +35,76 @@ import java.util.function.Supplier;
 
 /**
  * Represents a {@link ClassNode} for classes loaded from compiled bytecode files decompiled using ASM.
- * This class provides lazy initialization of class metadata, interfaces, superclasses, fields, and methods
- * to support efficient runtime class loading and introspection without parsing source code.
+ * This class bridges the gap between raw bytecode metadata and Groovy's AST representation, providing
+ * lazy initialization of all class members to enable efficient runtime class loading and introspection
+ * without requiring source code.
  *
- * <p>Decompiled class nodes are marked as non-primary and resolved, enabling Groovy to use them during
- * compilation when source is unavailable. Methods and constructors are wrapped in lazy-loading proxies
- * when they are private, deferring full metadata reconstruction until needed.
+ * <h2>Architectural Role</h2>
+ * <p>DecompiledClassNode is a deferred factory for AST nodes: it collects bytecode metadata from a
+ * {@link ClassStub} and reconstructs full AST nodes (methods, fields, constructors) on demand via
+ * lazy proxy classes ({@link LazyFieldNode}, {@link LazyMethodNode}, {@link LazyConstructorNode}).
+ * This enables Groovy to compile and introspect compiled classes without full bytecode decompilation upfront.
  *
- * <p>Class modifiers for inner classes are taken from the INNERCLASS bytecode attribute rather than the
- * top-level access flags, ensuring accurate representation of nested class visibility.
+ * <h2>Key Differences from Regular ClassNode</h2>
+ * <ul>
+ *   <li><strong>Immutability:</strong> Decompiled classes are read-only representations of bytecode;
+ *       modification methods throw {@link UnsupportedOperationException}. See
+ *       {@link #setName(String)}, {@link #setRedirect(ClassNode)}, {@link #setUsingGenerics(boolean)},
+ *       {@link #setGenericsPlaceHolder(boolean)}.</li>
+ *   <li><strong>Always resolved:</strong> {@link #isResolved()} always returns {@code true}.
+ *       Unlike source-based classes that transition from unresolved to resolved, decompiled classes
+ *       are inherently resolved because their metadata is extracted from compiled bytecode.</li>
+ *   <li><strong>Non-primary:</strong> {@code isPrimaryNode = false}. This indicates the class is
+ *       derived from compiled bytecode rather than primary source compilation.</li>
+ *   <li><strong>Lazy initialization:</strong> Superclass and member information is initialized on first access,
+ *       not at construction. This defers expensive metadata parsing until needed.</li>
+ *   <li><strong>JVM introspection fallback:</strong> Certain operations (e.g., {@link #isSealed()})
+ *       delegate to runtime JVM reflection via {@link #getTypeClass()}.</li>
+ * </ul>
  *
- * @see AsmDecompiler
+ * <h2>Lazy Initialization Strategy</h2>
+ * <p>DecompiledClassNode uses a two-phase lazy initialization pattern with double-checked locking:
+ * <ul>
+ *   <li><strong>Phase 1 - Superclass/Interface metadata:</strong> Triggered by accessors like
+ *       {@link #getGenericsTypes()}, {@link #getInterfaces()}, {@link #getAnnotations()}.
+ *       {@link #lazyInitSupers()} parses generic signatures and initializes annotations.</li>
+ *   <li><strong>Phase 2 - Class members:</strong> Triggered by accessors like {@link #getMethods()},
+ *       {@link #getFields()}, {@link #getDeclaredConstructors()}. {@link #lazyInitMembers()} unpacks
+ *       method and field stubs into AST nodes.</li>
+ * </ul>
+ * Private members are wrapped in lazy proxies ({@link LazyFieldNode}, {@link LazyMethodNode},
+ * {@link LazyConstructorNode}) to further defer parsing their complex signatures until accessed.
+ *
+ * <h2>Thread Safety</h2>
+ * <p>DecompiledClassNode is thread-safe for lazy initialization. Both {@link #lazyInitSupers()}
+ * and {@link #lazyInitMembers()} use double-checked locking with volatile flags to ensure single
+ * initialization across multiple threads. The implementation protects initialization with
+ * {@code lazyInitLock} (inherited from ClassNode) to serialize critical sections.
+ *
+ * <h2>Caching Strategy</h2>
+ * <p>The ASM decompiler and reference resolver are cached at the DecompiledClassNode level but
+ * not across multiple class loads. When the same bytecode is parsed by different
+ * {@link AsmDecompiler} instances, separate DecompiledClassNode instances are created.
+ * This ensures consistency within a compilation context.
+ *
+ * <h2>Inner Class Modifiers</h2>
+ * <p>For nested classes, the INNERCLASS bytecode attribute (JVMS 4.7.6) provides authoritative
+ * access modifiers that correctly reflect nested visibility. {@link #getModifiers(ClassStub)}
+ * prefers {@code innerClassModifiers} over the top-level {@code accessModifiers} when available.
+ *
+ * <h2>Timestamp Extraction</h2>
+ * <p>Groovy embeds compilation timestamps in synthetic static field names for change detection.
+ * {@link #getCompilationTimeStamp()} decodes this metadata using {@link org.codehaus.groovy.classgen.Verifier#getTimestampFromFieldName(String)}.
+ *
+ * @see AsmDecompiler#parseClass(String, int, String, String, String[])
  * @see AsmReferenceResolver
- * @see DecompiledClassNode#lazyInitSupers()
- * @see DecompiledClassNode#lazyInitMembers()
+ * @see ClassStub
+ * @see LazyFieldNode
+ * @see LazyMethodNode
+ * @see LazyConstructorNode
+ * @see ClassSignatureParser#configureClass(DecompiledClassNode, ClassStub, AsmReferenceResolver)
+ * @see MemberSignatureParser#createFieldNode(FieldStub, AsmReferenceResolver, DecompiledClassNode)
+ * @see MemberSignatureParser#createMethodNode(AsmReferenceResolver, MethodStub)
  */
 public class DecompiledClassNode extends ClassNode {
 
@@ -206,48 +262,99 @@ public class DecompiledClassNode extends ClassNode {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns all annotations attached to this class.
+     * Triggers lazy initialization of superclass and interface metadata.
+     *
+     * @return list of {@link AnnotationNode} objects
+     */
     @Override
     public List<AnnotationNode> getAnnotations() {
         lazyInitSupers();
         return super.getAnnotations();
     }
 
+    /**
+     * Returns annotations of a specific type attached to this class.
+     * Triggers lazy initialization of superclass and interface metadata.
+     *
+     * @param type the annotation type to filter by
+     * @return list of matching {@link AnnotationNode} objects
+     */
     @Override
     public List<AnnotationNode> getAnnotations(ClassNode type) {
         lazyInitSupers();
         return super.getAnnotations(type);
     }
 
+    /**
+     * Returns the generic type parameters of this class.
+     * Triggers lazy initialization of generic type information from the class signature.
+     *
+     * @return array of {@link GenericsType} objects, or empty array if not generic
+     */
     @Override
     public GenericsType[] getGenericsTypes() {
         lazyInitSupers();
         return super.getGenericsTypes();
     }
 
+    /**
+     * Returns the interfaces implemented by this class.
+     * Triggers lazy initialization of interface metadata from the bytecode.
+     *
+     * @return array of {@link ClassNode} objects representing interfaces
+     */
     @Override
     public ClassNode[] getInterfaces() {
         lazyInitSupers();
         return super.getInterfaces();
     }
 
+    /**
+     * Returns the record components of this record class (Java 16+).
+     * Triggers lazy initialization of superclass and interface metadata.
+     *
+     * @return list of {@link RecordComponentNode} objects, or empty list if not a record
+     */
     @Override
     public List<RecordComponentNode> getRecordComponents() {
         lazyInitSupers();
         return super.getRecordComponents();
     }
 
+    /**
+     * Returns the unresolved (not yet redirected) interfaces implemented by this class.
+     * Triggers lazy initialization of interface metadata.
+     *
+     * @param useRedirect whether to follow class redirects (typically false for decompiled classes)
+     * @return array of {@link ClassNode} objects representing interfaces
+     */
     @Override
     public ClassNode[] getUnresolvedInterfaces(boolean useRedirect) {
         lazyInitSupers();
         return super.getUnresolvedInterfaces(useRedirect);
     }
 
+    /**
+     * Returns the unresolved (not yet redirected) superclass of this class.
+     * Triggers lazy initialization of superclass metadata.
+     *
+     * @param useRedirect whether to follow class redirects (typically false for decompiled classes)
+     * @return the {@link ClassNode} representing the superclass
+     */
     @Override
     public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
         lazyInitSupers();
         return super.getUnresolvedSuperClass(useRedirect);
     }
 
+    /**
+     * Indicates whether this class is using generic types.
+     * Triggers lazy initialization of generic type information.
+     *
+     * @return {@code true} if the class uses generic type parameters
+     */
     @Override
     public boolean isUsingGenerics() {
         lazyInitSupers();
@@ -258,9 +365,18 @@ public class DecompiledClassNode extends ClassNode {
 
     /**
      * Lazily initializes class-level metadata including superclass, interfaces, annotations, and generics.
-     * This method uses double-checked locking to ensure thread-safe initialization while minimizing synchronization overhead.
-     * Initialization is deferred until the metadata is first requested via {@code getGenericsTypes()},
-     * {@code getInterfaces()}, or similar accessor methods.
+     *
+     * <p>This method parses generic type signatures and reconstructs generic type parameters using
+     * {@link ClassSignatureParser#configureClass(DecompiledClassNode, ClassStub, AsmReferenceResolver)}.
+     * It also attaches annotations extracted from the bytecode via
+     * {@link Annotations#addAnnotations(ClassStub, DecompiledClassNode, AsmReferenceResolver)}.
+     *
+     * <p><strong>Thread Safety:</strong> Uses double-checked locking with {@code supersInitialized} flag
+     * and {@code lazyInitLock} to ensure thread-safe single initialization across concurrent accesses.
+     * The flag is declared volatile to ensure visibility of initialization completion across threads.
+     *
+     * <p><strong>Triggered by:</strong> Any accessor that requires superclass or interface information:
+     * {@link #getGenericsTypes()}, {@link #getInterfaces()}, {@link #getAnnotations()}, etc.
      *
      * @see ClassSignatureParser#configureClass(DecompiledClassNode, ClassStub, AsmReferenceResolver)
      * @see Annotations#addAnnotations(ClassStub, DecompiledClassNode, AsmReferenceResolver)
@@ -279,30 +395,62 @@ public class DecompiledClassNode extends ClassNode {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns all constructors declared by this class.
+     * Triggers lazy initialization of class members.
+     *
+     * @return list of {@link ConstructorNode} objects
+     */
     @Override
     public List<ConstructorNode> getDeclaredConstructors() {
         lazyInitMembers();
         return super.getDeclaredConstructors();
     }
 
+    /**
+     * Returns a field declared by this class with the given name.
+     * Triggers lazy initialization of class members.
+     *
+     * @param name the field name
+     * @return the {@link FieldNode} if found, or {@code null} if no such field exists
+     */
     @Override
     public FieldNode getDeclaredField(final String name) {
         lazyInitMembers();
         return super.getDeclaredField(name);
     }
 
+    /**
+     * Returns all methods declared by this class with the given name.
+     * Triggers lazy initialization of class members.
+     *
+     * @param name the method name
+     * @return list of {@link MethodNode} objects with the specified name
+     */
     @Override
     public List<MethodNode> getDeclaredMethods(final String name) {
         lazyInitMembers();
         return super.getDeclaredMethods(name);
     }
 
+    /**
+     * Returns all fields declared by this class (excluding inherited fields).
+     * Triggers lazy initialization of class members.
+     *
+     * @return list of {@link FieldNode} objects
+     */
     @Override
     public List<FieldNode> getFields() {
         lazyInitMembers();
         return super.getFields();
     }
 
+    /**
+     * Returns all methods and constructors declared by this class (excluding inherited methods).
+     * Triggers lazy initialization of class members.
+     *
+     * @return list of {@link MethodNode} objects
+     */
     @Override
     public List<MethodNode> getMethods() {
         lazyInitMembers();
@@ -312,14 +460,33 @@ public class DecompiledClassNode extends ClassNode {
     private volatile boolean membersInitialized;
 
     /**
-     * Lazily initializes all class members including fields, methods, and constructors.
-     * This method reconstructs metadata from the bytecode stubs, wrapping private members in lazy proxies
-     * to defer further decompilation until the member is accessed. Like {@code lazyInitSupers()},
-     * this uses double-checked locking for thread-safe lazy initialization.
+     * Lazily initializes all class members (fields, methods, constructors) on first access.
+     *
+     * <p>This method reconstructs AST nodes from bytecode stubs by delegating to helper methods
+     * {@link #createFieldNode(FieldStub)}, {@link #createMethodNode(MethodStub)}, and
+     * {@link #createConstructor(MethodStub)}. Each method adds annotations and resolves types
+     * via {@link MemberSignatureParser} and {@link Annotations}.
+     *
+     * <p><strong>Lazy Proxy Pattern:</strong> Private members are wrapped in lazy proxies
+     * ({@link LazyFieldNode}, {@link LazyMethodNode}, {@link LazyConstructorNode}) that defer
+     * full initialization until the member is accessed. Public/protected members are fully
+     * initialized immediately. This optimization reduces startup time and memory footprint
+     * for large classes with many private members.
+     *
+     * <p><strong>Thread Safety:</strong> Like {@link #lazyInitSupers()}, uses double-checked locking
+     * with the {@code membersInitialized} flag and {@code lazyInitLock} to ensure single
+     * initialization across concurrent threads.
+     *
+     * <p><strong>Triggered by:</strong> Any accessor that requires member information:
+     * {@link #getMethods()}, {@link #getFields()}, {@link #getDeclaredConstructors()},
+     * {@link #getDeclaredMethods(String)}, {@link #getDeclaredField(String)}.
      *
      * @see DecompiledClassNode#createMethodNode(MethodStub)
      * @see DecompiledClassNode#createConstructor(MethodStub)
      * @see DecompiledClassNode#createFieldNode(FieldStub)
+     * @see LazyFieldNode
+     * @see LazyMethodNode
+     * @see LazyConstructorNode
      */
     private void lazyInitMembers() {
         if (membersInitialized) return;

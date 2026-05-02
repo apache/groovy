@@ -26,15 +26,60 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.objectweb.asm.Type;
 
 /**
- * Helper class for resolving class references found in bytecode stubs decompiled from compiled classes.
- * Maps bytecode type descriptors and internal class names to {@link ClassNode} instances by consulting
- * both classes currently being compiled and already-loaded classes via the compilation unit's resolver.
+ * Helper class for resolving class references encountered in bytecode stubs decompiled from compiled classes.
+ * Bridges between ASM's internal type descriptors/names and Groovy's {@link ClassNode} representation
+ * by consulting both classes currently being compiled in the compilation unit and already-loaded classes
+ * via the {@link ClassNodeResolver}.
+ *
+ * <h2>Resolution Strategy</h2>
+ * <p>AsmReferenceResolver implements a two-tier lookup strategy:
+ * <ol>
+ *   <li><strong>Compilation-time classes:</strong> First checks the compilation unit's AST for classes
+ *       being compiled in the same batch. This ensures references to companion classes resolve correctly.</li>
+ *   <li><strong>Runtime classes:</strong> If not found in the compilation unit, delegates to the
+ *       {@link ClassNodeResolver}, which consults already-compiled and third-party classes.</li>
+ * </ol>
+ *
+ * <h2>Type Descriptor Handling</h2>
+ * <p>The resolver handles multiple bytecode formats:
+ * <ul>
+ *   <li><strong>Primitive types:</strong> Resolved via {@link org.codehaus.groovy.ast.ClassHelper#make(String)}
+ *       (e.g., {@code "I"} → {@code int.class}).</li>
+ *   <li><strong>Object types:</strong> Converted from JVMS internal names (e.g., {@code "java/lang/String"})
+ *       to dot notation and resolved via {@link #resolveClass(String)}.</li>
+ *   <li><strong>Array types:</strong> Handled recursively by {@link #resolveType(Type)} and marked
+ *       via {@link ClassNode#makeArray()}.</li>
+ * </ul>
+ *
+ * <h2>Error Handling</h2>
+ * <p>The resolver distinguishes between two resolution modes:
+ * <ul>
+ *   <li>{@link #resolveClass(String)} - Throws {@link NoClassDefFoundError} if the class cannot be resolved.
+ *       Used when a type is required.</li>
+ *   <li>{@link #resolveClassNullable(String)} - Returns {@code null} if the class cannot be resolved.
+ *       Used for optional type information (e.g., exception types).</li>
+ * </ul>
+ *
+ * <h2>Thread Safety</h2>
+ * <p>AsmReferenceResolver instances are typically created once per compilation unit and are
+ * thread-safe for concurrent read access. The underlying {@link ClassNodeResolver} and
+ * {@link CompilationUnit} manage their own synchronization.
  *
  * @see DecompiledClassNode
  * @see AsmDecompiler
+ * @see ClassNodeResolver
+ * @see CompilationUnit
  */
 public class AsmReferenceResolver {
+    /**
+     * The resolver responsible for locating already-compiled and third-party classes.
+     */
     private final ClassNodeResolver resolver;
+
+    /**
+     * The compilation unit containing classes being compiled and compilation context metadata.
+     * Consulted first for classes in the current batch before falling back to {@code resolver}.
+     */
     private final CompilationUnit unit;
 
     /**
