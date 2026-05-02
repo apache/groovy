@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::xml-userguide[]
+:xml-userguide: xml-userguide.adoc
+endif::[]
 
 = StaxBuilder
 
@@ -36,3 +39,20 @@ An external library such as https://github.com/jettison-json/jettison[Jettison] 
 ----
 include::../test/StaxBuilderTest.groovy[tags=stax_builder_external_library,indent=0]
 ----
+
+== Reading XML with StAX
+
+`StaxBuilder` writes XML through a user-supplied `XMLStreamWriter`. For
+*reading* XML with StAX, Groovy provides hardened entry points:
+
+* `groovy.xml.FactorySupport.createXMLInputFactory()` — returns a hardened
+  `XMLInputFactory` (DTD support disabled, external entity resolution
+  disabled). Pass `true` to allow DOCTYPE declarations.
+* `groovy.xml.XmlUtil.events(reader)` — returns a `Stream<XMLEvent>` over
+  the supplied reader. Closes the underlying reader when the stream is closed.
+* `groovy.xml.XmlUtil.streamElements(reader, localName)` — pulls each
+  matching subtree as a small DOM `Node`, suitable for streaming
+  multi-gigabyte documents without loading them into memory.
+
+See <<{xml-userguide}#xml-security,XML security>> for a worked example
+including parallel per-record processing using virtual threads.

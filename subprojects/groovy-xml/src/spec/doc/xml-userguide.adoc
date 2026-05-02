@@ -127,7 +127,7 @@ Available options for both parsers:
 | `false`
 
 | `allowDocTypeDeclaration`
-| Allow DOCTYPE declarations in documents
+| Allow DOCTYPE declarations in documents (see <<xml-security>>)
 | `false`
 
 | `keepIgnorableWhitespace`
@@ -141,6 +141,13 @@ to trim whitespace from element text content.
 NOTE: Options that affect the underlying SAX parser (`namespaceAware`,
 `validating`, `allowDocTypeDeclaration`) must be set before the first
 parse call. Setting them afterwards throws an `IllegalStateException`.
+
+TIP: Groovy's XML parsers are secure by default — DOCTYPE declarations,
+external entities, billion-laughs payloads and external resource resolution
+are all blocked. See <<xml-security>> for details and the relax knobs
+available when you legitimately need DTD processing.
+
+include::_xml-security.adoc[leveloffset=+1]
 
 === DOMCategory
 

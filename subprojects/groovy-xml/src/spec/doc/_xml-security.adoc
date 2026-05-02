@@ -1,0 +1,222 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+[[xml-security]]
+= XML security
+
+Groovy's XML parsers and serializer are *secure by default*. This section
+covers what's blocked, why, and the relax knobs available when you legitimately
+need DOCTYPE support, external entity resolution, or external resource access.
+
+== What's blocked by default
+
+The defaults across all primary XML APIs:
+
+[cols="1,2,2",options="header"]
+|===
+| Parser / API | DOCTYPE declarations | External resource access
+
+| `groovy.xml.XmlParser`
+| Rejected (`SAXParseException`)
+| Blocked via `FEATURE_SECURE_PROCESSING`
+
+| `groovy.xml.XmlSlurper`
+| Rejected
+| Blocked
+
+| `groovy.xml.DOMBuilder.parse(...)` (static)
+| Rejected
+| Blocked
+
+| `groovy.xml.DOMBuilder.newInstance()` + DSL
+| Rejected (factory hardened)
+| Blocked
+
+| `groovy.xml.XmlUtil.serialize(...)`
+| Rejected (TransformerFactory)
+| External DTDs / stylesheets blocked
+|===
+
+This protects against:
+
+* **XXE (XML eXternal Entity)** — payloads that smuggle in `file://` or
+  `http://` references via internal DTD entity declarations.
+* **Billion laughs / XML bomb** — exponential entity expansion attacks
+  (mitigated by `FEATURE_SECURE_PROCESSING`'s entity-expansion budget).
+* **External resource disclosure** — `<xs:import>`, `<xsl:import>`,
+  external DTD subset resolution that would fetch from arbitrary URLs.
+
+== Relaxing when you need to
+
+Three knobs cover the common cases. All default to the secure setting; opt in
+explicitly when your input is trusted.
+
+=== `allowDocTypeDeclaration`
+
+For `XmlParser`, `XmlSlurper`, `DOMBuilder`, and `XmlUtil.newSAXParser`:
+
+[source,groovy]
+----
+// XmlParser / XmlSlurper — settable property or 3-arg constructor
+def parser = new XmlParser(false, true, true)   // validating, nsAware, allowDocType
+// or
+def parser = new XmlParser()
+parser.allowDocTypeDeclaration = true           // must be set before first parse
+
+// DOMBuilder — relax knob on static parse and on the new newInstance overload
+def doc = DOMBuilder.parse(reader, false, true, true)
+def builder = DOMBuilder.newInstance(false, true, true)
+----
+
+Setting `allowDocTypeDeclaration=true` permits `<!DOCTYPE>` declarations.
+External entity references (`<!ENTITY foo SYSTEM "...">`) are still constrained
+by `FEATURE_SECURE_PROCESSING`; supply an `EntityResolver` if you need to
+resolve them yourself in a controlled way.
+
+=== `EntityResolver` / `setEntityBaseUrl`
+
+Both `XmlParser` and `XmlSlurper` accept a custom `EntityResolver`:
+
+[source,groovy]
+----
+def slurper = new XmlSlurper(false, true, true)
+slurper.setEntityResolver { publicId, systemId ->
+    // resolve from a known-safe location, e.g. classpath
+    new InputSource(getClass().getResourceAsStream("/dtds/" + new File(systemId).name))
+}
+def root = slurper.parseText(xmlWithInternalDtd)
+
+// XmlSlurper also has a convenience for a fixed base URL:
+slurper.setEntityBaseUrl(new File("trusted-dtds/").toURI().toURL())
+----
+
+This is the recommended path when you have legitimate internal DTDs that
+need resolving against a controlled location, rather than turning the parser
+loose against the network.
+
+=== `SerializeOptions.allowExternalResources`
+
+For `XmlUtil.serialize` when transforming XSLT documents that legitimately
+reference external resources via `<xsl:import>` or `<xsl:include>`:
+
+[source,groovy]
+----
+def opts = new SerializeOptions()
+opts.allowDocTypeDeclaration = true     // permit DOCTYPE in output
+opts.allowExternalResources = true      // permit external DTD/stylesheet access
+XmlUtil.serialize(transformResult, output, opts)
+----
+
+For the overwhelmingly common case of pretty-printing already-parsed Groovy
+nodes or DOM trees, no changes are needed — the defaults work.
+
+== Hardened factories from `FactorySupport`
+
+If you drop down to JAXP directly, `groovy.xml.FactorySupport` returns
+factories that already apply Groovy's hardening recipe:
+
+[source,groovy]
+----
+import groovy.xml.FactorySupport
+
+def dbf = FactorySupport.createDocumentBuilderFactory()                // DOCTYPE blocked
+def dbf2 = FactorySupport.createDocumentBuilderFactory(true)           // DOCTYPE allowed
+
+def spf = FactorySupport.createSaxParserFactory()                      // DOCTYPE blocked
+def spf2 = FactorySupport.createSaxParserFactory(true)                 // DOCTYPE allowed
+
+def xif = FactorySupport.createXMLInputFactory()                       // StAX, hardened
+def xif2 = FactorySupport.createXMLInputFactory(true)                  // StAX, DOCTYPE allowed
+
+def tf = FactorySupport.createTransformerFactory(false, false)         // doctype + external both blocked
+
+def sf = FactorySupport.createSchemaFactory(W3C_XML_SCHEMA_NS_URI)     // FSP enabled
+def xpf = FactorySupport.createXPathFactory()                          // FSP enabled
+----
+
+The zero-arg `createDocumentBuilderFactory()` and `createSaxParserFactory()`
+return *hardened* factories — convenient aliases for the common secure default.
+This is a behaviour change in Groovy 6.0.0; prior versions returned bare JDK
+factories.
+
+== Streaming large XML documents
+
+For multi-gigabyte feeds where loading the whole document into memory is
+impractical, use `XmlUtil.streamElements` to pull each matching subtree as a
+small DOM `Node`:
+
+[source,groovy]
+----
+new File("huge-feed.xml").withReader { reader ->
+    XmlUtil.streamElements(reader, "record").forEach { Node record ->
+        // each subtree is a small, complete DOM tree
+        process(record)
+    }
+}
+----
+
+Matching can be namespace-qualified:
+
+[source,groovy]
+----
+XmlUtil.streamElements(reader, "urn:example:atom", "entry").forEach { entry ->
+    // ...
+}
+----
+
+For raw event-level streaming use `XmlUtil.events(reader)` to obtain a
+`Stream<XMLEvent>` over a hardened `XMLInputFactory`.
+
+The factory underlying these streams is hardened by default; pass
+`allowDocTypeDeclaration=true` on the four-argument overload of
+`streamElements` if you need DTD support.
+
+For per-record parallel processing on JDK 21+, sink the stream into a
+virtual-thread executor:
+
+[source,groovy]
+----
+def executor = Executors.newVirtualThreadPerTaskExecutor()
+try {
+    XmlUtil.streamElements(reader, "record")
+        .map { record -> executor.submit { process(record) } }
+        .toList()
+        *.get()
+} finally {
+    executor.close()
+}
+----
+
+== Notes for advanced users
+
+* `XmlUtil.setFeatureQuietly` (and the equivalent helpers inside
+  `FactorySupport`) silently ignore features that the underlying JAXP
+  provider does not recognise. If you ship a custom JAXP provider that
+  doesn't implement `FEATURE_SECURE_PROCESSING`, hardening is best-effort
+  and your factory may fall back to provider defaults.
+* `SchemaFactory` instances returned by `FactorySupport.createSchemaFactory`
+  enable `FEATURE_SECURE_PROCESSING` but do *not* set `ACCESS_EXTERNAL_SCHEMA`.
+  This preserves the ability to resolve `<xs:import schemaLocation="...">`
+  against trusted locations. Tighten further by setting
+  `XMLConstants.ACCESS_EXTERNAL_SCHEMA` to `""` on the returned factory if
+  your schema sources never legitimately import.
+* `setFeature` calls within the hardening recipes are wrapped in try/catch
+  blocks. To verify hardening took effect at runtime, read back via
+  `factory.getFeature(...)` or `factory.getProperty(...)`.

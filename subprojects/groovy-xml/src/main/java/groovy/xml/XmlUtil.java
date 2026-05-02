@@ -765,4 +765,84 @@ public class XmlUtil {
             // feature is not supported, ignore
         }
     }
+
+    /**
+     * Streams XML events from the supplied {@link Reader} using a hardened
+     * StAX {@link javax.xml.stream.XMLInputFactory}. The returned stream
+     * lazily pulls events; closing the stream closes the underlying reader.
+     * <p>
+     * Equivalent to {@link #events(Reader, boolean) events(reader, false)}.
+     *
+     * @param reader the XML source
+     * @return a stream of {@link javax.xml.stream.events.XMLEvent}s
+     * @since 6.0.0
+     */
+    public static java.util.stream.Stream<javax.xml.stream.events.XMLEvent> events(java.io.Reader reader) {
+        return events(reader, false);
+    }
+
+    /**
+     * Streams XML events from the supplied {@link Reader} using a hardened
+     * StAX {@link javax.xml.stream.XMLInputFactory}. The returned stream
+     * lazily pulls events; closing the stream closes the underlying reader.
+     *
+     * @param reader the XML source
+     * @param allowDocTypeDeclaration whether DOCTYPE declarations are permitted
+     * @return a stream of {@link javax.xml.stream.events.XMLEvent}s
+     * @since 6.0.0
+     */
+    public static java.util.stream.Stream<javax.xml.stream.events.XMLEvent> events(java.io.Reader reader, boolean allowDocTypeDeclaration) {
+        return StAXSupport.events(reader, allowDocTypeDeclaration);
+    }
+
+    /**
+     * Streams matching subtrees from a (potentially very large) XML document
+     * as DOM {@link org.w3c.dom.Node}s. Each emitted node is the root of one
+     * complete element matching {@code localName}; matching is performed on
+     * local name only (any namespace).
+     * <p>
+     * Equivalent to {@link #streamElements(Reader, String, String, boolean)
+     * streamElements(reader, null, localName, false)}.
+     * <p>
+     * Closing the returned stream closes the underlying reader. For parallel
+     * per-subtree processing, sink the stream into a virtual-thread executor
+     * (JDK 21+).
+     *
+     * @param reader the XML source
+     * @param localName the element local name to match
+     * @return a stream of DOM nodes, one per matching subtree
+     * @since 6.0.0
+     */
+    public static java.util.stream.Stream<org.w3c.dom.Node> streamElements(java.io.Reader reader, String localName) {
+        return StAXSupport.streamElements(reader, null, localName, false);
+    }
+
+    /**
+     * Streams matching subtrees from a (potentially very large) XML document
+     * as DOM {@link org.w3c.dom.Node}s. Matching is namespace-qualified.
+     *
+     * @param reader the XML source
+     * @param namespaceURI the namespace URI to match (use {@code null} to match any)
+     * @param localName the element local name to match
+     * @return a stream of DOM nodes, one per matching subtree
+     * @since 6.0.0
+     */
+    public static java.util.stream.Stream<org.w3c.dom.Node> streamElements(java.io.Reader reader, String namespaceURI, String localName) {
+        return StAXSupport.streamElements(reader, namespaceURI, localName, false);
+    }
+
+    /**
+     * Streams matching subtrees from a (potentially very large) XML document
+     * as DOM {@link org.w3c.dom.Node}s. Matching is namespace-qualified.
+     *
+     * @param reader the XML source
+     * @param namespaceURI the namespace URI to match (use {@code null} to match any)
+     * @param localName the element local name to match
+     * @param allowDocTypeDeclaration whether DOCTYPE declarations are permitted
+     * @return a stream of DOM nodes, one per matching subtree
+     * @since 6.0.0
+     */
+    public static java.util.stream.Stream<org.w3c.dom.Node> streamElements(java.io.Reader reader, String namespaceURI, String localName, boolean allowDocTypeDeclaration) {
+        return StAXSupport.streamElements(reader, namespaceURI, localName, allowDocTypeDeclaration);
+    }
 }
