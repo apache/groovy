@@ -99,7 +99,7 @@ public final class AwaitableAdapterRegistry {
     @SuppressWarnings("unchecked")
     static <T> Awaitable<T> toAwaitable(Object source) {
         if (source == null) {
-            return (Awaitable<T>) Awaitable.of(null);
+            return Awaitable.of(null);
         }
         if (source instanceof Awaitable) return (Awaitable<T>) source;
         Class<?> type = source.getClass();

@@ -79,7 +79,7 @@ public final class DefaultActor<T> implements Actor<T> {
         Objects.requireNonNull(message, "message must not be null");
         if (!active) throw new IllegalStateException("Actor has been stopped");
         DataflowVariable<R> reply = new DataflowVariable<>();
-        queue.add(new Envelope<>(message, (DataflowVariable<Object>) (DataflowVariable<?>) reply));
+        queue.add(new Envelope<>(message, (DataflowVariable<Object>) reply));
         return reply;
     }
 
@@ -94,7 +94,7 @@ public final class DefaultActor<T> implements Actor<T> {
         if (!active) return;
         active = false;
         // Poison pill signals the processing loop to exit after draining
-        queue.add((Envelope<T>) (Envelope<?>) new Envelope<>(POISON, null));
+        queue.add(new Envelope<>(POISON, null));
     }
 
     // ---- Internal -------------------------------------------------------

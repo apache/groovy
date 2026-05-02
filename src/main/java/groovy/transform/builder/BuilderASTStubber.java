@@ -100,7 +100,7 @@ public class BuilderASTStubber extends AbstractASTTransformation {
         Expression strategyExpr = annotation.getMember("builderStrategy");
         String strategyName = DEFAULT_STRATEGY;
         if (strategyExpr instanceof ClassExpression) {
-            strategyName = ((ClassExpression) strategyExpr).getType().getName();
+            strategyName = strategyExpr.getType().getName();
         }
 
         if (DEFAULT_STRATEGY.equals(strategyName)) {

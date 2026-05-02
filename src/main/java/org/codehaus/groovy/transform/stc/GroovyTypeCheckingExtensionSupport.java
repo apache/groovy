@@ -230,7 +230,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         if (script == null) {
             ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
             // cast to prevent incorrect @since 1.7 warning
-            InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(resolvedPath);
+            InputStream is = transformLoader.getResourceAsStream(resolvedPath);
             if (is == null) {
                 // fallback to the source unit classloader
                 is = cl.getResourceAsStream(resolvedPath);

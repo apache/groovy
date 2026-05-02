@@ -61,10 +61,10 @@ public class ModifiesEnsuresValidationTransformation implements ASTTransformatio
         if (!(nodes[0] instanceof AnnotationNode annotation)) return;
         if (!(nodes[1] instanceof MethodNode methodNode)) return;
 
-        Set<String> modifiesSet = (Set<String>) methodNode.getNodeMetaData(ModifiesASTTransformation.MODIFIES_FIELDS_KEY);
+        Set<String> modifiesSet = methodNode.getNodeMetaData(ModifiesASTTransformation.MODIFIES_FIELDS_KEY);
         if (modifiesSet == null || modifiesSet.isEmpty()) return;
 
-        Set<String> oldRefs = (Set<String>) methodNode.getNodeMetaData(AnnotationClosureVisitor.OLD_REFERENCES_KEY);
+        Set<String> oldRefs = methodNode.getNodeMetaData(AnnotationClosureVisitor.OLD_REFERENCES_KEY);
         if (oldRefs == null || oldRefs.isEmpty()) return;
 
         for (String ref : oldRefs) {

@@ -121,7 +121,7 @@ public class SemanticPredicates {
      */
     public static boolean isFollowingArgumentsOrClosure(ExpressionContext context) {
         if (context instanceof PostfixExprAltContext) {
-            List<ParseTree> peacChildren = ((PostfixExprAltContext) context).children;
+            List<ParseTree> peacChildren = context.children;
 
             try {
                 ParseTree peacChild = peacChildren.get(0);

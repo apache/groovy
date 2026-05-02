@@ -324,7 +324,7 @@ public class TypeCheckingExtension {
     }
 
     public MethodNode getTargetMethod(final Expression expression) {
-        return (MethodNode) expression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        return expression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
     }
 
     public ClassNode classNodeFor(Class type) {

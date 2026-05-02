@@ -235,7 +235,7 @@ public class Inspector {
         Tuple2[] result = new Tuple2[metaMethods.size()];
         int i = 0;
         for (Iterator<MetaMethod> iter = metaMethods.iterator(); iter.hasNext(); i++) {
-            MetaMethod metaMethod = (MetaMethod) iter.next();
+            MetaMethod metaMethod = iter.next();
             result[i] = Tuple2.tuple(metaMethod, methodInfo(metaMethod));
         }
         return result;

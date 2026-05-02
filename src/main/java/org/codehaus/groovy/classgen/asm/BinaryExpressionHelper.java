@@ -534,7 +534,7 @@ public class BinaryExpressionHelper {
             // (Map → key lookup, bean → getter, GroovyObject → getProperty).
             if (isMapStyle) {
                 for (Expression e : elements) {
-                    String key = (String) e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
+                    String key = e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
                     // Property access is a read here; the surrounding pushLHS(true) above would
                     // otherwise mark it as a store target.
                     compileStack.popLHS();

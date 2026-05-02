@@ -75,7 +75,7 @@ public class ModifiesASTTransformation implements ASTTransformation {
 
         // For @Repeatable, each annotation triggers this transform separately,
         // so merge with any existing metadata from prior invocations.
-        Set<String> modifiesSet = (Set<String>) methodNode.getNodeMetaData(MODIFIES_FIELDS_KEY);
+        Set<String> modifiesSet = methodNode.getNodeMetaData(MODIFIES_FIELDS_KEY);
         if (modifiesSet == null) {
             modifiesSet = new LinkedHashSet<>();
         }

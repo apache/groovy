@@ -1680,7 +1680,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
         for (Expression e : tuple.getExpressions()) {
-            String mapKey = (String) e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
+            String mapKey = e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
             Expression valueExpr = rhsByKey.get(mapKey);
             ClassNode targetType = getType(e);
             if (valueExpr != null) {
@@ -1724,7 +1724,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // surfaces "No such property" errors for keys that aren't statically declared.
         boolean ok = true;
         for (Expression e : tuple.getExpressions()) {
-            String mapKey = (String) e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
+            String mapKey = e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
             PropertyExpression pexp = new PropertyExpression(rightExpression, mapKey);
             pexp.setSourcePosition(e);
             visitPropertyExpression(pexp); // resolves type or records "No such property"

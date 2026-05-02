@@ -318,7 +318,7 @@ public class DefaultTableModel extends AbstractTableModel {
          */
         public void renumberTableColumns() {
             for (int i = tableColumns.size() - 1; i >= 0; i--) {
-                ((DefaultTableColumn)tableColumns.get(i)).setModelIndex(i);
+                tableColumns.get(i).setModelIndex(i);
             }
         }
 
