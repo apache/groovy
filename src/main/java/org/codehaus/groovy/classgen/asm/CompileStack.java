@@ -541,6 +541,8 @@ public class CompileStack {
      * to be called later.
      *
      * @return the break label
+     *
+     * @since 6.0.0
      */
     public Label pushBreakable(final List<String> labelNames) {
         pushState();

@@ -532,6 +532,8 @@ public abstract class StaticTypeCheckingSupport {
      * the token is not one of the twelve operators in scope. {@code INTDIV_EQUAL},
      * {@code MOD_EQUAL}, {@code ELVIS_EQUAL}, {@code LOGICAL_OR_EQUAL} and
      * {@code LOGICAL_AND_EQUAL} are intentionally excluded.
+     *
+     * @since 6.0.0
      */
     public static String getAssignOperationName(final int op) {
         return switch (op) {

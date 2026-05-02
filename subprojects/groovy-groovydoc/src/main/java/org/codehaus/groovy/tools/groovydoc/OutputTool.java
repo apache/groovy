@@ -43,6 +43,8 @@ public interface OutputTool {
      * {@code srcPath} to {@code dstPath}. Routed through the tool rather
      * than calling {@code Files.copy} directly so that alternative tools
      * (notably {@link MockOutputTool}) can intercept the side-effect.
+     *
+     * @since 6.0.0
      */
     void copyResource(String srcPath, String dstPath) throws Exception;
 }

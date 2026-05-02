@@ -73,6 +73,8 @@ public class LinkArgument {
      * Get the module attribute.
      *
      * @return the module attribute, or an empty string if not set
+     *
+     * @since 6.0.0
      */
     public String getModule() {
         return module;
@@ -84,6 +86,8 @@ public class LinkArgument {
      * Javadoc URLs such as {@code .../api/java.base/java/lang/Object.html}.
      *
      * @param module the JPMS module name (e.g. {@code java.base})
+     *
+     * @since 6.0.0
      */
     public void setModule(String module) {
         this.module = module;

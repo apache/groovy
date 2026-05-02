@@ -42,6 +42,8 @@ record HttpResult(int status, String body, HttpHeaders headers, HttpResponse<Str
      * Creates a result wrapper from a JDK HTTP response.
      *
      * @param response the response to wrap
+     *
+     * @since 6.0.0
      */
     HttpResult(final HttpResponse<String> response) {
         this(response.statusCode(), response.body(), response.headers(), response)
@@ -51,6 +53,8 @@ record HttpResult(int status, String body, HttpHeaders headers, HttpResponse<Str
      * Parses the buffered body as JSON.
      *
      * @return the parsed JSON value
+     *
+     * @since 6.0.0
      */
     Object getJson() {
         return new JsonSlurper().parseText(body)
@@ -60,6 +64,8 @@ record HttpResult(int status, String body, HttpHeaders headers, HttpResponse<Str
      * Parses the buffered body as XML.
      *
      * @return the parsed XML value
+     *
+     * @since 6.0.0
      */
     Object getXml() {
         return new XmlSlurper().parseText(body)
@@ -69,6 +75,8 @@ record HttpResult(int status, String body, HttpHeaders headers, HttpResponse<Str
      * Parses the buffered body as HTML using jsoup when available.
      *
      * @return the parsed HTML document
+     *
+     * @since 6.0.0
      */
     Object getHtml() {
         try {
@@ -105,6 +113,8 @@ record HttpResult(int status, String body, HttpHeaders headers, HttpResponse<Str
      * Parses the buffered body according to the {@code Content-Type} header when possible.
      *
      * @return parsed JSON, XML, HTML, or the raw body text
+     *
+     * @since 6.0.0
      */
     Object getParsed() {
         String contentType = headers.firstValue('Content-Type').orElse('')

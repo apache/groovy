@@ -196,6 +196,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
      * and {@code TupleConstructorASTStubber} consume the same selection so
      * the joint-compilation stub's constructor signature is a strict subset
      * of the runtime's, never a superset.
+     *
+     * @since 6.0.0
      */
     public record SelectedTupleProperties(List<PropertyNode> superList, List<PropertyNode> list, List<PropertyNode> ordered) {}
 
@@ -207,6 +209,8 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
      * {@code includeSuperProperties}, {@code includeSuperFields}, and
      * {@code allProperties} attributes the same way the full transform does
      * so the joint-compilation stubber stays in lockstep.
+     *
+     * @since 6.0.0
      */
     public static SelectedTupleProperties selectTupleProperties(
             final AbstractASTTransformation xform, final ClassNode cNode, final AnnotationNode anno) {

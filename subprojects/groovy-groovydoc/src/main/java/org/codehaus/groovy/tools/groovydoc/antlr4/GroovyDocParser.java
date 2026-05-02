@@ -67,6 +67,8 @@ public class GroovyDocParser implements GroovyDocParserI {
 
     /**
      * Creates a parser with the supplied {@link JavaParser} instance.
+     *
+     * @since 6.0.0
      */
     public GroovyDocParser(JavaParser javaParser, List<LinkArgument> links, Properties properties) {
         this.javaParser = javaParser;

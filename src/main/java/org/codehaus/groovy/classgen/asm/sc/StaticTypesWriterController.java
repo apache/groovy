@@ -110,6 +110,8 @@ public class StaticTypesWriterController extends DelegatingController {
      * contains one or more sub-expressions that will be routed through the regular
      * (non-static) call site writer via {@link #getCallSiteWriterFor}. The regular
      * writer's per-method state must then be initialized at method entry.
+     *
+     * @since 6.0.0
      */
     public boolean methodHasDynamicResolution() {
         return methodHasDynamicResolution;

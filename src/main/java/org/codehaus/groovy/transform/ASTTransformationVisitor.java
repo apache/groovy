@@ -99,6 +99,8 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      * that need to drive transform invocation outside the standard phase wiring (for
      * example, {@code JavaAwareCompilationUnit} runs CONVERSION-phase transforms
      * before the stub generator emits stubs — see GEP-21).
+     *
+     * @since 6.0.0
      */
     public static void invokeTransformsForClass(final CompilePhase phase, final ASTTransformationsContext context,
                                                 final SourceUnit source, final ClassNode classNode) {

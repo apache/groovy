@@ -106,6 +106,8 @@ public interface GrapeEngine {
     /**
      * Sets the logging level for the grape engine.
      * @param level the logging level (0=quiet/errors only, 1=warn, 2=info, 3=verbose, 4=debug)
+     *
+     * @since 6.0.0
      */
     default void setLoggingLevel(int level) { }
 }

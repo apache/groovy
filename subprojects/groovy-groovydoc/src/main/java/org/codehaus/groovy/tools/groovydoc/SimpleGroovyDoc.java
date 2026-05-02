@@ -151,6 +151,8 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
      * Indicates whether this documentation comment should be rendered as Markdown.
      *
      * @return {@code true} if Markdown rendering is enabled
+     *
+     * @since 6.0.0
      */
     public boolean isMarkdown() {
         return markdown;
@@ -160,6 +162,8 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
      * Sets whether this documentation comment should be rendered as Markdown.
      *
      * @param markdown {@code true} to enable Markdown rendering
+     *
+     * @since 6.0.0
      */
     public void setMarkdown(boolean markdown) {
         this.markdown = markdown;
@@ -170,6 +174,8 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
      * lookups but excluded from rendered output.
      *
      * @return {@code true} if this element is hidden from published docs
+     *
+     * @since 6.0.0
      */
     public boolean isHidden() {
         return hidden;
@@ -180,6 +186,8 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
      * remaining available for internal resolution such as {@code inheritDoc}.
      *
      * @param hidden {@code true} if this element should be hidden
+     *
+     * @since 6.0.0
      */
     public void setHidden(boolean hidden) {
         this.hidden = hidden;

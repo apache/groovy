@@ -56,6 +56,8 @@ record HttpStreamResult(
      * Creates a streaming result wrapper from a JDK HTTP response.
      *
      * @param response the response to wrap
+     *
+     * @since 6.0.0
      */
     HttpStreamResult(HttpResponse<Flow.Publisher<List<ByteBuffer>>> response) {
         this(response.statusCode(), response.headers(), response)
@@ -65,6 +67,8 @@ record HttpStreamResult(
      * Returns the response body as a publisher of {@code List<ByteBuffer>}
      * chunks, exactly as JDK {@code HttpResponse.BodyHandlers.ofPublisher()}
      * provides it.
+     *
+     * @since 6.0.0
      */
     Flow.Publisher<List<ByteBuffer>> bodyAsPublisher() {
         return raw.body()
@@ -78,6 +82,8 @@ record HttpStreamResult(
      * delivery.
      *
      * @param charset the charset to decode bytes with (defaults to UTF-8)
+     *
+     * @since 6.0.0
      */
     Flow.Publisher<String> bodyAsTextPublisher(Charset charset = StandardCharsets.UTF_8) {
         Closure mapper = { chunk ->
@@ -96,6 +102,8 @@ record HttpStreamResult(
      * framing, log tails). Trailing partial lines are emitted on completion.
      *
      * @param charset the charset to decode bytes with (defaults to UTF-8)
+     *
+     * @since 6.0.0
      */
     Flow.Publisher<String> bodyAsLinePublisher(Charset charset = StandardCharsets.UTF_8) {
         return new LinePublisher(raw.body(), charset)
@@ -106,6 +114,7 @@ record HttpStreamResult(
      * source publisher and applies a transformer per signalled item.
      */
     // package-private for same-package unit testing
+    /** @since 6.0.0 */
     static final class MappedPublisher implements Flow.Publisher<Object> {
         private final Flow.Publisher source
         private final Closure mapper
@@ -136,6 +145,7 @@ record HttpStreamResult(
      * Subscriber that applies a mapping closure before forwarding items downstream.
      */
     // package-private for same-package unit testing
+    /** @since 6.0.0 */
     static final class MappingSubscriber implements Flow.Subscriber<Object> {
         private final Flow.Subscriber<? super Object> downstream
         private final Closure mapper
@@ -215,6 +225,7 @@ record HttpStreamResult(
      * many newlines is drip-fed to the downstream one line per {@code request}.
      */
     // package-private for same-package unit testing
+    /** @since 6.0.0 */
     static final class LinePublisher implements Flow.Publisher<String> {
         private final Flow.Publisher<List<ByteBuffer>> source
         private final Charset charset

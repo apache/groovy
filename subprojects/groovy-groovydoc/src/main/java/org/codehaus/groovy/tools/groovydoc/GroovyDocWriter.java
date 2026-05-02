@@ -70,6 +70,8 @@ public class GroovyDocWriter {
 
     /**
      * Creates a writer with source-path information used to locate and mirror resource directories.
+     *
+     * @since 6.0.0
      */
     public GroovyDocWriter(OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties, String[] sourcepaths) {
         this.output = output;

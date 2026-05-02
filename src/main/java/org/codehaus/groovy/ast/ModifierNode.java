@@ -134,6 +134,7 @@ public class ModifierNode extends ASTNode {
         return Objects.equals(DEF, this.type) || Objects.equals(VAL, this.type) || Objects.equals(VAR, this.type);
     }
 
+    /** @since 6.0.0 */
     public boolean isVal() {
         return Objects.equals(VAL, this.type);
     }

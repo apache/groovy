@@ -188,11 +188,14 @@ public class ModuleNode extends ASTNode {
      * @return star imports that originated from {@code import module M} declarations.
      *         Separate from {@link #getStarImports()} so that resolution can apply
      *         JLS 6.4.1 shadowing (type-import-on-demand shadows module-import).
+     *
+     * @since 6.0.0
      */
     public List<ImportNode> getModuleStarImports() {
         return moduleStarImports;
     }
 
+    /** @since 6.0.0 */
     public void addModuleStarImport(final String packageName, final List<AnnotationNode> annotations) {
         ImportNode importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);

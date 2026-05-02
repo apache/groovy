@@ -1095,6 +1095,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      * through to {@link TagRenderer} so inline tags that need the enclosing
      * member context (e.g. {@code {@inheritDoc}} needs the current method
      * to find its overridden parent) can resolve.
+     *
+     * @since 6.0.0
      */
     public String replaceTags(String comment, GroovyMemberDoc memberDoc) {
         return replaceTags(comment, memberDoc, null);

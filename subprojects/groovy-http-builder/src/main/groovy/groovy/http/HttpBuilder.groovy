@@ -446,6 +446,8 @@ final class HttpBuilder {
 
     /**
      * Configuration DSL used to create an {@link HttpBuilder}.
+     *
+     * @since 6.0.0
      */
     static final class Config {
         /**
@@ -544,6 +546,8 @@ final class HttpBuilder {
 
     /**
      * Per-request configuration DSL used by the request methods.
+     *
+     * @since 6.0.0
      */
     static final class RequestSpec {
         /**

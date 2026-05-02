@@ -891,6 +891,8 @@ class GrapeMaven implements GrapeEngine {
  * @param force whether this dependency is forced
  * @param changing whether this dependency may change over time
  * @param transitive whether transitive dependencies should be resolved
+ *
+ * @since 6.0.0
  */
 record MavenGrabRecord(
     String groupId,

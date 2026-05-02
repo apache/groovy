@@ -117,6 +117,8 @@ public interface GinqAstVisitor<R> {
      *
      * @param setOperationExpression the expression to visit
      * @return the visit result
+     *
+     * @since 6.0.0
      */
     R visitSetOperationExpression(SetOperationExpression setOperationExpression);
     /**

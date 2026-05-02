@@ -333,6 +333,8 @@ class Main {
      * @param args CLI-like arguments (same as {@link #main(String[])}).
      * @param initialBindings binding variables for the GroovyEngine
      * @return process exit code (0 for success)
+     *
+     * @since 6.0.0
      */
     static int start(Map<String, ?> initialBindings = Collections.emptyMap(), String[] args = new String[0]) {
         def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
@@ -569,6 +571,8 @@ class Main {
      *
      * @param args CLI-like arguments (same as {@link #main(String[])}).
      * @return process exit code (0 for success)
+     *
+     * @since 6.0.0
      */
     static int start(String[] args) {
         start([:], args)

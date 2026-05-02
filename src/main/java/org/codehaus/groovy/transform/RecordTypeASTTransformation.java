@@ -197,6 +197,8 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
      * @param cNode          the candidate class node
      * @param targetBytecode the target bytecode level
      *                       (see {@link CompilerConfiguration#getTargetBytecode()})
+     *
+     * @since 6.0.0
      */
     @Incubating
     public static boolean wouldBeNativeRecord(final ClassNode cNode, final String targetBytecode) {

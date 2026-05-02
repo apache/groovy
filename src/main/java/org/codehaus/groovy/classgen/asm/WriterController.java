@@ -211,6 +211,7 @@ public class WriterController {
         return callSiteWriter;
     }
 
+    /** @since 6.0.0 */
     public CallSiteWriter getCallSiteWriterFor(final Expression expression) {
         return callSiteWriter;
     }

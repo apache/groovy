@@ -109,6 +109,8 @@ public final class ChannelSelect {
     /**
      * The result of a {@link #select()} operation, indicating which
      * channel produced the value.
+     *
+     * @since 6.0.0
      */
     public static final class Result {
         private final int index;

@@ -92,6 +92,8 @@ public class GroovydocJavaVisitor
 
     /**
      * Creates a visitor for the given package path, link arguments, and generation properties.
+     *
+     * @since 6.0.0
      */
     public GroovydocJavaVisitor(String packagePath, List<LinkArgument> links, Properties properties) {
         this.packagePath = packagePath;

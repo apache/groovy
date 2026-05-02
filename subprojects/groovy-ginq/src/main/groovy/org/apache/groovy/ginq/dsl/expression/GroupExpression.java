@@ -83,6 +83,8 @@ public class GroupExpression extends ProcessExpression {
      * Returns the {@code into} alias.
      *
      * @return the alias, or {@code null}
+     *
+     * @since 6.0.0
      */
     public String getIntoAlias() {
         return intoAlias;
@@ -92,6 +94,8 @@ public class GroupExpression extends ProcessExpression {
      * Sets the {@code into} alias.
      *
      * @param intoAlias the alias to set
+     *
+     * @since 6.0.0
      */
     public void setIntoAlias(String intoAlias) {
         this.intoAlias = intoAlias;

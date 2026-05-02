@@ -153,6 +153,8 @@ public class GroovyDocTool {
 
     /**
      * @return the number of source files that could not be parsed
+     *
+     * @since 6.0.0
      */
     public int getErrorCount() {
         return rootDocBuilder.getErrorCount();

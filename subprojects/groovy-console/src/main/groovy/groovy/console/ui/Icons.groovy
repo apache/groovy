@@ -183,6 +183,8 @@ class Icons {
     /**
      * Icon proxy whose inner FlatSVGIcon can be rebuilt at a new size
      * without changing the outer reference held by Swing components.
+     *
+     * @since 6.0.0
      */
     static class DynamicSVGIcon implements Icon {
         private final String path

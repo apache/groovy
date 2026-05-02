@@ -476,6 +476,7 @@ public class BytecodeHelper {
         ret.append(end);
     }
 
+    /** @since 6.0.0 */
     public static void doCast(final MethodVisitor mv, final Class<?> type) {
         if (type.isPrimitive() && type != Void.TYPE) {
             unbox(mv, type);

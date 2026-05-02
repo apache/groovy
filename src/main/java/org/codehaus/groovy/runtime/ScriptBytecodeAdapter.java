@@ -1005,6 +1005,8 @@ public class ScriptBytecodeAdapter {
      * invoke it and return {@code receiver} (so the caller's STORE assigns the same
      * reference back, leaving the in-place mutation visible). Otherwise fall back to
      * {@code baseName} and return its result for the caller to assign.
+     *
+     * @since 6.0.0
      */
     public static Object compoundAssign(final Object receiver, final Object arg,
                                         final String assignName, final String baseName) throws Throwable {

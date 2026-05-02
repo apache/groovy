@@ -176,6 +176,8 @@ public class GroovyRootDocBuilder {
 
     /**
      * Returns the number of source files that failed to parse.
+     *
+     * @since 6.0.0
      */
     public int getErrorCount() {
         return errorCount;

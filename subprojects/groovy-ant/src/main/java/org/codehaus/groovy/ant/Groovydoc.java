@@ -186,6 +186,8 @@ public class Groovydoc extends Task {
      * attribute (including {@code class="groovyTestCase"}) are left alone.
      *
      * @param preLanguage the language id, or empty/null to disable
+     *
+     * @since 6.0.0
      */
     public void setPreLanguage(String preLanguage) {
         this.preLanguage = preLanguage;
@@ -197,6 +199,8 @@ public class Groovydoc extends Task {
      * to false, so internal members are hidden.
      *
      * @param showInternal new value
+     *
+     * @since 6.0.0
      */
     public void setShowInternal(boolean showInternal) {
         this.showInternal = showInternal;
@@ -205,6 +209,8 @@ public class Groovydoc extends Task {
     /**
      * GROOVY-11943: if set to true, suppress generation of the alphabetical
      * index page ({@code index-all.html}) and its nav-bar link.
+     *
+     * @since 6.0.0
      */
     public void setNoIndex(boolean noIndex) {
         this.noIndex = noIndex;
@@ -213,6 +219,8 @@ public class Groovydoc extends Task {
     /**
      * GROOVY-11943: if set to true, suppress generation of the deprecated-list
      * page ({@code deprecated-list.html}) and its nav-bar link.
+     *
+     * @since 6.0.0
      */
     public void setNoDeprecatedList(boolean noDeprecatedList) {
         this.noDeprecatedList = noDeprecatedList;
@@ -221,6 +229,8 @@ public class Groovydoc extends Task {
     /**
      * GROOVY-11943: if set to true, suppress generation of the help page
      * ({@code help-doc.html}) and its nav-bar link.
+     *
+     * @since 6.0.0
      */
     public void setNoHelp(boolean noHelp) {
         this.noHelp = noHelp;
@@ -231,6 +241,8 @@ public class Groovydoc extends Task {
      * {@code {@snippet}} and fenced Markdown code blocks. Valid values are
      * {@code "prism"} (bundled) or {@code "none"} (default). Any other value
      * is treated as {@code "none"}.
+     *
+     * @since 6.0.0
      */
     public void setSyntaxHighlighter(String syntaxHighlighter) {
         this.syntaxHighlighter = syntaxHighlighter;
@@ -245,6 +257,8 @@ public class Groovydoc extends Task {
      *   <li>{@code "dark"} — lock the palette to dark regardless of OS.</li>
      * </ul>
      * Any other value is treated as {@code "auto"}.
+     *
+     * @since 6.0.0
      */
     public void setTheme(String theme) {
         this.theme = theme;
@@ -303,6 +317,8 @@ public class Groovydoc extends Task {
      * @param packages a comma-separated (or colon-separated, to match
      *                 the CLI form) list of package specs, possibly
      *                 wildcarded.
+     *
+     * @since 6.0.0
      */
     public void setExcludePackageNames(String packages) {
         StringTokenizer tok = new StringTokenizer(packages, ",:");
@@ -459,6 +475,8 @@ public class Groovydoc extends Task {
      * default. Repeatable — specify once per extra stylesheet.
      *
      * @return a holder that Ant will populate with the nested element's file attribute
+     *
+     * @since 6.0.0
      */
     public AddStylesheet createAddStylesheet() {
         AddStylesheet a = new AddStylesheet();
@@ -466,6 +484,7 @@ public class Groovydoc extends Task {
     }
 
     /** Nested-element holder populated by Ant introspection for {@code <addStylesheet file="..."/>}. */
+    /** @since 6.0.0 */
     public class AddStylesheet {
         private File file;
 

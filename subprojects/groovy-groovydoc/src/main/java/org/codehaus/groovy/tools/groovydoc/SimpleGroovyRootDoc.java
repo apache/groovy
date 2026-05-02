@@ -67,6 +67,8 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
      * Returns the source paths used to build this root document.
      *
      * @return the configured source paths
+     *
+     * @since 6.0.0
      */
     public String[] getSourcepaths() {
         return sourcepaths;
@@ -76,6 +78,8 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
      * Stores the source paths used to build this root document.
      *
      * @param sourcepaths the source paths to retain
+     *
+     * @since 6.0.0
      */
     public void setSourcepaths(String[] sourcepaths) {
         this.sourcepaths = sourcepaths == null ? new String[0] : java.util.Arrays.copyOf(sourcepaths, sourcepaths.length);
