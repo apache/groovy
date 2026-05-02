@@ -178,7 +178,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         body.addStatement(returnS(callX(bais, "withObjectInputStream", args(classLoader, readClos))));
 
         new VariableScopeVisitor(sourceUnit, true).visitClass(cNode);
-        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = cloneExceptionsFor(cNode);
         addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
     }
 
@@ -223,7 +223,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             }
             addGeneratedConstructor(cNode, ACC_PROTECTED, params(initParam), ClassNode.EMPTY_ARRAY, initBody);
         }
-        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = cloneExceptionsFor(cNode);
         addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, block(stmt(ctorX(cNode, args(varX("this"))))));
     }
 
@@ -250,7 +250,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         }
         addSimpleCloneHelperMethod(cNode, fieldNodes, excludes);
         final Expression result = localVarX("_result", cNode);
-        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = cloneExceptionsFor(cNode);
         ConstructorCallExpression init = ctorX(cNode);
         if (AnnotatedNodeUtils.hasAnnotation(cNode, COMPILESTATIC_CLASSNODE) && cNode.getDeclaredConstructor(Parameter.EMPTY_ARRAY) == null) {
             // constructor may not be added yet which confuses type checking, so add manually
@@ -317,8 +317,32 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         // return _result
         body.addStatement(returnS(result));
 
-        ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
+        ClassNode[] exceptions = cloneExceptionsFor(cNode);
         addGeneratedMethod(cNode, "clone", ACC_PUBLIC, GenericsUtils.nonGeneric(cNode), Parameter.EMPTY_ARRAY, exceptions, body);
+    }
+
+    /**
+     * Returns the {@code throws} clause to use for a generated {@code clone()}
+     * override. Java overrides may narrow checked exceptions but cannot add new
+     * ones, so the nearest superclass-declared {@code clone()} dictates the
+     * shape: if it does not declare {@link CloneNotSupportedException}, neither
+     * may we (e.g. a subclass of {@link java.util.HashMap}, whose {@code clone()}
+     * is silenced). Defaults to {@code throws CloneNotSupportedException} when
+     * no narrowing parent intervenes, matching {@link Object#clone()}.
+     */
+    static ClassNode[] cloneExceptionsFor(ClassNode cNode) {
+        for (ClassNode sc = cNode.getSuperClass(); sc != null && !isObjectType(sc); sc = sc.getSuperClass()) {
+            MethodNode parent = sc.getDeclaredMethod("clone", Parameter.EMPTY_ARRAY);
+            if (parent != null) {
+                for (ClassNode ex : parent.getExceptions()) {
+                    if ("java.lang.CloneNotSupportedException".equals(ex.getName())) {
+                        return new ClassNode[]{make(CloneNotSupportedException.class)};
+                    }
+                }
+                return ClassNode.EMPTY_ARRAY;
+            }
+        }
+        return new ClassNode[]{make(CloneNotSupportedException.class)};
     }
 
     private static AutoCloneStyle getStyle(AnnotationNode node, String name) {
