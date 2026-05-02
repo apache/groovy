@@ -21,11 +21,14 @@ package org.codehaus.groovy.tools;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -113,16 +116,8 @@ public class RootLoader extends URLClassLoader {
 
         Thread.currentThread().setContextClassLoader(this);
 
-        // Skip URLs already on the JVM startup (system) classpath: the launcher
-        // puts the core groovy jar on -classpath to start GroovyStarter, and
-        // groovy-starter.conf's "load lib/*.jar" then re-globs it. Adding the
-        // same jar to both loaders lets each define its own copy of every core
-        // class, and trips duplicate-resource detection.
-        Set<File> startup = startupClasspathFiles();
         for (URL url : lc.getClassPathUrls()) {
-            if (!startup.contains(canonicalFile(url))) {
-                addURL(url);
-            }
+            addURL(url);
         }
         // TODO M12N eventually defer this until later when we have a full Groovy
         // environment and use normal Grape.grab()
@@ -178,6 +173,27 @@ public class RootLoader extends URLClassLoader {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Collapses entries that resolve to the same canonical jar file so callers
+     * such as {@link java.util.ServiceLoader} don't see the same providers
+     * twice when the launcher's startup classpath and the {@code load} entries
+     * in {@code groovy-starter.conf} reference the same jar (GROOVY-11978).
+     */
+    @Override
+    public Enumeration<URL> getResources(final String name) throws IOException {
+        LinkedHashSet<URL> result = new LinkedHashSet<>();
+        Set<File> seenJars = new HashSet<>();
+        appendUnique(findResources(name), result, seenJars);
+        ClassLoader parent = getParent();
+        Enumeration<URL> parentResources = (parent != null)
+                ? parent.getResources(name)
+                : ClassLoader.getSystemResources(name);
+        appendUnique(parentResources, result, seenJars);
+        return Collections.enumeration(result);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void addURL(final URL url) {
@@ -192,23 +208,28 @@ public class RootLoader extends URLClassLoader {
         throw new ClassNotFoundException(name);
     }
 
-    private static Set<File> startupClasspathFiles() {
-        Set<File> files = new HashSet<>();
-        String cp = System.getProperty("java.class.path");
-        if (cp == null || cp.isEmpty()) return files;
-        for (String entry : cp.split(File.pathSeparator)) {
-            if (entry.isEmpty()) continue;
-            File f = canonicalFile(new File(entry));
-            if (f != null) files.add(f);
+    private static void appendUnique(Enumeration<URL> in, Set<URL> out, Set<File> seenJars) {
+        while (in.hasMoreElements()) {
+            URL u = in.nextElement();
+            File jar = jarFileOf(u);
+            if (jar == null) {
+                out.add(u); // directory or non-file URL — URL identity is enough
+            } else if (seenJars.add(jar)) {
+                out.add(u); // first occurrence of this jar wins
+            }
         }
-        return files;
     }
 
-    private static File canonicalFile(URL url) {
-        if (!"file".equals(url.getProtocol())) return null;
+    private static File jarFileOf(URL u) {
+        if (!"jar".equals(u.getProtocol())) return null;
+        String s = u.toString();
+        int bang = s.indexOf("!/");
+        if (bang < 0) return null;
+        String inner = s.substring(4, bang); // strip "jar:" prefix
+        if (!inner.startsWith("file:")) return null;
         try {
-            return canonicalFile(new File(url.toURI()));
-        } catch (URISyntaxException | IllegalArgumentException e) {
+            return canonicalFile(new File(URI.create(inner)));
+        } catch (IllegalArgumentException e) {
             return null;
         }
     }
