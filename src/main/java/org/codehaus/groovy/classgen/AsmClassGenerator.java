@@ -1475,8 +1475,12 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void createInterfaceSyntheticStaticFields() {
-        if (referencedClasses.isEmpty()) return;
         var icl = controller.getInterfaceClassLoadingClass();
+        // GROOVY-11982: also materialise the helper when there are call sites
+        // (e.g. dynamic code in default methods under indy=false), otherwise
+        // CallSiteWriter routes INVOKESTATIC at a class that was never emitted
+        boolean hasCallSites = !controller.getCallSiteWriter().getCallSites().isEmpty();
+        if (referencedClasses.isEmpty() && !hasCallSites) return;
         addInnerClass(icl);
         for (Map.Entry<String, ClassNode> entry : referencedClasses.entrySet()) {
             // generate a field node

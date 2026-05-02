@@ -116,7 +116,10 @@ public class CallSiteWriter {
         if (controller.isNotClinit()) {
             MethodVisitor mv = controller.getMethodVisitor();
             mv.visitInsn(NOP); // GROOVY-9076: need this for debugger to support step into
-            mv.visitMethodInsn(INVOKESTATIC, controller.getInternalClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC, false);
+            // GROOVY-11982: for an interface, route to the helper inner class which
+            // owns $getCallSiteArray (interfaces themselves never have it, and an
+            // INVOKESTATIC Methodref against an interface owner throws ICCE)
+            mv.visitMethodInsn(INVOKESTATIC, controller.getClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC, false);
             controller.getOperandStack().push(CALLSITE_ARRAY_TYPE);
             callSiteArrayVarIndex = controller.getCompileStack().defineTemporaryVariable("$local$callSiteArray", CALLSITE_ARRAY_TYPE, true);
         }
