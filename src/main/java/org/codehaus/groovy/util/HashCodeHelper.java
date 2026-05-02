@@ -68,7 +68,7 @@ public class HashCodeHelper {
      * @return the updated hash value
      */
     public static int updateHash(int current, Character var) {
-        return updateHash(current, var == null ? 0 : var.charValue());
+        return updateHash(current, var == null ? 0 : var);
     }
 
     /**
