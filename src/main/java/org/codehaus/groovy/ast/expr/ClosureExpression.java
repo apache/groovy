@@ -28,8 +28,15 @@ import static org.codehaus.groovy.ast.AstToTextHelper.getParametersText;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.hasImplicitParameter;
 
 /**
- * Represents a closure expression such as <pre>{ statement }</pre>
- * or { i {@code ->} statement } or { i, x, String y {@code ->}  statement }
+ * Represents a closure expression such as {@code { statement }} or {@code { i -> statement }} or
+ * {@code { i, x, String y -> statement }}. A closure is an anonymous function that can capture
+ * local variables from its enclosing scope (closure variables). Closures support zero or more
+ * parameters, with optional type annotations, and are executed in their own variable scope.
+ *
+ * @see Expression
+ * @see Parameter
+ * @see VariableScope
+ * @see MethodCallExpression
  */
 public class ClosureExpression extends Expression {
 
@@ -37,6 +44,14 @@ public class ClosureExpression extends Expression {
     private Statement code;
     private VariableScope variableScope;
 
+    /**
+     * Creates a closure expression with the specified parameters and code body.
+     *
+     * @param parameters an array of {@link Parameter} definitions for this closure, or null if the
+     *                   closure has no explicit parameters (allowing implicit it parameter); may be
+     *                   empty for a closure with no parameters
+     * @param code the {@link Statement} representing the body of the closure; must not be null
+     */
     public ClosureExpression(final Parameter[] parameters, final Statement code) {
         this.parameters = parameters;
         this.code = code;
@@ -44,43 +59,60 @@ public class ClosureExpression extends Expression {
     }
 
     /**
-     * This gets the code statement of the closure. You can read this method to find out what actions
-     * the closure is going to perform.
+     * Returns the code statement that represents the body of this closure.
+     * This method can be used to inspect or analyze what actions the closure will perform.
      *
-     * @return the code statement of the closure
+     * @return the code {@link Statement} representing the closure body; may be null
      */
     public Statement getCode() {
         return code;
     }
 
     /**
-     * This sets the code statement of the closure. You can use this method in order to add more actions
-     * during the closure execution.
+     * Sets the code statement for this closure body. This method can be used to modify
+     * or add additional actions during closure execution, typically during AST transformations.
      *
-     * @param code the new Statement
+     * @param code the new {@link Statement} representing the closure body; must not be null
      */
     public void setCode(final Statement code) {
         this.code = code;
     }
 
     /**
-     * @return an array of zero (for implicit it) or more (when explicit args given) parameters or null otherwise (representing explicit no args)
+     * Returns the parameter definitions for this closure.
+     *
+     * @return an array of {@link Parameter} definitions, empty if no explicit parameters are provided
+     *         (allowing implicit it parameter), or null if the closure has no parameters at all
      */
     public Parameter[] getParameters() {
         return parameters;
     }
 
     /**
-     * @return {@code true} if one or more explicit parameters are supplied
+     * Indicates whether one or more explicit parameters are specified for this closure.
+     *
+     * @return true if explicit parameters are present; false if no explicit parameters are specified
+     *         (in which case an implicit 'it' parameter may be available)
      */
     public boolean isParameterSpecified() {
         return (parameters != null && parameters.length > 0);
     }
 
+    /**
+     * Returns the variable scope associated with this closure. The variable scope tracks
+     * accessible variables within the closure's execution context, including captured variables.
+     *
+     * @return the {@link VariableScope} for this closure; may be null if not yet initialized
+     */
     public VariableScope getVariableScope() {
         return variableScope;
     }
 
+    /**
+     * Sets the variable scope for this closure.
+     *
+     * @param variableScope the {@link VariableScope} to associate with this closure; may be null
+     */
     public void setVariableScope(final VariableScope variableScope) {
         this.variableScope = variableScope;
     }

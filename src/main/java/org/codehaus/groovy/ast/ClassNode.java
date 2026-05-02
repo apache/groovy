@@ -196,11 +196,15 @@ public class ClassNode extends AnnotatedNode {
     //--------------------------------------------------------------------------
 
     /**
-     * @param name       the fully-qualified name of the class
-     * @param modifiers  the modifiers; see {@link java.lang.reflect.Modifier Modifier} or {@link org.objectweb.asm.Opcodes Opcodes}
-     * @param superClass the base class; use "java.lang.Object" if no direct base class
-     * @param interfaces the interfaces
-     * @param mixins     the mixins
+     * Constructs a primary {@code ClassNode} representing a class declaration with all components.
+     * This constructor creates a new ClassNode that will be compiled by Groovy. The node represents
+     * an actual source class definition with specified interfaces and mixins.
+     *
+     * @param name       the fully-qualified name of the class (e.g., "com.example.MyClass")
+     * @param modifiers  the bytecode modifiers (flags from {@link java.lang.reflect.Modifier} or {@link org.objectweb.asm.Opcodes})
+     * @param superClass the base class ({@link ClassNode} representing the parent type); use {@link ClassHelper#OBJECT_TYPE} if no direct base class
+     * @param interfaces array of {@link ClassNode} instances for interfaces implemented by this class; may be empty
+     * @param mixins     array of {@link MixinNode} instances to be mixed into this class; may be empty
      */
     public ClassNode(final String name, final int modifiers, final ClassNode superClass, final ClassNode[] interfaces, final MixinNode[] mixins) {
         this.name = name;
@@ -213,16 +217,24 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @param name       the fully-qualified name of the class
-     * @param modifiers  the modifiers; see {@link java.lang.reflect.Modifier Modifier} or {@link org.objectweb.asm.Opcodes Opcodes}
-     * @param superClass the base class; use "java.lang.Object" if no direct base class
+     * Constructs a primary {@code ClassNode} representing a class declaration with superclass.
+     * This is a convenience constructor for creating classes with a single superclass and no interfaces or mixins.
+     * It delegates to the full constructor with empty interface and mixin arrays.
+     *
+     * @param name       the fully-qualified name of the class (e.g., "com.example.MyClass")
+     * @param modifiers  the bytecode modifiers (flags from {@link java.lang.reflect.Modifier} or {@link org.objectweb.asm.Opcodes})
+     * @param superClass the base class ({@link ClassNode} representing the parent type); use {@link ClassHelper#OBJECT_TYPE} if no direct base class
      */
     public ClassNode(final String name, final int modifiers, final ClassNode superClass) {
         this(name, modifiers, superClass, ClassNode.EMPTY_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
-     * Creates a non-primary {@code ClassNode} from a real class.
+     * Constructs a non-primary {@code ClassNode} from a real Java class.
+     * This constructor creates a ClassNode that represents an actual Java class loaded at runtime (not a Groovy source class).
+     * The class information is lazily initialized from reflection, and the node will not be compiled by Groovy.
+     *
+     * @param c the Java class ({@link Class}) to wrap; must not be {@code null}
      */
     public ClassNode(final Class<?> c) {
         this(c.getName(), c.getModifiers(), null, null, MixinNode.EMPTY_ARRAY);
@@ -232,7 +244,12 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Constructor used by {@code makeArray()} if a real class is available.
+     * Constructs a non-primary array {@code ClassNode} from a real Java array class.
+     * This internal constructor is used by {@code makeArray()} when a real array class is available.
+     * It wraps an array class and associates it with its component type.
+     *
+     * @param c the Java array class; must not be {@code null}
+     * @param componentType the {@link ClassNode} representing the element type of the array
      */
     private ClassNode(final Class<?> c, final ClassNode componentType) {
         this(c);
@@ -240,7 +257,11 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Constructor used by {@code makeArray()} if no real class is available.
+     * Constructs a non-primary array {@code ClassNode} when no real array class is available.
+     * This internal constructor is used by {@code makeArray()} to create a synthetic array ClassNode.
+     * The resulting node represents an array type with appropriate interfaces and modifiers.
+     *
+     * @param componentType the {@link ClassNode} representing the element type of the array
      */
     private ClassNode(final ClassNode componentType) {
         this(componentType.getName() + "[]", ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC, ClassHelper.OBJECT_TYPE,
@@ -253,19 +274,39 @@ public class ClassNode extends AnnotatedNode {
 
     /**
      * Returns the {@code ClassNode} this node is a proxy for or the node itself.
+     * If this ClassNode has been set as a proxy to another ClassNode via {@link #setRedirect(ClassNode)},
+     * recursively follows the redirect chain to return the ultimate target ClassNode. If no redirect is set,
+     * returns {@code this}. This mechanism allows lazy resolution of class references during compilation.
+     *
+     * @return the final {@link ClassNode} in the redirect chain; never {@code null}
      */
     public ClassNode redirect() {
         return (redirect == null ? this : redirect.redirect());
     }
 
+    /**
+     * Returns whether this {@link ClassNode} is a redirect (proxy) node for another ClassNode.
+     * A redirect node acts as a placeholder that forwards most method calls to its target ClassNode.
+     * This mechanism is used during compilation to defer class resolution until the actual target
+     * class is available. The actual target can be found using {@link #redirect()}.
+     *
+     * @return {@code true} if this node redirects to another ClassNode; {@code false} if it is a standalone node
+     * @see #redirect()
+     * @see #setRedirect(ClassNode)
+     * @see #isPrimaryClassNode()
+     */
     public boolean isRedirectNode() {
         return (redirect != null);
     }
 
     /**
-     * Sets this instance as proxy for the given {@code ClassNode}.
+     * Sets this instance as a proxy for the given {@code ClassNode}, enabling deferred class resolution.
+     * After calling this method, most operations on this ClassNode are forwarded to the target ClassNode.
+     * Redirect is only allowed for non-primary ClassNodes (see {@link #isPrimaryClassNode()}).
+     * If the target is {@code null}, the redirect is removed, making this node standalone again.
      *
-     * @param node the class to redirect to; if {@code null} the redirect is removed
+     * @param node the {@link ClassNode} to redirect to; if {@code null} the redirect is cleared
+     * @throws GroovyBugError if this is a primary ClassNode, as redirects are only for proxy nodes
      */
     public void setRedirect(ClassNode node) {
         if (isPrimaryNode) throw new GroovyBugError("tried to set a redirect for a primary ClassNode (" + getName() + "->" + node.getName() + ").");
@@ -275,7 +316,12 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @return {@code true} if this instance is a primary {@code ClassNode}
+     * Determines whether this ClassNode is a primary node or redirects to one.
+     * A primary ClassNode represents actual Groovy source code that will be compiled into bytecode.
+     * Returns {@code true} if this node is primary or if its redirect target (or array component type)
+     * is a primary ClassNode. Non-primary nodes are typically loaded via reflection.
+     *
+     * @return {@code true} if this is a primary ClassNode or redirects to one; {@code false} if it only represents a reflected class
      */
     public boolean isPrimaryClassNode() {
         return redirect().isPrimaryNode || (componentType != null && componentType.isPrimaryClassNode());
@@ -347,10 +393,27 @@ public class ClassNode extends AnnotatedNode {
         return name;
     }
 
+    /**
+     * Returns the unresolved super class of this {@link ClassNode}, using redirect resolution by default.
+     * The unresolved super class represents the raw class hierarchy without applying redirect
+     * resolution. Returns {@code null} if this class has no explicit superclass.
+     *
+     * @return the unresolved {@link ClassNode} representing the super class, or {@code null}
+     * @see #getUnresolvedSuperClass(boolean)
+     */
     public ClassNode getUnresolvedSuperClass() {
         return getUnresolvedSuperClass(true);
     }
 
+    /**
+     * Returns the unresolved super class of this {@link ClassNode} with optional redirect resolution.
+     * When {@code deref} is {@code true}, resolves redirects recursively; otherwise returns the
+     * raw superclass stored in this ClassNode. Resolving may trigger lazy class initialization.
+     *
+     * @param deref {@code true} to apply redirect resolution, {@code false} to return raw superclass
+     * @return the unresolved {@link ClassNode} representing the super class, or {@code null}
+     * @see #getUnresolvedSuperClass()
+     */
     public ClassNode getUnresolvedSuperClass(final boolean deref) {
         if (deref) {
             if (redirect != null)
@@ -360,14 +423,37 @@ public class ClassNode extends AnnotatedNode {
         return superClass;
     }
 
+    /**
+     * Sets the unresolved super class for this {@link ClassNode}.
+     * This method sets the raw superclass without applying any redirect resolution.
+     *
+     * @param superClass the {@link ClassNode} representing the super class, or {@code null}
+     */
     public void setUnresolvedSuperClass(final ClassNode superClass) {
         this.superClass = superClass;
     }
 
+    /**
+     * Returns the unresolved interfaces implemented by this {@link ClassNode}, using redirect resolution by default.
+     * The unresolved interfaces represent the raw interface hierarchy without applying redirect resolution.
+     * Returns an empty array if this class implements no interfaces.
+     *
+     * @return an array of {@link ClassNode} representing the interfaces, never {@code null}
+     * @see #getUnresolvedInterfaces(boolean)
+     */
     public ClassNode[] getUnresolvedInterfaces() {
         return getUnresolvedInterfaces(true);
     }
 
+    /**
+     * Returns the unresolved interfaces implemented by this {@link ClassNode} with optional redirect resolution.
+     * When {@code deref} is {@code true}, resolves redirects recursively; otherwise returns the
+     * raw interfaces stored in this ClassNode. Resolving may trigger lazy class initialization.
+     *
+     * @param deref {@code true} to apply redirect resolution, {@code false} to return raw interfaces
+     * @return an array of {@link ClassNode} representing the interfaces, never {@code null}
+     * @see #getUnresolvedInterfaces()
+     */
     public ClassNode[] getUnresolvedInterfaces(final boolean deref) {
         if (deref) {
             if (redirect != null)
@@ -384,18 +470,58 @@ public class ClassNode extends AnnotatedNode {
         return getName();
     }
 
+    /**
+     * Returns the fully-qualified name of this class after following any redirects.
+     * If this ClassNode is a proxy for another ClassNode, the name of the target is returned.
+     * The name remains consistent across all compilation phases for the redirected type.
+     *
+     * @return the fully-qualified class name (e.g., "com.example.MyClass" or "int[]")
+     */
     public String getName() {
         return redirect().name;
     }
 
+    /**
+     * Sets the fully-qualified name of this class, delegating to the redirect if one exists.
+     * Allows the class name to be updated after construction, which is occasionally used during
+     * AST transformation phases. Changes are propagated to the redirect target if present.
+     *
+     * @param name the new fully-qualified class name to set
+     * @return the name that was set
+     */
     public String setName(final String name) {
         return redirect != null ? redirect.setName(name) : (this.name = name);
     }
 
+    /**
+     * Returns the modifier flags for this {@link ClassNode}, combining visibility and behavioral modifiers.
+     * The flags are represented as a bitmask using ASM/bytecode conventions (e.g., {@code ACC_PUBLIC},
+     * {@code ACC_ABSTRACT}, {@code ACC_INTERFACE}, {@code ACC_ENUM}). This method follows redirects
+     * if present, ensuring the modifiers of the actual target ClassNode are returned.
+     * Individual modifiers can be tested using bitwise AND operations with the ASM Opcodes constants.
+     *
+     * @return the modifier flags as an integer bitmask
+     * @see #setModifiers(int)
+     * @see #isAbstract()
+     * @see #isInterface()
+     * @see #isEnum()
+     */
     public int getModifiers() {
         return redirect().modifiers;
     }
 
+    /**
+     * Sets the modifier flags for this {@link ClassNode}.
+     * The modifiers are a bitmask of ASM/bytecode convention flags (e.g., {@code ACC_PUBLIC},
+     * {@code ACC_ABSTRACT}, {@code ACC_INTERFACE}, {@code ACC_ENUM}). Calling this method
+     * directly on a redirect node updates the redirect's modifiers instead of this node's.
+     * Use this method to control visibility and structural attributes like abstractness or finality.
+     *
+     * @param modifiers the new modifier flags as a bitmask
+     * @see #getModifiers()
+     * @see #isAbstract()
+     * @see #isInterface()
+     */
     public void setModifiers(final int modifiers) {
         this.modifiers = modifiers;
     }
@@ -416,6 +542,15 @@ public class ClassNode extends AnnotatedNode {
         return sc;
     }
 
+    /**
+     * Sets the super class of this {@link ClassNode}. If this ClassNode has a redirect,
+     * the super class is set on the redirect instead. Updates the generics usage indicator
+     * if the super class uses generics and this is a primary ClassNode.
+     *
+     * @param superClass the {@link ClassNode} representing the super class, or {@code null}
+     * @see #getSuperClass()
+     * @see #isUsingGenerics()
+     */
     public void setSuperClass(final ClassNode superClass) {
         if (redirect != null) {
             redirect.setSuperClass(superClass);
@@ -452,6 +587,16 @@ public class ClassNode extends AnnotatedNode {
         }
     }
 
+    /**
+     * Sets the interfaces implemented by this {@link ClassNode}. If this ClassNode has a redirect,
+     * the interfaces are set on the redirect instead. Updates the generics usage indicator
+     * if any interface uses generics and this is a primary ClassNode.
+     *
+     * @param interfaces an array of {@link ClassNode} representing the interfaces, or {@code null}
+     * @see #getInterfaces()
+     * @see #addInterface(ClassNode)
+     * @see #isUsingGenerics()
+     */
     public void setInterfaces(final ClassNode[] interfaces) {
         if (redirect != null) {
             redirect.setInterfaces(interfaces);
@@ -531,6 +676,15 @@ public class ClassNode extends AnnotatedNode {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Adds an interface to the list of interfaces implemented by this {@link ClassNode}.
+     * If the interface is already implemented, this method has no effect. The interface
+     * is appended to the end of the current interfaces array.
+     *
+     * @param node the {@link ClassNode} representing the interface to add
+     * @see #getInterfaces()
+     * @see #setInterfaces(ClassNode[])
+     */
     public void addInterface(ClassNode node) {
         ClassNode[] interfaces = getInterfaces();
         for (ClassNode face : interfaces) {
@@ -561,6 +715,15 @@ public class ClassNode extends AnnotatedNode {
         }
     }
 
+    /**
+     * Adds a {@link FieldNode} to this ClassNode. The field is added to the end of the field list
+     * and its declaring class is set to this node's redirect target. The field is registered in
+     * the internal field index for fast lookup by name.
+     *
+     * @param node the {@link FieldNode} to add, must not be {@code null}
+     * @see #addFieldFirst(FieldNode)
+     * @see #removeField(String)
+     */
     public void addField(FieldNode node) {
         addField(node, true);
     }
@@ -582,28 +745,87 @@ public class ClassNode extends AnnotatedNode {
         r.fieldIndex.put(node.getName(), node);
     }
 
+    /**
+     * Creates and adds a {@link FieldNode} to this ClassNode with the specified properties.
+     * The field is initialized with the given name, modifiers, type, and optional initial value expression.
+     * This is a convenience method that creates a FieldNode and adds it via {@link #addField(FieldNode)}.
+     *
+     * @param name the name of the field
+     * @param modifiers the access modifiers for the field (e.g., ACC_PUBLIC, ACC_PRIVATE)
+     * @param type the {@link ClassNode} representing the field's type
+     * @param initialValue the initial value {@link Expression}, or {@code null} if no initializer
+     * @return the newly created {@link FieldNode}
+     * @see #addFieldFirst(String, int, ClassNode, Expression)
+     */
     public FieldNode addField(String name, int modifiers, ClassNode type, Expression initialValue) {
         FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
         addField(node);
         return node;
     }
 
+    /**
+     * Adds a {@link FieldNode} to this ClassNode at the beginning of the field list.
+     * This method is similar to {@link #addField(FieldNode)} but prepends the field instead of appending it,
+     * which can be useful when field declaration order matters.
+     *
+     * @param node the {@link FieldNode} to add first, must not be {@code null}
+     * @see #addField(FieldNode)
+     */
     public void addFieldFirst(FieldNode node) {
         addField(node, false);
     }
 
+    /**
+     * Creates and adds a {@link FieldNode} to the beginning of this ClassNode's field list
+     * with the specified properties. This is a convenience method for adding fields where
+     * declaration order is significant.
+     *
+     * @param name the name of the field
+     * @param modifiers the access modifiers for the field (e.g., ACC_PUBLIC, ACC_PRIVATE)
+     * @param type the {@link ClassNode} representing the field's type
+     * @param initialValue the initial value {@link Expression}, or {@code null} if no initializer
+     * @return the newly created {@link FieldNode}
+     * @see #addField(String, int, ClassNode, Expression)
+     */
     public FieldNode addFieldFirst(String name, int modifiers, ClassNode type, Expression initialValue) {
         FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
         addFieldFirst(node);
         return node;
     }
 
+    /**
+     * Adds a {@link PropertyNode} to this ClassNode. The property's associated field is also added
+     * to the field list, and the property itself is registered in the properties list. The property's
+     * declaring class is set to this node's redirect target.
+     *
+     * @param node the {@link PropertyNode} to add, must not be {@code null}
+     * @see #addField(FieldNode)
+     * @see #removeProperty(String)
+     * @see PropertyNode
+     */
     public void addProperty(PropertyNode node) {
         node.setDeclaringClass(redirect());
         addField(node.getField());
         getProperties().add(node);
     }
 
+    /**
+     * Creates and adds a {@link PropertyNode} to this ClassNode with the specified properties,
+     * or returns an existing property with the same name if one is already present. If a property
+     * with the given name exists, the method updates its getter block, setter block, and initial
+     * value expression if they are currently {@code null}. This prevents duplicate properties while
+     * allowing partial initialization across multiple calls.
+     *
+     * @param name the name of the property
+     * @param modifiers the access modifiers for the property (e.g., ACC_PUBLIC, ACC_PRIVATE)
+     * @param type the {@link ClassNode} representing the property's type
+     * @param initialValue the initial value {@link Expression}, or {@code null} if no initializer
+     * @param getterBlock the getter method's {@link Statement} body, or {@code null}
+     * @param setterBlock the setter method's {@link Statement} body, or {@code null}
+     * @return the newly created {@link PropertyNode} or the existing property if one with this name is already present
+     * @see #addProperty(PropertyNode)
+     * @see PropertyNode
+     */
     public PropertyNode addProperty(String name, int modifiers, ClassNode type, Expression initialValue, Statement getterBlock, Statement setterBlock) {
         for (PropertyNode pn : getProperties()) {
             if (pn.getName().equals(name)) {
@@ -624,6 +846,16 @@ public class ClassNode extends AnnotatedNode {
         return node;
     }
 
+    /**
+     * Adds a {@link MethodNode} to this ClassNode. The method is added to the internal methods list
+     * and registered by name in the methods map for fast lookup. The method's declaring class is set
+     * to this node's redirect target. This method does not check for duplicates.
+     *
+     * @param node the {@link MethodNode} to add, must not be {@code null}
+     * @see #removeMethod(MethodNode)
+     * @see #getMethod(String, Parameter[])
+     * @see MethodNode
+     */
     public void addMethod(MethodNode node) {
         ClassNode r = redirect();
         node.setDeclaringClass(r);
@@ -635,11 +867,21 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * If a method with the given name and parameters is already defined then it is returned
-     * otherwise the given method is added to this node. This method is useful for
-     * default method adding like getProperty() or invokeMethod() where there may already
-     * be a method defined in a class and so the default implementations should not be added
-     * if already present.
+     * Creates and adds a {@link MethodNode} to this ClassNode with the specified properties,
+     * but only if a method with the same name and parameter signature does not already exist.
+     * If a matching method is already declared in this class, it is returned without adding a new one.
+     * This method is useful for adding default method implementations (e.g., {@code getProperty()},
+     * {@code invokeMethod()}) where the class may already have a user-defined version.
+     *
+     * @param name the name of the method
+     * @param modifiers the access modifiers (e.g., ACC_PUBLIC, ACC_STATIC)
+     * @param returnType the {@link ClassNode} representing the return type
+     * @param parameters array of {@link Parameter}s, or an empty array for no parameters
+     * @param exceptions array of exception {@link ClassNode}s that the method declares, or an empty array
+     * @param code the method body as a {@link Statement}, or {@code null}
+     * @return the newly created {@link MethodNode} or an existing method if one matches the name and parameters
+     * @see #addMethod(MethodNode)
+     * @see #getDeclaredMethod(String, Parameter[])
      */
     public MethodNode addMethod(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         MethodNode other = getDeclaredMethod(name, parameters);
@@ -741,7 +983,14 @@ public class ClassNode extends AnnotatedNode {
     //--------------------------------------------------------------------------
 
     /**
-     * @return the fields associated with this {@code ClassNode}
+     * Returns all {@link FieldNode}s declared in this ClassNode, including inherited fields.
+     * If this node is a proxy (has a redirect), the call is forwarded to the redirect target.
+     * The returned list includes fields from this class only, not from super classes.
+     *
+     * @return an unmodifiable or mutable list of {@link FieldNode}s associated with this ClassNode;
+     *         an empty list if this class declares no fields
+     * @see #getDeclaredField(String)
+     * @see FieldNode
      */
     public List<FieldNode> getFields() {
         if (redirect != null)
@@ -752,6 +1001,16 @@ public class ClassNode extends AnnotatedNode {
         return fields;
     }
 
+    /**
+     * Returns all {@link PropertyNode}s declared in this ClassNode. If this node is a proxy
+     * (has a redirect), the call is forwarded to the redirect target. Properties are distinct
+     * from fields and represent a higher-level abstraction with getter/setter semantics.
+     *
+     * @return a mutable list of {@link PropertyNode}s associated with this ClassNode;
+     *         an empty list if this class declares no properties
+     * @see #getProperty(String)
+     * @see PropertyNode
+     */
     public List<PropertyNode> getProperties() {
         if (redirect != null)
             return redirect.getProperties();
@@ -760,21 +1019,58 @@ public class ClassNode extends AnnotatedNode {
         return properties;
     }
 
+    /**
+     * Returns the internal field index map for fast field lookup by name. This method is deprecated
+     * as field access should go through {@link #getField(String)} or {@link #getDeclaredField(String)}.
+     * The field index is an internal implementation detail and may change in future versions.
+     *
+     * @return a map from field name to {@link FieldNode}, or {@code null} if no field index exists
+     * @deprecated for removal since 5.0.0; use {@link #getField(String)} or {@link #getDeclaredField(String)} instead
+     * @see #getField(String)
+     * @see #getDeclaredField(String)
+     */
     @Deprecated(forRemoval = true, since = "5.0.0")
     public Map<String, FieldNode> getFieldIndex() {
         return fieldIndex;
     }
 
+    /**
+     * Tests whether a property with the given name exists in this ClassNode.
+     * This method searches through the properties list, comparing by name.
+     *
+     * @param name the name of the property to check
+     * @return {@code true} if a property with the given name exists, {@code false} otherwise
+     * @see #getProperty(String)
+     * @see #getProperties()
+     */
     public boolean hasProperty(String name) {
         return getProperties().stream().map(PropertyNode::getName).anyMatch(name::equals);
     }
 
+    /**
+     * Finds a {@link PropertyNode} matching the given name in this ClassNode.
+     * This method searches through the properties list, comparing by name. Only direct
+     * properties of this class are searched, not inherited ones.
+     *
+     * @param name the name of the property to find
+     * @return the {@link PropertyNode} with the given name, or {@code null} if not found
+     * @see #hasProperty(String)
+     * @see #getProperties()
+     */
     public PropertyNode getProperty(String name) {
         return getProperties().stream().filter(pn -> pn.getName().equals(name)).findFirst().orElse(null);
     }
 
     /**
-     * @return the methods associated with this {@code ClassNode}
+     * Returns all {@link MethodNode}s declared in this ClassNode, including inherited and synthetic methods.
+     * If this node is a proxy (has a redirect), the call is forwarded to the redirect target.
+     * This list includes constructors and all instance and static methods defined for this class.
+     *
+     * @return a list of all {@link MethodNode}s associated with this ClassNode;
+     *         an empty list if this class declares no methods
+     * @see #getDeclaredMethods(String)
+     * @see #getMethod(String, Parameter[])
+     * @see MethodNode
      */
     public List<MethodNode> getMethods() {
         if (redirect != null)
@@ -784,17 +1080,33 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @return the abstract methods associated with this {@code ClassNode}
+     * Returns a list of all abstract {@link MethodNode}s declared in this ClassNode.
+     * Abstract methods are obtained from the declared methods map and filtered to return only
+     * those with the abstract modifier set. This includes abstract methods from superclasses
+     * and implemented interfaces.
+     *
+     * @return a list of abstract {@link MethodNode}s (possibly empty);
+     *         returns an empty list if there are no abstract methods
+     * @see #getDeclaredMethodsMap()
+     * @see MethodNode#isAbstract()
      */
     public List<MethodNode> getAbstractMethods() {
         return getDeclaredMethodsMap().values().stream()
             .filter(MethodNode::isAbstract).collect(toList());
     }
 
-    public List<MethodNode> getAllDeclaredMethods() {
-        return new ArrayList<>(getDeclaredMethodsMap().values());
-    }
-
+    /**
+     * Returns all declared {@link MethodNode}s from this ClassNode and its superclasses and interfaces.
+     * The methods are collected in a single map with method type descriptors as keys, allowing
+     * resolution of method overrides across the inheritance hierarchy. This method provides
+     * a complete view of all accessible methods.
+     *
+     * @return a map from method type descriptor (name and signature) to {@link MethodNode};
+     *         includes methods from superclasses and interfaces
+     * @see #getDeclaredMethods(String)
+     * @see #getMethod(String, Parameter[])
+     * @see MethodNode#getTypeDescriptor()
+     */
     public Map<String, MethodNode> getDeclaredMethodsMap() {
         Map<String, MethodNode> result = ClassNodeUtils.getDeclaredMethodsFromSuper(this);
         ClassNodeUtils.addDeclaredMethodsFromInterfaces(this, result);
@@ -803,6 +1115,19 @@ public class ClassNode extends AnnotatedNode {
             result.put(method.getTypeDescriptor(), method);
         }
         return result;
+    }
+
+    /**
+     * Returns all declared {@link MethodNode}s from this ClassNode and its superclasses and interfaces
+     * as a list. This is a convenience method that collects all values from the declared methods map
+     * into a single list.
+     *
+     * @return a list of all {@link MethodNode}s declared in this class, superclasses, and interfaces;
+     *         an empty list if no methods are found
+     * @see #getDeclaredMethodsMap()
+     */
+    public List<MethodNode> getAllDeclaredMethods() {
+        return new ArrayList<>(getDeclaredMethodsMap().values());
     }
 
     public List<ConstructorNode> getDeclaredConstructors() {
@@ -827,24 +1152,46 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
+     * Tests whether a method with the given name and parameter signature exists in this class
+     * or any of its superclasses. This is a convenience method for checking method existence.
+     *
+     * @param name the name of the method to check
+     * @param parameters an array of {@link Parameter}s representing the method signature,
+     *                   or {@code null}/{@code empty} for methods with no parameters
+     * @return {@code true} if a method with the given name and parameters exists, {@code false} otherwise
      * @see #getMethod(String, Parameter[])
+     * @see #hasDeclaredMethod(String, Parameter[])
      */
     public boolean hasMethod(String name, Parameter[] parameters) {
         return (getMethod(name, parameters) != null);
     }
 
     /**
+     * Tests whether a method with the given name and parameter signature is declared directly
+     * in this class (not inherited from a superclass). This is a convenience method for checking
+     * method existence.
+     *
+     * @param name the name of the method to check
+     * @param parameters an array of {@link Parameter}s representing the method signature,
+     *                   or {@code null}/{@code empty} for methods with no parameters
+     * @return {@code true} if a method with the given name and parameters is declared in this class,
+     *         {@code false} otherwise
      * @see #getDeclaredMethod(String, Parameter[])
+     * @see #hasMethod(String, Parameter[])
      */
     public boolean hasDeclaredMethod(String name, Parameter[] parameters) {
         return (getDeclaredMethod(name, parameters) != null);
     }
 
     /**
-     * Finds a field matching the given name in this class.
+     * Finds a {@link FieldNode} matching the given name declared directly in this class.
+     * This method does not search superclasses; to include inherited fields, use {@link #getField(String)}.
+     * If this node is a proxy (has a redirect), the call is forwarded to the redirect target.
      *
-     * @param name the name of the field of interest
-     * @return the method matching the given name and parameters or null
+     * @param name the name of the field to find
+     * @return the {@link FieldNode} with the given name declared in this class, or {@code null} if not found
+     * @see #getField(String)
+     * @see #getFields()
      */
     public FieldNode getDeclaredField(String name) {
         if (redirect != null)
@@ -854,10 +1201,15 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Finds a field matching the given name in this class or a parent class.
+     * Finds a {@link FieldNode} matching the given name in this class or any of its superclasses.
+     * This method searches the inheritance hierarchy starting from this ClassNode and moving up
+     * through superclasses until a field with the matching name is found.
      *
-     * @param name the name of the field of interest
-     * @return the method matching the given name and parameters or null
+     * @param name the name of the field to find
+     * @return the {@link FieldNode} with the given name, or {@code null} if not found in this class
+     *         or any superclass
+     * @see #getDeclaredField(String)
+     * @see #getFields()
      */
     public FieldNode getField(String name) {
         ClassNode node = this;
@@ -876,10 +1228,15 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Returns a list of all methods with the given name from this class.
+     * Returns a list of all {@link MethodNode}s with the given name declared directly in this class.
+     * This method does not search superclasses; to include inherited methods, use {@link #getMethods(String)}.
+     * If this node is a proxy (has a redirect), the call is forwarded to the redirect target.
+     * The list may be empty if no methods with the given name are declared in this class.
      *
-     * @return method list (possibly empty)
+     * @param name the name of the methods to find
+     * @return a list of {@link MethodNode}s with the given name (possibly empty)
      * @see #getMethods(String)
+     * @see #getDeclaredMethod(String, Parameter[])
      */
     public List<MethodNode> getDeclaredMethods(String name) {
         if (redirect != null)
@@ -889,11 +1246,15 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Returns a list of all methods with the given name from this class and its
-     * super class(es).
+     * Returns a list of all {@link MethodNode}s with the given name from this class and its superclasses.
+     * This method searches the inheritance hierarchy starting from this ClassNode and moving up
+     * through superclasses, collecting all methods with matching names. The list may be empty if
+     * no methods with the given name are found in the class hierarchy.
      *
-     * @return method list (possibly empty)
+     * @param name the name of the methods to find
+     * @return a list of {@link MethodNode}s with the given name from this class and its superclasses (possibly empty)
      * @see #getDeclaredMethods(String)
+     * @see #getMethod(String, Parameter[])
      */
     public List<MethodNode> getMethods(String name) {
         List<MethodNode> list = new ArrayList<>(4);
@@ -906,9 +1267,17 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Finds a method matching the given name and parameters in this class.
+     * Finds a {@link MethodNode} matching the given name and parameter signature declared directly
+     * in this class. This method does not search superclasses; to include inherited methods, use
+     * {@link #getMethod(String, Parameter[])}. Parameter matching is done by comparing parameter
+     * types using the {@link #parametersEqual(Parameter[], Parameter[])} method.
      *
-     * @return method node or null
+     * @param name the name of the method to find
+     * @param parameters an array of {@link Parameter}s representing the method signature,
+     *                   or {@code null}/{@code empty} for methods with no parameters
+     * @return the {@link MethodNode} with the given name and parameters, or {@code null} if not found
+     * @see #getMethod(String, Parameter[])
+     * @see #getDeclaredMethods(String)
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
         boolean zeroParameters = !asBoolean(parameters);
@@ -923,10 +1292,18 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * Finds a method matching the given name and parameters in this class
-     * or any super class.
+     * Finds a {@link MethodNode} matching the given name and parameter signature in this class
+     * or any of its superclasses. This method searches the inheritance hierarchy starting from
+     * this ClassNode. Parameter matching is done by comparing parameter types using the
+     * {@link #parametersEqual(Parameter[], Parameter[])} method.
      *
-     * @return method node or null
+     * @param name the name of the method to find
+     * @param parameters an array of {@link Parameter}s representing the method signature,
+     *                   or {@code null}/{@code empty} for methods with no parameters
+     * @return the {@link MethodNode} with the given name and parameters, or {@code null} if not found
+     *         in this class or any superclass
+     * @see #getDeclaredMethod(String, Parameter[])
+     * @see #getMethods(String)
      */
     public MethodNode getMethod(String name, Parameter[] parameters) {
         boolean zeroParameters = !asBoolean(parameters);
@@ -965,7 +1342,14 @@ public class ClassNode extends AnnotatedNode {
     }
 
     /**
-     * @return {@code true} if this type implements {@code GroovyObject}
+     * Returns whether this {@link ClassNode} represents a type that implements the {@code GroovyObject} interface.
+     * GroovyObject is the core interface that all Groovy objects implement, providing methods like
+     * {@code getProperty()}, {@code setProperty()}, and {@code invokeMethod()} for dynamic behavior.
+     * This method checks the class hierarchy to determine if GroovyObject is in the list of implemented interfaces.
+     *
+     * @return {@code true} if this type directly or indirectly implements {@code GroovyObject}; {@code false} otherwise
+     * @see #implementsInterface(ClassNode)
+     * @see #isDerivedFrom(ClassNode)
      */
     public boolean isDerivedFromGroovyObject() {
         return implementsInterface(ClassHelper.GROOVY_OBJECT_TYPE);
@@ -1048,10 +1432,34 @@ public class ClassNode extends AnnotatedNode {
         return ParameterUtils.parametersEqual(a, b);
     }
 
+    /**
+     * Finds a getter {@link MethodNode} matching the given name, optionally searching superclasses.
+     * A getter method is defined as a method with no parameters that returns a non-void type.
+     * For methods starting with "is", the return type must be boolean. Synthetic and bridge methods
+     * are disregarded in favor of the most specific real getter.
+     *
+     * @param getterName the name of the getter method to find
+     * @return the getter {@link MethodNode}, or {@code null} if not found
+     * @see #getGetterMethod(String, boolean)
+     * @see #getSetterMethod(String)
+     */
     public MethodNode getGetterMethod(String getterName) {
         return getGetterMethod(getterName, true);
     }
 
+    /**
+     * Finds a getter {@link MethodNode} matching the given name, optionally searching superclasses
+     * and interfaces. A getter method is defined as a method with no parameters that returns a non-void type.
+     * For methods starting with "is", the return type must be boolean. Synthetic and bridge methods
+     * are disregarded in favor of the most specific real getter.
+     *
+     * @param getterName the name of the getter method to find
+     * @param searchSupers if {@code true}, searches superclasses and interfaces for the getter;
+     *                     if {@code false}, searches only methods declared in this class
+     * @return the getter {@link MethodNode}, or {@code null} if not found
+     * @see #getSetterMethod(String, boolean)
+     * @see MethodNode
+     */
     public MethodNode getGetterMethod(String getterName, boolean searchSupers) {
         MethodNode getterMethod = null;
 
@@ -1106,10 +1514,32 @@ public class ClassNode extends AnnotatedNode {
         return getterMethod;
     }
 
+    /**
+     * Finds a setter {@link MethodNode} matching the given name, optionally searching superclasses.
+     * A setter method is defined as a method with exactly one parameter that returns void.
+     * This method searches from this class up the inheritance hierarchy until a matching setter is found.
+     *
+     * @param setterName the name of the setter method to find
+     * @return the setter {@link MethodNode}, or {@code null} if not found
+     * @see #getSetterMethod(String, boolean)
+     * @see #getGetterMethod(String)
+     */
     public MethodNode getSetterMethod(String setterName) {
         return getSetterMethod(setterName, true);
     }
 
+    /**
+     * Finds a setter {@link MethodNode} matching the given name. A setter method is defined as a method
+     * with exactly one parameter. If {@code voidOnly} is {@code true}, the method must also return void.
+     * The method searches this class and superclasses for the first matching setter.
+     *
+     * @param setterName the name of the setter method to find
+     * @param voidOnly if {@code true}, only returns setter methods that return void;
+     *                 if {@code false}, accepts setters that return any type
+     * @return the setter {@link MethodNode}, or {@code null} if not found
+     * @see #getGetterMethod(String, boolean)
+     * @see MethodNode
+     */
     public MethodNode getSetterMethod(String setterName, boolean voidOnly) {
         for (MethodNode method : getDeclaredMethods(setterName)) {
             if (setterName.equals(method.getName())
@@ -1250,6 +1680,16 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
             index.put(newName, index.remove(oldName));
     }
 
+    /**
+     * Removes the {@link FieldNode} with the given name from this ClassNode.
+     * This method removes the field from the internal field list and index.
+     * If this node is a proxy (has a redirect), the operation is performed on the redirect target.
+     *
+     * @param oldName the name of the field to remove
+     * @see #addField(FieldNode)
+     * @see #getField(String)
+     * @see FieldNode
+     */
     public void removeField(String oldName) {
         ClassNode r = redirect();
         var index = r.fieldIndex;
@@ -1257,6 +1697,16 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
             r.fields.remove(index.remove(oldName));
     }
 
+    /**
+     * Removes the given {@link MethodNode} from this ClassNode. The method is removed from the
+     * internal methods list and the methods map. If this node is a proxy (has a redirect),
+     * the operation is performed on the redirect target.
+     *
+     * @param node the {@link MethodNode} to remove
+     * @see #addMethod(MethodNode)
+     * @see #getMethod(String, Parameter[])
+     * @see MethodNode
+     */
     public void removeMethod(MethodNode node) {
         ClassNode r = redirect();
         if (!r.methodsList.isEmpty()) {
@@ -1271,6 +1721,22 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Compares this {@link ClassNode} with another object for equality.
+     * Two ClassNodes are considered equal if:
+     * <ul>
+     * <li>They are the same object (identity check)</li>
+     * <li>Both are ClassNode instances and either have identical redirects, identical component types (for arrays),
+     * or have matching text representations</li>
+     * </ul>
+     * If this ClassNode is a redirect node, the comparison is delegated to the redirect target.
+     * Array ClassNodes are compared based on their component types.
+     *
+     * @param that the object to compare with this ClassNode
+     * @return {@code true} if the objects represent the same class; {@code false} otherwise
+     * @see #hashCode()
+     * @see #redirect()
+     */
     @Override
     public boolean equals(Object that) {
         if (that == this) return true;
@@ -1280,16 +1746,44 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return ((ClassNode) that).getText().equals(getText()); // arrays could be "T[]" or "[LT;"
     }
 
+    /**
+     * Returns the hash code for this {@link ClassNode}.
+     * The hash code is based on the redirect's hash code if a redirect exists,
+     * or the text representation's hash code if this is a primary or array ClassNode.
+     * This ensures that equal ClassNodes (by {@link #equals(Object)}) have equal hash codes,
+     * maintaining the hash code contract for use in hash-based collections.
+     *
+     * @return a hash code value for this ClassNode
+     * @see #equals(Object)
+     */
     @Override
-    public     int hashCode() {
+    public  int hashCode() {
         return (redirect != null ? redirect.hashCode() : getText().hashCode());
     }
 
+    /**
+     * Returns a string representation of this ClassNode for debugging and display purposes.
+     * For array types, appends "[]" to the component type's string representation.
+     * For generic types, includes generic type parameters (e.g., "List<String>").
+     * If this is a redirect node, includes arrow notation showing the redirect target.
+     *
+     * @return a string representation of this ClassNode, including fully-qualified name and type information
+     */
     @Override
     public  String toString() {
         return toString(true);
     }
 
+    /**
+     * Returns a string representation of this ClassNode with optional redirect information.
+     * For array types, appends "[]" to the component type's string representation.
+     * For generic types, includes generic type parameters (e.g., "List<String>").
+     * If {@code showRedirect} is {@code true} and this is a redirect node, includes arrow notation
+     * showing the redirect target; otherwise the redirect information is omitted.
+     *
+     * @param showRedirect if {@code true}, includes redirect information in the output; if {@code false}, omits it
+     * @return a string representation of this ClassNode
+     */
     public  String toString(boolean showRedirect) {
         if (isArray()) {
             return getComponentType().toString(showRedirect) + "[]";
@@ -1351,18 +1845,57 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns whether this {@link ClassNode} represents an abstract class.
+     * A class is abstract if the {@code ACC_ABSTRACT} modifier flag is set in its modifiers.
+     * Abstract classes cannot be instantiated directly; they serve as base types for subclasses.
+     * This method checks the actual modifier bits, independent of the source code syntax.
+     *
+     * @return {@code true} if this class has the abstract modifier set; {@code false} otherwise
+     * @see #getModifiers()
+     * @see #setModifiers(int)
+     */
     public boolean isAbstract() {
         return (getModifiers() & ACC_ABSTRACT) != 0;
     }
 
+    /**
+     * Returns whether this {@link ClassNode} represents an interface type.
+     * A class is an interface if the {@code ACC_INTERFACE} modifier flag is set in its modifiers.
+     * Interfaces define contracts for implementing classes without providing implementation details.
+     * Note that annotations are also interfaces (with the {@code ACC_ANNOTATION} flag also set).
+     *
+     * @return {@code true} if this class is an interface; {@code false} if it is a regular class
+     * @see #isAnnotationDefinition()
+     * @see #getModifiers()
+     */
     public boolean isInterface() {
         return (getModifiers() & ACC_INTERFACE) != 0;
     }
 
+    /**
+     * Returns whether this {@link ClassNode} represents an annotation type (annotation definition).
+     * Annotation types are always interfaces with both the {@code ACC_INTERFACE} and {@code ACC_ANNOTATION}
+     * modifier flags set. They define metadata that can be attached to program elements.
+     * All annotation types are interfaces but not all interfaces are annotations.
+     *
+     * @return {@code true} if this class is an annotation type; {@code false} otherwise
+     * @see #isInterface()
+     * @see #getModifiers()
+     */
     public boolean isAnnotationDefinition() {
         return isInterface() && (getModifiers() & ACC_ANNOTATION) != 0;
     }
 
+    /**
+     * Returns whether this {@link ClassNode} represents an enumeration type.
+     * An enum class has the {@code ACC_ENUM} modifier flag set in its modifiers.
+     * Enumerations define a fixed set of named constants that can be iterated over at compile time.
+     *
+     * @return {@code true} if this class is an enumeration; {@code false} otherwise
+     * @see #getModifiers()
+     * @see #setModifiers(int)
+     */
     public boolean isEnum() {
         return (getModifiers() & ACC_ENUM) != 0;
     }
@@ -1390,6 +1923,14 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return !getAnnotations(ClassHelper.SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();
     }
 
+    /**
+     * Determines whether this ClassNode has been resolved to an actual Java class.
+     * A ClassNode is considered resolved if it represents a real {@link Class} object loaded at runtime,
+     * or if it has been redirected to a resolved ClassNode, or if it represents an array of resolved component types.
+     * During early compilation phases, unresolved ClassNodes may reference types that haven't been loaded yet.
+     *
+     * @return {@code true} if this ClassNode has been resolved to a real class; {@code false} if it still represents an unresolved reference
+     */
     public boolean isResolved() {
         if (clazz != null) return true;
         if (redirect != null) return redirect.isResolved();
@@ -1414,15 +1955,19 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         throw new GroovyBugError("ClassNode#getTypeClass for " + getName() + " called before the type class is set");
     }
 
-    //
-
+    /**
+     * Determines whether this ClassNode represents an array type.
+     * A ClassNode is an array if its component type has been set. The component type represents
+     * the element type of the array (e.g., "int" for "int[]", or "String" for "String[]").
+     *
+     * @return {@code true} if this ClassNode represents an array type; {@code false} if it represents a scalar type
+     */
     public boolean isArray() {
         return (componentType != null);
     }
 
     /**
-     * Returns a {@code ClassNode} representing an array of the type represented
-     * by this.
+     * Returns a {@code ClassNode} representing an array of the type represented by this.
      */
     public ClassNode makeArray() {
         ClassNode node;
@@ -1439,12 +1984,26 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return node;
     }
 
+    /**
+     * Returns the component type of this array ClassNode.
+     * If this ClassNode does not represent an array type, returns {@code null}.
+     * For array types, this returns the {@link ClassNode} representing the element type
+     * (e.g., for "String[]", returns the ClassNode for "String").
+     *
+     * @return the {@link ClassNode} representing the array's element type, or {@code null} if not an array
+     */
     public ClassNode getComponentType() {
         return componentType;
     }
 
-    //
-
+    /**
+     * Returns the outer class of this {@link ClassNode}, or {@code null} if this is not an inner class.
+     * If this ClassNode has a redirect, returns the outer class from the redirect.
+     * This method traverses the class hierarchy upward to find the immediately enclosing class.
+     *
+     * @return the outer {@link ClassNode}, or {@code null} if not an inner class
+     * @see #getOuterClasses()
+     */
     public ClassNode getOuterClass() {
         if (redirect != null) {
             return redirect.getOuterClass();
@@ -1452,6 +2011,15 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return null;
     }
 
+    /**
+     * Returns a list of all outer classes enclosing this {@link ClassNode} in hierarchical order.
+     * The innermost outer class appears first in the list. Returns an empty list if this is not
+     * an inner class. If this ClassNode has a redirect, the list is derived from the redirect.
+     *
+     * @return a {@link List} of enclosing {@link ClassNode}s in order from innermost to outermost,
+     *         never {@code null}
+     * @see #getOuterClass()
+     */
     public List<ClassNode> getOuterClasses() {
         ClassNode outer = getOuterClass();
         if (outer == null) {
@@ -1475,10 +2043,16 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return null;
     }
 
-    //
-
     private List<InnerClassNode> innerClasses;
 
+    /**
+     * Adds an inner class to this {@link ClassNode}. If this ClassNode has a redirect,
+     * the inner class is added to the redirect instead. Inner classes are lazily initialized
+     * in a list and become visible through the iteration provided by {@link #getInnerClasses()}.
+     *
+     * @param innerClass the {@link InnerClassNode} to add
+     * @see #getInnerClasses()
+     */
     void addInnerClass(InnerClassNode innerClass) {
         if (redirect != null) {
             redirect.addInnerClass(innerClass);
@@ -1490,7 +2064,12 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
     }
 
     /**
-     * @return iterator of inner classes defined inside this one
+     * Returns an iterator over the inner classes defined within this {@link ClassNode}.
+     * The iterator is backed by an unmodifiable view of the inner classes list.
+     * Returns an empty iterator if this class has no inner classes defined.
+     *
+     * @return an {@link Iterator} of {@link InnerClassNode}s defined in this class, never {@code null}
+     * @see #addInnerClass(InnerClassNode)
      */
     public Iterator<InnerClassNode> getInnerClasses() {
         if (innerClasses == null) return Collections.emptyIterator();
@@ -1502,12 +2081,25 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
     private MethodNode enclosingMethod;
 
     /**
-     * The enclosing method of local inner class.
+     * Returns the enclosing {@link MethodNode} of this local inner class, or {@code null}
+     * if this is not a local inner class. Local inner classes are those declared within method bodies.
+     * If this ClassNode has a redirect, returns the enclosing method from the redirect.
+     *
+     * @return the {@link MethodNode} enclosing this class, or {@code null}
+     * @see #setEnclosingMethod(MethodNode)
+     * @see #getOuterClass()
      */
     public MethodNode getEnclosingMethod() {
         return redirect().enclosingMethod;
     }
 
+    /**
+     * Sets the enclosing {@link MethodNode} for this local inner class.
+     * This is typically called when processing classes declared within method bodies.
+     *
+     * @param enclosingMethod the {@link MethodNode} enclosing this class, or {@code null}
+     * @see #getEnclosingMethod()
+     */
     public void setEnclosingMethod(MethodNode enclosingMethod) {
         this.enclosingMethod = enclosingMethod;
     }
@@ -1528,10 +2120,29 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         }
     }
 
+    /**
+     * Returns the generic type parameters for this {@link ClassNode}, or {@code null} if none are defined.
+     * Generic types represent type parameters and their bounds as declared in class definitions.
+     * For example, in {@code class List<T>}, the {@link GenericsType} array would contain a single
+     * element representing the type parameter {@code T}.
+     *
+     * @return an array of {@link GenericsType} representing the type parameters, or {@code null}
+     * @see #setGenericsTypes(GenericsType[])
+     * @see #isUsingGenerics()
+     */
     public GenericsType[] getGenericsTypes() {
         return genericsTypes;
     }
 
+    /**
+     * Sets the generic type parameters for this {@link ClassNode}.
+     * Setting generics types updates the generics usage indicator for this class.
+     * This method is typically called during compiler phases when type information becomes available.
+     *
+     * @param genericsTypes an array of {@link GenericsType} representing the type parameters, or {@code null}
+     * @see #getGenericsTypes()
+     * @see #isUsingGenerics()
+     */
     public void setGenericsTypes(GenericsType[] genericsTypes) {
         usesGenerics = usesGenerics || genericsTypes != null;
         this.genericsTypes = genericsTypes;
@@ -1562,44 +2173,95 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         this.usesGenerics = usesGenerics;
     }
 
-    //
-
     private boolean script;
 
+    /**
+     * Returns whether this {@link ClassNode} represents a Groovy script body.
+     * A script is a special class that executes at the top level rather than requiring instantiation.
+     * This method checks both the direct flag and whether the class derives from {@code Script}.
+     * During compilation, script bodies are compiled into classes that extend the {@code Script} base class.
+     *
+     * @return {@code true} if this class represents a script; {@code false} otherwise
+     * @see #setScript(boolean)
+     * @see #isScriptBody()
+     * @see #isDerivedFrom(ClassNode)
+     */
     public boolean isScript() {
         return redirect().script || isDerivedFrom(ClassHelper.SCRIPT_TYPE);
     }
 
+    /**
+     * Marks this {@link ClassNode} as a script or removes the script flag.
+     * Setting this to {@code true} indicates that this class represents a Groovy script
+     * that should be executed at the top level. This is used internally during compilation
+     * to identify script classes that need special treatment (e.g., extending the Script base class).
+     *
+     * @param script {@code true} to mark as a script; {@code false} to unmark
+     * @see #isScript()
+     * @see #setScriptBody(boolean)
+     */
     public void setScript(boolean script) {
         this.script = script;
     }
 
-    //
-
     private boolean scriptBody;
 
     /**
-     * @return {@code true} if this inner class or closure was declared inside a script body
+     * Returns whether this inner class or closure was declared inside a script body.
+     * This flag distinguishes between inner classes/closures defined within a script's top-level code
+     * versus those defined within regular class methods. Script body context affects how local variable
+     * access and scoping rules are applied. This method follows redirects if present.
+     *
+     * @return {@code true} if this inner class or closure is inside a script body; {@code false} otherwise
+     * @see #setScriptBody(boolean)
+     * @see #isScript()
+     * @see #isStaticClass()
      */
     public boolean isScriptBody() {
         return redirect().scriptBody;
     }
 
+    /**
+     * Marks this inner class or closure as being declared inside a script body.
+     * When set to {@code true}, indicates that the class definition occurs at the top level
+     * of a Groovy script (outside of any method or class definition). This affects variable
+     * scoping and how the compiler generates code for accessing enclosing scope variables.
+     * Typically used by the compiler during script class generation.
+     *
+     * @param scriptBody {@code true} to mark as defined in script body; {@code false} otherwise
+     * @see #isScriptBody()
+     * @see #setStaticClass(boolean)
+     */
     public void setScriptBody(boolean scriptBody) {
         this.scriptBody = scriptBody;
     }
 
-    //
-
     private boolean staticClass;
 
     /**
-     * Is this class declared in a static method (such as a closure / inner class declared in a static method)
+     * Returns whether this inner class or closure was declared inside a static method context.
+     * This flag identifies classes that are nested within static methods (as opposed to instance methods
+     * or top-level definitions). Inner classes in static contexts have different scoping rules and cannot
+     * access instance variables of the enclosing class. This method follows redirects if present.
+     *
+     * @return {@code true} if this class is declared in a static method; {@code false} otherwise
+     * @see #setStaticClass(boolean)
+     * @see #isScriptBody()
      */
     public boolean isStaticClass() {
         return redirect().staticClass;
     }
 
+    /**
+     * Marks this inner class or closure as being declared in a static method context.
+     * When set to {@code true}, indicates that this class definition occurs within a static method,
+     * affecting how the compiler generates access to enclosing class members. Static inner classes
+     * have restricted access to the enclosing class (only to static members).
+     *
+     * @param staticClass {@code true} to mark as defined in a static context; {@code false} otherwise
+     * @see #isStaticClass()
+     * @see #setScriptBody(boolean)
+     */
     public void setStaticClass(boolean staticClass) {
         this.staticClass = staticClass;
     }
@@ -1620,18 +2282,50 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
         return syntheticPublic;
     }
 
+    /**
+     * Marks this {@link ClassNode} as having synthetic public visibility.
+     * When set to {@code true}, indicates that this class was implicitly made public by Groovy's
+     * default visibility rule rather than having an explicit {@code public} modifier in the source code.
+     * This distinction is important for AST transformations that need to preserve the original intent
+     * regarding visibility and access control.
+     *
+     * @param syntheticPublic {@code true} if public was added by the compiler; {@code false} if explicitly declared
+     * @see #isSyntheticPublic()
+     * @see #getModifiers()
+     */
     public void setSyntheticPublic(boolean syntheticPublic) {
         this.syntheticPublic = syntheticPublic;
     }
 
-    //
-
     private boolean annotated;
 
+    /**
+     * Returns whether this {@link ClassNode} has been marked as annotated.
+     * This flag is set to {@code true} when annotations are added to the class via
+     * {@link #addAnnotation(AnnotationNode)} or related methods. It serves as a quick
+     * indicator that the class carries metadata annotations, without requiring iteration
+     * through the full annotations list. The flag does not distinguish between different
+     * types of annotations (type annotations, method annotations, etc.).
+     *
+     * @return {@code true} if this class has been marked as having annotations; {@code false} otherwise
+     * @see #setAnnotated(boolean)
+     * @see #getAnnotations()
+     */
     public boolean isAnnotated() {
         return this.annotated;
     }
 
+    /**
+     * Marks this {@link ClassNode} as having annotations attached to it.
+     * This flag is used internally by the compiler to track whether annotations have been added
+     * to the class. It should be set to {@code true} when annotations are added and may be used
+     * as an optimization to avoid scanning the annotations list for empty cases.
+     *
+     * @param annotated {@code true} to mark as having annotations; {@code false} to clear the flag
+     * @see #isAnnotated()
+     * @see #addAnnotation(AnnotationNode)
+     * @see #addTypeAnnotation(AnnotationNode)
+     */
     public void setAnnotated(boolean annotated) {
         this.annotated = annotated;
     }

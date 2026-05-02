@@ -1522,7 +1522,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
      * HTMLEditorKit scales FontSize values up by ~4/3 (pt→px at 96/72);
      * compensate so the output pane visually matches the input pane.
      *
-     *  @since 6.0.0
+     * @since 6.0.0
      */
     static int outputFontSizeFor(int inputFontSize) {
         Math.max(1, Math.round(inputFontSize * 0.75f) as int)
