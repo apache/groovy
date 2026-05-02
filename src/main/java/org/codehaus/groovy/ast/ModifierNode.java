@@ -44,7 +44,10 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.VOLATILE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 
 /**
- * Represents a modifier
+ * Represents a modifier keyword or annotation in Groovy source code.
+ * ModifierNode wraps language modifiers (public, private, static, final, etc.)
+ * and treats annotations as pseudo-modifiers for consistent AST handling.
+ * Each modifier maps to an ASM opcode for bytecode generation.
  */
 public class ModifierNode extends ASTNode {
     private Integer type;
@@ -53,7 +56,18 @@ public class ModifierNode extends ASTNode {
     private AnnotationNode annotationNode;
     private boolean repeatable;
 
+    /**
+     * Pseudo-modifier type constant for annotations. Annotations are treated as
+     * modifiers in the AST for unified processing, distinguished by this sentinel type.
+     */
     public static final int ANNOTATION_TYPE = -999;
+
+    /**
+     * Maps modifier types (parser token types) to their corresponding ASM opcodes.
+     * Enables conversion from source-level modifiers to bytecode-level access flags.
+     * Some modifiers (SEALED, NON_SEALED, DEFAULT, DEF, VAL, VAR) have no direct
+     * bytecode equivalent and map to 0.
+     */
     public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Maps.of(
             ANNOTATION_TYPE, 0,
             DEF, 0,
@@ -77,6 +91,14 @@ public class ModifierNode extends ASTNode {
             DEFAULT, 0 // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
     );
 
+    /**
+     * Creates a modifier node for the specified modifier type.
+     * The type corresponds to a parser token type and is mapped to an ASM opcode
+     * via {@link #MODIFIER_OPCODE_MAP}.
+     *
+     * @param type the modifier type (parser token type)
+     * @throws IllegalArgumentException if the type has no valid ASM opcode mapping
+     */
     public ModifierNode(Integer type) {
         this.type = type;
         this.opcode = MODIFIER_OPCODE_MAP.get(type);
@@ -88,8 +110,12 @@ public class ModifierNode extends ASTNode {
     }
 
     /**
-     * @param type the modifier type, which is same as the token type
-     * @param text text of the ast node
+     * Creates a modifier node with a specific text representation.
+     * Useful for preserving the exact source text of the modifier.
+     *
+     * @param type the modifier type (parser token type)
+     * @param text text of the ast node (source representation)
+     * @throws IllegalArgumentException if the type has no valid ASM opcode mapping
      */
     public ModifierNode(Integer type, String text) {
         this(type);
@@ -97,8 +123,12 @@ public class ModifierNode extends ASTNode {
     }
 
     /**
-     * @param annotationNode the annotation node
-     * @param text           text of the ast node
+     * Creates a modifier node wrapping an annotation.
+     * Treats annotations as pseudo-modifiers for unified AST processing.
+     *
+     * @param annotationNode the annotation node to wrap
+     * @param text text of the ast node (source representation)
+     * @throws IllegalArgumentException if annotationNode is null
      */
     public ModifierNode(AnnotationNode annotationNode, String text) {
         this(ModifierNode.ANNOTATION_TYPE, text);
@@ -110,56 +140,128 @@ public class ModifierNode extends ASTNode {
     }
 
     /**
-     * Check whether the modifier is not an imagined modifier(annotation, def)
+     * Checks whether this node represents a true modifier (not annotation or def).
+     * Distinguishes real modifiers (public, static, final, etc.) from pseudo-modifiers
+     * (annotations, def, val, var) that are treated as modifiers in the AST.
+     *
+     * @return true if this is a real modifier, false for annotations or def declarations
      */
     public boolean isModifier() {
         return !this.isAnnotation() && !this.isDef();
     }
 
+    /**
+     * Checks whether this modifier controls visibility (public, protected, private).
+     * Visibility modifiers are mutually exclusive and determine class/member access scope.
+     *
+     * @return true if this is a visibility modifier
+     */
     public boolean isVisibilityModifier() {
         return Objects.equals(PUBLIC, this.type)
                 || Objects.equals(PROTECTED, this.type)
                 || Objects.equals(PRIVATE, this.type);
     }
 
+    /**
+     * Checks whether this is a non-visibility modifier (static, final, abstract, etc.).
+     * These modifiers can coexist with visibility modifiers.
+     *
+     * @return true if this is a non-visibility modifier
+     */
     public boolean isNonVisibilityModifier() {
         return this.isModifier() && !this.isVisibilityModifier();
     }
 
+    /**
+     * Checks whether this node represents an annotation (pseudo-modifier).
+     *
+     * @return true if this node wraps an annotation
+     */
     public boolean isAnnotation() {
         return Objects.equals(ANNOTATION_TYPE, this.type);
     }
 
+    /**
+     * Checks whether this node represents a property or variable declaration modifier
+     * (def, val, or var). These are Groovy-specific pseudo-modifiers.
+     *
+     * @return true if this is a def/val/var declaration modifier
+     */
     public boolean isDef() {
         return Objects.equals(DEF, this.type) || Objects.equals(VAL, this.type) || Objects.equals(VAR, this.type);
     }
 
-    /** @since 6.0.0 */
+    /**
+     * Checks whether this node specifically represents the 'val' modifier.
+     * In Groovy, 'val' declares a final variable (shorthand for final var).
+     *
+     * @return true if this is the 'val' modifier
+     *
+     * @since 6.0.0
+     */
     public boolean isVal() {
         return Objects.equals(VAL, this.type);
     }
 
+    /**
+     * Returns the modifier type constant (parser token type).
+     *
+     * @return the type identifier for this modifier
+     */
     public Integer getType() {
         return type;
     }
 
+    /**
+     * Returns the ASM opcode corresponding to this modifier.
+     * Used during bytecode generation to set appropriate access flags.
+     * Returns 0 for modifiers without direct bytecode representation.
+     *
+     * @return the ASM Opcodes constant for this modifier
+     */
     public Integer getOpcode() {
         return opcode;
     }
 
+    /**
+     * Checks whether this modifier supports repetition (stacking).
+     * Only annotations are repeatable in Groovy; modifiers are mutually exclusive.
+     *
+     * @return true if this modifier can appear multiple times (only for annotations)
+     */
     public boolean isRepeatable() {
         return repeatable;
     }
 
+    /**
+     * Returns the source text representation of this modifier.
+     * Preserves the exact text as it appeared in the source code.
+     *
+     * @return the source text of this modifier, or null if not set
+     */
     @Override
     public String getText() {
         return text;
     }
 
+    /**
+     * Returns the wrapped annotation node if this modifier represents an annotation.
+     * Only non-null for pseudo-modifiers created via {@link #ModifierNode(AnnotationNode, String)}.
+     *
+     * @return the {@link AnnotationNode} wrapped by this modifier, or null if this is a true modifier
+     */
     public AnnotationNode getAnnotationNode() {
         return annotationNode;
     }
 
+    /**
+     * Compares this modifier with another object for equality.
+     * Two modifiers are equal if they have the same type, text representation, and wrapped annotation.
+     * Used for deduplicating modifier nodes during AST processing.
+     *
+     * @param o the object to compare
+     * @return true if both modifiers represent the same language construct
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -170,11 +272,24 @@ public class ModifierNode extends ASTNode {
                 Objects.equals(annotationNode, that.annotationNode);
     }
 
+    /**
+     * Returns the hash code for this modifier.
+     * Consistent with equals(): identical modifiers have identical hash codes.
+     * Used for efficient storage in hash-based collections.
+     *
+     * @return hash code based on type, text, and annotation
+     */
     @Override
     public int hashCode() {
         return Objects.hash(type, text, annotationNode);
     }
 
+    /**
+     * Returns the string representation of this modifier.
+     * Returns the source text if available, otherwise delegates to {@link Object#toString()}.
+     *
+     * @return the source text of this modifier
+     */
     @Override
     public String toString() {
         return this.text;

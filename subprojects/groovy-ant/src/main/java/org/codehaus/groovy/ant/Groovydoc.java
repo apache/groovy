@@ -483,8 +483,11 @@ public class Groovydoc extends Task {
         return a;
     }
 
-    /** Nested-element holder populated by Ant introspection for {@code <addStylesheet file="..."/>}. */
-    /** @since 6.0.0 */
+    /**
+     * Nested-element holder populated by Ant introspection for {@code <addStylesheet file="..."/>}.
+     *
+     * @since 6.0.0
+     */
     public class AddStylesheet {
         private File file;
 

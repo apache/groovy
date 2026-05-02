@@ -304,9 +304,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     /** Console window icon resource. */
     public static URL ICON_PATH = Console.class.classLoader.getResource('groovy/console/ui/ConsoleIcon.png')
-    /** Returns the icon used for AST and object browser tree nodes. */
-    /** @since 6.0.0 */
-    static javax.swing.Icon getNodeIcon() { Icons.green('fiber_manual_record') }
+    /**
+     * Returns the icon used for AST and object browser tree nodes.
+     *
+     * @since 6.0.0
+     */
+    static Icon getNodeIcon() { Icons.green('fiber_manual_record') }
 
     /** File filter used for Groovy script open/save dialogs. */
     static groovyFileFilter = new GroovyFileFilter()
@@ -1515,9 +1518,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         Math.max(10, Math.min(48, Math.round(fontSize * 1.33f) as int))
     }
 
-    /** HTMLEditorKit scales FontSize values up by ~4/3 (pt→px at 96/72);
-     *  compensate so the output pane visually matches the input pane. */
-    /** @since 6.0.0 */
+    /**
+     * HTMLEditorKit scales FontSize values up by ~4/3 (pt→px at 96/72);
+     * compensate so the output pane visually matches the input pane.
+     *
+     *  @since 6.0.0
+     */
     static int outputFontSizeFor(int inputFontSize) {
         Math.max(1, Math.round(inputFontSize * 0.75f) as int)
     }

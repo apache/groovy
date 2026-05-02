@@ -83,14 +83,35 @@ public class ModuleNode extends ASTNode {
     private String mainClassName;
     private final BlockStatement statementBlock = new BlockStatement();
 
+    /**
+     * Creates a module node for the specified compilation context.
+     * Used when compiling a single Groovy file with full source location tracking.
+     *
+     * @param context the source unit providing file path, line mapping, and error context
+     */
     public ModuleNode(final SourceUnit context) {
         this.context = context;
     }
 
+    /**
+     * Creates a module node for batch compilation.
+     * Used when compiling multiple classes in a single compilation batch.
+     *
+     * @param unit the compile unit managing this module's classes
+     */
     public ModuleNode(final CompileUnit unit) {
         this.unit = unit;
     }
 
+    /**
+     * Returns the module's class definitions.
+     * If {@code createClassForStatements} is true and there are module-level statements,
+     * methods, or this is a package-info script, a synthetic class is created to wrap them.
+     * This class is automatically inserted at the beginning of the list.
+     * The flag is then reset to prevent future synthesis.
+     *
+     * @return list of {@link ClassNode} definitions (may include synthetic wrapper for statements)
+     */
     public List<ClassNode> getClasses() {
         if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty() || isPackageInfo())) {
             ClassNode mainClass = createStatementsClass();
@@ -104,43 +125,62 @@ public class ModuleNode extends ASTNode {
     }
 
     /**
-     * @return the module's methods
+     * Returns the module's top-level method definitions.
+     * These are module-level methods typically found in scripts or trait interfaces.
+     *
+     * @return list of {@link MethodNode} definitions
      */
     public List<MethodNode> getMethods() {
         return methods;
     }
 
     /**
-     * @return a copy of the module's imports
+     * Returns a copy of the module's regular import declarations.
+     * Includes both simple class imports (e.g., {@code import java.util.List})
+     * and aliased imports. Does not include star imports or static imports.
+     *
+     * @return a copy of the {@link ImportNode} list for regular imports
      */
     public List<ImportNode> getImports() {
         return new ArrayList<>(imports);
     }
 
     /**
-     * @return the module's star imports
+     * Returns wildcard (star) import declarations (e.g., {@code import java.util.*}).
+     * These imports make all public classes in a package available without qualification.
+     *
+     * @return list of {@link ImportNode} for wildcard imports
      */
     public List<ImportNode> getStarImports() {
         return starImports;
     }
 
     /**
-     * @return the module's static imports
+     * Returns static import declarations (e.g., {@code import static java.lang.Math.PI}).
+     * Maps simple names to {@link ImportNode} objects for static member imports.
+     *
+     * @return map from simple name to {@link ImportNode} for static imports
      */
     public Map<String, ImportNode> getStaticImports() {
         return staticImports;
     }
 
     /**
-     * @return the module's static star imports
+     * Returns static wildcard import declarations (e.g., {@code import static java.lang.Math.*}).
+     * Maps package names to {@link ImportNode} objects for static star imports.
+     *
+     * @return map from package name to {@link ImportNode} for static star imports
      */
     public Map<String, ImportNode> getStaticStarImports() {
         return staticStarImports;
     }
 
     /**
-     * @param alias the name of interest
-     * @return the import type for the given alias or null if none is available
+     * Looks up the class type for a regular import by its alias name.
+     * Resolves simple names to the actual class they reference.
+     *
+     * @param alias the imported name to look up
+     * @return the {@link ClassNode} for that import, or null if not found
      */
     public ClassNode getImportType(final String alias) {
         ImportNode node = getImport(alias);
@@ -148,8 +188,12 @@ public class ModuleNode extends ASTNode {
     }
 
     /**
-     * @param alias the name of interest
-     * @return the import node for the given alias or null if none is available
+     * Looks up an import node by its alias name.
+     * Searches regular imports and returns the matching node.
+     * Caches import alias mappings as node metadata for performance.
+     *
+     * @param alias the imported name to look up
+     * @return the {@link ImportNode} for that import, or null if not found
      */
     public ImportNode getImport(final String alias) {
         Map<String, ImportNode> aliases = getNodeMetaData("import.aliases", x ->
@@ -157,10 +201,27 @@ public class ModuleNode extends ASTNode {
         return aliases.get(alias);
     }
 
+    /**
+     * Registers a regular import (e.g., {@code import java.util.List}).
+     * The alias name will be used to reference the imported class.
+     *
+     * @param name the alias name for this import
+     * @param type the {@link ClassNode} to import
+     * @throws SyntaxException if the name conflicts with an existing declaration
+     */
     public void addImport(final String name, final ClassNode type) {
         addImport(name, type, Collections.emptyList());
     }
 
+    /**
+     * Registers a regular import with optional annotations.
+     * The alias name will be used to reference the imported class.
+     *
+     * @param name the alias name for this import
+     * @param type the {@link ClassNode} to import
+     * @param annotations annotations to attach to this import
+     * @throws SyntaxException if the name conflicts with an existing declaration
+     */
     public void addImport(final String name, final ClassNode type, final List<AnnotationNode> annotations) {
         checkUsage(name, type); // GROOVY-8254
 
@@ -172,10 +233,23 @@ public class ModuleNode extends ASTNode {
         storeLastAddedImportNode(importNode);
     }
 
+    /**
+     * Registers a wildcard import (e.g., {@code import java.util.*}).
+     * All public classes in the package become available without qualification.
+     *
+     * @param packageName the package name (e.g., "java.util")
+     */
     public void addStarImport(final String packageName) {
         addStarImport(packageName, Collections.emptyList());
     }
 
+    /**
+     * Registers a wildcard import with optional annotations.
+     * All public classes in the package become available without qualification.
+     *
+     * @param packageName the package name (e.g., "java.util")
+     * @param annotations annotations to attach to this import
+     */
     public void addStarImport(final String packageName, final List<AnnotationNode> annotations) {
         ImportNode importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);
@@ -185,17 +259,26 @@ public class ModuleNode extends ASTNode {
     }
 
     /**
-     * @return star imports that originated from {@code import module M} declarations.
-     *         Separate from {@link #getStarImports()} so that resolution can apply
-     *         JLS 6.4.1 shadowing (type-import-on-demand shadows module-import).
+     * Registers a module-level star import (e.g., {@code import module java.base}).
+     * Returns module star imports, which are separate from regular wildcard imports
+     * for proper JLS 6.4.1 shadowing resolution (type-import-on-demand shadowing).
      *
+     * @return star imports from {@code import module} declarations
      * @since 6.0.0
      */
     public List<ImportNode> getModuleStarImports() {
         return moduleStarImports;
     }
 
-    /** @since 6.0.0 */
+    /**
+     * Adds a module-level star import with optional annotations.
+     * These are tracked separately from regular wildcard imports for import resolution.
+     *
+     * @param packageName the module package name
+     * @param annotations annotations to attach to this import
+     *
+     * @since 6.0.0
+     */
     public void addModuleStarImport(final String packageName, final List<AnnotationNode> annotations) {
         ImportNode importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);
@@ -204,10 +287,29 @@ public class ModuleNode extends ASTNode {
         storeLastAddedImportNode(importNode);
     }
 
+    /**
+     * Registers a static import (e.g., {@code import static java.lang.Math.PI}).
+     * A specific static member from a class becomes available without qualification.
+     *
+     * @param type the {@link ClassNode} containing the static member
+     * @param memberName the name of the static member (field or method)
+     * @param simpleName the alias name by which this member is imported
+     * @throws SyntaxException if the simpleName conflicts with existing declarations
+     */
     public void addStaticImport(final ClassNode type, final String memberName, final String simpleName) {
         addStaticImport(type, memberName, simpleName, Collections.emptyList());
     }
 
+    /**
+     * Registers a static import with optional annotations.
+     * A specific static member from a class becomes available without qualification.
+     *
+     * @param type the {@link ClassNode} containing the static member
+     * @param memberName the name of the static member (field or method)
+     * @param simpleName the alias name by which this member is imported
+     * @param annotations annotations to attach to this import
+     * @throws SyntaxException if the simpleName conflicts with existing declarations
+     */
     public void addStaticImport(final ClassNode type, final String memberName, final String simpleName, final List<AnnotationNode> annotations) {
         ClassNode memberType = new ClassNode(type.getName() + '.' + memberName, 0, null) {
             @Override public ClassNode getOuterClass() { return type; }
@@ -226,10 +328,25 @@ public class ModuleNode extends ASTNode {
         storeLastAddedImportNode(node);
     }
 
+    /**
+     * Registers a static wildcard import (e.g., {@code import static java.lang.Math.*}).
+     * All static members from a class become available without qualification.
+     *
+     * @param name the package/class name for this static star import
+     * @param type the {@link ClassNode} from which to import static members
+     */
     public void addStaticStarImport(final String name, final ClassNode type) {
         addStaticStarImport(name, type, Collections.emptyList());
     }
 
+    /**
+     * Registers a static wildcard import with optional annotations.
+     * All static members from a class become available without qualification.
+     *
+     * @param name the package/class name for this static star import
+     * @param type the {@link ClassNode} from which to import static members
+     * @param annotations annotations to attach to this import
+     */
     public void addStaticStarImport(final String name, final ClassNode type, final List<AnnotationNode> annotations) {
         ImportNode node = new ImportNode(type);
         node.addAnnotations(annotations);
@@ -238,10 +355,26 @@ public class ModuleNode extends ASTNode {
         storeLastAddedImportNode(node);
     }
 
+    /**
+     * Adds a statement to the module's statement block.
+     * Module-level statements are collected and later wrapped in a synthetic class
+     * during compilation (controlled by {@link #createClassForStatements}).
+     *
+     * @param node the {@link Statement} to add
+     */
     public void addStatement(final Statement node) {
         statementBlock.addStatement(node);
     }
 
+    /**
+     * Adds a class definition to this module.
+     * If this is the first class added, its name is recorded as the main class name.
+     * The class's containing module is set to this module, and it's registered
+     * with the compile unit if present.
+     *
+     * @param node the {@link ClassNode} to add
+     * @throws SyntaxException if a class with the same name already exists in this module
+     */
     public void addClass(final ClassNode node) {
         if (classes.isEmpty())
             mainClassName = node.getName();
@@ -281,40 +414,89 @@ public class ModuleNode extends ASTNode {
         }
     }
 
+    /**
+     * Adds a module-level method definition.
+     * Module-level methods are typically found in scripts or in trait interface definitions.
+     *
+     * @param node the {@link MethodNode} to add
+     */
     public void addMethod(final MethodNode node) {
         methods.add(node);
     }
 
+    /**
+     * Accepts a code visitor for AST traversal and processing.
+     * Implementation is empty; module-level visitation typically proceeds directly
+     * to classes and methods contained within.
+     *
+     * @param visitor the {@link GroovyCodeVisitor} to process this node
+     */
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
     }
 
+    /**
+     * Returns the module's package name.
+     * Returns null if no package is declared (uses the default package).
+     *
+     * @return the fully qualified package name, or null for the default package
+     */
     public String getPackageName() {
         return packageNode == null ? null : packageNode.getName();
     }
 
+    /**
+     * Returns the package node for this module.
+     * Contains the package declaration and associated annotations.
+     *
+     * @return the {@link PackageNode}, or null if none is declared
+     */
     public PackageNode getPackage() {
         return packageNode;
     }
 
+    /**
+     * Checks whether this module declares a package.
+     *
+     * @return true if a package is declared, false for the default package
+     */
     public boolean hasPackage() {
         return (packageNode != null);
     }
 
+    /**
+     * Sets the package declaration for this module.
+     *
+     * @param packageNode the {@link PackageNode} for this module
+     */
     public void setPackage(final PackageNode packageNode) {
         this.packageNode = packageNode;
     }
 
+    /**
+     * Checks whether this module has a named package (not default package).
+     *
+     * @return true if a non-null package name is declared
+     */
     public boolean hasPackageName() {
         return (packageNode != null && packageNode.getName() != null);
     }
 
+    /**
+     * Sets the package for this module by name.
+     * Creates a new {@link PackageNode} with the given package name.
+     *
+     * @param packageName the fully qualified package name
+     */
     public void setPackageName(final String packageName) {
         setPackage(new PackageNode(packageName));
     }
 
     /**
-     * @return the underlying character stream description
+     * Returns a description of this module.
+     * Typically the source file name if available (via context), otherwise a user-supplied description.
+     *
+     * @return the module description (usually the file path), or null if not set
      */
     public String getDescription() {
         if (context != null) {
@@ -324,10 +506,21 @@ public class ModuleNode extends ASTNode {
         }
     }
 
+    /**
+     * Sets a description for this module (typically the source file name).
+     *
+     * @param description the description to set
+     */
     public void setDescription(final String description) {
         this.description = description;
     }
 
+    /**
+     * Returns the compile unit managing this module (batch compilation context).
+     * Null if this module was compiled individually.
+     *
+     * @return the {@link CompileUnit}, or null for single-file compilation
+     */
     public CompileUnit getUnit() {
         return unit;
     }
@@ -336,6 +529,12 @@ public class ModuleNode extends ASTNode {
         this.unit = unit;
     }
 
+    /**
+     * Returns the source unit for this module (single-file compilation context).
+     * Provides access to source code, line mappings, and error reporting.
+     *
+     * @return the {@link SourceUnit}, or null if compiled as part of a batch
+     */
     public SourceUnit getContext() {
         return context;
     }
@@ -344,6 +543,14 @@ public class ModuleNode extends ASTNode {
         return context != null && context.getName() != null && context.getName().endsWith("package-info.groovy");
     }
 
+    /**
+     * Returns a synthetic class wrapping this module's statements and methods.
+     * Used for scripts: module-level code is collected and placed in a generated class
+     * with a {@code main(String[])} method. Configures the base class based on compiler config.
+     *
+     * @return a {@link ClassNode} for script execution
+     * @throws RuntimeException if module description is not set
+     */
     public ClassNode getScriptClassDummy() {
         if (scriptDummy != null) {
             setScriptBaseClassFromConfig(scriptDummy);
@@ -400,6 +607,13 @@ public class ModuleNode extends ASTNode {
         return params(parameter);
     }
 
+    /**
+     * Creates a synthetic class wrapping this module's statement and method definitions.
+     * Generates a {@code main(String[])} method for script execution and a {@code run()} method for statement execution.
+     * Only invoked when the module contains module-level code (scripts or statements).
+     *
+     * @return a {@link ClassNode} representing the synthetic wrapper class with generated methods
+     */
     protected ClassNode createStatementsClass() {
         ClassNode classNode = getScriptClassDummy();
         if (classNode.getName().endsWith("package-info")) {
@@ -581,6 +795,13 @@ public class ModuleNode extends ASTNode {
         return result;
     }
 
+    /**
+     * Extracts the class name from the module's description (typically a file path).
+     * Strips file extensions, path separators, and URI schemes to derive a valid class name.
+     * Used when generating synthetic script wrapper classes.
+     *
+     * @return a valid class name derived from the description
+     */
     protected String extractClassFromFileDescription() {
         String answer = getDescription();
         try {
@@ -612,10 +833,22 @@ public class ModuleNode extends ASTNode {
         return answer;
     }
 
+    /**
+     * Checks whether this module is empty (no classes or statements).
+     * An empty module compiles to no bytecode output.
+     *
+     * @return true if both class list and statement block are empty
+     */
     public boolean isEmpty() {
         return classes.isEmpty() && statementBlock.getStatements().isEmpty();
     }
 
+    /**
+     * Sorts classes in dependency order based on class hierarchy.
+     * Inner classes and dependent classes are ordered after their dependencies.
+     * This ensures that base classes are defined before derived classes during compilation.
+     * Does nothing if the module is empty or contains only one class.
+     */
     public void sortClasses() {
         if (isEmpty()) return;
         List<ClassNode> classes = getClasses();
@@ -636,10 +869,23 @@ public class ModuleNode extends ASTNode {
         this.classes = ordered;
     }
 
+    /**
+     * Checks whether imports have been resolved for this module.
+     * Import resolution converts import aliases to fully qualified class names and
+     * processes import conflicts. This flag tracks whether that phase is complete.
+     *
+     * @return true if import resolution has been performed
+     */
     public boolean hasImportsResolved() {
         return importsResolved;
     }
 
+    /**
+     * Marks whether imports have been resolved for this module.
+     * Set to true after the import resolution phase completes.
+     *
+     * @param importsResolved true to mark imports as resolved
+     */
     public void setImportsResolved(final boolean importsResolved) {
         this.importsResolved = importsResolved;
     }
@@ -652,10 +898,24 @@ public class ModuleNode extends ASTNode {
         }
     }
 
+    /**
+     * Returns the simple name of the main class for this module.
+     * For scripts, this is the synthetic wrapper class name.
+     * For modules with classes, this is typically the first class added.
+     *
+     * @return the main class name, or null if not set
+     */
     public String getMainClassName() {
         return mainClassName;
     }
 
+    /**
+     * Returns the block of statements defined at module scope.
+     * These statements become part of the script's run() method (if module is a script)
+     * or remain at module level (if module contains only classes).
+     *
+     * @return the {@link BlockStatement} containing module-level code
+     */
     public BlockStatement getStatementBlock() {
         return statementBlock;
     }
