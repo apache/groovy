@@ -48,16 +48,31 @@ class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTrans
     private static final MethodNode CURRENTTHREAD_METHOD = THREAD_TYPE.getMethod('currentThread')
     private static final MethodNode ISINTERRUPTED_METHOD = THREAD_TYPE.getMethod('isInterrupted')
 
+    /**
+     * Returns the annotation type handled by this transformation.
+     *
+     * @return the handled annotation type
+     */
     @Override
     protected ClassNode type() {
         TYPE
     }
 
+    /**
+     * Returns the message used when the current thread has been interrupted.
+     *
+     * @return the failure message
+     */
     @Override
     protected String getErrorMessage() {
         'Execution interrupted. The current thread has been interrupted.'
     }
 
+    /**
+     * Builds the condition that checks the current thread interruption flag.
+     *
+     * @return the interrupt condition expression
+     */
     @Override
     protected Expression createCondition() {
         def currentThread = callX(classX(THREAD_TYPE), 'currentThread')
@@ -71,6 +86,11 @@ class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTrans
         isInterrupted
     }
 
+    /**
+     * Wraps closure bodies with the thread interruption check.
+     *
+     * @param closure the closure being visited
+     */
     @Override
     void visitClosureExpression(ClosureExpression closure) {
         Statement code = closure.code
@@ -78,6 +98,11 @@ class ThreadInterruptibleASTTransformation extends AbstractInterruptibleASTTrans
         super.visitClosureExpression(closure)
     }
 
+    /**
+     * Wraps eligible methods with the thread interruption check.
+     *
+     * @param method the method being visited
+     */
     @Override
     void visitMethod(MethodNode method) {
         if (checkOnMethodStart && !method.isAbstract() && !method.isSynthetic()

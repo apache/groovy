@@ -36,6 +36,11 @@ public class ArrayOperations {
 }
 """
 
+/**
+ * Generates the inner meta-method classes for each primitive array type.
+ *
+ * @return the Java source for the generated inner classes
+ */
 def genInners () {
     def res = ''
 

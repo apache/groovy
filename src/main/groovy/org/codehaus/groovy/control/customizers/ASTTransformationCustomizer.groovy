@@ -87,8 +87,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 class ASTTransformationCustomizer extends CompilationCustomizer implements CompilationUnitAware {
 
     private boolean applied // global xforms
+    /**
+     * Compilation unit currently being customized.
+     */
     protected CompilationUnit compilationUnit
     private final AnnotationNode annotationNode
+    /**
+     * Transformation instance applied by this customizer.
+     */
             final ASTTransformation transformation
 
     /**
@@ -136,6 +142,14 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
         this.annotationParameters = annotationParams
     }
 
+    /**
+     * Creates an AST transformation customizer using the specified annotation, annotation parameters,
+     * and transformation class name.
+     *
+     * @param annotationParams the annotation member values to apply
+     * @param transformationAnnotation the transformation annotation type
+     * @param astTransformationClassName the implementation class name for the transformation
+     */
     ASTTransformationCustomizer(Map annotationParams, Class<? extends Annotation> transformationAnnotation, String astTransformationClassName) {
         this(annotationParams, transformationAnnotation, transformationAnnotation.classLoader)
     }
@@ -185,10 +199,22 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
         this.annotationParameters = annotationParams
     }
 
+    /**
+     * Creates an AST transformation customizer using the specified annotation and annotation parameters.
+     *
+     * @param annotationParams the annotation member values to apply
+     * @param transformationAnnotation the transformation annotation type
+     */
     ASTTransformationCustomizer(Map annotationParams, Class<? extends Annotation> transformationAnnotation) {
         this(annotationParams, transformationAnnotation, transformationAnnotation.classLoader)
     }
 
+    /**
+     * Creates an AST transformation customizer using the specified transformation and annotation parameters.
+     *
+     * @param annotationParams the annotation member values to apply
+     * @param transformation the transformation to invoke
+     */
     ASTTransformationCustomizer(Map annotationParams, ASTTransformation transformation) {
         this(transformation)
         this.annotationParameters = annotationParams
@@ -373,11 +399,23 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Records the compilation unit that will receive the configured transformation.
+     *
+     * @param compilationUnit the owning compilation unit
+     */
     @Override
     void setCompilationUnit(CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit
     }
 
+    /**
+     * Applies the configured transformation to the supplied class or source unit.
+     *
+     * @param sourceUnit the current source unit
+     * @param context the current generator context
+     * @param classNode the class node being customized
+     */
     @Override
     void call(SourceUnit sourceUnit, GeneratorContext context, ClassNode classNode) {
         if (transformation instanceof CompilationUnitAware unitAware) {

@@ -26,6 +26,9 @@ import picocli.CommandLine.Parameters
 import picocli.CommandLine.ParentCommand
 import picocli.CommandLine.Unmatched
 
+/**
+ * Command-line entry point for inspecting and managing the local Grape cache.
+ */
 @SuppressWarnings('Println')
 @Command(name = 'grape', description = 'Allows for the inspection and management of the local grape cache.',
     subcommands = [Install, Uninstall, ListCommand, Resolve, CommandLine.HelpCommand])
@@ -52,10 +55,18 @@ class GrapeMain implements Runnable {
     @Option(names = ['-d', '--debug'], description = 'Log level 4 - debug')
     private boolean debug
 
+    /**
+     * Tokens that did not match a known command or option.
+     */
     @Unmatched List<String> unmatched = new ArrayList<String>()
 
     private CommandLine parser
 
+    /**
+     * Launches the Grape command-line application.
+     *
+     * @param args the command-line arguments
+     */
     static void main(String[] args) {
         GrapeMain grape = new GrapeMain()
         def parser = new CommandLine(grape)
@@ -67,6 +78,9 @@ class GrapeMain implements Runnable {
         System.exit(exitCode)
     }
 
+    /**
+     * Handles top-level execution when no valid subcommand was selected.
+     */
     void run() {
         if (unmatched) {
             System.err.println "grape: '${unmatched[0]}' is not a grape command. See 'grape --help'"
@@ -113,11 +127,22 @@ class GrapeMain implements Runnable {
             optionListHeading = '%nOptions:%n',
             descriptionHeading = '%n')
     private static class HelpOptionsMixin {
+        /**
+         * Whether command help was requested.
+         */
         @Option(names = ['-h', '--help'], usageHelp = true, description = 'usage information') boolean isHelpRequested
+        /**
+         * Whether version information was requested.
+         */
         @Option(names = ['-v', '--version'], versionHelp = true, description = 'display the Groovy and JVM versions') boolean isVersionRequested
     }
 
     private static class VersionProvider implements CommandLine.IVersionProvider {
+        /**
+         * Returns the version banner shown by picocli.
+         *
+         * @return the Groovy and JVM version line
+         */
         String[] getVersion() {
             String version = GroovySystem.version
             ["Groovy Version: $version JVM: ${System.getProperty('java.version')}"]
@@ -127,20 +152,38 @@ class GrapeMain implements Runnable {
     @Command(name = 'install', header = 'Installs a particular grape',
             description = 'Installs the specified groovy module or maven artifact. If a version is specified that specific version will be installed, otherwise the most recent version will be used (as if `*` was passed in).')
     private static class Install implements Runnable {
+        /**
+         * Module group to install.
+         */
         @Parameters(index = '0', arity = '1', description = 'Which module group the module comes from. Translates directly to a Maven groupId or an Ivy Organization. Any group matching /groovy[x][\\..*]^/ is reserved and may have special meaning to the groovy endorsed modules.')
         String group
 
+        /**
+         * Module name to install.
+         */
         @Parameters(index = '1', arity = '1', description = 'The name of the module to load. Translated directly to a Maven artifactId or an Ivy artifact.')
         String module
 
+        /**
+         * Module version to install, defaulting to the latest available version.
+         */
         @Parameters(index = '2', arity = '0..1', description = 'The version of the module to use. Either a literal version `1.1-RC3` or an Ivy Range `[2.2.1,)` meaning 2.2.1 or any greater version).')
         String version = '*'
 
+        /**
+         * Optional classifier to install.
+         */
         @Parameters(index = '3', arity = '0..1', description = 'The optional classifier to use (for example, jdk15).')
         String classifier
 
+        /**
+         * Owning top-level command.
+         */
         @ParentCommand GrapeMain parentCommand
 
+        /**
+         * Installs the requested grape artifact.
+         */
         void run() {
             parentCommand.init()
 
@@ -172,8 +215,14 @@ class GrapeMain implements Runnable {
             description = 'Lists locally installed modules (with their full maven name in the case of groovy modules) and versions.')
     private static class ListCommand implements Runnable {
 
+        /**
+         * Owning top-level command.
+         */
         @ParentCommand GrapeMain parentCommand
 
+        /**
+         * Lists cached grape modules and versions.
+         */
         void run() {
             parentCommand.init()
 
@@ -230,11 +279,20 @@ class GrapeMain implements Runnable {
         @Option(names = ['-i', '--ivy'], description = 'Express dependencies in an ivy-like format')
         private boolean ivyFormatRequested
 
+        /**
+         * Positional dependency coordinates captured from the command line.
+         */
         @Parameters(hidden = true) // parameter description is embedded in the command description
         List<String> args = new ArrayList<>() // the positional parameters
 
+        /**
+         * Owning top-level command.
+         */
         @ParentCommand GrapeMain parentCommand
 
+        /**
+         * Resolves the requested grapes and prints their resulting classpath entries.
+         */
         void run() {
             parentCommand.init()
 
@@ -316,12 +374,21 @@ class GrapeMain implements Runnable {
     @Command(name = 'uninstall',
             description = 'Uninstalls a particular grape (non-transitively removes the respective jar file from the grape cache).')
     private static class Uninstall implements Runnable {
+        /**
+         * Module group to uninstall.
+         */
         @Parameters(index = '0', arity = '1', description = 'Which module group the module comes from. Translates directly to a Maven groupId or an Ivy Organization. Any group matching /groovy[x][\\..*]^/ is reserved and may have special meaning to the groovy endorsed modules.')
         String group
 
+        /**
+         * Module name to uninstall.
+         */
         @Parameters(index = '1', arity = '1', description = 'The name of the module to load. Translated directly to a Maven artifactId or an Ivy artifact.')
         String module
 
+        /**
+         * Module version to uninstall.
+         */
         @Parameters(index = '2', arity = '1', description = 'The version of the module to use. Either a literal version `1.1-RC3` or an Ivy Range `[2.2.1,)` meaning 2.2.1 or any greater version).')
         String version
 
@@ -329,8 +396,14 @@ class GrapeMain implements Runnable {
         //@Parameters(index = '3', arity = '0..1', description = 'The optional classifier to use (for example, jdk15).')
         //String classifier;
 
+        /**
+         * Owning top-level command.
+         */
         @ParentCommand GrapeMain parentCommand
 
+        /**
+         * Removes the requested grape artifact from the local cache.
+         */
         void run() {
             parentCommand.init()
 

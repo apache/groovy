@@ -18,8 +18,18 @@
  */
 package org.codehaus.groovy.classgen
 
+/**
+ * Emits numeric call-site specializations for default Groovy method math operations.
+ */
 def types = ['Integer', 'Long', 'Float', 'Double']
 
+/**
+ * Returns the {@code NumberMath} implementation name for the supplied boxed operand types.
+ *
+ * @param a the left operand type name
+ * @param b the right operand type name
+ * @return the helper class name that should implement the operation
+ */
 def getMath (a,b) {
     if (a == 'Double' || b == 'Double' || a == 'Float' || b == 'Float')
       return 'FloatingPointMath'

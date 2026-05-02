@@ -36,16 +36,40 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 @CompileStatic
 class ASTTransformationCustomizerFactory extends AbstractFactory {
 
+    /**
+     * Indicates that {@code ast} nodes do not accept nested builder content.
+     *
+     * @return {@code true}
+     */
     @Override
     boolean isLeaf() {
         true
     }
 
+    /**
+     * Leaves attribute handling to {@link #newInstance(FactoryBuilderSupport, Object, Object, Map)}.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param attributes the node attributes
+     * @return {@code false} to keep the attributes available for instance creation
+     */
     @Override
     boolean onHandleNodeAttributes(final FactoryBuilderSupport builder, final Object node, final Map attributes) {
         false
     }
 
+    /**
+     * Creates an {@link ASTTransformationCustomizer} for the supplied annotation and attributes.
+     *
+     * @param builder the active builder
+     * @param name the node name
+     * @param value the transformation annotation class
+     * @param attributes annotation member values to apply
+     * @return a configured {@link ASTTransformationCustomizer}
+     * @throws InstantiationException if the customizer cannot be instantiated
+     * @throws IllegalAccessException if the customizer cannot be accessed
+     */
     @Override
     @CompileDynamic
     Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {

@@ -26,6 +26,11 @@ public class ArrayUtil {
 
 """
 
+/**
+ * Generates all supported {@code createArray} overloads.
+ *
+ * @return the Java source for the overload set
+ */
 def genMethods () {
     def res = ''
     for (i in 1..250)
@@ -33,6 +38,12 @@ def genMethods () {
     res
 }
 
+/**
+ * Generates a single {@code createArray} overload for the supplied arity.
+ *
+ * @param paramNum the number of array elements accepted by the overload
+ * @return the Java source for the generated overload
+ */
 def genMethod (int paramNum) {
     def res = 'public static Object [] createArray ('
     for (k in 0..<paramNum) {

@@ -76,6 +76,12 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
     private static final String APPLY_TO_ALL_MEMBERS = 'applyToAllMembers'
     private static final String THROWN_EXCEPTION_TYPE = 'thrown'
 
+    /**
+     * Applies the timed interrupt transformation to the annotated target.
+     *
+     * @param nodes the annotation node and annotated AST node
+     * @param source the source unit containing the annotation
+     */
     @Override
     void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source)
@@ -131,6 +137,15 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         }
     }
 
+    /**
+     * Resolves a constant annotation member, coercing it to the requested type when possible.
+     *
+     * @param node the annotation node to inspect
+     * @param parameterName the member name to resolve
+     * @param type the expected value type
+     * @param defaultValue the fallback value when the member is absent
+     * @return the resolved constant value or {@code defaultValue}
+     */
     static getConstantAnnotationParameter(AnnotationNode node, String parameterName, Class type, defaultValue) {
         def member = node.getMember(parameterName)
         if (member) {
@@ -153,6 +168,9 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
     }
 
     private static class TimedInterruptionVisitor extends ClassCodeVisitorSupport {
+        /**
+         * Source unit currently being transformed.
+         */
         final SourceUnit sourceUnit
         final private boolean checkOnMethodStart
         final private boolean applyToAllClasses
@@ -164,6 +182,18 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
         private final ClassNode thrown
         private final String basename
 
+        /**
+         * Creates a visitor with the resolved timed-interrupt settings.
+         *
+         * @param source the source unit being transformed
+         * @param checkOnMethodStart whether to add checks at method entry
+         * @param applyToAllClasses whether all classes in the source unit should be visited
+         * @param applyToAllMembers whether all class members should be visited
+         * @param maximum the configured timeout value
+         * @param unit the timeout unit expression
+         * @param thrown the exception type to throw on timeout
+         * @param hash unique suffix used for generated member names
+         */
         TimedInterruptionVisitor(SourceUnit source, checkOnMethodStart, applyToAllClasses, applyToAllMembers, maximum, Expression unit, ClassNode thrown, hash) {
             this.sourceUnit = source
             this.checkOnMethodStart = checkOnMethodStart
@@ -217,6 +247,11 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
             }
         }
 
+        /**
+         * Adds the timing fields to the class and visits eligible members.
+         *
+         * @param node the class being transformed
+         */
         @Override
         void visitClass(ClassNode node) {
             String startTime = basename + '$startTime'
@@ -252,6 +287,11 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
             }
         }
 
+        /**
+         * Wraps closure bodies with the timeout check.
+         *
+         * @param closureExpr the closure being visited
+         */
         @Override
         void visitClosureExpression(ClosureExpression closureExpr) {
             def code = closureExpr.code
@@ -263,6 +303,11 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
             super.visitClosureExpression closureExpr
         }
 
+        /**
+         * Visits eligible instance fields.
+         *
+         * @param node the field being visited
+         */
         @Override
         void visitField(FieldNode node) {
             if (!node.isStatic() && !node.isSynthetic()) {
@@ -270,6 +315,11 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
             }
         }
 
+        /**
+         * Visits eligible instance properties.
+         *
+         * @param node the property being visited
+         */
         @Override
         void visitProperty(PropertyNode node) {
             if (!node.isStatic() && !node.isSynthetic()) {
@@ -286,24 +336,44 @@ class TimedInterruptibleASTTransformation extends AbstractASTTransformation {
             loopStatement.loopBlock = wrapBlock(statement)
         }
 
+        /**
+         * Wraps a {@code for} loop body with the timeout check.
+         *
+         * @param forStatement the loop being visited
+         */
         @Override
         void visitForLoop(ForStatement forStatement) {
             visitLoop(forStatement)
             super.visitForLoop(forStatement)
         }
 
+        /**
+         * Wraps a {@code do/while} loop body with the timeout check.
+         *
+         * @param doWhileStatement the loop being visited
+         */
         @Override
         void visitDoWhileLoop(DoWhileStatement doWhileStatement) {
             visitLoop(doWhileStatement)
             super.visitDoWhileLoop(doWhileStatement)
         }
 
+        /**
+         * Wraps a {@code while} loop body with the timeout check.
+         *
+         * @param whileStatement the loop being visited
+         */
         @Override
         void visitWhileLoop(WhileStatement whileStatement) {
             visitLoop(whileStatement)
             super.visitWhileLoop(whileStatement)
         }
 
+        /**
+         * Wraps eligible methods with the timeout check.
+         *
+         * @param node the method being visited
+         */
         @Override
         void visitMethod(MethodNode node) {
             if (checkOnMethodStart && !node.isSynthetic() && !node.isStatic() && !node.isAbstract()) {

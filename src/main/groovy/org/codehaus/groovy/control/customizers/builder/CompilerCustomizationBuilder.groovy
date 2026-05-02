@@ -31,6 +31,13 @@ import org.codehaus.groovy.control.CompilerConfiguration
 @AutoFinal @CompileStatic
 class CompilerCustomizationBuilder extends FactoryBuilderSupport {
 
+    /**
+     * Applies compilation customizers declared by the builder DSL to the supplied configuration.
+     *
+     * @param config the compiler configuration to customize
+     * @param spec the customization DSL
+     * @return the same {@link CompilerConfiguration} instance for chaining
+     */
     static CompilerConfiguration withConfig(CompilerConfiguration config, @DelegatesTo(type='org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder') Closure spec) {
         config.invokeMethod('addCompilationCustomizers', new CompilerCustomizationBuilder().invokeMethod('customizers', spec))
         config
@@ -38,6 +45,9 @@ class CompilerCustomizationBuilder extends FactoryBuilderSupport {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Creates a builder and registers the supported customization factories.
+     */
     CompilerCustomizationBuilder() {
         registerFactory('customizers', new CustomizersFactory()) // root
 
@@ -48,6 +58,13 @@ class CompilerCustomizationBuilder extends FactoryBuilderSupport {
         registerFactory('source', new SourceAwareCustomizerFactory())
     }
 
+    /**
+     * Finalizes a node and gives post-completion factories a chance to replace it.
+     *
+     * @param parent the parent builder node
+     * @param node the node being completed
+     * @return the completed node, possibly replaced by the active factory
+     */
     @Override
     protected Object postNodeCompletion(Object parent, Object node) {
         Object value = super.postNodeCompletion(parent, node)
