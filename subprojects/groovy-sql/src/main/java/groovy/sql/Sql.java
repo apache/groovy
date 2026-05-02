@@ -1166,7 +1166,7 @@ public class Sql implements AutoCloseable {
                 "Sql.inList() requires a non-empty collection; " +
                 "check for empty input before building the query");
         }
-        final List<Object> snapshot = Collections.unmodifiableList(new ArrayList<>(values));
+        final List<Object> snapshot = List.copyOf(values);
         return () -> snapshot;
     }
 

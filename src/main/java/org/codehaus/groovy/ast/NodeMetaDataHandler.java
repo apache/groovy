@@ -146,7 +146,7 @@ public interface NodeMetaDataHandler {
         }
         // snapshot under the map's mutex to honour the synchronizedMap iteration contract
         synchronized (metaDataMap) {
-            return Collections.unmodifiableMap(new HashMap<>(metaDataMap));
+            return Map.copyOf(metaDataMap);
         }
     }
 

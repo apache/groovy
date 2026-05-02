@@ -591,10 +591,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         return sourceUnit;
     }
 
-    private static final Set<Integer> FILTER_BINARY_OP_SET = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-        Types.KEYWORD_IN, Types.COMPARE_NOT_IN, Types.COMPARE_IDENTICAL, Types.COMPARE_NOT_IDENTICAL,
-        Types.COMPARE_EQUAL, Types.COMPARE_NOT_EQUAL, Types.COMPARE_LESS_THAN, Types.COMPARE_LESS_THAN_EQUAL,
-        Types.COMPARE_GREATER_THAN, Types.COMPARE_GREATER_THAN_EQUAL, Types.MATCH_REGEX)));
+    private static final Set<Integer> FILTER_BINARY_OP_SET = Set.of(Types.KEYWORD_IN, Types.COMPARE_NOT_IN, Types.COMPARE_IDENTICAL, Types.COMPARE_NOT_IDENTICAL, Types.COMPARE_EQUAL, Types.COMPARE_NOT_EQUAL, Types.COMPARE_LESS_THAN, Types.COMPARE_LESS_THAN_EQUAL, Types.COMPARE_GREATER_THAN, Types.COMPARE_GREATER_THAN_EQUAL, Types.MATCH_REGEX);
 
     private static final String __LATEST_GINQ_EXPRESSION_CLAUSE = "__latestGinqExpressionClause";
     private static final String KW_WITH = "with"; // reserved keyword
@@ -620,8 +617,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private static final String KW_MINUS = "minus";
     private static final String KW_SHUTDOWN = "shutdown";
     private static final Set<String> KEYWORD_SET;
-    private static final Set<String> SET_OP_SET = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(KW_UNION, KW_UNIONALL, KW_INTERSECT, KW_MINUS)));
+    private static final Set<String> SET_OP_SET = Set.of(KW_UNION, KW_UNIONALL, KW_INTERSECT, KW_MINUS);
     static {
         Set<String> keywordSet = new HashSet<>();
         keywordSet.addAll(Arrays.asList(KW_WITH, KW_FROM, KW_IN, KW_ON, KW_WHERE, KW_EXISTS, KW_GROUPBY, KW_HAVING, KW_ORDERBY,

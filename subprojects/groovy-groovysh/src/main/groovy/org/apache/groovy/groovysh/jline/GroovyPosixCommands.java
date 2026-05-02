@@ -1215,7 +1215,7 @@ public class GroovyPosixCommands {
     private static final LinkOption[] NO_FOLLOW_OPTIONS = new LinkOption[] {LinkOption.NOFOLLOW_LINKS};
     private static final LinkOption[] EMPTY_LINK_OPTIONS = new LinkOption[0];
     private static final List<String> WINDOWS_EXECUTABLE_EXTENSIONS =
-        Collections.unmodifiableList(Arrays.asList(".bat", ".exe", ".cmd"));
+        List.of(".bat", ".exe", ".cmd");
 
     private static boolean isWindowsExecutable(String fileName) {
         if ((fileName == null) || (fileName.length() <= 0)) {
