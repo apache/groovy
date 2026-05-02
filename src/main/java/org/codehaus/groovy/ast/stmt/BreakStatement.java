@@ -21,20 +21,41 @@ package org.codehaus.groovy.ast.stmt;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents a break statement in a switch or loop statement
+ * Represents a break statement that terminates execution of a loop or switch statement.
+ * When a break statement is encountered, control flow exits the current loop or switch,
+ * continuing at the statement following the loop or switch. Labeled break statements
+ * can exit outer loops or switch statements.
+ *
+ * @see {@link SwitchStatement}
+ * @see {@link LoopingStatement}
+ * @see {@link ContinueStatement}
+ * @see {@link Statement}
  */
 public class BreakStatement extends Statement {
 
     private String label;
 
+    /**
+     * Constructs an unlabeled break statement that exits the innermost enclosing loop or switch.
+     */
     public BreakStatement() {
         this(null);
     }
 
+    /**
+     * Constructs a labeled break statement that exits the enclosing loop or switch with the given label.
+     *
+     * @param label the name of the label to break to, or null for an unlabeled break
+     */
     public BreakStatement(String label) {
         this.label = label;
     }
 
+    /**
+     * Returns the label associated with this break statement.
+     *
+     * @return the label name, or null if this is an unlabeled break statement
+     */
     public String getLabel() {
         return label;
     }

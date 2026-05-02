@@ -23,12 +23,26 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 
 /**
- * A simple statement such as a method call where the return value is ignored
+ * Represents an expression statement that executes an expression where the return value is ignored.
+ * An expression statement wraps an {@link Expression} for use as a statement in contexts where
+ * an expression must be treated as a statement (e.g., method calls, assignments, or other
+ * side-effect-producing expressions). The expression is evaluated and its result is discarded.
+ *
+ * @throws IllegalArgumentException if the expression is null
+ * @see {@link Expression}
+ * @see {@link Statement}
+ * @see {@link ReturnStatement}
  */
 public class ExpressionStatement extends Statement {
 
     private Expression expression;
 
+    /**
+     * Constructs an expression statement with the given expression.
+     *
+     * @param expression the {@link Expression} to execute; must not be null
+     * @throws IllegalArgumentException if the expression is null
+     */
     public ExpressionStatement(Expression expression) {
         if (expression == null) {
             throw new IllegalArgumentException("expression cannot be null");
@@ -41,10 +55,20 @@ public class ExpressionStatement extends Statement {
         visitor.visitExpressionStatement(this);
     }
 
+    /**
+     * Returns the expression executed by this statement.
+     *
+     * @return the {@link Expression}
+     */
     public Expression getExpression() {
         return expression;
     }
 
+    /**
+     * Sets the expression executed by this statement.
+     *
+     * @param expression the {@link Expression}
+     */
     public void setExpression(Expression expression) {
         this.expression = expression;
     }

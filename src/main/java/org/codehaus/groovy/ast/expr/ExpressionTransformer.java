@@ -19,9 +19,37 @@
 package org.codehaus.groovy.ast.expr;
 
 /**
- * Provides a way to transform expressions.
+ * Functional interface for transforming {@link Expression} nodes during AST traversal and manipulation.
+ *
+ * <p>This transformer interface enables expression-level transformations in AST processing. Implementations
+ * typically take an input expression and return a (possibly modified) expression. This can be used for:
+ * <ul>
+ *   <li>Code generation and transformation passes</li>
+ *   <li>Expression normalization or optimization</li>
+ *   <li>Type-driven transformation in static type checking</li>
+ *   <li>Custom DSL implementation and metaprogramming</li>
+ * </ul>
+ *
+ * <p>Transformers may return:
+ * <ul>
+ *   <li>The same expression instance unchanged</li>
+ *   <li>A new expression of the same type with modified properties</li>
+ *   <li>A completely different expression type</li>
+ *   <li>Null if the expression should be removed (usage-dependent)</li>
+ * </ul>
+ *
+ * <p>This is a functional interface and can be implemented as a lambda expression.
+ *
+ * @see org.codehaus.groovy.ast.ClassCodeExpressionTransformer for abstract transformer base class
+ * @see TransformingCodeVisitor for visitor using transformers
  */
 @FunctionalInterface
 public interface ExpressionTransformer {
+    /**
+     * Transforms the given expression.
+     *
+     * @param expression the expression to transform, may be null
+     * @return the transformed expression, may be the same instance, a new instance, or null
+     */
     Expression transform(Expression expression);
 }

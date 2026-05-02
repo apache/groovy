@@ -25,9 +25,23 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
 import java.util.function.BiPredicate;
 
+/**
+ * Utility methods for working with method and constructor parameters.
+ *
+ * <p>Provides predicates and comparison utilities for {@link Parameter} arrays, supporting
+ * parameter equality checks, compatibility analysis, and varargs detection. Used extensively
+ * in method resolution and signature matching during compilation and reflection.
+ *
+ * @see Parameter for the parameter node type
+ * @see ClassHelper for related type utilities
+ */
 public class ParameterUtils {
 
     /**
+     * Checks if the last parameter in the array is a varargs parameter (array type).
+     *
+     * @param parameters the parameter array to check, may be null
+     * @return true if the array is non-empty and ends with an array-typed parameter, false otherwise
      * @since 4.0.4
      */
     public static boolean isVargs(final Parameter[] parameters) {
@@ -36,24 +50,42 @@ public class ParameterUtils {
     }
 
     /**
+     * Checks if two parameter arrays have equal types (exact type matching).
+     *
+     * @param a the first parameter array, may be null
+     * @param b the second parameter array, may be null
+     * @return true if both arrays have the same length and parameter types match exactly, false otherwise
      * @since 2.5.0
+     * @see #parametersEqualWithWrapperType(Parameter[], Parameter[])
      */
     public static boolean parametersEqual(final Parameter[] a, final Parameter[] b) {
         return parametersEqual(a, b, false);
     }
 
     /**
+     * Checks if two parameter arrays have equal types, treating wrapper and primitive types as equal.
+     *
+     * <p>For example, {@code int.class} and {@code Integer.class} are considered equal.
+     *
+     * @param a the first parameter array, may be null
+     * @param b the second parameter array, may be null
+     * @return true if both arrays have the same length and parameter types match (with wrapper equivalence), false otherwise
      * @since 3.0.0
+     * @see #parametersEqual(Parameter[], Parameter[])
      */
     public static boolean parametersEqualWithWrapperType(final Parameter[] a, final Parameter[] b) {
         return parametersEqual(a, b, true);
     }
 
     /**
-     * Checks compatibility of parameter arrays. Each parameter should match the
-     * following condition: {@code sourceType.isAssignableTo(targetType)}
+     * Checks if source parameters are compatible with target parameters using type assignability.
+     * Each parameter type in source must be assignable to the corresponding target parameter type.
      *
+     * @param source the source parameter array (may be null)
+     * @param target the target parameter array (may be null)
+     * @return true if both arrays have the same length and all source types are assignable to target types, false otherwise
      * @since 3.0.0
+     * @see StaticTypeCheckingSupport#isAssignableTo(ClassNode, ClassNode)
      */
     public static boolean parametersCompatible(final Parameter[] source, final Parameter[] target) {
         return parametersMatch(source, target, StaticTypeCheckingSupport::isAssignableTo);

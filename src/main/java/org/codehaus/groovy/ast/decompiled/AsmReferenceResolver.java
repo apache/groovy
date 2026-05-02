@@ -26,7 +26,9 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.objectweb.asm.Type;
 
 /**
- * A helper class used to resolve references found in ASM-decompiled classes.
+ * Helper class for resolving class references found in bytecode stubs decompiled from compiled classes.
+ * Maps bytecode type descriptors and internal class names to {@link ClassNode} instances by consulting
+ * both classes currently being compiled and already-loaded classes via the compilation unit's resolver.
  *
  * @see DecompiledClassNode
  * @see AsmDecompiler
@@ -35,11 +37,25 @@ public class AsmReferenceResolver {
     private final ClassNodeResolver resolver;
     private final CompilationUnit unit;
 
+    /**
+     * Creates an ASM reference resolver for a compilation unit.
+     *
+     * @param resolver the {@link ClassNodeResolver} used to resolve class names
+     * @param unit the {@link CompilationUnit} containing classes being compiled and metadata
+     */
     public AsmReferenceResolver(final ClassNodeResolver resolver, final CompilationUnit unit) {
         this.resolver = resolver;
         this.unit = unit;
     }
 
+    /**
+     * Resolves a fully qualified class name to a {@link ClassNode}.
+     * First checks classes being compiled in this unit, then consults the resolver for already-loaded classes.
+     *
+     * @param className the fully qualified class name
+     * @return the resolved {@link ClassNode}
+     * @throws NoClassDefFoundError if the class cannot be resolved
+     */
     public ClassNode resolveClass(final String className) {
         ClassNode classNode = resolveClassNullable(className);
         if (classNode == null) {
@@ -48,6 +64,13 @@ public class AsmReferenceResolver {
         return classNode;
     }
 
+    /**
+     * Attempts to resolve a fully qualified class name to a {@link ClassNode}, returning {@code null} if not found.
+     * First checks classes being compiled in this unit, then consults the resolver for already-loaded classes.
+     *
+     * @param className the fully qualified class name
+     * @return the resolved {@link ClassNode}, or {@code null} if not resolvable
+     */
     public ClassNode resolveClassNullable(final String className) {
         ClassNode beingCompiled = unit.getAST().getClass(className);
         if (beingCompiled != null) {
@@ -58,6 +81,13 @@ public class AsmReferenceResolver {
         return lookupResult != null ? lookupResult.getClassNode() : null;
     }
 
+    /**
+     * Resolves an ASM {@link Type} to a {@link ClassNode}, handling array types by wrapping element types.
+     *
+     * @param type the ASM type to resolve
+     * @return the corresponding {@link ClassNode}, with dimensions for array types
+     * @throws NoClassDefFoundError if an object type cannot be resolved
+     */
     public ClassNode resolveType(final Type type) {
         if (type.getSort() == Type.ARRAY) {
             ClassNode result = resolveNonArrayType(type.getElementType());
@@ -70,6 +100,15 @@ public class AsmReferenceResolver {
         return resolveNonArrayType(type);
     }
 
+    /**
+     * Resolves a non-array ASM type to a {@link ClassNode}.
+     * Primitive types are wrapped using {@link ClassHelper#make(String)};
+     * object types are resolved via {@link AsmReferenceResolver#resolveClass(String)}.
+     *
+     * @param type the ASM type (non-array)
+     * @return the corresponding {@link ClassNode}
+     * @throws NoClassDefFoundError if an object type cannot be resolved
+     */
     private ClassNode resolveNonArrayType(final Type type) {
         String className = type.getClassName();
         if (type.getSort() != Type.OBJECT) {
@@ -79,6 +118,14 @@ public class AsmReferenceResolver {
         return resolveClass(className);
     }
 
+    /**
+     * Resolves a fully qualified class name to a runtime JVM {@link Class} object.
+     * Uses the compilation unit's class loader to load the class.
+     *
+     * @param name the fully qualified class name
+     * @return the loaded runtime {@link Class}
+     * @throws GroovyBugError if the class cannot be loaded (wrapped ClassNotFoundException)
+     */
     public Class resolveJvmClass(final String name) {
         try {
             return unit.getClassLoader().loadClass(name, false, true);

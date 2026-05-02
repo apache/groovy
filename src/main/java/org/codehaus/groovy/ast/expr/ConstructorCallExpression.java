@@ -23,13 +23,35 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * A constructor call.
+ * Represents a constructor call expression.
+ * This includes regular object construction (e.g., {@code new MyClass(args)}),
+ * as well as special constructor calls like {@code this()} and {@code super()} calls within constructors.
+ * The constructor is identified by the type being constructed, and the arguments are wrapped in a {@link TupleExpression}.
+ * May optionally use an anonymous inner class.
+ * 
+ * @see {@link MethodCall} for the method interface this class implements
+ * @see {@link TupleExpression} for argument representation
+ * @see {@link ClassNode#THIS} for {@code this()} constructor calls
+ * @see {@link ClassNode#SUPER} for {@code super()} constructor calls
  */
 public class ConstructorCallExpression extends Expression implements MethodCall {
 
+    /**
+     * The constructor arguments, always wrapped in a {@link TupleExpression}.
+     */
     private final Expression arguments;
+    /**
+     * Whether this constructor call uses an anonymous inner class declaration.
+     */
     private boolean usesAnonymousInnerClass;
 
+    /**
+     * Creates a constructor call expression.
+     * Arguments are automatically wrapped in a {@link TupleExpression} if not already.
+     * 
+     * @param type the type being constructed (non-null), or {@link ClassNode#THIS}/{@link ClassNode#SUPER} for special calls
+     * @param arguments the constructor arguments (may be a single expression or already a {@link TupleExpression})
+     */
     public ConstructorCallExpression(ClassNode type, Expression arguments) {
         setType(type);
         if (!(arguments instanceof TupleExpression)) {
@@ -64,6 +86,11 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
         return "<init>";
     }
 
+    /**
+     * Returns the constructor arguments.
+     * 
+     * @return a {@link TupleExpression} containing the arguments
+     */
     @Override
     public Expression getArguments() {
         return arguments;
@@ -82,22 +109,47 @@ public class ConstructorCallExpression extends Expression implements MethodCall 
         return text + getArguments().getText();
     }
 
+    /**
+     * Indicates whether this is a special constructor call ({@code this()} or {@code super()}).
+     * 
+     * @return true if this is a {@code this()} or {@code super()} call, false for regular constructor calls
+     */
     public boolean isSpecialCall() {
         return isThisCall() || isSuperCall();
     }
 
+    /**
+     * Indicates whether this is a {@code super()} constructor call.
+     * 
+     * @return true if this calls the superclass constructor, false otherwise
+     */
     public boolean isSuperCall() {
         return getType() == ClassNode.SUPER;
     }
 
+    /**
+     * Indicates whether this is a {@code this()} constructor call.
+     * 
+     * @return true if this calls another constructor in the same class, false otherwise
+     */
     public boolean isThisCall() {
         return getType() == ClassNode.THIS;
     }
 
+    /**
+     * Indicates whether this constructor call uses an anonymous inner class.
+     * 
+     * @return true if an anonymous inner class is being created, false for regular construction
+     */
     public boolean isUsingAnonymousInnerClass() {
         return usesAnonymousInnerClass;
     }
 
+    /**
+     * Sets whether this constructor call uses an anonymous inner class.
+     * 
+     * @param usage true if an anonymous inner class is being used, false otherwise
+     */
     public void setUsingAnonymousInnerClass(boolean usage) {
         this.usesAnonymousInnerClass = usage;
     }

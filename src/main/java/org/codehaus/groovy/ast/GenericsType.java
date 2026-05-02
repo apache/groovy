@@ -32,9 +32,12 @@ import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
- * This class is used to describe generic type signatures for ClassNodes.
+ * Represents generic type information for parameterized types in Groovy/Java, including type variables,
+ * wildcard types, and type bounds. Supports placeholders for type parameters, wildcards with upper/lower bounds,
+ * and tracks resolution state for multi-phase compilation. Provides compatibility checking for generic type constraints.
  *
  * @see ClassNode
+ * @see GenericsTypeName
  */
 public class GenericsType extends ASTNode {
     public static final GenericsType[] EMPTY_ARRAY = new GenericsType[0];
@@ -45,6 +48,14 @@ public class GenericsType extends ASTNode {
     private final ClassNode[] upperBounds;
     private boolean placeholder, resolved, wildcard;
 
+    /**
+     * Creates a generics type with optional upper and lower bounds.
+     * The type is marked as a placeholder if the provided type is a generics placeholder.
+     *
+     * @param type the {@link ClassNode} representing the main generic type (never null)
+     * @param upperBounds optional array of upper bound {@link ClassNode}s (e.g., for "? extends Bound" or "T extends Bound")
+     * @param lowerBound optional lower bound {@link ClassNode} (e.g., for "? super Bound")
+     */
     public GenericsType(final ClassNode type, final ClassNode[] upperBounds, final ClassNode lowerBound) {
         setType(type);
         this.lowerBound = lowerBound;
@@ -53,14 +64,30 @@ public class GenericsType extends ASTNode {
         setName(placeholder ? type.getUnresolvedName() : type.getName());
     }
 
+    /**
+     * Creates a simple generics type with no bounds for a concrete type.
+     *
+     * @param basicType the {@link ClassNode} representing the concrete type (never null)
+     */
     public GenericsType(final ClassNode basicType) {
         this(basicType, null, null);
     }
 
+    /**
+     * Returns the underlying {@link ClassNode} for this generic type.
+     *
+     * @return the type
+     */
     public ClassNode getType() {
         return type;
     }
 
+    /**
+     * Sets the underlying {@link ClassNode} for this generic type.
+     *
+     * @param type the {@link ClassNode} to set (never null)
+     * @throws NullPointerException if type is null
+     */
     public void setType(final ClassNode type) {
         this.type = Objects.requireNonNull(type); // TODO: ensure type is not primitive
     }
@@ -145,26 +172,58 @@ public class GenericsType extends ASTNode {
         return sb;
     }
 
+    /**
+     * Returns the name of this generic type. For wildcard types, returns "?"; otherwise returns the type name.
+     *
+     * @return the type name
+     */
     public String getName() {
         return (isWildcard() ? "?" : name);
     }
 
+    /**
+     * Sets the name of this generic type.
+     *
+     * @param name the type name (never null)
+     * @throws NullPointerException if name is null
+     */
     public void setName(final String name) {
         this.name = Objects.requireNonNull(name);
     }
 
+    /**
+     * Returns true if this generic type has been resolved during compilation phases.
+     *
+     * @return true if resolved
+     */
     public boolean isResolved() {
         return resolved;
     }
 
+    /**
+     * Marks this generic type as resolved. Setting to true also implicitly sets resolved=true.
+     *
+     * @param resolved true to mark as resolved
+     */
     public void setResolved(final boolean resolved) {
         this.resolved = resolved;
     }
 
+    /**
+     * Returns true if this generic type represents a type variable placeholder (e.g., T in &lt;T&gt;).
+     *
+     * @return true if this is a placeholder type variable
+     */
     public boolean isPlaceholder() {
         return placeholder;
     }
 
+    /**
+     * Marks this generic type as a placeholder type variable. Setting to true also sets resolved=true
+     * and clears the wildcard flag, since placeholders and wildcards are mutually exclusive.
+     *
+     * @param placeholder true to mark as a placeholder
+     */
     public void setPlaceholder(final boolean placeholder) {
         this.placeholder = placeholder;
         this.resolved = resolved || placeholder;
@@ -172,28 +231,53 @@ public class GenericsType extends ASTNode {
         getType().setGenericsPlaceHolder(placeholder);
     }
 
+    /**
+     * Returns true if this generic type represents a wildcard (e.g., ? or ? extends/super Bound).
+     *
+     * @return true if this is a wildcard type
+     */
     public boolean isWildcard() {
         return wildcard;
     }
 
+    /**
+     * Marks this generic type as a wildcard. Clears the placeholder flag if set, since
+     * wildcards and placeholders are mutually exclusive.
+     *
+     * @param wildcard true to mark as a wildcard
+     */
     public void setWildcard(final boolean wildcard) {
         this.wildcard = wildcard;
         this.placeholder = placeholder && !wildcard;
     }
 
+    /**
+     * Returns the lower bound for this wildcard type (e.g., Bound in "? super Bound"), or null
+     * if this is not a lower-bounded wildcard.
+     *
+     * @return the lower bound {@link ClassNode}, or null
+     */
     public ClassNode getLowerBound() {
         return lowerBound;
     }
 
+    /**
+     * Returns the upper bounds for this wildcard or placeholder type (e.g., Bounds in "? extends Bound" or "T extends Bound1 & Bound2"),
+     * or null if this type has no upper bounds.
+     *
+     * @return array of upper bound {@link ClassNode}s, or null
+     */
     public ClassNode[] getUpperBounds() {
         return upperBounds;
     }
 
-    //--------------------------------------------------------------------------
-
     /**
-     * Determines if the provided type is compatible with this specification.
-     * The check is complete, meaning that nested generics are also checked.
+     * Determines if the provided type is compatible with this generic type specification.
+     * The check is complete and recursive, including nested generic parameters.
+     * Accounts for wildcards, placeholders, bounds, and generic type covariance rules.
+     *
+     * @param classNode the {@link ClassNode} to check for compatibility
+     * @return true if classNode satisfies this generic type specification
      */
     public boolean isCompatibleWith(final ClassNode classNode) {
         GenericsType[] genericsTypes = classNode.getGenericsTypes();
@@ -440,9 +524,10 @@ public class GenericsType extends ASTNode {
     }
 
     /**
-     * Represents {@link GenericsType} name.
-     * <p>
-     * TODO: In order to distinguish GenericsType with same name, we should add a property to keep the declaring class.
+     * Represents the name of a {@link GenericsType} for use as a map key or in generic type comparisons.
+     * This inner class provides value-based equality and hashing for generic type name matching.
+     *
+     * <p>TODO: In order to distinguish GenericsType with same name, we should add a property to keep the declaring class.
      * <ol>
      * <li> change the signature of constructor GenericsTypeName to `GenericsTypeName(String name, ClassNode declaringClass)`
      * <li> try to fix all compilation errors(if `GenericsType` has declaringClass property, the step would be a bit easy to fix...)
@@ -454,14 +539,31 @@ public class GenericsType extends ASTNode {
     public static class GenericsTypeName {
         private final String name;
 
+        /**
+         * Creates a generics type name with the specified string.
+         *
+         * @param name the generic type name (never null)
+         * @throws NullPointerException if name is null
+         */
         public GenericsTypeName(final String name) {
             this.name = Objects.requireNonNull(name);
         }
 
+        /**
+         * Returns the generic type name.
+         *
+         * @return the name
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * Compares this GenericsTypeName with another object for equality based on the type name.
+         *
+         * @param that the object to compare with
+         * @return true if both objects are GenericsTypeNames with equal names
+         */
         @Override
         public boolean equals(Object that) {
             if (this == that) return true;
@@ -469,11 +571,21 @@ public class GenericsType extends ASTNode {
             return getName().equals(((GenericsTypeName) that).getName());
         }
 
+        /**
+         * Returns the hash code based on the type name.
+         *
+         * @return the hash code
+         */
         @Override
         public int hashCode() {
             return getName().hashCode();
         }
 
+        /**
+         * Returns the string representation of this generics type name.
+         *
+         * @return the name
+         */
         @Override
         public String toString() {
             return getName();

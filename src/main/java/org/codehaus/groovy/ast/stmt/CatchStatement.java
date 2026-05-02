@@ -24,7 +24,14 @@ import org.codehaus.groovy.ast.Parameter;
 
 
 /**
- * Represents a catch (Exception var) { } statement
+ * Represents a catch (Exception var) { } statement that handles exceptions in a try-catch block.
+ * Each catch statement specifies an exception type to handle and a code block to execute when
+ * an exception of that type is caught. The exception is bound to a variable that can be
+ * referenced within the catch block.
+ *
+ * @see {@link TryCatchStatement}
+ * @see {@link Parameter}
+ * @see {@link Statement}
  */
 public class CatchStatement extends Statement {
 
@@ -32,6 +39,12 @@ public class CatchStatement extends Statement {
 
     private Statement code;
 
+    /**
+     * Constructs a catch statement with the given exception parameter and code block.
+     *
+     * @param variable the {@link Parameter} that declares the caught exception and binds it to a variable name
+     * @param code the {@link Statement} to execute when the exception is caught
+     */
     public CatchStatement(Parameter variable, Statement code) {
         this.variable = variable;
         this.code = code;
@@ -42,18 +55,38 @@ public class CatchStatement extends Statement {
         visitor.visitCatchStatement(this);
     }
 
+    /**
+     * Returns the statement executed when the exception is caught.
+     *
+     * @return the catch block {@link Statement}
+     */
     public Statement getCode() {
         return code;
     }
 
+    /**
+     * Returns the exception type of this catch statement.
+     *
+     * @return the {@link ClassNode} representing the exception type
+     */
     public ClassNode getExceptionType() {
         return variable.getType();
     }
 
+    /**
+     * Returns the parameter that declares the caught exception variable.
+     *
+     * @return the exception {@link Parameter}
+     */
     public Parameter getVariable() {
         return variable;
     }
 
+    /**
+     * Sets the statement executed when the exception is caught.
+     *
+     * @param code the catch block {@link Statement}
+     */
     public void setCode(Statement code) {
         this.code = code;
     }

@@ -92,7 +92,30 @@ import java.util.function.UnaryOperator;
 import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 
 /**
- * Handy methods when working with the Groovy AST.
+ * Handy methods when working with the Groovy AST. Provides factory methods for creating
+ * common AST nodes and utility methods for expression and statement construction.
+ *
+ * <p>This utility class offers shorthand methods (often with abbreviated names) for building
+ * AST structures:
+ * <ul>
+ *   <li>Statement constructors: {@code block()}, {@code expr()}, {@code assign()}, {@code ret()}, etc.</li>
+ *   <li>Expression constructors: {@code var()}, {@code constX()}, {@code classX()}, {@code cast()}, etc.</li>
+ *   <li>Operator expressions: {@code binX()}, {@code andX()}, {@code orX()}, {@code cmp()}, etc.</li>
+ *   <li>Collection literals: {@code list()}, {@code map()}, {@code tuple()}, {@code array()}, etc.</li>
+ *   <li>Method calls: {@code call()}, {@code invokeMethod()}, {@code staticCall()}, etc.</li>
+ * </ul>
+ *
+ * <p>Common patterns use abbreviated names like {@code X} suffix for expression factories
+ * (e.g., {@code varX()} for VariableExpression) and {@code S} suffix for statement factories
+ * (e.g., {@code blockS()} for BlockStatement).
+ *
+ * <p><strong>Null Handling:</strong> Most methods handle null gracefully, often returning
+ * empty or no-op structures rather than throwing exceptions.
+ *
+ * @see Expression for the base expression type
+ * @see Statement for the base statement type
+ * @see ClassNode for type information
+ * @see GenericsUtils for generic type utilities
  */
 public class GeneralUtils {
 
@@ -111,40 +134,101 @@ public class GeneralUtils {
     public  static final Token MINUS         = Token.newSymbol(Types.MINUS                     , -1, -1);
     public  static final Token PLUS          = Token.newSymbol(Types.PLUS                      , -1, -1);
 
+    /**
+     * Creates a binary expression with the AND operator joining two expressions.
+     *
+     * @param lhv the left-hand-side operand
+     * @param rhv the right-hand-side operand
+     * @return a BinaryExpression with AND operator
+     * @see #binX(Expression, Token, Expression)
+     */
     public static BinaryExpression andX(final Expression lhv, final Expression rhv) {
         return binX(lhv, AND, rhv);
     }
 
+    /**
+     * Creates an ArgumentListExpression from individual expression arguments.
+     *
+     * @param expressions the argument expressions (may be empty)
+     * @return an ArgumentListExpression containing the arguments
+     */
     public static ArgumentListExpression args(final Expression... expressions) {
         List<Expression> list = new ArrayList<>(expressions.length);
         Collections.addAll(list, expressions);
         return args(list);
     }
 
+    /**
+     * Creates an ArgumentListExpression from a list of expressions.
+     *
+     * @param expressions the list of argument expressions (may be empty)
+     * @return an ArgumentListExpression containing the arguments
+     */
     public static ArgumentListExpression args(final List<Expression> expressions) {
         return new ArgumentListExpression(expressions);
     }
 
+    /**
+     * Creates an ArgumentListExpression from parameter nodes, extracting their names as variable references.
+     *
+     * @param parameters the parameter nodes
+     * @return an ArgumentListExpression with variable expressions for each parameter
+     */
     public static ArgumentListExpression args(final Parameter... parameters) {
         return new ArgumentListExpression(parameters);
     }
 
+    /**
+     * Creates an ArgumentListExpression from variable names, converting each to a VariableExpression.
+     *
+     * @param names the variable names (non-null strings)
+     * @return an ArgumentListExpression with variable expressions for each name
+     */
     public static ArgumentListExpression args(final String... names) {
         return args(Arrays.stream(names).map(GeneralUtils::varX).toArray(Expression[]::new));
     }
 
+    /**
+     * Creates an ArrayExpression for the given element type and initial value expressions.
+     *
+     * @param elementType the {@link ClassNode} representing the array element type
+     * @param initExpressions the expressions providing initial array values
+     * @return an ArrayExpression with the given element type and values
+     */
     public static ArrayExpression arrayX(final ClassNode elementType, List<Expression> initExpressions) {
         return new ArrayExpression(elementType, initExpressions);
     }
 
+    /**
+     * Creates an ArrayExpression for the given element type, dimensions, and initial values.
+     *
+     * @param elementType the {@link ClassNode} representing the array element type
+     * @param initExpressions the expressions providing initial array values
+     * @param sizeExpressions the expressions providing array dimensions
+     * @return an ArrayExpression with the given element type, dimensions, and values
+     */
     public static ArrayExpression arrayX(final ClassNode elementType, List<Expression> initExpressions, List<Expression> sizeExpressions) {
         return new ArrayExpression(elementType, initExpressions, sizeExpressions);
     }
 
+    /**
+     * Creates a CastExpression converting the given expression to the specified type.
+     *
+     * @param type the {@link ClassNode} to cast to
+     * @param expression the expression to cast
+     * @return a CastExpression with the given type and expression
+     */
     public static CastExpression asX(final ClassNode type, final Expression expression) {
         return CastExpression.asExpression(type, expression);
     }
 
+    /**
+     * Creates a statement that assigns a null/empty value to the target expression.
+     * Used to clear or reset variable values.
+     *
+     * @param target the expression to assign to
+     * @return an ExpressionStatement assigning null to the target
+     */
     public static Statement assignNullS(final Expression target) {
         return assignS(target, ConstantExpression.EMPTY_EXPRESSION);
     }

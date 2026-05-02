@@ -22,11 +22,21 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents access to a Java/Groovy class in an expression, such
- * as when invoking a static method or accessing a static type
+ * Represents access to a Java or Groovy class object as an expression.
+ * This is used when referring to a class literal (e.g., {@code String.class}, {@code MyClass})
+ * in contexts such as invoking static methods, accessing static members, or passing a class as an argument.
+ * The type of this expression is the {@link ClassNode} being accessed.
+ * 
+ * @see {@link VariableExpression} for variable references
+ * @see {@link MethodCallExpression} for static method invocation
  */
 public class ClassExpression extends Expression {
 
+    /**
+     * Creates a class expression for the specified type.
+     * 
+     * @param type the class being accessed as an expression (non-null)
+     */
     public ClassExpression(ClassNode type) {
         super.setType(type);
     }

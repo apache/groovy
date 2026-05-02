@@ -32,12 +32,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents the entire contents of a compilation step which consists of one or
- * more {@link ModuleNode} instances. There's one instance of this that's shared
- * by all modules and classes compiled during a single invocation of the compiler.
- * <p>
- * It's attached to MethodNodes and ClassNodes and is used to find fully qualified
- * names of classes, resolve imports, and that sort of thing.
+ * Represents a complete compilation step involving one or more {@link ModuleNode} instances.
+ * A single {@link CompileUnit} is shared across all modules and classes compiled in one invocation,
+ * serving as a central repository for class metadata, import resolution, and compilation state.
+ *
+ * <p>The compile unit maintains mappings from fully qualified class names to {@link ClassNode} instances,
+ * tracks which classes require compilation, stores source file locations, and manages generated inner classes.
+ * It is attached to {@link MethodNode} and {@link ClassNode} instances to enable
+ * fully qualified name resolution, import lookup, and other compilation-time queries.
+ *
+ * @see ModuleNode
+ * @see ClassNode
+ * @see SourceUnit
+ * @see CompilerConfiguration
  */
 public class CompileUnit implements NodeMetaDataHandler {
 
@@ -52,44 +59,91 @@ public class CompileUnit implements NodeMetaDataHandler {
     private final Map<String, SourceUnit> classNameToSource = new LinkedHashMap<>();
     private final Map<String, InnerClassNode> generatedInnerClasses = new LinkedHashMap<>();
 
+    /**
+     * Creates a compile unit with the given classloader and compiler configuration.
+     * The code source is set to {@code null}.
+     *
+     * @param classLoader the {@link GroovyClassLoader} to use for loading classes
+     * @param config the {@link CompilerConfiguration} defining compilation behavior
+     */
     public CompileUnit(final GroovyClassLoader classLoader, final CompilerConfiguration config) {
         this(classLoader, null, config);
     }
 
+    /**
+     * Creates a compile unit with the given classloader, code source, and compiler configuration.
+     *
+     * @param classLoader the {@link GroovyClassLoader} to use for loading classes
+     * @param codeSource the {@link CodeSource} for code permissions or {@code null}
+     * @param config the {@link CompilerConfiguration} defining compilation behavior
+     */
     public CompileUnit(final GroovyClassLoader classLoader, final CodeSource codeSource, final CompilerConfiguration config) {
         this.loader = classLoader;
         this.codeSource = codeSource;
         this.config = config;
     }
 
+    /**
+     * Returns the compiler configuration for this compilation.
+     *
+     * @return the {@link CompilerConfiguration}
+     */
     public CompilerConfiguration getConfig() {
         return config;
     }
 
+    /**
+     * Returns the Groovy classloader used for loading classes during compilation.
+     *
+     * @return the {@link GroovyClassLoader}
+     */
     public GroovyClassLoader getClassLoader() {
         return loader;
     }
 
+    /**
+     * Returns the code source used for Java security permissions.
+     *
+     * @return the {@link CodeSource} or {@code null}
+     */
     public CodeSource getCodeSource() {
         return codeSource;
     }
 
+    /**
+     * Returns the metadata map for storing compilation-phase metadata.
+     * Implements {@link NodeMetaDataHandler} for consistency with AST nodes.
+     *
+     * @return the metadata map or {@code null}
+     */
     @Override
     public Map<?, ?> getMetaDataMap() {
         return metaDataMap;
     }
 
+    /**
+     * Sets the metadata map for storing compilation-phase metadata.
+     *
+     * @param metaDataMap the metadata map or {@code null}
+     */
     @Override
     public void setMetaDataMap(final Map<?, ?> metaDataMap) {
         this.metaDataMap = metaDataMap;
     }
 
+    /**
+     * Returns all modules being compiled in this unit.
+     *
+     * @return a list of {@link ModuleNode} instances
+     */
     public List<ModuleNode> getModules() {
         return modules;
     }
 
     /**
-     * @return a list of all the classes in each module in the compilation unit
+     * Returns all classes from all modules in this compilation unit.
+     *
+     * @return a list of all {@link ClassNode} instances across all modules
      */
     public List<ClassNode> getClasses() {
         List<ClassNode> answer = new ArrayList<>();
@@ -100,9 +154,11 @@ public class CompileUnit implements NodeMetaDataHandler {
     }
 
     /**
-     * @return the ClassNode for the given qualified name or returns null if
-     *         the name does not exist in the current compilation unit
-     *         (ignoring the .class files on the classpath)
+     * Looks up a class by its fully qualified name, checking both compiled classes and classes pending compilation.
+     * Returns {@code null} if the name does not exist in the current compilation unit (does not check .class files on classpath).
+     *
+     * @param name the fully qualified class name
+     * @return the {@link ClassNode} or {@code null} if not found in this unit
      */
     public ClassNode getClass(final String name) {
         ClassNode cn = classes.get(name);
@@ -111,36 +167,76 @@ public class CompileUnit implements NodeMetaDataHandler {
         return cn;
     }
 
+    /**
+     * Returns the map of classes pending compilation.
+     * These are typically forward references or generated classes queued for later compilation phases.
+     *
+     * @return a map from fully qualified names to {@link ClassNode} instances pending compilation
+     */
     public Map<String, ClassNode> getClassesToCompile() {
         return classesToCompile;
     }
 
+    /**
+     * Retrieves the source file location for a class by name.
+     * Useful for mapping compiled classes back to their source {@link SourceUnit}.
+     *
+     * @param className the fully qualified class name
+     * @return the {@link SourceUnit} where this class was defined, or {@code null} if not tracked
+     */
     public SourceUnit getScriptSourceLocation(final String className) {
         return classNameToSource.get(className);
     }
 
+    /**
+     * Returns an unmodifiable view of all generated inner classes.
+     * These are typically inner classes generated by Groovy transformations or the compiler.
+     *
+     * @return an unmodifiable map from inner class names to {@link InnerClassNode} instances
+     */
     public Map<String, InnerClassNode> getGeneratedInnerClasses() {
         return Collections.unmodifiableMap(generatedInnerClasses);
     }
 
+    /**
+     * Retrieves a generated inner class by name.
+     *
+     * @param name the fully qualified inner class name
+     * @return the {@link InnerClassNode} or {@code null} if not found
+     */
     public InnerClassNode getGeneratedInnerClass(final String name) {
         return generatedInnerClasses.get(name);
     }
 
-    //--------------------------------------------------------------------------
-
+    /**
+     * Checks if there are any classes pending compilation.
+     *
+     * @return {@code true} if {@code classesToCompile} is not empty
+     * @deprecated Use {@link #getClassesToCompile()} instead
+     */
     @Deprecated
     public boolean hasClassNodeToCompile() {
         return !classesToCompile.isEmpty();
     }
 
+    /**
+     * Returns an iterator over the names of classes pending compilation.
+     *
+     * @return an iterator over fully qualified class names
+     * @deprecated Use {@link #getClassesToCompile()} instead
+     */
     @Deprecated
     public Iterator<String> iterateClassNodeToCompile() {
         return classesToCompile.keySet().iterator();
     }
 
-    //--------------------------------------------------------------------------
-
+    /**
+     * Adds a module to this compilation unit along with all its classes.
+     * If the module is {@code null} (indicating a parsing error), it is silently ignored.
+     * Sets this compile unit as the module's owning unit.
+     *
+     * @param node the {@link ModuleNode} to add, or {@code null}
+     */
     public void addModule(final ModuleNode node) {
         // null means a compilation error prevented groovy from building an AST
         if (node != null) {
@@ -151,8 +247,9 @@ public class CompileUnit implements NodeMetaDataHandler {
     }
 
     /**
-     * Appends all of the fully-qualified class names in this
-     * module into the given map.
+     * Adds all classes in the given list to this compilation unit.
+     *
+     * @param list the list of {@link ClassNode} instances to add
      */
     public void addClasses(final List<ClassNode> list) {
         for (ClassNode node : list) {
@@ -161,7 +258,11 @@ public class CompileUnit implements NodeMetaDataHandler {
     }
 
     /**
-     * Adds a class to the unit.
+     * Adds a single class to this compilation unit, checking for duplicates and reporting errors.
+     * If a duplicate is detected, emits a {@link SyntaxException} describing the conflict and its possible resolution.
+     * Removes any pending compilation entry for the class if it exists.
+     *
+     * @param node the {@link ClassNode} to add
      */
     public void addClass(ClassNode node) {
         node = node.redirect();
@@ -193,9 +294,13 @@ public class CompileUnit implements NodeMetaDataHandler {
     }
 
     /**
-     * this method actually does not compile a class. It's only
-     * a marker that this type has to be compiled by the CompilationUnit
-     * at the end of a parse step no node should be left.
+     * Marks a class for compilation and associates it with its source location.
+     * This method does not perform actual compilation—it is only a marker that the class
+     * should be compiled by the {@link org.codehaus.groovy.control.CompilationUnit} at the end of a parse step.
+     * No marked class should remain by the end of compilation.
+     *
+     * @param node the {@link ClassNode} to compile
+     * @param location the {@link SourceUnit} where this class is defined
      */
     public void addClassNodeToCompile(final ClassNode node, final SourceUnit location) {
         String nodeName = node.getName();
@@ -203,6 +308,12 @@ public class CompileUnit implements NodeMetaDataHandler {
         classNameToSource.put(nodeName, location);
     }
 
+    /**
+     * Adds a generated inner class to the map of generated inner classes.
+     * These are inner classes created during compilation, typically by transformations.
+     *
+     * @param icn the {@link InnerClassNode} to register as generated
+     */
     public void addGeneratedInnerClass(final InnerClassNode icn) {
         generatedInnerClasses.put(icn.getName(), icn);
     }
