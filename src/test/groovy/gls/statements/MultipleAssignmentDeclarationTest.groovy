@@ -1572,8 +1572,9 @@ final class MultipleAssignmentDeclarationTest {
         '''
     }
 
-    // GEP-20 def/var binders: accepted in place of a type, equivalent to omitting it.
+    // GEP-20 def/val/var binders: accepted in place of a type, equivalent to omitting it.
     // Provided for symmetry with switch case patterns and the GEP-19 bracket-form grammar.
+    // `val` additionally marks the binding as final.
 
     @Test
     void testDefBinder_positional() {
@@ -1592,10 +1593,26 @@ final class MultipleAssignmentDeclarationTest {
     }
 
     @Test
+    void testValBinder_positional() {
+        assertScript '''
+            def (val a, val b) = [1, 2]
+            assert a == 1 && b == 2
+        '''
+    }
+
+    @Test
     void testMixedDefVarTypedBinder() {
         assertScript '''
             def (def a, var b, int c) = [1, 2, 3]
             assert a == 1 && b == 2 && c == 3
+        '''
+    }
+
+    @Test
+    void testMixedDefValVarTypedBinder() {
+        assertScript '''
+            def (def a, val b, var c, int d) = [1, 2, 3, 4]
+            assert a == 1 && b == 2 && c == 3 && d == 4
         '''
     }
 
@@ -1609,9 +1626,26 @@ final class MultipleAssignmentDeclarationTest {
     }
 
     @Test
+    void testValBinder_withRest() {
+        assertScript '''
+            def (val h, *t) = [1, 2, 3]
+            assert h == 1
+            assert t == [2, 3]
+        '''
+    }
+
+    @Test
     void testVarBinder_mapStyle() {
         assertScript '''
             def (name: var n, age: var a) = [name: 'X', age: 9]
+            assert n == 'X' && a == 9
+        '''
+    }
+
+    @Test
+    void testValBinder_mapStyle() {
+        assertScript '''
+            def (name: val n, age: val a) = [name: 'X', age: 9]
             assert n == 'X' && a == 9
         '''
     }
@@ -1629,6 +1663,18 @@ final class MultipleAssignmentDeclarationTest {
     }
 
     @Test
+    void testValBinder_CompileStatic_listLiteral() {
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic
+            def go() {
+                def (val a, val b) = [10, 20]
+                assert a == 10 && b == 20
+            }
+            go()
+        '''
+    }
+
+    @Test
     void testVarBinder_CompileStatic_mapStyle() {
         assertScript '''import groovy.transform.CompileStatic
             @CompileStatic
@@ -1638,6 +1684,38 @@ final class MultipleAssignmentDeclarationTest {
             }
             go()
         '''
+    }
+
+    @Test
+    void testValBinder_CompileStatic_mapStyle() {
+        assertScript '''import groovy.transform.CompileStatic
+            @CompileStatic
+            def go() {
+                def (name: val n) = [name: 'Z']
+                assert n == 'Z'
+            }
+            go()
+        '''
+    }
+
+    @Test // GROOVY-11977: val inner binder makes only that name final
+    void testValBinder_finality_perBinder() {
+        def e = shouldFail '''
+            def (val a, var b) = [1, 2]
+            b = 99      // OK
+            a = 99      // rejected
+        '''
+        assert e.message.contains('final')
+    }
+
+    @Test // GROOVY-11977: val inner binder under map-style enforces finality
+    void testValBinder_mapStyle_finality() {
+        def e = shouldFail '''
+            def (name: val n, age: var a) = [name: 'X', age: 9]
+            a = 10      // OK
+            n = 'Y'     // rejected
+        '''
+        assert e.message.contains('final')
     }
 
     // GEP-20 edge cases: empty Map literal, null RHS, Map missing-key with primitive

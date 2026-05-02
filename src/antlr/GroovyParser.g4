@@ -584,11 +584,11 @@ typeNamePairs
     ;
 
 typeNamePair
-    :   (DEF | VAR | type)? MUL? variableDeclaratorId
+    :   (DEF | VAL | VAR | type)? MUL? variableDeclaratorId
     ;
 
 keyedPair
-    :   key=identifier COLON (DEF | VAR | type)? variableDeclaratorId
+    :   key=identifier COLON (DEF | VAL | VAR | type)? variableDeclaratorId
     ;
 
 variableNames

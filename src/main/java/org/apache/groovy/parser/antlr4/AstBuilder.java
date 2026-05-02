@@ -2228,13 +2228,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         boolean isRest = asBoolean(ctx.MUL());
         // GEP-20: typed rest (e.g. `def (h, List<Integer> *t) = list`) is accepted; the
         // declared container type is honoured by static type checking and runtime coercion.
-        // `def` and `var` are also accepted in place of a type (equivalent to omitting it),
-        // for symmetry with switch case patterns and the bracket-form declaration grammar.
+        // `def`, `val`, and `var` are also accepted in place of a type (equivalent to omitting
+        // it), for symmetry with switch case patterns and the bracket-form declaration grammar.
+        // `val` additionally marks the binding as final.
         VariableExpression ve = configureAST(
                 new VariableExpression(
                         this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName(),
-                        binderType(ctx.DEF(), ctx.VAR(), ctx.type())),
+                        binderType(ctx.DEF(), ctx.VAL(), ctx.VAR(), ctx.type())),
                 ctx);
+        if (asBoolean(ctx.VAL())) {
+            ve.setModifiers(ve.getModifiers() | Opcodes.ACC_FINAL);
+        }
         if (isRest) {
             ve.putNodeMetaData(MultipleAssignmentMetadata.REST_BINDING, Boolean.TRUE);
         }
@@ -2246,15 +2250,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         VariableExpression ve = configureAST(
                 new VariableExpression(
                         this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName(),
-                        binderType(ctx.DEF(), ctx.VAR(), ctx.type())),
+                        binderType(ctx.DEF(), ctx.VAL(), ctx.VAR(), ctx.type())),
                 ctx);
+        if (asBoolean(ctx.VAL())) {
+            ve.setModifiers(ve.getModifiers() | Opcodes.ACC_FINAL);
+        }
         ve.putNodeMetaData(MultipleAssignmentMetadata.MAP_KEY, this.visitIdentifier(ctx.key));
         return ve;
     }
 
-    /** GEP-20: resolve a binder's declared type — `def`/`var` produce the dynamic type, same as omitting a type. */
-    private ClassNode binderType(final TerminalNode defNode, final TerminalNode varNode, final TypeContext typeCtx) {
-        if (asBoolean(defNode) || asBoolean(varNode)) return ClassHelper.dynamicType();
+    /** GEP-20: resolve a binder's declared type — `def`/`val`/`var` produce the dynamic type, same as omitting a type. */
+    private ClassNode binderType(final TerminalNode defNode, final TerminalNode valNode, final TerminalNode varNode, final TypeContext typeCtx) {
+        if (asBoolean(defNode) || asBoolean(valNode) || asBoolean(varNode)) return ClassHelper.dynamicType();
         return this.visitType(typeCtx);
     }
 
