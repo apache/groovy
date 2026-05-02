@@ -31,19 +31,26 @@ import org.codehaus.groovy.control.SourceUnit;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.transform.AutoCloneASTTransformation.cloneExceptionsFor;
 import static org.codehaus.groovy.transform.StubberSupport.addStubMethod;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  * Joint-compilation stubber for {@link AutoClone}. Adds the
  * {@link Cloneable} interface to the class header and emits a placeholder
- * {@code public Foo clone() throws CloneNotSupportedException} so Java
- * consumers can call the AutoClone-generated covariant {@code clone()}
- * against the joint-compilation stub.
+ * {@code public Foo clone()} so Java consumers can call the
+ * AutoClone-generated covariant {@code clone()} against the
+ * joint-compilation stub.
  *
  * <p>Without this, Java sees only {@code Object.clone()} (which is
  * {@code protected}), so {@code foo.clone()} from Java fails to compile
  * even though the runtime exposes a public covariant override.
+ *
+ * <p>The placeholder's {@code throws} clause is computed by
+ * {@link AutoCloneASTTransformation#cloneExceptionsFor(ClassNode)} so it
+ * is a legal Java override of the superclass {@code clone()} (e.g. a
+ * subclass of {@link java.util.HashMap} must not declare
+ * {@link CloneNotSupportedException} since {@code HashMap.clone()} doesn't).
  *
  * <p>The full {@link AutoCloneASTTransformation} at CANONICALIZATION
  * removes the stubber-tagged placeholder before installing whichever
@@ -57,7 +64,6 @@ public class AutoCloneASTStubber extends AbstractASTTransformation {
 
     private static final ClassNode MY_TYPE = make(AutoClone.class);
     private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
-    private static final ClassNode CNSE_TYPE = make(CloneNotSupportedException.class);
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -71,12 +77,14 @@ public class AutoCloneASTStubber extends AbstractASTTransformation {
             classNode.addInterface(CLONEABLE_TYPE);
         }
 
-        // public Foo clone() throws CloneNotSupportedException { return null; }
+        // public Foo clone() [throws CloneNotSupportedException] { return null; }
+        // Throws clause matches the nearest superclass clone() so the stub is a
+        // valid Java override (e.g. HashMap.clone() does not declare CNSE).
         if (classNode.getDeclaredMethod("clone", Parameter.EMPTY_ARRAY) == null) {
             addStubMethod(classNode, "clone", ACC_PUBLIC,
                     GenericsUtils.nonGeneric(classNode),
                     Parameter.EMPTY_ARRAY,
-                    new ClassNode[]{CNSE_TYPE},
+                    cloneExceptionsFor(classNode),
                     returnS(constX(null)));
         }
     }
