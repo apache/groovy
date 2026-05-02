@@ -244,6 +244,14 @@ public class FieldNode extends AnnotatedNode implements Variable {
         this.initialValueExpression = initialValueExpression;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && "org.codehaus.groovy.ast.decompiled.LazyFieldNode".equals(obj.getClass().getName())) {
+            return obj.equals(this);
+        }
+        return super.equals(obj);
+    }
+
     /**
      * Returns the original declared type of this field before any transformations.
      * Useful for preserving type information through compilation phases that may modify types.
