@@ -338,8 +338,7 @@ public class WideningCategories {
 
             @Override
             public boolean equals(final Object o) {
-                if (!(o instanceof TypePair)) return false;
-                TypePair p = (TypePair) o;
+                if (!(o instanceof TypePair p)) return false;
                 return (a == p.a && b == p.b) || (a == p.b && b == p.a);
             }
 
