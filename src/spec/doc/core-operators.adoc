@@ -1012,7 +1012,7 @@ Here is a complete list of the operators and their corresponding methods:
 === Compound assignment operator overloading
 
 Compound assignment operators (`+=`, `-=`, `\*=`, ...) normally desugar to `x = x.op(y)`,
-which creates a new value and reassigns the variable. Since Groovy 5.0 (GEP-15), classes can
+which creates a new value and reassigns the variable. Since Groovy 6.0 (GEP-15), classes can
 define dedicated *Assign methods to override compound-assign independently of the base operator.
 When a `*Assign` method exists on the receiver type and the compiler can resolve it directly
 (for example, under `@CompileStatic` or `@TypeChecked`), it is called directly: the receiver is
