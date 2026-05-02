@@ -195,7 +195,7 @@ public final class MarkdownRenderer {
     }
 
     private static String shiftHeadings(String html) {
-        if (html.indexOf("<h") < 0) return html;
+        if (!html.contains("<h")) return html;
         StringBuilder out = new StringBuilder(html.length());
         int i = 0, n = html.length();
         while (i < n) {
