@@ -467,7 +467,7 @@ public class XmlUtil {
     public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, boolean allowDoctypeDecl, Source... schemas) throws SAXException, ParserConfigurationException {
         SAXParserFactory factory = newFactoryInstance(namespaceAware, validating, allowDoctypeDecl);
         if (schemas.length != 0) {
-            SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
+            SchemaFactory schemaFactory = FactorySupport.createSchemaFactory(schemaLanguage);
             factory.setSchema(schemaFactory.newSchema(schemas));
         }
         SAXParser saxParser = factory.newSAXParser();
@@ -477,12 +477,10 @@ public class XmlUtil {
         return saxParser;
     }
 
-    private static SAXParserFactory newFactoryInstance(boolean namespaceAware, boolean validating, boolean allowDoctypeDecl) {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
+    private static SAXParserFactory newFactoryInstance(boolean namespaceAware, boolean validating, boolean allowDoctypeDecl) throws ParserConfigurationException {
+        SAXParserFactory factory = FactorySupport.createSaxParserFactory(allowDoctypeDecl);
         factory.setValidating(validating);
         factory.setNamespaceAware(namespaceAware);
-        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDoctypeDecl);
         return factory;
     }
 
@@ -517,7 +515,7 @@ public class XmlUtil {
      * @since 1.8.7
      */
     public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, File schema) throws SAXException, ParserConfigurationException {
-        SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
+        SchemaFactory schemaFactory = FactorySupport.createSchemaFactory(schemaLanguage);
         return newSAXParser(namespaceAware, validating, schemaFactory.newSchema(schema));
     }
 
@@ -552,7 +550,7 @@ public class XmlUtil {
      * @since 1.8.7
      */
     public static SAXParser newSAXParser(String schemaLanguage, boolean namespaceAware, boolean validating, URL schema) throws SAXException, ParserConfigurationException {
-        SchemaFactory schemaFactory = SchemaFactory.newInstance(schemaLanguage);
+        SchemaFactory schemaFactory = FactorySupport.createSchemaFactory(schemaLanguage);
         return newSAXParser(namespaceAware, validating, schemaFactory.newSchema(schema));
     }
 
@@ -695,8 +693,8 @@ public class XmlUtil {
     }
 
     private static void serialize(Source source, StreamResult target, SerializeOptions options) {
-        TransformerFactory factory = TransformerFactory.newInstance();
-        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !options.isAllowDocTypeDeclaration());
+        TransformerFactory factory = FactorySupport.createTransformerFactory(
+                options.isAllowDocTypeDeclaration(), options.isAllowExternalResources());
         setIndent(factory, options.getIndent());
         try {
             Transformer transformer = factory.newTransformer();

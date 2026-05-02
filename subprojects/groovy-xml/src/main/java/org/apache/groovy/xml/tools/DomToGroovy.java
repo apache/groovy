@@ -19,6 +19,7 @@
 package org.apache.groovy.xml.tools;
 
 import groovy.util.IndentPrinter;
+import groovy.xml.FactorySupport;
 import org.codehaus.groovy.syntax.Types;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
@@ -182,9 +183,8 @@ public class DomToGroovy {
     }
 
     private static Document parse(InputSource is) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
         factory.setNamespaceAware(true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(is);
     }

@@ -34,7 +34,6 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -52,7 +51,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-import static groovy.xml.XmlUtil.setFeatureQuietly;
 
 /**
  * Parse XML into a document tree that may be traversed similar to XPath
@@ -188,11 +186,9 @@ public class XmlSlurper extends DefaultHandler {
     }
 
     private void initReader() throws ParserConfigurationException, SAXException {
-        SAXParserFactory factory = FactorySupport.createSaxParserFactory();
+        SAXParserFactory factory = FactorySupport.createSaxParserFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
-        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 

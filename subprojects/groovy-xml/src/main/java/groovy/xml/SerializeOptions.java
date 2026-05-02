@@ -38,6 +38,7 @@ public class SerializeOptions {
     private String encoding = "UTF-8";
     private int indent = 2;
     private boolean allowDocTypeDeclaration = false;
+    private boolean allowExternalResources = false;
 
     /**
      * Creates a new options instance using the default serialization settings.
@@ -109,6 +110,31 @@ public class SerializeOptions {
      */
     public void setAllowDocTypeDeclaration(boolean allowDocTypeDeclaration) {
         this.allowDocTypeDeclaration = allowDocTypeDeclaration;
+    }
+
+    /**
+     * Whether the underlying {@link javax.xml.transform.TransformerFactory}
+     * may resolve external DTDs and stylesheets (e.g. via {@code <xsl:import>}
+     * or {@code <xsl:include>}).
+     * Default is {@code false}; set to {@code true} when serializing XSLT
+     * documents that legitimately reference external resources.
+     *
+     * @return {@code true} if external resource resolution is allowed
+     * @since 6.0.0
+     */
+    public boolean isAllowExternalResources() {
+        return allowExternalResources;
+    }
+
+    /**
+     * Sets whether external DTDs and stylesheets may be resolved during
+     * serialization.
+     *
+     * @param allowExternalResources {@code true} to allow external resource resolution
+     * @since 6.0.0
+     */
+    public void setAllowExternalResources(boolean allowExternalResources) {
+        this.allowExternalResources = allowExternalResources;
     }
 
     /**
