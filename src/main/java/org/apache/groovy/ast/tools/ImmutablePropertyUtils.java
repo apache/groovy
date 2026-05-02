@@ -55,8 +55,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 
+/**
+ * Utility methods for immutable-property analysis and code generation.
+ */
 public class ImmutablePropertyUtils {
     private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
+    /**
+     * The {@link ImmutableOptions} annotation type used to configure immutable-property handling.
+     */
     public  static final ClassNode IMMUTABLE_OPTIONS_TYPE = ClassHelper.makeWithoutCaching(ImmutableOptions.class, false);
 
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
@@ -142,6 +148,13 @@ public class ImmutablePropertyUtils {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Creates an expression that clones an array or {@link Cloneable} value and casts it back to the requested type.
+     *
+     * @param expr the expression producing the original value
+     * @param type the expected result type
+     * @return an expression that performs the clone operation
+     */
     public static Expression cloneArrayOrCloneableExpr(final Expression expr, final ClassNode type) {
         Expression clone;
         if (!CompilerConfiguration.DEFAULT.isIndyEnabled()) {
@@ -182,18 +195,45 @@ public class ImmutablePropertyUtils {
         return castX(type, clone);
     }
 
+    /**
+     * Checks whether the supplied type implements {@link Cloneable}.
+     *
+     * @param fieldType the type to inspect
+     * @return {@code true} if the type implements {@link Cloneable}
+     */
     public static boolean implementsCloneable(final ClassNode fieldType) {
         return isOrImplements(fieldType, ClassHelper.CLONEABLE_TYPE);
     }
 
+    /**
+     * Creates an expression that clones a {@link Date} value.
+     *
+     * @param origDate the date expression to clone
+     * @return an expression that creates a defensive date copy
+     */
     public static Expression cloneDateExpr(final Expression origDate) {
         return ctorX(DATE_TYPE, callX(origDate, "getTime"));
     }
 
+    /**
+     * Checks whether the supplied type derives from {@link Date}.
+     *
+     * @param fieldType the type to inspect
+     * @return {@code true} if the type derives from {@link Date}
+     */
     public static boolean derivesFromDate(final ClassNode fieldType) {
         return fieldType.isDerivedFrom(DATE_TYPE);
     }
 
+    /**
+     * Creates the standard error message for an unsupported immutable property type.
+     *
+     * @param className the immutable class being processed
+     * @param fieldName the property name
+     * @param typeName the unsupported type name
+     * @param mode the operation being performed
+     * @return the formatted error message
+     */
     public static String createErrorMessage(final String className, final String fieldName, final String typeName, final String mode) {
         return "Unsupported type (" + prettyTypeName(typeName) + ") found for field '" + fieldName + "' while " + mode + " immutable class " + className + ".\n" +
                 "Immutable classes only support properties with effectively immutable types including:\n" +
@@ -208,6 +248,13 @@ public class ImmutablePropertyUtils {
         return "java.lang.Object".equals(name) ? name + " or def" : name;
     }
 
+    /**
+     * Checks whether the supplied type is acceptable for an immutable property.
+     *
+     * @param fieldType the type to inspect
+     * @param knownImmutableClasses additional immutable type names supplied by configuration
+     * @return {@code true} if the type is supported by immutable-property handling
+     */
     public static boolean isKnownImmutableType(final ClassNode fieldType, final List<String> knownImmutableClasses) {
         if (builtinOrDeemedType(fieldType, knownImmutableClasses))
             return true;
@@ -243,6 +290,12 @@ public class ImmutablePropertyUtils {
         return BUILTIN_IMMUTABLE_ANNOTATIONS.contains(name);
     }
 
+    /**
+     * Checks whether the supplied type name is one of the built-in immutable types.
+     *
+     * @param typeName the type name to inspect
+     * @return {@code true} if the type is treated as built-in immutable
+     */
     public static boolean isBuiltinImmutable(final String typeName) {
         return BUILTIN_IMMUTABLES.contains(typeName);
     }
@@ -256,10 +309,23 @@ public class ImmutablePropertyUtils {
         return false;
     }
 
+    /**
+     * Checks whether the supplied class is built in as immutable or carries an immutable marker annotation.
+     *
+     * @param clazz the class to inspect
+     * @return {@code true} if the class is treated as immutable
+     */
     public static boolean builtinOrMarkedImmutableClass(final Class<?> clazz) {
         return isBuiltinImmutable(clazz.getName()) || hasImmutableAnnotation(clazz);
     }
 
+    /**
+     * Extracts configured immutable property names from {@link ImmutableOptions}.
+     *
+     * @param xform the transform reporting configuration errors
+     * @param cNode the annotated class node
+     * @return the configured immutable property names
+     */
     public static List<String> getKnownImmutables(final AbstractASTTransformation xform, final ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);
@@ -284,6 +350,13 @@ public class ImmutablePropertyUtils {
         return immutables;
     }
 
+    /**
+     * Extracts configured immutable helper classes from {@link ImmutableOptions}.
+     *
+     * @param xform the transform reporting configuration errors
+     * @param cNode the annotated class node
+     * @return the configured immutable class names
+     */
     public static List<String> getKnownImmutableClasses(final AbstractASTTransformation xform, final ClassNode cNode) {
         List<AnnotationNode> annotations = cNode.getAnnotations(ImmutablePropertyUtils.IMMUTABLE_OPTIONS_TYPE);
         AnnotationNode anno = annotations.isEmpty() ? null : annotations.get(0);

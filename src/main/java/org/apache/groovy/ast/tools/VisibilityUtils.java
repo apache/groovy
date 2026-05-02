@@ -38,6 +38,9 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
+/**
+ * Utility methods for resolving visibility customizations from {@link VisibilityOptions}.
+ */
 public class VisibilityUtils {
     private static final ClassNode VISIBILITY_OPTIONS_TYPE = makeWithoutCaching(VisibilityOptions.class, false);
 

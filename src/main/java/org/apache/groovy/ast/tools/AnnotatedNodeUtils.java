@@ -39,10 +39,25 @@ public class AnnotatedNodeUtils {
 
     private AnnotatedNodeUtils() { }
 
+    /**
+     * Marks the supplied node with {@link Generated @Generated} when generation metadata is available.
+     *
+     * @param containingClass the class currently receiving generated members
+     * @param nodeToMark the node to annotate
+     * @return the supplied node
+     */
     public static <T extends AnnotatedNode> T markAsGenerated(final ClassNode containingClass, final T nodeToMark) {
         return markAsGenerated(containingClass, nodeToMark, false);
     }
 
+    /**
+     * Marks the supplied node with {@link Generated @Generated}.
+     *
+     * @param containingClass the class currently receiving generated members
+     * @param nodeToMark the node to annotate
+     * @param skipChecks whether to skip the usual source-context checks
+     * @return the supplied node
+     */
     public static <T extends AnnotatedNode> T markAsGenerated(final ClassNode containingClass, final T nodeToMark, final boolean skipChecks) {
         boolean shouldAnnotate = skipChecks || (containingClass.getModule() != null && containingClass.getModule().getContext() != null);
         if (shouldAnnotate && !isGenerated(nodeToMark)) {
@@ -51,11 +66,24 @@ public class AnnotatedNodeUtils {
         return nodeToMark;
     }
 
+    /**
+     * Checks whether the supplied node carries the given annotation.
+     *
+     * @param node the node to inspect
+     * @param annotation the annotation type to look for
+     * @return {@code true} if the node has at least one matching annotation
+     */
     public static boolean hasAnnotation(final AnnotatedNode node, final ClassNode annotation) {
         List<?> annots = node.getAnnotations(annotation);
         return (annots != null && !annots.isEmpty());
     }
 
+    /**
+     * Checks whether the supplied node has been marked as generated.
+     *
+     * @param node the node to inspect
+     * @return {@code true} if the node carries {@link Generated @Generated}
+     */
     public static boolean isGenerated(final AnnotatedNode node) {
         return hasAnnotation(node, GENERATED_TYPE);
     }
