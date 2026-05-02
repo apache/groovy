@@ -43,6 +43,7 @@ include::../../../../../src/spec/doc/core-introduction.adoc[]
 
 == Groovy Language Specification
 
+:core-concurrent-actors:
 :core-domain-specific-languages:
 :core-metaprogramming:
 :core-object-orientation:

@@ -264,7 +264,7 @@ loop works identically.
 
 The JDK's `Flow.Publisher` is supported out of the box — no adapter module
 needed. This means streams exposed by built-in sources such as
-`Agent.changes()` (see xref:actors-agent[]) and `BroadcastChannel.asPublisher()`
+`Agent.changes()` (see <<{core-concurrent-actors}#actors-agent,Agent>>) and `BroadcastChannel.asPublisher()`
 (see xref:async-broadcast-channel[]), or any third-party publisher using the JDK
 interfaces, compose directly with `for await` and `await`:
 
