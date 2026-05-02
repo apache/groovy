@@ -26,7 +26,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -61,14 +60,31 @@ public class DOMBuilder extends BuilderSupport {
 
     /**
      * Creates a DOM builder using the requested parser settings.
+     * The underlying parser does not allow DOCTYPE declarations.
      *
      * @param validating whether the parser should validate source documents
      * @param namespaceAware whether the parser should be namespace aware
      * @return a new DOM builder backed by a freshly created {@link DocumentBuilder}
      * @throws ParserConfigurationException if the parser cannot be configured
+     * @see #newInstance(boolean, boolean, boolean)
      */
     public static DOMBuilder newInstance(boolean validating, boolean namespaceAware) throws ParserConfigurationException {
-        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
+        return newInstance(validating, namespaceAware, false);
+    }
+
+    /**
+     * Creates a DOM builder using the requested parser settings, including
+     * whether DOCTYPE declarations are permitted in parsed documents.
+     *
+     * @param validating              whether the parser should validate source documents
+     * @param namespaceAware          whether the parser should be namespace aware
+     * @param allowDocTypeDeclaration whether the parser should allow DOCTYPE declarations
+     * @return a new DOM builder backed by a freshly created {@link DocumentBuilder}
+     * @throws ParserConfigurationException if the parser cannot be configured
+     * @since 6.0.0
+     */
+    public static DOMBuilder newInstance(boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException {
+        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
         return new DOMBuilder(factory.newDocumentBuilder());
@@ -128,11 +144,9 @@ public class DOMBuilder extends BuilderSupport {
      */
     public static Document parse(Reader reader, boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration)
             throws SAXException, IOException, ParserConfigurationException {
-        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
+        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
-        XmlUtil.setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        XmlUtil.setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         DocumentBuilder documentBuilder = factory.newDocumentBuilder();
         return documentBuilder.parse(new InputSource(reader));
     }

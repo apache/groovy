@@ -23,6 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.namespace.QName;
 import groovy.xml.DOMBuilder;
+import groovy.xml.FactorySupport;
 import org.apache.groovy.xml.extensions.XmlExtensions;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.w3c.dom.Attr;
@@ -35,7 +36,6 @@ import org.w3c.dom.Text;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -709,7 +709,7 @@ public class DOMCategory {
      * @throws GroovyRuntimeException if the expression cannot be evaluated
      */
     public static Object xpath(Node self, String expression, javax.xml.namespace.QName returnType) {
-        final XPath xpath = XPathFactory.newInstance().newXPath();
+        final XPath xpath = FactorySupport.createXPathFactory().newXPath();
         try {
             return xpath.evaluate(expression, self, returnType);
         } catch (XPathExpressionException e) {
@@ -726,7 +726,7 @@ public class DOMCategory {
      * @throws GroovyRuntimeException if the expression cannot be evaluated
      */
     public static String xpath(Node self, String expression) {
-        final XPath xpath = XPathFactory.newInstance().newXPath();
+        final XPath xpath = FactorySupport.createXPathFactory().newXPath();
         try {
             return xpath.evaluate(expression, self);
         } catch (XPathExpressionException e) {

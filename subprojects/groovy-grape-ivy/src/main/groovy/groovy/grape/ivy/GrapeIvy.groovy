@@ -53,7 +53,9 @@ import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
 import org.w3c.dom.Element
 
+import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.parsers.ParserConfigurationException
 import java.text.ParseException
 import java.util.regex.Pattern
 
@@ -505,7 +507,16 @@ class GrapeIvy implements GrapeEngine {
                         // TODO: handle other types? e.g. 'dlls'
                         def jardir = new File(moduleDir, 'jars')
                         if (!jardir.exists()) return
-                        def db = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                        def dbf = DocumentBuilderFactory.newInstance()
+                        try {
+                            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+                            dbf.setFeature('http://apache.org/xml/features/disallow-doctype-decl', true)
+                        } catch (ParserConfigurationException ignored) {
+                            // feature not supported by this JAXP impl
+                        }
+                        dbf.setXIncludeAware(false)
+                        dbf.setExpandEntityReferences(false)
+                        def db = dbf.newDocumentBuilder()
                         def root = db.parse(ivyFile).getDocumentElement()
                         def publis = root.getElementsByTagName('publications')
                         for (int i = 0; i < publis.length; i += 1) {

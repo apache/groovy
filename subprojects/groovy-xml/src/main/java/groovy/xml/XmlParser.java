@@ -33,7 +33,6 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -49,7 +48,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static groovy.xml.XmlUtil.setFeatureQuietly;
 
 /**
  * A helper class for parsing XML into a tree of Node instances for a
@@ -149,11 +147,9 @@ public class XmlParser implements ContentHandler {
     }
 
     private void initReader() throws ParserConfigurationException, SAXException {
-        SAXParserFactory factory = FactorySupport.createSaxParserFactory();
+        SAXParserFactory factory = FactorySupport.createSaxParserFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
-        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         reader = factory.newSAXParser().getXMLReader();
     }
 

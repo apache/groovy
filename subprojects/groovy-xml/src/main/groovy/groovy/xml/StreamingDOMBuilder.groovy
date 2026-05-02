@@ -22,8 +22,6 @@ import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 import org.w3c.dom.Node
 
-import javax.xml.parsers.DocumentBuilderFactory
-
 /**
  * A streaming builder that creates W3C DOM content for GPath-style XML traversal or further DOM processing.
  */
@@ -214,7 +212,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                 boundClosure.trigger = ['document' : document, 'element' : it]
                 return document
             }
-            def dBuilder = DocumentBuilderFactory.newInstance()
+            def dBuilder = FactorySupport.createDocumentBuilderFactory()
             dBuilder.namespaceAware = true
             def newDocument = dBuilder.newDocumentBuilder().newDocument()
             boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
