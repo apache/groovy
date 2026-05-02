@@ -72,6 +72,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -705,9 +706,9 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                     if ("old".equals(varExpr.getName())) {
                         String propName = propExpr.getPropertyAsString();
                         // Record the old reference for @Modifies validation
-                        java.util.Set<String> oldRefs = (java.util.Set<String>) methodNode.getNodeMetaData(OLD_REFERENCES_KEY);
+                        Set<String> oldRefs = methodNode.getNodeMetaData(OLD_REFERENCES_KEY);
                         if (oldRefs == null) {
-                            oldRefs = new java.util.LinkedHashSet<>();
+                            oldRefs = new LinkedHashSet<>();
                             methodNode.putNodeMetaData(OLD_REFERENCES_KEY, oldRefs);
                         }
                         oldRefs.add(propName);
