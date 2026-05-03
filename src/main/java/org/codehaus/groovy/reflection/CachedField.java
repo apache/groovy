@@ -27,8 +27,19 @@ import java.lang.reflect.Field;
 
 import static org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation.castToType;
 
+/**
+ * Caches reflection information about a single field for efficient access and modification.
+ * <p>
+ * Extends {@link MetaProperty} to integrate with the meta-programming framework.
+ * Handles lazy field accessibility and provides property-like access to field values.
+ */
 public class CachedField extends MetaProperty {
 
+    /**
+     * Constructs a {@code CachedField} for the given Java field.
+     *
+     * @param field the field to cache reflection information for
+     */
     public CachedField(final Field field) {
         super(field.getName(), field.getType());
         this.field = field;
@@ -41,11 +52,21 @@ public class CachedField extends MetaProperty {
         madeAccessible = true;
     }
 
+    /**
+     * Returns the underlying Java {@code Field} object, making it accessible if necessary.
+     *
+     * @return the cached field with accessibility ensured
+     */
     public Field getCachedField() {
         if (!madeAccessible) makeAccessible();
         return field;
     }
 
+    /**
+     * Returns the class that declares this field.
+     *
+     * @return the declaring class
+     */
     public Class getDeclaringClass() {
         return field.getDeclaringClass();
     }
@@ -98,6 +119,14 @@ public class CachedField extends MetaProperty {
         }
     }
 
+    /**
+     * Creates a method handle that provides getter access to this field via MethodHandles API.
+     * Attempts to unreflect the field, automatically making it accessible if needed.
+     *
+     * @param lookup the method handles lookup context
+     * @return a method handle providing getter access to this field
+     * @throws IllegalAccessException if the field cannot be accessed even with accessibility adjustments
+     */
     public MethodHandle asAccessMethod(final MethodHandles.Lookup lookup) throws IllegalAccessException {
         try {
             return lookup.unreflectGetter(field);

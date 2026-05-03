@@ -26,21 +26,39 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Array;
 
+/**
+ * Manages parameter type information for methods and constructors, supporting lazy initialization.
+ * <p>
+ * Stores both cached class representations and native Java {@code Class} objects,
+ * initializing them on-demand with thread-safe synchronization.
+ */
 public class ParameterTypes {
 
     private volatile CachedClass[] parameterTypes;
     private volatile Class[] nativeParamTypes;
     private boolean isVargsMethod;
 
+    /**
+     * Constructs a {@code ParameterTypes} with uninitialized parameter types.
+     */
     public ParameterTypes() {
     }
 
+    /**
+     * Constructs a {@code ParameterTypes} with the specified native parameter types.
+     *
+     * @param pt the native Java {@code Class} array representing method parameters
+     */
     public ParameterTypes(Class[] pt) {
         nativeParamTypes = pt;
     }
 
     /**
-     * @deprecated
+     * Constructs a {@code ParameterTypes} from class names.
+     *
+     * @param pt an array of fully qualified class names
+     * @deprecated Use {@link #ParameterTypes(Class[])} instead
+     * @throws NoClassDefFoundError if any class name cannot be resolved
      */
     @Deprecated
     public ParameterTypes(String[] pt) {
@@ -56,15 +74,31 @@ public class ParameterTypes {
         }
     }
 
+    /**
+     * Constructs a {@code ParameterTypes} with the specified cached parameter types.
+     *
+     * @param pt an array of cached class objects representing method parameters
+     */
     public ParameterTypes(CachedClass[] pt) {
         setParametersTypes(pt);
     }
 
+    /**
+     * Sets the cached parameter types and determines if this is a varargs method.
+     *
+     * @param pt the array of cached parameter types
+     */
     protected final void setParametersTypes(CachedClass[] pt) {
         this.parameterTypes = pt;
         isVargsMethod = pt.length > 0 && pt[pt.length - 1].isArray;
     }
 
+    /**
+     * Returns the cached class representations of the parameter types.
+     * Lazily initializes the types on first access.
+     *
+     * @return an array of cached parameter types
+     */
     public CachedClass[] getParameterTypes() {
         if (parameterTypes == null) {
             getParametersTypes0();
@@ -89,6 +123,12 @@ public class ParameterTypes {
         }
     }
 
+    /**
+     * Returns the native Java {@code Class} objects for the parameter types.
+     * Lazily initializes the types on first access.
+     *
+     * @return an array of native parameter classes
+     */
     public Class[] getNativeParameterTypes() {
         if (nativeParamTypes == null) {
             getNativeParameterTypes0();
@@ -111,10 +151,22 @@ public class ParameterTypes {
         }
     }
 
+    /**
+     * Protected method subclasses override to provide parameter types.
+     * Default implementation throws {@code UnsupportedOperationException}.
+     *
+     * @return the native parameter class array
+     * @throws UnsupportedOperationException if not overridden by subclass
+     */
     protected Class[] getPT() {
         throw new UnsupportedOperationException(getClass().getName());
     }
 
+    /**
+     * Returns whether this represents a varargs (variable arguments) method.
+     *
+     * @return {@code true} if the last parameter is an array type, {@code false} otherwise
+     */
     public boolean isVargsMethod() {
         if (parameterTypes == null) {
             getParametersTypes0(); // GROOVY-11293
@@ -122,6 +174,12 @@ public class ParameterTypes {
         return isVargsMethod;
     }
 
+    /**
+     * Checks if this varargs method should treat arguments as a varargs invocation.
+     *
+     * @param arguments the actual arguments passed to the method
+     * @return {@code true} if varargs conversion is needed, {@code false} otherwise
+     */
     public boolean isVargsMethod(Object[] arguments) {
         if (isVargsMethod()) {
             int aCount = arguments.length;
@@ -137,6 +195,14 @@ public class ParameterTypes {
         return false;
     }
 
+    /**
+     * Coerces arguments to match the expected parameter types, handling type conversions and varargs expansion.
+     * First corrects argument count for varargs methods, then coerces each argument to its target type.
+     *
+     * @param arguments the arguments to coerce
+     * @return the coerced argument array
+     * @throws IllegalArgumentException if null is passed where a primitive type is expected
+     */
     public final Object[] coerceArgumentsToClasses(Object[] arguments) {
         arguments = correctArguments(arguments);
         // TODO: if isVargsMethod, coerce array items
@@ -156,6 +222,13 @@ public class ParameterTypes {
         return arguments;
     }
 
+    /**
+     * Corrects argument count to match method signature, handling varargs expansion and null filling.
+     * Transforms arguments to match the expected parameter count by expanding varargs arrays or filling nulls.
+     *
+     * @param arguments the arguments to correct
+     * @return the corrected argument array
+     */
     public Object[] correctArguments(Object[] arguments) {
         if (arguments == null) {
             arguments = MetaClassHelper.EMPTY_ARRAY;
@@ -232,6 +305,12 @@ public class ParameterTypes {
         return result;
     }
 
+    /**
+     * Checks if the given argument types are valid for this method, considering varargs conversion.
+     *
+     * @param argumentTypes the argument types to validate
+     * @return {@code true} if the types match the method parameters; {@code false} otherwise
+     */
     public boolean isValidMethod(Class[] argumentTypes) {
         if (argumentTypes == null) return true;
         CachedClass[] pt = getParameterTypes();
@@ -256,6 +335,13 @@ public class ParameterTypes {
         return true;
     }
 
+    /**
+     * Checks if the given actual arguments exactly match this method's parameter types.
+     * All arguments must be assignable to their corresponding parameters.
+     *
+     * @param args the actual arguments to validate
+     * @return {@code true} if the arguments are valid for exact invocation; {@code false} otherwise
+     */
     public boolean isValidExactMethod(Object[] args) {
         // let's check the parameter types match
         getParametersTypes0();
@@ -272,6 +358,13 @@ public class ParameterTypes {
         return true;
     }
 
+    /**
+     * Checks if the given argument types exactly match this method's parameter types.
+     * All types must be assignable to their corresponding parameters.
+     *
+     * @param args the argument types to validate
+     * @return {@code true} if the types are valid for exact invocation; {@code false} otherwise
+     */
     public boolean isValidExactMethod(Class[] args) {
         // let's check the parameter types match
         getParametersTypes0();
@@ -317,6 +410,11 @@ public class ParameterTypes {
         return true;
     }
 
+    /**
+     * Checks if the given actual arguments are valid for this method, considering varargs conversion.
+     * @param arguments the actual arguments to validate
+     * @return {@code true} if the arguments are valid for this method; {@code false} otherwise
+     */
     public boolean isValidMethod(Object[] arguments) {
         if (arguments == null) return true;
         final CachedClass[] parameterTypes = getParameterTypes();

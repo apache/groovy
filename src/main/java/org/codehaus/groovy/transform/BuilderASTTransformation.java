@@ -57,8 +57,17 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
     private static final Class<?> MY_CLASS = Builder.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
+    /**
+     * String representation of the @Builder annotation for error reporting.
+     */
     public static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    /**
+     * Empty array of ClassNode for use in method signatures.
+     */
     public static final ClassNode[] NO_EXCEPTIONS = ClassNode.EMPTY_ARRAY;
+    /**
+     * Empty array of Parameter for use in method signatures.
+     */
     public static final Parameter[] NO_PARAMS = Parameter.EMPTY_ARRAY;
 
     @Override
@@ -123,10 +132,16 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         }
     }
 
+    /**
+     * Strategy interface for builder code generation.
+     */
     public interface BuilderStrategy {
         void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno);
     }
 
+    /**
+     * Base class for builder generation strategies.
+     */
     public abstract static class AbstractBuilderStrategy implements BuilderStrategy {
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes) {
             return getPropertyInfoFromClassNode(cNode, includes, excludes, false);
@@ -254,7 +269,16 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             return getPropertyInfoFromClassNode(transform, anno, buildee, includes, excludes, allNames, allProperties);
         }
 
+        /**
+         * Holds information about a builder property.
+         */
         protected static class PropertyInfo {
+            /**
+             * Creates a new property information holder.
+             *
+             * @param name the property name
+             * @param type the property class type
+             */
             public PropertyInfo(String name, ClassNode type) {
                 this.name = name;
                 this.type = type;
@@ -263,18 +287,38 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             private String name;
             private ClassNode type;
 
+            /**
+             * Gets the property name.
+             *
+             * @return the property name
+             */
             public String getName() {
                 return name;
             }
 
+            /**
+             * Gets the property type.
+             *
+             * @return the property ClassNode
+             */
             public ClassNode getType() {
                 return type;
             }
 
+            /**
+             * Sets the property name.
+             *
+             * @param name the property name
+             */
             public void setName(String name) {
                 this.name = name;
             }
 
+            /**
+             * Sets the property type.
+             *
+             * @param type the property ClassNode
+             */
             public void setType(ClassNode type) {
                 this.type = type;
             }

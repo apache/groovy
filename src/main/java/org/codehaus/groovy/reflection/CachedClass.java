@@ -47,8 +47,17 @@ import java.util.Set;
 import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isPublic;
 
+/**
+ * Caches reflection information for a class including its fields, methods, constructors, and interfaces.
+ * <p>
+ * Lazily initializes cached members on first access and provides utility methods for searching methods,
+ * checking assignability, and managing MOP methods. Instances are typically obtained via {@link ReflectionCache}.
+ */
 public class CachedClass {
 
+    /**
+     * An empty array constant representing zero cached classes.
+     */
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
@@ -227,16 +236,45 @@ public class CachedClass {
     //--------------------------------------------------------------------------
 
     private final Class<?> cachedClass;
+    /**
+     * {@code ClassInfo} object for this class, holding metadata about the class.
+     */
     public ClassInfo classInfo;
+    /**
+     * {@code true} if the cached class is an array type, {@code false} otherwise.
+     */
     public final boolean isArray;
+    /**
+     * {@code true} if the cached class is a primitive type, {@code false} otherwise.
+     */
     public final boolean isPrimitive;
+    /**
+     * The modifiers of this class (e.g., public, final, abstract).
+     * See {@link java.lang.reflect.Modifier} for constants.
+     */
     public final int modifiers;
+    /**
+     * {@code true} if the cached class is an interface, {@code false} otherwise.
+     */
     public final boolean isInterface;
+    /**
+     * {@code true} if the cached class is assignable from {@link Number}, {@code false} otherwise.
+     */
     public final boolean isNumber;
+    /**
+     * Array of MOP (Meta-Object Protocol) methods, including inherited methods.
+     * Updated when methods are added via {@link #setNewMopMethods(List)} or {@link #addNewMopMethods(List)}.
+     */
     public CachedMethod[] mopMethods;
     int distance = -1;
     int hashCode;
 
+    /**
+     * Constructs a {@code CachedClass} for the given class with the specified {@code ClassInfo}.
+     *
+     * @param klazz the class to cache reflection information for
+     * @param classInfo the {@code ClassInfo} object associated with this cached class
+     */
     public CachedClass(Class<?> klazz, ClassInfo classInfo) {
         cachedClass = klazz;
         this.classInfo = classInfo;
@@ -247,30 +285,69 @@ public class CachedClass {
         isNumber = Number.class.isAssignableFrom(klazz);
     }
 
+    /**
+     * Returns the cached superclass of this class, if any.
+     *
+     * @return the cached superclass, or {@code null} if this is {@code Object} or an interface
+     */
     public CachedClass getCachedSuperClass() {
         return superClass.get();
     }
 
+    /**
+     * Returns a set of all interfaces implemented or extended by this class, including inherited interfaces.
+     * If this class is an interface, it includes itself in the set.
+     *
+     * @return a set of cached interfaces
+     */
     public Set<CachedClass> getInterfaces() {
         return interfaces.get();
     }
 
+    /**
+     * Returns a set of interfaces directly declared by this class (not including inherited ones).
+     *
+     * @return a set of directly declared cached interfaces
+     */
     public Set<CachedClass> getDeclaredInterfaces() {
         return declaredInterfaces.get();
     }
 
+    /**
+     * Returns all public and protected methods of this class and its superclasses.
+     *
+     * @return an array of cached methods, sorted by name
+     */
     public CachedMethod[] getMethods() {
         return methods.get();
     }
 
+    /**
+     * Returns all public and protected fields declared in this class.
+     *
+     * @return an array of cached fields
+     */
     public CachedField[] getFields() {
         return fields.get();
     }
 
+    /**
+     * Returns all public and protected constructors declared in this class.
+     *
+     * @return an array of cached constructors
+     */
     public CachedConstructor[] getConstructors() {
         return constructors.get();
     }
 
+    /**
+     * Searches for a method with the specified name and parameter types in this class.
+     *
+     * @param name the name of the method to search for
+     * @param parameterTypes the parameter types of the method
+     * @return the matching cached method, or {@code null} if not found. If multiple matches exist,
+     *         returns the one with the most specific return type
+     */
     public CachedMethod searchMethods(String name, CachedClass[] parameterTypes) {
         CachedMethod[] methods = getMethods();
 
@@ -307,14 +384,34 @@ public class CachedClass {
         return true;
     }
 
+    /**
+     * Returns the access modifier flags for this class.
+     *
+     * @return the modifiers as an integer, see {@link java.lang.reflect.Modifier}
+     */
     public int getModifiers() {
         return modifiers;
     }
 
+    /**
+     * Coerces an argument to a form suitable for this class.
+     * <p>
+     * By default, returns the argument unchanged. Subclasses may override to provide
+     * type-specific coercion logic.
+     *
+     * @param argument the argument to coerce
+     * @return the coerced argument
+     */
     public Object coerceArgument(Object argument) {
         return argument;
     }
 
+    /**
+     * Computes the distance from this class to the superclass hierarchy, used for type matching.
+     * The distance is the number of steps up the inheritance chain from this class to {@code Object}.
+     *
+     * @return the superclass distance (1 for Object, 2 for direct subclasses of Object, etc.)
+     */
     public int getSuperClassDistance() {
         if (distance >= 0) return distance;
 
@@ -336,30 +433,66 @@ public class CachedClass {
         return hashCode;
     }
 
+    /**
+     * Returns whether this class represents a primitive type.
+     *
+     * @return {@code true} if this is a primitive type (int, double, etc.), {@code false} otherwise
+     */
     public boolean isPrimitive() {
         return isPrimitive;
     }
 
+    /**
+     * Returns whether this class represents the void type.
+     *
+     * @return {@code true} if this class is void, {@code false} otherwise
+     */
     public boolean isVoid() {
         return getTheClass() == void.class;
     }
 
+    /**
+     * Returns whether this class represents an interface type.
+     *
+     * @return {@code true} if this is an interface, {@code false} otherwise
+     */
     public boolean isInterface() {
         return isInterface;
     }
 
+    /**
+     * Returns the fully qualified name of this class.
+     *
+     * @return the class name
+     */
     public String getName() {
         return getTheClass().getName();
     }
 
+    /**
+     * Returns the bytecode type descriptor for this class.
+     *
+     * @return the type descriptor string
+     */
     public String getTypeDescription() {
         return BytecodeHelper.getTypeDescription(getTheClass());
     }
 
+    /**
+     * Returns the underlying Java {@code Class} object wrapped by this cached class.
+     *
+     * @return the class object
+     */
     public final Class<?> getTheClass() {
         return cachedClass;
     }
 
+    /**
+     * Returns a list of new meta-methods added to this class's meta-class.
+     * Includes expando methods and methods from all superclasses and interfaces.
+     *
+     * @return an array of meta-methods
+     */
     public MetaMethod[] getNewMetaMethods() {
         List<MetaMethod> metaMethods = new ArrayList<>();
 
@@ -407,6 +540,13 @@ public class CachedClass {
         }
     }
 
+    /**
+     * Replaces the current MOP methods with the specified list of meta-methods.
+     * Reinitializes the meta-class to reflect the new methods.
+     *
+     * @param arr the new list of meta-methods to use, or {@code null} to revert to default
+     * @throws GroovyRuntimeException if a strong custom meta-class is already set
+     */
     public void setNewMopMethods(List<MetaMethod> arr) {
         final MetaClass metaClass = classInfo.getStrongMetaClass();
         if (metaClass != null) {
@@ -445,6 +585,13 @@ public class CachedClass {
             classInfo.newMetaMethods = classInfo.dgmMetaMethods;
     }
 
+    /**
+     * Adds a list of new meta-methods to this class's existing MOP methods.
+     * Reinitializes the meta-class to incorporate the new methods alongside existing ones.
+     *
+     * @param arr the list of meta-methods to add
+     * @throws GroovyRuntimeException if a strong custom meta-class is already set
+     */
     public void addNewMopMethods(List<MetaMethod> arr) {
         final MetaClass metaClass = classInfo.getStrongMetaClass();
         if (metaClass != null) {
@@ -492,25 +639,49 @@ public class CachedClass {
         }
     }
 
+    /**
+     * Returns whether the argument class is assignable to this class.
+     * Returns {@code true} for {@code null} arguments.
+     *
+     * @param argument the class to check
+     * @return {@code true} if {@code argument} is {@code null} or assignable to this class
+     */
     public boolean isAssignableFrom(Class<?> argument) {
         return argument == null || getTheClass().isAssignableFrom(argument);
     }
 
+    /**
+     * Returns whether an object instance is directly assignable to this class.
+     *
+     * @param argument the object to check
+     * @return {@code true} if the object's class is assignable to this class
+     */
     public boolean isDirectlyAssignable(Object argument) {
         return getTheClass().isAssignableFrom(argument.getClass());
     }
 
+    /**
+     * Returns the class loader used for generating call site classes for this cached class.
+     *
+     * @return a call site class loader
+     */
     public CallSiteClassLoader getCallSiteLoader() {
         return callSiteClassLoader.get();
     }
 
+    /**
+     * Returns the complete type hierarchy for this class, including superclasses and interfaces.
+     *
+     * @return a collection of {@code ClassInfo} objects in the hierarchy
+     */
     public Collection<ClassInfo> getHierarchy() {
         return hierarchy.get();
     }
 
     /**
-     * compatibility method
-     * @return this
+     * Returns this cached class (for compatibility).
+     *
+     * @return this {@code CachedClass}
      */
     public CachedClass getCachedClass() {
         return this;
@@ -523,7 +694,13 @@ public class CachedClass {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Comparator for ordering cached methods by name.
+     */
     public static class CachedMethodComparatorByName implements Comparator<CachedMethod> {
+        /**
+         * Singleton instance of this comparator.
+         */
         public static final Comparator INSTANCE = new CachedMethodComparatorByName();
 
         @Override
@@ -532,7 +709,14 @@ public class CachedClass {
         }
     }
 
+    /**
+     * Comparator for ordering cached methods against string names.
+     * Allows mixed comparisons between CachedMethod and String instances.
+     */
     public static class CachedMethodComparatorWithString implements Comparator {
+        /**
+         * Singleton instance of this comparator.
+         */
         public static final Comparator INSTANCE = new CachedMethodComparatorWithString();
 
         @Override

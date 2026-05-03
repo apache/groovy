@@ -79,6 +79,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
+/**
+ * Handles generation of variant methods with named parameters via the {@link NamedVariant} annotation.
+ */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
@@ -186,6 +189,14 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         return true;
     }
 
+    /**
+     * Creates a NamedParam annotation node with the given configuration.
+     *
+     * @param name the parameter name
+     * @param type the parameter class type
+     * @param required whether the parameter is required
+     * @return a new AnnotationNode for @NamedParam
+     */
     public static AnnotationNode createNamedParam(String name, ClassNode type, boolean required) {
         AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
         namedParam.addMember("value", constX(name));

@@ -18,12 +18,33 @@
  */
 package org.codehaus.groovy.reflection;
 
+/**
+ * Central registry for obtaining cached class information.
+ * <p>
+ * Provides factory methods for retrieving {@link CachedClass} instances for a given Java class.
+ * Maintains static references to commonly-used classes for efficient access.
+ */
 public class ReflectionCache {
 
+    /**
+     * The cached representation of {@code Object.class}.
+     * Frequently accessed during type compatibility checks.
+     */
     public static final CachedClass OBJECT_CLASS = getCachedClass(Object.class);
 
+    /**
+     * The cached representation of {@code Object[].class}.
+     * Used as the superclass for non-primitive array types.
+     */
     public static final CachedClass OBJECT_ARRAY_CLASS = getCachedClass(Object[].class);
 
+    /**
+     * Retrieves the {@code CachedClass} for the given Java class.
+     * Returns {@code null} if the class is {@code null}.
+     *
+     * @param klazz the Java class for which to obtain cache information
+     * @return the cached class information, or {@code null} if {@code klazz} is {@code null}
+     */
     public static CachedClass getCachedClass(Class klazz) {
         if (klazz == null)
           return null;

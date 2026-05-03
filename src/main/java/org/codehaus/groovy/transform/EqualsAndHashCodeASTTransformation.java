@@ -93,6 +93,9 @@ import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
+/**
+ * Handles generation of equals() and hashCode() methods via the {@link EqualsAndHashCode} annotation.
+ */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = EqualsAndHashCode.class;
@@ -148,22 +151,82 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, allNames,false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, allNames, allProperties, false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     * @param useGetter whether to use getter methods instead of direct field access
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingHashCode = hasDeclaredMethod(cNode, HASH_CODE, 0);
@@ -317,21 +380,82 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         NullCheckASTTransformation.markAsProcessed(canEqual);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, false);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames,false);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames, allProperties, false);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames, allProperties, pojo, false);
     }
+
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     * @param useGetter whether to use getter methods instead of direct field access
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore

@@ -90,6 +90,13 @@ public class ClassInfo implements Finalizable {
             new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
 
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
+        /**
+         * Creates a new {@code ClassInfo} for the given class type.
+         * Initializes cache and registers the class information in the global set.
+         *
+         * @param type the class to create information for
+         * @return the newly created {@code ClassInfo}
+         */
         @Override
         public ClassInfo computeValue(Class<?> type) {
             ClassInfo ret = new ClassInfo(type);
@@ -106,15 +113,30 @@ public class ClassInfo implements Finalizable {
         artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
     }
 
+    /**
+     * Returns the version number of this class information.
+     * The version increments when the metaclass is modified (e.g., methods/properties added).
+     *
+     * @return the current version
+     */
     public int getVersion() {
         return version.get();
     }
 
+    /**
+     * Increments the version number and invalidates call sites.
+     * Called when metaclass modifications occur (e.g., adding methods to an {@code ExpandoMetaClass}).
+     */
     public void incVersion() {
         version.incrementAndGet();
         VMPluginFactory.getPlugin().invalidateCallSites();
     }
 
+    /**
+     * Returns the modified {@code ExpandoMetaClass} for this class, if one exists.
+     *
+     * @return the modified expando metaclass, or {@code null} if not modified or not an ExpandoMetaClass
+     */
     public ExpandoMetaClass getModifiedExpando() {
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
@@ -122,6 +144,10 @@ public class ClassInfo implements Finalizable {
         return strongRef == null ? null : strongRef instanceof ExpandoMetaClass ? (ExpandoMetaClass)strongRef : null;
     }
 
+    /**
+     * Clears all modified {@code ExpandoMetaClass} instances for all classes.
+     * Removes strong references to metaclasses and disassociates them from their class information.
+     */
     public static void clearModifiedExpandos() {
         for (Iterator<ClassInfo> itr = modifiedExpandos.iterator(); itr.hasNext(); ) {
             ClassInfo info = itr.next();
@@ -143,14 +169,33 @@ public class ClassInfo implements Finalizable {
         return classRef.get();
     }
 
+    /**
+     * Returns the cached class representation for this class.
+     * Lazily initializes on first access.
+     *
+     * @return the cached class
+     */
     public CachedClass getCachedClass() {
         return cachedClassRef.get();
     }
 
+    /**
+     * Returns the class loader for loading class artifacts (e.g., compiled bytecode).
+     * Lazily initializes on first access.
+     *
+     * @return the artifact class loader
+     */
     public ClassLoaderForClassArtifacts getArtifactClassLoader() {
         return artifactClassLoader.get();
     }
 
+    /**
+     * Retrieves the {@code ClassInfo} for the given class.
+     * Lazily creates one if not already cached.
+     *
+     * @param cls the class to get information for
+     * @return the class information, or {@code null} if {@code cls} is {@code null}
+     */
     public static ClassInfo getClassInfo (Class cls) {
         return globalClassValue.get(cls);
     }
@@ -171,10 +216,21 @@ public class ClassInfo implements Finalizable {
         globalClassValue.remove(cls);
     }
 
+    /**
+     * Returns all cached class information across the runtime.
+     *
+     * @return a collection of all cached class info objects
+     */
     public static Collection<ClassInfo> getAllClassInfo () {
         return getAllGlobalClassInfo();
     }
 
+    /**
+     * Executes the given action on all cached class information.
+     * Allows processing of all classes currently tracked by the runtime.
+     *
+     * @param action the action to execute on each ClassInfo
+     */
     public static void onAllClassInfo(ClassInfoAction action) {
         for (ClassInfo classInfo : getAllGlobalClassInfo()) {
             action.onClassInfo(classInfo);
@@ -185,10 +241,22 @@ public class ClassInfo implements Finalizable {
         return globalClassSet.values();
     }
 
+    /**
+     * Returns the strong (immutable) metaclass for this class, if one has been set.
+     * A strong reference keeps the metaclass in memory regardless of garbage collection.
+     *
+     * @return the strong metaclass, or {@code null} if not set
+     */
     public MetaClass getStrongMetaClass() {
         return strongMetaClass;
     }
 
+    /**
+     * Sets the strong (immutable) metaclass for this class.
+     * Increments the version number and manages ExpandoMetaClass registry.
+     *
+     * @param answer the metaclass to set, or {@code null} to clear
+     */
     public void setStrongMetaClass(MetaClass answer) {
         version.incrementAndGet();
 
@@ -216,6 +284,12 @@ public class ClassInfo implements Finalizable {
         replaceWeakMetaClassRef(null);
     }
 
+    /**
+     * Returns the weak (mutable) metaclass for this class, if one has been set.
+     * A weak reference allows garbage collection of the metaclass when no longer needed.
+     *
+     * @return the weak metaclass, or {@code null} if not set or if it has been garbage collected
+     */
     public MetaClass getWeakMetaClass() {
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
@@ -223,6 +297,12 @@ public class ClassInfo implements Finalizable {
         return weakRef == null ? null : weakRef.get();
     }
 
+    /**
+     * Sets the weak (mutable) metaclass for this class.
+     * Clears the strong metaclass and increments the version number.
+     *
+     * @param answer the metaclass to set, or {@code null} to clear
+     */
     public void setWeakMetaClass(MetaClass answer) {
         version.incrementAndGet();
 
@@ -244,6 +324,12 @@ public class ClassInfo implements Finalizable {
         weakMetaClass = newRef;
     }
 
+    /**
+     * Returns the most appropriate metaclass for this class.
+     * Prefers strong metaclass if available, then weak metaclass if valid, otherwise the default.
+     *
+     * @return the metaclass for this class
+     */
     public MetaClass getMetaClassForClass() {
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
@@ -317,6 +403,13 @@ public class ClassInfo implements Finalizable {
         }
     }
 
+    /**
+     * Returns the metaclass for an object.
+     * If the object has a per-instance metaclass, returns that; otherwise returns this class's metaclass.
+     *
+     * @param obj the object to get the metaclass for
+     * @return the metaclass for the object
+     */
     public MetaClass getMetaClass(Object obj) {
         final MetaClass instanceMetaClass = getPerInstanceMetaClass(obj);
         if (instanceMetaClass != null)
@@ -324,10 +417,20 @@ public class ClassInfo implements Finalizable {
         return getMetaClass();
     }
 
+    /**
+     * Returns the number of cached class information entries.
+     *
+     * @return the count of cached ClassInfo instances
+     */
     public static int size () {
         return globalClassSet.size();
     }
 
+    /**
+     * Returns the total size including soft-referenced (potentially garbage-collectable) entries.
+     *
+     * @return the full count of class information entries
+     */
     public static int fullSize () {
         return globalClassSet.fullSize();
     }
@@ -388,14 +491,27 @@ public class ClassInfo implements Finalizable {
         return CachedSAMClass.getSAMMethod(c) !=null;
     }
 
+    /**
+     * Acquires a lock for this class information.
+     * Used to synchronize modifications to metaclass and per-instance metaclass maps.
+     */
     public void lock () {
         lock.lock();
     }
 
+    /**
+     * Releases the lock for this class information.
+     */
     public void unlock () {
         lock.unlock();
     }
 
+    /**
+     * Returns the per-instance metaclass for the given object, if one has been set.
+     *
+     * @param obj the object to get the per-instance metaclass for
+     * @return the per-instance metaclass, or {@code null} if not set
+     */
     public MetaClass getPerInstanceMetaClass(Object obj) {
         if (perInstanceMetaClassMap == null)
           return null;
@@ -403,6 +519,13 @@ public class ClassInfo implements Finalizable {
         return perInstanceMetaClassMap.get(obj);
     }
 
+    /**
+     * Sets the per-instance metaclass for the given object.
+     * Per-instance metaclasses override the class-level metaclass for that specific object.
+     *
+     * @param obj the object to associate with a metaclass
+     * @param metaClass the metaclass to set, or {@code null} to remove the association
+     */
     public void setPerInstanceMetaClass(Object obj, MetaClass metaClass) {
         version.incrementAndGet();
 
@@ -419,6 +542,11 @@ public class ClassInfo implements Finalizable {
         }
     }
 
+    /**
+     * Returns whether this class has any per-instance metaclasses associated with its objects.
+     *
+     * @return {@code true} if one or more per-instance metaclasses have been set; {@code false} otherwise
+     */
     public boolean hasPerInstanceMetaClasses () {
         return perInstanceMetaClassMap != null;
     }
@@ -484,7 +612,15 @@ public class ClassInfo implements Finalizable {
 
     }
 
+    /**
+     * Functional interface for performing actions on {@code ClassInfo} instances.
+     */
     public interface ClassInfoAction {
+        /**
+         * Performs an action on the given {@code ClassInfo}.
+         *
+         * @param classInfo the class information to act upon
+         */
         void onClassInfo(ClassInfo classInfo);
     }
 }

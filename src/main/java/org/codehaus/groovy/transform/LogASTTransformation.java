@@ -66,6 +66,9 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
      */
     public static final String DEFAULT_CATEGORY_NAME = "##default-category-name##";
 
+    /**
+     * Default access modifier for logger field.
+     */
     public static final String DEFAULT_ACCESS_MODIFIER = "private";
 
     @Override
@@ -320,12 +323,23 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         FieldNode addLoggerFieldToClass(ClassNode classNode, String fieldName, String categoryName, int fieldModifiers);
     }
 
+    /**
+     * Base class for logging strategy implementations supporting the v2 logging API.
+     */
     public abstract static class AbstractLoggingStrategyV2 extends AbstractLoggingStrategy implements LoggingStrategyV2 {
 
+        /**
+         * Creates a new logging strategy with the given class loader.
+         *
+         * @param loader the class loader for loading logging implementation classes
+         */
         protected AbstractLoggingStrategyV2(final GroovyClassLoader loader) {
             super(loader);
         }
 
+        /**
+         * Creates a new logging strategy using the default class loader.
+         */
         protected AbstractLoggingStrategyV2() {
             this(null);
         }
@@ -336,18 +350,38 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
         }
     }
 
+    /**
+     * Base class for logging strategy implementations.
+     */
     public abstract static class AbstractLoggingStrategy implements LoggingStrategy {
 
+        /**
+         * The class loader for resolving logging implementation classes.
+         */
         protected final GroovyClassLoader loader;
 
+        /**
+         * Creates a new logging strategy with the given class loader.
+         *
+         * @param loader the class loader for loading logging implementation classes
+         */
         protected AbstractLoggingStrategy(final GroovyClassLoader loader) {
             this.loader = loader;
         }
 
+        /**
+         * Creates a new logging strategy using the default class loader.
+         */
         protected AbstractLoggingStrategy() {
             this(null);
         }
 
+        /**
+         * Resolves a ClassNode for the given class name.
+         *
+         * @param name the fully qualified class name
+         * @return the ClassNode for the specified class
+         */
         protected ClassNode classNode(final String name) {
             ClassLoader cl = loader != null ? loader : getClass().getClassLoader();
             try {
