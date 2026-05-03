@@ -55,6 +55,7 @@ import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -253,6 +254,9 @@ import static org.codehaus.groovy.runtime.ArrayGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.init;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
+import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
+import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
+import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IN;
@@ -267,6 +271,7 @@ import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_AND;
 import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
@@ -4271,13 +4276,15 @@ trying: for (ClassNode[] signature : signatures) {
 
             // GROOVY-6429: reverse instanceof tracking
             typeCheckingContext.pushTemporaryTypeInfo();
-            tti.forEach(this::putNotInstanceOfTypeInfo);
+            // GROOVY-11983: only invert when the boolean's falsity pins down each instanceof
+            boolean canInvert = canInvertNarrowingForElseBranch(ifElse.getBooleanExpression());
+            if (canInvert) tti.forEach(this::putNotInstanceOfTypeInfo);
 
             elsePath.visit(this);
 
             typeCheckingContext.popTemporaryTypeInfo();
             // GROOVY-8523: propagate tracking to outer scope; keep simple for now
-            if (elsePath.isEmpty() && !GeneralUtils.maybeFallsThrough(thenPath)) {
+            if (canInvert && elsePath.isEmpty() && !GeneralUtils.maybeFallsThrough(thenPath)) {
                 tti.forEach(this::putNotInstanceOfTypeInfo);
             }
         } finally {
@@ -4468,7 +4475,11 @@ trying: for (ClassNode[] signature : signatures) {
         Map<Object, List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
 
         typeCheckingContext.pushTemporaryTypeInfo();
-        tti.forEach(this::putNotInstanceOfTypeInfo); // GROOVY-8412
+        // GROOVY-8412 / GROOVY-11983: only invert when sound (no AND-like op in condition)
+        if (!(expression instanceof ElvisOperatorExpression)
+                && canInvertNarrowingForElseBranch(expression.getBooleanExpression())) {
+            tti.forEach(this::putNotInstanceOfTypeInfo);
+        }
         Expression falseExpression = expression.getFalseExpression();
         ClassNode typeOfFalse = visitValueExpression(falseExpression);
         typeCheckingContext.popTemporaryTypeInfo();
@@ -6237,6 +6248,49 @@ out:    for (ClassNode type : todo) {
     private void putNotInstanceOfTypeInfo(final Object key, final Collection<ClassNode> types) {
         Object notKey = key instanceof Object[] ? ((Object[]) key)[1] : new Object[]{"!instanceof", key}; // stash negative type(s)
         typeCheckingContext.temporaryIfBranchTypeInformation.peek().computeIfAbsent(notKey, x -> new LinkedList<>()).addAll(types);
+    }
+
+    /**
+     * GROOVY-11983: Whether the temporary type info captured while visiting {@code expr}
+     * may be soundly inverted for the else branch of {@code if (expr) ... else ...} (or
+     * the false branch of a ternary, or the surrounding scope after an early-returning
+     * {@code if (expr) return}). Inversion is only sound when {@code !expr} pins down
+     * the negation of every individual instanceof / !instanceof check inside it.
+     * <p>
+     * Only OR-like operators ({@code ||}, and {@code |} on booleans) preserve that
+     * property — {@code !(L op R)} is equivalent to {@code !L && !R}, so each operand's
+     * negation is pinned down. AND-like and XOR-like operators ({@code &&}, {@code &},
+     * {@code ^}) do not: {@code !(L && R)} only requires <em>at least one</em> operand
+     * to be false, so a {@code !instanceof} hidden inside one of them would otherwise
+     * be unwrapped into a positive smart-cast in the else branch, producing an unsound
+     * {@code checkcast} and a runtime ClassCastException.
+     */
+    private static boolean canInvertNarrowingForElseBranch(final Expression expr) {
+        if (expr instanceof BinaryExpression) {
+            BinaryExpression be = (BinaryExpression) expr;
+            int op = be.getOperation().getType();
+            // AND-like / XOR: !(L op R) doesn't pin down each operand's truth value
+            if (op == LOGICAL_AND || op == BITWISE_AND || op == BITWISE_XOR) return false;
+            // OR-like: !(L op R) <=> !L && !R, so recurse into both operands
+            if (op == LOGICAL_OR || op == BITWISE_OR) {
+                return canInvertNarrowingForElseBranch(be.getLeftExpression())
+                    && canInvertNarrowingForElseBranch(be.getRightExpression());
+            }
+            return true; // instanceof, ==, comparisons, etc.
+        }
+        if (expr instanceof BooleanExpression) {
+            return canInvertNarrowingForElseBranch(((BooleanExpression) expr).getExpression());
+        }
+        if (expr instanceof NotExpression) {
+            return canInvertNarrowingForElseBranch(((NotExpression) expr).getExpression());
+        }
+        if (expr instanceof TernaryExpression) {
+            TernaryExpression te = (TernaryExpression) expr;
+            return canInvertNarrowingForElseBranch(te.getBooleanExpression())
+                && canInvertNarrowingForElseBranch(te.getTrueExpression())
+                && canInvertNarrowingForElseBranch(te.getFalseExpression());
+        }
+        return true;
     }
 
     /**

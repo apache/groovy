@@ -688,6 +688,97 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11983: !instanceof inside && must not produce a positive smart-cast in the else branch
+    void testNotInstanceof7() {
+        for (test in ['!(x instanceof String)', 'x !instanceof String']) {
+            // if/else form: a non-String x with cond=false lands in the else; if x were
+            // smart-cast to String, the body would emit a checkcast and throw CCE
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int f(Object x, boolean cond) {
+                        if (cond && $test) {
+                            return 1
+                        } else {
+                            return x.hashCode()
+                        }
+                    }
+                }
+                assert T.f(42, false) == Integer.valueOf(42).hashCode()
+                assert T.f('s', false) == 's'.hashCode()
+                assert T.f('s', true)  == 's'.hashCode()
+                assert T.f(42, true)   == 1
+            """
+            // ternary form
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int g(Object x, boolean cond) {
+                        return (cond && $test) ? 1 : x.hashCode()
+                    }
+                }
+                assert T.g(42, false) == Integer.valueOf(42).hashCode()
+                assert T.g('s', false) == 's'.hashCode()
+            """
+            // early-return surrounding-scope form
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int h(Object x, boolean cond) {
+                        if (cond && $test) return 1
+                        return x.hashCode()
+                    }
+                }
+                assert T.h(42, false) == Integer.valueOf(42).hashCode()
+                assert T.h('s', false) == 's'.hashCode()
+            """
+        }
+    }
+
+    // GROOVY-11983: bitwise & / ^ between booleans, and bitwise | wrapping a logical-and,
+    // must also disable the else-branch instanceof inversion
+    void testNotInstanceof8() {
+        // bitwise-AND: same unsoundness as logical-AND
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int f(Object x, boolean cond) {
+                    if (cond & !(x instanceof String)) return 1
+                    return x.hashCode()
+                }
+            }
+            assert T.f(42, false) == Integer.valueOf(42).hashCode()
+            assert T.f('s', false) == 's'.hashCode()
+            assert T.f('s', true) == 's'.hashCode()
+            assert T.f(42, true) == 1
+        '''
+        // bitwise-XOR: same unsoundness
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int g(Object x, boolean cond) {
+                    if (cond ^ (x instanceof String)) return 1
+                    return x.hashCode()
+                }
+            }
+            assert T.g(42, false) == Integer.valueOf(42).hashCode()
+            assert T.g('s', true) == 's'.hashCode()
+        '''
+        // bitwise-OR wrapping a logical-AND: still must disqualify
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int h(Object x, boolean a, boolean b) {
+                    if (a | (b && !(x instanceof String))) return 1
+                    return x.hashCode()
+                }
+            }
+            assert T.h(42, false, false) == Integer.valueOf(42).hashCode()
+            assert T.h('s', false, false) == 's'.hashCode()
+            assert T.h(42, true, false) == 1
+        '''
+    }
+
     // GROOVY-10217
     void testInstanceOfThenSubscriptOperator() {
         assertScript '''
