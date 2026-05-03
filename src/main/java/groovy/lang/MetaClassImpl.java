@@ -3333,7 +3333,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             checkIfGroovyObjectMethod(metaMethod);
             break;
           case "get":
-            if (checkMatch(metaMethod, genericGetMethod, GETTER_MISSING_ARGS) && metaMethod.getReturnType() != Void.TYPE) {
+            // GROOVY-11986: parameter must be String exactly, not just assignable from String,
+            // to avoid hijacking unrelated single-arg get(X) methods (e.g. get(Serializable),
+            // get(Object)) as the generic property getter, which silently shadows propertyMissing
+            if (checkMatch(metaMethod, genericGetMethod, GETTER_MISSING_ARGS) && metaMethod.getReturnType() != Void.TYPE
+                    && metaMethod.getParameterTypes()[0].getTheClass() == String.class) {
                 genericGetMethod = metaMethod;
             }
             break;
