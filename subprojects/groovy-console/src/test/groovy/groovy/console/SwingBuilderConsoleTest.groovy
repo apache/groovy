@@ -430,6 +430,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
                 console.inputArea.text = 'throw new Exception()'
                 console.runScript(new EventObject([:]))
+                waitForScriptCompletion(console)
 
                 def doc = console.outputArea.document
                 assert doc.getText(0, doc.length) =~ /java.lang.Exception/
@@ -544,18 +545,21 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
                 console.inputArea.text = 'println "test1"'
                 console.runScript()
+                waitForScriptCompletion(console)
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert '' == doc2.getText(0, doc2.length).trim()
 
                 console2.inputArea.text = 'println "test2"'
                 console2.runScript()
+                waitForScriptCompletion(console2)
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert 'test2' == doc2.getText(0, doc2.length).trim()
 
                 console2.inputArea.text = 'System.err.println "error2"'
                 console2.runScript()
+                waitForScriptCompletion(console2)
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
@@ -591,11 +595,13 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 console.inputEditor.textEditor.text = scriptSource
 
                 console.runScript(new EventObject([:]))
+                waitForScriptCompletion(console)
                 assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
 
                 console.outputArea.text = ''
                 console.runScript(new EventObject([:]))
+                waitForScriptCompletion(console)
                 assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
             } finally {
@@ -604,6 +610,12 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
             }
         }
+    }
+
+    private static void waitForScriptCompletion(Console console) {
+        Thread thread = console.runThread
+        thread?.join(5000)
+        assert thread == null || !thread.alive
     }
 
 }
