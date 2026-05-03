@@ -1124,6 +1124,48 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11983: a leading NotExpression is always invertible — even when its operand
+    // contains an AND-like operator. The else of `if (!E)` fires when E is true, and
+    // visitNotExpression has already sign-flipped the tti once, so the else-branch
+    // inversion flips it back, yielding entries that are sound for E being true.
+    @Test
+    void testNotInstanceof9() {
+        // !(cond && (x instanceof T)): in the else, cond && (x instanceof T) holds —
+        // so x IS T. The else branch should permit a method call exclusive to T.
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int f(Object x, boolean cond) {
+                    if (!(cond && (x instanceof String))) {
+                        return -1
+                    } else {
+                        return x.length() // x must be smart-cast to String
+                    }
+                }
+            }
+            assert T.f('hello', true) == 5
+            assert T.f('hello', false) == -1
+            assert T.f(42, true) == -1
+        '''
+        // !(cond && !(x instanceof T)): in the else, cond is true AND x is NOT T.
+        // No checkcast should be emitted on x in the else branch.
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int g(Object x, boolean cond) {
+                    if (!(cond && !(x instanceof String))) {
+                        return -1
+                    } else {
+                        return x.hashCode() // x is some non-String Object — no smart-cast
+                    }
+                }
+            }
+            assert T.g('s', true) == -1
+            assert T.g(42, true) == Integer.valueOf(42).hashCode()
+            assert T.g(42, false) == -1
+        '''
+    }
+
     // GROOVY-10217
     @Test
     void testInstanceOfThenSubscriptOperator() {

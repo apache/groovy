@@ -6670,8 +6670,16 @@ out:    for (ClassNode type : todo) {
      * to be false, so a {@code !instanceof} hidden inside one of them would otherwise
      * be unwrapped into a positive smart-cast in the else branch, producing an unsound
      * {@code checkcast} and a runtime ClassCastException.
+     * <p>
+     * A leading {@code NotExpression} is always invertible regardless of its operand:
+     * {@code visitNotExpression} sign-flips the operand's tti on the way out, and the
+     * else-branch inversion flips a second time, leaving entries that match the operand
+     * being true — exactly the condition under which the else fires.
      */
     private static boolean canInvertNarrowingForElseBranch(final Expression expr) {
+        // NotExpression extends BooleanExpression — must check before the BooleanExpression branch
+        if (expr instanceof NotExpression) return true;
+        if (expr instanceof BooleanExpression be) return canInvertNarrowingForElseBranch(be.getExpression());
         if (expr instanceof BinaryExpression be) {
             int op = be.getOperation().getType();
             // AND-like / XOR: !(L op R) doesn't pin down each operand's truth value
@@ -6683,8 +6691,6 @@ out:    for (ClassNode type : todo) {
             }
             return true; // instanceof, ==, comparisons, etc.
         }
-        if (expr instanceof BooleanExpression be) return canInvertNarrowingForElseBranch(be.getExpression());
-        if (expr instanceof NotExpression ne) return canInvertNarrowingForElseBranch(ne.getExpression());
         if (expr instanceof TernaryExpression te) {
             return canInvertNarrowingForElseBranch(te.getBooleanExpression())
                 && canInvertNarrowingForElseBranch(te.getTrueExpression())
