@@ -20,14 +20,32 @@ package org.codehaus.groovy.reflection.stdclasses;
 
 import org.codehaus.groovy.reflection.ClassInfo;
 
+/**
+ * Provides optimized reflection caching for {@code short} and {@link java.lang.Short}.
+ * Coerces numeric arguments to short values for type-safe method invocation.
+ * Optionally allows {@code null} values for the boxed {@link Short} class variant.
+ */
 public class ShortCachedClass extends NumberCachedClass {
     private final boolean allowNull;
 
+    /**
+     * Constructs a cached class representation for the given short class.
+     *
+     * @param klazz the short class to cache (either {@code short.class} or {@link Short}.class)
+     * @param classInfo the class information associated with this cached class
+     * @param allowNull {@code true} to allow {@code null} values (for {@link Short}.class), {@code false} for primitive {@code short}
+     */
     public ShortCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
     }
 
+    /**
+     * Coerces the given numeric argument to a short value.
+     *
+     * @param argument the argument to coerce
+     * @return the argument as a {@code short}, or the original argument if not a number
+     */
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Short) {
@@ -40,11 +58,24 @@ public class ShortCachedClass extends NumberCachedClass {
         return argument;
     }
 
+    /**
+     * Checks if the given argument is directly assignable without type conversion.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is a {@link Short} instance, or {@code null} is allowed, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Short;
     }
 
+    /**
+     * Determines if the given class can be transformed to short/Short.
+     * Accepts byte and short integral types and their boxed variants.
+     *
+     * @param classToTransformFrom the source class to check
+     * @return {@code true} if the class can be transformed to short, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)

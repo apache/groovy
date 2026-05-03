@@ -21,18 +21,42 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
+/**
+ * Provides optimized reflection caching for {@code boolean} and {@link java.lang.Boolean}.
+ * Optionally allows {@code null} values for the boxed {@link Boolean} class variant.
+ */
 public class BooleanCachedClass extends CachedClass {
     private final boolean allowNull;
+
+    /**
+     * Constructs a cached class representation for the given boolean class.
+     *
+     * @param klazz the boolean class to cache (either {@code boolean.class} or {@link Boolean}.class)
+     * @param classInfo the class information associated with this cached class
+     * @param allowNull {@code true} to allow {@code null} values (for {@link Boolean}.class), {@code false} for primitive {@code boolean}
+     */
     public BooleanCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
     }
 
+    /**
+     * Checks if the given argument is directly assignable without type conversion.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is a {@link Boolean} instance, or {@code null} is allowed, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Boolean;
      }
 
+    /**
+     * Determines if the given class can be transformed to boolean/Boolean.
+     *
+     * @param classToTransformFrom the source class to check
+     * @return {@code true} if the class can be transformed to boolean, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)

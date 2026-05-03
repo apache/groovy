@@ -23,19 +23,45 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class DoubleCachedClass extends NumberCachedClass { // Double, double
+/**
+ * Provides optimized reflection caching for {@code double} and {@link java.lang.Double}.
+ * Coerces numeric arguments to double values, with validation to prevent overflow to infinity.
+ * Optionally allows {@code null} values for the boxed {@link Double} class variant.
+ */
+public class DoubleCachedClass extends NumberCachedClass {
     private final boolean allowNull;
 
+    /**
+     * Constructs a cached class representation for the given double class.
+     *
+     * @param klazz the double class to cache (either {@code double.class} or {@link Double}.class)
+     * @param classInfo the class information associated with this cached class
+     * @param allowNull {@code true} to allow {@code null} values (for {@link Double}.class), {@code false} for primitive {@code double}
+     */
     public DoubleCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
     }
 
+    /**
+     * Checks if the given argument is directly assignable without type conversion.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is a {@link Double} instance, or {@code null} is allowed, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Double;
     }
 
+    /**
+     * Coerces the given numeric argument to a double value.
+     * Validates that {@link BigDecimal} conversions do not overflow to infinity.
+     *
+     * @param argument the argument to coerce
+     * @return the argument as a {@code double}, or the original argument if not a number
+     * @throws IllegalArgumentException if a {@link BigDecimal} conversion results in infinity
+     */
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Double) {
@@ -52,6 +78,13 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
         return argument;
     }
 
+    /**
+     * Determines if the given class can be transformed to double/Double.
+     * Accepts all numeric types, including integral and big numeric types.
+     *
+     * @param classToTransformFrom the source class to check
+     * @return {@code true} if the class can be transformed to double, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)

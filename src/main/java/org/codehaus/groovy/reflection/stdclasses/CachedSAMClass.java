@@ -39,16 +39,35 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Provides optimized reflection caching for Single Abstract Method (SAM) types.
+ * Converts {@link Closure} arguments to SAM interface implementations via dynamic proxies or aggregates.
+ */
 public class CachedSAMClass extends CachedClass {
 
     private final Method method;
 
+    /**
+     * Constructs a cached class representation for a SAM type.
+     * Locates and caches the single abstract method of the class.
+     *
+     * @param clazz the SAM type to cache
+     * @param classInfo the class information associated with this cached class
+     * @throws GroovyBugError if the class does not have exactly one abstract method
+     */
     public CachedSAMClass(Class clazz, ClassInfo classInfo) {
         super(clazz, classInfo);
         method = getSAMMethod(clazz);
         if (method == null) throw new GroovyBugError("assigned method should not have been null!");
     }
 
+    /**
+     * Determines if the given class is assignable to this SAM type.
+     * Accepts {@code null}, {@link Closure} instances, and instances already assignable to the SAM type.
+     *
+     * @param argument the class to check
+     * @return {@code true} if the class can be assigned to this SAM type, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class argument) {
         return argument == null
@@ -56,6 +75,13 @@ public class CachedSAMClass extends CachedClass {
             || getTheClass().isAssignableFrom(argument);
     }
 
+    /**
+     * Coerces the given argument to this SAM type.
+     * Converts {@link Closure} arguments to SAM interface implementations via dynamic proxies.
+     *
+     * @param argument the argument to coerce
+     * @return the coerced SAM instance, or the original argument if already compatible
+     */
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Closure) {
@@ -73,10 +99,30 @@ public class CachedSAMClass extends CachedClass {
     private static final int ABSTRACT_STATIC_PRIVATE = Modifier.ABSTRACT | Modifier.STATIC | Modifier.PRIVATE;
     private static final Set<String> OBJECT_METHOD_NAMES = Arrays.stream(Object.class.getMethods()).map(Method::getName).collect(Collectors.toUnmodifiableSet());
 
+    /**
+     * Coerces a closure to a SAM interface implementation.
+     * Automatically detects whether the SAM type is an interface or class.
+     *
+     * @param argument the closure to convert
+     * @param method the single abstract method of the SAM type
+     * @param clazz the SAM class or interface to coerce to
+     * @return a dynamic proxy or aggregate instance implementing the SAM type
+     */
     public static Object coerceToSAM(Closure argument, Method method, Class clazz) {
         return coerceToSAM(argument, method, clazz, clazz.isInterface());
     }
 
+    /**
+     * Coerces a closure to a SAM interface or class implementation.
+     * For interfaces, uses dynamic proxies or trait-aware aggregates.
+     * For classes, uses proxy generators to instantiate from base class.
+     *
+     * @param argument the closure to convert
+     * @param method the single abstract method of the SAM type
+     * @param clazz the SAM class or interface to coerce to
+     * @param isInterface {@code true} if the SAM type is an interface, {@code false} for a class
+     * @return a dynamic proxy or aggregate instance implementing the SAM type
+     */
     public static Object coerceToSAM(Closure argument, Method method, Class clazz, boolean isInterface) {
         if (argument != null && clazz.isAssignableFrom(argument.getClass())) {
             return argument;

@@ -22,14 +22,32 @@ import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.math.BigInteger;
 
-public class IntegerCachedClass extends NumberCachedClass {  // int, Integer
+/**
+ * Provides optimized reflection caching for {@code int} and {@link java.lang.Integer}.
+ * Coerces numeric arguments to int values for type-safe method invocation.
+ * Optionally allows {@code null} values for the boxed {@link Integer} class variant.
+ */
+public class IntegerCachedClass extends NumberCachedClass {
     private final boolean allowNull;
 
+    /**
+     * Constructs a cached class representation for the given integer class.
+     *
+     * @param klazz the integer class to cache (either {@code int.class} or {@link Integer}.class)
+     * @param classInfo the class information associated with this cached class
+     * @param allowNull {@code true} to allow {@code null} values (for {@link Integer}.class), {@code false} for primitive {@code int}
+     */
     public IntegerCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
     }
 
+    /**
+     * Coerces the given numeric argument to an int value.
+     *
+     * @param argument the argument to coerce
+     * @return the argument as an {@code int}, or the original argument if not a number
+     */
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Integer) {
@@ -42,11 +60,24 @@ public class IntegerCachedClass extends NumberCachedClass {  // int, Integer
         return argument;
     }
 
+    /**
+     * Checks if the given argument is directly assignable without type conversion.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is an {@link Integer} instance, or {@code null} is allowed, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Integer;
     }
 
+    /**
+     * Determines if the given class can be transformed to int/Integer.
+     * Accepts integral types, boxed integral types, and {@link BigInteger}.
+     *
+     * @param classToTransformFrom the source class to check
+     * @return {@code true} if the class can be transformed to int, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)

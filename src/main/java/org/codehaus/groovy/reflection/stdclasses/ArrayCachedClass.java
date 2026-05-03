@@ -25,11 +25,30 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Array;
 
+/**
+ * Provides optimized reflection caching for Java arrays.
+ * Handles type coercion including conversion of boxed arrays to primitive arrays,
+ * and {@link GString} arrays to {@link String} arrays.
+ */
 public class ArrayCachedClass extends CachedClass {
+    /**
+     * Constructs a cached class representation for the given array class.
+     *
+     * @param klazz the array class to cache
+     * @param classInfo the class information associated with this cached class
+     */
     public ArrayCachedClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);
     }
 
+    /**
+     * Coerces the given argument to the appropriate array type.
+     * Converts boxed arrays to primitive arrays if needed, and
+     * {@link GString} arrays to {@link String} arrays.
+     *
+     * @param argument the argument to coerce
+     * @return the coerced argument, or the original argument if no coercion is needed
+     */
     @Override
     public Object coerceArgument(Object argument) {
         Class argumentClass = argument.getClass();

@@ -22,10 +22,21 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
 
+/**
+ * Provides optimized reflection caching for Groovy {@link groovy.lang.Closure} classes.
+ * Analyzes closure {@code doCall} methods to determine parameter types and maximum parameters.
+ */
 public class CachedClosureClass extends CachedClass {
     private final Class[] parameterTypes;
     private final int maximumNumberOfParameters;
 
+    /**
+     * Constructs a cached class representation for a closure class.
+     * Inspects the closure's {@code doCall} methods to extract parameter metadata.
+     *
+     * @param klazz the closure class to cache
+     * @param classInfo the class information associated with this cached class
+     */
     public CachedClosureClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);
 
@@ -51,10 +62,20 @@ public class CachedClosureClass extends CachedClass {
         this.parameterTypes = parameterTypes;
     }
 
+    /**
+     * Returns the parameter types of the closure's {@code doCall} method with maximum parameters.
+     *
+     * @return the parameter types array, or {@code null} if no {@code doCall} method was found
+     */
     public Class[] getParameterTypes() {
         return parameterTypes;
     }
 
+    /**
+     * Returns the maximum number of parameters accepted by the closure's {@code doCall} methods.
+     *
+     * @return the maximum number of parameters, or {@code 0} if no {@code doCall} method was found
+     */
     public int getMaximumNumberOfParameters() {
         return maximumNumberOfParameters;
     }
