@@ -23,7 +23,7 @@
  * <p>
  * {@code @GQ} annotation enables SELECT/FROM/WHERE/GROUP BY/ORDER BY/JOIN/HAVING clauses
  * in Groovy closures. {@link org.apache.groovy.ginq.transform.GinqASTTransformation} and
- * {@link org.apache.groovy.ginq.transform.GinqAstOptimizer} handle compilation and optimization.
+ * {@link org.apache.groovy.ginq.dsl.GinqAstOptimizer} handle compilation and optimization.
  * </p>
  */
 package groovy.ginq.transform;

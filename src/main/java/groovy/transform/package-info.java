@@ -25,7 +25,7 @@
  * {@link groovy.transform.TypeChecked @TypeChecked} (type checking),
  * {@link groovy.transform.ToString @ToString}, {@link groovy.transform.EqualsAndHashCode @EqualsAndHashCode},
  * {@link groovy.transform.Immutable @Immutable}, {@link groovy.transform.TupleConstructor @TupleConstructor},
- * {@link groovy.transform.Lazy @Lazy}, {@link groovy.transform.Synchronized @Synchronized},
+ * {@link groovy.lang.Lazy @Lazy}, {@link groovy.transform.Synchronized @Synchronized},
  * and many others for traits, records, sealing, and property handling.
  * </p>
  *

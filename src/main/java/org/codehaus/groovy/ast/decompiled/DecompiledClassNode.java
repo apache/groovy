@@ -161,7 +161,7 @@ public class DecompiledClassNode extends ClassNode {
      * Resolves the runtime JVM {@link Class} object for this decompiled class node.
      *
      * @return the loaded {@link Class} instance from the current classloader
-     * @throws GroovyBugError if the class cannot be resolved at runtime
+     * @throws org.codehaus.groovy.GroovyBugError if the class cannot be resolved at runtime
      * @see AsmReferenceResolver#resolveJvmClass(String)
      */
     @Override
