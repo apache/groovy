@@ -39,7 +39,7 @@ import java.util.Map;
  * <p><strong>Thread Safety:</strong> ClassStub instances are typically constructed once and then
  * treated as immutable. They are safe for concurrent read access after initialization.
  *
- * @see AsmDecompiler#parseClass(String, int, String, String, String[])
+ * @see AsmDecompiler#parseClass(java.net.URL)
  * @see DecompiledClassNode#DecompiledClassNode(ClassStub, AsmReferenceResolver)
  */
 public class ClassStub extends MemberStub {

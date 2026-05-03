@@ -96,7 +96,7 @@ import java.util.function.Supplier;
  * <p>Groovy embeds compilation timestamps in synthetic static field names for change detection.
  * {@link #getCompilationTimeStamp()} decodes this metadata using {@link org.codehaus.groovy.classgen.Verifier#getTimestampFromFieldName(String)}.
  *
- * @see AsmDecompiler#parseClass(String, int, String, String, String[])
+ * @see AsmDecompiler#parseClass(java.net.URL)
  * @see AsmReferenceResolver
  * @see ClassStub
  * @see LazyFieldNode

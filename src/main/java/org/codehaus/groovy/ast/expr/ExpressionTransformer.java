@@ -41,7 +41,7 @@ package org.codehaus.groovy.ast.expr;
  * <p>This is a functional interface and can be implemented as a lambda expression.
  *
  * @see org.codehaus.groovy.ast.ClassCodeExpressionTransformer for abstract transformer base class
- * @see TransformingCodeVisitor for visitor using transformers
+ * @see org.codehaus.groovy.ast.TransformingCodeVisitor for visitor using transformers
  */
 @FunctionalInterface
 public interface ExpressionTransformer {

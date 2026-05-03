@@ -28,7 +28,6 @@ import org.codehaus.groovy.ast.expr.Expression;
  * an expression must be treated as a statement (e.g., method calls, assignments, or other
  * side-effect-producing expressions). The expression is evaluated and its result is discarded.
  *
- * @throws IllegalArgumentException if the expression is null
  * @see {@link Expression}
  * @see {@link Statement}
  * @see {@link ReturnStatement}

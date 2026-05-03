@@ -1950,7 +1950,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             advance();
         }
 
-        /** {@inheritDoc} */
+        /** @return {@code true} if more elements remain (delegates to {@link #hasNext()}) */
         public boolean hasMoreElements() {
             return hasNext();
         }
@@ -1981,7 +1981,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             }
         }
 
-        /** {@inheritDoc} */
+        /** @return {@code true} if there is a next live entry to iterate to */
         public boolean hasNext() {
             while (nextEntry != null) {
                 if (nextEntry.key() != null) {
@@ -2009,7 +2009,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
             return lastReturned;
         }
 
-        /** {@inheritDoc} */
+        /** Removes the last entry returned by the iterator. */
         public void remove() {
             if (lastReturned == null) {
                 throw new IllegalStateException();

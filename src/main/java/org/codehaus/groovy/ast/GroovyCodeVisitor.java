@@ -363,7 +363,7 @@ public interface GroovyCodeVisitor {
     void visitFieldExpression(FieldExpression expression);
 
     /**
-     * Visits a method pointer expression (object.&methodName).
+     * Visits a method pointer expression ({@code object.&methodName}).
      *
      * @param expression the {@link MethodPointerExpression} to process
      */

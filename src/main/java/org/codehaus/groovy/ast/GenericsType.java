@@ -262,7 +262,9 @@ public class GenericsType extends ASTNode {
     }
 
     /**
-     * Returns the upper bounds for this wildcard or placeholder type (e.g., Bounds in "? extends Bound" or "T extends Bound1 & Bound2"),
+     * Returns the upper bounds for this wildcard or placeholder type
+     * (e.g., {@code Bound} in {@code ? extends Bound} or
+     * {@code Bound1 & Bound2} in {@code T extends Bound1 & Bound2}),
      * or null if this type has no upper bounds.
      *
      * @return array of upper bound {@link ClassNode}s, or null

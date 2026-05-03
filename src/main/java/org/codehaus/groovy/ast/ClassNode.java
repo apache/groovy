@@ -800,7 +800,6 @@ public class ClassNode extends AnnotatedNode {
      *
      * @param node the {@link PropertyNode} to add, must not be {@code null}
      * @see #addField(FieldNode)
-     * @see #removeProperty(String)
      * @see PropertyNode
      */
     public void addProperty(PropertyNode node) {

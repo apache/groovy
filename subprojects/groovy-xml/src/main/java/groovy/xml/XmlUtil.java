@@ -767,7 +767,7 @@ public class XmlUtil {
     }
 
     /**
-     * Streams XML events from the supplied {@link Reader} using a hardened
+     * Streams XML events from the supplied {@link java.io.Reader} using a hardened
      * StAX {@link javax.xml.stream.XMLInputFactory}. The returned stream
      * lazily pulls events; closing the stream closes the underlying reader.
      * <p>
@@ -782,7 +782,7 @@ public class XmlUtil {
     }
 
     /**
-     * Streams XML events from the supplied {@link Reader} using a hardened
+     * Streams XML events from the supplied {@link java.io.Reader} using a hardened
      * StAX {@link javax.xml.stream.XMLInputFactory}. The returned stream
      * lazily pulls events; closing the stream closes the underlying reader.
      *
