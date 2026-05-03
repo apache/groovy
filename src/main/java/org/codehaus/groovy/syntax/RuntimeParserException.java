@@ -24,17 +24,31 @@ import org.codehaus.groovy.ast.ASTNode;
 import java.io.Serial;
 
 /**
- * A helper class to allow parser exceptions to be thrown anywhere in the code.
- * Should be replaced when no longer required.
+ * A runtime exception wrapper for parser errors, allowing parser exceptions to be thrown
+ * from contexts that cannot throw checked exceptions. Can be converted back to a
+ * {@link SyntaxException} when needed for proper error handling.
  */
 public class RuntimeParserException extends GroovyRuntimeException {
 
     @Serial private static final long serialVersionUID = -6612860527133856587L;
 
+    /**
+     * Constructs a RuntimeParserException from an error message and AST node.
+     * The node's position information is included in the error message.
+     *
+     * @param message the error message
+     * @param node the {@link ASTNode} where the error occurred
+     */
     public RuntimeParserException(String message, ASTNode node) {
         super(message + "\n", node);
     }
 
+    /**
+     * Converts this runtime exception to a checked {@link SyntaxException}.
+     * Extracts position information from the associated AST node.
+     *
+     * @throws SyntaxException containing the error details from this runtime exception
+     */
     public void throwParserException() throws SyntaxException {
         final ASTNode node = getNode();
         throw new SyntaxException(getMessage(), node.getLineNumber(), node.getColumnNumber(), node.getLastLineNumber(), node.getLastColumnNumber());

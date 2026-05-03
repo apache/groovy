@@ -24,26 +24,52 @@ import java.io.IOException;
 import java.io.Serial;
 
 /**
- * Encapsulates non-specific i/o exceptions.
+ * Exception that wraps I/O exceptions ({@link IOException}) in a Groovy-specific context.
+ * Provides convenient access to the underlying I/O cause while maintaining the
+ * {@link GroovyException} hierarchy.
  */
 public class ReadException extends GroovyException {
     @Serial private static final long serialVersionUID = 848585058428047961L;
+    /** The underlying I/O exception. */
     private final IOException cause;
 
+    /**
+     * Constructs a ReadException from an I/O exception.
+     * No specific message is provided.
+     *
+     * @param cause the {@link IOException} that triggered this exception
+     */
     public ReadException(IOException cause) {
         super();
         this.cause = cause;
     }
 
+    /**
+     * Constructs a ReadException from a message and an I/O exception.
+     *
+     * @param message the error message
+     * @param cause the underlying {@link IOException} that triggered this exception
+     */
     public ReadException(String message, IOException cause) {
         super(message);
         this.cause = cause;
     }
 
+    /**
+     * Returns the underlying I/O cause of this exception.
+     *
+     * @return the {@link IOException} that caused this exception
+     */
     public IOException getIOCause() {
         return this.cause;
     }
 
+    /**
+     * Returns a string representation of this exception.
+     * If no custom message was provided, returns the cause's message.
+     *
+     * @return the exception message or I/O cause message
+     */
     @Override
     public String toString() {
         String message = super.getMessage();
@@ -54,6 +80,12 @@ public class ReadException extends GroovyException {
         return message;
     }
 
+    /**
+     * Returns the exception message.
+     * Equivalent to {@link #toString()} for this exception type.
+     *
+     * @return the exception message or I/O cause message
+     */
     @Override
     public String getMessage() {
         return toString();
