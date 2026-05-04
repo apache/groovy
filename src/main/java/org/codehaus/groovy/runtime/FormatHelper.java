@@ -90,26 +90,70 @@ public class FormatHelper {
         FormatHelper.DEFAULT_IMPORT_CLASSES.add("java.math.BigInteger");
     }
 
+    /**
+     * Returns a string representation of the given object.
+     *
+     * @param arguments the object to convert to a string
+     * @return a string representation
+     */
     public static String toString(Object arguments) {
         return format(arguments, false, -1, false);
     }
 
+    /**
+     * Returns an inspectable string representation of the given object.
+     *
+     * @param self the object to inspect
+     * @return a detailed string representation
+     */
     public static String inspect(Object self) {
         return format(self, true);
     }
 
+    /**
+     * Formats the given object as a string with optional verbosity.
+     *
+     * @param arguments the object to format
+     * @param verbose if true, uses inspect mode with escaped backslashes
+     * @return a formatted string representation
+     */
     public static String format(Object arguments, boolean verbose) {
         return format(arguments, verbose, -1);
     }
 
+    /**
+     * Formats the given object as a string with inspect and escape options.
+     *
+     * @param arguments the object to format
+     * @param inspect if true, uses inspect mode; if false, uses toString
+     * @param escapeBackslashes if true, escapes special characters like tabs and newlines
+     * @return a formatted string representation
+     */
     public static String format(Object arguments, boolean inspect, boolean escapeBackslashes) {
         return format(arguments, inspect, -1);
     }
 
+    /**
+     * Formats the given object as a string with a maximum size constraint.
+     *
+     * @param arguments the object to format
+     * @param verbose if true, uses inspect mode with escaped backslashes
+     * @param maxSize maximum characters to include, or -1 for no limit
+     * @return a formatted string representation
+     */
     public static String format(Object arguments, boolean verbose, int maxSize) {
         return format(arguments, verbose, maxSize, false);
     }
 
+    /**
+     * Formats the given object as a string with multiple options.
+     *
+     * @param arguments the object to format
+     * @param inspect if true, uses inspect mode; if false, uses toString
+     * @param escapeBackslashes if true, escapes special characters
+     * @param maxSize maximum characters to include, or -1 for no limit
+     * @return a formatted string representation
+     */
     public static String format(Object arguments, boolean inspect, boolean escapeBackslashes, int maxSize) {
         return format(arguments, inspect, escapeBackslashes, maxSize, false);
     }
@@ -156,10 +200,29 @@ public class FormatHelper {
         return format(arguments, (boolean) inspect, (boolean) escapeBackslashes, (int) maxSize, (boolean) safe);
     }
 
+    /**
+     * Formats the given object as a string with verbose and safe options.
+     *
+     * @param arguments the object to format
+     * @param verbose if true, uses inspect mode with escaped backslashes
+     * @param maxSize maximum characters to include, or -1 for no limit
+     * @param safe if true, exceptions during formatting are caught and handled gracefully
+     * @return a formatted string representation
+     */
     public static String format(Object arguments, boolean verbose, int maxSize, boolean safe) {
         return format(arguments, verbose, verbose, maxSize, safe);
     }
 
+    /**
+     * Formats the given object as a string with full control over all options.
+     *
+     * @param arguments the object to format
+     * @param inspect if true, uses inspect mode; if false, uses toString
+     * @param escapeBackslashes if true, escapes special characters like tabs and newlines
+     * @param maxSize maximum characters to include, or -1 for no limit
+     * @param safe if true, exceptions during formatting are caught and handled gracefully
+     * @return a formatted string representation
+     */
     public static String format(Object arguments, boolean inspect, boolean escapeBackslashes, int maxSize, boolean safe) {
         if (arguments == null) {
             final NullObject nullObject = NullObject.getNullObject();
@@ -236,6 +299,13 @@ public class FormatHelper {
         return s.contains("\n") || s.contains("\r");
     }
 
+    /**
+     * Escapes special characters in the given string, converting them to their escaped representations.
+     * Converts backslash, newline, carriage return, tab, and form feed characters.
+     *
+     * @param orig the string to escape
+     * @return the string with special characters escaped
+     */
     public static String escapeBackslashes(String orig) {
         // must replace backslashes first, as the other replacements add backslashes not to be escaped
         return orig
@@ -499,6 +569,10 @@ public class FormatHelper {
 
     /**
      * Writes an object to a Writer using Groovy's default representation for the object.
+     *
+     * @param out the writer to write to
+     * @param object the object to write
+     * @throws IOException if an I/O error occurs
      */
     public static void write(Writer out, Object object) throws IOException {
         if (object instanceof String) {
@@ -532,6 +606,10 @@ public class FormatHelper {
 
     /**
      * Appends an object to an Appendable using Groovy's default representation for the object.
+     *
+     * @param out the appendable to write to
+     * @param object the object to append
+     * @throws IOException if an I/O error occurs
      */
     public static void append(Appendable out, Object object) throws IOException {
         if (object instanceof String) {

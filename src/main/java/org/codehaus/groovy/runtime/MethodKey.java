@@ -34,6 +34,13 @@ public abstract class MethodKey {
     private final Class sender;
     private final boolean isCallToSuper;
 
+    /**
+     * Constructs a MethodKey for a method invocation.
+     *
+     * @param sender the class that sends the method call
+     * @param name the method name
+     * @param isCallToSuper whether this is a super method call
+     */
     public MethodKey(Class sender, String name, boolean isCallToSuper) {
         this.sender = sender;
         this.name = name;

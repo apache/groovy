@@ -23,21 +23,42 @@ import groovy.lang.Writable;
 import java.io.*;
 
 /**
- * A Writable File.
+ * A file wrapper implementing the {@link Writable} interface to support writing file contents.
+ * Allows a file to be written to any output stream, optionally with a specified character encoding.
  */
 public class WritableFile extends File implements Writable {
     @Serial private static final long serialVersionUID = 4157767752861425917L;
+    /** Optional character encoding for reading the file. */
     private final String encoding;
 
+    /**
+     * Constructs a WritableFile from a delegate File with default character encoding.
+     *
+     * @param delegate the underlying {@link File} to wrap
+     */
     public WritableFile(final File delegate) {
         this(delegate, null);
     }
 
+    /**
+     * Constructs a WritableFile from a delegate File with optional character encoding.
+     *
+     * @param delegate the underlying {@link File} to wrap
+     * @param encoding the character encoding to use when reading the file, or {@code null} for default
+     */
     public WritableFile(final File delegate, final String encoding) {
         super(delegate.toURI());
         this.encoding = encoding;
     }
 
+    /**
+     * Writes this file's contents to the specified Writer.
+     * If encoding was specified, uses that encoding when reading the file.
+     *
+     * @param out the {@link Writer} to write the file contents to
+     * @return the same {@link Writer} for method chaining
+     * @throws IOException if an I/O error occurs during reading or writing
+     */
     @Override
     public Writer writeTo(final Writer out) throws IOException {
 

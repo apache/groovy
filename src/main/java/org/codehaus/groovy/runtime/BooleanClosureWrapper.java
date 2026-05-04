@@ -35,6 +35,11 @@ public class BooleanClosureWrapper {
     private final Closure wrapped;
     private final int numberOfArguments;
 
+    /**
+     * Constructs a BooleanClosureWrapper from a Closure.
+     *
+     * @param wrapped the {@link Closure} to wrap for boolean conversion
+     */
     public BooleanClosureWrapper(Closure wrapped) {
         this.wrapped = wrapped;
         this.numberOfArguments = wrapped.getMaximumNumberOfParameters();

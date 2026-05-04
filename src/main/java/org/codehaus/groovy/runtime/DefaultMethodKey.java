@@ -25,6 +25,14 @@ public class DefaultMethodKey extends MethodKey{
 
     private final Class[] parameterTypes;
 
+    /**
+     * Constructs a method key with the specified parameters.
+     *
+     * @param sender the sender class
+     * @param name the method name
+     * @param parameterTypes the class types of the parameters
+     * @param isCallToSuper whether this is a super method call
+     */
     public DefaultMethodKey(Class sender, String name, Class[] parameterTypes, boolean isCallToSuper) {
         super(sender, name,isCallToSuper);
         this.parameterTypes = parameterTypes;

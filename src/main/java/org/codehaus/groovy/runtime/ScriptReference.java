@@ -32,16 +32,32 @@ public class ScriptReference extends Reference {
     private Script script;
     private String variable;
 
+    /**
+     * Constructs a ScriptReference to a variable in the given script.
+     *
+     * @param script the script instance
+     * @param variable the name of the variable to reference
+     */
     public ScriptReference(Script script, String variable) {
         this.script = script;
         this.variable = variable;
     }
 
+    /**
+     * Gets the current value of the referenced variable.
+     *
+     * @return the variable value from the script binding
+     */
     @Override
     public Object get() {
         return script.getBinding().getVariable(variable);
     }
 
+    /**
+     * Sets the value of the referenced variable.
+     *
+     * @param value the value to set in the script binding
+     */
     @Override
     public void set(Object value) {
         script.getBinding().setVariable(variable, value);

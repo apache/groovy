@@ -27,6 +27,12 @@ import java.io.OutputStreamWriter;
  */
 public class FlushingStreamWriter extends OutputStreamWriter {
 
+    /**
+     * Constructs a FlushingStreamWriter that flushes on every write.
+     *
+     * @param out the underlying output stream to write to
+     * @throws NullPointerException if out is null
+     */
     public FlushingStreamWriter(OutputStream out) {
         super(out);
     }

@@ -62,6 +62,13 @@ public final class ComposedClosure<V> extends Closure<V> {
     private Closure first;
     private Closure<V> second;
 
+    /**
+     * Constructs a composed closure by chaining two closures.
+     * The first closure's output becomes the second closure's input.
+     *
+     * @param first the first closure to apply
+     * @param second the second closure to apply to the result of the first
+     */
     public ComposedClosure(Closure first, Closure<V> second) {
         super(first.clone());
         this.first = (Closure) getOwner();

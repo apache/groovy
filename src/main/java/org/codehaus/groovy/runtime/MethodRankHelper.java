@@ -43,14 +43,44 @@ import java.util.stream.Collectors;
 public class MethodRankHelper {
 
     // These are the costs for the various edit operations they are used by the two Damerau-Levenshtein implementations
+    /**
+     * Cost for case change in Damerau-Levenshtein distance calculation.
+     */
     public static final int DL_CASE          =  5;
+
+    /**
+     * Cost for delete operation in Damerau-Levenshtein distance calculation (also used for insert).
+     */
     public static final int DL_DELETE        = 10; // also the cost for insert
+
+    /**
+     * Cost for substitution in Damerau-Levenshtein distance calculation.
+     */
     public static final int DL_SUBSTITUTION  = 10;
+
+    /**
+     * Cost for transposition in Damerau-Levenshtein distance calculation.
+     */
     public static final int DL_TRANSPOSITION =  5;
 
+    /**
+     * Maximum number of method recommendations to suggest.
+     */
     public static final int MAX_RECOMENDATIONS    =  5;
+
+    /**
+     * Maximum score threshold for method ranking.
+     */
     public static final int MAX_METHOD_SCORE      = 50;
+
+    /**
+     * Maximum score threshold for constructor ranking.
+     */
     public static final int MAX_CONSTRUCTOR_SCORE = 20;
+
+    /**
+     * Maximum score threshold for field ranking.
+     */
     public static final int MAX_FIELD_SCORE       = 30;
 
     /**

@@ -18,11 +18,31 @@
  */
 package org.codehaus.groovy.runtime;
 
+/**
+ * Holds information about a range, including its boundaries and direction.
+ * Used internally by Groovy to represent range iteration parameters.
+ */
 public class RangeInfo {
+    /**
+     * The starting index of the range (inclusive).
+     */
     public final int from;
+    /**
+     * The ending index of the range (inclusive).
+     */
     public final int to;
+    /**
+     * Whether the range should be iterated in reverse order.
+     */
     public final boolean reverse;
 
+    /**
+     * Constructs a RangeInfo with the specified boundaries and direction.
+     *
+     * @param from the starting index (inclusive)
+     * @param to the ending index (inclusive)
+     * @param reverse whether to iterate in reverse order
+     */
     public RangeInfo(int from, int to, boolean reverse) {
         this.from = from;
         this.to = to;

@@ -36,6 +36,13 @@ public class ProcessResult {
     private final String err;
     private final int exitCode;
 
+    /**
+     * Constructs a ProcessResult with the specified output, error, and exit code.
+     *
+     * @param out the standard output of the process
+     * @param err the standard error of the process
+     * @param exitCode the process exit code
+     */
     public ProcessResult(final String out, final String err, final int exitCode) {
         this.out = out;
         this.err = err;
@@ -70,6 +77,9 @@ public class ProcessResult {
         return exitCode == 0;
     }
 
+    /**
+     * Returns a string representation of this process result, including the exit code and abbreviated output/error.
+     */
     @Override
     public String toString() {
         return "ProcessResult(exitCode=" + exitCode

@@ -20,7 +20,16 @@ package org.codehaus.groovy.runtime;
 
 import java.util.Comparator;
 
+/**
+ * Base class for Groovy comparators. Provides a common implementation where equality is based on object identity.
+ */
 public abstract class AbstractComparator<T> implements Comparator<T> {
+    /**
+     * Tests for equality based on object identity.
+     *
+     * @param obj the object to compare with
+     * @return {@code true} if this object is the same as the specified object
+     */
     @Override
     public boolean equals(Object obj) {
         return this == obj;

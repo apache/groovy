@@ -31,10 +31,21 @@ import java.util.function.Predicate;
 public class BooleanClosurePredicate<T> implements Predicate<T> {
     private final BooleanClosureWrapper bcw;
 
+    /**
+     * Constructs a BooleanClosurePredicate from a Closure.
+     *
+     * @param wrapped the {@link Closure} to adapt to a predicate
+     */
     public BooleanClosurePredicate(Closure wrapped) {
         this.bcw = new BooleanClosureWrapper(wrapped);
     }
 
+    /**
+     * Tests the given value using the wrapped closure with Groovy truth conversion.
+     *
+     * @param arg the value to test
+     * @return {@code true} if the closure result is truthy by Groovy standards, {@code false} otherwise
+     */
     @Override
     public boolean test(T arg) {
         return bcw.call(arg);

@@ -34,11 +34,24 @@ public class BooleanClosureForMapPredicate<K, V> implements Predicate<Map.Entry<
     private final BooleanClosureWrapper bcw;
     private final int numberOfArguments;
 
+    /**
+     * Constructs a BooleanClosureForMapPredicate from a Closure.
+     *
+     * @param wrapped the {@link Closure} to adapt to a map entry predicate
+     */
     public BooleanClosureForMapPredicate(Closure wrapped) {
         this.bcw = new BooleanClosureWrapper(wrapped);
         this.numberOfArguments = wrapped.getMaximumNumberOfParameters();
     }
 
+    /**
+     * Tests the given map entry using the wrapped closure with Groovy truth conversion.
+     * If the closure takes two parameters, key and value are passed separately;
+     * otherwise the entry itself is passed.
+     *
+     * @param entry the {@link Map.Entry} to test
+     * @return {@code true} if the closure result is truthy by Groovy standards, {@code false} otherwise
+     */
     @Override
     public boolean test(Map.Entry<K, V> entry) {
         if (numberOfArguments == 2) {

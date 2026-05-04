@@ -54,6 +54,9 @@ import java.util.stream.BaseStream;
  */
 public class ScriptBytecodeAdapter {
 
+    /**
+     * An empty Object array constant.
+     */
     public static final Object[] EMPTY_ARGS = {};
     private static final Integer ONE = 1;
     private static final Integer ZERO = 0;
@@ -62,6 +65,14 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     //                   exception handling
     //  --------------------------------------------------------
+
+    /**
+     * Unwraps a GroovyRuntimeException, extracting the actual cause if present.
+     * Converts GroovyRuntimeException instances that wrap actual exceptions to those exceptions.
+     *
+     * @param gre the GroovyRuntimeException to unwrap
+     * @return the unwrapped Throwable
+     */
     public static Throwable unwrap(GroovyRuntimeException gre) {
         if (gre.getCause() == null) {
             if (gre instanceof MissingPropertyExceptionNoStack noStack) {

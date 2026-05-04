@@ -24,6 +24,11 @@ import groovy.lang.GroovyObjectSupport;
 import java.util.Collections;
 import java.util.Iterator;
 
+/**
+ * A singleton representing the Groovy {@code null} object, providing null-safe method dispatch
+ * and special handling for operations on null values. This class raises {@code NullPointerException}
+ * for most operations, except for a few special cases like {@code equals()}, {@code asBoolean()}, and {@code plus(String)}.
+ */
 public class NullObject extends GroovyObjectSupport {
 
     private static final NullObject INSTANCE = new NullObject();
