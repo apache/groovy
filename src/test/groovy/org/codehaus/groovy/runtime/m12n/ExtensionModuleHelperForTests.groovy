@@ -25,6 +25,10 @@ final class ExtensionModuleHelperForTests {
     private ExtensionModuleHelperForTests() {}
 
     static void doInFork(String baseTestClass = 'java.lang.Object', String code) {
+        doInFork(baseTestClass, code, Collections.<String>emptyList())
+    }
+
+    static void doInFork(String baseTestClass, String code, List<String> extraJvmArgs) {
         File baseDir = File.createTempDir()
         File sourceFile = new File(baseDir, 'Temp.groovy')
         sourceFile << """import org.codehaus.groovy.runtime.m12n.*
@@ -69,6 +73,7 @@ final class ExtensionModuleHelperForTests {
             ~/Picked up _JAVA_OPTIONS: .*/
         ]
         def jvmArgs = []
+        jvmArgs.addAll(extraJvmArgs)
         if (Runtime.version().feature() == 25) {
             // JEP 471/498: silence terminal-deprecation warnings for sun.misc.Unsafe
             // memory-access methods called from agents on the inherited classpath
@@ -78,8 +83,19 @@ final class ExtensionModuleHelperForTests {
         }
         try {
             ant.with {
-                taskdef(name: 'groovyc', classname: 'org.codehaus.groovy.ant.Groovyc')
-                groovyc(srcdir: baseDir.absolutePath, destdir: baseDir.absolutePath, includes: 'Temp.groovy', fork: true)
+                // Compile via FileSystemCompilerFacade in a forked JVM (same as forked groovyc),
+                // but using ant.java so we can attach arbitrary JVM args (e.g. system properties).
+                java(classname: 'org.codehaus.groovy.ant.FileSystemCompilerFacade', fork: 'true', failonerror: 'true') {
+                    jvmArgs.each { jvmarg(value: it) }
+                    classpath {
+                        cp.each { pathelement location: it }
+                    }
+                    arg(value: '--classpath')
+                    arg(value: cp.join(File.pathSeparator))
+                    arg(value: '-d')
+                    arg(value: baseDir.absolutePath)
+                    arg(value: sourceFile.absolutePath)
+                }
                 java(classname: 'Temp', fork: 'true', outputproperty: 'out', errorproperty: 'err') {
                     jvmArgs.each { jvmarg(value: it) }
                     classpath {

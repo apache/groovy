@@ -1225,7 +1225,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ClassNode visitClassDeclaration(final ClassDeclarationContext ctx) {
         String packageName = Optional.ofNullable(this.moduleNode.getPackageName()).orElse("");
         String className = this.visitIdentifier(ctx.identifier());
-        if ("var".equals(className) || "val".equals(className)) {
+        if ("var".equals(className) || (VAL_ENABLED && "val".equals(className))) {
             throw createParsingFailedException(className + " cannot be used for type declarations", ctx.identifier());
         }
 
@@ -4952,6 +4952,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private int visitingArrayInitializerCount;
 
     private static final int SLL_THRESHOLD = SystemUtil.getIntegerSafe("groovy.antlr4.sll.threshold", -1);
+    private static final boolean VAL_ENABLED = Boolean.parseBoolean(System.getProperty("groovy.val.enabled", "true"));
 
     private static final String QUESTION_STR = "?";
     private static final String DOT_STR = ".";
