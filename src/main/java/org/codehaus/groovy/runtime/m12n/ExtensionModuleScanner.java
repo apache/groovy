@@ -40,7 +40,6 @@ public class ExtensionModuleScanner {
 
     /**
      * Legacy location for META-INF module metadata files (Java services format).
-     * @deprecated This location is maintained for backward compatibility. Prefer {@link #MODULE_META_INF_FILE}.
      */
     public static final String LEGACY_MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
 
