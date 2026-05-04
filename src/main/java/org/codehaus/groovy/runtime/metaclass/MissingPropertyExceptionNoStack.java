@@ -22,14 +22,33 @@ import groovy.lang.MissingPropertyException;
 
 import java.io.Serial;
 
+/**
+ * A {@link MissingPropertyException} that does not populate the stack trace.
+ * This exception is optimized for performance when the stack trace is not needed,
+ * as stack trace generation can be expensive.
+ * <p>
+ * This exception is for internal use only.
+ */
 public class MissingPropertyExceptionNoStack extends MissingPropertyException {
 
     @Serial private static final long serialVersionUID = 8993570436675442348L;
 
+    /**
+     * Constructs a new MissingPropertyExceptionNoStack.
+     *
+     * @param propertyName the name of the missing property
+     * @param theClass the class where the property was not found
+     */
     public MissingPropertyExceptionNoStack(String propertyName, Class theClass) {
         super(propertyName, theClass);
     }
 
+    /**
+     * Overrides the default stack trace filling to optimize performance.
+     * Returns this exception without populating the stack trace.
+     *
+     * @return this exception unchanged
+     */
     @Override
     public Throwable fillInStackTrace() {
         return this;

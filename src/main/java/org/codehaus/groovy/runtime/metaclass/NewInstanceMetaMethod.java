@@ -32,21 +32,44 @@ import java.lang.reflect.Modifier;
 public class NewInstanceMetaMethod extends NewMetaMethod {
 
 
+    /**
+     * Constructs a new NewInstanceMetaMethod.
+     *
+     * @param method the cached static helper method
+     */
     public NewInstanceMetaMethod(CachedMethod method) {
         super(method);
     }
 
+    /**
+     * Indicates this method is not static (it appears as an instance method).
+     *
+     * @return false, as this wraps a static method to appear as an instance method
+     */
     @Override
     public boolean isStatic() {
         return false;
     }
 
+    /**
+     * Returns the modifiers for this method (PUBLIC without STATIC).
+     *
+     * @return PUBLIC modifier only
+     */
     @Override
     public int getModifiers() {
         // let's clear the static bit
         return Modifier.PUBLIC;
     }
 
+    /**
+     * Invokes the underlying static method with the object as the first argument.
+     * This adapts instance method calls to the underlying static method signature.
+     *
+     * @param object the object to invoke the method on (passed as first argument to static method)
+     * @param arguments the method arguments
+     * @return the method return value
+     */
     @Override
     public Object invoke(Object object, Object[] arguments)  {
         // we need to cheat using the type

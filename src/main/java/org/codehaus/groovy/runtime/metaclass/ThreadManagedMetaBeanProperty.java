@@ -128,17 +128,21 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         return res;
     }
 
-    /* (non-Javadoc)
-      * @see groovy.lang.MetaBeanProperty#getGetter()
-      */
+    /**
+     * Returns the getter metamethod for this thread-managed property.
+     *
+     * @return the getter metamethod
+     */
     @Override
     public MetaMethod getGetter() {
         return this.getter;
     }
 
-    /* (non-Javadoc)
-      * @see groovy.lang.MetaBeanProperty#getSetter()
-      */
+    /**
+     * Returns the setter metamethod for this thread-managed property.
+     *
+     * @return the setter metamethod
+     */
     @Override
     public MetaMethod getSetter() {
         return this.setter;
@@ -146,41 +150,71 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
 
     /**
-     * Accesses the ThreadBound state of the property as a getter
+     * Accesses the ThreadBound state of the property as a getter.
+     * This inner class implements a MetaMethod that retrieves the thread-bound value
+     * for a property, using the initial value if not yet set for the current thread/object.
      */
     class ThreadBoundGetter extends MetaMethod {
         private final String name;
 
-
+        /**
+         * Constructs a new ThreadBoundGetter for the given property name.
+         *
+         * @param name the name of the property
+         */
         public ThreadBoundGetter(String name) {
             setParametersTypes(CachedClass.EMPTY_ARRAY);
             this.name = getGetterName(name, type);
         }
 
-
+        /**
+         * Returns the modifiers for this getter method (PUBLIC).
+         *
+         * @return Modifier.PUBLIC
+         */
         @Override
         public int getModifiers() {
             return Modifier.PUBLIC;
         }
 
+        /**
+         * Returns the name of this getter method.
+         *
+         * @return the getter method name
+         */
         @Override
         public String getName() {
             return name;
         }
 
+        /**
+         * Returns the return type of this getter.
+         *
+         * @return the property type
+         */
         @Override
         public Class getReturnType() {
             return type;
         }
 
+        /**
+         * Returns the cached class that declares this getter.
+         *
+         * @return the declaring class
+         */
         @Override
         public CachedClass getDeclaringClass() {
             return ReflectionCache.getCachedClass(declaringClass);
         }
 
-        /* (non-Javadoc)
-           * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
-           */
+        /**
+         * Invokes the getter to retrieve the thread-bound property value for the given object.
+         * If no value has been set for this object/thread combination, returns the initial value.
+         *
+         * @param object the object on which the getter is invoked
+         * @param arguments unused (property getters take no arguments)
+         * @return the property value for this object/thread
+         */
         @Override
         public Object invoke(Object object, Object[] arguments) {
             return instance2Prop.getOrPut(object, getInitialValue());
@@ -188,44 +222,70 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     }
 
     /**
-     * Sets the ThreadBound state of the property like a setter
+     * Sets the ThreadBound state of the property like a setter.
+     * This inner class implements a MetaMethod that stores a thread-bound value
+     * for a property, allowing each thread/object combination to have its own value.
      */
     private class ThreadBoundSetter extends MetaMethod {
         private final String name;
 
+        /**
+         * Constructs a new ThreadBoundSetter for the given property name.
+         *
+         * @param name the name of the property
+         */
         public ThreadBoundSetter(String name) {
             setParametersTypes (new CachedClass [] {ReflectionCache.getCachedClass(type)} );
             this.name = getSetterName(name);
         }
 
-
+        /**
+         * Returns the modifiers for this setter method (PUBLIC).
+         *
+         * @return Modifier.PUBLIC
+         */
         @Override
         public int getModifiers() {
             return Modifier.PUBLIC;
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.MetaMethod#getName()
+        /**
+         * Returns the name of this setter method.
+         *
+         * @return the setter method name
          */
-
         @Override
         public String getName() {
             return name;
         }
 
+        /**
+         * Returns the return type of this setter.
+         *
+         * @return the property type
+         */
         @Override
         public Class getReturnType() {
             return type;
         }
 
+        /**
+         * Returns the cached class that declares this setter.
+         *
+         * @return the declaring class
+         */
         @Override
         public CachedClass getDeclaringClass() {
             return ReflectionCache.getCachedClass(declaringClass);
         }
 
-        /* (non-Javadoc)
-           * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
-           */
+        /**
+         * Invokes the setter to store a thread-bound property value for the given object.
+         *
+         * @param object the object on which the setter is invoked
+         * @param arguments a single-element array containing the value to set
+         * @return null
+         */
         @Override
         public Object invoke(Object object, Object[] arguments) {
             instance2Prop.put(object, arguments[0]);

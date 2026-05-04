@@ -28,9 +28,16 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import java.lang.reflect.Modifier;
 
 /**
- * MetaProperty for mixed in classes
+ * MetaProperty for properties in mixed in classes.
+ * This property delegates to the mixin instance's property.
  */
 public class MixinInstanceMetaProperty extends MetaBeanProperty {
+    /**
+     * Constructs a new MixinInstanceMetaProperty.
+     *
+     * @param property the property from the mixin
+     * @param mixinInMetaClass the mixin metadata
+     */
     public MixinInstanceMetaProperty(MetaProperty property, MixinInMetaClass mixinInMetaClass) {
         super(property.getName(), property.getType(), createGetter(property, mixinInMetaClass), createSetter(property, mixinInMetaClass));
     }
@@ -42,26 +49,53 @@ public class MixinInstanceMetaProperty extends MetaBeanProperty {
               setParametersTypes (new CachedClass [] {ReflectionCache.getCachedClass(property.getType())} );
           }
 
+          /**
+           * Returns the modifiers for this method.
+           *
+           * @return the modifiers
+           */
           @Override
           public int getModifiers() {
               return Modifier.PUBLIC;
           }
 
+          /**
+           * Returns the name of this method.
+           *
+           * @return the method name
+           */
           @Override
           public String getName() {
               return name;
           }
 
+          /**
+           * Returns the return type of this method.
+           *
+           * @return the return type
+           */
           @Override
           public Class getReturnType() {
               return property.getType();
           }
 
+          /**
+           * Returns the class that declares this method.
+           *
+           * @return the declaring class
+           */
           @Override
           public CachedClass getDeclaringClass() {
               return mixinInMetaClass.getInstanceClass();
           }
 
+          /**
+           * Invokes this setter method on the given object.
+           *
+           * @param object the object on which to invoke the method
+           * @param arguments the arguments (single element array with the property value)
+           * @return null
+           */
           @Override
           public Object invoke(Object object, Object[] arguments) {
               property.setProperty(mixinInMetaClass.getMixinInstance(object), arguments[0]);
@@ -77,26 +111,53 @@ public class MixinInstanceMetaProperty extends MetaBeanProperty {
                 setParametersTypes (CachedClass.EMPTY_ARRAY);
             }
 
+            /**
+             * Returns the modifiers for this method.
+             *
+             * @return the modifiers
+             */
             @Override
             public int getModifiers() {
                 return Modifier.PUBLIC;
             }
 
+            /**
+             * Returns the name of this method.
+             *
+             * @return the method name
+             */
             @Override
             public String getName() {
                 return name;
             }
 
+            /**
+             * Returns the return type of this method.
+             *
+             * @return the return type
+             */
             @Override
             public Class getReturnType() {
                 return property.getType();
             }
 
+            /**
+             * Returns the class that declares this method.
+             *
+             * @return the declaring class
+             */
             @Override
             public CachedClass getDeclaringClass() {
                 return mixinInMetaClass.getInstanceClass();
             }
 
+            /**
+             * Invokes this getter method on the given object.
+             *
+             * @param object the object on which to invoke the method
+             * @param arguments the arguments (should be empty)
+             * @return the property value
+             */
             @Override
             public Object invoke(Object object, Object[] arguments) {
                 return property.getProperty(mixinInMetaClass.getMixinInstance(object));

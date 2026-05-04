@@ -48,6 +48,14 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
         this(name, declaringClass, c, c.getParameterTypes());
     }
 
+    /**
+     * Constructs a new ClosureStaticMetaMethod with the specified parameter types.
+     *
+     * @param name The name of the MetaMethod
+     * @param declaringClass The class which declared the MetaMethod
+     * @param c The closure that this ClosureStaticMetaMethod will invoke when called
+     * @param paramTypes The parameter types for the closure method
+     */
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c, Class[] paramTypes) {
         super(paramTypes);
         this.callable = c;
@@ -55,6 +63,14 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
         this.name = name;
     }
 
+    /**
+     * Invokes the static closure method with the given arguments. The closure's delegate is set
+     * to the object parameter.
+     *
+     * @param object the object to set as the closure's delegate
+     * @param arguments the arguments to pass to the closure
+     * @return the result of the closure invocation
+     */
     @Override
     public Object invoke(Object object, Object[] arguments) {
         Closure cloned = (Closure) callable.clone();
@@ -62,21 +78,41 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
         return cloned.call(arguments);
     }
 
+    /**
+     * Returns the modifiers for this meta method (PUBLIC | STATIC).
+     *
+     * @return the modifiers indicating this is a public static method
+     */
     @Override
     public int getModifiers() {
         return Modifier.PUBLIC | Modifier.STATIC;
     }
 
+    /**
+     * Returns the name of this static meta method.
+     *
+     * @return the name of the method
+     */
     @Override
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the return type of this method.
+     *
+     * @return Object.class, as closures return Object
+     */
     @Override
     public Class getReturnType() {
         return Object.class;
     }
 
+    /**
+     * Returns the cached class that declares this meta method.
+     *
+     * @return the declaring class
+     */
     @Override
     public CachedClass getDeclaringClass() {
         return this.declaringClass;

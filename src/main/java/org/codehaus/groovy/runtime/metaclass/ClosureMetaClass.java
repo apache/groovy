@@ -87,6 +87,11 @@ public final class ClosureMetaClass extends MetaClassImpl {
         resetCachedMetaClasses();
     }
 
+    /**
+     * Resets the cached metaclasses for Closure and Class. This method is used to reinitialize
+     * the metaclass caches when the system configuration changes, ensuring that any cached
+     * metaclass information is refreshed.
+     */
     public static void resetCachedMetaClasses() {
         MetaClassImpl temp = new MetaClassImpl(Closure.class);
         temp.initialize();
@@ -170,10 +175,24 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Constructs a new ClosureMetaClass for the given closure class.
+     * This metaclass handles method invocation and property access for closure instances,
+     * providing special handling for closure-specific behavior.
+     *
+     * @param registry the metaclass registry
+     * @param theClass the closure class this metaclass represents
+     */
     public ClosureMetaClass(final MetaClassRegistry registry, final Class theClass) {
         super(registry, theClass);
     }
 
+    /**
+     * Gets the meta property for the given name from the closure metaclass.
+     *
+     * @param name the property name
+     * @return the meta property or null if not found
+     */
     @Override
     public MetaProperty getMetaProperty(final String name) {
         return CLOSURE_METACLASS.getMetaProperty(name);
@@ -395,6 +414,9 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    /**
+     * Initializes the closure metaclass by discovering and indexing all closure-related methods.
+     */
     @Override
     public synchronized void initialize() {
         if (!isInitialized()) {
@@ -488,6 +510,13 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    /**
+     * Looks up the metaclass for the given object, handling special cases for
+     * GroovyObject, Class instances, and regular objects.
+     *
+     * @param object the object to look up
+     * @return the metaclass for the object
+     */
     private MetaClass lookupObjectMetaClass(final Object object) {
         MetaClass metaClass;
         if (object instanceof GroovyObject) {
@@ -500,6 +529,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return metaClass;
     }
 
+    /**
+     * Returns a list of all methods available to closures, including both
+     * closure-specific doCall methods and inherited Closure class methods.
+     *
+     * @return a list of all available methods
+     */
     @Override
     public List<MetaMethod> getMethods() {
         List<MetaMethod> answer = CLOSURE_METACLASS.getMetaMethods();
@@ -507,16 +542,34 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return answer;
     }
 
+    /**
+     * Returns a list of all metamethods in the Closure metaclass.
+     *
+     * @return a list of all metamethods
+     */
     @Override
     public List<MetaMethod> getMetaMethods() {
         return CLOSURE_METACLASS.getMetaMethods();
     }
 
+    /**
+     * Returns a list of all properties available to closures.
+     *
+     * @return a list of all available properties
+     */
     @Override
     public List<MetaProperty> getProperties() {
         return CLOSURE_METACLASS.getProperties();
     }
 
+    /**
+     * Picks the most appropriate method from the available closure methods that matches
+     * the given method name and argument types.
+     *
+     * @param methodName the name of the method to pick (typically "call" or "doCall" for closures)
+     * @param argumentTypes the types of arguments to match against method signatures
+     * @return the matching method, or null if no match is found
+     */
     @Override
     public MetaMethod pickMethod(final String methodName, final Class[] argumentTypes) {
         if (CLOSURE_CALL_METHOD.equals(methodName) || CLOSURE_DO_CALL_METHOD.equals(methodName)) {
@@ -525,19 +578,54 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return CLOSURE_METACLASS.getMetaMethod(methodName, argumentTypes);
     }
 
+    /**
+     * Retrieves a static method with the given name and argument types.
+     * Closures do not support static methods, so this always returns null.
+     *
+     * @param methodName the name of the static method to retrieve
+     * @param arguments the argument types
+     * @return null, as closures do not have static methods
+     */
     public MetaMethod retrieveStaticMethod(final String methodName, final Class[] arguments) {
         return null;
     }
 
+    /**
+     * Gets a static meta method by name and argument objects.
+     * Delegates to the Closure metaclass.
+     *
+     * @param name the name of the static method
+     * @param args the arguments
+     * @return the matching static meta method, or null if not found
+     */
     @Override
     public MetaMethod getStaticMetaMethod(final String name, final Object[] args) {
         return CLOSURE_METACLASS.getStaticMetaMethod(name, args);
     }
 
+    /**
+     * Gets a static meta method by name and argument types.
+     * Delegates to the Closure metaclass.
+     *
+     * @param name the name of the static method
+     * @param argTypes the argument types
+     * @return the matching static meta method, or null if not found
+     */
     public MetaMethod getStaticMetaMethod(final String name, final Class[] argTypes) {
         return CLOSURE_METACLASS.getStaticMetaMethod(name, argTypes);
     }
 
+    /**
+     * Gets a property on the closure or the object it represents.
+     * For Class objects, delegates to the static metaclass; otherwise delegates to Closure metaclass.
+     *
+     * @param sender the class that is sending this request
+     * @param object the object to get the property from
+     * @param name the name of the property
+     * @param useSuper whether to use super resolution
+     * @param fromInsideClass whether the call is from inside the class
+     * @return the property value
+     */
     @Override
     public Object getProperty(final Class sender, final Object object, final String name, final boolean useSuper, final boolean fromInsideClass) {
         if (object instanceof Class) {
@@ -547,6 +635,18 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    /**
+     * Gets an attribute from the closure or the object it represents.
+     * For Class objects, delegates to the static metaclass. For closures, checks the
+     * cached fields first before delegating to the Closure metaclass.
+     *
+     * @param sender the class that is sending this request
+     * @param object the object to get the attribute from
+     * @param attribute the name of the attribute
+     * @param useSuper whether to use super resolution
+     * @param fromInsideClass whether the call is from inside the class
+     * @return the attribute value
+     */
     @Override
     public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean useSuper, final boolean fromInsideClass) {
         if (object instanceof Class) {
@@ -562,6 +662,18 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    /**
+     * Sets an attribute on the closure or the object it represents.
+     * For Class objects, delegates to the static metaclass. For closures, checks the
+     * cached fields first before delegating to the Closure metaclass.
+     *
+     * @param sender the class that is sending this request
+     * @param object the object on which to set the attribute
+     * @param attribute the name of the attribute
+     * @param newValue the new value for the attribute
+     * @param useSuper whether to use super resolution
+     * @param fromInsideClass whether the call is from inside the class
+     */
     @Override
     public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         if (object instanceof Class) {
@@ -577,11 +689,31 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    /**
+     * Invokes a static method on the closure class itself.
+     * Delegates to the static metaclass.
+     *
+     * @param object the object on which to invoke the static method
+     * @param methodName the name of the static method
+     * @param arguments the arguments to pass to the method
+     * @return the result of the method invocation
+     */
     @Override
     public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
         return getStaticMetaClass().invokeMethod(Class.class, object, methodName, arguments, false, false);
     }
 
+    /**
+     * Sets a property on the closure or the object it represents.
+     * For Class objects, delegates to the static metaclass; otherwise delegates to Closure metaclass.
+     *
+     * @param sender the class that is sending this request
+     * @param object the object on which to set the property
+     * @param name the name of the property
+     * @param newValue the new value for the property
+     * @param useSuper whether to use super resolution
+     * @param fromInsideClass whether the call is from inside the class
+     */
     @Override
     public void setProperty(final Class sender, final Object object, final String name, final Object newValue, final boolean useSuper, final boolean fromInsideClass) {
         if (object instanceof Class) {
@@ -591,61 +723,161 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    /**
+     * Gets a method without using the cache.
+     * This operation is not supported for ClosureMetaClass.
+     *
+     * @param index the method index
+     * @param sender the class that is sending this request
+     * @param methodName the name of the method
+     * @param arguments the argument types
+     * @param isCallToSuper whether this is a call to a super method
+     * @return never returns; always throws UnsupportedOperationException
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     public MetaMethod getMethodWithoutCaching(final int index, final Class sender, final String methodName, final Class[] arguments, final boolean isCallToSuper) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Sets multiple properties on a bean.
+     * This operation is not supported for ClosureMetaClass.
+     *
+     * @param bean the bean object
+     * @param map the properties to set
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     @Override
     public void setProperties(final Object bean, final Map map) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Adds a meta bean property to this metaclass.
+     * This operation is not supported for ClosureMetaClass as it is immutable.
+     *
+     * @param mp the meta bean property to add
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     @Override
     public void addMetaBeanProperty(final MetaBeanProperty mp) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Adds a meta method to this metaclass.
+     * This operation is not supported for ClosureMetaClass as it is immutable.
+     *
+     * @param method the meta method to add
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     @Override
     public void addMetaMethod(final MetaMethod method) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Adds a new instance method to this metaclass.
+     * This operation is not supported for ClosureMetaClass as it is immutable.
+     *
+     * @param method the method to add
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     @Override
     public void addNewInstanceMethod(final Method method) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Adds a new static method to this metaclass.
+     * This operation is not supported for ClosureMetaClass as it is immutable.
+     *
+     * @param method the static method to add
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     @Override
     public void addNewStaticMethod(final Method method) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Retrieves a constructor matching the given argument types.
+     * This operation is not supported for ClosureMetaClass.
+     *
+     * @param arguments the argument types
+     * @return never returns; always throws UnsupportedOperationException
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     @Override
     public Constructor retrieveConstructor(final Class[] arguments) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Creates a POJO (Plain Old Java Object) call site for this metaclass.
+     * This operation is not supported for ClosureMetaClass.
+     *
+     * @param site the call site
+     * @param receiver the receiver object
+     * @param args the arguments
+     * @return never returns; always throws UnsupportedOperationException
+     * @throws UnsupportedOperationException this method is not supported for closures
+     */
     @Override
     public CallSite createPojoCallSite(final CallSite site, final Object receiver, final Object[] args) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Creates a POGO (Plain Old Groovy Object) call site for this metaclass.
+     * Provides optimized method invocation for POGO objects.
+     *
+     * @param site the call site
+     * @param args the arguments
+     * @return a POGO-specific call site
+     */
     @Override
     public CallSite createPogoCallSite(final CallSite site, final Object[] args) {
         return new PogoMetaClassSite(site, this);
     }
 
+    /**
+     * Creates a POGO call site for the current class context.
+     * Provides optimized method invocation for POGO objects within a specific class context.
+     *
+     * @param site the call site
+     * @param sender the class sending the call
+     * @param args the arguments
+     * @return a POGO-specific call site
+     */
     @Override
     public CallSite createPogoCallCurrentSite(final CallSite site, final Class sender, final Object[] args) {
         return new PogoMetaClassSite(site, this);
     }
 
+    /**
+     * Checks if this metaclass responds to the given method name with the specified argument types.
+     * Returns a list of methods that match the given name and signature.
+     *
+     * @param obj the object to check
+     * @param name the method name
+     * @param argTypes the argument types
+     * @return a list of matching methods, or an empty list if none match
+     */
     @Override
     public List respondsTo(final Object obj, final String name, final Object[] argTypes) {
         loadMetaInfo();
         return super.respondsTo(obj, name, argTypes);
     }
 
+    /**
+     * Checks if this metaclass responds to the given method name.
+     * Returns a list of methods that match the given name.
+     *
+     * @param obj the object to check
+     * @param name the method name
+     * @return a list of matching methods, or an empty list if none match
+     */
     @Override
     public List respondsTo(final Object obj, final String name) {
         loadMetaInfo();

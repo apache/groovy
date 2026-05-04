@@ -21,13 +21,26 @@ package org.codehaus.groovy.runtime.metaclass;
 import java.io.Serial;
 
 /**
- * A stack less exception used to indicate, that the execution of a missingMethod
+ * A stack-less exception used to indicate that the execution of a missingMethod
  * method failed with a MissingMethodException. This is used to prevent a call to
  * invokeMethod for GroovyObject implementing classes.
  */
 public class MissingMethodExecutionFailed extends MissingMethodExceptionNoStack {
     @Serial private static final long serialVersionUID = -7894095278952483769L;
+    /**
+     * The underlying cause of the method execution failure
+     */
     private Throwable cause;
+
+    /**
+     * Constructs a new MissingMethodExecutionFailed.
+     *
+     * @param method the name of the method that failed
+     * @param type the class where the method was called
+     * @param arguments the arguments passed to the method
+     * @param isStatic true if the missing method was static
+     * @param cause the underlying exception that caused the execution to fail
+     */
     public MissingMethodExecutionFailed(String method, Class type, Object[] arguments, boolean isStatic, Throwable cause) {
         super(method, type, arguments, isStatic);
         this.cause = cause;

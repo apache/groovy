@@ -55,6 +55,12 @@ public class MethodSelectionException extends GroovyRuntimeException {
         this.methods = methods;
     }
 
+    /**
+     * Returns a descriptive error message listing which method could not be selected
+     * and the available methods that could have been chosen.
+     *
+     * @return the error message describing the method selection failure
+     */
     @Override
     public String getMessage() {
         StringBuilder buffer = new StringBuilder();

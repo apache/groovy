@@ -28,8 +28,19 @@ import org.codehaus.groovy.runtime.MethodKey;
  */
 public class TemporaryMethodKey extends MethodKey {
 
+    /**
+     * The parameter values used to look up the method
+     */
     private final Object[] parameterValues;
 
+    /**
+     * Constructs a new TemporaryMethodKey.
+     *
+     * @param sender the class making the method call
+     * @param name the method name
+     * @param parameterValues the actual parameter values (used to determine types)
+     * @param isCallToSuper true if this is a call to a super method
+     */
     public TemporaryMethodKey(Class sender, String name, Object[] parameterValues, boolean isCallToSuper) {
         super(sender, name, isCallToSuper);
         if (parameterValues == null) {
@@ -38,11 +49,25 @@ public class TemporaryMethodKey extends MethodKey {
         this.parameterValues = parameterValues;
     }
 
+    /**
+     * Returns the number of parameters for this method key.
+     *
+     * @return the number of parameter values
+     */
     @Override
     public int getParameterCount() {
         return parameterValues.length;
     }
 
+    /**
+     * Gets the class type of the parameter at the specified index.
+     * If the parameter value is a Class object, returns it directly.
+     * Otherwise, returns the class of the parameter value.
+     * If the parameter is null, returns Object.class.
+     *
+     * @param index the parameter index
+     * @return the class type of the parameter
+     */
     @Override
     public Class getParameterType(int index) {
         Object value = parameterValues[index];

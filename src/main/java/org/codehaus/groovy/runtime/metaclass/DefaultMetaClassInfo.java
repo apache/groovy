@@ -258,7 +258,11 @@ public class DefaultMetaClassInfo {
     private static boolean withoutCustomHandle = true;
 
     /**
-     * Sets if the system uses a custom metaclass creation handle.
+     * Sets whether the system uses a custom metaclass creation handle.
+     * When set to false, indicates that a custom handle is in use; when set to true,
+     * indicates the system uses the standard metaclass creation handle.
+     *
+     * @param mch true if using standard metaclass creation handle, false if using custom
      */
     public static void setWithoutCustomMetaclassCreationHandle(boolean mch) {
         withoutCustomHandle = mch;
@@ -271,11 +275,23 @@ public class DefaultMetaClassInfo {
     private static boolean categoryUsed = false;
     private static boolean disabledStandardMC = false;
 
+    /**
+     * Sets whether categories are currently in use and updates related flags accordingly.
+     * When categories are used, standard metaclass functionality may be affected.
+     *
+     * @param b true if categories are in use, false otherwise
+     */
     public static void setCategoryUsed(boolean b) {
         categoryUsed = b;
         disabledStandardMC = b || !withoutCustomHandle;
     }
 
+    /**
+     * Returns whether standard metaclass functionality has been disabled.
+     * This occurs when either categories are in use or a custom metaclass creation handle is set.
+     *
+     * @return true if standard metaclass is disabled, false otherwise
+     */
     public static boolean disabledStandardMetaClass() {
         return disabledStandardMC;
     }
@@ -298,6 +314,14 @@ public class DefaultMetaClassInfo {
         }
     }
 
+    /**
+     * Sets whether the original metaclass is used for the given primitive class.
+     * This method updates the appropriate flag based on the class type (Byte, Character, Short,
+     * Integer, Long, Float, Double, or Integer array).
+     *
+     * @param c the primitive or primitive array class
+     * @param orig true if using the original metaclass, false otherwise
+     */
     public static void setPrimitiveMeta(Class c, boolean orig) {
         if (c==Byte.class) {
             setOrigByte(orig);
@@ -322,17 +346,42 @@ public class DefaultMetaClassInfo {
     //---------------------------------------------
     //         GlobalMetaClassVersioning
     //---------------------------------------------
+    /**
+     * Represents a constant version of the metaclass configuration at a point in time.
+     * Used to track when metaclass configurations have changed and invalidate caches
+     * accordingly.
+     */
     public static class ConstantMetaClassVersioning {
         private boolean valid = true;
+        
+        /**
+         * Returns whether this versioning instance is still valid.
+         * Returns false if a newer version has been created.
+         *
+         * @return true if this version is still current, false otherwise
+         */
         public boolean isValid(){return valid;}
     }
     private static ConstantMetaClassVersioning constantMetaClassVersioning = new ConstantMetaClassVersioning();
     private static final Object constantMetaClassVersioningLock = new Object();
 
+    /**
+     * Retrieves the current constant metaclass versioning object.
+     * All cached metaclass information is tagged with the current version.
+     * When the version changes, all caches using the old version become invalid.
+     *
+     * @return the current metaclass versioning instance
+     */
     public static ConstantMetaClassVersioning getCurrentConstantMetaClassVersioning() {
         return constantMetaClassVersioning;
     }
 
+    /**
+     * Creates a new constant metaclass versioning instance and invalidates the old one.
+     * This should be called when global metaclass configuration changes occur.
+     *
+     * @return the new metaclass versioning instance
+     */
     public static ConstantMetaClassVersioning getNewConstantMetaClassVersioning() {
         synchronized (constantMetaClassVersioningLock) {
             constantMetaClassVersioning.valid = false;

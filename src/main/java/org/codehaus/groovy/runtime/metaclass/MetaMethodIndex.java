@@ -28,6 +28,13 @@ import org.codehaus.groovy.util.FastArray;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * An index of metamethods for a class, organized by method name and signature.
+ * Provides efficient lookup of methods for static, normal, and super method calls.
+ * Uses caching to optimize method lookup performance.
+ * <p>
+ * This class is for internal use by the Groovy runtime's metaclass system.
+ */
 public class MetaMethodIndex {
     private static final int DEFAULT_CAPACITY = 32;
 
@@ -38,14 +45,27 @@ public class MetaMethodIndex {
      */
     public final Map<Class<?>, Map<String, Cache>> indexMap = new ConcurrentHashMap<>(DEFAULT_CAPACITY);
 
+    /**
+     * The main class for which this index was created
+     */
     public final Class<?> mainClass;
 
+    /**
+     * A cache entry for a metamethod with its parameter types.
+     */
     public static class MetaMethodCache {
+        /**
+         * The parameter types used for this cached method
+         */
         public final Class<?>[] params;
+        /**
+         * The cached metamethod
+         */
         public final MetaMethod method;
 
         /**
-         * create a new method entry
+         * Creates a new method entry.
+         *
          * @param params in case of caching params might not be the same as {@link MetaMethod#getParameterTypes}
          * @param method the meta method
          */
@@ -55,15 +75,44 @@ public class MetaMethodIndex {
         }
     }
 
+    /**
+     * A cache of metamethods indexed by name.
+     */
     public static class Cache {
+        /**
+         * The method name
+         */
         public final String name;
+        /**
+         * A list of methods or a single method
+         */
         public Object methods;
+        /**
+         * Methods available for super calls
+         */
         public Object methodsForSuper;
+        /**
+         * Static methods for this name
+         */
         public Object staticMethods;
+        /**
+         * Cached method result for normal calls
+         */
         public MetaMethodCache cachedMethod;
+        /**
+         * Cached method result for super calls
+         */
         public MetaMethodCache cachedMethodForSuper;
+        /**
+         * Cached static method result
+         */
         public MetaMethodCache cachedStaticMethod;
 
+        /**
+         * Constructs a new Cache for the given method name.
+         *
+         * @param name the method name
+         */
         public Cache(String name) {
             this.name = name;
         }
@@ -76,6 +125,11 @@ public class MetaMethodIndex {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Constructs a new MetaMethodIndex for the given class.
+     *
+     * @param theCachedClass the cached class for which to build the index
+     */
     public MetaMethodIndex(final CachedClass theCachedClass) {
         this.mainClass = theCachedClass.getTheClass();
         if (!theCachedClass.isInterface()) {
@@ -88,11 +142,24 @@ public class MetaMethodIndex {
         }
     }
 
+    /**
+     * Gets the cached methods for a given class and method name.
+     *
+     * @param cls the class to look up
+     * @param name the method name
+     * @return the cache entry or null if not found
+     */
     public final Cache getMethods(final Class<?> cls, final String name) {
         var map = indexMap.get(cls);
         return map == null ? null : map.get(name);
     }
 
+    /**
+     * Adds a metamethod to the index.
+     *
+     * @param method the metamethod to add
+     * @param map the cache map to add the method to
+     */
     public void addMetaMethod(MetaMethod method, Map<String, Cache> map) {
         var cache = map.computeIfAbsent(method.getName(), Cache::new);
 
@@ -106,10 +173,22 @@ public class MetaMethodIndex {
         return cacheIndex.computeIfAbsent(name, Cache::new);
     }
 
+    /**
+     * Gets the method cache header for the given class.
+     *
+     * @param cls the class
+     * @return the method cache map or null if not found
+     */
     public Map<String, Cache> getHeader(final Class<?> cls) {
         return indexMap.get(cls);
     }
 
+    /**
+     * Copies all non-private methods from one method cache map to another.
+     *
+     * @param from the source method cache map
+     * @param to the destination method cache map
+     */
     public  void copyNonPrivateMethods(final Map<String, Cache> from, final Map<String, Cache> to) {
         for (Cache e : from.values()) {
             copyNonPrivateMethods(e, to);
@@ -139,6 +218,12 @@ public class MetaMethodIndex {
         }
     }
 
+    /**
+     * Copies all non-private, non-new metamethods from one method cache map to another.
+     *
+     * @param from the source method cache map
+     * @param to the destination method cache map
+     */
     public  void copyNonPrivateNonNewMetaMethods(final Map<String, Cache> from, final Map<String, Cache> to) {
         for (Cache e : from.values()) {
             copyNonPrivateNonNewMetaMethods(e, to);
@@ -173,6 +258,14 @@ public class MetaMethodIndex {
                 GeneralUtils.inSamePackage(method.getDeclaringClass().getTheClass(), mainClass));
     }
 
+    /**
+     * Adds a metamethod to a method list, handling overrides and duplicates.
+     * Returns either a single MetaMethod, a FastArray of methods, or the original object.
+     *
+     * @param o the existing method list (can be null, a MetaMethod, or a FastArray)
+     * @param toIndex the metamethod to add
+     * @return the updated method list
+     */
     public Object addMethodToList(final Object o, final MetaMethod toIndex) {
         if (o == null) {
             return toIndex;
@@ -263,6 +356,9 @@ public class MetaMethodIndex {
         return -1;
     }
 
+    /**
+     * Copies all methods to their super method counterparts in the cache index.
+     */
     public void copyMethodsToSuper() {
         allEntries().forEach(cacheEntry -> {
             if (cacheEntry.methods instanceof FastArray) {
@@ -277,12 +373,20 @@ public class MetaMethodIndex {
         return indexMap.values().stream().flatMap(map -> map.values().stream());
     }
 
+    /**
+     * Clears all cached metamethods across all cache entries.
+     */
     public void clearCaches() {
         allEntries().forEach(e ->
             e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null
         );
     }
 
+    /**
+     * Clears all cached metamethods for methods with the given name.
+     *
+     * @param name the method name
+     */
     public void clearCaches(String name) {
         allEntries().filter(cache -> cache.name.equals(name)).forEach(e ->
             e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null

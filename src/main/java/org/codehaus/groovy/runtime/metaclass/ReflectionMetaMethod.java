@@ -25,34 +25,76 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * A MetaMethod implementation that wraps a reflection-based method call.
+ * This class provides access to a cached method and delegates method invocations
+ * to the underlying cached method.
+ * <p>
+ * This implementation is for internal use by the Groovy runtime.
+ */
 public class ReflectionMetaMethod extends MetaMethod {
+    /**
+     * The underlying cached method that this MetaMethod wraps
+     */
     protected final CachedMethod method;
 
+    /**
+     * Constructs a new ReflectionMetaMethod.
+     *
+     * @param method the cached method to wrap
+     */
     public ReflectionMetaMethod(CachedMethod method) {
         this.method = method;
         setParametersTypes(method.getParameterTypes());
     }
 
+    /**
+     * Returns the modifiers of the wrapped cached method.
+     *
+     * @return the method modifiers
+     */
     @Override
     public int getModifiers() {
         return method.getModifiers();
     }
 
+    /**
+     * Returns the name of the wrapped cached method.
+     *
+     * @return the method name
+     */
     @Override
     public String getName() {
         return method.getName();
     }
 
+    /**
+     * Returns the return type of the wrapped cached method.
+     *
+     * @return the return type
+     */
     @Override
     public Class getReturnType() {
         return method.getReturnType();
     }
 
+    /**
+     * Returns the class that declares the wrapped cached method.
+     *
+     * @return the declaring class
+     */
     @Override
     public CachedClass getDeclaringClass() {
         return method.cachedClass;
     }
 
+    /**
+     * Invokes the wrapped cached method on the given object with the specified arguments.
+     *
+     * @param object the object to invoke the method on
+     * @param arguments the method arguments
+     * @return the method return value
+     */
     @Override
     public Object invoke(Object object, Object[] arguments) {
         try {
@@ -64,6 +106,11 @@ public class ReflectionMetaMethod extends MetaMethod {
         }
     }
 
+    /**
+     * Returns a string representation of the wrapped cached method.
+     *
+     * @return the string representation
+     */
     @Override
     public String toString () {
         return method.toString();
@@ -74,6 +121,11 @@ public class ReflectionMetaMethod extends MetaMethod {
         return method.getNativeParameterTypes();
     }
 
+    /**
+     * Returns the cached method wrapped by this MetaMethod.
+     *
+     * @return the cached method
+     */
     public MetaMethod getCachedMethod() {
         return method;
     }

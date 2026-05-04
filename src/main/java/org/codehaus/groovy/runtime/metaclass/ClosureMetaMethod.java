@@ -47,10 +47,26 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     private final CachedMethod doCall;
     private final CachedClass  declaringClass;
 
+    /**
+     * Constructs a new ClosureMetaMethod with the specified name and closure.
+     * The declaring class is obtained from the closure's owner.
+     *
+     * @param name the name of the method
+     * @param c the closure to invoke when this method is called
+     * @param doCall the cached method representing the closure's doCall method
+     */
     public ClosureMetaMethod(String name, Closure c, CachedMethod doCall) {
         this(name, c.getOwner().getClass(), c, doCall);
     }
 
+    /**
+     * Constructs a new ClosureMetaMethod with the specified name, declaring class, and closure.
+     *
+     * @param name the name of the method
+     * @param declaringClass the class that declares this meta method
+     * @param c the closure to invoke when this method is called
+     * @param doCall the cached method representing the closure's doCall method
+     */
     public ClosureMetaMethod(String name, Class declaringClass, Closure c, CachedMethod doCall) {
         super(doCall.getNativeParameterTypes());
         this.name = name;
@@ -59,26 +75,54 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
     }
 
+    /**
+     * Returns the modifiers for this method.
+     *
+     * @return Modifier.PUBLIC
+     */
     @Override
     public int getModifiers() {
         return Modifier.PUBLIC;
     }
 
+    /**
+     * Returns the name of this closure meta method.
+     *
+     * @return the name of the method
+     */
     @Override
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the return type of this method.
+     *
+     * @return Object.class, as closures return Object
+     */
     @Override
     public Class getReturnType() {
         return Object.class;
     }
 
+    /**
+     * Returns the cached class that declares this meta method.
+     *
+     * @return the declaring class
+     */
     @Override
     public CachedClass getDeclaringClass() {
         return declaringClass;
     }
 
+    /**
+     * Invokes the closure with the given arguments. The closure's delegate is set to the
+     * object on which this method is being invoked.
+     *
+     * @param object the object on which the method is invoked (becomes the closure's delegate)
+     * @param arguments the arguments to pass to the closure
+     * @return the result of the closure invocation
+     */
     @Override
     public Object invoke(final Object object, final Object[] arguments) {
         Closure clone = (Closure) callable.clone();
@@ -100,6 +144,15 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         return callable;
     }
 
+    /**
+     * Creates a list of MetaMethod instances from the given closure.
+     * Handles MethodClosure, GeneratedClosure, and anonymous closures appropriately.
+     *
+     * @param name the name of the method
+     * @param declaringClass the class that declares this meta method
+     * @param closure the closure to create meta methods from
+     * @return a list of MetaMethod instances
+     */
     public static List<MetaMethod> createMethodList(final String name, final Class declaringClass, final Closure closure) {
         List<MetaMethod> mms = new ArrayList<>();
         if (closure instanceof MethodClosure) {
@@ -133,10 +186,23 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         }
         return metaMethod;
     }
+
+    /**
+     * Returns the cached method that represents the closure's doCall method.
+     *
+     * @return the cached doCall method
+     */
     public CachedMethod getDoCall() {
         return doCall;
     }
 
+    /**
+     * Creates a copy of the given ClosureMetaMethod. If the method is a MethodClosureMetaMethod,
+     * returns a new MethodClosureMetaMethod; otherwise returns a new ClosureMetaMethod.
+     *
+     * @param closureMethod the closure meta method to copy
+     * @return a copy of the closure meta method
+     */
     public static ClosureMetaMethod copy(ClosureMetaMethod closureMethod) {
         if (closureMethod instanceof MethodClosureMetaMethod)
           return new MethodClosureMetaMethod(closureMethod.getName(), closureMethod.getDeclaringClass().getTheClass(), closureMethod.getClosure(), closureMethod.getDoCall());
@@ -145,10 +211,25 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     }
 
     private static class MethodClosureMetaMethod extends ClosureMetaMethod {
+        /**
+         * Constructs a new MethodClosureMetaMethod with the specified name, declaring class, closure, and method.
+         *
+         * @param name the name of the method
+         * @param declaringClass the class that declares this meta method
+         * @param closure the closure to invoke when this method is called
+         * @param method the cached method representing the closure's method
+         */
         public MethodClosureMetaMethod(String name, Class declaringClass, Closure closure, CachedMethod method) {
             super(name, declaringClass, closure, method);
         }
 
+        /**
+         * Invokes the closure's underlying method directly on the closure's owner.
+         *
+         * @param object the object on which the method is invoked (unused)
+         * @param arguments the method arguments
+         * @return the result of the method invocation
+         */
         @Override
         public Object invoke(Object object, Object[] arguments) {
             return getDoCall().invoke(getClosure().getOwner(), arguments);
@@ -160,6 +241,13 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         private final String name;
         private final Class declaringClass;
 
+        /**
+         * Constructs a new AnonymousMetaMethod with the specified closure, name, and declaring class.
+         *
+         * @param closure the closure to invoke when this method is called
+         * @param name the name of the method
+         * @param declaringClass the class that declares this meta method
+         */
         public AnonymousMetaMethod(Closure closure, String name, Class declaringClass) {
             super(closure.getParameterTypes());
             this.closure = closure;
@@ -167,31 +255,64 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
             this.declaringClass = declaringClass;
         }
 
+        /**
+         * Returns the closure associated with this method.
+         *
+         * @return the closure
+         */
         @Override
         public Closure getClosure() {
             return closure;
         }
 
+        /**
+         * Returns the modifiers for this method.
+         *
+         * @return Modifier.PUBLIC
+         */
         @Override
         public int getModifiers() {
             return Modifier.PUBLIC;
         }
 
+        /**
+         * Returns the name of this meta method.
+         *
+         * @return the name of the method
+         */
         @Override
         public String getName() {
             return name;
         }
 
+        /**
+         * Returns the return type of this method.
+         *
+         * @return Object.class, as closures return Object
+         */
         @Override
         public Class getReturnType() {
             return Object.class;
         }
 
+        /**
+         * Returns the cached class that declares this meta method.
+         *
+         * @return the cached declaring class
+         */
         @Override
         public CachedClass getDeclaringClass() {
             return ReflectionCache.getCachedClass(declaringClass);
         }
 
+        /**
+         * Invokes the closure with the given arguments. The closure's delegate is set to the
+         * object on which this method is being invoked.
+         *
+         * @param object the object on which the method is invoked (becomes the closure's delegate)
+         * @param arguments the arguments to pass to the closure
+         * @return the result of the closure invocation
+         */
         @Override
         public Object invoke(Object object, Object[] arguments) {
             Closure cloned = (Closure) closure.clone();

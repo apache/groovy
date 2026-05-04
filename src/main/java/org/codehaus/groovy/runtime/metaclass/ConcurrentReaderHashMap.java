@@ -1055,6 +1055,14 @@ public class ConcurrentReaderHashMap
     protected final Entry next;
     protected volatile Object value;
 
+    /**
+     * Constructs a new Entry with the given hash, key, value, and next entry.
+     *
+     * @param hash the hash code of the key
+     * @param key the key
+     * @param value the value
+     * @param next the next entry in the chain, or null if this is the last entry
+     */
     Entry(int hash, Object key, Object value, Entry next) {
       this.hash = hash;
       this.key = key;
@@ -1064,6 +1072,11 @@ public class ConcurrentReaderHashMap
 
     // Map.Entry Ops
 
+    /**
+     * Returns the key of this entry.
+     *
+     * @return the key
+     */
     @Override
     public Object getKey() {
       return key;
@@ -1115,6 +1128,13 @@ public class ConcurrentReaderHashMap
       return oldValue;
     }
 
+    /**
+     * Compares the specified object with this entry for equality.
+     * Returns true if the given object is also a Map.Entry and has the same key and value.
+     *
+     * @param o the object to compare
+     * @return true if equal, false otherwise
+     */
     @Override
     public boolean equals(Object o) {
       if (!(o instanceof Map.Entry e))
@@ -1122,11 +1142,22 @@ public class ConcurrentReaderHashMap
         return (key.equals(e.getKey()) && value.equals(e.getValue()));
     }
 
+    /**
+     * Returns the hash code for this entry.
+     * Computed as the XOR of the hash codes of the key and value.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
       return  key.hashCode() ^ value.hashCode();
     }
 
+    /**
+     * Returns a string representation of this entry.
+     *
+     * @return a string representation in the form "key=value"
+     */
     @Override
     public String toString() {
       return key + "=" + value;
@@ -1142,17 +1173,37 @@ public class ConcurrentReaderHashMap
     protected Object currentValue;         // value for current node
     protected Entry lastReturned = null;   // last node returned by next
 
+    /**
+     * Constructs a new HashIterator over a snapshot of the table.
+     */
     protected HashIterator() {
       tab = ConcurrentReaderHashMap.this.getTableForReading();
       index = tab.length - 1;
     }
 
+    /**
+     * Returns whether there are more elements (Enumeration interface).
+     *
+     * @return true if there are more elements, false otherwise
+     */
     @Override
     public boolean hasMoreElements() { return hasNext(); }
+    
+    /**
+     * Returns the next element (Enumeration interface).
+     *
+     * @return the next element
+     * @throws NoSuchElementException if there are no more elements
+     */
     @Override
     public Object nextElement() { return next(); }
 
 
+    /**
+     * Returns whether there are more elements to iterate over.
+     *
+     * @return true if there are more elements, false otherwise
+     */
     @Override
     public boolean hasNext() {
 
@@ -1186,8 +1237,21 @@ public class ConcurrentReaderHashMap
       }
     }
 
+    /**
+     * Returns the value of the next element.
+     * This method can be overridden by subclasses to return different values
+     * (e.g., just the key or just the value instead of the whole entry).
+     *
+     * @return the value to return for the next element
+     */
     protected Object returnValueOfNext() { return entry; }
 
+    /**
+     * Returns the next element in the iteration.
+     *
+     * @return the next element
+     * @throws NoSuchElementException if there are no more elements
+     */
     @Override
     public Object next() {
       if (currentKey == null && !hasNext())
@@ -1200,6 +1264,11 @@ public class ConcurrentReaderHashMap
       return result;
     }
 
+    /**
+     * Removes the last returned element from the map.
+     *
+     * @throws IllegalStateException if next() has not been called or remove() has already been called after the last next() call
+     */
     @Override
     public void remove() {
       if (lastReturned == null)
@@ -1211,11 +1280,17 @@ public class ConcurrentReaderHashMap
   }
 
 
+  /**
+   * Iterator over the keys of the map.
+   */
   protected class KeyIterator extends HashIterator {
     @Override
     protected Object returnValueOfNext() { return currentKey; }
   }
 
+  /**
+   * Iterator over the values of the map.
+   */
   protected class ValueIterator extends HashIterator {
     @Override
     protected Object returnValueOfNext() { return currentValue; }
