@@ -134,7 +134,7 @@ tasks.named('compileTestGroovy') {
 
 tasks.register('checkCompatibility') {
     doLast {
-        assert JavaVersion.current().java17Compatible
+        assert JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)
     }
 }
 
