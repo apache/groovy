@@ -52,14 +52,23 @@ final class ExtensionModuleHelperForTests {
 
         def ant = new AntBuilder()
         def allowed = [
-            'Picked up JAVA_TOOL_OPTIONS: .*',
-            'Picked up _JAVA_OPTIONS: .*'
+            ~/Picked up JAVA_TOOL_OPTIONS: .*/,
+            ~/Picked up _JAVA_OPTIONS: .*/
         ]
+        def jvmArgs = []
+        if (Runtime.version().feature() == 25) {
+            // JEP 471/498: silence terminal-deprecation warnings for sun.misc.Unsafe
+            // memory-access methods called from agents on the inherited classpath
+            // (e.g. testlens's shaded protobuf UnsafeUtil::arrayBaseOffset).
+            // remove when we can - this could mask errors we want to pick up
+            jvmArgs << '--sun-misc-unsafe-memory-access=allow'
+        }
         try {
             ant.with {
                 taskdef(name: 'groovyc', classname: 'org.codehaus.groovy.ant.Groovyc')
                 groovyc(srcdir: baseDir.absolutePath, destdir: baseDir.absolutePath, includes: 'Temp.groovy', fork: true)
                 java(classname: 'Temp', fork: 'true', outputproperty: 'out', errorproperty: 'err') {
+                    jvmArgs.each { jvmarg(value: it) }
                     classpath {
                         cp.each {
                             pathelement location: it
@@ -71,8 +80,11 @@ final class ExtensionModuleHelperForTests {
             baseDir.deleteDir()
             String out = ant.project.properties.out
             String err = ant.project.properties.err
-            if (err && !allowed.any{ err.trim().matches(it) }) {
-                throw new RuntimeException("$err\nClasspath: ${cp.join('\n')}")
+            def stray = err?.readLines()?.findAll { line ->
+                line.trim() && !allowed.any { line ==~ it }
+            } ?: []
+            if (stray) {
+                throw new RuntimeException("${stray.join('\n')}\nClasspath: ${cp.join('\n')}")
             }
             if (out && (out.contains('FAILURES') || !out.contains('OK'))) {
                 throw new RuntimeException("$out\nClasspath: ${cp.join('\n')}")
