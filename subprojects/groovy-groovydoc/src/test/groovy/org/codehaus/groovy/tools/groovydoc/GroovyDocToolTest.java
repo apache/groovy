@@ -823,6 +823,159 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 invokeMethodSection.contains("{@inheritDoc}"));
     }
 
+    public void testInheritDocResolvesFromExternalJdkAbstractClassInHtml() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaExtendsWriterInheritDoc.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/JavaExtendsWriterInheritDoc.html");
+        String closeSection = findMethodSection(doc, "close", "");
+        String flushSection = findMethodSection(doc, "flush", "");
+        assertNotNull("Expected JavaExtendsWriterInheritDoc.html in output", doc);
+        assertNotNull("Expected close() section in:\n" + doc, closeSection);
+        assertNotNull("Expected flush() section in:\n" + doc, flushSection);
+        assertTrue("Expected inherited close() text from java.io.Writer in:\n" + doc,
+                normalizeWhitespace(closeSection).contains("Closes the stream"));
+        assertTrue("Expected inherited flush() text from java.io.Writer in:\n" + doc,
+                normalizeWhitespace(flushSection).contains("Flushes the stream"));
+        assertFalse("External JDK inheritDoc should not remain literal in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
+    public void testInheritDocResolvesFromExternalObjectMethodInHtml() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaObjectCloneInheritDocChild.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/JavaObjectCloneInheritDocChild.html");
+        String cloneSection = findMethodSection(doc, "clone", "");
+        assertNotNull("Expected JavaObjectCloneInheritDocChild.html in output", doc);
+        assertNotNull("Expected clone() section in:\n" + doc, cloneSection);
+        assertTrue("Expected inherited clone() text from java.lang.Object in:\n" + doc,
+                normalizeWhitespace(cloneSection).contains("Creates and returns a copy of this object"));
+        assertFalse("External Object inheritDoc should not remain literal in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
+    public void testExternalGroovyClassDocUsesActualSuperclassSemantics() {
+        assertNull("java.lang.Object should not invent a superclass",
+                new ExternalGroovyClassDoc(Object.class).superclass());
+        assertNull("Interfaces should not invent Object as a superclass",
+                new ExternalGroovyClassDoc(Map.class).superclass());
+        assertEquals("Concrete external classes should expose their reflected superclass",
+                "java.lang.Object",
+                new ExternalGroovyClassDoc(java.io.Writer.class).superclass().qualifiedTypeName());
+    }
+
+    public void testExternalJavadocSupportStandaloneLookupDoesNotRetainCaches() {
+        ExternalJavadocSupport.clearCaches();
+
+        GroovyMethodDoc[] docs = ExternalJavadocSupport.methodsFor(new ExternalGroovyClassDoc(Map.class));
+        assertTrue("Expected external methods for java.util.Map", docs.length > 0);
+
+        ExternalJavadocSupport.CacheStats stats = ExternalJavadocSupport.cacheStats();
+        assertEquals("Standalone external lookup should not retain raw comment cache entries", 0, stats.rawCommentCacheSize());
+        assertEquals("Standalone external lookup should not retain method metadata cache entries", 0, stats.methodCacheSize());
+        assertEquals("Standalone external lookup should not retain method doc cache entries", 0, stats.methodDocCacheSize());
+    }
+
+    public void testExternalJavadocSupportClearsCachesWhenSessionCloses() throws Exception {
+        ExternalJavadocSupport.clearCaches();
+
+        try (AutoCloseable ignored = ExternalJavadocSupport.openCacheSession()) {
+            GroovyMethodDoc[] docs = ExternalJavadocSupport.methodsFor(new ExternalGroovyClassDoc(Map.class));
+            assertTrue("Expected external methods for java.util.Map", docs.length > 0);
+
+            ExternalJavadocSupport.CacheStats stats = ExternalJavadocSupport.cacheStats();
+            assertTrue("Expected raw comment cache entries while the session is active", stats.rawCommentCacheSize() > 0);
+            assertTrue("Expected method metadata cache entries while the session is active", stats.methodCacheSize() > 0);
+            assertTrue("Expected method doc cache entries while the session is active", stats.methodDocCacheSize() > 0);
+        }
+
+        ExternalJavadocSupport.CacheStats stats = ExternalJavadocSupport.cacheStats();
+        assertEquals("Raw comment cache should be cleared after the last session closes", 0, stats.rawCommentCacheSize());
+        assertEquals("Method metadata cache should be cleared after the last session closes", 0, stats.methodCacheSize());
+        assertEquals("Method doc cache should be cleared after the last session closes", 0, stats.methodDocCacheSize());
+    }
+
+    public void testInheritDocResolvesFromExternalMapAndObjectMethodsInHtml() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/JavaImplementsMapInheritDoc.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/JavaImplementsMapInheritDoc.html");
+        String clearSection = findMethodSection(doc, "clear", "");
+        String containsValueSection = findMethodSection(doc, "containsValue", "java.lang.Object");
+        String equalsSection = findMethodSection(doc, "equals", "java.lang.Object");
+        String hashCodeSection = findMethodSection(doc, "hashCode", "");
+        assertNotNull("Expected JavaImplementsMapInheritDoc.html in output", doc);
+        assertNotNull("Expected clear() section in:\n" + doc, clearSection);
+        assertNotNull("Expected containsValue(Object) section in:\n" + doc, containsValueSection);
+        assertNotNull("Expected equals(Object) section in:\n" + doc, equalsSection);
+        assertNotNull("Expected hashCode() section in:\n" + doc, hashCodeSection);
+        assertTrue("Expected inherited clear() text from java.util.Map in:\n" + doc,
+                normalizeWhitespace(clearSection).contains("Removes all of the mappings from this map"));
+        assertTrue("Expected inherited containsValue(Object) text from java.util.Map in:\n" + doc,
+                containsValueSection.contains("Returns <CODE>true</CODE> if this map maps one or more keys to the"));
+        assertTrue("Expected inherited equals(Object) text from java.lang.Object in:\n" + doc,
+                equalsSection.contains("Indicates whether some other object is \"equal to\" this one"));
+        assertTrue("Expected normalized inherited hashCode() text from java.lang.Object in:\n" + doc,
+                normalizeWhitespace(hashCodeSection).contains("a hash code value for this object"));
+        assertFalse("Inherited external docs should not retain raw Javadoc comment markers in:\n" + doc,
+                normalizeWhitespace(doc).contains("* Removes all of the mappings"));
+        assertFalse("Inherited external docs should not leave raw link/index inline tags in:\n" + doc,
+                doc.contains("{@linkplain") || doc.contains("{@index"));
+        assertFalse("External Map/Object inheritDoc should not remain literal in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
+    public void testNestedInternalClassReferencesResolveUsingDocPathNaming() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(
+                base + "/JavaNestedResolutionOuter.java",
+                base + "/JavaNestedResolutionSamePackageConsumer.java",
+                base + "/sub/JavaNestedResolutionImportedConsumer.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String samePackageDoc = output.getText(MOCK_DIR + "/" + base + "/JavaNestedResolutionSamePackageConsumer.html");
+        String importedDoc = output.getText(MOCK_DIR + "/" + base + "/sub/JavaNestedResolutionImportedConsumer.html");
+        String nestedConsumerDoc = output.getText(MOCK_DIR + "/" + base + "/JavaNestedResolutionOuter/Enclosing.Consumer.html");
+        assertNotNull("Expected JavaNestedResolutionSamePackageConsumer.html in output", samePackageDoc);
+        assertNotNull("Expected JavaNestedResolutionImportedConsumer.html in output", importedDoc);
+        assertNotNull("Expected JavaNestedResolutionOuter/Enclosing.Consumer.html in output", nestedConsumerDoc);
+        assertNotNull("Expected same-package nested helper page in output",
+                output.getText(MOCK_DIR + "/" + base + "/JavaNestedResolutionOuter.SamePackageHelper.html"));
+        assertNotNull("Expected imported nested helper page in output",
+                output.getText(MOCK_DIR + "/" + base + "/JavaNestedResolutionOuter.ImportedHelper.html"));
+        assertNotNull("Expected sibling nested helper page in output",
+                output.getText(MOCK_DIR + "/" + base + "/JavaNestedResolutionOuter/Enclosing.Sibling.html"));
+
+        assertTrue("Same-package nested type should link using dotted doc path in:\n" + samePackageDoc,
+                samePackageDoc.contains("JavaNestedResolutionOuter.SamePackageHelper.html"));
+        assertFalse("Same-package nested type should not use binary-name or slash lookup in:\n" + samePackageDoc,
+                samePackageDoc.contains("JavaNestedResolutionOuter$SamePackageHelper.html")
+                        || samePackageDoc.contains("JavaNestedResolutionOuter/SamePackageHelper.html"));
+
+        assertTrue("Imported nested type should link using dotted doc path in:\n" + importedDoc,
+                importedDoc.contains("JavaNestedResolutionOuter.ImportedHelper.html"));
+        assertFalse("Imported nested type should not use binary-name or slash lookup in:\n" + importedDoc,
+                importedDoc.contains("JavaNestedResolutionOuter$ImportedHelper.html")
+                        || importedDoc.contains("JavaNestedResolutionOuter/ImportedHelper.html"));
+
+        assertTrue("Nested sibling type should resolve through enclosing types using dotted doc path in:\n" + nestedConsumerDoc,
+                nestedConsumerDoc.contains("Enclosing.Sibling.html"));
+        assertFalse("Nested sibling type should not use binary-name lookup in:\n" + nestedConsumerDoc,
+                nestedConsumerDoc.contains("Enclosing$Sibling.html"));
+    }
+
     // Cyclic inheritDoc references must collapse safely instead of
     // recursing until the renderer overflows the stack.
     public void testInheritDocCycleDoesNotOverflow() throws Exception {

@@ -874,7 +874,7 @@ final class TagRenderer {
 
     private static boolean isKnownInlineTag(String name, Config cfg) {
         return switch (name) {
-            case "link", "see", "code", "interface", "value", "inheritDoc", "snippet" -> true;
+            case "link", "linkplain", "see", "code", "interface", "value", "inheritDoc", "return", "summary", "index", "snippet" -> true;
             case "literal" -> cfg.literalEnabled;
             default -> false;
         };
@@ -893,6 +893,7 @@ final class TagRenderer {
                 // annotation declarations in comments don't pollute output.
                 return;
             case "link":
+            case "linkplain":
             case "see":
                 out.append(SimpleGroovyClassDoc.getDocUrl(body, false, links, relPath, rootDoc, classDoc));
                 return;
@@ -904,6 +905,11 @@ final class TagRenderer {
                 break; // fall through to emit verbatim
             case "code":
                 out.append(cfg.codeOpen).append(SimpleGroovyClassDoc.encodeAngleBrackets(body)).append(cfg.codeClose);
+                return;
+            case "return":
+            case "summary":
+            case "index":
+                out.append(renderInline(body, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited, inheritDocContext));
                 return;
             case "value": {
                 // GROOVY-6016: resolve {@value #FIELD} or {@value Class#FIELD}.
@@ -924,7 +930,9 @@ final class TagRenderer {
             case "inheritDoc": {
                 // GROOVY-3782: only meaningful on a method; render the parent
                 // method's doc in the same inheritDoc expansion context so
-                // cycles don't reset the visited set on re-entry.
+                // cycles don't reset the visited set on re-entry. A non-null
+                // result means the tag was handled; the empty string suppresses
+                // a literal {@inheritDoc} when no inherited text is available.
                 String inherited = resolveInheritDoc(memberDoc, classDoc, links, relPath, rootDoc, cfg, inheritDocVisited, inheritDocContext);
                 if (inherited != null) {
                     out.append(inherited);
@@ -944,8 +952,11 @@ final class TagRenderer {
      * already-rendered comment text. Walks the superclass chain, then
      * interfaces reachable from the current class or any superclass,
      * looking for a method with the same name and matching parameter type
-     * names. Returns {@code null} if the current member isn't a method,
-     * no parent method is found, or the parent method has no doc.
+     * names. Returns {@code null} only when the current member isn't a
+     * method and the tag should therefore remain verbatim. Returns an empty
+     * string when the tag is recognized in a method context but no inherited
+     * text should be emitted, for example because no parent doc is available
+     * or a cycle was detected.
      *
      * <p>Recursion safety: the {@code visited} set tracks methods we've
      * already expanded on this chain and is reused when rendering parent
@@ -961,20 +972,22 @@ final class TagRenderer {
                                             Set<GroovyMethodDoc> visited,
                                             InheritDocContext inheritDocContext) {
         if (!(memberDoc instanceof GroovyMethodDoc thisMethod)) return null;
-        if (classDoc == null) return null;
+        if (classDoc == null) return "";
         if (visited == null) visited = new HashSet<>();
         if (!visited.add(thisMethod)) return ""; // cycle: suppress literal {@inheritDoc}
 
         GroovyMethodDoc parent = findInheritedMethod(thisMethod, classDoc, new HashSet<>());
-        if (parent == null) return null;
-        if (parent instanceof SimpleGroovyMemberDoc parentMember
-                && parentMember.belongsToClass instanceof SimpleGroovyClassDoc parentClassDoc) {
+        if (parent == null) return "";
+        if (parent instanceof SimpleGroovyMemberDoc parentMember) {
+            SimpleGroovyClassDoc parentClassDoc = parentMember.belongsToClass instanceof SimpleGroovyClassDoc
+                    ? (SimpleGroovyClassDoc) parentMember.belongsToClass
+                    : classDoc;
             if (inheritDocContext != null) {
                 GroovyTag inheritedTag = findInheritedTag(parentMember, inheritDocContext);
-                if (inheritedTag == null) return null;
+                if (inheritedTag == null) return "";
                 return renderInline(inheritedTag.text(), links, relPath, rootDoc, parentClassDoc, parentMember, cfg, visited, inheritDocContext);
             }
-            return parentClassDoc.replaceTags(parentMember.getRawCommentText(), parentMember, visited);
+            return render(parentMember.getRawCommentText(), links, relPath, rootDoc, parentClassDoc, parentMember, cfg, visited);
         }
         String rendered = parent.commentText();
         return rendered == null ? "" : rendered;
@@ -1049,19 +1062,101 @@ final class TagRenderer {
     private static GroovyMethodDoc findMatchingMethod(GroovyClassDoc cls, GroovyMethodDoc target) {
         String targetName = target.name();
         GroovyParameter[] targetParams = target.parameters();
+        GroovyMethodDoc compatibleMatch = null;
         for (GroovyMethodDoc m : cls.methods()) {
             if (!targetName.equals(m.name())) continue;
             GroovyParameter[] params = m.parameters();
             if (params.length != targetParams.length) continue;
-            boolean allMatch = true;
+            boolean allExactMatch = true;
+            boolean allCompatible = true;
             for (int i = 0; i < params.length; i++) {
                 String a = params[i].typeName();
                 String b = targetParams[i].typeName();
-                if (!Objects.equals(a, b)) { allMatch = false; break; }
+                if (!typeNamesEqual(a, b)) {
+                    allExactMatch = false;
+                    if (!typeNamesCompatible(a, b)) {
+                        allCompatible = false;
+                        break;
+                    }
+                }
             }
-            if (allMatch) return m;
+            if (allExactMatch) return m;
+            if (allCompatible && compatibleMatch == null) compatibleMatch = m;
         }
-        return null;
+        return compatibleMatch;
+    }
+
+    private static boolean typeNamesEqual(String left, String right) {
+        String a = normalizeTypeName(left);
+        String b = normalizeTypeName(right);
+        return Objects.equals(a, b) || Objects.equals(simpleTypeName(a), simpleTypeName(b));
+    }
+
+    private static boolean typeNamesCompatible(String left, String right) {
+        String a = normalizeTypeName(left);
+        String b = normalizeTypeName(right);
+        if (Objects.equals(a, b) || Objects.equals(simpleTypeName(a), simpleTypeName(b))) return true;
+        if (isTypeVariableName(a) && isTypeVariableName(b)) return true;
+        if ((isTypeVariableName(a) && isReferenceType(b)) || (isTypeVariableName(b) && isReferenceType(a))) {
+            return true;
+        }
+        if (isArrayType(a) && isArrayType(b)) {
+            String leftComponent = arrayComponentType(a);
+            String rightComponent = arrayComponentType(b);
+            if (typeNamesCompatible(leftComponent, rightComponent)) return true;
+            if ((isObjectType(leftComponent) && isReferenceType(rightComponent))
+                    || (isObjectType(rightComponent) && isReferenceType(leftComponent))) {
+                return true;
+            }
+        }
+        return (isObjectType(a) && !isPrimitiveType(b)) || (isObjectType(b) && !isPrimitiveType(a));
+    }
+
+    private static String normalizeTypeName(String typeName) {
+        if (typeName == null) return "";
+        String normalized = typeName.replace("...", "[]").trim();
+        int genericStart = normalized.indexOf('<');
+        if (genericStart >= 0) normalized = normalized.substring(0, genericStart).trim();
+        if (normalized.startsWith("? extends ")) {
+            normalized = normalized.substring("? extends ".length()).trim();
+        } else if (normalized.startsWith("? super ")) {
+            normalized = normalized.substring("? super ".length()).trim();
+        } else if ("?".equals(normalized)) {
+            normalized = Object.class.getSimpleName();
+        }
+        return normalized;
+    }
+
+    private static String simpleTypeName(String typeName) {
+        int lastDot = typeName.lastIndexOf('.');
+        return lastDot >= 0 ? typeName.substring(lastDot + 1) : typeName;
+    }
+
+    private static boolean isObjectType(String typeName) {
+        return "Object".equals(typeName) || "java.lang.Object".equals(typeName);
+    }
+
+    private static boolean isArrayType(String typeName) {
+        return typeName.endsWith("[]");
+    }
+
+    private static String arrayComponentType(String typeName) {
+        return typeName.substring(0, typeName.length() - 2);
+    }
+
+    private static boolean isPrimitiveType(String typeName) {
+        return switch (typeName) {
+            case "boolean", "byte", "char", "short", "int", "long", "float", "double", "void" -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isReferenceType(String typeName) {
+        return !isPrimitiveType(typeName);
+    }
+
+    private static boolean isTypeVariableName(String typeName) {
+        return typeName.matches("[A-Z][0-9]?") || "KEY".equals(typeName) || "VALUE".equals(typeName);
     }
 
     private static String resolveValueTag(String body, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {

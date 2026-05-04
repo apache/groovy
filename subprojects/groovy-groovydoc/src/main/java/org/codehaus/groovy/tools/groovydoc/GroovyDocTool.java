@@ -172,14 +172,16 @@ public class GroovyDocTool {
         if ("true".equals(properties.getProperty("privateScope"))) properties.setProperty("packageScope", "true");
         if ("true".equals(properties.getProperty("packageScope"))) properties.setProperty("protectedScope", "true");
         if ("true".equals(properties.getProperty("protectedScope"))) properties.setProperty("publicScope", "true");
-        if (templateEngine != null) {
-            GroovyDocWriter writer = new GroovyDocWriter(output, templateEngine, properties, sourcepaths);
-            GroovyRootDoc rootDoc = rootDocBuilder.getRootDoc();
-            writer.writeRoot(rootDoc, destdir);
-            writer.writePackages(rootDoc, destdir);
-            writer.writeClasses(rootDoc, destdir);
-        } else {
-            throw new UnsupportedOperationException("No template engine was found");
+        try (AutoCloseable ignored = ExternalJavadocSupport.openCacheSession()) {
+            if (templateEngine != null) {
+                GroovyDocWriter writer = new GroovyDocWriter(output, templateEngine, properties, sourcepaths);
+                GroovyRootDoc rootDoc = rootDocBuilder.getRootDoc();
+                writer.writeRoot(rootDoc, destdir);
+                writer.writePackages(rootDoc, destdir);
+                writer.writeClasses(rootDoc, destdir);
+            } else {
+                throw new UnsupportedOperationException("No template engine was found");
+            }
         }
     }
 
