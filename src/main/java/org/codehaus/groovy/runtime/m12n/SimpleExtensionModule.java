@@ -87,11 +87,23 @@ public abstract class SimpleExtensionModule extends ExtensionModule {
 
     private static final Logger LOG = Logger.getLogger(SimpleExtensionModule.class.getName());
 
+    /**
+     * Constructs a new SimpleExtensionModule.
+     *
+     * @param moduleName the name of this extension module
+     * @param moduleVersion the version of this extension module
+     */
     public SimpleExtensionModule(final String moduleName, final String moduleVersion) {
         super(moduleName, moduleVersion);
     }
 
-
+    /**
+     * Returns the list of all metamethods provided by this extension module.
+     * This method introspects the instance and static extension classes to extract
+     * metamethods from their public static methods.
+     *
+     * @return a list of metamethods provided by this module
+     */
     @Override
     public List<MetaMethod> getMetaMethods() {
         List<MetaMethod> metaMethods = new LinkedList<MetaMethod>();

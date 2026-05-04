@@ -31,8 +31,23 @@ import java.util.Properties;
  */
 public class StandardPropertiesModuleFactory extends PropertiesModuleFactory {
 
+    /**
+     * Property key in META-INF configuration file for specifying a custom module factory class.
+     * If specified, the factory class must extend PropertiesModuleFactory and have a no-arg constructor.
+     */
     public static final String MODULE_FACTORY_KEY = "moduleFactory";
 
+    /**
+     * Creates a new extension module from the given properties.
+     * If the properties contain a custom factory class name under the key
+     * {@link #MODULE_FACTORY_KEY}, that factory is instantiated and used.
+     * Otherwise, a {@link MetaInfExtensionModule} is created.
+     *
+     * @param properties the module metadata properties
+     * @param classLoader the class loader to use for loading extension classes and custom factory classes
+     * @return a new extension module
+     * @throws GroovyRuntimeException if the custom factory cannot be loaded or instantiated
+     */
     @Override
     @SuppressWarnings("unchecked")
     public ExtensionModule newModule(final Properties properties, final ClassLoader classLoader) {

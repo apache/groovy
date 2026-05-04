@@ -38,17 +38,35 @@ import java.util.Properties;
  */
 public class ExtensionModuleScanner {
 
+    /**
+     * Legacy location for META-INF module metadata files (Java services format).
+     * @deprecated This location is maintained for backward compatibility. Prefer {@link #MODULE_META_INF_FILE}.
+     */
     public static final String LEGACY_MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
+
+    /**
+     * Current location for META-INF module metadata files (Java properties format).
+     */
     public static final String MODULE_META_INF_FILE = "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule";
 
     private final ExtensionModuleListener listener;
     private final ClassLoader classLoader;
 
+    /**
+     * Constructs a new ExtensionModuleScanner.
+     *
+     * @param listener the listener to be notified when modules are discovered
+     * @param loader the class loader to use for scanning and loading modules
+     */
     public ExtensionModuleScanner(final ExtensionModuleListener listener, final ClassLoader loader) {
         this.listener = Objects.requireNonNull(listener);
         this.classLoader = Objects.requireNonNull(loader);
     }
 
+    /**
+     * Scans the classpath for extension module metadata files.
+     * This method scans for both the current and legacy module metadata file locations.
+     */
     public void scanClasspathModules() {
         scanClasspathModulesFrom(MODULE_META_INF_FILE);
         scanClasspathModulesFrom(LEGACY_MODULE_META_INF_FILE);
@@ -76,6 +94,12 @@ public class ExtensionModuleScanner {
         scanExtensionModuleFromProperties(properties);
     }
 
+    /**
+     * Scans and creates an extension module from the given properties.
+     * Properties are typically loaded from a module metadata file (properties format).
+     *
+     * @param properties the module metadata properties
+     */
     public void scanExtensionModuleFromProperties(final Properties properties) {
         var factory = new StandardPropertiesModuleFactory();
         var module = factory.newModule(properties, classLoader);
@@ -87,7 +111,15 @@ public class ExtensionModuleScanner {
         if (module != null) listener.onModule(module);
     }
 
+    /**
+     * Listener interface for extension module discovery events.
+     */
     public interface ExtensionModuleListener {
+        /**
+         * Called when an extension module is discovered and successfully loaded.
+         *
+         * @param module the discovered extension module
+         */
         void onModule(ExtensionModule module);
     }
 }

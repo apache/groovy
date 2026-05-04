@@ -27,8 +27,24 @@ import java.util.Properties;
  * @since 2.0.0
  */
 public abstract class PropertiesModuleFactory {
+    /**
+     * Property key in META-INF configuration file for specifying the module name.
+     */
     public static final String MODULE_NAME_KEY = "moduleName";
+    
+    /**
+     * Property key in META-INF configuration file for specifying the module version.
+     */
     public static final String MODULE_VERSION_KEY = "moduleVersion";
 
+    /**
+     * Creates a new extension module from the given properties and class loader.
+     * Implementations are responsible for parsing the properties and creating
+     * an appropriate module instance.
+     *
+     * @param properties the module metadata properties
+     * @param classLoader the class loader to use for loading extension classes
+     * @return a new extension module
+     */
     public abstract ExtensionModule newModule(Properties properties, final ClassLoader classLoader);
 }
