@@ -19,10 +19,17 @@
 package org.codehaus.groovy.runtime.typehandling;
 
 /**
- * Long NumberMath operations
+ * 64-bit long integer (long) arithmetic operations.
+ * <p>
+ * Singleton instance providing NumberMath implementations for long-based operations.
+ * Supports all standard operations: addition, subtraction, multiplication, integer division,
+ * comparison, and bitwise operations including bit shifts.
  */
 public final class LongMath extends NumberMath {
 
+    /**
+     * Singleton instance of LongMath.
+     */
     public static final LongMath INSTANCE = new LongMath();
 
     private LongMath() {}
@@ -119,6 +126,15 @@ public final class LongMath extends NumberMath {
         return left.longValue() >>> right.longValue();
     }
 
+    /**
+     * Bitwise AND operation for long values.
+     * <p>
+     * Performs a bitwise AND (&) between two numbers converted to long values.
+     *
+     * @param left the first operand
+     * @param right the second operand
+     * @return the bitwise AND result as a long
+     */
     public Number bitAndImpl(Number left, Number right) {
         return left.longValue() & right.longValue();
     }

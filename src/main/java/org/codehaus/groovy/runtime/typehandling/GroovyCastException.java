@@ -21,14 +21,23 @@ package org.codehaus.groovy.runtime.typehandling;
 import java.io.Serial;
 import java.util.Optional;
 
+/**
+ * Exception thrown when a type cast or coercion fails.
+ * <p>
+ * This exception provides detailed information about the object that failed to cast,
+ * the target type, and any underlying cause. The error messages suggest alternative
+ * wrapper types when casting to primitive wrapper classes.
+ */
 public class GroovyCastException extends ClassCastException {
 
     @Serial private static final long serialVersionUID = 6859089155641797356L;
 
     /**
-     * @param objectToCast object we tried to cast
-     * @param classToCastTo class we tried to cast to
-     * @param cause not kept but we pass on message from this Exception if any
+     * Constructs a GroovyCastException with details of the failed cast and its cause.
+     *
+     * @param objectToCast the object that failed to cast
+     * @param classToCastTo the target class
+     * @param cause the underlying exception (message is included in the error)
      */
     public GroovyCastException(final Object objectToCast, final Class classToCastTo, final Exception cause) {
         super(makeMessage(objectToCast, classToCastTo) +
@@ -36,15 +45,19 @@ public class GroovyCastException extends ClassCastException {
     }
 
     /**
-     * @param objectToCast object we tried to cast
-     * @param classToCastTo class we tried to cast to
+     * Constructs a GroovyCastException with details of the failed cast.
+     *
+     * @param objectToCast the object that failed to cast
+     * @param classToCastTo the target class
      */
     public GroovyCastException(final Object objectToCast, final Class classToCastTo) {
         super(makeMessage(objectToCast, classToCastTo));
     }
 
     /**
-     * @param message custom problem message
+     * Constructs a GroovyCastException with a custom error message.
+     *
+     * @param message the error message
      */
     public GroovyCastException(final String message) {
         super(message);

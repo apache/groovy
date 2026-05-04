@@ -23,12 +23,26 @@ import groovy.lang.GString;
 import java.util.Arrays;
 
 /**
- * Class providing various short paths for type conversions. Read the comments
- * to what conditions have to be met to get valid results!
- * Any method here must not depend on the groovy runtime.
+ * High-performance type casting and conversion utilities.
+ * <p>
+ * Provides fast-path type conversions for common cases. These methods are designed
+ * to avoid dependency on the Groovy runtime and should be used directly only when
+ * the type constraints documented in each method are met.
+ * <p>
+ * For general-purpose type coercion, use {@link DefaultTypeTransformation} instead.
  */
 public class ShortTypeHandling {
 
+    /**
+     * Casts an object to a Class object.
+     * <p>
+     * Accepts Class objects directly, or a string representation of a class name
+     * which is loaded via {@code Class.forName}.
+     *
+     * @param object a Class object or string class name
+     * @return the Class object, or null if input is null
+     * @throws GroovyCastException if the object is not a Class or valid class name
+     */
     public static Class castToClass(Object object) {
         if (object==null) return null;
         if (object instanceof Class) return (Class) object;
@@ -39,6 +53,16 @@ public class ShortTypeHandling {
         }
     }
 
+    /**
+     * Casts an object to a String representation.
+     * <p>
+     * Arrays are converted using {@code Arrays.toString} format.
+     * Primitive arrays receive special handling to show element values.
+     * Other objects use their standard {@code toString()} method.
+     *
+     * @param object any object (may be null)
+     * @return string representation, or null if input is null
+     */
     public static String castToString(Object object) {
         if (object==null) return null;
         if (object.getClass().isArray()) {
@@ -56,8 +80,18 @@ public class ShortTypeHandling {
     }
 
     /**
-     * this class requires that the supplied enum is not fitting a
-     * Collection case for casting
+     * Casts an object to an Enum value of the specified type.
+     * <p>
+     * <strong>Note:</strong> This method requires that the supplied enum
+     * is not fitting a Collection case for casting.
+     * <p>
+     * Accepts Enum objects already of the correct type, or a String/GString
+     * representation of the enum constant name.
+     *
+     * @param object an enum value, or a string enum constant name
+     * @param type the target enum class
+     * @return the Enum value, or null if input is null
+     * @throws GroovyCastException if the object cannot be converted to the enum type
      */
     public static Enum castToEnum(Object object, Class<? extends Enum> type) {
         if (object==null) return null;
@@ -68,6 +102,15 @@ public class ShortTypeHandling {
         throw new GroovyCastException(object, type);
     }
 
+    /**
+     * Casts an object to a char value (Character wrapper).
+     * <p>
+     * Accepts Character objects, Numbers (converted via intValue), or Strings of length 1.
+     *
+     * @param object a Character, Number, or single-character String
+     * @return a Character with the coerced value, or null if input is null
+     * @throws GroovyCastException if the object cannot be converted to char
+     */
     public static Character castToChar(Object object) {
         if (object==null) return null;
         if (object instanceof Character) {

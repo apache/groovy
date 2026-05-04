@@ -19,10 +19,17 @@
 package org.codehaus.groovy.runtime.typehandling;
 
 /**
- * FloatingPoint (Double and Float) NumberMath operations
+ * Binary floating-point arithmetic operations.
+ * <p>
+ * Singleton instance providing NumberMath implementations for floating-point operations.
+ * Handles both Float and Double types using double-precision floating-point semantics.
+ * All results are returned as Double values to preserve precision.
  */
 public final class FloatingPointMath extends NumberMath {
 
+    /**
+     * Singleton instance of FloatingPointMath.
+     */
     public static final FloatingPointMath INSTANCE = new FloatingPointMath();
 
     private FloatingPointMath() {}
