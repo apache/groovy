@@ -56,7 +56,7 @@ final class ExtensionModuleTest {
             def resolver = "@GrabResolver('$jarURL')"
 
             assertScript resolver + """
-                @Grab(value='module-test:module-test:1.4', changing='true')
+                @Grab(value='module-test:module-test:1.4', changing=true)
                 import org.codehaus.groovy.runtime.m12n.*
 
                 // ensure that the module is now loaded
@@ -88,7 +88,7 @@ final class ExtensionModuleTest {
             def resolver = "@GrabResolver('$jarURL')"
 
             assertScript resolver + """
-                @Grab(value='module-test:module-test:1.4', changing='true')
+                @Grab(value='module-test:module-test:1.4', changing=true)
                 import org.codehaus.groovy.runtime.m12n.*
 
                 def map = [:]
@@ -112,7 +112,7 @@ final class ExtensionModuleTest {
 
             assertScript """
                 @GrabResolver('$jarURL')
-                @Grab(value='module-test:module-test:1.4', changing='true')
+                @Grab(value='module-test:module-test:1.4', changing=true)
                 import org.codehaus.groovy.runtime.m12n.*
 
                 assert 'test'.groovy7225() == 'test: ok'

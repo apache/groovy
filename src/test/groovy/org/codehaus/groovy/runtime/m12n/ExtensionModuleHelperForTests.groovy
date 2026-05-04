@@ -28,6 +28,7 @@ final class ExtensionModuleHelperForTests {
         File baseDir = File.createTempDir()
         File sourceFile = new File(baseDir, 'Temp.groovy')
         sourceFile << """import org.codehaus.groovy.runtime.m12n.*
+            import static groovy.test.GroovyAssert.assertScript
             class TempTest extends $baseTestClass {
                 @org.junit.jupiter.api.Test
                 void testCode() {
@@ -36,15 +37,27 @@ final class ExtensionModuleHelperForTests {
             }
 
             import org.junit.platform.launcher.core.*
+            import org.junit.platform.launcher.listeners.SummaryGeneratingListener
             import static org.junit.platform.engine.discovery.DiscoverySelectors.*
 
             def launcher = LauncherFactory.create()
+            def listener = new SummaryGeneratingListener()
+            launcher.registerTestExecutionListeners(listener)
             def testPlan = launcher.discover(
                 LauncherDiscoveryRequestBuilder.request().selectors(
                     selectClass("TempTest")
                 ).build()
             )
             launcher.execute(testPlan)
+            // JUnit Platform's launcher is silent on failure; surface failures via
+            // stderr so the parent process (doInFork) detects them as stray lines.
+            def summary = listener.summary
+            if (summary.totalFailureCount) {
+                summary.failures.each { f ->
+                    System.err.println('TEST FAILED: ' + f.testIdentifier.displayName + ' :: ' + f.exception)
+                    f.exception.printStackTrace(System.err)
+                }
+            }
         """
 
         Set<String> cp = System.getProperty('java.class.path').split(File.pathSeparator) as Set
