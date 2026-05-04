@@ -167,15 +167,12 @@ public abstract class NumberMath {
     /**
      * Modulo operation on two numbers (for backwards compatibility).
      * <p>
-     * This method is retained for backwards compatibility; {@link #remainder(Number, Number)}
-     * may be preferred for new code.
+     * This method is retained for backwards compatibility
      *
      * @param left the dividend
      * @param right the divisor
      * @return the modulo result
-     * @deprecated use {@link #remainder(Number, Number)} instead
      */
-    @Deprecated(since = "3.0.0")
     public static Number mod(Number left, Number right) {
         return getMath(left, right).modImpl(left, right);
     }
