@@ -31,6 +31,7 @@ import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import groovy.util.CharsetToolkit;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
@@ -153,14 +154,29 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce the file to a {@code boolean} value.
+     * <p>
+     * By default this returns whether the file exists. Set the system property
+     * {@code groovy.truth.file.exists.enabled} to {@code false} to restore the
+     * pre-Groovy-5 behavior where any non-{@code null} {@code File} is truthy
+     * regardless of whether the underlying file exists.
      *
      * @param file a {@code File}
      * @return {@code true} if the file exists, {@code false} otherwise
      * @since 5.0.0
      */
     public static boolean asBoolean(final File file) {
+        if (!FILE_EXISTS_ENABLED) return file != null;
         return file.exists();
     }
+
+    /**
+     * When {@code true} (the default), coercing a {@link File} or {@link java.nio.file.Path}
+     * to a {@code boolean} returns whether the underlying file exists. Set the system property
+     * {@code groovy.truth.file.exists.enabled} to {@code false} to restore the pre-Groovy-5
+     * behavior where any non-{@code null} reference is truthy.
+     */
+    public static final boolean FILE_EXISTS_ENABLED = Boolean.parseBoolean(
+            SystemUtil.getSystemPropertySafe("groovy.truth.file.exists.enabled", "true"));
 
     /**
      * Create an object output stream for this file.
