@@ -302,7 +302,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
      * Note: This method always returns {@code null} and is retained for compatibility.
      *
      * @return {@code null}
-     * @deprecated This method is non-functional
      */
     public ParameterTypes getParamTypes() {
         return null;
