@@ -19,6 +19,7 @@
 package org.apache.groovy.groovysh.jline
 
 import org.jline.builtins.ConfigurationPath
+import org.jline.console.impl.SystemRegistryImpl
 import org.jline.reader.Parser
 import org.jline.terminal.Terminal
 
