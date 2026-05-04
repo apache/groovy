@@ -774,6 +774,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 if (doc != null) return doc;
                 doc = resolveInternalClassDocFromSamePackage(rootDoc, name);
                 if (doc != null) return doc;
+                doc = resolveNestedClassDocFromEnclosingTypes(rootDoc, name);
+                if (doc != null) return doc;
                 for (GroovyClassDoc nestedDoc : nested) {
                     if (nestedDoc.name().endsWith("." + name))
                         return nestedDoc;
@@ -851,12 +853,32 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         return PRIMITIVES.contains(type);
     }
 
+    private static String normalizeInternalTypeName(String name) {
+        return name.replace('$', '.');
+    }
+
+    private static int lastInternalNestedSeparator(String fullPathName) {
+        int lastSlash = fullPathName.lastIndexOf('/');
+        int lastDot = fullPathName.lastIndexOf('.');
+        return lastDot > lastSlash ? lastDot : -1;
+    }
+
     private GroovyClassDoc resolveInternalClassDocFromImport(GroovyRootDoc rootDoc, String baseName) {
         if (isPrimitiveType(baseName)) return null;
+        String normalizedBaseName = normalizeInternalTypeName(baseName);
         for (String importName : importedClassesAndPackages) {
             String targetClassName = null;
             if (aliases.containsKey(baseName)) {
                 targetClassName = aliases.get(baseName);
+            } else if (normalizedBaseName.contains(".")) {
+                int dot = normalizedBaseName.indexOf('.');
+                String outerName = normalizedBaseName.substring(0, dot);
+                String nestedSuffix = normalizedBaseName.substring(dot);
+                if (importName.endsWith("/" + outerName)) {
+                    targetClassName = importName + nestedSuffix;
+                } else if (importName.endsWith("/*")) {
+                    targetClassName = importName.substring(0, importName.length() - 1) + normalizedBaseName;
+                }
             } else if (importName.endsWith("/" + baseName)) {
                 targetClassName = importName;
             } else if (importName.endsWith("/*")) {
@@ -882,11 +904,25 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private GroovyClassDoc resolveInternalClassDocFromSamePackage(GroovyRootDoc rootDoc, String baseName) {
         if (isPrimitiveType(baseName)) return null;
-        if (baseName.contains(".")) return null;
         int lastSlash = fullPathName.lastIndexOf('/');
         if (lastSlash < 0) return null;
         String pkg = fullPathName.substring(0, lastSlash + 1);
-        return ((SimpleGroovyRootDoc)rootDoc).classNamedExact(pkg + baseName);
+        String candidate = normalizeInternalTypeName(baseName);
+        return ((SimpleGroovyRootDoc)rootDoc).classNamedExact(pkg + candidate);
+    }
+
+    private GroovyClassDoc resolveNestedClassDocFromEnclosingTypes(GroovyRootDoc rootDoc, String baseName) {
+        if (rootDoc == null || fullPathName == null) return null;
+        String nestedSuffix = normalizeInternalTypeName(baseName);
+        String current = fullPathName;
+        int separator = lastInternalNestedSeparator(current);
+        while (separator >= 0) {
+            current = current.substring(0, separator);
+            GroovyClassDoc doc = ((SimpleGroovyRootDoc) rootDoc).classNamedExact(current + "." + nestedSuffix);
+            if (doc != null) return doc;
+            separator = lastInternalNestedSeparator(current);
+        }
+        return null;
     }
 
     private Class resolveExternalClassFromImport(String name) {

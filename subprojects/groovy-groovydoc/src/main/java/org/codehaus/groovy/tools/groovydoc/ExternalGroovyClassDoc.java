@@ -27,6 +27,7 @@ import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +42,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     private static final GroovyPackageDoc[] EMPTY_GROOVYPACKAGEDOC_ARRAY = new GroovyPackageDoc[0];
     private static final GroovyMethodDoc[] EMPTY_GROOVYMETHODDOC_ARRAY = new GroovyMethodDoc[0];
     private static final GroovyType[] EMPTY_GROOVYTYPE_ARRAY = new GroovyType[0];
-    private final Class externalClass;
+    private final Class<?> externalClass;
     private final List<GroovyAnnotationRef> annotationRefs;
 
     /**
@@ -49,7 +50,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      *
      * @param externalClass the reflected class to represent
      */
-    public ExternalGroovyClassDoc(Class externalClass) {
+    public ExternalGroovyClassDoc(Class<?> externalClass) {
         this.externalClass = externalClass;
         annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
@@ -75,7 +76,8 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public String qualifiedTypeName() {
-        return externalClass.getName();
+        String canonicalName = externalClass.getCanonicalName();
+        return canonicalName != null ? canonicalName : externalClass.getName();
     }
 
     /**
@@ -83,15 +85,14 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public GroovyClassDoc superclass() {
-        Class aClass = externalClass.getSuperclass();
-        if (aClass != null) return new ExternalGroovyClassDoc(aClass);
-        return new ExternalGroovyClassDoc(Object.class);
+        Class<?> aClass = externalClass.getSuperclass();
+        return aClass != null ? new ExternalGroovyClassDoc(aClass) : null;
     }
 
     /**
      * Returns the underlying reflected class.
      */
-    public Class externalClass() {
+    public Class<?> externalClass() {
         return externalClass;
     }
 
@@ -107,7 +108,11 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public String simpleTypeName() {
-        return qualifiedTypeName(); // TODO fix
+        String simpleName = externalClass.getSimpleName();
+        if (!simpleName.isEmpty()) return simpleName;
+        String qualifiedName = qualifiedTypeName();
+        int lastDot = qualifiedName.lastIndexOf('.');
+        return lastDot >= 0 ? qualifiedName.substring(lastDot + 1) : qualifiedName;
     }
 
     /**
@@ -248,7 +253,14 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public GroovyClassDoc[] interfaces() {
-        return EMPTY_GROOVYCLASSDOC_ARRAY;
+        Class<?>[] interfaces = externalClass.getInterfaces();
+        if (interfaces.length == 0) return EMPTY_GROOVYCLASSDOC_ARRAY;
+
+        GroovyClassDoc[] result = new GroovyClassDoc[interfaces.length];
+        for (int i = 0; i < interfaces.length; i++) {
+            result[i] = new ExternalGroovyClassDoc(interfaces[i]);
+        }
+        return result;
     }
 
     /**
@@ -264,7 +276,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isAbstract() {
-        return false;
+        return Modifier.isAbstract(externalClass.getModifiers());
     }
 
     /**
@@ -280,7 +292,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isSerializable() {
-        return false;
+        return java.io.Serializable.class.isAssignableFrom(externalClass);
     }
 
     /**
@@ -288,7 +300,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public GroovyMethodDoc[] methods() {
-        return EMPTY_GROOVYMETHODDOC_ARRAY;
+        return ExternalJavadocSupport.methodsFor(this);
     }
 
     /**
@@ -296,7 +308,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public GroovyMethodDoc[] methods(boolean filter) {
-        return EMPTY_GROOVYMETHODDOC_ARRAY;
+        return methods();
     }
 
     /**
@@ -360,7 +372,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isFinal() {
-        return false;
+        return Modifier.isFinal(externalClass.getModifiers());
     }
 
     /**
@@ -376,7 +388,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isPrivate() {
-        return false;
+        return Modifier.isPrivate(externalClass.getModifiers());
     }
 
     /**
@@ -384,7 +396,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isProtected() {
-        return false;
+        return Modifier.isProtected(externalClass.getModifiers());
     }
 
     /**
@@ -392,7 +404,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isPublic() {
-        return false;
+        return Modifier.isPublic(externalClass.getModifiers());
     }
 
     /**
@@ -400,7 +412,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isStatic() {
-        return false;
+        return Modifier.isStatic(externalClass.getModifiers());
     }
 
     /**
@@ -416,7 +428,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public int modifierSpecifier() {
-        return 0;
+        return externalClass.getModifiers();
     }
 
     /**
@@ -424,7 +436,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public String qualifiedName() {
-        return null;
+        return externalClass.getName();
     }
 
     /**
@@ -448,7 +460,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isAnnotationType() {
-        return false;
+        return externalClass.isAnnotation();
     }
 
     /**
@@ -464,7 +476,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isClass() {
-        return false;
+        return !externalClass.isInterface() && !externalClass.isAnnotation() && !externalClass.isEnum() && !externalClass.isRecord();
     }
 
     /**
@@ -488,7 +500,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isEnum() {
-        return false;
+        return externalClass.isEnum();
     }
 
     /**
@@ -496,7 +508,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isRecord() {
-        return false;
+        return externalClass.isRecord();
     }
 
     /**
@@ -544,7 +556,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isInterface() {
-        return false;
+        return externalClass.isInterface();
     }
 
     /**
@@ -560,7 +572,7 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
      */
     @Override
     public boolean isOrdinaryClass() {
-        return false;
+        return isClass();
     }
 
     /**
