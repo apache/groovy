@@ -51,6 +51,16 @@ options {
     private int  invalidDigitCount;
 
     /**
+     * When {@code false}, the {@code val} keyword is treated as a regular
+     * identifier (lexed as IDENTIFIER, not VAL). This can be used as a porting
+     * aid for migrating to Groovy 6 if affected by the known breaking edge cases.
+     * Controlled by system property {@code groovy.val.enabled} (default: {@code true}).
+     */
+    private static final boolean VAL_ENABLED =
+            Boolean.parseBoolean(System.getProperty("groovy.val.enabled", "true"));
+    private boolean isValEnabled() { return VAL_ENABLED; }
+
+    /**
      * Record the index and token type of the current token while emitting tokens.
      */
     @Override
@@ -483,7 +493,7 @@ THROW         : 'throw';
 THROWS        : 'throws';
 TRANSIENT     : 'transient';
 TRY           : 'try';
-VAL           : 'val';
+VAL           : 'val' {isValEnabled()}?;
 VAR           : 'var';
 VOID          : 'void';
 VOLATILE      : 'volatile';
