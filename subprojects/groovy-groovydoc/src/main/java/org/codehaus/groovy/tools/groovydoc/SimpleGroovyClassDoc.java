@@ -665,20 +665,32 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         if (!type.contains(".") && classDoc != null) {
             String[] pieces = type.split("#", -1);
             String candidate = pieces[0];
-            Class c = classDoc.resolveExternalClassFromImport(candidate);
-            if (c != null) type = c.getName();
+            GroovyClassDoc resolvedDoc = resolveInternalShortName(rootDoc, classDoc, candidate);
+            if (resolvedDoc != null) {
+                type = resolvedDoc.getFullPathName();
+            } else {
+                Class c = classDoc.resolveExternalClassFromImport(candidate);
+                if (c != null) type = c.getName();
+            }
             if (pieces.length > 1) type += "#" + pieces[1];
             type = resolveMethodArgs(rootDoc, classDoc, type);
         }
 
         final String[] target = type.split("#");
-        String shortClassName = target[0].replaceAll(".*\\.", "");
+        String shortClassName = target[0];
+        int lastSlash = shortClassName.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            shortClassName = shortClassName.substring(lastSlash + 1);
+        }
+        shortClassName = shortClassName.replaceAll(".*\\.", "");
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(", -1)[0] : "");
-        String name = (full ? target[0] : shortClassName).replace('#', '.').replace('$', '.');
+        String name = (full ? target[0] : shortClassName).replace('/', '.').replace('#', '.').replace('$', '.');
 
         // last chance lookup for classes within the current codebase
         if (rootDoc != null) {
-            String slashedName = target[0].replace('.', '/');
+            String slashedName = target[0].contains("/")
+                    ? target[0].replace('$', '.')
+                    : target[0].replace('.', '/');
             GroovyClassDoc doc = rootDoc.classNamed(classDoc, slashedName);
             if (doc != null) {
                 target[0] = doc.getFullPathName(); // if we added a package
@@ -702,11 +714,25 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         return type;
     }
 
+    private static GroovyClassDoc resolveInternalShortName(GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc, String candidate) {
+        if (rootDoc == null) return null;
+        GroovyClassDoc resolvedDoc = classDoc.resolveClass(rootDoc, candidate);
+        if (!(resolvedDoc instanceof SimpleGroovyClassDoc)) return null;
+
+        String fullPathName = resolvedDoc.getFullPathName();
+        if (fullPathName == null || fullPathName.equals(candidate)) return null;
+
+        return resolvedDoc;
+    }
+
     private static String buildUrl(String relativeRoot, String[] target, String shortClassName) {
         if (!relativeRoot.isEmpty() && !relativeRoot.endsWith("/")) {
             relativeRoot += "/";
         }
-        String url = relativeRoot + target[0].replace('.', '/').replace('$', '.') + ".html" + (target.length > 1 ? "#" + target[1] : "");
+        String targetPath = target[0].contains("/")
+                ? target[0].replace('$', '.')
+                : target[0].replace('.', '/').replace('$', '.');
+        String url = relativeRoot + targetPath + ".html" + (target.length > 1 ? "#" + target[1] : "");
         return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
     }
 

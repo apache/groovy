@@ -1507,6 +1507,29 @@ public class GroovyDocToolTest extends GroovyTestCase {
                         && helperPage.contains(">ScriptWithSiblingClassLinks.method</a>"));
     }
 
+    public void testSimulatedScopedLocalNestedCarrierLinksRenderAsWorkingAnchors() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/SimulatedScopedLocal.java"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/SimulatedScopedLocal.html");
+        assertNotNull("Expected a page for SimulatedScopedLocal", page);
+        assertTrue("SimulatedScopedLocal page should link Carrier.run in:\n" + page,
+                page.contains("SimulatedScopedLocal.Carrier.html#run(")
+                        && page.contains(">Carrier.run</a>"));
+        assertTrue("SimulatedScopedLocal page should link Carrier.call in:\n" + page,
+                page.contains("SimulatedScopedLocal.Carrier.html#call(")
+                        && page.contains(">Carrier.call</a>"));
+        assertFalse("SimulatedScopedLocal page should not duplicate the raw Carrier.run reference in:\n" + page,
+                page.contains("Carrier#run(Runnable)#run(Runnable)"));
+        assertFalse("SimulatedScopedLocal page should not duplicate the raw Carrier.call reference in:\n" + page,
+                page.contains("Carrier#call(Supplier)#call(Supplier)"));
+        assertFalse("SimulatedScopedLocal page should not point nested Carrier links at a slash-based path in:\n" + page,
+                page.contains("SimulatedScopedLocal/Carrier.html#run(") || page.contains("SimulatedScopedLocal/Carrier.html#call("));
+    }
+
     // GROOVY-11943: -noindex / -nodeprecatedlist / -nohelp skip the matching
     // auxiliary top-level page AND suppress its nav-bar link on every page
     // that would otherwise reference it.
