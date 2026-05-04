@@ -40,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_ACCESSES_INSTANCE_MEMBERS;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
@@ -68,14 +69,14 @@ class StaticTypesLambdaAnalyzer {
     }
 
     boolean accessesInstanceMembers(final MethodNode lambdaMethod) {
-        Boolean accessingInstanceMembers = lambdaMethod.getNodeMetaData(MetaDataKey.ACCESSES_INSTANCE_MEMBERS);
+        Boolean accessingInstanceMembers = lambdaMethod.getNodeMetaData(LAMBDA_ACCESSES_INSTANCE_MEMBERS);
         if (accessingInstanceMembers != null) return accessingInstanceMembers;
 
         InstanceMemberAccessFinder finder = new InstanceMemberAccessFinder(getOrCreateResolver(lambdaMethod));
         lambdaMethod.getCode().visit(finder);
 
         accessingInstanceMembers = finder.isAccessingInstanceMembers();
-        lambdaMethod.putNodeMetaData(MetaDataKey.ACCESSES_INSTANCE_MEMBERS, accessingInstanceMembers);
+        lambdaMethod.putNodeMetaData(LAMBDA_ACCESSES_INSTANCE_MEMBERS, accessingInstanceMembers);
         return accessingInstanceMembers;
     }
 
@@ -161,9 +162,7 @@ class StaticTypesLambdaAnalyzer {
 
             PropertyExpression qualifiedReference = new PropertyExpression(classX(owner), expression.getName());
             qualifiedReference.setImplicitThis(false);
-            qualifiedReference.copyNodeMetaData(expression);
-            setSourcePosition(qualifiedReference, expression);
-            return qualifiedReference;
+            return finishQualifiedReference(qualifiedReference, expression);
         }
 
         private Expression qualify(final AttributeExpression expression) {
@@ -177,9 +176,7 @@ class StaticTypesLambdaAnalyzer {
             );
             qualifiedReference.setImplicitThis(false);
             qualifiedReference.setSpreadSafe(expression.isSpreadSafe());
-            qualifiedReference.copyNodeMetaData(expression);
-            setSourcePosition(qualifiedReference, expression);
-            return qualifiedReference;
+            return finishQualifiedReference(qualifiedReference, expression);
         }
 
         private Expression qualify(final PropertyExpression expression) {
@@ -193,9 +190,7 @@ class StaticTypesLambdaAnalyzer {
             );
             qualifiedReference.setImplicitThis(false);
             qualifiedReference.setSpreadSafe(expression.isSpreadSafe());
-            qualifiedReference.copyNodeMetaData(expression);
-            setSourcePosition(qualifiedReference, expression);
-            return qualifiedReference;
+            return finishQualifiedReference(qualifiedReference, expression);
         }
 
         private Expression qualify(final MethodCallExpression expression) {
@@ -212,6 +207,10 @@ class StaticTypesLambdaAnalyzer {
             qualifiedReference.setSpreadSafe(expression.isSpreadSafe());
             qualifiedReference.setGenericsTypes(expression.getGenericsTypes());
             qualifiedReference.setMethodTarget(expression.getMethodTarget());
+            return finishQualifiedReference(qualifiedReference, expression);
+        }
+
+        private <T extends Expression> T finishQualifiedReference(final T qualifiedReference, final Expression expression) {
             qualifiedReference.copyNodeMetaData(expression);
             setSourcePosition(qualifiedReference, expression);
             return qualifiedReference;
@@ -392,10 +391,6 @@ class StaticTypesLambdaAnalyzer {
         private boolean isAccessingInstanceMembers() {
             return accessingInstanceMembers;
         }
-    }
-
-    private enum MetaDataKey {
-        ACCESSES_INSTANCE_MEMBERS
     }
 
     private final SourceUnit sourceUnit;
