@@ -30,12 +30,12 @@ import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import org.apache.groovy.nio.runtime.WritablePath;
-import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
@@ -150,8 +150,8 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * Coerce the path to a {@code boolean} value.
      * <p>
      * By default this returns whether the file at the path exists. Set the
-     * system property {@code groovy.io.fileLegacyTruthy} to {@code true} to
-     * restore the pre-Groovy-5 behavior where any non-{@code null} {@code Path}
+     * system property {@code groovy.truth.file.exists.enabled} to {@code false}
+     * to restore the pre-Groovy-5 behavior where any non-{@code null} {@code Path}
      * is truthy regardless of whether the underlying file exists.
      *
      * @param path a {@code Path} object
@@ -160,11 +160,9 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static boolean asBoolean(final Path path) {
-        if (LEGACY_TRUTHY) return path != null;
+        if (!ResourceGroovyMethods.FILE_EXISTS_ENABLED) return path != null;
         return Files.exists(path);
     }
-
-    private static final boolean LEGACY_TRUTHY = SystemUtil.getBooleanSafe("groovy.io.fileLegacyTruthy");
 
     /**
      * Tests whether the file at the path exists.

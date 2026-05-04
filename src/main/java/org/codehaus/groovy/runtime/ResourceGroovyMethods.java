@@ -156,7 +156,7 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * Coerce the file to a {@code boolean} value.
      * <p>
      * By default this returns whether the file exists. Set the system property
-     * {@code groovy.io.fileLegacyTruthy} to {@code true} to restore the
+     * {@code groovy.truth.file.exists.enabled} to {@code false} to restore the
      * pre-Groovy-5 behavior where any non-{@code null} {@code File} is truthy
      * regardless of whether the underlying file exists.
      *
@@ -165,11 +165,18 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static boolean asBoolean(final File file) {
-        if (LEGACY_TRUTHY) return file != null;
+        if (!FILE_EXISTS_ENABLED) return file != null;
         return file.exists();
     }
 
-    private static final boolean LEGACY_TRUTHY = SystemUtil.getBooleanSafe("groovy.io.fileLegacyTruthy");
+    /**
+     * When {@code true} (the default), coercing a {@link File} or {@link java.nio.file.Path}
+     * to a {@code boolean} returns whether the underlying file exists. Set the system property
+     * {@code groovy.truth.file.exists.enabled} to {@code false} to restore the pre-Groovy-5
+     * behavior where any non-{@code null} reference is truthy.
+     */
+    public static final boolean FILE_EXISTS_ENABLED = Boolean.parseBoolean(
+            SystemUtil.getSystemPropertySafe("groovy.truth.file.exists.enabled", "true"));
 
     /**
      * Create an object output stream for this file.
