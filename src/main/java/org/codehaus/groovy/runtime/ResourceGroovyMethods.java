@@ -31,6 +31,7 @@ import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import groovy.util.CharsetToolkit;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
@@ -153,14 +154,22 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce the file to a {@code boolean} value.
+     * <p>
+     * By default this returns whether the file exists. Set the system property
+     * {@code groovy.io.fileLegacyTruthy} to {@code true} to restore the
+     * pre-Groovy-5 behavior where any non-{@code null} {@code File} is truthy
+     * regardless of whether the underlying file exists.
      *
      * @param file a {@code File}
      * @return {@code true} if the file exists, {@code false} otherwise
      * @since 5.0.0
      */
     public static boolean asBoolean(final File file) {
+        if (LEGACY_TRUTHY) return file != null;
         return file.exists();
     }
+
+    private static final boolean LEGACY_TRUTHY = SystemUtil.getBooleanSafe("groovy.io.fileLegacyTruthy");
 
     /**
      * Create an object output stream for this file.
