@@ -1712,6 +1712,40 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 + "}\n";
     }
 
+    private static List<String> createInstanceofPatternJavaSources(Path root, int count) throws IOException {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/instanceofpattern";
+        String packageName = pkg.replace('/', '.');
+        Path pkgDir = root.resolve(pkg);
+        Files.createDirectories(pkgDir);
+
+        List<String> sources = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            String className = "InstanceofPattern" + i;
+            Files.writeString(pkgDir.resolve(className + ".java"), instanceofPatternJavaSource(packageName, className));
+            sources.add(pkg + "/" + className + ".java");
+        }
+        return sources;
+    }
+
+    private static String instanceofPatternJavaSource(String packageName, String className) {
+        return "package " + packageName + ";\n"
+                + "import java.math.BigDecimal;\n"
+                + "/**\n"
+                + " * Exercise Java 17 instanceof pattern matching (JEP 394).\n"
+                + " */\n"
+                + "public class " + className + " {\n"
+                + "    public String describe(Object value) {\n"
+                + "        if (value instanceof BigDecimal bd) {\n"
+                + "            return \"DECIMAL(\" + bd.precision() + \",\" + bd.scale() + \")\";\n"
+                + "        }\n"
+                + "        if (value instanceof String s && !s.isEmpty()) {\n"
+                + "            return \"VARCHAR(\" + s.length() + \")\";\n"
+                + "        }\n"
+                + "        return \"UNKNOWN\";\n"
+                + "    }\n"
+                + "}\n";
+    }
+
     // GROOVY-9057
     public void testParseErrorIsTrackedInErrorCount() throws Exception {
         assertEquals("Initial error count should be zero", 0, xmlToolForTests.getErrorCount());
@@ -2748,6 +2782,27 @@ public class GroovyDocToolTest extends GroovyTestCase {
             String javadoc = output.getText(MOCK_DIR + "/" + base + "/SwitchExpression0.html");
             assertNotNull("Javadoc should not be null since Java 17 switch expressions are supported", javadoc);
             assertEquals("Expected no parse errors for switch expression source", 0, tool.getErrorCount());
+        } finally {
+            deleteRecursively(tmp);
+        }
+    }
+
+    // GROOVY-11202
+    public void testLanguageLevelSupportedForInstanceofPatterns() throws Exception {
+        Path tmp = Files.createTempDirectory("groovydoc-instanceof-pattern-");
+        try {
+            List<String> sources = createInstanceofPatternJavaSources(tmp, 1);
+            GroovyDocTool tool = makeHtmltool(new ArrayList<>(), ParserConfiguration.LanguageLevel.JAVA_17.name(), new Properties(), new String[] {tmp.toString()});
+            tool.add(sources);
+
+            MockOutputTool output = new MockOutputTool();
+            tool.renderToOutput(output, MOCK_DIR);
+
+            String base = "org/codehaus/groovy/tools/groovydoc/testfiles/instanceofpattern";
+            String javadoc = output.getText(MOCK_DIR + "/" + base + "/InstanceofPattern0.html");
+            assertNotNull("Javadoc should not be null since Java 17 instanceof patterns are supported", javadoc);
+            assertEquals("Expected no parse errors for instanceof pattern source", 0, tool.getErrorCount());
+            assertTrue("Expected describe(Object) signature in:\n" + javadoc, javadoc.contains("describe"));
         } finally {
             deleteRecursively(tmp);
         }
