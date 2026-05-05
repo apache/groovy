@@ -425,10 +425,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             visitAnnotations(recordComponent, visitor);
 
-            // the int encoded value of the type reference is ALWAYS `318767104`
-            // TODO Get the magic number `318767104` via `TypeReference.newXXX()`
-            TypeReference typeRef = new TypeReference(318767104);
-
+            TypeReference typeRef = newTypeReference(FIELD);
             visitTypeAnnotations(type, visitor, typeRef, "", true);
 
             visitor.visitEnd();
