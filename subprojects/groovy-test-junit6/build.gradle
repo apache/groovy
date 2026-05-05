@@ -37,3 +37,12 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junit6}"
 }
+
+tasks.named('test') {
+    useJUnitPlatform {
+        // Fixture classes for negative-path tests are tagged 'manual' and
+        // invoked explicitly via the JUnit Platform Launcher; keep them out
+        // of normal discovery so their deliberate failures don't fail CI.
+        excludeTags 'manual'
+    }
+}

@@ -125,6 +125,7 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation projects.groovyMacro
     testImplementation projects.groovyDateutil
+    testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
