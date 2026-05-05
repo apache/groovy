@@ -18,107 +18,104 @@
  */
 package org.codehaus.groovy.runtime.m12n
 
+import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 
-import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doInFork
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * Unit tests for extension methods loading.
+ * <p>
+ * Each test runs in a freshly forked JVM so its MetaClass-registry mutations
+ * (e.g. modules loaded via {@code @Grab}) don't pollute the main test JVM.
  */
+@ForkedJvm
 final class ExtensionModuleTest {
 
     @Test
     void testThatModuleHasBeenLoaded() {
-        doInFork '''
-            ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-            assert registry.modules
-            // look for the 'Test module' module; it should always be available
-            assert registry.modules.any { it.name == 'Test module' && it.version == '1.0-test' }
+        ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+        assert registry.modules
+        // look for the 'Test module' module; it should always be available
+        assert registry.modules.any { it.name == 'Test module' && it.version == '1.0-test' }
 
-            // the following methods are added by the test module
-            def str = 'This is a string'
-            assert str.reverseToUpperCase() == str.toUpperCase().reverse()
-            assert String.answer() == 42
-        '''
+        // the following methods are added by the test module
+        def str = 'This is a string'
+        assert str.reverseToUpperCase() == str.toUpperCase().reverse()
+        assert String.answer() == 42
     }
 
     @Test
     void testThatModuleCanBeLoadedWithGrab() {
-        doInFork '''
+        ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+        // ensure that the module isn't loaded
+        assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
+
+        // find jar resource
+        def jarURL = this.class.getResource("/jars")
+        assert jarURL
+
+        def resolver = "@GrabResolver('$jarURL')"
+
+        assertScript resolver + """
+            @Grab(value='module-test:module-test:1.4', changing=true)
+            import org.codehaus.groovy.runtime.m12n.*
+
+            // ensure that the module is now loaded
             ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-            // ensure that the module isn't loaded
-            assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
-
-            // find jar resource
-            def jarURL = this.class.getResource("/jars")
-            assert jarURL
-
-            def resolver = "@GrabResolver('$jarURL')"
-
-            assertScript resolver + """
-                @Grab(value='module-test:module-test:1.4', changing=true)
-                import org.codehaus.groovy.runtime.m12n.*
-
-                // ensure that the module is now loaded
-                ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-                assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
-
-                // the following methods are added by the 'Test module for Grab' module
-                def str = 'This is a string'
-                assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
-                assert String.answer2() == 42
-            """
-
-            // the module should still be available
             assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
-        '''
+
+            // the following methods are added by the 'Test module for Grab' module
+            def str = 'This is a string'
+            assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
+            assert String.answer2() == 42
+        """
+
+        // the module should still be available
+        assert registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
     }
 
     @Test
     void testExtensionModuleUsingGrabAndMap() {
-        doInFork '''
-            ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-            // ensure that the module isn't loaded
-            assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
+        ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+        // ensure that the module isn't loaded
+        assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
 
-            // find jar resource
-            def jarURL = this.class.getResource("/jars")
-            assert jarURL
+        // find jar resource
+        def jarURL = this.class.getResource("/jars")
+        assert jarURL
 
-            def resolver = "@GrabResolver('$jarURL')"
+        def resolver = "@GrabResolver('$jarURL')"
 
-            assertScript resolver + """
-                @Grab(value='module-test:module-test:1.4', changing=true)
-                import org.codehaus.groovy.runtime.m12n.*
+        assertScript resolver + """
+            @Grab(value='module-test:module-test:1.4', changing=true)
+            import org.codehaus.groovy.runtime.m12n.*
 
-                def map = [:]
-                assert 'foo'.taille() == 3
-                assert map.taille() == 0
-            """
-        '''
+            def map = [:]
+            assert 'foo'.taille() == 3
+            assert map.taille() == 0
+        """
     }
 
     // GROOVY-7225
     @Test
     void testExtensionModuleUsingGrabAndClosure() {
-        doInFork '''
-            ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-            // ensure that the module isn't loaded
-            assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
+        ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+        // ensure that the module isn't loaded
+        assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
 
-            // find jar resource
-            def jarURL = this.class.getResource("/jars")
-            assert jarURL
+        // find jar resource
+        def jarURL = this.class.getResource("/jars")
+        assert jarURL
 
-            assertScript """
-                @GrabResolver('$jarURL')
-                @Grab(value='module-test:module-test:1.4', changing=true)
-                import org.codehaus.groovy.runtime.m12n.*
+        assertScript """
+            @GrabResolver('$jarURL')
+            @Grab(value='module-test:module-test:1.4', changing=true)
+            import org.codehaus.groovy.runtime.m12n.*
 
-                assert 'test'.groovy7225() == 'test: ok'
-                assert {->}.groovy7225() == '{"field":"value"}'
-            """
-        '''
+            assert 'test'.groovy7225() == 'test: ok'
+            assert {->}.groovy7225() == '{"field":"value"}'
+        """
     }
 
     /**
@@ -128,13 +125,11 @@ final class ExtensionModuleTest {
      */
     @Test
     void testOverrideLocalDateTimeCompareTo() {
-        doInFork '''
-            def d1 = java.time.LocalDateTime.now()
-            def d2 = java.time.LocalDate.now().plusDays(42)
-            def d3 = java.time.LocalDate.now().minusDays(42)
+        def d1 = java.time.LocalDateTime.now()
+        def d2 = java.time.LocalDate.now().plusDays(42)
+        def d3 = java.time.LocalDate.now().minusDays(42)
 
-            assert d1 < d2
-            assert d1 > d3
-        '''
+        assert d1 < d2
+        assert d1 > d3
     }
 }

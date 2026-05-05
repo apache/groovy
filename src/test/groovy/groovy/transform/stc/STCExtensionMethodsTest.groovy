@@ -18,9 +18,9 @@
  */
 package groovy.transform.stc
 
+import groovy.junit6.plugin.ForkedJvm
+import org.codehaus.groovy.runtime.m12n.ExtensionModuleRegistry
 import org.junit.jupiter.api.Test
-
-import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doInFork
 
 /**
  * Unit tests for static type checking : extension methods.
@@ -53,33 +53,32 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
      * @see org.codehaus.groovy.runtime.m12n.TestStaticStringExtension
      */
     @Test
+    @ForkedJvm
     void testShouldFindExtensionMethodWithGrab() {
-        doInFork 'groovy.transform.stc.StaticTypeCheckingTestCase', '''
-            def impl = new MetaClassImpl(String)
-            impl.initialize()
-            String.metaClass = impl
-            try {
-                ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
-                // ensure that the module isn't loaded
-                assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
+        def impl = new MetaClassImpl(String)
+        impl.initialize()
+        String.metaClass = impl
+        try {
+            ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
+            // ensure that the module isn't loaded
+            assert !registry.modules.any { it.name == 'Test module for Grab' && it.version == '1.4' }
 
-                def jarURL = this.class.getResource('/jars')
-                assert jarURL
+            def jarURL = this.class.getResource('/jars')
+            assert jarURL
 
-                assertScript """@GrabResolver(name='local',root='$jarURL')
-                    @Grab('module-test:module-test:1.4;changing=true')
-                    import org.codehaus.groovy.runtime.m12n.*
+            assertScript """@GrabResolver(name='local',root='$jarURL')
+                @Grab('module-test:module-test:1.4;changing=true')
+                import org.codehaus.groovy.runtime.m12n.*
 
-                    // the following methods are added by the Grab test module
-                    def str = 'This is a string'
-                    assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
-                    // a static method added to String thanks to a @Grab extension
-                    assert String.answer2() == 42
-                """
-            } finally {
-                String.metaClass = null
-            }
-        '''
+                // the following methods are added by the Grab test module
+                def str = 'This is a string'
+                assert str.reverseToUpperCase2() == str.toUpperCase().reverse()
+                // a static method added to String thanks to a @Grab extension
+                assert String.answer2() == 42
+            """
+        } finally {
+            String.metaClass = null
+        }
     }
 
     /**

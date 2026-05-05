@@ -18,32 +18,24 @@
  */
 package groovy
 
+import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 
-import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doInFork
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * Tests that when {@code groovy.val.enabled=false}, GEP-16 breaking
  * changes are resolved and {@code val} behaves as a regular identifier.
- *
- * Each test runs in a freshly forked JVM (compile + execution) with the
- * property set, so the lexer's {@code static final VAL_ENABLED} is
- * initialised to {@code false}.
+ * <p>
+ * Each test runs in a freshly forked JVM with the property set, so the
+ * lexer's {@code static final VAL_ENABLED} is initialised to {@code false}.
  */
+@ForkedJvm(systemProperties = ['groovy.val.enabled=false'])
 final class ValDisabledTest {
-
-    private static final List<String> JVM_ARGS = ['-Dgroovy.val.enabled=false']
-
-    private static void doInForkWithValDisabled(String script) {
-        // Wrap each snippet in assertScript so top-level class declarations work
-        // (the snippet is otherwise placed inside a method body where local
-        // classes are not supported).
-        doInFork('java.lang.Object', "assertScript '''${script.replace("'", "\\'")}'''", JVM_ARGS)
-    }
 
     @Test
     void testFieldNamedValBeforeMethod() {
-        doInForkWithValDisabled '''
+        assertScript '''
             class Foo {
                 def val
                 void doSomething() {}
@@ -56,16 +48,16 @@ final class ValDisabledTest {
 
     @Test
     void testValAsCastExpression() {
-        doInForkWithValDisabled '''
+        assertScript '''
             def val = 42
             def result = val as String
-            assert result == "42"
+            assert result == '42'
         '''
     }
 
     @Test
     void testClassNamedVal() {
-        doInForkWithValDisabled '''
+        assertScript '''
             class val {
                 int x
             }
@@ -76,7 +68,7 @@ final class ValDisabledTest {
 
     @Test
     void testValAsMethodReturnType() {
-        doInForkWithValDisabled '''
+        assertScript '''
             class val {
                 int x
             }
@@ -90,7 +82,7 @@ final class ValDisabledTest {
 
     @Test
     void testValAsExplicitType() {
-        doInForkWithValDisabled '''
+        assertScript '''
             class val {
                 int x
             }
@@ -101,7 +93,7 @@ final class ValDisabledTest {
 
     @Test
     void testDefValAssignment() {
-        doInForkWithValDisabled '''
+        assertScript '''
             def val = 1
             assert val == 1
         '''
@@ -109,7 +101,7 @@ final class ValDisabledTest {
 
     @Test
     void testValReassignment() {
-        doInForkWithValDisabled '''
+        assertScript '''
             def val = 1
             val = 2
             assert val == 2
@@ -118,7 +110,7 @@ final class ValDisabledTest {
 
     @Test
     void testValAsMapKey() {
-        doInForkWithValDisabled '''
+        assertScript '''
             def m = [val: 42]
             assert m.val == 42
         '''
@@ -126,10 +118,10 @@ final class ValDisabledTest {
 
     @Test
     void testValPropertyAccess() {
-        doInForkWithValDisabled '''
-            class Foo { def val = "hello" }
+        assertScript '''
+            class Foo { def val = 'hello' }
             def f = new Foo()
-            assert f.val == "hello"
+            assert f.val == 'hello'
         '''
     }
 }
