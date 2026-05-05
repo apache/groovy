@@ -57,6 +57,9 @@ jmh {
         includes = ['.*' + project.benchInclude + '.*']
     }
     includeTests = true
+    if (project.hasProperty('jmhResultFormat')) {
+        resultFormat = project.jmhResultFormat
+    }
 }
 
 jmhJar {
