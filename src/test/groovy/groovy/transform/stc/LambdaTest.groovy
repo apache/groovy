@@ -3423,6 +3423,411 @@ final class LambdaTest {
             import java.util.function.IntUnaryOperator
             import java.util.function.Supplier
             '''.stripIndent()
-        private static final String SERIALIZED_LAMBDA_GET_CAPTURED_ARG = 'INVOKEVIRTUAL java/lang/invoke/SerializedLambda.getCapturedArg'
+        private static final String SERIALIZED_LAMBDA_GET_CAPTURED_ARG = 'INVOKEVIRTUAL java/lang/invoke/SerializedLambda.getCapturedArg (I)Ljava/lang/Object;'
+    }
+
+    @Nested
+    class NativeLambdaBytecodeTest extends AbstractBytecodeTestCase {
+        @Test
+        void testNonCapturingLambdaUsesCaptureFreeInvokeDynamic() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator create() {
+                        (int i) -> i * 2
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCaptureFreeLambdaFactory(
+                outerBytecode,
+                'C$_create_lambda1',
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(I)I'
+            )
+        }
+
+        @Test
+        void testCapturingLambdaUsesInvokeDynamicWithCapturedLambdaInstance() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator create() {
+                        int offset = 1
+                        IntUnaryOperator op = (int i) -> i + offset
+                        op
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall(I)I'])
+            assert !lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCapturingLambdaFactory(
+                outerBytecode,
+                'NEW C$_create_lambda1',
+                'INVOKEDYNAMIC applyAsInt(LC$_create_lambda1;)Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(I)I'
+            )
+        }
+
+        @Test
+        void testSerializableNonCapturingLambdaUsesAltMetafactoryWithoutCapturedArgLookup() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+
+                    static SerFunc<Integer, String> create() {
+                        (Integer i) -> 'v' + i
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def createBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCaptureFreeLambdaFactory(
+                createBytecode,
+                'C$_create_lambda1',
+                'INVOKEDYNAMIC apply()LC$SerFunc;',
+                'java/lang/invoke/LambdaMetafactory.altMetafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            )
+            assert createBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
+
+            def deserializeHelperBytecode = compileStaticBytecode(classNamePattern: 'C', method: '$deserializeLambda_C$_create_lambda1$', script)
+            assert !deserializeHelperBytecode.hasSequence([SERIALIZED_LAMBDA_GET_CAPTURED_ARG])
+        }
+
+        @Test
+        void testSerializableCapturingLambdaReadsCapturedArgDuringDeserialization() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+
+                    static SerFunc<Integer, String> create() {
+                        String prefix = 'v'
+                        SerFunc<Integer, String> fn = (Integer i) -> prefix + i
+                        fn
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+            assert !lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def createBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCapturingLambdaFactory(
+                createBytecode,
+                'NEW C$_create_lambda1',
+                'INVOKEDYNAMIC apply(LC$_create_lambda1;)LC$SerFunc;',
+                'java/lang/invoke/LambdaMetafactory.altMetafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            )
+            assert createBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
+
+            def deserializeHelperBytecode = compileStaticBytecode(classNamePattern: 'C', method: '$deserializeLambda_C$_create_lambda1$', script)
+            assert deserializeHelperBytecode.hasSequence([SERIALIZED_LAMBDA_GET_CAPTURED_ARG])
+        }
+
+        @Test
+        void testLambdaInFieldInitializerUsesNativeFactoryFromConstructor() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    IntUnaryOperator op = (int i) -> i + 1
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def initBytecode = compileStaticBytecode(classNamePattern: 'C', method: '<init>', script)
+            assertUsesCaptureFreeLambdaFactory(
+                initBytecode,
+                'C$_lambda1',
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_lambda1.doCall(I)I'
+            )
+        }
+
+        @Test
+        void testInnerClassLambdaUsingOuterStaticMembersRemainsCaptureFree() {
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    static String label = 'outer'
+                    static boolean isReady() { true }
+                    static String suffix() { '!' }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix() : 'never'
+                        }
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Outer.isReady ()Z',
+                'INVOKESTATIC Outer.getLabel ()Ljava/lang/String;',
+                'INVOKESTATIC Outer.suffix ()Ljava/lang/String;'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assertUsesCaptureFreeLambdaFactory(
+                outerBytecode,
+                'Outer$Inner$_create_lambda1',
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            )
+        }
+
+        private static void assertUsesCaptureFreeLambdaFactory(final bytecode, final String lambdaClassName, final String invokedynamicInstruction, final String bootstrapMethod, final String implementationTarget) {
+            assertUsesNativeLambdaFactory(bytecode, invokedynamicInstruction, bootstrapMethod, implementationTarget)
+            assert !bytecode.hasSequence(["NEW $lambdaClassName"])
+        }
+
+        private static void assertUsesCapturingLambdaFactory(final bytecode, final String allocationInstruction, final String invokedynamicInstruction, final String bootstrapMethod, final String implementationTarget) {
+            assert bytecode.hasSequence([
+                allocationInstruction,
+                invokedynamicInstruction,
+                bootstrapMethod,
+                implementationTarget
+            ])
+        }
+
+        private static void assertUsesNativeLambdaFactory(final bytecode, final String invokedynamicInstruction, final String bootstrapMethod, final String implementationTarget) {
+            assert bytecode.hasSequence([
+                invokedynamicInstruction,
+                bootstrapMethod,
+                implementationTarget
+            ])
+        }
+
+        private compileStaticBytecode(final Map options = [:], final String script) {
+            compile(options, COMMON_IMPORTS + script)
+        }
+
+        private static final String COMMON_IMPORTS = '''\
+            import groovy.transform.CompileStatic
+            import java.io.Serializable
+            import java.util.function.Function
+            import java.util.function.IntUnaryOperator
+            import java.util.function.Supplier
+            '''.stripIndent()
+        private static final String SERIALIZED_LAMBDA_GET_CAPTURED_ARG = 'INVOKEVIRTUAL java/lang/invoke/SerializedLambda.getCapturedArg (I)Ljava/lang/Object;'
+    }
+
+    @Test
+    void testLambdaWithDoubleReturnSAM() {
+        assertScript shell, '''
+            import java.util.function.DoubleUnaryOperator
+
+            DoubleUnaryOperator op = (double d) -> d * 2.0d
+            assert op.applyAsDouble(1.5d) == 3.0d
+            assert op.applyAsDouble(0.0d) == 0.0d
+        '''
+    }
+
+    @Test
+    void testLambdaWithLongReturnSAM() {
+        assertScript shell, '''
+            import java.util.function.LongUnaryOperator
+
+            LongUnaryOperator op = (long n) -> n * 2L
+            assert op.applyAsLong(3L)  == 6L
+            assert op.applyAsLong(0L)  == 0L
+        '''
+    }
+
+    @Test
+    void testLambdaWithByteReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+
+            ToByteFunc<Integer> f = (Integer n) -> n.byteValue()
+            assert f.apply(65)  == (byte) 65
+            assert f.apply(300) == (byte) 44
+        '''
+    }
+
+    @Test
+    void testLambdaWithCharReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToCharFunc<T> { char apply(T t) }
+
+            ToCharFunc<String> f = (String s) -> s.charAt(0)
+            assert f.apply('hello') == 'h'
+            assert f.apply('world') == 'w'
+        '''
+    }
+
+    @Test
+    void testLambdaWithFloatReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+
+            ToFloatFunc<Integer> f = (Integer n) -> n.floatValue()
+            assert f.apply(3) == 3.0f
+            assert f.apply(0) == 0.0f
+        '''
+    }
+
+    @Test
+    void testLambdaWithShortReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToShortFunc<T> { short apply(T t) }
+
+            ToShortFunc<Integer> f = (Integer n) -> n.shortValue()
+            assert f.apply(42)  == (short) 42
+            assert f.apply(300) == (short) 300
+        '''
+    }
+
+    @Test
+    void testLambdaWithDynamicParamAndPrimitiveSAM() {
+        assertScript shell, '''
+            import java.util.function.IntUnaryOperator
+
+            IntUnaryOperator op = i -> i + 1
+            assert op.applyAsInt(5) == 6
+            assert op.applyAsInt(0) == 1
+        '''
+    }
+
+    @Test
+    void testTwoLambdasSharingOuterVariableReuseReference() {
+        assertScript shell, '''
+            import java.util.function.IntSupplier
+
+            def sharedRefTest() {
+                int x = 42
+                IntSupplier s1 = () -> x
+                IntSupplier s2 = () -> x + 1
+                assert s1.getAsInt() == 42
+                assert s2.getAsInt() == 43
+            }
+
+            sharedRefTest()
+        '''
+    }
+
+    @Test
+    void testNonCapturingLambdaInStaticMethodUsesClassRef() {
+        assertScript shell, '''
+            class StaticLambdaHolder {
+                static Function<Integer, String> create() {
+                    (Integer i) -> 'x' + i
+                }
+            }
+
+            def fn = StaticLambdaHolder.create()
+            assert fn.apply(1) == 'x1'
+            assert fn.apply(9) == 'x9'
+        '''
+    }
+
+    @Test
+    void testLambdaCapturingInstanceFieldLoadsThis() {
+        assertScript shell, '''
+            import java.util.function.IntSupplier
+
+            class Counter {
+                int count = 7
+                IntSupplier supplier() {
+                    () -> count
+                }
+            }
+
+            def s = new Counter().supplier()
+            assert s.getAsInt() == 7
+        '''
+    }
+
+    @Test
+    void testLambdaWithWrapperParamForPrimitiveSAM() {
+        assertScript shell, '''
+            import java.util.function.IntUnaryOperator
+
+            IntUnaryOperator op = (Integer n) -> n + 10
+            assert op.applyAsInt(5)  == 15
+            assert op.applyAsInt(-3) == 7
+        '''
+    }
+
+    @Test
+    void testLambdaToByteFunctionFromMapGetBytePlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<K> { byte apply(K k) }
+
+            Map<String, Byte> m = [a: (byte) 42, b: (byte) 99]
+            ToByteFunc<String> f = m::get
+            assert f.apply('a') == (byte) 42
+            assert f.apply('b') == (byte) 99
+        '''
+    }
+
+    @Test
+    void testLambdaToCharFunctionFromMapGetCharPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToCharFunc<K> { char apply(K k) }
+
+            Map<String, Character> m = [p: (char) 'P', q: (char) 'Q']
+            ToCharFunc<String> f = m::get
+            assert f.apply('p') == 'P'
+            assert f.apply('q') == 'Q'
+        '''
+    }
+
+    @Test
+    void testLambdaToFloatFunctionFromMapGetFloatPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToFloatFunc<K> { float apply(K k) }
+
+            Map<String, Float> m = [x: 1.5f, y: 2.5f]
+            ToFloatFunc<String> f = m::get
+            assert f.apply('x') == 1.5f
+            assert f.apply('y') == 2.5f
+        '''
+    }
+
+    @Test
+    void testLambdaToShortFunctionFromMapGetShortPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToShortFunc<K> { short apply(K k) }
+
+            Map<String, Short> m = [lo: (short) 1, hi: (short) 500]
+            ToShortFunc<String> f = m::get
+            assert f.apply('lo') == (short) 1
+            assert f.apply('hi') == (short) 500
+        '''
+    }
+
+    @Test
+    void testLambdaWithSupertypeExplicitParameter() {
+        assertScript shell, '''
+            List<String> results = []
+            Consumer<String> c = (Object s) -> results.add(s.toString())
+            c.accept('hello')
+            c.accept('world')
+            assert results == ['hello', 'world']
+        '''
     }
 }

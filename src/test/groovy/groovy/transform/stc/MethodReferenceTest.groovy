@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -1158,6 +1160,144 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::new
+    void testSerializableConstructorReference() {
+        assertScript shell, '''
+            import java.io.ByteArrayInputStream
+            import java.io.ByteArrayOutputStream
+            import java.io.Serializable
+
+            @CompileStatic
+            class C {
+                interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+
+                static class Box {
+                    final String value
+
+                    Box(String value) {
+                        this.value = value.trim()
+                    }
+                }
+
+                static SerFunc<String, Box> create() {
+                    Box::new
+                }
+
+                static byte[] serialize(Serializable value) {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(value) }
+                    out.toByteArray()
+                }
+
+                static <T> T deserialize(byte[] bytes) {
+                    new ByteArrayInputStream(bytes).withObjectInputStream(C.classLoader) {
+                        (T) it.readObject()
+                    }
+                }
+            }
+
+            assert C.declaredMethods.count { it.name == '$deserializeLambda$' } == 1
+
+            C.SerFunc<String, C.Box> factory = C.deserialize(C.serialize(C.create()))
+            assert factory instanceof Serializable
+            assert factory.apply('  ok  ').value == 'ok'
+        '''
+    }
+
+    @Test // arrayClass::new
+    void testSerializableArrayConstructorReference() {
+        assertScript shell, '''
+            import java.io.ByteArrayInputStream
+            import java.io.ByteArrayOutputStream
+            import java.io.Serializable
+
+            @CompileStatic
+            class C {
+                interface SerIntFunc<T> extends Serializable, IntFunction<T> {}
+
+                static SerIntFunc<String[]> create() {
+                    String[]::new
+                }
+
+                static byte[] serialize(Serializable value) {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(value) }
+                    out.toByteArray()
+                }
+
+                static <T> T deserialize(byte[] bytes) {
+                    new ByteArrayInputStream(bytes).withObjectInputStream(C.classLoader) {
+                        (T) it.readObject()
+                    }
+                }
+            }
+
+            C.SerIntFunc<String[]> factory = C.deserialize(C.serialize(C.create()))
+            String[] values = factory.apply(3)
+            assert values.length == 3
+            assert values.toList() == [null, null, null]
+        '''
+    }
+
+    @Test
+    void testSerializableConstructorReferencesShareDeserializeDispatcherWithLambdas() {
+        assertScript shell, '''
+            import java.io.ByteArrayInputStream
+            import java.io.ByteArrayOutputStream
+            import java.io.Serializable
+
+            @CompileStatic
+            class C {
+                interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+                interface SerIntFunc<T> extends Serializable, IntFunction<T> {}
+
+                static class Box {
+                    final String value
+
+                    Box(String value) {
+                        this.value = value
+                    }
+                }
+
+                static SerFunc<String, Box> createConstructorReference() {
+                    Box::new
+                }
+
+                static SerIntFunc<Box[]> createArrayConstructorReference() {
+                    Box[]::new
+                }
+
+                static SerFunc<Integer, String> createLambda() {
+                    (Integer i) -> 'L' + i
+                }
+
+                static byte[] serialize(Serializable value) {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(value) }
+                    out.toByteArray()
+                }
+
+                static <T> T deserialize(byte[] bytes) {
+                    new ByteArrayInputStream(bytes).withObjectInputStream(C.classLoader) {
+                        (T) it.readObject()
+                    }
+                }
+            }
+
+            assert C.declaredMethods.count { it.name == '$deserializeLambda$' } == 1
+            assert C.declaredMethods.findAll { it.name.startsWith('$deserializeLambda') && it.name != '$deserializeLambda$' }
+                .every { java.lang.reflect.Modifier.isPrivate(it.modifiers) && java.lang.reflect.Modifier.isStatic(it.modifiers) }
+
+            C.SerFunc<String, C.Box> ctor = C.deserialize(C.serialize(C.createConstructorReference()))
+            C.SerIntFunc<C.Box[]> arrayCtor = C.deserialize(C.serialize(C.createArrayConstructorReference()))
+            C.SerFunc<Integer, String> lambda = C.deserialize(C.serialize(C.createLambda()))
+
+            assert ctor.apply('box').value == 'box'
+            assert arrayCtor.apply(2).length == 2
+            assert lambda.apply(4) == 'L4'
+        '''
+    }
+
     @Test // class::staticMethod
     void testFunctionCS() {
         assertScript shell, '''
@@ -1662,6 +1802,283 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test
+    void testSerializableNonCapturingMethodReference() {
+        assertScript shell, '''
+            import java.io.ByteArrayInputStream
+            import java.io.ByteArrayOutputStream
+            import java.io.Serializable
+
+            @CompileStatic
+            class C {
+                interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+
+                static SerFunc<Integer, String> create() {
+                    Integer::toString
+                }
+
+                static byte[] serialize(Serializable value) {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(value) }
+                    out.toByteArray()
+                }
+
+                static <T> T deserialize(byte[] bytes) {
+                    new ByteArrayInputStream(bytes).withObjectInputStream(C.classLoader) {
+                        (T) it.readObject()
+                    }
+                }
+            }
+
+            assert C.declaredMethods.count { it.name == '$deserializeLambda$' } == 1
+
+            C.SerFunc<Integer, String> fn = C.deserialize(C.serialize(C.create()))
+            assert fn instanceof Serializable
+            assert fn.apply(7) == '7'
+        '''
+    }
+
+    @Test
+    void testSerializableCapturingMethodReference() {
+        assertScript shell, '''
+            import java.io.ByteArrayInputStream
+            import java.io.ByteArrayOutputStream
+            import java.io.Serializable
+
+            @CompileStatic
+            class C {
+                interface SerSupplier<T> extends Serializable, Supplier<T> {}
+
+                private final String text
+
+                C(String text) {
+                    this.text = text
+                }
+
+                SerSupplier<String> create() {
+                    text::trim
+                }
+
+                static byte[] serialize(Serializable value) {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(value) }
+                    out.toByteArray()
+                }
+
+                static <T> T deserialize(byte[] bytes) {
+                    new ByteArrayInputStream(bytes).withObjectInputStream(C.classLoader) {
+                        (T) it.readObject()
+                    }
+                }
+            }
+
+            C.SerSupplier<String> supplier = C.deserialize(C.serialize(new C('  answer  ').create()))
+            assert supplier instanceof Serializable
+            assert supplier.get() == 'answer'
+        '''
+    }
+
+    @Test
+    void testSerializableMethodReferencesShareDeserializeDispatcherWithLambdas() {
+        assertScript shell, '''
+            import java.io.ByteArrayInputStream
+            import java.io.ByteArrayOutputStream
+            import java.io.Serializable
+
+            @CompileStatic
+            class C {
+                interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+                interface SerSupplier<T> extends Serializable, Supplier<T> {}
+
+                private final String text
+
+                C(String text) {
+                    this.text = text
+                }
+
+                static SerFunc<Integer, String> createMethodReference() {
+                    Integer::toString
+                }
+
+                static SerFunc<Integer, String> createLambda() {
+                    (Integer i) -> 'L' + i
+                }
+
+                SerSupplier<String> createBoundMethodReference() {
+                    text::trim
+                }
+
+                static byte[] serialize(Serializable value) {
+                    def out = new ByteArrayOutputStream()
+                    out.withObjectOutputStream { it.writeObject(value) }
+                    out.toByteArray()
+                }
+
+                static <T> T deserialize(byte[] bytes) {
+                    new ByteArrayInputStream(bytes).withObjectInputStream(C.classLoader) {
+                        (T) it.readObject()
+                    }
+                }
+            }
+
+            assert C.declaredMethods.count { it.name == '$deserializeLambda$' } == 1
+            assert C.declaredMethods.findAll { it.name.startsWith('$deserializeLambda') && it.name != '$deserializeLambda$' }
+                .every { java.lang.reflect.Modifier.isPrivate(it.modifiers) && java.lang.reflect.Modifier.isStatic(it.modifiers) }
+
+            C.SerFunc<Integer, String> methodRef = C.deserialize(C.serialize(C.createMethodReference()))
+            C.SerFunc<Integer, String> lambda = C.deserialize(C.serialize(C.createLambda()))
+            C.SerSupplier<String> bound = C.deserialize(C.serialize(new C('  x  ').createBoundMethodReference()))
+
+            assert methodRef.apply(3) == '3'
+            assert lambda.apply(4) == 'L4'
+            assert bound.get() == 'x'
+        '''
+    }
+
+    @Test
+    void testDeserializeDispatcherReturnsMatchingMethodReferenceAndLambdaBeforeFallback() {
+        assertScript shell, '''
+            import java.io.Serializable
+            import java.lang.invoke.SerializedLambda
+
+            @CompileStatic
+            class C {
+                interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+
+                static SerFunc<Integer, String> createMethodReference() {
+                    Integer::toString
+                }
+
+                static SerFunc<Integer, String> createLambda() {
+                    (Integer i) -> 'L' + i
+                }
+
+                @CompileDynamic
+                static SerializedLambda serialized(Serializable value) {
+                    def writeReplace = value.class.getDeclaredMethod('writeReplace')
+                    writeReplace.accessible = true
+                    (SerializedLambda) writeReplace.invoke(value)
+                }
+            }
+
+            def dispatcher = C.getDeclaredMethod('$deserializeLambda$', SerializedLambda)
+            dispatcher.accessible = true
+
+            C.SerFunc<Integer, String> methodRef =
+                (C.SerFunc<Integer, String>) dispatcher.invoke(null, C.serialized(C.createMethodReference()))
+            C.SerFunc<Integer, String> lambda =
+                (C.SerFunc<Integer, String>) dispatcher.invoke(null, C.serialized(C.createLambda()))
+
+            assert methodRef.apply(3) == '3'
+            assert lambda.apply(3) == 'L3'
+        '''
+    }
+
+    @Test
+    void testDeserializeDispatcherRejectsWrongCapturingClassEvenWhenOtherSerializedFieldsMatch() {
+        assertScript shell, '''
+            import java.io.Serializable
+            import java.lang.invoke.SerializedLambda
+
+            @CompileStatic
+            class C {
+                interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+
+                static SerFunc<Integer, String> createMethodReference() {
+                    Integer::toString
+                }
+
+                static SerFunc<Integer, String> createLambda() {
+                    (Integer i) -> 'L' + i
+                }
+
+                @CompileDynamic
+                static SerializedLambda serialized(Serializable value) {
+                    def writeReplace = value.class.getDeclaredMethod('writeReplace')
+                    writeReplace.accessible = true
+                    (SerializedLambda) writeReplace.invoke(value)
+                }
+
+                @CompileDynamic
+                static SerializedLambda withCapturingClass(SerializedLambda serialized, Class capturingClass) {
+                    new SerializedLambda(
+                        capturingClass,
+                        serialized.functionalInterfaceClass,
+                        serialized.functionalInterfaceMethodName,
+                        serialized.functionalInterfaceMethodSignature,
+                        serialized.implMethodKind,
+                        serialized.implClass,
+                        serialized.implMethodName,
+                        serialized.implMethodSignature,
+                        serialized.instantiatedMethodType,
+                        (0..<serialized.capturedArgCount).collect { serialized.getCapturedArg(it) } as Object[]
+                    )
+                }
+            }
+
+            def dispatcher = C.getDeclaredMethod('$deserializeLambda$', SerializedLambda)
+            dispatcher.accessible = true
+
+            def assertInvalid = { SerializedLambda serialized ->
+                def err
+                try {
+                    dispatcher.invoke(null, serialized)
+                    assert false: 'dispatcher invocation should fail'
+                } catch (java.lang.reflect.InvocationTargetException e) {
+                    err = e
+                }
+                assert err.cause instanceof IllegalArgumentException
+                assert err.cause.message == 'Invalid serialized functional interface'
+            }
+
+            assertInvalid(C.withCapturingClass(C.serialized(C.createMethodReference()), String))
+            assertInvalid(C.withCapturingClass(C.serialized(C.createLambda()), Integer))
+        '''
+    }
+
+    @Test
+    void testDeserializeDispatcherReportsClearErrorForMismatchedSerializedForm() {
+        assertScript shell, '''
+            import java.lang.invoke.MethodHandleInfo
+            import java.lang.invoke.SerializedLambda
+
+            @CompileStatic
+            class C {
+                interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+
+                static SerFunc<Integer, String> create() {
+                    Integer::toString
+                }
+            }
+
+            def dispatcher = C.getDeclaredMethod('$deserializeLambda$', SerializedLambda)
+            dispatcher.accessible = true
+
+            def serialized = new SerializedLambda(
+                C,
+                'java/util/function/Function',
+                'apply',
+                '(Ljava/lang/Object;)Ljava/lang/Object;',
+                MethodHandleInfo.REF_invokeStatic,
+                'java/lang/Integer',
+                'toString',
+                '(I)Ljava/lang/String;',
+                '(Ljava/lang/Integer;)Ljava/lang/String;',
+                [] as Object[]
+            )
+
+            def err
+            try {
+                dispatcher.invoke(null, serialized)
+                assert false: 'dispatcher invocation should fail'
+            } catch (java.lang.reflect.InvocationTargetException e) {
+                err = e
+            }
+            assert err.cause instanceof IllegalArgumentException
+            assert err.cause.message == 'Invalid serialized functional interface'
+        '''
+    }
+
     // GROOVY-11467
     @Test
     void testSuperInterfaceMethodReference() {
@@ -1756,5 +2173,611 @@ final class MethodReferenceTest {
 
             new C().test()
         '''
+    }
+
+    @Test
+    void testDoubleSupplierMethodReference() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                DoubleSupplier s = Math::random
+                assert s.getAsDouble() >= 0.0d && s.getAsDouble() < 1.0d
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testLongSupplierMethodReference() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                LongSupplier s = System::currentTimeMillis
+                assert s.getAsLong() > 0L
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testBiPredicateFromMapPutBooleanPlaceholder() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Map<String, Boolean> m = [k: true]
+                BiPredicate<String, Boolean> p = m::put
+                assert p.test('k', false) == true  // old value was true
+                assert p.test('k', true)  == false // old value was false
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testToDoubleFunctionFromMapGetDoublePlaceholder() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Map<String, Double> m = [pi: 3.14d, e: 2.71d]
+                ToDoubleFunction<String> f = m::get
+                assert Math.abs(f.applyAsDouble('pi') - 3.14d) < 1e-9d
+                assert Math.abs(f.applyAsDouble('e')  - 2.71d) < 1e-9d
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testToLongFunctionFromMapGetLongPlaceholder() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Map<String, Long> m = [a: 100L, b: 200L]
+                ToLongFunction<String> f = m::get
+                assert f.applyAsLong('a') == 100L
+                assert f.applyAsLong('b') == 200L
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testByteReturnSAMMethodReference() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+
+            @CompileStatic
+            void test() {
+                ToByteFunc<Number> f = Number::byteValue
+                assert f.apply(65)  == (byte) 65
+                assert f.apply(300) == (byte) 44  // 300 % 256 = 44
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testCharReturnSAMMethodReference() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToCharFunc { char apply(String s, int i) }
+
+            @CompileStatic
+            void test() {
+                ToCharFunc f = String::charAt
+                assert f.apply('hello', 0) == 'h'
+                assert f.apply('hello', 4) == 'o'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testFloatReturnSAMMethodReference() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+
+            @CompileStatic
+            void test() {
+                ToFloatFunc<Number> f = Number::floatValue
+                assert f.apply(3.14) == 3.14f
+                assert f.apply(42)   == 42.0f
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testShortReturnSAMMethodReference() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToShortFunc<T> { short apply(T t) }
+
+            @CompileStatic
+            void test() {
+                ToShortFunc<Number> f = Number::shortValue
+                assert f.apply(42)  == (short) 42
+                assert f.apply(300) == (short) 300
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testVarargAdapterWhenLastSamParamNotAssignableToVarargArray() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                BiFunction<String, String, String> f = String::format
+                assert f.apply('%s',  'hello') == 'hello'
+                assert f.apply('[%s]', 'world') == '[world]'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testVarargZeroArgSAMMethodReference() {
+        assertScript shell, '''
+            import java.util.Arrays
+
+            @CompileStatic
+            void test() {
+                Supplier<List<Object>> s = Arrays::asList
+                assert s.get() == []
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testVarargMultiArgSAMMethodReference() {
+        assertScript shell, '''
+            @FunctionalInterface
+            interface StringFormatter { String format(String fmt, String a, String b) }
+
+            @CompileStatic
+            void test() {
+                StringFormatter sf = String::format
+                assert sf.format('%s and %s', 'foo', 'bar') == 'foo and bar'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testBoundInstanceVarargExternalClassMethodReference() {
+        assertScript shell, '''
+            class StringJoiner {
+                String join(String... parts) { parts.join('-') }
+            }
+
+            @CompileStatic
+            void test() {
+                StringJoiner joiner = new StringJoiner()
+                // 0-arg SAM; join is vararg instance method on external class
+                Supplier<String> s = joiner::join
+                assert s.get() == ''
+                assert new StringJoiner().join('a', 'b', 'c') == 'a-b-c'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testVarargMethodReferenceInCurrentClass() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                String join(String... parts) { parts.join('-') }
+
+                Supplier<String> createRef() {
+                    this::join
+                }
+            }
+
+            def result = new C().createRef().get()
+            assert result == ''
+        '''
+    }
+
+    @Test
+    void testInstanceBoundToStaticMethodReference() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Integer num = 42
+                ToIntFunction<String> f = num::parseInt
+                assert f.applyAsInt('123') == 123
+                assert f.applyAsInt('-7')  == -7
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testToByteFunctionFromMapGetBytePlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<K> { byte apply(K k) }
+
+            @CompileStatic
+            void test() {
+                Map<String, Byte> m = [a: (byte) 1, b: (byte) 127]
+                ToByteFunc<String> f = m::get
+                assert f.apply('a') == (byte) 1
+                assert f.apply('b') == (byte) 127
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testToCharFunctionFromMapGetCharPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToCharFunc<K> { char apply(K k) }
+
+            @CompileStatic
+            void test() {
+                Map<String, Character> m = [x: (char) 'A', y: (char) 'Z']
+                ToCharFunc<String> f = m::get
+                assert f.apply('x') == 'A'
+                assert f.apply('y') == 'Z'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testToFloatFunctionFromMapGetFloatPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToFloatFunc<K> { float apply(K k) }
+
+            @CompileStatic
+            void test() {
+                Map<String, Float> m = [pi: 3.14f, e: 2.71f]
+                ToFloatFunc<String> f = m::get
+                assert Math.abs(f.apply('pi') - 3.14f) < 1e-4f
+                assert Math.abs(f.apply('e')  - 2.71f) < 1e-4f
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testToShortFunctionFromMapGetShortPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToShortFunc<K> { short apply(K k) }
+
+            @CompileStatic
+            void test() {
+                Map<String, Short> m = [lo: (short) 0, hi: (short) 100]
+                ToShortFunc<String> f = m::get
+                assert f.apply('lo') == (short) 0
+                assert f.apply('hi') == (short) 100
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testTypeReferringInstanceVarargMethodReference() {
+        assertScript shell, '''
+            class Joiner {
+                String join(String... parts) { parts.join('-') }
+            }
+
+            @FunctionalInterface interface JoinerBiFunc { String apply(Joiner j, String a, String b) }
+
+            @CompileStatic
+            void test() {
+                JoinerBiFunc f = Joiner::join
+                assert f.apply(new Joiner(), 'a', 'b') == 'a-b'
+                assert f.apply(new Joiner(), 'x', 'y') == 'x-y'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testVarargMethodRefNoAdapterWhenArrayParamCompatible() {
+        assertScript shell, '''
+            @FunctionalInterface interface StrFormatter { String fmt(String format, Object[] args) }
+
+            @CompileStatic
+            void test() {
+                StrFormatter f = String::format
+                assert f.fmt('%s=%d', ['answer', 42] as Object[]) == 'answer=42'
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testGenericTypeResolutionForMethodReference() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Function<List<String>, Integer> f = List::size
+                assert f.apply(['a', 'b', 'c']) == 3
+                assert f.apply([]) == 0
+            }
+
+            test()
+        '''
+    }
+
+    @Test
+    void testMethodRefReceiverTypeNarrowerThanSAMParam() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                ToIntFunction<String> f = String::length
+                assert f.applyAsInt('hello') == 5
+                assert f.applyAsInt('') == 0
+            }
+            test()
+        '''
+    }
+
+    @Test
+    void testInstanceBoundStaticVarargMethodRef() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                String fmt = "unused"
+                BiFunction<String, String, String> f = fmt::format
+                assert f.apply('Hello %s!', 'world') == 'Hello world!'
+                assert f.apply('Hi %s', 'Groovy') == 'Hi Groovy'
+            }
+            test()
+        '''
+    }
+
+    @Test
+    void testMethodRefAssignedToClosureType() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Closure<?> fn = String::length
+                assert fn.call('hello') == 5
+                assert fn.call('') == 0
+            }
+            test()
+        '''
+    }
+
+    @Nested
+    class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
+        @Test
+        void testClassReferringInstanceMethodUsesCaptureFreeInvokeDynamic() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', '''
+                @CompileStatic
+                class C {
+                    static ToIntFunction<String> create() {
+                        String::length
+                    }
+                }
+            ''')
+
+            assertUsesInvokeDynamicFactory(
+                bytecode,
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/ToIntFunction;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'java/lang/String.length()I'
+            )
+        }
+
+        @Test
+        void testBoundInstanceMethodCapturesReceiverInFactoryDescriptor() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', '''
+                @CompileStatic
+                class C {
+                    static Supplier<String> create() {
+                        String text = '  ok  '
+                        text::trim
+                    }
+                }
+            ''')
+
+            assertUsesInvokeDynamicFactory(
+                bytecode,
+                'INVOKEDYNAMIC get(Ljava/lang/String;)Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'java/lang/String.trim()Ljava/lang/String;'
+            )
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC get()Ljava/util/function/Supplier;'])
+        }
+
+        @Test
+        void testInstanceBoundToStaticMethodDropsSuperfluousReceiverCapture() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', '''
+                @CompileStatic
+                class C {
+                    static ToIntFunction<String> create() {
+                        Integer number = 42
+                        number::parseInt
+                    }
+                }
+            ''')
+
+            assertUsesInvokeDynamicFactory(
+                bytecode,
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/ToIntFunction;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'java/lang/Integer.parseInt(Ljava/lang/String;)I'
+            )
+            assert !bytecode.hasSequence(['INVOKEDYNAMIC applyAsInt(Ljava/lang/Integer;)Ljava/util/function/ToIntFunction;'])
+        }
+
+        @Test
+        void testClassReferringStaticMethodUsesDirectBootstrapTarget() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator create() {
+                        Math::abs
+                    }
+                }
+            ''')
+
+            assertUsesInvokeDynamicFactory(
+                bytecode,
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'java/lang/Math.abs(I)I'
+            )
+        }
+
+        @Test
+        void testConstructorReferenceUsesSyntheticFactoryMethodAsBootstrapTarget() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static class Box {
+                        final String value
+                        Box(String value) {
+                            this.value = value
+                        }
+                    }
+
+                    static Function<String, Box> create() {
+                        Box::new
+                    }
+                }
+            '''
+
+            def helperBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'ctorRef$create$0', script)
+            assert helperBytecode.hasSequence([
+                'private final static synthetic ctorRef$create$0(Ljava/lang/String;)LC$Box;',
+                'LDC LC$Box;.class',
+                'INVOKEDYNAMIC init(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Object;',
+                '"<init>"',
+                'INVOKEDYNAMIC cast(Ljava/lang/Object;)LC$Box;',
+                'ARETURN'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesInvokeDynamicFactory(
+                outerBytecode,
+                'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C.ctorRef$create$0(Ljava/lang/String;)LC$Box;'
+            )
+        }
+
+        @Test
+        void testArrayConstructorReferenceUsesSyntheticArrayFactoryMethod() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntFunction<String[]> create() {
+                        String[]::new
+                    }
+                }
+            '''
+
+            def helperBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'ctorRef$create$0', script)
+            assert helperBytecode.hasSequence([
+                'private final static synthetic ctorRef$create$0(I)[Ljava/lang/String;',
+                'ANEWARRAY java/lang/String',
+                'ARETURN'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesInvokeDynamicFactory(
+                outerBytecode,
+                'INVOKEDYNAMIC apply()Ljava/util/function/IntFunction;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C.ctorRef$create$0(I)[Ljava/lang/String;'
+            )
+        }
+
+        @Test
+        void testSerializableMethodReferenceUsesAltMetafactoryAndDeserializeDispatcher() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+
+                    static SerFunc<String, String> create() {
+                        String::trim
+                    }
+                }
+            '''
+
+            def createBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesInvokeDynamicFactory(
+                createBytecode,
+                'INVOKEDYNAMIC apply()LC$SerFunc;',
+                'java/lang/invoke/LambdaMetafactory.altMetafactory',
+                'java/lang/String.trim()Ljava/lang/String;'
+            )
+            assert createBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
+
+            def dispatcherBytecode = compileStaticBytecode(classNamePattern: 'C', method: '$deserializeLambda$', script)
+            assert dispatcherBytecode.hasSequence(['INVOKESTATIC C.$deserializeLambda_methodref$'])
+        }
+
+        @Test
+        void testVarargMethodReferenceUsesSyntheticAdapterInsteadOfFallback() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static Supplier<List> create() {
+                        Arrays::asList
+                    }
+                }
+            '''
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesInvokeDynamicFactory(
+                outerBytecode,
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C.adapt$Arrays$asList$'
+            )
+        }
+
+        private static void assertUsesInvokeDynamicFactory(final bytecode, final String invokedynamicInstruction, final String bootstrapMethod, final String implementationTarget) {
+            assert bytecode.hasSequence([
+                invokedynamicInstruction,
+                bootstrapMethod,
+                implementationTarget
+            ])
+            assertNoMethodPointerFallback(bytecode)
+        }
+
+        private static void assertNoMethodPointerFallback(final bytecode) {
+            assert !bytecode.hasSequence(['INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getMethodPointer'])
+        }
+
+        private compileStaticBytecode(final Map options = [:], final String script) {
+            compile(options, COMMON_IMPORTS + script)
+        }
+
+        private static final String COMMON_IMPORTS = '''\
+            import groovy.transform.CompileStatic
+            import java.io.Serializable
+            import java.util.Arrays
+            import java.util.function.*
+            '''
     }
 }
