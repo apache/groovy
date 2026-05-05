@@ -160,7 +160,7 @@ class Main {
             sourcepath = list.toArray()
         }
 
-        javaVersion = options.javaVersion
+        javaVersion = options.javaVersion ?: null
         author = Boolean.valueOf(options.author) ?: false
         noScripts = Boolean.valueOf(options.noscripts) ?: false
         noMainForScripts = Boolean.valueOf(options.nomainforscripts) ?: false
