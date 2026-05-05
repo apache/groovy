@@ -92,6 +92,10 @@ memory setting. (Examples: 83886080, 81920k, or 80m) |No
 VM, if using fork mode; ignored otherwise. Defaults to the standard VM
 memory setting. (Examples: 83886080, 81920k, or 80m) |No
 
+|inheritAll |If enabled and `fork` is true, all properties from the parent Ant
+project are passed to the forked compiler JVM as system properties. For selective
+passing, use a nested `<sysproperty>` or `<syspropertyset>` instead. Defaults to false. |No
+
 |failonerror |Indicates whether compilation errors will fail the build;
 defaults to true. |No
 
@@ -170,6 +174,9 @@ the compilation fails. |No
 |src |a path structure |Yes (unless srcdir is used) |srcdir
 |classpath |a path structure |No |classpath or classpathref
 |javac |javac task |No |N/A
+|jvmarg |https://ant.apache.org/manual/using.html#arg[command line argument] |No |N/A
+|sysproperty |an Ant https://ant.apache.org/manual/Tasks/java.html[`<sysproperty>`] |No |N/A
+|syspropertyset |an Ant https://ant.apache.org/manual/Types/propertyset.html[`<propertyset>`] |No |N/A
 |==========================================================
 
 *Notes:*
@@ -209,3 +216,28 @@ Joint compilation is enabled by using an embedded `javac` element, as shown in t
 -----------------------------------------------------------------------
 
 More details about joint compilation can be found in the <<{tools-groovyc}#section-jointcompilation,joint compilation>> section.
+
+[[groovyc-ant-task-forked-jvm-args]]
+=== Passing JVM arguments and system properties to a forked compiler
+
+When `fork="true"`, you can attach arbitrary JVM arguments and system
+properties to the spawned compiler JVM via nested `<jvmarg>`,
+`<sysproperty>`, and `<syspropertyset>` elements (mirroring Ant's
+https://ant.apache.org/manual/Tasks/java.html[`<java>`] task). This is
+useful for compile-time configuration consumed by AST transforms, the
+parser/lexer, or annotation processors.
+
+[source,xml]
+-----------------------------------------------------------------------
+<groovyc srcdir="src" destdir="build/classes" fork="true">
+  <jvmarg value="--add-opens=java.base/java.lang=ALL-UNNAMED"/>
+  <sysproperty key="my.compile.flag" value="true"/>
+  <syspropertyset>
+    <propertyref prefix="myapp."/>
+  </syspropertyset>
+</groovyc>
+-----------------------------------------------------------------------
+
+To pass _every_ parent project property at once, set `inheritAll="true"`.
+Explicit `<sysproperty>` and `<syspropertyset>` entries take precedence
+on name collision.

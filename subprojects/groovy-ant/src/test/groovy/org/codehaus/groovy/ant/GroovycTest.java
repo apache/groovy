@@ -21,6 +21,9 @@ package org.codehaus.groovy.ant;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
+import org.apache.tools.ant.types.Environment;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.PropertySet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -379,5 +382,91 @@ final class GroovycTest {
     void testBadJavacArgument() {
         var e = assertThrows(BuildException.class, () -> project.executeTarget("badJavacArgument"));
         assertTrue(e.getCause().getMessage().contains("invalid flag: -Xlint:xxx"));
+    }
+
+    // GROOVY-11995
+
+    private static Groovyc newForkedGroovyc(Project project) {
+        Groovyc gc = new Groovyc();
+        gc.setProject(project);
+        gc.setFork(true);
+        return gc;
+    }
+
+    private static java.util.List<String> buildForkCommandLine(Groovyc gc) {
+        java.util.List<String> cmd = new java.util.ArrayList<>();
+        gc.doForkCommandLineList(cmd, new Path(gc.getProject()), File.separator);
+        return cmd;
+    }
+
+    @Test
+    void testJvmargAddedToForkedCommandLine() {
+        Groovyc gc = newForkedGroovyc(project);
+        gc.createJvmarg().setValue("--add-opens=java.base/java.lang=ALL-UNNAMED");
+        assertTrue(buildForkCommandLine(gc).contains("--add-opens=java.base/java.lang=ALL-UNNAMED"));
+    }
+
+    @Test
+    void testSyspropertyAddedToForkedCommandLine() {
+        Groovyc gc = newForkedGroovyc(project);
+        Environment.Variable v = new Environment.Variable();
+        v.setKey("my.compile.flag");
+        v.setValue("true");
+        gc.addSysproperty(v);
+        assertTrue(buildForkCommandLine(gc).contains("-Dmy.compile.flag=true"));
+    }
+
+    @Test
+    void testSyspropertysetAddedToForkedCommandLine() {
+        project.setProperty("myapp.url", "https://example.com");
+        project.setProperty("myapp.timeout", "30");
+        project.setProperty("other.value", "ignored");
+        Groovyc gc = newForkedGroovyc(project);
+        PropertySet ps = new PropertySet();
+        ps.setProject(project);
+        PropertySet.PropertyRef ref = new PropertySet.PropertyRef();
+        ref.setPrefix("myapp.");
+        ps.addPropertyref(ref);
+        gc.addSyspropertyset(ps);
+        java.util.List<String> cmd = buildForkCommandLine(gc);
+        assertTrue(cmd.contains("-Dmyapp.url=https://example.com"));
+        assertTrue(cmd.contains("-Dmyapp.timeout=30"));
+        assertTrue(cmd.stream().noneMatch(s -> s.startsWith("-Dother.value=")));
+    }
+
+    @Test
+    void testInheritAllPassesProjectProperties() {
+        project.setProperty("alpha", "1");
+        project.setProperty("beta", "two");
+        Groovyc gc = newForkedGroovyc(project);
+        gc.setInheritAll(true);
+        java.util.List<String> cmd = buildForkCommandLine(gc);
+        assertTrue(cmd.contains("-Dalpha=1"));
+        assertTrue(cmd.contains("-Dbeta=two"));
+    }
+
+    @Test
+    void testExplicitSyspropertyTakesPrecedenceOverInheritAll() {
+        project.setProperty("shared", "fromProject");
+        Groovyc gc = newForkedGroovyc(project);
+        Environment.Variable explicit = new Environment.Variable();
+        explicit.setKey("shared");
+        explicit.setValue("fromSysproperty");
+        gc.addSysproperty(explicit);
+        gc.setInheritAll(true);
+        java.util.List<String> cmd = buildForkCommandLine(gc);
+        long count = cmd.stream().filter(s -> s.startsWith("-Dshared=")).count();
+        assertEquals(1, count);
+        assertTrue(cmd.contains("-Dshared=fromSysproperty"));
+    }
+
+    @Test
+    void testJvmargClasspathRejected() {
+        for (String forbidden : new String[]{"-classpath", "-cp", "--class-path", "--class-path=foo"}) {
+            Groovyc gc = newForkedGroovyc(project);
+            gc.createJvmarg().setValue(forbidden);
+            BuildException e = assertThrows(BuildException.class, () -> buildForkCommandLine(gc));
+            assertTrue(e.getMessage().contains("classpath"), "expected classpath error for " + forbidden + ", got: " + e.getMessage());
+        }
     }
 }
