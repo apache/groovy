@@ -257,27 +257,27 @@ public class NumberMathModificationInfo {
     public boolean double_or;
 
     /**
-     * Flags indicating whether the bitwise AND (&) operation has been modified for Byte type.
+     * Flags indicating whether the bitwise AND (&amp;) operation has been modified for Byte type.
      */
     public boolean byte_and;
     /**
-     * Flags indicating whether the bitwise AND (&) operation has been modified for Short type.
+     * Flags indicating whether the bitwise AND (&amp;) operation has been modified for Short type.
      */
     public boolean short_and;
     /**
-     * Flags indicating whether the bitwise AND (&) operation has been modified for Integer type.
+     * Flags indicating whether the bitwise AND (&amp;) operation has been modified for Integer type.
      */
     public boolean int_and;
     /**
-     * Flags indicating whether the bitwise AND (&) operation has been modified for Long type.
+     * Flags indicating whether the bitwise AND (&amp;) operation has been modified for Long type.
      */
     public boolean long_and;
     /**
-     * Flags indicating whether the bitwise AND (&) operation has been modified for Float type.
+     * Flags indicating whether the bitwise AND (&amp;) operation has been modified for Float type.
      */
     public boolean float_and;
     /**
-     * Flags indicating whether the bitwise AND (&) operation has been modified for Double type.
+     * Flags indicating whether the bitwise AND (&amp;) operation has been modified for Double type.
      */
     public boolean double_and;
 
@@ -382,27 +382,27 @@ public class NumberMathModificationInfo {
     public boolean double_remainder;
 
     /**
-     * Flags indicating whether the left shift (<<) operation has been modified for Byte type.
+     * Flags indicating whether the left shift (&lt;&lt;) operation has been modified for Byte type.
      */
     public boolean byte_leftShift;
     /**
-     * Flags indicating whether the left shift (<<) operation has been modified for Short type.
+     * Flags indicating whether the left shift (&lt;&lt;) operation has been modified for Short type.
      */
     public boolean short_leftShift;
     /**
-     * Flags indicating whether the left shift (<<) operation has been modified for Integer type.
+     * Flags indicating whether the left shift (&lt;&lt;) operation has been modified for Integer type.
      */
     public boolean int_leftShift;
     /**
-     * Flags indicating whether the left shift (<<) operation has been modified for Long type.
+     * Flags indicating whether the left shift (&lt;&lt;) operation has been modified for Long type.
      */
     public boolean long_leftShift;
     /**
-     * Flags indicating whether the left shift (<<) operation has been modified for Float type.
+     * Flags indicating whether the left shift (&lt;&lt;) operation has been modified for Float type.
      */
     public boolean float_leftShift;
     /**
-     * Flags indicating whether the left shift (<<) operation has been modified for Double type.
+     * Flags indicating whether the left shift (&lt;&lt;) operation has been modified for Double type.
      */
     public boolean double_leftShift;
 

@@ -129,7 +129,7 @@ public final class LongMath extends NumberMath {
     /**
      * Bitwise AND operation for long values.
      * <p>
-     * Performs a bitwise AND (&) between two numbers converted to long values.
+     * Performs a bitwise AND (&amp;) between two numbers converted to long values.
      *
      * @param left the first operand
      * @param right the second operand

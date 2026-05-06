@@ -56,6 +56,13 @@ tasks.withType(Javadoc).configureEach {
     options {
         addBooleanOption('html5', true)
         addStringOption('Xdoclint:none', '-quiet')
+        // JUnit 5 (and other libs) ship as named modules; this project's
+        // sources are in the unnamed module. JDK 21+ javadoc warns by default
+        // when --link targets a named-module API from the unnamed module.
+        // Downgrade to info so it doesn't pollute the build output.
+        if (JavaVersion.current() >= JavaVersion.VERSION_21) {
+            addStringOption('-link-modularity-mismatch', 'info')
+        }
         addStringOption('tag', 'apiNote:a:"API Note:"')
         addStringOption('tag', 'implSpec:a:"Implementation Requirements:"')
         addStringOption('tag', 'implNote:a:"Implementation Note:"')
