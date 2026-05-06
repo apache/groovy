@@ -18,6 +18,7 @@
  */
 package groovy.jmx.builder
 
+import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
@@ -28,6 +29,7 @@ import javax.management.remote.rmi.RMIConnectorServer
 
 import static groovy.test.GroovyAssert.shouldFail
 
+@ForkedJvm
 final class JmxClientConnectorFactoryTest {
 
     private JmxBuilder builder
@@ -35,6 +37,12 @@ final class JmxClientConnectorFactoryTest {
 
     @BeforeEach
     void setUp() {
+        // ForkedJvm only intercepts @Test invocations; @BeforeEach still
+        // fires in the parent JVM (where the test body itself never runs).
+        // Skip the side-effecting setup there, otherwise the parent grabs
+        // port 10990 first and the child's createRmiRegistry collides.
+        if (!Boolean.parseBoolean(System.getProperty('groovy.junit6.forked'))) return
+
         System.setProperty('java.rmi.server.hostname', hostAddress)
 
         final int defaultPort = 10990
@@ -50,6 +58,7 @@ final class JmxClientConnectorFactoryTest {
 
     @AfterEach
     void tearDown() {
+        if (!Boolean.parseBoolean(System.getProperty('groovy.junit6.forked'))) return
         System.clearProperty('java.rmi.server.hostname')
         JmxConnectorHelper.destroyRmiRegistry(rmi.registry)
     }

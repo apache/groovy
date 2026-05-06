@@ -18,16 +18,14 @@
  */
 package org.codehaus.groovy.control;
 
+import groovy.junit6.plugin.ForkedJvm;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.messages.WarningMessage;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,19 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Make sure CompilerConfiguration works.
  */
 public final class CompilerConfigurationTest {
-
-    private Properties savedProperties;
-
-    @BeforeEach
-    public void setUp() {
-        savedProperties = System.getProperties();
-        System.setProperties(new Properties(savedProperties));
-    }
-
-    @AfterEach
-    public void tearDown() {
-        System.setProperties(savedProperties);
-    }
 
     @Test
     public void testDefaultConstructor() {
@@ -76,13 +61,17 @@ public final class CompilerConfigurationTest {
     }
 
     @Test
+    @ForkedJvm(systemProperties = {
+            "groovy.warnings=PaRaNoiA",
+            "groovy.output.verbose=trUE",
+            "groovy.mem.stub=true",
+            "groovy.generate.stub.in.memory=true",
+            "groovy.recompile.minimumInterval=867892345"})
     public void testSetViaSystemProperties() {
-        System.setProperty("groovy.warnings", "PaRaNoiA");
-        System.setProperty("groovy.output.verbose", "trUE");
-        System.setProperty("groovy.mem.stub", "true");
-        System.setProperty("groovy.generate.stub.in.memory", "true");
-        System.setProperty("groovy.recompile.minimumInterval", "867892345");
-
+        // Properties are set on the JVM command line via @ForkedJvm; the
+        // forked child reads them through the normal System.getProperties()
+        // path the production code uses, and parent-JVM state stays clean
+        // for all the other (read-only) tests in this class.
         assertEquals("PaRaNoiA", System.getProperty("groovy.warnings"));
 
         CompilerConfiguration config = new CompilerConfiguration(System.getProperties());

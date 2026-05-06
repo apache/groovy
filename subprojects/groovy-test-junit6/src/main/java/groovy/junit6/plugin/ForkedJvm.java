@@ -53,6 +53,23 @@ import java.lang.annotation.Target;
  * void withModuleAccess() { ... }
  * </pre>
  * <p>
+ * <b>Recipe — {@code @GrabConfig(systemClassLoader=true)} tests:</b>
+ * scripts that use {@code @GrabConfig(systemClassLoader=true)} to add
+ * resolved JARs to the JVM <em>system</em> classloader only behave
+ * correctly when that classloader is Groovy's {@code RootLoader}, which
+ * cannot be retrofitted after JVM startup. Set it via {@code jvmArgs}:
+ * <pre>
+ * &#64;Test
+ * &#64;ForkedJvm(jvmArgs = {"-Djava.system.class.loader=org.codehaus.groovy.tools.RootLoader"})
+ * void scriptUsesGrabConfigSystemClassLoader() {
+ *     assertScript '''
+ *         &#64;GrabConfig(systemClassLoader=true)
+ *         &#64;Grab('org.example:some-lib:1.0')
+ *         // ... library is now visible to anything resolving via the system classloader ...
+ *     '''
+ * }
+ * </pre>
+ * <p>
  * Properties from the parent JVM can be propagated to the child via
  * {@link #inheritProperties()}. Each entry is either an exact property
  * name or a prefix pattern ending in {@code *}. This is useful when the

@@ -18,11 +18,10 @@
  */
 package groovy.grape
 
+import groovy.junit6.plugin.ForkedJvm
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -30,17 +29,18 @@ import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
+@ForkedJvm(inheritProperties = ['grape.root', 'user.home', 'gradle.home'])
 final class GrabResolverTest {
-
-    private static String originalGrapeRoot
-
-    @BeforeAll
-    static void setUpTestSuite() {
-        originalGrapeRoot = System.getProperty('grape.root')
-    }
 
     @BeforeEach @CompileDynamic
     void setUp() {
+        // Lifecycle hooks fire in BOTH the parent test JVM and each forked
+        // child; the parent never runs the test bodies, so its Grape state
+        // and grape.root must stay untouched. The previous BeforeAll/AfterAll
+        // save/restore dance becomes redundant once nothing in the parent
+        // mutates grape.root.
+        if (!Boolean.parseBoolean(System.getProperty('groovy.junit6.forked'))) return
+
         Grape.@instance = null // isolate each test
 
         // create a new grape root directory for each test for isolation
@@ -60,17 +60,6 @@ final class GrabResolverTest {
             // Maven engine: start from no repositories so @GrabResolver is required by the test.
             engine.repos.clear()
         }
-    }
-
-    @AfterAll
-    static void tearDownTestSuite() {
-        if (originalGrapeRoot == null) {
-            System.clearProperty('grape.root')
-        } else {
-            System.setProperty('grape.root', originalGrapeRoot)
-        }
-
-        Grape.@instance = null // isolate tests
     }
 
     @Test

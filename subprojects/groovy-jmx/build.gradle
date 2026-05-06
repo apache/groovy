@@ -23,6 +23,7 @@ plugins {
 dependencies {
     api rootProject // JmxBuilder extends FactoryBuilderSupport...
     testImplementation projects.groovyTest
+    testImplementation projects.groovyTestJunit6
     testRuntimeOnly(project(':')) {
         because 'Tests are using Grapes'
         capabilities {

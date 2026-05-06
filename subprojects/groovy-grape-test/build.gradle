@@ -26,7 +26,7 @@ plugins {
 dependencies {
     testImplementation rootProject
     testImplementation projects.groovyTest
-    testImplementation projects.groovyTestJunit5
+    testImplementation projects.groovyTestJunit6
     testRuntimeOnly projects.groovyGrapeIvy
     testRuntimeOnly projects.groovyGrapeMaven
     testRuntimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
@@ -34,7 +34,5 @@ dependencies {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
-    forkEvery = 1
-    maxParallelForks = 1
 }
 

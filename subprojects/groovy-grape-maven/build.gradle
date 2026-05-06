@@ -24,6 +24,11 @@ dependencies {
     api rootProject
     implementation "org.apache.maven:maven-resolver-provider:${versions.mavenResolverProvider}"
     implementation "org.apache.maven.resolver:maven-resolver-supplier-mvn4:${versions.mavenResolverSupplier}"
+    // Maven Resolver's supplier instantiates components annotated with javax.inject (JSR-330);
+    // without javax.inject on the classpath, RepositorySystemSupplier.get() fails with
+    // NoClassDefFoundError: javax/inject/Provider. The supplier's POM doesn't declare this
+    // transitively as of 2.0.17, so we provide it explicitly.
+    implementation "javax.inject:javax.inject:${versions.javaxInject}"
 }
 
 tasks.withType(Javadoc).configureEach {

@@ -26,6 +26,7 @@ dependencies {
         transitive = false
     }
     testImplementation projects.groovyTest
+    testImplementation projects.groovyTestJunit6
 }
 
 // The only Java source is a package-private implementation class;

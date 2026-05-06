@@ -18,14 +18,17 @@
  */
 package groovy.grape
 
+import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 
 final class GrapeImplementationSelectionTest {
     @Test
+    @ForkedJvm(systemProperties = ['groovy.grape.impl=groovy.grape.nonexistent.DoesNotExist'])
     void testConfiguredImplementationMismatchSkipsServiceLoad() {
         // This module runs with both implementations available; selecting an implementation
-        // that is not on this test runtime classpath should disable Grapes.
-        System.setProperty('groovy.grape.impl', 'groovy.grape.nonexistent.DoesNotExist')
+        // that is not on this test runtime classpath should disable Grapes. The property is
+        // set on the JVM command line so it precedes any class load of groovy.grape.Grape,
+        // which caches its chosen instance after the first lookup.
         String output = GrapeSelectionTestSupport.captureStderr {
             assert Grape.instance == null
         }

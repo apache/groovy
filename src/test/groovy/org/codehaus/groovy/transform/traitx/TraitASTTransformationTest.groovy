@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.junit6.plugin.ForkedJvm
 import groovy.transform.AnnotationCollector
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
@@ -3376,6 +3377,7 @@ final class TraitASTTransformationTest {
 
     // GROOVY-10521
     @Test
+    @ForkedJvm(systemProperties = ['spock.iKnowWhatImDoing.disableGroovyVersionCheck=true'])
     void testVariadicMethodOfPrecompiledTrait() {
         assertScript shell, """import org.codehaus.groovy.ast.*
             class CT implements ${T10521.name} {
@@ -3390,7 +3392,6 @@ final class TraitASTTransformationTest {
             assert td == 'm(java.lang.Class,[java.lang.Object):java.lang.Object'
         """
 
-        System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck','true')
         assertScript shell, """
             @Grab('org.spockframework:spock-core:2.4-groovy-5.0')
             @GrabExclude('org.codehaus.groovy:groovy-all')

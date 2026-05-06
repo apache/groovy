@@ -18,12 +18,13 @@
  */
 package groovy.grape
 
+import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 
 final class GrapeConfiguredMavenSelectionTest {
     @Test
+    @ForkedJvm(systemProperties = ['groovy.grape.impl=groovy.grape.maven.GrapeMaven'])
     void testConfiguredMavenImplementationIgnoresIvyProvider() {
-        System.setProperty('groovy.grape.impl', 'groovy.grape.maven.GrapeMaven')
         String output = GrapeSelectionTestSupport.captureStderr {
             assert Grape.instance != null
         }

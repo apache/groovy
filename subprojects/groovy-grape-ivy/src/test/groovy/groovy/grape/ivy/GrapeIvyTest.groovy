@@ -19,6 +19,7 @@
 package groovy.grape.ivy
 
 import groovy.grape.Grape
+import groovy.junit6.plugin.ForkedJvm
 
 import org.codehaus.groovy.control.CompilationFailedException
 import org.junit.jupiter.api.BeforeAll
@@ -264,6 +265,7 @@ final class GrapeIvyTest {
     }
 
     @Test // GROOVY-8372
+    @ForkedJvm(inheritProperties = ['grape.root', 'user.home', 'gradle.home'])
     void testConf2() {
         assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy uses <ivysettings>
         def tempDir = File.createTempDir()
@@ -496,6 +498,7 @@ final class GrapeIvyTest {
     }
 
     @Test // GROOVY-7548
+    @ForkedJvm(inheritProperties = ['grape.root', 'user.home', 'gradle.home'])
     void testSystemProperties() {
         System.setProperty('groovy7548prop', 'x')
         assert System.getProperty('groovy7548prop') == 'x'

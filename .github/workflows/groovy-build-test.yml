@@ -36,6 +36,9 @@ jobs:
             env-no-color: '1'
           - java: 17
             os: macos-latest
+          - java: 25
+            os: ubuntu-latest
+            junit-network: '-Djunit.network=true'
     runs-on: ${{ matrix.os }}
     env:
       NO_COLOR: ${{ matrix.env-no-color }}
@@ -55,7 +58,7 @@ jobs:
       - name: "🔍 Setup TestLens"
         uses: testlens-app/setup-testlens@v1
       - name: "🏃Test with Gradle"
-        run: ./gradlew test -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}"
+        run: ./gradlew test ${{ matrix.junit-network }} -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}"
         shell: bash
         timeout-minutes: 60
       - name: "🚀Upload reports"
