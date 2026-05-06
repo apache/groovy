@@ -122,7 +122,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             invocationReadyMethodReference.implementationMethod().getDeclaringClass(),
             invocationReadyMethodReference.implementationMethod(),
             functionalInterface.parametersWithExactType(),
-            functionalInterface.serializable()
+            functionalInterface.serializable(),
+            functionalInterface.markers()
         );
 
         updateOperandStack(functionalInterface.functionalType(), invocation.capturing());
@@ -137,13 +138,34 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         if (abstractMethod == null) return null;
 
         ClassNode[] inferredParameterTypes = methodReferenceExpression.getNodeMetaData(StaticTypesMarker.CLOSURE_ARGUMENTS);
+        // GROOVY-11998: pick up intersection-cast markers populated by STC
+        @SuppressWarnings("unchecked")
+        java.util.List<ClassNode> rawMarkers = (java.util.List<ClassNode>) methodReferenceExpression.getNodeMetaData(StaticTypesMarker.LAMBDA_MARKERS);
+        boolean fromIntersection = rawMarkers != null && rawMarkers.stream().anyMatch(m ->
+                m != null && (m.equals(ClassHelper.SERIALIZABLE_TYPE) || m.implementsInterface(ClassHelper.SERIALIZABLE_TYPE)));
+        boolean serializable = functionalType.implementsInterface(ClassHelper.SERIALIZABLE_TYPE) || fromIntersection;
+        ClassNode[] markers = filterMarkers(rawMarkers, functionalType);
         return new FunctionalInterfaceContext(
             functionalType,
             abstractMethod,
             createParametersWithExactType(abstractMethod, inferredParameterTypes),
             createMethodDescriptor(abstractMethod),
-            functionalType.implementsInterface(ClassHelper.SERIALIZABLE_TYPE)
+            serializable,
+            markers
         );
+    }
+
+    private static ClassNode[] filterMarkers(final java.util.List<ClassNode> raw, final ClassNode functionalType) {
+        if (raw == null || raw.isEmpty()) return ClassNode.EMPTY_ARRAY;
+        java.util.List<ClassNode> out = new java.util.ArrayList<>(raw.size());
+        for (ClassNode m : raw) {
+            if (m == null || !m.isInterface()) continue;
+            if (m.equals(ClassHelper.SERIALIZABLE_TYPE)
+                    || ClassHelper.SERIALIZABLE_TYPE.equals(m.redirect())) continue;
+            if (functionalType != null && functionalType.implementsInterface(m)) continue;
+            out.add(m);
+        }
+        return out.toArray(ClassNode.EMPTY_ARRAY);
     }
 
     private MethodReferenceTarget resolveMethodReferenceTarget(final MethodReferenceExpression methodReferenceExpression) {
@@ -684,7 +706,7 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
      */
     private record FunctionalInterfaceContext(ClassNode functionalType, MethodNode abstractMethod,
                                               Parameter[] parametersWithExactType, String samMethodDescriptor,
-                                              boolean serializable) {
+                                              boolean serializable, ClassNode[] markers) {
     }
 
     /**

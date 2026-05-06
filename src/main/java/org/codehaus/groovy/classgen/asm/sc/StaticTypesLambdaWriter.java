@@ -56,6 +56,7 @@ import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterface
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_PRELOADED_RECEIVER;
 import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_SHARED_VARIABLES;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -94,6 +95,10 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
 
         boolean serializable = makeSerializableIfNeeded(expression, functionalType);
+        // GROOVY-11998: gather intersection-cast marker interfaces, filtering out
+        // Serializable (already conveyed via FLAG_SERIALIZABLE) and any interface
+        // already implemented by the SAM target.
+        ClassNode[] markers = collectLambdaMarkers(expression, functionalType);
         GeneratedLambda generatedLambda = getOrAddGeneratedLambda(expression, abstractMethod);
 
         ensureDeserializeLambdaSupport(expression, functionalType, abstractMethod, generatedLambda, serializable);
@@ -101,7 +106,22 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             loadLambdaReceiver(generatedLambda);
         }
 
-        writeLambdaFactoryInvocation(functionalType.redirect(), abstractMethod, generatedLambda, serializable);
+        writeLambdaFactoryInvocation(functionalType.redirect(), abstractMethod, generatedLambda, serializable, markers);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ClassNode[] collectLambdaMarkers(final LambdaExpression expression, final ClassNode functionalType) {
+        Object md = expression.getNodeMetaData(LAMBDA_MARKERS);
+        if (!(md instanceof java.util.List)) return ClassNode.EMPTY_ARRAY;
+        java.util.List<ClassNode> raw = (java.util.List<ClassNode>) md;
+        java.util.List<ClassNode> out = new java.util.ArrayList<>(raw.size());
+        for (ClassNode m : raw) {
+            if (m == null || !m.isInterface()) continue;
+            if (m.equals(SERIALIZABLE_TYPE) || SERIALIZABLE_TYPE.equals(m.redirect())) continue;
+            if (functionalType != null && functionalType.implementsInterface(m)) continue;
+            out.add(m);
+        }
+        return out.toArray(ClassNode.EMPTY_ARRAY);
     }
 
     private static MethodNode resolveFunctionalInterfaceMethod(final ClassNode functionalType) {
@@ -138,7 +158,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         ), helperMethod);
     }
 
-    private void writeLambdaFactoryInvocation(final ClassNode functionalType, final MethodNode abstractMethod, final GeneratedLambda generatedLambda, final boolean serializable) {
+    private void writeLambdaFactoryInvocation(final ClassNode functionalType, final MethodNode abstractMethod, final GeneratedLambda generatedLambda, final boolean serializable, final ClassNode[] markers) {
         writeFunctionalInterfaceIndy(
             controller.getMethodVisitor(),
             abstractMethod.getName(),
@@ -148,7 +168,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             generatedLambda.lambdaClass,
             generatedLambda.lambdaMethod,
             generatedLambda.lambdaMethod.getParameters(),
-            serializable
+            serializable,
+            markers
         );
 
         if (generatedLambda.nonCapturing()) {

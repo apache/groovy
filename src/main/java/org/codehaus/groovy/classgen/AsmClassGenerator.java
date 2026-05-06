@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
@@ -1000,9 +1001,22 @@ public class AsmClassGenerator extends ClassGenerator {
     @Override
     public void visitCastExpression(final CastExpression castExpression) {
         Expression expression = castExpression.getExpression();
+        ClassNode type = castExpression.getType();
+
+        // GROOVY-11998: lambda / method-reference factory invocations already
+        // emit an object that implements every component of an intersection
+        // target via altMetafactory FLAG_MARKERS, so the outer cast is a no-op
+        // here. Non-functional intersection casts are out of scope for PR3
+        // and fall through to the default handling below.
+        if (type instanceof IntersectionTypeClassNode
+                && (expression instanceof LambdaExpression
+                    || expression instanceof MethodReferenceExpression)) {
+            expression.visit(this);
+            return;
+        }
+
         expression.visit(this);
 
-        ClassNode type = castExpression.getType();
         if (isObjectType(type)) return;
         maybeInnerClassEntry(type);
 
