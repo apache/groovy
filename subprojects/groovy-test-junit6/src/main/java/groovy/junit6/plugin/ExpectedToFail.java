@@ -35,17 +35,30 @@ import java.lang.annotation.Target;
  * Useful for asserting that some condition reliably fails, and for testing
  * test-infrastructure code that should propagate failures.
  * <p>
- * Optionally constrain the expected failure by exception type and/or message
- * substring:
+ * Optionally constrain the expected failure by exception type or by a closure
+ * predicate evaluated against the thrown exception:
  * <pre>
  * &#64;Test
- * &#64;ExpectedToFail(IllegalStateException.class)
+ * &#64;ExpectedToFail(IllegalStateException)
  * void mustThrowIse() { throw new IllegalStateException("boom") }
  *
  * &#64;Test
- * &#64;ExpectedToFail(messageContains = "boom")
- * void mustThrowWithBoomInMessage() { throw new RuntimeException("kaboom!") }
+ * &#64;ExpectedToFail({ ex instanceof RuntimeException &amp;&amp; message.contains('boom') })
+ * void mustMatchPredicate() { throw new RuntimeException("kaboom!") }
  * </pre>
+ * <p>
+ * Closure predicates are evaluated with three bindings: {@code ex} (the
+ * thrown exception), {@code message} (its message, possibly {@code null}),
+ * and {@code cause} (its cause, possibly {@code null}). The test is
+ * reported as passing iff the predicate returns a Groovy-truthy value.
+ * <p>
+ * For callers who want compile-time enforcement that the configured class
+ * is a {@link Throwable} subclass, set {@link #exception()} instead of
+ * (or alongside) {@link #value()}. {@code exception} and a closure
+ * {@code value} compose: the type acts as a guard that runs before the
+ * predicate, so the closure body can drop the {@code ex instanceof X}
+ * boilerplate. {@code exception} and a {@link Throwable} {@code value} are
+ * mutually exclusive (they would specify the type twice).
  * <p>
  * {@code TestAbortedException} (the exception thrown by JUnit
  * {@code Assumptions}) is never treated as the expected failure; it's
@@ -68,17 +81,28 @@ import java.lang.annotation.Target;
 @ExtendWith(ExpectedToFailExtension.class)
 public @interface ExpectedToFail {
     /**
-     * Expected exception type. The thrown exception must be an instance of
-     * this class (or a subclass) for the test to be reported as passing.
-     * Defaults to {@link Throwable}, which matches anything.
+     * Either an expected {@link Throwable} subclass or a {@code Closure}
+     * predicate evaluated against the thrown exception. Defaults to
+     * {@link Throwable}, which matches anything.
+     * <p>
+     * When set to a {@link Throwable} subclass, mutually exclusive with
+     * {@link #exception()}. When set to a closure, composes with
+     * {@link #exception()}: the type guard is checked first, then the
+     * closure predicate.
      */
-    Class<? extends Throwable> value() default Throwable.class;
+    Class<?> value() default Throwable.class;
 
     /**
-     * Substring that must appear in the thrown exception's message.
-     * Defaults to empty (no message check).
+     * Type-safe alternative to {@link #value()}: declares the expected
+     * exception type with compile-time enforcement that it is a
+     * {@link Throwable} subclass. Defaults to {@link Throwable}, which
+     * matches anything.
+     * <p>
+     * Mutually exclusive with a {@link Throwable} {@link #value()};
+     * composes with a closure {@link #value()} as a type guard evaluated
+     * before the predicate.
      */
-    String messageContains() default "";
+    Class<? extends Throwable> exception() default Throwable.class;
 
     /**
      * Optional human-readable explanation of why this test is expected to fail.

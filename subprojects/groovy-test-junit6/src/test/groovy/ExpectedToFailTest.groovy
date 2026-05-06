@@ -55,21 +55,39 @@ class ExpectedToFailTest {
     }
 
     @Test
-    @ExpectedToFail(messageContains = 'cosmic ray')
-    void messageFilterMatchesSubstring() {
+    @ExpectedToFail({ message.contains('cosmic ray') })
+    void closurePredicateOnMessageBinding() {
         throw new RuntimeException('hit by a cosmic ray')
     }
 
     @Test
-    @ExpectedToFail(value = IllegalArgumentException, messageContains = 'bad')
-    void typeAndMessageFiltersBothMatch() {
+    @ExpectedToFail({ ex instanceof IllegalArgumentException && message.contains('bad') })
+    void closurePredicateCombinesTypeAndMessage() {
+        throw new IllegalArgumentException('this is bad input')
+    }
+
+    @Test
+    @ExpectedToFail({ cause?.message == 'root' })
+    void closurePredicateOnCauseBinding() {
+        throw new RuntimeException('wrapper', new IllegalStateException('root'))
+    }
+
+    @Test
+    @ExpectedToFail(exception = RuntimeException)
+    void typeSafeExceptionAttribute() {
+        throw new IllegalStateException('boom')
+    }
+
+    @Test
+    @ExpectedToFail(exception = IllegalArgumentException, value = { message.contains('bad') })
+    void exceptionGuardComposesWithClosurePredicate() {
         throw new IllegalArgumentException('this is bad input')
     }
 
     // ---------------- composition with @ForkedJvm ----------------
 
     @Test
-    @ExpectedToFail(value = AssertionError, messageContains = 'forked failure')
+    @ExpectedToFail({ ex instanceof AssertionError && message.contains('forked failure') })
     @ForkedJvm
     void outerOrdering_failurePropagatesFromForkAndIsInverted() {
         // ExpectedToFail OUTER: parent does the inversion AFTER @ForkedJvm
@@ -80,7 +98,7 @@ class ExpectedToFailTest {
 
     @Test
     @ForkedJvm
-    @ExpectedToFail(value = AssertionError, messageContains = 'forked failure')
+    @ExpectedToFail({ ex instanceof AssertionError && message.contains('forked failure') })
     void innerOrdering_inversionHappensInsideForkedChild() {
         // ExpectedToFail INNER: child JVM swallows the failure; parent sees
         // success. Doesn't exercise the parent's view of the propagation.
@@ -108,11 +126,20 @@ class ExpectedToFailTest {
     }
 
     @Test
-    void messageFilterMismatchIsReportedAsFailure() {
+    void closurePredicateMismatchIsReportedAsFailure() {
         TestExecutionSummary summary = runFixture(BadFixtures, 'wrongMessageMethod')
         assertEquals(1, summary.totalFailureCount)
         def msg = summary.failures[0].exception.message
-        assertTrue(msg.contains('expected message containing'),
+        assertTrue(msg.contains('predicate did not match'),
+                "actual: ${msg}")
+    }
+
+    @Test
+    void valueAndExceptionTogetherIsReportedAsFailure() {
+        TestExecutionSummary summary = runFixture(BadFixtures, 'bothValueAndExceptionMethod')
+        assertEquals(1, summary.totalFailureCount)
+        def msg = summary.failures[0].exception.message
+        assertTrue(msg.contains('mutually exclusive'),
                 "actual: ${msg}")
     }
 
@@ -166,9 +193,15 @@ class ExpectedToFailTest {
         }
 
         @Test
-        @ExpectedToFail(messageContains = 'foo')
+        @ExpectedToFail({ message.contains('foo') })
         void wrongMessageMethod() {
             throw new RuntimeException('bar')
+        }
+
+        @Test
+        @ExpectedToFail(value = RuntimeException, exception = RuntimeException)
+        void bothValueAndExceptionMethod() {
+            throw new RuntimeException('boom')
         }
 
         @Test

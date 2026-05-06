@@ -18,6 +18,8 @@
  */
 package groovy.junit6.plugin;
 
+import groovy.lang.Closure;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
@@ -107,23 +109,60 @@ public class ExpectedToFailExtension implements InvocationInterceptor {
     }
 
     private static void evaluateOutcome(Throwable thrown, ExpectedToFail config) {
+        Class<?> value = config.value();
+        Class<? extends Throwable> exception = config.exception();
+        boolean valueSet = value != Throwable.class;
+        boolean exceptionSet = exception != Throwable.class;
+        boolean valueIsClosure = Closure.class.isAssignableFrom(value);
+        if (valueSet && !valueIsClosure && exceptionSet) {
+            throw new AssertionError(
+                    "@ExpectedToFail: 'value' (as Throwable type) and 'exception' are mutually "
+                            + "exclusive — use a closure for 'value' if you also want a type guard");
+        }
+        if (valueSet && !valueIsClosure && !Throwable.class.isAssignableFrom(value)) {
+            throw new AssertionError(
+                    "@ExpectedToFail value must be a Throwable or Closure subclass, was: "
+                            + value.getName());
+        }
         if (thrown != null) {
-            if (!config.value().isInstance(thrown)) {
+            Class<? extends Throwable> typeFilter;
+            if (exceptionSet) {
+                typeFilter = exception;
+            } else if (valueSet && !valueIsClosure) {
+                @SuppressWarnings("unchecked")
+                Class<? extends Throwable> t = (Class<? extends Throwable>) value;
+                typeFilter = t;
+            } else {
+                typeFilter = Throwable.class;
+            }
+            if (!typeFilter.isInstance(thrown)) {
                 throw new AssertionError("@ExpectedToFail expected exception of type "
-                        + config.value().getName() + " but got "
+                        + typeFilter.getName() + " but got "
                         + thrown.getClass().getName() + ": " + thrown.getMessage(), thrown);
             }
-            String wanted = config.messageContains();
-            if (!wanted.isEmpty()
-                    && (thrown.getMessage() == null || !thrown.getMessage().contains(wanted))) {
-                throw new AssertionError("@ExpectedToFail expected message containing '"
-                        + wanted + "' but got: " + thrown.getMessage(), thrown);
+            if (valueIsClosure && !evaluateClosure(value, thrown)) {
+                throw new AssertionError("@ExpectedToFail predicate did not match thrown "
+                        + thrown.getClass().getName() + ": " + thrown.getMessage(), thrown);
             }
             return; // matched: swallow, treat as success
         }
         String reason = config.reason();
         throw new AssertionError("@ExpectedToFail: test was expected to fail but passed"
                 + (reason.isEmpty() ? "" : " (" + reason + ")"));
+    }
+
+    private static boolean evaluateClosure(Class<?> closureClass, Throwable thrown) {
+        Closure<?> closure;
+        try {
+            closure = (Closure<?>) closureClass.getConstructor(Object.class, Object.class)
+                    .newInstance(null, null);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(
+                    "@ExpectedToFail: failed to instantiate closure predicate", e);
+        }
+        closure.setDelegate(new ExpectedToFailContext(thrown));
+        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+        return DefaultTypeTransformation.castToBoolean(closure.call());
     }
 
     private static ExpectedToFail findAnnotation(ExtensionContext context) {

@@ -142,7 +142,7 @@ class ForkedJvmTest {
     }
 
     @Test
-    @ExpectedToFail(value = AssertionError, messageContains = 'expected failure from forked child')
+    @ExpectedToFail({ ex instanceof AssertionError && message.contains('expected failure from forked child') })
     @ForkedJvm
     void failureInChildJvmPropagatesToParent() {
         // @ExpectedToFail is OUTER (declared before @ForkedJvm) so the
