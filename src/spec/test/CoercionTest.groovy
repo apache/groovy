@@ -374,6 +374,103 @@ final class CoercionTest {
         '''
     }
 
+    // GROOVY-11998
+    @Test
+    void testIntersectionCastLambda() {
+        assertScript '''
+            // tag::intersection_cast_lambda[]
+            // A lambda that is also Serializable
+            Runnable r = (Runnable & java.io.Serializable) () -> println("hi")
+            assert r instanceof Runnable
+            assert r instanceof java.io.Serializable
+            r.run()
+            // end::intersection_cast_lambda[]
+        '''
+    }
+
+    // GROOVY-11998
+    @Test
+    void testIntersectionCastSerializableRoundTrip() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            // tag::intersection_cast_serializable_roundtrip[]
+            @CompileStatic
+            class T {
+                static Runnable make() {
+                    return (Runnable & java.io.Serializable) () -> println("hi")
+                }
+            }
+
+            // The lambda factory uses LambdaMetafactory.altMetafactory with
+            // FLAG_SERIALIZABLE so the result can be safely written to and read
+            // from an ObjectStream.
+            def r = T.make()
+            def baos = new ByteArrayOutputStream()
+            new ObjectOutputStream(baos).withCloseable { it.writeObject(r) }
+            def restored = null
+            new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).withCloseable {
+                restored = it.readObject()
+            }
+            assert restored instanceof Runnable
+            // end::intersection_cast_serializable_roundtrip[]
+        '''
+    }
+
+    // GROOVY-11998
+    @Test
+    void testIntersectionAsCoercion() {
+        assertScript '''
+            // tag::intersection_as_coercion_marker[]
+            // Closures already implement Runnable, Serializable and Cloneable, so
+            // intersections of those is an identity coercion (no proxy is built).
+            def cl = { -> 1 }
+            def coerced = cl as (Runnable & java.io.Serializable)
+            assert coerced.is(cl) // same instance
+            // end::intersection_as_coercion_marker[]
+        '''
+    }
+
+    // GROOVY-11998
+    @Test
+    void testIntersectionAsCoercionMap() {
+        assertScript '''
+            // tag::intersection_as_coercion_map[]
+            interface Action { void perform() }
+
+            def calls = 0
+            def proxy = ([perform: { -> calls++ }] as (Action & java.io.Serializable))
+            assert proxy instanceof Action
+            assert proxy instanceof java.io.Serializable
+            proxy.perform()
+            proxy.perform()
+            assert calls == 2
+            // end::intersection_as_coercion_map[]
+        '''
+    }
+
+    // GROOVY-11998
+    @Test
+    void testIntersectionMethodReference() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            import java.util.function.Function
+
+            // tag::intersection_method_reference[]
+            @CompileStatic
+            class T {
+                static Function<String, Integer> make() {
+                    return (Function<String, Integer> & java.io.Serializable) String::length
+                }
+            }
+
+            Function<String, Integer> f = T.make()
+            assert f instanceof java.io.Serializable
+            assert f.apply("hello") == 5
+            // end::intersection_method_reference[]
+        '''
+    }
+
     @Test
     void testAsVsAsType() {
         assertScript '''

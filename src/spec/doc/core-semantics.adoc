@@ -759,6 +759,65 @@ The type of the exception depends on the call itself:
 * `MissingMethodException` if the arguments of the call do not match those from the interface/class
 * `UnsupportedOperationException` if the arguments of the call match one of the overloaded methods of the interface/class
 
+[[intersection-cast]]
+=== Intersection-type cast and coercion
+
+Since Groovy 6.0, the cast and `as` operators accept _intersection types_ — a
+class component (at most one) and any number of interface components joined by
+`&`, mirroring Java's
+https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.16[JLS §15.16]
+intersection cast. The most common use is to opt a lambda or method reference
+into `Serializable`:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=intersection_cast_lambda,indent=0]
+----
+
+For statically compiled lambdas and method references, the additional
+interfaces are threaded through `LambdaMetafactory.altMetafactory` via
+`FLAG_MARKERS` / `FLAG_SERIALIZABLE` — there is no runtime proxy and the
+result implements every component natively, so it can be serialised and
+restored:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=intersection_cast_serializable_roundtrip,indent=0]
+----
+
+The same syntax works in the `as` form, with parentheses around the intersection:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=intersection_as_coercion_marker,indent=0]
+----
+
+For closure literals and maps, `as` builds a
+{@link groovy.util.ProxyGenerator} aggregate that implements every interface
+component:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=intersection_as_coercion_map,indent=0]
+----
+
+Method references support the same intersection-cast forms:
+
+[source,groovy]
+----
+include::../test/CoercionTest.groovy[tags=intersection_method_reference,indent=0]
+----
+
+The well-formedness rules follow the JLS:
+
+* at most one component may be a class — and if present, it must come first;
+* the class component (if any) must not be `final`;
+* primitive components are not allowed;
+* when the operand is a lambda, method reference or closure literal, exactly
+  one component may have an abstract method (the SAM-bearing functional
+  interface). The remainder must be marker-compatible interfaces (no abstract
+  methods, or abstract methods identical to the SAM).
+
 === String to enum coercion
 
 Groovy allows transparent `String` (or `GString`) to enum values coercion. Imagine you define the following enum:
