@@ -36,6 +36,7 @@ import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
@@ -143,6 +144,11 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce the path to a {@code boolean} value.
+     * <p>
+     * By default this returns whether the file at the path exists. Set the
+     * system property {@code groovy.truth.file.exists.enabled} to {@code false}
+     * to restore the pre-Groovy-5 behavior where any non-{@code null} {@code Path}
+     * is truthy regardless of whether the underlying file exists.
      *
      * @param path a {@code Path} object
      * @return {@code true} if the file at the path exists, {@code false} otherwise
@@ -150,6 +156,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static boolean asBoolean(final Path path) {
+        if (!ResourceGroovyMethods.FILE_EXISTS_ENABLED) return path != null;
         return Files.exists(path);
     }
 
