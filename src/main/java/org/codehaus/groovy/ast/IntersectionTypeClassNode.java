@@ -18,7 +18,12 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
+
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  * Represents a user-written intersection type used as the target of a cast
@@ -35,21 +40,22 @@ import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNod
  * for cast-conversion checks, error messages and (in later phases) bytecode
  * generation via {@code LambdaMetafactory.altMetafactory} markers.
  *
- * <p>This node is built by the parser's {@code AstBuilder} from the
- * {@code intersectionType} rule. At parse time the components have not yet
- * been resolved to bound {@link ClassNode}s, so the {@code upper} bound
- * passed to the parent constructor is a placeholder and the
- * {@code interfaces} array is just the components in user order; resolution
- * and class-vs-interface classification are completed in later phases.
+ * <p>Lifecycle: at parse time the components have not yet been resolved to
+ * bound {@link ClassNode}s, so the constructor places all components in the
+ * inherited {@link #getInterfaces() interfaces} array with {@code Object} as
+ * the placeholder superclass. After {@code ResolveVisitor} resolves each
+ * component it should call {@link #reclassifyComponents()} so that the
+ * interfaces array contains only interface components and the superclass is
+ * the (at most one) class component.
  *
  * @since 5.0.0
  */
-public final class IntersectionTypeClassNode extends LowestUpperBoundClassNode {
+public final class IntersectionTypeClassNode extends ClassNode {
 
     private final ClassNode[] components;
 
     public IntersectionTypeClassNode(final ClassNode[] components) {
-        super("IntersectionType", ClassHelper.OBJECT_TYPE, components.clone());
+        super("IntersectionType", ACC_PUBLIC | ACC_FINAL, ClassHelper.OBJECT_TYPE, components.clone(), MixinNode.EMPTY_ARRAY);
         if (components.length < 2) {
             throw new IllegalArgumentException("IntersectionTypeClassNode requires at least two components");
         }
@@ -61,5 +67,37 @@ public final class IntersectionTypeClassNode extends LowestUpperBoundClassNode {
      */
     public ClassNode[] getComponents() {
         return components.clone();
+    }
+
+    /**
+     * Reclassifies the components after resolution: separates the (at most
+     * one) class component from the interface components and updates the
+     * inherited superclass and interfaces accordingly. Components are
+     * resolved in place — callers do not need to substitute new instances.
+     */
+    public void reclassifyComponents() {
+        ClassNode klass = null;
+        List<ClassNode> ifaces = new ArrayList<>(components.length);
+        for (ClassNode c : components) {
+            if (c.isInterface()) {
+                ifaces.add(c);
+            } else {
+                klass = c; // STC will validate "at most one" elsewhere
+            }
+        }
+        setSuperClass(klass != null ? klass : ClassHelper.OBJECT_TYPE);
+        setInterfaces(ifaces.toArray(ClassNode.EMPTY_ARRAY));
+    }
+
+    @Override
+    public String getText() {
+        StringJoiner sj = new StringJoiner(" & ", "(", ")");
+        for (ClassNode c : components) sj.add(c.toString(false));
+        return sj.toString();
+    }
+
+    @Override
+    public String toString(final boolean showRedirect) {
+        return getText();
     }
 }

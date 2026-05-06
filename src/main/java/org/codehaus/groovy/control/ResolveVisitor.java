@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GenericsType.GenericsTypeName;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -349,6 +350,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void resolveOrFail(final ClassNode type, final String msg, final ASTNode node, final boolean preferImports) {
+        if (type instanceof IntersectionTypeClassNode it) { // GROOVY-11998
+            for (ClassNode component : it.getComponents()) {
+                resolveOrFail(component, msg, node, preferImports);
+            }
+            it.reclassifyComponents();
+            return;
+        }
         if (type.isRedirectNode() || !type.isPrimaryClassNode()) {
             visitTypeAnnotations(type); // JSR 308 support
         }

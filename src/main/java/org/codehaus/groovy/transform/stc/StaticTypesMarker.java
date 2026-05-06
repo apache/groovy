@@ -63,5 +63,9 @@ public enum StaticTypesMarker {
     /** list of {@code return null} statements recorded on a method before its body is rewritten, so a downstream checker can still report them as non-null violations */
     INFERRED_NON_NULL_RETURN_VIOLATIONS,
     /** GEP-15: stores the resolved compound-assignment {@code MethodNode} (e.g. {@code plusAssign}) on a {@code BinaryExpression} when the static type checker has located one, signalling to codegen that the receiver should be mutated in place rather than {@code x = x.plus(y)}-desugared */
-    COMPOUND_ASSIGN_TARGET
+    COMPOUND_ASSIGN_TARGET,
+    /** GROOVY-11998: for an intersection-cast lambda or method reference, the SAM-bearing component picked from the intersection */
+    PRIMARY_FUNCTIONAL_TYPE,
+    /** GROOVY-11998: for an intersection cast on a lambda, method reference or closure, the additional marker interfaces to thread to {@code LambdaMetafactory.altMetafactory} */
+    LAMBDA_MARKERS
 }
