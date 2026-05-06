@@ -96,6 +96,20 @@ final class IntersectionClosureLiteralTest {
         ''')
     }
 
+    // GROOVY-11999: this previously NPE'd inside ProxyGeneratorAdapter when
+    // interfaces list mixed bootstrap (Runnable) and user (MyMarker) loaders.
+    @Test
+    void 'dynamic closure as (Runnable & MyMarker) builds a multi-interface proxy'() {
+        def shell = new GroovyShell()
+        shell.evaluate('''
+            interface MyMarker {}
+            def c = ({ -> "hi" } as (Runnable & MyMarker))
+            assert c instanceof Runnable
+            assert c instanceof MyMarker
+            c.run()
+        ''')
+    }
+
     @Test
     void 'static cast form succeeds where dynamic would need a runtime proxy'() {
         // Without PR5, (R & MyMarker) cast form on a closure literal would throw

@@ -840,11 +840,16 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             super(parent);
             if (interfaces != null) {
                 for (Class<?> c : interfaces) {
-                    if (c.getClassLoader() != parent) {
+                    // GROOVY-11999: bootstrap-loaded classes (e.g., java.lang.Runnable,
+                    // java.io.Serializable) report a null classloader. Don't store
+                    // null in the extras list — bootstrap is reachable via every
+                    // non-null parent's delegation chain anyway.
+                    ClassLoader cl = c.getClassLoader();
+                    if (cl != null && cl != parent) {
                         if (internalClassLoaders == null)
                             internalClassLoaders = new ArrayList<>(interfaces.length);
-                        if (!internalClassLoaders.contains(c.getClassLoader())) {
-                            internalClassLoaders.add(c.getClassLoader());
+                        if (!internalClassLoaders.contains(cl)) {
+                            internalClassLoaders.add(cl);
                         }
                     }
                 }
@@ -884,6 +889,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             // Not loaded, try to load it
             if (internalClassLoaders != null) {
                 for (ClassLoader i : internalClassLoaders) {
+                    if (i == null) continue; // GROOVY-11999: defensive, see InnerLoader ctor
                     try {
                         // Ignore parent delegation and just try to load locally
                         loadedClass = i.loadClass(name);
