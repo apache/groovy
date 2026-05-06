@@ -238,6 +238,25 @@ Runnable run = { println 'run' }
 list.each { println it } // or list.each(this.&println)
 ----
 
+Since Groovy 6.0, intersection-type casts (https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.16[JLS §15.16])
+are supported on lambdas and method references, so a lambda can opt into `Serializable`
+or other marker interfaces, just like in Java:
+
+[source,groovy]
+----
+Runnable r = (Runnable & Serializable) () -> println('hi') // serialisable lambda
+----
+
+Groovy additionally accepts the `as` form, where parentheses are required around
+the intersection:
+
+[source,groovy]
+----
+def r = { -> println 'hi' } as (Runnable & Serializable)
+----
+
+See the <<{core-semantics}#intersection-cast,Intersection-type cast and coercion>> section in the semantics guide.
+
 
 == GStrings
 

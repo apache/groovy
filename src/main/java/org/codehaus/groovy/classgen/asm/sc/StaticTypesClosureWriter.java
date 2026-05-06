@@ -44,6 +44,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS;
 
 /**
  * Writer responsible for generating closure classes in statically compiled mode.
@@ -69,8 +70,38 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         for (MethodNode method : methods) {
             visitor.visitMethod(method);
         }
+        // GROOVY-11998: when the closure literal is the source of an intersection
+        // cast, declare the additional marker interfaces on the generated class so
+        // the resulting object IS-A every component without going through a
+        // runtime proxy. Markers are only added when they are true marker
+        // interfaces (no abstract methods we'd be obliged to implement).
+        addIntersectionMarkers(closureClass, expression);
         closureClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         return closureClass;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addIntersectionMarkers(final ClassNode closureClass, final ClosureExpression expression) {
+        Object md = expression.getNodeMetaData(LAMBDA_MARKERS);
+        if (!(md instanceof List)) return;
+        List<ClassNode> markers = (List<ClassNode>) md;
+        for (ClassNode marker : markers) {
+            if (marker == null || !marker.isInterface()) continue;
+            if (closureClass.implementsInterface(marker)) continue;
+            // Only add interfaces with no abstract methods (true markers). For
+            // interfaces that declare unimplemented abstract methods, we'd
+            // have to synthesise method bodies — out of scope here, fall back
+            // to the runtime proxy path in IntersectionCastSupport.asType.
+            if (hasAbstractMethods(marker)) continue;
+            closureClass.addInterface(marker);
+        }
+    }
+
+    private static boolean hasAbstractMethods(final ClassNode iface) {
+        for (MethodNode m : iface.getMethods()) {
+            if (m.isAbstract() && !m.isDefault() && !m.isStatic()) return true;
+        }
+        return false;
     }
 
     private static void createDirectCallMethod(final ClassNode closureClass, final MethodNode doCallMethod) {
