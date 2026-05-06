@@ -58,6 +58,7 @@ import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModifierNode;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -2475,7 +2476,32 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ClassNode visitCastParExpression(final CastParExpressionContext ctx) {
-        return this.visitType(ctx.type());
+        return this.visitIntersectionType(ctx.intersectionType());
+    }
+
+    @Override
+    public ClassNode visitIntersectionType(final IntersectionTypeContext ctx) {
+        List<? extends TypeContext> typeCtxs = ctx.type();
+        if (typeCtxs.size() == 1) {
+            return this.visitType(typeCtxs.get(0));
+        }
+        ClassNode[] components = new ClassNode[typeCtxs.size()];
+        Set<String> seenNames = new HashSet<>();
+        for (int i = 0, n = typeCtxs.size(); i < n; i += 1) {
+            ClassNode component = this.visitType(typeCtxs.get(i));
+            if (!seenNames.add(component.getName())) {
+                throw createParsingFailedException("Duplicate type in intersection: " + component.getName(), ctx);
+            }
+            components[i] = component;
+        }
+        return configureAST(new IntersectionTypeClassNode(components), ctx);
+    }
+
+    @Override
+    public ClassNode visitCoercionType(final CoercionTypeContext ctx) {
+        return ctx.castParExpression() != null
+                ? this.visitCastParExpression(ctx.castParExpression())
+                : this.visitType(ctx.type());
     }
 
     @Override
@@ -3204,7 +3230,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (expr instanceof VariableExpression && ((VariableExpression) expr).isSuperExpression()) {
                 throw this.createParsingFailedException("Cannot cast or coerce `super`", ctx); // GROOVY-9391
             }
-            Expression cast = CastExpression.asExpression(this.visitType(ctx.type()), expr);
+            Expression cast = CastExpression.asExpression(this.visitCoercionType(ctx.coercionType()), expr);
             return configureAST(
                     cast,
                     ctx);
@@ -3218,14 +3244,25 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             this.visitMatchingType(ctx.matchingType())),
                     ctx);
 
-          case NOT_INSTANCEOF:
-            ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+          case NOT_INSTANCEOF: {
+            CoercionTypeContext coercionCtx = ctx.coercionType();
+            if (coercionCtx.castParExpression() != null
+                    && coercionCtx.castParExpression().intersectionType().type().size() > 1) {
+                throw this.createParsingFailedException("Intersection types are not supported as the right-hand side of !instanceof", ctx);
+            }
+            ClassNode notInstType = this.visitCoercionType(coercionCtx);
+            // GROOVY-11998: keep IS_INSIDE_INSTANCEOF_EXPR on the parser context for the resolver
+            (coercionCtx.type() != null
+                    ? coercionCtx.type()
+                    : coercionCtx.castParExpression().intersectionType().type(0)
+            ).putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
             return configureAST(
                     new BinaryExpression(
                             (Expression) this.visit(ctx.left),
                             this.createGroovyToken(ctx.op),
-                            configureAST(new ClassExpression(this.visitType(ctx.type())), ctx.type())),
+                            configureAST(new ClassExpression(notInstType), coercionCtx)),
                     ctx);
+          }
 
           case GT:
           case GE:

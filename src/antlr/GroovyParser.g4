@@ -728,7 +728,16 @@ forUpdate
 // EXPRESSIONS
 
 castParExpression
-    :   LPAREN type RPAREN
+    :   LPAREN intersectionType RPAREN
+    ;
+
+intersectionType
+    :   type (BITAND nls type)*
+    ;
+
+coercionType
+    :   castParExpression                                                                       // (T) or (A & B & ...)
+    |   type                                                                                    // T
     ;
 
 parExpression
@@ -833,7 +842,7 @@ expression
 
     // boolean relational expressions (level 7)
     |   left=expression nls op=INSTANCEOF nls matchingType                                  #relationalExprAlt
-    |   left=expression nls op=(AS | NOT_INSTANCEOF) nls type                               #relationalExprAlt
+    |   left=expression nls op=(AS | NOT_INSTANCEOF) nls coercionType                       #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN) nls right=expression       #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
