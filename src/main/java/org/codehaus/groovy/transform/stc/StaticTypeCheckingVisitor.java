@@ -69,6 +69,7 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
@@ -340,7 +341,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLU
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PRIMARY_FUNCTIONAL_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCESS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_MUTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_METHODS_ACCESS;
@@ -4791,7 +4794,11 @@ trying: for (ClassNode[] signature : signatures) {
     public void visitCastExpression(final CastExpression expression) {
         ClassNode target = expression.getType();
         Expression source = expression.getExpression();
-        applyTargetType(target, source); // GROOVY-9997
+        if (target instanceof IntersectionTypeClassNode) { // GROOVY-11998
+            validateAndApplyIntersectionCast((IntersectionTypeClassNode) target, expression, source);
+        } else {
+            applyTargetType(target, source); // GROOVY-9997
+        }
 
         source.visit(this);
 
@@ -4800,7 +4807,89 @@ trying: for (ClassNode[] signature : signatures) {
         }
     }
 
+    /**
+     * Validates JLS §4.9 well-formedness of an intersection cast target,
+     * and for lambda / method-reference / closure operands picks the
+     * SAM-bearing component as the primary functional target so that
+     * parameter inference (and downstream lambda factory generation)
+     * can proceed. Additional components are stored as
+     * {@link StaticTypesMarker#LAMBDA_MARKERS} on both the cast and
+     * source for use by the bytecode writers.
+     */
+    private void validateAndApplyIntersectionCast(final IntersectionTypeClassNode target,
+                                                  final CastExpression expression,
+                                                  final Expression source) {
+        ClassNode[] components = target.getComponents();
+        int classCount = 0;
+        boolean classNotFirst = false;
+        for (int i = 0, n = components.length; i < n; i += 1) {
+            ClassNode c = components[i];
+            if (isPrimitiveType(c)) {
+                addStaticTypeError("Intersection type components must be reference types: " + prettyPrintType(c), expression);
+            }
+            if (!c.isInterface()) {
+                classCount += 1;
+                if (i != 0) classNotFirst = true;
+                if (Modifier.isFinal(c.getModifiers())) {
+                    addStaticTypeError("Intersection type may not include the final class " + prettyPrintType(c), expression);
+                }
+            }
+        }
+        if (classCount > 1) {
+            addStaticTypeError("Intersection type may include at most one class component: " + prettyPrintType(target), expression);
+        }
+        if (classNotFirst) {
+            addStaticTypeError("Class component of intersection type must come first: " + prettyPrintType(target), expression);
+        }
+
+        boolean isFunctionalSource = source instanceof ClosureExpression
+                                  || source instanceof MethodReferenceExpression;
+        if (!isFunctionalSource) return; // non-functional cast: just decompose check below
+
+        ClassNode primary = null;
+        List<ClassNode> markers = new ArrayList<>(components.length);
+        for (ClassNode c : components) {
+            if (!c.isInterface()) { markers.add(c); continue; }
+            MethodNode sam = findSAM(c);
+            if (sam == null) {
+                markers.add(c); // marker interface
+            } else if (primary == null) {
+                primary = c;
+            } else {
+                addStaticTypeError("Intersection type for lambda/closure has multiple functional interface components: "
+                        + prettyPrintType(primary) + " and " + prettyPrintType(c), expression);
+                markers.add(c);
+            }
+        }
+        if (primary == null) {
+            addStaticTypeError("Intersection type for lambda/closure target has no functional interface component: " + prettyPrintType(target), expression);
+            return;
+        }
+        applyTargetType(primary, source);
+        expression.putNodeMetaData(PRIMARY_FUNCTIONAL_TYPE, primary);
+        source.putNodeMetaData(PRIMARY_FUNCTIONAL_TYPE, primary);
+        if (!markers.isEmpty()) {
+            source.putNodeMetaData(LAMBDA_MARKERS, markers);
+            expression.putNodeMetaData(LAMBDA_MARKERS, markers);
+        }
+        if (source instanceof LambdaExpression) {
+            for (ClassNode m : markers) {
+                if (m.equals(ClassHelper.SERIALIZABLE_TYPE)
+                        || m.implementsInterface(ClassHelper.SERIALIZABLE_TYPE)) {
+                    ((LambdaExpression) source).setSerializable(true);
+                    break;
+                }
+            }
+        }
+    }
+
     protected boolean checkCast(final ClassNode targetType, final Expression source) {
+        if (targetType instanceof IntersectionTypeClassNode it) { // GROOVY-11998
+            for (ClassNode component : it.getComponents()) {
+                if (!checkCast(component, source)) return false;
+            }
+            return true;
+        }
         if (isNullConstant(source)) {
             return !isPrimitiveType(targetType) || isPrimitiveBoolean(targetType); // GROOVY-6577
         }
