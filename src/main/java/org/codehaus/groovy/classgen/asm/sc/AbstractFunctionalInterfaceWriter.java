@@ -78,11 +78,32 @@ public interface AbstractFunctionalInterfaceWriter {
                                               final String samMethodDescriptor, final int implMethodKind,
                                               final ClassNode implClassNode, final MethodNode implMethodNode,
                                               final Parameter[] implMethodParameters, final boolean serializable) {
+        // GROOVY-11998: delegate to marker-aware overload with no extra interfaces
+        writeFunctionalInterfaceIndy(methodVisitor, samMethodName, invokedTypeDescriptor,
+                samMethodDescriptor, implMethodKind, implClassNode, implMethodNode,
+                implMethodParameters, serializable, ClassNode.EMPTY_ARRAY);
+    }
+
+    /**
+     * Marker-aware variant for intersection-cast targets such as
+     * {@code (Runnable & Cloneable) () -> ...}. Markers are threaded through
+     * {@code LambdaMetafactory.altMetafactory} via {@code FLAG_MARKERS} so the
+     * generated lambda implements every component interface at runtime.
+     *
+     * @since 5.0.0
+     */
+    default void writeFunctionalInterfaceIndy(final MethodVisitor methodVisitor,
+                                              final String samMethodName, final String invokedTypeDescriptor,
+                                              final String samMethodDescriptor, final int implMethodKind,
+                                              final ClassNode implClassNode, final MethodNode implMethodNode,
+                                              final Parameter[] implMethodParameters, final boolean serializable,
+                                              final ClassNode[] markers) {
+        boolean useAlt = serializable || (markers != null && markers.length > 0);
         methodVisitor.visitInvokeDynamicInsn(
                 samMethodName,
                 invokedTypeDescriptor,
-                createBootstrapMethod(serializable),
-                createBootstrapMethodArguments(samMethodDescriptor, implMethodKind, implClassNode, implMethodNode, implMethodParameters, serializable)
+                createBootstrapMethod(useAlt),
+                createBootstrapMethodArguments(samMethodDescriptor, implMethodKind, implClassNode, implMethodNode, implMethodParameters, serializable, markers)
         );
         if (serializable) {
             methodVisitor.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(ClassHelper.SERIALIZABLE_TYPE));
@@ -188,12 +209,12 @@ public interface AbstractFunctionalInterfaceWriter {
         return new Parameter[] { new Parameter(SERIALIZEDLAMBDA_TYPE, "serializedLambda") };
     }
 
-    private Handle createBootstrapMethod(final boolean serializable) {
+    private Handle createBootstrapMethod(final boolean useAlt) {
         return new Handle(
             Opcodes.H_INVOKESTATIC,
             "java/lang/invoke/LambdaMetafactory",
-            serializable ? "altMetafactory" : "metafactory",
-            serializable ? "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"
+            useAlt ? "altMetafactory" : "metafactory",
+            useAlt ? "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"
                 : "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
             false // GROOVY-8299, GROOVY-8989, GROOVY-11265
         );
@@ -202,20 +223,64 @@ public interface AbstractFunctionalInterfaceWriter {
     private Object[] createBootstrapMethodArguments(final String samMethodDescriptor, final int implMethodKind,
                                                     final ClassNode implClassNode, final MethodNode implMethodNode,
                                                     final Parameter[] implMethodParameters, final boolean serializable) {
-        Object[] arguments = !serializable ? new Object[3] : new Object[]{null, null, null, 5, 0};
+        return createBootstrapMethodArguments(samMethodDescriptor, implMethodKind, implClassNode, implMethodNode,
+                implMethodParameters, serializable, ClassNode.EMPTY_ARRAY);
+    }
 
-        arguments[0] = Type.getMethodType(samMethodDescriptor);
+    /**
+     * GROOVY-11998: builds the variadic args for {@code LambdaMetafactory.altMetafactory}
+     * including {@code FLAG_MARKERS} when the cast target is an intersection.
+     * Layout per the JDK contract:
+     * <pre>
+     *   samMethodType, implMethod, instantiatedMethodType,
+     *   flags,
+     *   [markerCount, marker_1, ..., marker_n]   // when FLAG_MARKERS set
+     *   [bridgeCount, bridge_1, ..., bridge_n]   // when FLAG_BRIDGES set (unused)
+     * </pre>
+     */
+    private Object[] createBootstrapMethodArguments(final String samMethodDescriptor, final int implMethodKind,
+                                                    final ClassNode implClassNode, final MethodNode implMethodNode,
+                                                    final Parameter[] implMethodParameters, final boolean serializable,
+                                                    final ClassNode[] markers) {
+        ClassNode[] effectiveMarkers = markers == null ? ClassNode.EMPTY_ARRAY : markers;
+        boolean hasMarkers = effectiveMarkers.length > 0;
+        boolean useAlt = serializable || hasMarkers;
 
-        arguments[1] = new Handle(
+        if (!useAlt) {
+            Object[] args = new Object[3];
+            args[0] = Type.getMethodType(samMethodDescriptor);
+            args[1] = new Handle(
+                implMethodKind,
+                getClassInternalName(implClassNode.getName()),
+                implMethodNode.getName(),
+                getMethodDescriptor(implMethodNode),
+                implClassNode.isInterface());
+            args[2] = createInstantiatedMethodType(samMethodDescriptor, implMethodNode, implMethodParameters);
+            return args;
+        }
+
+        int flags = (serializable ? 1 : 0) | (hasMarkers ? 2 : 0); // FLAG_SERIALIZABLE | FLAG_MARKERS
+        int size = 4 + (hasMarkers ? 1 + effectiveMarkers.length : 0);
+        Object[] args = new Object[size];
+
+        args[0] = Type.getMethodType(samMethodDescriptor);
+        args[1] = new Handle(
             implMethodKind, // H_INVOKESTATIC or H_INVOKEVIRTUAL or H_INVOKEINTERFACE (GROOVY-9853)
             getClassInternalName(implClassNode.getName()),
             implMethodNode.getName(),
             getMethodDescriptor(implMethodNode),
             implClassNode.isInterface());
+        args[2] = createInstantiatedMethodType(samMethodDescriptor, implMethodNode, implMethodParameters);
+        args[3] = flags;
 
-        arguments[2] = createInstantiatedMethodType(samMethodDescriptor, implMethodNode, implMethodParameters);
-
-        return arguments;
+        if (hasMarkers) {
+            int p = 4;
+            args[p++] = effectiveMarkers.length;
+            for (ClassNode m : effectiveMarkers) {
+                args[p++] = Type.getObjectType(getClassInternalName(m));
+            }
+        }
+        return args;
     }
 
     private Type createInstantiatedMethodType(final String samMethodDescriptor, final MethodNode implMethodNode, final Parameter[] implMethodParameters) {
