@@ -71,18 +71,20 @@ jobs:
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} ${{ matrix.indyFlag }} -PjmhResultFormat=JSON
         timeout-minutes: 60
 
-      - name: Publish to dashboard
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          tool: 'jmh'
-          output-file-path: subprojects/performance/build/results/jmh/results.json
-          benchmark-data-dir-path: dev/bench/jmh/${{ matrix.suite }}/${{ matrix.indy }}
-          gh-pages-branch: gh-pages
-          auto-push: true
-          comment-always: true
-          alert-threshold: '120%'
-          fail-on-alert: false
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # Temporarily disabled pending ASF approval of the benchmark-action/github-action-benchmark third-party action.
+      # Re-enable by uncommenting the step below once the action is on the approved list.
+      # - name: Publish to dashboard
+      #   uses: benchmark-action/github-action-benchmark@a60cea5bc7b49e15c1f58f411161f99e0df48372 # v1.22.0
+      #   with:
+      #     tool: 'jmh'
+      #     output-file-path: subprojects/performance/build/results/jmh/results.json
+      #     benchmark-data-dir-path: dev/bench/jmh/${{ matrix.suite }}/${{ matrix.indy }}
+      #     gh-pages-branch: gh-pages
+      #     auto-push: true
+      #     comment-always: true
+      #     alert-threshold: '120%'
+      #     fail-on-alert: false
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload reports-jmh-${{ matrix.suite }}-${{ matrix.indy }}
         uses: actions/upload-artifact@v7
