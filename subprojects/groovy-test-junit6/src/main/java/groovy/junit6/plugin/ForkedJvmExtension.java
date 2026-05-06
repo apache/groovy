@@ -32,7 +32,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * JUnit 5 {@link InvocationInterceptor} backing the {@link ForkedJvm}
@@ -109,6 +112,10 @@ public class ForkedJvmExtension implements InvocationInterceptor {
         if (parentInverting) {
             cmd.add("-D" + ExpectedToFailExtension.DEFERRED_TO_PARENT_PROP + "=true");
         }
+        // Inherited properties first, then explicit systemProperties — later -D wins on the JVM command line.
+        for (String name : resolveInherited(config.inheritProperties())) {
+            cmd.add("-D" + name + "=" + System.getProperty(name));
+        }
         for (String sp : config.systemProperties()) {
             int eq = sp.indexOf('=');
             if (eq < 0) {
@@ -126,6 +133,23 @@ public class ForkedJvmExtension implements InvocationInterceptor {
         cmd.add(testClass.getName());
         cmd.add(testMethod.getName());
         return cmd;
+    }
+
+    private static Set<String> resolveInherited(String[] patterns) {
+        if (patterns.length == 0) return java.util.Collections.emptySet();
+        Properties parent = System.getProperties();
+        Set<String> matched = new LinkedHashSet<>();
+        for (String pattern : patterns) {
+            if (pattern.endsWith("*")) {
+                String prefix = pattern.substring(0, pattern.length() - 1);
+                for (String name : parent.stringPropertyNames()) {
+                    if (name.startsWith(prefix)) matched.add(name);
+                }
+            } else if (parent.getProperty(pattern) != null) {
+                matched.add(pattern);
+            }
+        }
+        return matched;
     }
 
     private static void propagateOutcome(int exit, Path resultFile,

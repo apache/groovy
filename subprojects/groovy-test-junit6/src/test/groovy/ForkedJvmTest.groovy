@@ -19,7 +19,9 @@
 
 import groovy.junit6.plugin.ExpectedToFail
 import groovy.junit6.plugin.ForkedJvm
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors
@@ -32,6 +34,31 @@ import static org.junit.jupiter.api.Assertions.assertNull
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 class ForkedJvmTest {
+
+    private static final String INHERIT_EXACT = 'groovy.junit6.test.inherit.exact'
+    private static final String INHERIT_GLOB_A = 'groovy.junit6.test.inherit.glob.a'
+    private static final String INHERIT_GLOB_B = 'groovy.junit6.test.inherit.glob.b'
+
+    @BeforeAll
+    static void setParentProperties() {
+        // Lifecycle hooks fire in BOTH parent and forked-child JVMs (the child
+        // re-runs the class lifecycle for the single targeted method). Only
+        // seed these properties in the parent — in the child they must arrive
+        // exclusively via @ForkedJvm propagation, otherwise the negative
+        // assertions below would be self-defeating.
+        if (Boolean.parseBoolean(System.getProperty('groovy.junit6.forked'))) return
+        System.setProperty(INHERIT_EXACT, 'exact-value')
+        System.setProperty(INHERIT_GLOB_A, 'a-value')
+        System.setProperty(INHERIT_GLOB_B, 'b-value')
+    }
+
+    @AfterAll
+    static void clearParentProperties() {
+        if (Boolean.parseBoolean(System.getProperty('groovy.junit6.forked'))) return
+        System.clearProperty(INHERIT_EXACT)
+        System.clearProperty(INHERIT_GLOB_A)
+        System.clearProperty(INHERIT_GLOB_B)
+    }
 
     @Test
     @ForkedJvm(systemProperties = ['groovy.junit6.test.example=hello'])
@@ -76,6 +103,42 @@ class ForkedJvmTest {
     void emptyAnnotationStillForks() {
         // No properties or args, but the FORKED_FLAG should still be set.
         assertEquals('true', System.getProperty('groovy.junit6.forked'))
+    }
+
+    @Test
+    @ForkedJvm(inheritProperties = ['groovy.junit6.test.inherit.exact'])
+    void inheritsExactProperty() {
+        assertEquals('exact-value', System.getProperty(INHERIT_EXACT))
+        // Glob-prefixed siblings are NOT pulled in by an exact-match entry.
+        assertNull(System.getProperty(INHERIT_GLOB_A))
+        assertNull(System.getProperty(INHERIT_GLOB_B))
+    }
+
+    @Test
+    @ForkedJvm(inheritProperties = ['groovy.junit6.test.inherit.glob.*'])
+    void inheritsByPrefixPattern() {
+        assertEquals('a-value', System.getProperty(INHERIT_GLOB_A))
+        assertEquals('b-value', System.getProperty(INHERIT_GLOB_B))
+        // The exact-only sibling must not be matched by the glob prefix.
+        assertNull(System.getProperty(INHERIT_EXACT))
+    }
+
+    @Test
+    @ForkedJvm(
+            inheritProperties = ['groovy.junit6.test.inherit.exact'],
+            systemProperties = ['groovy.junit6.test.inherit.exact=overridden'])
+    void explicitSystemPropertyOverridesInherited() {
+        // Both supplied; explicit value wins because it is emitted last on the
+        // command line, and the JVM honours the last -D for a given key.
+        assertEquals('overridden', System.getProperty(INHERIT_EXACT))
+    }
+
+    @Test
+    @ForkedJvm(inheritProperties = ['does.not.exist.in.parent'])
+    void unmatchedInheritPatternIsSilentNoOp() {
+        // An inheritProperties entry that matches nothing in the parent JVM
+        // must not throw or pollute the child — it is a quiet no-op.
+        assertNull(System.getProperty('does.not.exist.in.parent'))
     }
 
     @Test

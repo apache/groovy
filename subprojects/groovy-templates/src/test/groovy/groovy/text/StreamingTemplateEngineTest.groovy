@@ -18,9 +18,9 @@
  */
 package groovy.text
 
+import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
 import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class StreamingTemplateEngineTest {
@@ -452,66 +452,31 @@ final class StreamingTemplateEngineTest {
     }
 
     @Test
+    @ForkedJvm(
+            systemProperties = ['groovy.StreamingTemplateEngine.reuseClassLoader=true'],
+            inheritProperties = ['spock.*'])
     void reuseClassLoader1() {
-        assertScript '''
-            final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
-            System.setProperty(reuseOption, 'true')
-            try {
-                // reload class to initialize static field from the beginning
-                def steClass = groovy.text.StreamingTemplateEngineTest.reloadClass('groovy.text.StreamingTemplateEngine')
-
-                GroovyClassLoader gcl = new GroovyClassLoader()
-                def engine = steClass.newInstance(gcl)
-                assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
-                assert gcl.loadedClasses.length > 0
-                def cloned = gcl.loadedClasses.clone()
-                assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
-                assert cloned == gcl.loadedClasses
-            } finally {
-                System.clearProperty(reuseOption)
-            }
-        '''
+        GroovyClassLoader gcl = new GroovyClassLoader()
+        def engine = new StreamingTemplateEngine(gcl)
+        assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
+        assert gcl.loadedClasses.length > 0
+        def cloned = gcl.loadedClasses.clone()
+        assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
+        assert cloned == gcl.loadedClasses
     }
 
     @Test
+    @ForkedJvm(
+            systemProperties = ['groovy.StreamingTemplateEngine.reuseClassLoader=true'],
+            inheritProperties = ['spock.*'])
     void reuseClassLoader2() {
-        assertScript '''
-            final reuseOption = 'groovy.StreamingTemplateEngine.reuseClassLoader'
-            System.setProperty(reuseOption, 'true')
-            try {
-                // reload class to initialize static field from the beginning
-                def steClass = groovy.text.StreamingTemplateEngineTest.reloadClass('groovy.text.StreamingTemplateEngine')
-
-                GroovyClassLoader gcl = new GroovyClassLoader()
-                def engine = steClass.newInstance(gcl)
-                assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
-                assert gcl.loadedClasses.length > 0
-                def cloned = gcl.loadedClasses.clone()
-                engine = steClass.newInstance(gcl)
-                assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
-                assert cloned == gcl.loadedClasses
-            } finally {
-                System.clearProperty(reuseOption)
-            }
-        '''
-    }
-
-    static Class reloadClass(String className) {
-        def loader = new GroovyClassLoader() {
-            private final Map<String, Class> loadedClasses = new java.util.concurrent.ConcurrentHashMap<>()
-
-            @Override
-            Class loadClass(String name) {
-                if (name ==~ ('^' + className + '([$].+)?$')) {
-                    return loadedClasses.computeIfAbsent(name, n -> {
-                        def clazz = defineClass(n, GroovyClassLoader.class.getResourceAsStream('/' + n.replace('.', '/') + '.class').bytes)
-                        return clazz
-                    })
-                }
-                return super.loadClass(name)
-            }
-        }
-        def loaded = loader.loadClass(className)
-        return loaded
+        GroovyClassLoader gcl = new GroovyClassLoader()
+        def engine = new StreamingTemplateEngine(gcl)
+        assert 'Hello, Daniel' == engine.createTemplate('Hello, ${name}').make([name: 'Daniel']).toString()
+        assert gcl.loadedClasses.length > 0
+        def cloned = gcl.loadedClasses.clone()
+        engine = new StreamingTemplateEngine(gcl)
+        assert 'Hello, Paul' == engine.createTemplate('Hello, ${name}').make([name: 'Paul']).toString()
+        assert cloned == gcl.loadedClasses
     }
 }

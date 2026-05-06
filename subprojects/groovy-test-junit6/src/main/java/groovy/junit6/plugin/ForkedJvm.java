@@ -52,6 +52,34 @@ import java.lang.annotation.Target;
  * &#64;ForkedJvm(jvmArgs = {"--add-opens=java.base/java.lang=ALL-UNNAMED"})
  * void withModuleAccess() { ... }
  * </pre>
+ * <p>
+ * Properties from the parent JVM can be propagated to the child via
+ * {@link #inheritProperties()}. Each entry is either an exact property
+ * name or a prefix pattern ending in {@code *}. This is useful when the
+ * parent test JVM is configured by the build (e.g. Gradle) with a
+ * property the child also needs, such as Spock's Groovy-version-check
+ * override:
+ * <pre>
+ * &#64;Test
+ * &#64;ForkedJvm(inheritProperties = {"spock.*"})
+ * void seesSpockOverride() { ... }
+ * </pre>
+ * <p>
+ * <b>Lifecycle gotcha:</b> JUnit lifecycle hooks
+ * ({@code @BeforeAll}, {@code @BeforeEach}, {@code @AfterAll},
+ * {@code @AfterEach}) fire in <em>both</em> the parent and the forked
+ * child JVM, because the child re-runs the class lifecycle for the
+ * targeted method. Setup that mutates JVM-global state — typically
+ * {@code System.setProperty(...)} — therefore replays in the child and
+ * can defeat tests that assert on what was (or was not) propagated
+ * across the fork. Guard parent-only setup with the forked-flag check:
+ * <pre>
+ * &#64;BeforeAll
+ * static void setUp() {
+ *     if (Boolean.parseBoolean(System.getProperty("groovy.junit6.forked"))) return;
+ *     // ...parent-only setup here...
+ * }
+ * </pre>
  *
  * @since 6.0.0
  */
@@ -71,4 +99,17 @@ public @interface ForkedJvm {
      * {@code "-Xmx128m"} or {@code "--add-opens=java.base/java.lang=ALL-UNNAMED"}.
      */
     String[] jvmArgs() default {};
+
+    /**
+     * Names or prefix patterns of system properties from the parent JVM to
+     * propagate to the forked child. Each entry is either an exact property
+     * name (e.g. {@code "spock.iKnowWhatImDoing.disableGroovyVersionCheck"})
+     * or a prefix pattern ending in {@code *} (e.g. {@code "spock.*"} or
+     * {@code "groovy.compiler.*"}). Patterns that match no parent property
+     * are silently ignored.
+     * <p>
+     * Properties supplied via {@link #systemProperties()} override inherited
+     * values for the same key.
+     */
+    String[] inheritProperties() default {};
 }
