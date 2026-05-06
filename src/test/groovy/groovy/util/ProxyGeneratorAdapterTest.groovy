@@ -244,4 +244,43 @@ class ProxyGeneratorAdapterTest {
     static interface OtherInterface {
         int calc(int x)
     }
+
+    static interface UserMarker {} // user-defined marker; classloader is the test classloader
+
+    // GROOVY-11999: building a proxy whose interface list mixes a bootstrap-loaded
+    // interface (Runnable/Serializable) with a user-defined one used to NPE in
+    // InnerLoader because the bootstrap classloader (null) was added to the
+    // internalClassLoaders list and dereferenced during class definition.
+    @Test
+    void testProxyMixingBootstrapAndUserInterfaces() {
+        def closure = { -> /* doCall */ }
+        def closureMap = ['*': closure]
+        def adapter = new ProxyGeneratorAdapter(
+                closureMap,
+                Object,
+                [Runnable, UserMarker] as Class[],
+                this.class.classLoader,
+                false,
+                null)
+        def obj = adapter.proxy(closureMap, null)
+        assert obj instanceof Runnable
+        assert obj instanceof UserMarker
+        obj.run() // does not throw
+    }
+
+    // GROOVY-11999: same scenario via the public ProxyGenerator entry point used
+    // by the runtime intersection-cast path (IntersectionCastSupport.asType).
+    @Test
+    void testInstantiateAggregateMixingBootstrapAndUserInterfaces() {
+        def calls = 0
+        def proxy = ProxyGenerator.INSTANCE.instantiateAggregate(
+                ['run': { -> calls++ }],
+                [Runnable, java.io.Serializable, UserMarker] as List<Class>)
+        assert proxy instanceof Runnable
+        assert proxy instanceof java.io.Serializable
+        assert proxy instanceof UserMarker
+        proxy.run()
+        proxy.run()
+        assert calls == 2
+    }
 }
