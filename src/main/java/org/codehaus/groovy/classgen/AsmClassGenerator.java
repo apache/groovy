@@ -1005,13 +1005,18 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // GROOVY-11998: lambda / method-reference factory invocations already
         // emit an object that implements every component of an intersection
-        // target via altMetafactory FLAG_MARKERS, so the outer cast is a no-op
-        // here. Non-functional intersection casts are out of scope for PR3
-        // and fall through to the default handling below.
+        // target via altMetafactory FLAG_MARKERS, so the outer cast is a no-op.
         if (type instanceof IntersectionTypeClassNode
                 && (expression instanceof LambdaExpression
                     || expression instanceof MethodReferenceExpression)) {
             expression.visit(this);
+            return;
+        }
+        // GROOVY-11998: non-functional intersection casts route through the
+        // runtime helper IntersectionCastSupport, which strict-casts for `()`
+        // and may build a multi-interface proxy via ProxyGenerator for `as`.
+        if (type instanceof IntersectionTypeClassNode) {
+            emitIntersectionCastCall((IntersectionTypeClassNode) type, expression, castExpression.isCoerce());
             return;
         }
 
@@ -1031,6 +1036,47 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             operandStack.doGroovyCast(type);
         }
+    }
+
+    /**
+     * Emits a call to {@link org.codehaus.groovy.runtime.IntersectionCastSupport}
+     * for an intersection-target cast or coercion on a non-functional source.
+     *
+     * Bytecode layout:
+     * <pre>
+     *   visit(source)             // pushes source on the JVM stack
+     *   bipush/iconst N           // component count
+     *   anewarray Class           // create Class[N]
+     *   for each component i:
+     *     dup; bipush i; ldc Type; aastore
+     *   invokestatic IntersectionCastSupport.{castTo|asType}(Object, Class[]) Object
+     * </pre>
+     */
+    private void emitIntersectionCastCall(final IntersectionTypeClassNode it, final Expression source, final boolean coerce) {
+        source.visit(this); // leaves source on the operand / JVM stack as Object-ish
+        controller.getOperandStack().box();   // ensure boxed reference (handles primitive sources)
+
+        MethodVisitor mv = controller.getMethodVisitor();
+        ClassNode[] components = it.getComponents();
+
+        BytecodeHelper.pushConstant(mv, components.length);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Class");
+        for (int i = 0; i < components.length; i += 1) {
+            mv.visitInsn(DUP);
+            BytecodeHelper.pushConstant(mv, i);
+            BytecodeHelper.visitClassLiteral(mv, components[i]);
+            mv.visitInsn(AASTORE);
+        }
+
+        mv.visitMethodInsn(
+            INVOKESTATIC,
+            "org/codehaus/groovy/runtime/IntersectionCastSupport",
+            coerce ? "asType" : "castTo",
+            "(Ljava/lang/Object;[Ljava/lang/Class;)Ljava/lang/Object;",
+            false
+        );
+
+        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
     @Override
