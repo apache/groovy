@@ -63,17 +63,17 @@ and exposed as the
 [`CompilePhase`](src/main/java/org/codehaus/groovy/control/CompilePhase.java)
 enum that AST transformations and customizers attach to:
 
-| # | Phase | What happens | Driver classes |
-|---|---|---|---|
-| 1 | `INITIALIZATION` | Source files opened, `CompilationUnit` configured, customizers applied | `CompilationUnit`, `CompilerConfiguration` |
-| 2 | `PARSING` | ANTLR4 lexer + parser produce a CST (parse tree) | `Antlr4ParserPlugin`, `GroovyLangLexer`, `GroovyLangParser` |
-| 3 | `CONVERSION` | CST → AST (`ModuleNode` / `ClassNode` / `MethodNode` / ...) | `AstBuilder` |
-| 4 | `SEMANTIC_ANALYSIS` | Class resolution, import handling, validity checks the grammar can't catch | `ResolveVisitor`, `StaticImportVisitor`, `AnnotationConstantsVisitor` |
-| 5 | `CANONICALIZATION` | Fill in the AST: synthesised members, generic types, most local AST transforms run here | `ASTTransformationVisitor`, `GenericsVisitor` |
+| # | Phase | What happens                                                                            | Driver classes |
+|---|---|-----------------------------------------------------------------------------------------|---|
+| 1 | `INITIALIZATION` | Source files opened, `CompilationUnit` configured, customizers applied                  | `CompilationUnit`, `CompilerConfiguration` |
+| 2 | `PARSING` | ANTLR4 lexer + parser produce a CST (parse tree)                                        | `Antlr4ParserPlugin`, `GroovyLangLexer`, `GroovyLangParser` |
+| 3 | `CONVERSION` | CST → AST (`ModuleNode` / `ClassNode` / `MethodNode` / ...)                             | `AstBuilder` |
+| 4 | `SEMANTIC_ANALYSIS` | Class resolution, import handling, validity checks the grammar can't catch              | `ResolveVisitor`, `StaticImportVisitor`, `AnnotationConstantsVisitor` |
+| 5 | `CANONICALIZATION` | Fill in the AST: synthesized members, generic types, most local AST transforms run here | `ASTTransformationVisitor`, `GenericsVisitor` |
 | 6 | `INSTRUCTION_SELECTION` | Optimisations and instruction-set selection; `@CompileStatic` / `@TypeChecked` run here | `OptimizerVisitor`, `StaticTypeCheckingVisitor` |
-| 7 | `CLASS_GENERATION` | AST → bytecode in memory | `AsmClassGenerator`, `Verifier`, classes under `classgen/asm/` |
-| 8 | `OUTPUT` | Write generated `.class` files | `CompilationUnit` output stage |
-| 9 | `FINALIZATION` | Cleanup, `Janitor` callbacks | `CompilationUnit`, `Janitor` |
+| 7 | `CLASS_GENERATION` | AST → bytecode in memory                                                                | `AsmClassGenerator`, `Verifier`, classes under `classgen/asm/` |
+| 8 | `OUTPUT` | Write generated `.class` files                                                          | `CompilationUnit` output stage |
+| 9 | `FINALIZATION` | Cleanup, `Janitor` callbacks                                                            | `CompilationUnit`, `Janitor` |
 
 Each phase iterates over all `SourceUnit`s before the next phase
 begins. AST transformations declare which phase they run in; the
@@ -140,7 +140,7 @@ verbatim keeps the reference precise; paraphrasing tends to drift.
 
 - `org.codehaus.groovy.classgen.AsmClassGenerator` walks the AST and
   emits bytecode via ASM. Supporting visitors run here too:
-  `Verifier` (synthesises bridge methods, accessors, default
+  `Verifier` (synthesizes bridge methods, accessors, default
   constructors), `EnumVisitor`, `EnumCompletionVisitor`,
   `InnerClassVisitor`, `InnerClassCompletionVisitor`,
   `VariableScopeVisitor`, `ReturnAdder`.

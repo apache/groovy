@@ -244,7 +244,7 @@ or other marker interfaces, just like in Java:
 
 [source,groovy]
 ----
-Runnable r = (Runnable & Serializable) () -> println('hi') // serialisable lambda
+Runnable r = (Runnable & Serializable) () -> println('hi') // serializable lambda
 ----
 
 Groovy additionally accepts the `as` form, where parentheses are required around

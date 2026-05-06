@@ -35,7 +35,7 @@ import java.util.Map;
  * reference (those cases are handled at compile time via
  * {@code LambdaMetafactory.altMetafactory} markers).
  *
- * @since 5.0.0
+ * @since 6.0.0
  */
 public final class IntersectionCastSupport {
 

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 /**
- * Regression coverage for the synthesised lower-arity bridge constructor that
+ * Regression coverage for the synthesized lower-arity bridge constructor that
  * {@code @CompileStatic} emits for a constructor with a default-valued list
  * parameter. The bridge inlines the default {@code [...]} literal as a
  * {@code new ArrayList(n)} followed by {@code .add(...)} calls; when the

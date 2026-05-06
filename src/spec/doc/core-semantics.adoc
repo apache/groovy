@@ -793,7 +793,7 @@ include::../test/CoercionTest.groovy[tags=intersection_as_coercion_marker,indent
 ----
 
 For closure literals and maps, `as` builds a
-{@link groovy.util.ProxyGenerator} aggregate that implements every interface
+`groovy.util.ProxyGenerator` aggregate that implements every interface
 component:
 
 [source,groovy]

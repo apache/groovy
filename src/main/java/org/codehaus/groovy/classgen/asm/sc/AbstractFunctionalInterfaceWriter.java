@@ -90,7 +90,7 @@ public interface AbstractFunctionalInterfaceWriter {
      * {@code LambdaMetafactory.altMetafactory} via {@code FLAG_MARKERS} so the
      * generated lambda implements every component interface at runtime.
      *
-     * @since 5.0.0
+     * @since 6.0.0
      */
     default void writeFunctionalInterfaceIndy(final MethodVisitor methodVisitor,
                                               final String samMethodName, final String invokedTypeDescriptor,

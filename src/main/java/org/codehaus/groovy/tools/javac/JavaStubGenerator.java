@@ -542,7 +542,7 @@ public class JavaStubGenerator {
     }
 
     private void printMethods(final PrintWriter out, final ClassNode classNode, final boolean isEnum, final boolean isRecordStub) {
-        // For native record stubs, let javac auto-synthesise the canonical
+        // For native record stubs, let javac auto-synthesize the canonical
         // constructor; we cannot reliably emit a placeholder body that
         // satisfies record component definite-assignment rules. Non-canonical
         // user-declared constructors are not visible in the stub (known

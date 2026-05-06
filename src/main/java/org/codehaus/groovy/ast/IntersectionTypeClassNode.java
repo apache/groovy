@@ -35,7 +35,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  *
  * <p>Distinct from the implicit lowest-upper-bound nodes that
  * {@link org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor}
- * synthesises during inference: an instance of this class records the ordered
+ * synthesizes during inference: an instance of this class records the ordered
  * list of components exactly as written by the user. That ordering is needed
  * for cast-conversion checks, error messages and (in later phases) bytecode
  * generation via {@code LambdaMetafactory.altMetafactory} markers.
@@ -48,7 +48,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * interfaces array contains only interface components and the superclass is
  * the (at most one) class component.
  *
- * @since 5.0.0
+ * @since 6.0.0
  */
 public final class IntersectionTypeClassNode extends ClassNode {
 

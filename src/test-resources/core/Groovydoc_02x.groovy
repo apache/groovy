@@ -25,7 +25,7 @@
 //
 // Known runtime-doc gaps (pre-existing, independent of GROOVY-8877):
 //   * Script-level /**@: a leading /**@ on a bare script is not attached to
-//     the synthesised Script class — no AST node to claim it.
+//     the synthesized Script class — no AST node to claim it.
 //   * @Field lift: /**@ before an @Field declaration is lost when the AST
 //     transform lifts the local into a FieldNode; the annotation isn't
 //     carried across.
@@ -36,7 +36,7 @@
  */
 void m() {}
 
-// /**@ on a script's top-level method reaches the synthesised method.
+// /**@ on a script's top-level method reaches the synthesized method.
 def mMethod = this.class.getDeclaredMethods().find { it.name == 'm' }
 assert mMethod != null
 assert mMethod.groovydoc.isPresent()

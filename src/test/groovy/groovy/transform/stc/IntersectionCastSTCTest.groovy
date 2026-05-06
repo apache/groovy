@@ -39,9 +39,9 @@ import org.junit.jupiter.api.Test
 /**
  * Tests for static type checking of intersection-cast targets (GROOVY-11998 PR2).
  *
- * These tests stop compilation at {@link Phases#SEMANTIC_ANALYSIS} so they
- * exercise resolution and STC without relying on bytecode generation, which
- * is delivered in subsequent phases.
+ * These tests stop compilation at {@link Phases#INSTRUCTION_SELECTION} so they
+ * exercise resolution and STC without producing class files, which keeps the
+ * tests focused on resolution/STC behavior delivered in this PR.
  */
 final class IntersectionCastSTCTest {
 

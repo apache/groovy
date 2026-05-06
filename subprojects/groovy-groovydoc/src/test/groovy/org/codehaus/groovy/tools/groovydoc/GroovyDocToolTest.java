@@ -371,7 +371,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String fixtureSourcePath = "src/test/resources/docfiles-fixture";
         String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
 
-        // Synthesise a class on the fly that uses {@snippet file=... region=...}
+        // Synthesize a class on the fly that uses {@snippet file=... region=...}
         // Actually, just use a testfile in src/test/groovy that we add to sourcepath.
         // Here we reuse a class with an inline doc reference via the resource-dir.
         Path tmp = Files.createTempDirectory("snippet-region-");
@@ -1613,7 +1613,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String klass = "EnumWithAbstractMethodAndConstantBodies";
         Properties props = new Properties();
         // phase 7 = CLASS_GENERATION, by which point the per-constant anonymous
-        // inner classes have been synthesised. The fix must keep them out of
+        // inner classes have been synthesized. The fix must keep them out of
         // the doc output at any phase.
         props.put("phaseOverride", "7");
         GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
