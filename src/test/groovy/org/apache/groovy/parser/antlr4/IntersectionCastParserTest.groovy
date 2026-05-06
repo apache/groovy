@@ -22,7 +22,6 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.IntersectionTypeClassNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.ast.expr.CastExpression
-import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -36,7 +35,6 @@ import org.junit.jupiter.api.Test
 import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertThrows
 
 /**
  * Tests for the parser-level handling of intersection types in cast expressions

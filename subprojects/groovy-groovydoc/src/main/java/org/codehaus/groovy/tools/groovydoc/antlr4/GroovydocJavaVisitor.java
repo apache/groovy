@@ -190,7 +190,7 @@ public class GroovydocJavaVisitor
         currentClassDoc.add(fieldDoc);
         applyJavadocComment(n.getJavadocComment(), fieldDoc);
         n.getDefaultValue().ifPresent(defValue -> {
-            // For Markdown-form comments (no `*` line prefix), the synthesised
+            // For Markdown-form comments (no `*` line prefix), the synthesized
             // @default tag goes on a bare line; traditional /** */ form keeps
             // the `* ` prefix for visual parity with existing continuation lines.
             String prefix = fieldDoc.isMarkdown() ? "\n@default " : "\n* @default ";

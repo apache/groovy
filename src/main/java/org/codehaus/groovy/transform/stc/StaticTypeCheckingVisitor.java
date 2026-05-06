@@ -1628,7 +1628,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     /**
-     * Build a synthesised ListExpression of {@code rhs.getAt(i)} accesses, one per LHS slot,
+     * Build a synthesized ListExpression of {@code rhs.getAt(i)} accesses, one per LHS slot,
      * tagged with the inferred element type. Used by {@link #typeCheckMultipleAssignmentPositional}
      * when the RHS isn't a literal list/range/Tuple-typed expression. Returns the original
      * RHS unchanged if its static type doesn't support {@code getAt(int)}.

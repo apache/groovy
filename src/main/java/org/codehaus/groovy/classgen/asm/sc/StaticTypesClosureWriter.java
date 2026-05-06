@@ -90,7 +90,7 @@ public class StaticTypesClosureWriter extends ClosureWriter {
             if (closureClass.implementsInterface(marker)) continue;
             // Only add interfaces with no abstract methods (true markers). For
             // interfaces that declare unimplemented abstract methods, we'd
-            // have to synthesise method bodies — out of scope here, fall back
+            // have to synthesize method bodies — out of scope here, fall back
             // to the runtime proxy path in IntersectionCastSupport.asType.
             if (hasAbstractMethods(marker)) continue;
             closureClass.addInterface(marker);

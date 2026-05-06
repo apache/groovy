@@ -60,7 +60,7 @@ import java.util.regex.PatternSyntaxException;
  *
  * <p>Supported block tags: {@code @see}, {@code @param}, {@code @return},
  * {@code @throws} / {@code @exception}, {@code @since}, {@code @author},
- * {@code @version}, {@code @default}, plus synthesised {@code typeparam}
+ * {@code @version}, {@code @default}, plus synthesized {@code typeparam}
  * (from {@code @param <T>}). Unknown block tags fall through to a generic
  * {@code <DL>} rendering.
  *
@@ -110,7 +110,7 @@ final class TagRenderer {
         COLLATED_TAGS.put("author", "Authors");
         COLLATED_TAGS.put("version", "Version");
         COLLATED_TAGS.put("default", "Default");
-        // typeparam is synthesised from `@param <T> desc`
+        // typeparam is synthesized from `@param <T> desc`
         COLLATED_TAGS.put("typeparam", "Type Parameters");
     }
 

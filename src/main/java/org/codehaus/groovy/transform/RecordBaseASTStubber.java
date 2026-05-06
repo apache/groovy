@@ -94,7 +94,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  * <p><b>Native records.</b> When the class would compile as a native JVM
  * record (target {@code >= JDK16} and {@code mode != EMULATE}), the stub
  * generator already renders {@code record Foo(...)} syntax via the
- * back-channel introduced by GROOVY-11974, and {@code javac} synthesises
+ * back-channel introduced by GROOVY-11974, and {@code javac} synthesizes
  * the canonical constructor and component accessors itself. This stubber
  * detects that case via
  * {@link RecordTypeASTTransformation#wouldBeNativeRecord} and bails out;

@@ -18,7 +18,7 @@
  */
 
 /// GROOVY-11542 + GROOVY-8877 fixture: a **Markdown** script-level doc that
-/// should be lifted to the synthesised Script class via the same rules used
+/// should be lifted to the synthesized Script class via the same rules used
 /// for traditional Javadoc comments.
 package org.codehaus.groovy.tools.groovydoc.testfiles
 
