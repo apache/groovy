@@ -62,6 +62,10 @@ tasks.withType(Test).configureEach {
     }
     systemProperty 'apple.awt.UIElement', 'true'
     systemProperty 'javadocAssertion.src.dir', './src/main'
+    // Suppress TestLens (app.testlens:junit-platform-instrumentation) inside
+    // @ForkedJvm child JVMs to avoid false flakiness triggers.
+    // Harmless when TestLens isn't on the classpath (no entries match).
+    systemProperty 'groovy.junit6.forked.excludeClasspath', 'junit-platform-instrumentation'
 //    systemProperty 'groovy.grape.report.downloads', 'true'
 //    systemProperty 'ivy.message.logger.level', '4'
 
