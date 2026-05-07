@@ -129,4 +129,23 @@ public @interface ForkedJvm {
      * values for the same key.
      */
     String[] inheritProperties() default {};
+
+    /**
+     * Regular expressions that exclude matching entries from the parent's
+     * {@code java.class.path} when constructing the forked JVM's classpath.
+     * Each pattern is applied to each path entry with
+     * {@link java.util.regex.Matcher#find()}, so plain substrings (e.g.
+     * {@code "junit-platform-instrumentation"}) work without anchoring.
+     * <p>
+     * Patterns can also be supplied via the system property
+     * {@code groovy.junit6.forked.excludeClasspath} (comma-separated) for
+     * build- or CI-level configuration without modifying test source.
+     * Annotation values and the system-property values are unioned.
+     * <p>
+     * Limitations: this filter only inspects entries appearing literally
+     * in {@code java.class.path}. Modules on {@code --module-path},
+     * directory wildcards (e.g. {@code lib/*}), and {@code Class-Path:}
+     * manifest entries inherited from another jar are not matched.
+     */
+    String[] excludeFromClasspath() default {};
 }

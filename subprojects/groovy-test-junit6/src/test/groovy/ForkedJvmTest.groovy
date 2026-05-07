@@ -19,11 +19,14 @@
 
 import groovy.junit6.plugin.ExpectedToFail
 import groovy.junit6.plugin.ForkedJvm
+import groovy.junit6.plugin.ForkedJvmExtension
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+
+import java.util.regex.Pattern
 import org.junit.platform.engine.discovery.DiscoverySelectors
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder
 import org.junit.platform.launcher.core.LauncherFactory
@@ -139,6 +142,59 @@ class ForkedJvmTest {
         // An inheritProperties entry that matches nothing in the parent JVM
         // must not throw or pollute the child — it is a quiet no-op.
         assertNull(System.getProperty('does.not.exist.in.parent'))
+    }
+
+    // ---------------- excludeFromClasspath ----------------
+
+    @Test
+    void filterClasspath_dropsMatchingEntries() {
+        def sep = File.pathSeparator
+        def cp = "/a/foo-1.0.jar${sep}/b/junit-platform-instrumentation-1.9.0.jar${sep}/c/bar-2.0.jar"
+        def filtered = ForkedJvmExtension.filterClasspath(cp, [Pattern.compile('junit-platform-instrumentation')])
+        assertEquals("/a/foo-1.0.jar${sep}/c/bar-2.0.jar".toString(), filtered)
+    }
+
+    @Test
+    void filterClasspath_supportsMultiplePatterns() {
+        def sep = File.pathSeparator
+        def cp = "/a/foo.jar${sep}/b/bar.jar${sep}/c/baz.jar"
+        def filtered = ForkedJvmExtension.filterClasspath(cp,
+                [Pattern.compile('foo'), Pattern.compile('baz')])
+        assertEquals("/b/bar.jar", filtered)
+    }
+
+    @Test
+    void filterClasspath_unchangedWhenNoMatches() {
+        def sep = File.pathSeparator
+        def cp = "/a/foo-1.0.jar${sep}/b/bar-2.0.jar".toString()
+        def filtered = ForkedJvmExtension.filterClasspath(cp, [Pattern.compile('nothing-matches-this')])
+        assertEquals(cp, filtered)
+    }
+
+    @Test
+    void filterClasspath_unchangedWithEmptyPatterns() {
+        def cp = "/a/foo.jar${File.pathSeparator}/b/bar.jar".toString()
+        def filtered = ForkedJvmExtension.filterClasspath(cp, [])
+        assertEquals(cp, filtered)
+    }
+
+    @Test
+    void filterClasspath_handlesNullAndEmpty() {
+        assertNull(ForkedJvmExtension.filterClasspath(null, [Pattern.compile('x')]))
+        assertEquals('', ForkedJvmExtension.filterClasspath('', [Pattern.compile('x')]))
+    }
+
+    @Test
+    @ForkedJvm(excludeFromClasspath = ['this-pattern-matches-no-real-jar-xyz'])
+    void excludeWithNoMatchPreservesChildClasspath() {
+        // End-to-end: the wiring runs the parent's classpath through the
+        // filter and lands on the child's -cp. With a pattern that matches
+        // nothing real, the child must still boot, find its classes, and
+        // run this assertion.
+        def cp = System.getProperty('java.class.path')
+        assertTrue(cp != null && !cp.isEmpty(), "child classpath was empty")
+        assertTrue(!cp.contains('this-pattern-matches-no-real-jar-xyz'),
+                "the test pattern should not appear in any real classpath entry")
     }
 
     @Test

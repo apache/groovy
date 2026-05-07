@@ -36,6 +36,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * JUnit 5 {@link InvocationInterceptor} backing the {@link ForkedJvm}
@@ -51,6 +52,14 @@ import java.util.Set;
  * @since 6.0.0
  */
 public class ForkedJvmExtension implements InvocationInterceptor {
+
+    /**
+     * System property naming a comma-separated list of regular expressions
+     * to exclude from the parent's {@code java.class.path} when building
+     * the forked JVM's classpath. Augments
+     * {@link ForkedJvm#excludeFromClasspath()}.
+     */
+    public static final String EXCLUDE_CLASSPATH_PROP = "groovy.junit6.forked.excludeClasspath";
 
     @Override
     public void interceptTestMethod(Invocation<Void> invocation,
@@ -128,11 +137,54 @@ public class ForkedJvmExtension implements InvocationInterceptor {
             cmd.add(arg);
         }
         cmd.add("-cp");
-        cmd.add(System.getProperty("java.class.path"));
+        cmd.add(filterClasspath(System.getProperty("java.class.path"), resolveExcludes(config)));
         cmd.add(ForkedJvmTestRunner.class.getName());
         cmd.add(testClass.getName());
         cmd.add(testMethod.getName());
         return cmd;
+    }
+
+    private static List<Pattern> resolveExcludes(ForkedJvm config) {
+        List<Pattern> excludes = new ArrayList<>();
+        for (String p : config.excludeFromClasspath()) {
+            if (!p.isEmpty()) excludes.add(Pattern.compile(p));
+        }
+        String fromProp = System.getProperty(EXCLUDE_CLASSPATH_PROP, "");
+        for (String p : fromProp.split(",")) {
+            String trimmed = p.trim();
+            if (!trimmed.isEmpty()) excludes.add(Pattern.compile(trimmed));
+        }
+        return excludes;
+    }
+
+    /**
+     * Filters {@code classpath} (a {@link File#pathSeparator}-separated list)
+     * by dropping entries that match any of the supplied regular expressions
+     * via {@link java.util.regex.Matcher#find()}. Visible for testing.
+     *
+     * @param classpath the original classpath string
+     * @param excludes  regex patterns; an empty list returns {@code classpath} unchanged
+     * @return the filtered classpath string
+     */
+    public static String filterClasspath(String classpath, List<Pattern> excludes) {
+        if (excludes.isEmpty() || classpath == null || classpath.isEmpty()) {
+            return classpath;
+        }
+        StringBuilder result = new StringBuilder(classpath.length());
+        for (String entry : classpath.split(Pattern.quote(File.pathSeparator))) {
+            boolean matched = false;
+            for (Pattern p : excludes) {
+                if (p.matcher(entry).find()) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                if (result.length() > 0) result.append(File.pathSeparator);
+                result.append(entry);
+            }
+        }
+        return result.toString();
     }
 
     private static Set<String> resolveInherited(String[] patterns) {
