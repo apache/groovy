@@ -100,7 +100,7 @@ These are also breaking, even though `japicmp` may not catch them:
 
 - Behavioural changes that users have come to rely on, including
   MetaClass dispatch, method-resolution order, GDK method semantics,
-  and serialisation formats.
+  and serialization formats.
 - Changing the bytecode shape that `@CompileStatic` produces in a way
   that breaks reflection-based callers.
 - Changing the AST shape produced for a given source construct in a

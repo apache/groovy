@@ -37,7 +37,7 @@ import java.util.function.Function;
  * GPars' {@code Agent}.
  * <p>
  * An {@code Agent} wraps a value that can be read by any thread but
- * modified only through serialised update functions. Updates are queued
+ * modified only through serialized update functions. Updates are queued
  * and applied one at a time on a dedicated executor, guaranteeing that
  * the value is never corrupted by concurrent writes.
  * <p>
@@ -84,7 +84,7 @@ public final class Agent<T> {
 
     /**
      * Creates an agent with the given initial value, using a
-     * single-thread executor for serialised updates.
+     * single-thread executor for serialized updates.
      *
      * @param initialValue the starting value
      * @param <T>          the value type
@@ -101,7 +101,7 @@ public final class Agent<T> {
 
     /**
      * Creates an agent backed by the given pool for update execution.
-     * Updates are still serialised (only one at a time), but they run
+     * Updates are still serialized (only one at a time), but they run
      * on the pool's threads.
      *
      * @param initialValue the starting value
@@ -111,7 +111,7 @@ public final class Agent<T> {
      */
     public static <T> Agent<T> create(T initialValue, Pool pool) {
         Objects.requireNonNull(pool, "pool must not be null");
-        // Use a SerialExecutor to serialise updates on the pool's threads.
+        // Use a SerialExecutor to serialize updates on the pool's threads.
         // We cannot use newSingleThreadExecutor with a delegating ThreadFactory
         // because that breaks the executor's internal task loop.
         return new Agent<>(initialValue, new SerialExecutor(pool));
@@ -155,7 +155,7 @@ public final class Agent<T> {
      * Queues an update function to be applied to the current value.
      * The function receives the current value and returns the new value.
      * <p>
-     * Updates are applied asynchronously and serialised: only one update
+     * Updates are applied asynchronously and serialized: only one update
      * runs at a time.
      *
      * @param updateFn a function from current value to new value
@@ -305,7 +305,7 @@ public final class Agent<T> {
     }
 
     /**
-     * An executor that serialises task execution on a delegate executor.
+     * An executor that serializes task execution on a delegate executor.
      * Tasks are queued and executed one at a time — when one completes,
      * the next is submitted to the delegate.
      */

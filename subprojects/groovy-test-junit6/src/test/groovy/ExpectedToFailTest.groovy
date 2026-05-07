@@ -91,7 +91,7 @@ class ExpectedToFailTest {
     @ForkedJvm
     void outerOrdering_failurePropagatesFromForkAndIsInverted() {
         // ExpectedToFail OUTER: parent does the inversion AFTER @ForkedJvm
-        // serialises the failure across the JVM boundary, exercising the
+        // serializes the failure across the JVM boundary, exercising the
         // round-trip and verifying type+message fidelity.
         throw new AssertionError('forked failure round-trips')
     }

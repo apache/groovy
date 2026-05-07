@@ -179,7 +179,7 @@ final class ActorTest {
     // === Concurrent stress ===
 
     @Test
-    void testConcurrentSendsAreSerialised() {
+    void testConcurrentSendsAreSerialized() {
         assertScript '''
             import groovy.concurrent.Actor
             import java.util.concurrent.CountDownLatch

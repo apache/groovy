@@ -43,7 +43,7 @@ import java.nio.file.Paths;
  * and method name as command-line arguments. Runs exactly that one test method
  * via the JUnit Platform {@link Launcher}, then reports outcome to the parent
  * via the file referenced by the system property
- * {@code groovy.junit6.forked.result}: empty file on success, serialised
+ * {@code groovy.junit6.forked.result}: empty file on success, serialized
  * {@link Throwable} (with text fallback) on failure.
  *
  * @since 6.0.0
@@ -58,7 +58,7 @@ public final class ForkedJvmTestRunner {
 
     /**
      * Marker byte at the start of the result file when the failure had to be
-     * written as text instead of a serialised {@link Throwable}.
+     * written as text instead of a serialized {@link Throwable}.
      * Distinguishable because {@link ObjectOutputStream}'s STREAM_MAGIC is
      * {@code 0xACED}, never starts with {@code 0x00}.
      */

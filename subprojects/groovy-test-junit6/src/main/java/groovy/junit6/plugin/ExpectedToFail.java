@@ -69,7 +69,7 @@ import java.lang.annotation.Target;
  * annotation iteration order). When {@code @ExpectedToFail} is declared
  * <em>before</em> {@code @ForkedJvm} (i.e., outer), the inversion happens in
  * the parent JVM after the failure propagates from the fork — exercising
- * {@code @ForkedJvm}'s serialisation. When declared after (inner), the
+ * {@code @ForkedJvm}'s serialization. When declared after (inner), the
  * inversion happens inside the forked child.
  *
  * @since 6.0.0

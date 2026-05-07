@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
 /**
  * Marks a class as an active object whose {@link ActiveMethod}-annotated
  * methods are automatically routed through an internal actor for
- * thread-safe, serialised execution.
+ * thread-safe, serialized execution.
  * <p>
  * All {@code @ActiveMethod} calls on the same instance are processed
  * one at a time — no locks needed.

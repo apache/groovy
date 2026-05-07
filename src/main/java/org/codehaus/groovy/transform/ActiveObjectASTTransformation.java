@@ -59,7 +59,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 /**
  * Handles the {@link ActiveObject} annotation, transforming
  * {@link ActiveMethod}-annotated methods to route through an
- * internal actor for serialised execution.
+ * internal actor for serialized execution.
  * <p>
  * Inspired by GPars' {@code ActiveObjectASTTransformation},
  * adapted for Groovy's built-in {@link Actor} infrastructure.

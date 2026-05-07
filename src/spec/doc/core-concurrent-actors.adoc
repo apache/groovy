@@ -40,7 +40,7 @@ Both use virtual threads on JDK 21+ for efficient scaling.
 == Agent
 
 An `Agent` wraps a value that can be read by any thread but modified
-only through serialised update functions:
+only through serialized update functions:
 
 [source,groovy]
 ----
@@ -322,7 +322,7 @@ class Account {
 }
 
 def account = new Account()
-account.deposit(100)         // async, serialised, blocks until done
+account.deposit(100)         // async, serialized, blocks until done
 account.deposit(50)
 account.withdraw(30)
 assert account.getBalance() == 120.0
@@ -352,7 +352,7 @@ assert await(result) == 49
 
 The key benefit: you write normal-looking classes with normal methods.
 Thread safety is guaranteed by the annotation — all `@ActiveMethod`
-calls are serialised through the actor. No locks, no concurrent
+calls are serialized through the actor. No locks, no concurrent
 collections, no race conditions.
 
 This also makes the code highly readable for AI tools — the

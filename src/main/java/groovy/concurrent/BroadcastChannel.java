@@ -261,7 +261,7 @@ public final class BroadcastChannel<T> {
             if (n <= 0) {
                 // Reactive Streams §3.9 violation. Route the terminal error
                 // through the drain thread (§1.3 requires onNext / onError /
-                // onComplete signals to be serialised); calling
+                // onComplete signals to be serialized); calling
                 // subscriber.onError here would race a concurrent onNext.
                 terminalError.compareAndSet(null, new IllegalArgumentException(
                         "Reactive Streams §3.9: request must be positive, got " + n));

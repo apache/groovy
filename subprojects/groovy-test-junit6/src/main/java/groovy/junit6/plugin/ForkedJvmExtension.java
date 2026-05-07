@@ -235,7 +235,7 @@ public class ForkedJvmExtension implements InvocationInterceptor {
             throw t;
         } catch (ClassNotFoundException | IOException deserFailed) {
             throw new AssertionError("Forked JVM for " + location
-                    + " failed and result couldn't be deserialised", deserFailed);
+                    + " failed and result couldn't be deserialized", deserFailed);
         }
     }
 }
