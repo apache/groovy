@@ -6656,6 +6656,18 @@ out:    for (ClassNode type : todo) {
         tti.addAll(types); // stash negative type(s)
     }
 
+    private boolean optInstanceOfTypeInfo(final Expression expression, final ClassNode type) {
+        var tti = typeCheckingContext.temporaryIfBranchTypeInformation.peek().get(extractTemporaryTypeInfoKey(expression));
+        if (tti != null) { assert !tti.isEmpty();
+            tti.add(type);
+            ClassNode ut = newUnionTypeClassNode(tti);
+            tti.clear();
+            tti.add(ut);
+            return true;
+        }
+        return false;
+    }
+
     /**
      * GROOVY-11983: Whether the temporary type info captured while visiting {@code expr}
      * may be soundly inverted for the else branch of {@code if (expr) ... else ...} (or
@@ -6679,36 +6691,31 @@ out:    for (ClassNode type : todo) {
     private static boolean canInvertNarrowingForElseBranch(final Expression expr) {
         // NotExpression extends BooleanExpression — must check before the BooleanExpression branch
         if (expr instanceof NotExpression) return true;
-        if (expr instanceof BooleanExpression be) return canInvertNarrowingForElseBranch(be.getExpression());
+        if (expr instanceof BooleanExpression be) {
+            return canInvertNarrowingForElseBranch(be.getExpression());
+        }
         if (expr instanceof BinaryExpression be) {
-            int op = be.getOperation().getType();
-            // AND-like / XOR: !(L op R) doesn't pin down each operand's truth value
-            if (op == LOGICAL_AND || op == BITWISE_AND || op == BITWISE_XOR) return false;
-            // OR-like: !(L op R) <=> !L && !R, so recurse into both operands
-            if (op == LOGICAL_OR || op == BITWISE_OR) {
+            switch (be.getOperation().getType()) {
+              case LOGICAL_AND:
+              case BITWISE_AND:
+              case BITWISE_XOR:
+                // AND-like / XOR: !(L op R) doesn't pin down each operand's truth value
+                return false;
+              case LOGICAL_OR:
+              case BITWISE_OR:
+                // OR-like: !(L op R) <=> !L && !R, so recurse into both operands
                 return canInvertNarrowingForElseBranch(be.getLeftExpression())
                     && canInvertNarrowingForElseBranch(be.getRightExpression());
+              default:
+                return true; // instanceof, ==, comparisons, etc.
             }
-            return true; // instanceof, ==, comparisons, etc.
         }
         if (expr instanceof TernaryExpression te) {
-            return canInvertNarrowingForElseBranch(te.getBooleanExpression())
+            return canInvertNarrowingForElseBranch(te.getBooleanExpression().getExpression())
                 && canInvertNarrowingForElseBranch(te.getTrueExpression())
                 && canInvertNarrowingForElseBranch(te.getFalseExpression());
         }
         return true;
-    }
-
-    private boolean optInstanceOfTypeInfo(final Expression expression, final ClassNode type) {
-        var tti = typeCheckingContext.temporaryIfBranchTypeInformation.peek().get(extractTemporaryTypeInfoKey(expression));
-        if (tti != null) { assert !tti.isEmpty();
-            tti.add(type);
-            ClassNode ut = newUnionTypeClassNode(tti);
-            tti.clear();
-            tti.add(ut);
-            return true;
-        }
-        return false;
     }
 
     /**
