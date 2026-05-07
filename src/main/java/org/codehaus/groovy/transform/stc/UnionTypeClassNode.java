@@ -385,15 +385,24 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public boolean isDerivedFrom(final ClassNode type) {
-        return getUnresolvedSuperClass(false).isDerivedFrom(type);
+        return this.equals(type)
+            || getUnresolvedSuperClass(false).isDerivedFrom(type);
     }
 
     @Override
     public boolean isDerivedFromGroovyObject() {
         for (ClassNode delegate : delegates) {
-            if (delegate.isDerivedFromGroovyObject()) return true;
+            if (!delegate.isDerivedFromGroovyObject()) return false;
         }
-        return false;
+        return true;
+    }
+
+    @Override
+    public boolean isInterface() {
+        for (ClassNode delegate : delegates) {
+            if (!delegate.isInterface()) return false;
+        }
+        return true;
     }
 
     @Override
