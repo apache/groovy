@@ -743,7 +743,7 @@ public class GroovyPosixCommands {
 
     private static void toColumn(Context context, PrintStream out, Stream<String> ansi, boolean horizontal) {
         Terminal terminal = context.terminal();
-        int width = context.isTty() ? terminal.getWidth() : 80;
+        int width = context.isTty() ? terminal.getColumns() : 80;
         List<AttributedString> strings = ansi.map(AttributedString::fromAnsi).collect(Collectors.toList());
         if (!strings.isEmpty()) {
             int max = strings.stream()
