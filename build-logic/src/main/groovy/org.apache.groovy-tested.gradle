@@ -185,13 +185,11 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
 // swallows the entirety of a project's test source set.
 gradle.taskGraph.whenReady { graph ->
     def testTask = tasks.named('test').get()
-    logger.lifecycle("DEBUG[grape-warn] project=${project.path} hasTest=${graph.hasTask(testTask)}")
     if (!graph.hasTask(testTask)) return
     if (providers.systemProperty('junit.network').getOrNull()) return
     boolean hasGrapeTests = sourceSets.test.allSource.srcDirs.any {
         new File(it, 'groovy/grape').isDirectory()
     }
-    logger.lifecycle("DEBUG[grape-warn] project=${project.path} hasGrapeTests=${hasGrapeTests}")
     if (hasGrapeTests) {
         logger.warn("WARNING: ${testTask.path} will skip groovy/grape/* tests; set -Djunit.network=true to include them")
     }
