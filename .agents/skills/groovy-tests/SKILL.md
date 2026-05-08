@@ -69,6 +69,21 @@ These are the recurring mistakes when working with Groovy tests:
 7. **Orphaned tagged regions.** A `// tag::...[] ... // end::...[]` block in `src/spec/test/` that no AsciiDoc file `include::`'s is dead weight. If you removed the include, remove the tagged region too.
 8. **`./gradlew test` as the inner loop.** It builds and runs the whole core suite. Use targeted runs (`:test --tests <FQN>` or `:<subproject>:test --tests <FQN>`) for development; reserve the full run for the final pre-PR check.
 9. **JDK-preview-dependent test in the wrong location.** Tests that need `--enable-preview` go in `subprojects/tests-preview/src/test/`, not core `src/test/`.
+10. **Using `String.valueOf(object)` in test assertions.** It calls Java's static `String.valueOf` and bypasses Groovy MetaClass dispatch — Maps render as `{k=v}` instead of `[k:v]`, and similar mismatches hit other Groovy-flavoured collections. Use `object.toString()` so the Groovy extensions apply. (`null.toString()` returns `'null'` in Groovy, so no separate null guard is needed.)
+11. **Locale-, platform-, or format-dependent assertions.** Don't bake JVM defaults into expected output — locale (number/date formatting), default timezone, line endings, file path separators, and default charset all vary across CI agents and contributor machines. Symptom: a test passes for the author and fails on a colleague's Windows box, or starts failing when CI rotates locales. Two patterns that bite repeatedly:
+    - **Path strings interpolated into a parsed command line.** A Windows-native `Path.toString()` like `C:\Users\…\foo.json` interpolated into a `system.execute("cmd ${file}")`-style line gets its backslashes eaten by JLine's `DefaultParser` (which treats `\` as an escape). Forward-slash the path before interpolating: `path.toString().replace('\\', '/')`. Java NIO accepts forward-slash paths on Windows.
+    - **Output captured from `PrintStream.println`.** `println` uses `System.lineSeparator()`, which is `\r\n` on Windows. Line-aware assertions (`output.split('\n')`, `output.contains('foo\n')`) silently fail on Windows. Use Groovy's `String.normalize()` extension to collapse platform line separators to `\n` before splitting/comparing.
+    Other defences: `Locale.ROOT` for date/number formatting, explicit `StandardCharsets.UTF_8` rather than the platform default, or assert on parsed values rather than their stringified forms.
+12. **`-Djunit.network` doesn't reach the test JVM by default.** The build-logic uses it at the source-set filter level (excluding `groovy/grape/` paths from compilation when unset). If you need the property visible at runtime — for example to gate a non-Grape network test via `@EnabledIfSystemProperty(named = 'junit.network', matches = 'true')` — the subproject's `build.gradle` has to forward it:
+
+    ```groovy
+    tasks.named('test') {
+        def network = System.getProperty('junit.network')
+        if (network) systemProperty 'junit.network', network
+    }
+    ```
+
+    Without forwarding the gated test always skips, even with `-Djunit.network=true` on the Gradle CLI.
 
 ## Procedure for a JIRA regression test
 
