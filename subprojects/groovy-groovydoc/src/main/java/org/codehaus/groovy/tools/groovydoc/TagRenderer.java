@@ -1156,6 +1156,12 @@ final class TagRenderer {
     }
 
     private static boolean isTypeVariableName(String typeName) {
+        // Heuristic for recognizing a Java type-variable name when matching an override
+        // against its parent declaration during {@inheritDoc} resolution. Matches the
+        // common single-letter (optionally numbered) convention (T, E, R, K, V, T1, ...).
+        // KEY and VALUE are accepted because Groovy's own org.apache.groovy.json.internal.Cache
+        // declares its type parameters as <KEY, VALUE>, which would otherwise look like
+        // real class names to this matcher.
         return typeName.matches("[A-Z][0-9]?") || "KEY".equals(typeName) || "VALUE".equals(typeName);
     }
 

@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -55,6 +56,7 @@ import java.util.zip.ZipFile;
  * source method overrides a method declared outside the documented source set.
  */
 final class ExternalJavadocSupport {
+    private static final System.Logger LOGGER = System.getLogger(ExternalJavadocSupport.class.getName());
     private static final JavaParser JAVA_PARSER = new JavaParser(
             new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.BLEEDING_EDGE)
     );
@@ -63,7 +65,10 @@ final class ExternalJavadocSupport {
     private static final Map<Class<?>, List<ExternalMethodData>> METHOD_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, GroovyMethodDoc[]> METHOD_DOC_CACHE = new ConcurrentHashMap<>();
     private static final AtomicInteger ACTIVE_CACHE_SESSIONS = new AtomicInteger();
+    private static final AtomicBoolean SRC_ZIP_WARNING_LOGGED = new AtomicBoolean();
+    private static final Object ZIP_LOCK = new Object();
     private static final GroovyMethodDoc[] EMPTY_GROOVYMETHODDOC_ARRAY = new GroovyMethodDoc[0];
+    private static ZipFile sharedZipFile;
 
     private ExternalJavadocSupport() {
     }
@@ -115,14 +120,16 @@ final class ExternalJavadocSupport {
     }
 
     /**
-     * Clears all external Javadoc caches. This method is automatically called when
-     * the last active {@link CacheSession} is closed. It can also be called manually
-     * to force a reset of cached data.
+     * Clears all external Javadoc caches and releases the shared JDK source archive
+     * handle. This method is automatically called when the last active
+     * {@link CacheSession} is closed. It can also be called manually to force a reset
+     * of cached data.
      */
     static void clearCaches() {
         RAW_COMMENT_CACHE.clear();
         METHOD_CACHE.clear();
         METHOD_DOC_CACHE.clear();
+        closeSharedZipFile();
     }
 
     private static GroovyMethodDoc[] cachedMethodDocsFor(Class<?> externalClass) {
@@ -277,11 +284,26 @@ final class ExternalJavadocSupport {
     }
 
     private static Optional<CompilationUnit> loadCompilationUnit(Class<?> externalClass) {
-        if (JDK_SRC_ZIP == null) return Optional.empty();
+        if (JDK_SRC_ZIP == null) {
+            warnMissingSrcZipOnce();
+            return Optional.empty();
+        }
         String entryName = sourceEntryName(externalClass);
         if (entryName == null) return Optional.empty();
 
+        ZipFile shared = sharedZipFileForActiveSession();
+        if (shared != null) {
+            return parseCompilationUnit(shared, entryName);
+        }
         try (ZipFile zip = new ZipFile(JDK_SRC_ZIP.toFile())) {
+            return parseCompilationUnit(zip, entryName);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static Optional<CompilationUnit> parseCompilationUnit(ZipFile zip, String entryName) {
+        try {
             ZipEntry entry = zip.getEntry(entryName);
             if (entry == null) {
                 entry = findFallbackEntry(zip, entryName);
@@ -297,7 +319,40 @@ final class ExternalJavadocSupport {
         }
     }
 
-    private static ZipEntry findFallbackEntry(ZipFile zip, String entryName) {
+    private static ZipFile sharedZipFileForActiveSession() {
+        if (JDK_SRC_ZIP == null || ACTIVE_CACHE_SESSIONS.get() == 0) return null;
+        synchronized (ZIP_LOCK) {
+            if (sharedZipFile != null) return sharedZipFile;
+            if (ACTIVE_CACHE_SESSIONS.get() == 0) return null;
+            try {
+                sharedZipFile = new ZipFile(JDK_SRC_ZIP.toFile());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return sharedZipFile;
+        }
+    }
+
+    private static void closeSharedZipFile() {
+        synchronized (ZIP_LOCK) {
+            if (sharedZipFile == null) return;
+            try {
+                sharedZipFile.close();
+            } catch (IOException ignored) {
+            }
+            sharedZipFile = null;
+        }
+    }
+
+    private static void warnMissingSrcZipOnce() {
+        if (SRC_ZIP_WARNING_LOGGED.compareAndSet(false, true)) {
+            LOGGER.log(System.Logger.Level.WARNING,
+                    "JDK src.zip not found under java.home=" + System.getProperty("java.home")
+                            + "; external {@inheritDoc} resolution from JDK classes is unavailable.");
+        }
+    }
+
+    static ZipEntry findFallbackEntry(ZipFile zip, String entryName) {
         int slash = entryName.indexOf('/');
         String suffix = slash >= 0 ? "/" + entryName.substring(slash + 1) : "/" + entryName;
         return zip.stream()
@@ -395,7 +450,7 @@ final class ExternalJavadocSupport {
         return false;
     }
 
-    private static String eraseTypeName(String declaredType) {
+    static String eraseTypeName(String declaredType) {
         if (declaredType == null || declaredType.isEmpty()) return "";
         StringBuilder erased = new StringBuilder(declaredType.length());
         int genericDepth = 0;

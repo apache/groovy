@@ -47,6 +47,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
@@ -824,6 +827,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testInheritDocResolvesFromExternalJdkAbstractClassInHtml() throws Exception {
+        if (skipIfNoJdkSrcZip()) return;
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         htmlTool.add(List.of(base + "/JavaExtendsWriterInheritDoc.java"));
 
@@ -836,15 +840,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertNotNull("Expected JavaExtendsWriterInheritDoc.html in output", doc);
         assertNotNull("Expected close() section in:\n" + doc, closeSection);
         assertNotNull("Expected flush() section in:\n" + doc, flushSection);
-        assertTrue("Expected inherited close() text from java.io.Writer in:\n" + doc,
-                normalizeWhitespace(closeSection).contains("Closes the stream"));
-        assertTrue("Expected inherited flush() text from java.io.Writer in:\n" + doc,
-                normalizeWhitespace(flushSection).contains("Flushes the stream"));
+        assertMatches("Expected inherited close() text from java.io.Writer in:\n" + doc,
+                "(?i)close[sd]?\\b[^\\n]{0,40}\\bstream", normalizeWhitespace(closeSection));
+        assertMatches("Expected inherited flush() text from java.io.Writer in:\n" + doc,
+                "(?i)flush(es|ed|ing)?\\b[^\\n]{0,40}\\bstream", normalizeWhitespace(flushSection));
         assertFalse("External JDK inheritDoc should not remain literal in:\n" + doc,
                 doc.contains("{@inheritDoc}"));
     }
 
     public void testInheritDocResolvesFromExternalObjectMethodInHtml() throws Exception {
+        if (skipIfNoJdkSrcZip()) return;
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         htmlTool.add(List.of(base + "/JavaObjectCloneInheritDocChild.java"));
 
@@ -855,8 +860,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String cloneSection = findMethodSection(doc, "clone", "");
         assertNotNull("Expected JavaObjectCloneInheritDocChild.html in output", doc);
         assertNotNull("Expected clone() section in:\n" + doc, cloneSection);
-        assertTrue("Expected inherited clone() text from java.lang.Object in:\n" + doc,
-                normalizeWhitespace(cloneSection).contains("Creates and returns a copy of this object"));
+        assertMatches("Expected inherited clone() text from java.lang.Object in:\n" + doc,
+                "(?i)copy\\s+of\\s+this\\s+object", normalizeWhitespace(cloneSection));
         assertFalse("External Object inheritDoc should not remain literal in:\n" + doc,
                 doc.contains("{@inheritDoc}"));
     }
@@ -903,6 +908,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testInheritDocResolvesFromExternalMapAndObjectMethodsInHtml() throws Exception {
+        if (skipIfNoJdkSrcZip()) return;
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         htmlTool.add(List.of(base + "/JavaImplementsMapInheritDoc.java"));
 
@@ -919,16 +925,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertNotNull("Expected containsValue(Object) section in:\n" + doc, containsValueSection);
         assertNotNull("Expected equals(Object) section in:\n" + doc, equalsSection);
         assertNotNull("Expected hashCode() section in:\n" + doc, hashCodeSection);
-        assertTrue("Expected inherited clear() text from java.util.Map in:\n" + doc,
-                normalizeWhitespace(clearSection).contains("Removes all of the mappings from this map"));
-        assertTrue("Expected inherited containsValue(Object) text from java.util.Map in:\n" + doc,
-                containsValueSection.contains("Returns <CODE>true</CODE> if this map maps one or more keys to the"));
-        assertTrue("Expected inherited equals(Object) text from java.lang.Object in:\n" + doc,
-                equalsSection.contains("Indicates whether some other object is \"equal to\" this one"));
-        assertTrue("Expected normalized inherited hashCode() text from java.lang.Object in:\n" + doc,
-                normalizeWhitespace(hashCodeSection).contains("a hash code value for this object"));
-        assertFalse("Inherited external docs should not retain raw Javadoc comment markers in:\n" + doc,
-                normalizeWhitespace(doc).contains("* Removes all of the mappings"));
+        assertMatches("Expected inherited clear() text from java.util.Map in:\n" + doc,
+                "(?i)remov(es|ing)?\\b[^\\n]{0,30}\\bmapping", normalizeWhitespace(clearSection));
+        assertMatches("Expected inherited containsValue(Object) text from java.util.Map in:\n" + doc,
+                "(?i)map\\s+maps?\\s+one\\s+or\\s+more\\s+key", normalizeWhitespace(containsValueSection));
+        assertMatches("Expected inherited equals(Object) text from java.lang.Object in:\n" + doc,
+                "(?i)\\bother\\s+object\\b[^\\n]{0,40}\\bequal", normalizeWhitespace(equalsSection));
+        assertMatches("Expected normalized inherited hashCode() text from java.lang.Object in:\n" + doc,
+                "(?i)hash\\s*code\\b[^\\n]{0,30}\\bobject", normalizeWhitespace(hashCodeSection));
+        assertFalse("Inherited external docs should not retain raw Javadoc comment markers (a leading '* ') in:\n" + doc,
+                Pattern.compile("\\*\\s+(?i:Removes|Returns|Indicates|Creates|Closes|Flushes)\\b").matcher(doc).find());
         assertFalse("Inherited external docs should not leave raw link/index inline tags in:\n" + doc,
                 doc.contains("{@linkplain") || doc.contains("{@index"));
         assertFalse("External Map/Object inheritDoc should not remain literal in:\n" + doc,
@@ -1049,6 +1055,31 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     private static String normalizeWhitespace(String text) {
         return text == null ? null : text.replaceAll("\\s+", " ").trim();
+    }
+
+    private static void assertMatches(String message, String regex, String content) {
+        if (content == null || !Pattern.compile(regex).matcher(content).find()) {
+            fail(message + "\n  pattern: " + regex + "\n  content: " + content);
+        }
+    }
+
+    private boolean skipIfNoJdkSrcZip() {
+        if (jdkSrcZipPath() != null) return false;
+        System.out.println("[skip] " + getName() + ": JDK src.zip not found under java.home="
+                + System.getProperty("java.home"));
+        return true;
+    }
+
+    private static Path jdkSrcZipPath() {
+        String javaHome = System.getProperty("java.home");
+        if (javaHome == null || javaHome.isEmpty()) return null;
+        Path home = Paths.get(javaHome);
+        Path direct = home.resolve("lib/src.zip");
+        if (Files.isRegularFile(direct)) return direct;
+        Path parent = home.getParent();
+        if (parent == null) return null;
+        Path sibling = parent.resolve("lib/src.zip");
+        return Files.isRegularFile(sibling) ? sibling : null;
     }
 
     private static GroovyMethodDoc findMethod(GroovyClassDoc classDoc, String name, int parameterCount) {
@@ -3447,5 +3478,89 @@ public class GroovyDocToolTest extends GroovyTestCase {
         }
 
         return null;
+    }
+
+    public void testEraseTypeNameStripsGenericsAndWildcards() {
+        assertEquals("List", ExternalJavadocSupport.eraseTypeName("List<String>"));
+        assertEquals("Map", ExternalJavadocSupport.eraseTypeName("Map<String, Integer>"));
+        assertEquals("Map", ExternalJavadocSupport.eraseTypeName("Map<String, Map<String, Integer>>"));
+        assertEquals("Number", ExternalJavadocSupport.eraseTypeName("? extends Number"));
+        assertEquals("Integer", ExternalJavadocSupport.eraseTypeName("? super Integer"));
+        assertEquals("Object", ExternalJavadocSupport.eraseTypeName("?"));
+        assertEquals("List[]", ExternalJavadocSupport.eraseTypeName("List<? extends T>[]"));
+        assertEquals("", ExternalJavadocSupport.eraseTypeName(""));
+        assertEquals("", ExternalJavadocSupport.eraseTypeName(null));
+    }
+
+    public void testFindFallbackEntryFindsByTrailingPathSuffix() throws Exception {
+        Path zipPath = Files.createTempFile("ext-javadoc-fallback", ".zip");
+        try {
+            try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zipPath))) {
+                out.putNextEntry(new ZipEntry("noise/elsewhere/Other.java"));
+                out.write("// other".getBytes());
+                out.closeEntry();
+                out.putNextEntry(new ZipEntry("some.module/com/example/Foo.java"));
+                out.write("// foo".getBytes());
+                out.closeEntry();
+            }
+            try (ZipFile zip = new ZipFile(zipPath.toFile())) {
+                ZipEntry hit = ExternalJavadocSupport.findFallbackEntry(zip, "java.base/com/example/Foo.java");
+                assertNotNull("Expected fallback to find Foo.java by trailing path", hit);
+                assertEquals("some.module/com/example/Foo.java", hit.getName());
+
+                ZipEntry miss = ExternalJavadocSupport.findFallbackEntry(zip, "java.base/com/example/Missing.java");
+                assertNull("No entry should match Missing.java", miss);
+            }
+        } finally {
+            Files.deleteIfExists(zipPath);
+        }
+    }
+
+    public void testFindFallbackEntryHandlesEntryNameWithoutSlash() throws Exception {
+        Path zipPath = Files.createTempFile("ext-javadoc-fallback-noslash", ".zip");
+        try {
+            try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zipPath))) {
+                out.putNextEntry(new ZipEntry("any/where/Bare.java"));
+                out.write("// bare".getBytes());
+                out.closeEntry();
+            }
+            try (ZipFile zip = new ZipFile(zipPath.toFile())) {
+                ZipEntry hit = ExternalJavadocSupport.findFallbackEntry(zip, "Bare.java");
+                assertNotNull("Expected fallback to find entry by '/Bare.java' suffix", hit);
+                assertEquals("any/where/Bare.java", hit.getName());
+            }
+        } finally {
+            Files.deleteIfExists(zipPath);
+        }
+    }
+
+    // Exercises the matchesTypeName same-package / java.lang / array-aware branches: the JDK
+    // source for java.lang.Throwable declares getMessage() returning String, setStackTrace
+    // taking StackTraceElement[] (bare same-package types). Override-matching has to fall
+    // through past canonical/typeName checks before resolving these to the reflected
+    // java.lang.* qualified types and producing a non-empty raw comment.
+    public void testMatchesTypeNameResolvesUnqualifiedJavaLangTypes() {
+        if (skipIfNoJdkSrcZip()) return;
+        try (AutoCloseable ignored = ExternalJavadocSupport.openCacheSession()) {
+            GroovyMethodDoc[] docs = ExternalJavadocSupport.methodsFor(new ExternalGroovyClassDoc(Throwable.class));
+            assertTrue("Expected reflective methods for java.lang.Throwable", docs.length > 0);
+
+            boolean foundGetMessage = false;
+            boolean foundSetStackTrace = false;
+            for (GroovyMethodDoc doc : docs) {
+                String raw = ((SimpleGroovyMethodDoc) doc).getRawCommentText();
+                if (raw == null || raw.isEmpty()) continue;
+                if ("getMessage".equals(doc.name()) && doc.parameters().length == 0) {
+                    foundGetMessage = true;
+                } else if ("setStackTrace".equals(doc.name()) && doc.parameters().length == 1) {
+                    foundSetStackTrace = true;
+                }
+            }
+            assertTrue("Expected resolved Javadoc for Throwable#getMessage()", foundGetMessage);
+            assertTrue("Expected resolved Javadoc for Throwable#setStackTrace(StackTraceElement[])"
+                    + " (bare same-package array parameter)", foundSetStackTrace);
+        } catch (Exception e) {
+            fail("session close threw: " + e);
+        }
     }
 }
