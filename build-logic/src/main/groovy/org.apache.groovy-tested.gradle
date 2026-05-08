@@ -182,18 +182,18 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
 }
 
 // Warn (rather than silently NO-SOURCE) when the groovy/grape exclusion
-// swallows the entirety of a project's test source set. A plain
-// `:groovy-grape-test:test` invocation otherwise reports BUILD SUCCESSFUL
-// with zero tests executed — easy to mistake for a passing run.
-afterEvaluate {
-    if (!providers.systemProperty('junit.network').getOrNull()) {
-        boolean hasGrapeTests = sourceSets.test.allSource.srcDirs.any {
-            new File(it, 'groovy/grape').isDirectory()
-        }
-        if (hasGrapeTests) {
-            String testPath = (project.path == ':' ? '' : project.path) + ':test'
-            logger.warn("WARNING: ${testPath} will skip groovy/grape/* tests; set -Djunit.network=true to include them")
-        }
+// swallows the entirety of a project's test source set.
+gradle.taskGraph.whenReady { graph ->
+    def testTask = tasks.named('test').get()
+    logger.lifecycle("DEBUG[grape-warn] project=${project.path} hasTest=${graph.hasTask(testTask)}")
+    if (!graph.hasTask(testTask)) return
+    if (providers.systemProperty('junit.network').getOrNull()) return
+    boolean hasGrapeTests = sourceSets.test.allSource.srcDirs.any {
+        new File(it, 'groovy/grape').isDirectory()
+    }
+    logger.lifecycle("DEBUG[grape-warn] project=${project.path} hasGrapeTests=${hasGrapeTests}")
+    if (hasGrapeTests) {
+        logger.warn("WARNING: ${testTask.path} will skip groovy/grape/* tests; set -Djunit.network=true to include them")
     }
 }
 
