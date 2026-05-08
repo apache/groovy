@@ -34,6 +34,8 @@ dependencies {
     implementation projects.groovyJson
     implementation projects.groovyNio
     testImplementation projects.groovyTest
+    testImplementation projects.groovyCsv         // for /slurp .csv default coverage
+    testImplementation projects.groovyTestJunit6  // for @ForkedJvm in CSV fallback tests
     implementation "net.java.dev.jna:jna:${versions.jna}"
     implementation "org.jline:jansi:${versions.jline}"
     implementation "org.jline:jline-builtins:${versions.jline}"
@@ -48,6 +50,16 @@ dependencies {
 plugins.withId('eclipse') {
     eclipse.classpath.file.whenMerged {
         entries.removeAll { entry -> entry.path in ['/groovy-xml', '/groovy-swing', '/groovy-templates'] }
+    }
+}
+
+// Forward -Djunit.network from the Gradle invocation to the test JVM so that
+// @EnabledIfSystemProperty in network-gated tests (e.g. SlurpCsvFallbackTest)
+// can see it.
+tasks.named('test') {
+    def network = System.getProperty('junit.network')
+    if (network) {
+        systemProperty 'junit.network', network
     }
 }
 

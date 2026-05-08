@@ -35,4 +35,13 @@ class MethodsTest extends SystemTestSupport {
         system.execute('/methods -d twice')
         assert !engine.methodNames.contains('twice')
     }
+
+    @Test
+    void testDeleteNonexistentMethodIsHarmless() {
+        // /methods -d on an unknown method should not throw; the engine's
+        // method registry stays stable.
+        def before = engine.methodNames.toSet()
+        system.execute('/methods -d noSuchMethodEverDefined')
+        assert engine.methodNames.toSet() == before
+    }
 }

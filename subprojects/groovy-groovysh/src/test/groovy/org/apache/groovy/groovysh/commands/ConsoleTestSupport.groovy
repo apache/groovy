@@ -22,6 +22,7 @@ import org.apache.groovy.groovysh.Main
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
+import org.jline.console.Printer
 import org.jline.builtins.ClasspathResourceUtil
 import org.jline.builtins.ConfigurationPath
 import org.jline.builtins.SyntaxHighlighter
@@ -34,6 +35,7 @@ import org.jline.reader.impl.DefaultParser
 import org.junit.jupiter.api.BeforeEach
 
 import java.nio.file.Path
+import java.util.function.Supplier
 
 /**
  * Support for testing {@link ConsoleEngine} instances.
@@ -44,9 +46,10 @@ abstract class ConsoleTestSupport {
     private Path root = ClasspathResourceUtil.getResourcePath(rootURL)
     private Path temp = File.createTempDir().toPath()
     protected ConfigurationPath configPath = new ConfigurationPath(root, temp)
+    protected Supplier<Path> workDir = { -> temp } as Supplier<Path>
     protected DummyPrinter printer = new DummyPrinter(configPath)
     private highlighter = SyntaxHighlighter.build(root, "DUMMY")
-    protected CommandRegistry groovy = new GroovyCommands(engine, null, printer, highlighter)
+    protected CommandRegistry groovy = new GroovyCommands(engine, workDir, printer, highlighter)
     protected ConsoleEngine console
     protected CommandRegistry.CommandSession session = new CommandRegistry.CommandSession()
     protected LineReader reader
@@ -70,7 +73,19 @@ abstract class ConsoleTestSupport {
 
         @Override
         void println(Map<String, Object> options, Object object) {
-            output << object.toString()
+            // /classloader --view passes the EngineClassLoader as `object`
+            // with COLUMNS option naming the fields to render. DefaultPrinter
+            // would format those as a table; in tests we capture each
+            // column as `name=value` so substring assertions still work.
+            if (object instanceof GroovyEngine.EngineClassLoader) {
+                options?[Printer.COLUMNS]?.each { col ->
+                    output << "$col=" + object."$col"
+                }
+            } else {
+                // .toString() (not String.valueOf) preserves Groovy MetaClass
+                // extensions — Map renders as [k:v] not {k=v}.
+                output << object.toString()
+            }
         }
 
         @Override
