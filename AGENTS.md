@@ -127,8 +127,21 @@ into the human-facing docs above.
 
 | Skill | Use for |
 |---|---|
+| [`groovy-build`](.agents/skills/groovy-build/SKILL.md) | Gradle build changes — convention plugins, build files, dependency verification, ASM/ANTLR repackaging, OSGi, release pipeline |
 | [`groovy-internals`](.agents/skills/groovy-internals/SKILL.md) | Compiler and runtime work — parser, AST, type checker, transforms, class generation |
 | [`groovy-tests`](.agents/skills/groovy-tests/SKILL.md) | Adding or modifying tests, including JIRA regression tests and executable AsciiDoc examples |
+| [`groovysh`](.agents/skills/groovysh/SKILL.md) | Work in `subprojects/groovy-groovysh/` — REPL commands, JLine integration, vendored forks, terminal-aware test stack |
+
+## Subproject guides
+
+Some subprojects have their own `AGENTS.md` with content specific to
+that module — additional architecture, test infrastructure, or
+conventions that don't apply elsewhere. Load the relevant subproject's
+guide when working in its directory tree.
+
+| Subproject | Scope |
+|---|---|
+| [`groovy-groovysh`](subprojects/groovy-groovysh/AGENTS.md) | Interactive REPL, JLine integration, vendored forks, terminal-aware test stack |
 
 ## Where to ask
 
