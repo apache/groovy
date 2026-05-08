@@ -393,7 +393,7 @@ class Main {
                 }
                 name('groovysh')
             }.build()
-            if (terminal.width == 0 || terminal.height == 0) {
+            if (terminal.columns == 0 || terminal.rows == 0) {
                 terminal.size = new Size(120, 40) // hard-coded terminal size when redirecting
             }
             Thread executeThread = Thread.currentThread()
@@ -502,7 +502,7 @@ class Main {
                 println render(messages['startup_banner.1'])
                 println render(messages['startup_banner.2'])
             }
-            println '-' * (terminal.width - 1)
+            println '-' * (terminal.columns - 1)
 // for debugging
 //            def index = 0
 //            def lines = ['/slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
