@@ -70,4 +70,60 @@ class GroovyEngineTest {
         engine.execute('import java.awt.Point')
         assert engine.imports.values().any { it.contains('java.awt.Point') }
     }
+
+    @Test
+    void resetClearsTrackedDefinitionsButLeavesBindingVarsForFreshExecutes() {
+        // /reset wipes types/methods/imports/snippet-tracked variables;
+        // it does NOT delete shared/binding variables (those are managed
+        // by the underlying ScriptEngine and survive). This is contract
+        // users rely on.
+        engine.execute('class C {}')
+        engine.execute('def m(x) { x * 3 }')
+        engine.put('survivor', 'still here')
+
+        engine.reset()
+
+        assert engine.types.isEmpty()
+        assert engine.methodNames.isEmpty()
+        assert engine.imports.isEmpty()
+        assert engine.hasVariable('survivor')
+        assert engine.execute('survivor') == 'still here'
+    }
+
+    @Test
+    void redefiningATypeReplacesTheTrackedSnippet() {
+        // The user redefines a class (common in interactive use). The
+        // engine should keep only one snippet under that name and run
+        // the latest body — not stack two definitions and produce
+        // ambiguous behaviour.
+        engine.execute('class T { String greet() { "first" } }')
+        engine.execute('class T { String greet() { "second" } }')
+        assert engine.types.containsKey('T')
+        assert engine.execute('new T().greet()') == 'second'
+    }
+
+    @Test
+    void removeMethodDropsItFromTracking() {
+        engine.execute('def disposable() { 1 }')
+        assert engine.methodNames.contains('disposable')
+        engine.removeMethod('disposable')
+        assert !engine.methodNames.contains('disposable')
+    }
+
+    @Test
+    void removeTypeDropsItFromTracking() {
+        engine.execute('class Disposable {}')
+        assert engine.types.containsKey('Disposable')
+        engine.removeType('Disposable')
+        assert !engine.types.containsKey('Disposable')
+    }
+
+    @Test
+    void closureBindingVariableSurvivesAcrossExecutes() {
+        // A closure stored in the binding can be invoked by name on a
+        // later execute — useful for "save a callback, use it later"
+        // patterns that show up in REPL workflows.
+        engine.execute('greet = { name -> "hi, $name" }')
+        assert engine.execute("greet('paul')") == 'hi, paul'
+    }
 }
