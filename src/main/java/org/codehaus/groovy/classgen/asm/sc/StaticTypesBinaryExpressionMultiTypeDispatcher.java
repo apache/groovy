@@ -93,10 +93,14 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
+    /**
+     * Creates a binary-expression dispatcher for statically compiled bytecode generation.
+     */
     public StaticTypesBinaryExpressionMultiTypeDispatcher(final WriterController wc) {
         super(wc);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void writePostOrPrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
         MethodNode mn = orig.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
@@ -135,12 +139,14 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
         if (tryStaticCompoundAssignPaths(method, expression)) return;
         super.evaluateBinaryExpressionWithAssignment(method, expression);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void evaluateCompoundAssign(final String assignName, final String baseName, final BinaryExpression expression) {
         if (tryStaticCompoundAssignPaths(baseName, expression)) return;
@@ -211,6 +217,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         controller.getCompileStack().removeVar(slot);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
         Expression leftExpression = expression.getLeftExpression();
@@ -334,6 +341,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void assignToArray(final Expression enclosing, final Expression receiver, final Expression subscript, final Expression rhsValueLoader, final boolean safe) {
         ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());

@@ -77,12 +77,16 @@ import static org.objectweb.asm.Opcodes.NEW;
  */
 public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFunctionalInterfaceWriter {
 
+    /**
+     * Creates a lambda writer for statically compiled code generation.
+     */
     public StaticTypesLambdaWriter(final WriterController controller) {
         super(controller);
         this.staticTypesClosureWriter = new StaticTypesClosureWriter(controller);
         this.lambdaAnalyzer = new StaticTypesLambdaAnalyzer(controller.getSourceUnit());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeLambda(final LambdaExpression expression) {
         // functional interface target is required for native lambda generation
@@ -266,11 +270,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         });
     }
 
+    /** {@inheritDoc} */
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         return staticTypesClosureWriter.createClosureClass(expression, modifiers);
     }
 
+    /**
+     * Creates the synthetic inner class that backs a statically compiled lambda expression.
+     */
     protected ClassNode createLambdaClass(final LambdaExpression expression, final int modifiers, final MethodNode abstractMethod) {
         ClassNode enclosingClass = controller.getClassNode();
         ClassNode outermostClass = controller.getOutermostClass();

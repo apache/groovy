@@ -56,6 +56,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLU
  */
 public class StaticTypesWriterController extends DelegatingController {
 
+    /**
+     * Tracks whether the current member is being emitted through the static-compilation fast path.
+     */
     protected boolean isInStaticallyCheckedMethod;
     private boolean methodHasDynamicResolution; // GROOVY-11968
 
@@ -69,10 +72,14 @@ public class StaticTypesWriterController extends DelegatingController {
     private BinaryExpressionMultiTypeDispatcher binaryExpressionHelper;
     private MethodReferenceExpressionWriter methodReferenceExpressionWriter;
 
+    /**
+     * Creates a delegating writer controller that switches between dynamic and static code-generation strategies.
+     */
     public StaticTypesWriterController(final WriterController controller) {
         super(controller);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void init(final AsmClassGenerator asmClassGenerator, final GeneratorContext gcon, final ClassVisitor cv, final ClassNode cn) {
         super.init(asmClassGenerator, gcon, cv, cn);
@@ -91,6 +98,7 @@ public class StaticTypesWriterController extends DelegatingController {
                 : new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setMethodNode(final MethodNode mn) {
         isInStaticallyCheckedMethod = isStaticallyCompiled(mn);
@@ -98,6 +106,7 @@ public class StaticTypesWriterController extends DelegatingController {
         super.setMethodNode(mn);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setConstructorNode(final ConstructorNode cn) {
         isInStaticallyCheckedMethod = isStaticallyCompiled(cn);
@@ -167,12 +176,14 @@ public class StaticTypesWriterController extends DelegatingController {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFastPath() {
         if (isInStaticallyCheckedMethod) return true;
         return super.isFastPath();
     }
 
+    /** {@inheritDoc} */
     @Override
     public CallSiteWriter getCallSiteWriter() {
         if (isInStaticallyCheckedMethod) {
@@ -181,6 +192,7 @@ public class StaticTypesWriterController extends DelegatingController {
         return super.getCallSiteWriter();
     }
 
+    /** {@inheritDoc} */
     @Override
     public CallSiteWriter getCallSiteWriterFor(final Expression expression) {
         if (expression.getNodeMetaData(DYNAMIC_RESOLUTION) != null) {
@@ -189,10 +201,14 @@ public class StaticTypesWriterController extends DelegatingController {
         return getCallSiteWriter();
     }
 
+    /**
+     * Returns the regular dynamic call-site writer used for fallback expressions.
+     */
     public CallSiteWriter getRegularCallSiteWriter() {
         return super.getCallSiteWriter();
     }
 
+    /** {@inheritDoc} */
     @Override
     public StatementWriter getStatementWriter() {
         if (isInStaticallyCheckedMethod) {
@@ -202,6 +218,7 @@ public class StaticTypesWriterController extends DelegatingController {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public TypeChooser getTypeChooser() {
         if (isInStaticallyCheckedMethod) {
@@ -211,6 +228,7 @@ public class StaticTypesWriterController extends DelegatingController {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public InvocationWriter getInvocationWriter() {
         if (isInStaticallyCheckedMethod) {
@@ -220,10 +238,14 @@ public class StaticTypesWriterController extends DelegatingController {
         }
     }
 
+    /**
+     * Returns the regular dynamic invocation writer used for fallback expressions.
+     */
     public InvocationWriter getRegularInvocationWriter() {
         return super.getInvocationWriter();
     }
 
+    /** {@inheritDoc} */
     @Override
     public BinaryExpressionHelper getBinaryExpressionHelper() {
         if (isInStaticallyCheckedMethod) {
@@ -233,6 +255,7 @@ public class StaticTypesWriterController extends DelegatingController {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public MethodReferenceExpressionWriter getMethodReferenceExpressionWriter() {
         if (isInStaticallyCheckedMethod) {
@@ -242,6 +265,7 @@ public class StaticTypesWriterController extends DelegatingController {
         return super.getMethodReferenceExpressionWriter();
     }
 
+    /** {@inheritDoc} */
     @Override
     public UnaryExpressionHelper getUnaryExpressionHelper() {
         if (isInStaticallyCheckedMethod) {
@@ -250,6 +274,7 @@ public class StaticTypesWriterController extends DelegatingController {
         return super.getUnaryExpressionHelper();
     }
 
+    /** {@inheritDoc} */
     @Override
     public ClosureWriter getClosureWriter() {
         if (isInStaticallyCheckedMethod) {
@@ -258,6 +283,7 @@ public class StaticTypesWriterController extends DelegatingController {
         return super.getClosureWriter();
     }
 
+    /** {@inheritDoc} */
     @Override
     public LambdaWriter getLambdaWriter() {
         if (isInStaticallyCheckedMethod) {

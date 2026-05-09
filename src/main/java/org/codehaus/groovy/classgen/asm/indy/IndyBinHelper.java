@@ -26,12 +26,19 @@ import org.codehaus.groovy.classgen.asm.BinaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 
+/**
+ * Binary-expression helper that routes prefix and postfix operations through the indy invocation path.
+ */
 public class IndyBinHelper extends BinaryExpressionHelper {
 
+    /**
+     * Creates an indy-aware binary-expression helper.
+     */
     public IndyBinHelper(WriterController wc) {
         super(wc);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void writePostOrPrefixMethod(int op, String method, Expression expression, Expression orig) {
         getController().getInvocationWriter().makeCall(

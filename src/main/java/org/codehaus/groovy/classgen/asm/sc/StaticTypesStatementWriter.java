@@ -69,10 +69,14 @@ public class StaticTypesStatementWriter extends StatementWriter {
     private static final MethodCaller ENUMERATION_NEXT_METHOD = MethodCaller.newInterface(Enumeration.class, "nextElement");
     private static final MethodCaller ENUMERATION_HASMORE_METHOD = MethodCaller.newInterface(Enumeration.class, "hasMoreElements");
 
+    /**
+     * Creates a statement writer that favors statically typed loop and block generation.
+     */
     public StaticTypesStatementWriter(final StaticTypesWriterController controller) {
         super(controller);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeBlockStatement(final BlockStatement statement) {
         controller.switchToFastPath();
@@ -82,6 +86,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
 
     //--------------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     protected void writeForInLoop(final ForStatement loop) {
         controller.getAcg().onLineNumber(loop, "visitForLoop");

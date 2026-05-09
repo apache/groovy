@@ -52,11 +52,17 @@ import static org.objectweb.asm.Opcodes.LRETURN;
  * @since 2.5.0
  */
 public abstract class TypeUtil {
+    /**
+     * Returns the wrapper type for the supplied primitive class, or the class itself if it is already a reference type.
+     */
     public static Class autoboxType(Class type) {
         final Class res = PRIMITIVE_TYPE_TO_WRAPPED_CLASS_MAP.get(type);
         return res == null ? type : res;
     }
 
+    /**
+     * Returns the load opcode for the supplied ASM type.
+     */
     public static int getLoadInsnByType(Type type) {
         Integer insn = PRIMITIVE_TYPE_TO_LOAD_INSN_MAP.get(type);
 
@@ -67,6 +73,9 @@ public abstract class TypeUtil {
         return ALOAD;
     }
 
+    /**
+     * Returns the return opcode for the supplied ASM type.
+     */
     public static int getReturnInsnByType(Type type) {
         Integer insn = PRIMITIVE_TYPE_TO_RETURN_INSN_MAP.get(type);
 
@@ -77,6 +86,9 @@ public abstract class TypeUtil {
         return ARETURN;
     }
 
+    /**
+     * Returns the descriptor of the wrapper class corresponding to the supplied primitive ASM type.
+     */
     public static String getWrappedClassDescriptor(Type type) {
         String desc = PRIMITIVE_TYPE_TO_WRAPPED_CLASS_DESCRIPTOR_MAP.get(type);
 
@@ -87,18 +99,30 @@ public abstract class TypeUtil {
         throw new IllegalArgumentException("Unexpected type class [" + type + "]");
     }
 
+    /**
+     * Tests whether the supplied ASM type is primitive.
+     */
     public static boolean isPrimitiveType(Type type) {
         return PRIMITIVE_TYPE_TO_LOAD_INSN_MAP.containsKey(type);
     }
 
+    /**
+     * Tests whether the supplied type name denotes a primitive type.
+     */
     public static boolean isPrimitiveType(String name) {
         return NAME_TO_PRIMITIVE_TYPE_MAP.containsKey(name);
     }
 
+    /**
+     * Tests whether the supplied class node denotes a primitive type.
+     */
     public static boolean isPrimitiveType(ClassNode type) {
         return type != null && PRIMITIVE_TYPE_TO_DESCRIPTION_MAP.containsKey(type.redirect());
     }
 
+    /**
+     * Returns the JVM type descriptor for the supplied class node.
+     */
     public static String getDescriptionByType(ClassNode type) {
         String desc = PRIMITIVE_TYPE_TO_DESCRIPTION_MAP.get(type);
 
@@ -121,6 +145,9 @@ public abstract class TypeUtil {
         return desc;
     }
 
+    /**
+     * Returns the JVM type descriptor for the supplied type name.
+     */
     public static String getDescriptionByName(String name) {
         ClassNode type = NAME_TO_PRIMITIVE_TYPE_MAP.get(name);
 

@@ -73,6 +73,9 @@ import static org.objectweb.asm.Opcodes.CHECKCAST;
  */
 public interface AbstractFunctionalInterfaceWriter {
 
+    /**
+     * Emits the bootstrap invocation for a functional-interface implementation without additional marker interfaces.
+     */
     default void writeFunctionalInterfaceIndy(final MethodVisitor methodVisitor,
                                               final String samMethodName, final String invokedTypeDescriptor,
                                               final String samMethodDescriptor, final int implMethodKind,
@@ -110,24 +113,39 @@ public interface AbstractFunctionalInterfaceWriter {
         }
     }
 
+    /**
+     * Returns the JVM method descriptor for the supplied method node.
+     */
     default String createMethodDescriptor(final MethodNode method) {
         return createMethodDescriptor(method.getReturnType(), method.getParameters());
     }
 
+    /**
+     * Returns the JVM method descriptor for the supplied return type and parameters.
+     */
     default String createMethodDescriptor(final ClassNode returnType, final Parameter[] parameters) {
         return getMethodDescriptor(returnType, parameters);
     }
 
+    /**
+     * Returns the invoked type descriptor used to create the functional-interface instance.
+     */
     default String createFunctionalInterfaceFactoryDescriptor(final ClassNode functionalType, final Parameter[] capturedParameters) {
         return createMethodDescriptor(functionalType.redirect(), capturedParameters);
     }
 
+    /**
+     * Creates the synthetic parameter that carries a captured receiver into a generated lambda factory.
+     */
     default Parameter createCapturedReceiverParameter(final ClassNode receiverType, final String parameterName) {
         Parameter parameter = new Parameter(receiverType, parameterName);
         parameter.setClosureSharedVariable(false);
         return parameter;
     }
 
+    /**
+     * Reconciles the inferred lambda parameter type with the target functional-interface parameter type.
+     */
     default ClassNode convertParameterType(final ClassNode targetType, final ClassNode parameterType, final ClassNode inferredType) {
         if (!getWrapper(inferredType).isDerivedFrom(getWrapper(parameterType))) {
             throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
@@ -169,9 +187,12 @@ public interface AbstractFunctionalInterfaceWriter {
         return type;
     }
 
+    /**
+     * Builds the serialized-lambda fingerprint used to dispatch deserialization helpers.
+     */
     default SerializedLambdaFingerprint createSerializedLambdaFingerprint(final String samMethodDescriptor, final ClassNode capturingClass,
-                                                                          final int implMethodKind, final ClassNode implClassNode,
-                                                                          final MethodNode implMethodNode, final Parameter[] implMethodParameters,
+                                                                           final int implMethodKind, final ClassNode implClassNode,
+                                                                           final MethodNode implMethodNode, final Parameter[] implMethodParameters,
                                                                           final ClassNode functionalType, final MethodNode abstractMethod,
                                                                           final int capturedArgumentCount) {
         return new SerializedLambdaFingerprint(
@@ -188,6 +209,9 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
+    /**
+     * Registers a deserialization guard that routes a serialized lambda back to its helper method.
+     */
     default void addDeserializeDispatcherEntry(final WriterController controller, final Parameter[] deserializeMethodParameters,
                                                final SerializedLambdaFingerprint serializedLambdaFingerprint,
                                                final MethodNode helperMethod) {
@@ -205,6 +229,9 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
+    /**
+     * Creates the parameter list for a synthetic {@code $deserializeLambda$} helper.
+     */
     default Parameter[] createDeserializeMethodParameters() {
         return new Parameter[] { new Parameter(SERIALIZEDLAMBDA_TYPE, "serializedLambda") };
     }

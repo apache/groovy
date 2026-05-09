@@ -45,20 +45,30 @@ public class LoggableTextifier extends Textifier {
     private final CompilerConfiguration compilerConfiguration;
     private int lineCount;
 
+    /**
+     * Creates a textifier that uses the default compiler configuration for stack-trace enrichment.
+     */
     public LoggableTextifier() {
         this(CompilerConfiguration.DEFAULT);
     }
 
+    /**
+     * Creates a textifier that logs emitted bytecode using the supplied compiler configuration.
+     */
     public LoggableTextifier(final CompilerConfiguration compilerConfiguration) {
         super(CompilerConfiguration.ASM_API_VERSION);
         this.compilerConfiguration = compilerConfiguration;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected Textifier createTextifier() {
         return new LoggableTextifier(compilerConfiguration);
     }
 
+    /**
+     * Logs any newly collected bytecode text since the previous visitor callback.
+     */
     protected void log() {
         int textSize = text.size();
         List<Object> bcList = new ArrayList<>();
@@ -90,18 +100,21 @@ public class LoggableTextifier extends Textifier {
 
     //--------------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
         super.visit(version, access, name, signature, superName, interfaces);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitSource(String file, String debug) {
         super.visitSource(file, debug);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitModule(final String name, final int access, final String version) {
         Printer p = super.visitModule(name, access, version);
@@ -109,12 +122,14 @@ public class LoggableTextifier extends Textifier {
         return p;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitOuterClass(String owner, String name, String desc) {
         super.visitOuterClass(owner, name, desc);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitClassAnnotation(String desc, boolean visible) {
         Textifier t = super.visitClassAnnotation(desc, visible);
@@ -122,6 +137,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitClassTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
         Printer t = super.visitClassTypeAnnotation(typeRef, typePath, desc, visible);
@@ -129,18 +145,21 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitClassAttribute(Attribute attr) {
         super.visitClassAttribute(attr);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitInnerClass(String name, String outerName, String innerName, int access) {
         super.visitInnerClass(name, outerName, innerName, access);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitField(int access, String name, String desc, String signature, Object value) {
         Textifier t = super.visitField(access, name, desc, signature, value);
@@ -148,6 +167,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         Textifier t = super.visitMethod(access, name, desc, signature, exceptions);
@@ -155,54 +175,63 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitClassEnd() {
         super.visitClassEnd();
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitRequire(String require, int access, String version) {
         super.visitRequire(require, access, version);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitExport(String export, int access, String... modules) {
         super.visitExport(export, access, modules);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitUse(String use) {
         super.visitUse(use);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitProvide(String provide, String... providers) {
         super.visitProvide(provide, providers);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitModuleEnd() {
         super.visitModuleEnd();
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visit(String name, Object value) {
         super.visit(name, value);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitEnum(String name, String desc, String value) {
         super.visitEnum(name, desc, value);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitAnnotation(String name, String desc) {
         Textifier t = super.visitAnnotation(name, desc);
@@ -210,6 +239,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitArray(String name) {
         Textifier t = super.visitArray(name);
@@ -217,12 +247,14 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitAnnotationEnd() {
         super.visitAnnotationEnd();
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitFieldAnnotation(String desc, boolean visible) {
         Textifier t = super.visitFieldAnnotation(desc, visible);
@@ -230,6 +262,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitFieldTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
         Printer t = super.visitFieldTypeAnnotation(typeRef, typePath, desc, visible);
@@ -237,24 +270,28 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitFieldAttribute(Attribute attr) {
         super.visitFieldAttribute(attr);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitFieldEnd() {
         super.visitFieldEnd();
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitParameter(String name, int access) {
         super.visitParameter(name, access);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitAnnotationDefault() {
         Textifier t = super.visitAnnotationDefault();
@@ -262,6 +299,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitMethodAnnotation(String desc, boolean visible) {
         Textifier t = super.visitMethodAnnotation(desc, visible);
@@ -269,6 +307,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitMethodTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
         Printer t = super.visitMethodTypeAnnotation(typeRef, typePath, desc, visible);
@@ -276,6 +315,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitParameterAnnotation(int parameter, String desc, boolean visible) {
         Textifier t = super.visitParameterAnnotation(parameter, desc, visible);
@@ -283,54 +323,63 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitMethodAttribute(Attribute attr) {
         super.visitMethodAttribute(attr);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitCode() {
         super.visitCode();
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
         super.visitFrame(type, nLocal, local, nStack, stack);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitInsn(int opcode) {
         super.visitInsn(opcode);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitIntInsn(int opcode, int operand) {
         super.visitIntInsn(opcode, operand);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitVarInsn(int opcode, int varIndex) {
         super.visitVarInsn(opcode, varIndex);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitTypeInsn(int opcode, String type) {
         super.visitTypeInsn(opcode, type);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitFieldInsn(int opcode, String owner, String name, String desc) {
         super.visitFieldInsn(opcode, owner, name, desc);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     @Deprecated
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
@@ -338,60 +387,70 @@ public class LoggableTextifier extends Textifier {
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         super.visitMethodInsn(opcode, owner, name, desc, itf);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
         super.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitJumpInsn(int opcode, Label label) {
         super.visitJumpInsn(opcode, label);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitLabel(Label label) {
         super.visitLabel(label);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitLdcInsn(Object cst) {
         super.visitLdcInsn(cst);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitIincInsn(int varIndex, int increment) {
         super.visitIincInsn(varIndex, increment);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
         super.visitTableSwitchInsn(min, max, dflt, labels);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
         super.visitLookupSwitchInsn(dflt, keys, labels);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitMultiANewArrayInsn(String desc, int dims) {
         super.visitMultiANewArrayInsn(desc, dims);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitInsnAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
         Printer t = super.visitInsnAnnotation(typeRef, typePath, desc, visible);
@@ -399,12 +458,14 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
         super.visitTryCatchBlock(start, end, handler, type);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitTryCatchAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
         Printer t = super.visitTryCatchAnnotation(typeRef, typePath, desc, visible);
@@ -412,12 +473,14 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
         super.visitLocalVariable(name, desc, signature, start, end, index);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String desc, boolean visible) {
         Printer t = super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, desc, visible);
@@ -425,24 +488,28 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitLineNumber(int line, Label start) {
         super.visitLineNumber(line, start);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {
         super.visitMaxs(maxStack, maxLocals);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitMethodEnd() {
         super.visitMethodEnd();
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitAnnotation(String desc, boolean visible) {
         Textifier t = super.visitAnnotation(desc, visible);
@@ -450,6 +517,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitTypeAnnotation(int typeRef, TypePath typePath, String desc, boolean visible) {
         Textifier t = super.visitTypeAnnotation(typeRef, typePath, desc, visible);
@@ -457,42 +525,49 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitAttribute(Attribute attr) {
         super.visitAttribute(attr);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitNestHost(String nestHost) {
         super.visitNestHost(nestHost);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitNestMember(String nestMember) {
         super.visitNestMember(nestMember);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitMainClass(String mainClass) {
         super.visitMainClass(mainClass);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitPackage(String packaze) {
         super.visitPackage(packaze);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitOpen(String packaze, int access, String... modules) {
         super.visitOpen(packaze, access, modules);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitAnnotableParameterCount(int parameterCount, boolean visible) {
         Textifier t = super.visitAnnotableParameterCount(parameterCount, visible);
@@ -500,6 +575,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitRecordComponent(String name, String descriptor, String signature) {
         Printer p = super.visitRecordComponent(name, descriptor, signature);
@@ -507,6 +583,7 @@ public class LoggableTextifier extends Textifier {
         return p;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Textifier visitRecordComponentAnnotation(String descriptor, boolean visible) {
         Textifier t = super.visitRecordComponentAnnotation(descriptor, visible);
@@ -514,6 +591,7 @@ public class LoggableTextifier extends Textifier {
         return t;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Printer visitRecordComponentTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
         Printer p = super.visitRecordComponentTypeAnnotation(typeRef, typePath, descriptor, visible);
@@ -521,18 +599,21 @@ public class LoggableTextifier extends Textifier {
         return p;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitRecordComponentAttribute(Attribute attribute) {
         super.visitRecordComponentAttribute(attribute);
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitRecordComponentEnd() {
         super.visitRecordComponentEnd();
         log();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitPermittedSubclass(String permittedSubclass) {
         super.visitPermittedSubclass(permittedSubclass);

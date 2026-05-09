@@ -38,6 +38,9 @@ import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
  * @since 2.5.0
  */
 public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpressionMultiTypeDispatcher {
+    /**
+     * Creates a dispatcher that combines static compilation and indy array access.
+     */
     public IndyStaticTypesMultiTypeDispatcher(WriterController wc) {
         super(wc);
 
@@ -66,6 +69,7 @@ public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpress
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected BinaryExpressionWriter[] initializeDelegateHelpers() {
         BinaryExpressionWriter[] bewArray = super.initializeDelegateHelpers();

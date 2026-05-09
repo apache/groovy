@@ -50,10 +50,14 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS
  * Writer responsible for generating closure classes in statically compiled mode.
  */
 public class StaticTypesClosureWriter extends ClosureWriter {
+    /**
+     * Creates a closure writer for statically compiled code generation.
+     */
     public StaticTypesClosureWriter(WriterController wc) {
         super(wc);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int mods) {
         ClassNode closureClass = super.createClosureClass(expression, mods);

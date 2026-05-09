@@ -98,18 +98,28 @@ import static org.objectweb.asm.Opcodes.IFNONNULL;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
+/**
+ * Invocation writer for statically compiled code paths.
+ */
 public class StaticInvocationWriter extends InvocationWriter {
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
+    /**
+     * Creates an invocation writer that favors direct bytecode calls over dynamic dispatch.
+     */
     public StaticInvocationWriter(final WriterController wc) {
         super(wc);
     }
 
+    /**
+     * Returns the current call expression being emitted, if any.
+     */
     Expression getCurrentCall() {
         return currentCall;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
         MethodNode mn = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -153,6 +163,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeSpecialConstructorCall(final ConstructorCallExpression call) {
         MethodNode mn = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
@@ -252,6 +263,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null) return false;
@@ -350,6 +362,9 @@ public class StaticInvocationWriter extends InvocationWriter {
         return false;
     }
 
+    /**
+     * @deprecated Use bridge metadata on the declaring class instead of probing outer-class nesting manually.
+     */
     @Deprecated(since = "6.0.0")
     protected static boolean isPrivateBridgeMethodsCallAllowed(final ClassNode receiver, final ClassNode caller) {
         if (receiver == null) return false;
@@ -359,6 +374,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void loadArguments(final List<Expression> argumentList, final Parameter[] parameters) {
         final int nArgs = argumentList.size(), nPrms = parameters.length; if (nPrms == 0) return;
@@ -464,11 +480,13 @@ public class StaticInvocationWriter extends InvocationWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected boolean makeCachedCall(final Expression origin, final ClassExpression sender, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean containsSpreadExpression) {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
         if (origin.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {

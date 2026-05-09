@@ -65,10 +65,14 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
     private static final UnaryMinusExpression EMPTY_UNARY_MINUS = new UnaryMinusExpression(EmptyExpression.INSTANCE);
     private static final UnaryPlusExpression EMPTY_UNARY_PLUS = new UnaryPlusExpression(EmptyExpression.INSTANCE);
 
+    /**
+     * Creates a unary-expression helper that emits primitive-specialized bytecode when possible.
+     */
     public StaticTypesUnaryExpressionHelper(final WriterController controller) {
         super(controller);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeBitwiseNegate(final BitwiseNegationExpression expression) {
         expression.getExpression().visit(controller.getAcg());
@@ -96,6 +100,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeNotExpression(final NotExpression expression) {
         Expression subExpression = expression.getExpression();
@@ -119,6 +124,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeUnaryMinus(final UnaryMinusExpression expression) {
         expression.getExpression().visit(controller.getAcg());
@@ -149,6 +155,7 @@ public class StaticTypesUnaryExpressionHelper extends UnaryExpressionHelper {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeUnaryPlus(final UnaryPlusExpression expression) {
         expression.getExpression().visit(controller.getAcg());

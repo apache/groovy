@@ -128,11 +128,15 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     private final StaticTypesWriterController controller;
 
+    /**
+     * Creates a call-site writer for statically compiled property and operator access.
+     */
     public StaticTypesCallSiteWriter(final StaticTypesWriterController controller) {
         super(controller);
         this.controller = controller;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void generateCallSiteArray() {
         CallSiteWriter regularCallSiteWriter = controller.getRegularCallSiteWriter();
@@ -141,6 +145,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeCallSite(final Expression receiver, final String message, final Expression arguments, final boolean safe, final boolean implicitThis, final boolean callCurrent, final boolean callStatic) {
         throw new GroovyBugError(
@@ -150,6 +155,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 "Please try to create a simple example reproducing this error and file a bug report at https://issues.apache.org/jira/browse/GROOVY");
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
         Object dynamic = receiver.getNodeMetaData(StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY);
@@ -322,6 +328,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         compileStack.removeVar(list);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeGroovyObjectGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
         ClassNode receiverType;
@@ -384,6 +391,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         call.visit(controller.getAcg());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeCallSiteArrayInitializer() {
     }
@@ -458,6 +466,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         return false;
     }
 
+    /**
+     * Emits direct field access when the target field is visible from the current class.
+     */
     boolean makeGetField(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
         FieldNode field = getField(receiverType, fieldName); // GROOVY-7039: include interface constants
         if (field != null && AsmClassGenerator.isFieldDirectlyAccessible(field, controller.getClassNode())) {
@@ -505,6 +516,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeSiteEntry() {
         // GROOVY-11968: when the statically compiled method body contains any
@@ -518,10 +530,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void prepareCallSite(final String message) {
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression argument, final boolean safe) {
         ClassNode rType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
@@ -701,6 +715,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         operandStack.replace(Number_TYPE, m2 - m1);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void fallbackAttributeOrPropertySite(final PropertyExpression expression, final Expression objectExpression, final String name, final MethodCallerMultiAdapter adapter) {
         CompileStack compileStack = controller.getCompileStack();

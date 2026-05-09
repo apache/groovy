@@ -21,8 +21,12 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 
+/**
+ * Factory that wraps the standard writer controller with static-compilation behavior.
+ */
 public class StaticTypesWriterControllerFactoryImpl implements WriterControllerFactory {
 
+    /** {@inheritDoc} */
     @Override
     public WriterController makeController(WriterController normalController) {
         return new StaticTypesWriterController(normalController);

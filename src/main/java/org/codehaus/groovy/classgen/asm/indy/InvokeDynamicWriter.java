@@ -89,10 +89,14 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Creates an invocation writer that emits {@code invokedynamic} call sites.
+     */
     public InvokeDynamicWriter(final WriterController controller) {
         super(controller);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected boolean makeCachedCall(final Expression origin, final ClassExpression sender,
             final Expression receiver, final Expression message, final Expression arguments,
@@ -303,11 +307,13 @@ public class InvokeDynamicWriter extends InvocationWriter {
         return flags;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, final boolean safe) {
         makeIndyCall(invokeMethod, receiver, false, safe, message, arguments);
     }
 
+    /** {@inheritDoc} */
     protected void writeGetProperty(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis, final boolean groovyObject) {
         var descriptor = prepareIndyCall(receiver, implicitThis) + ")Ljava/lang/Object;";
         int flags = 0;
@@ -318,11 +324,13 @@ public class InvokeDynamicWriter extends InvocationWriter {
         finishIndyCall(BSM, GET.getCallSiteName(), descriptor, 1, propertyName, flags);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void writeNormalConstructorCall(final ConstructorCallExpression call) {
         makeCall(call, new ClassExpression(call.getType()), new ConstantExpression("<init>"), call.getArguments(), null, false, false, false);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void coerce(final ClassNode from, final ClassNode target) {
         ClassNode wrapper = getWrapper(target);
@@ -336,6 +344,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void castToNonPrimitiveIfNecessary(final ClassNode sourceType, final ClassNode targetType) {
         if (WideningCategories.implementsInterfaceOrSubclassOf(getWrapper(sourceType), targetType)) {
@@ -345,6 +354,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void castNonPrimitiveToBool(final ClassNode sourceType) {
         writeIndyCast(sourceType, boolean_TYPE);

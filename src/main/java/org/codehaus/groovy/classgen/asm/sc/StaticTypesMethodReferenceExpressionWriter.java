@@ -86,10 +86,14 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
  */
 public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceExpressionWriter implements AbstractFunctionalInterfaceWriter {
 
+    /**
+     * Creates a writer for statically compiled method-reference expressions.
+     */
     public StaticTypesMethodReferenceExpressionWriter(final WriterController controller) {
         super(controller);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeMethodReferenceExpression(final MethodReferenceExpression methodReferenceExpression) {
         FunctionalInterfaceContext functionalInterface = resolveFunctionalInterfaceContext(methodReferenceExpression);

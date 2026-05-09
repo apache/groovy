@@ -59,15 +59,24 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
  */
 class StaticTypesLambdaAnalyzer {
 
+    /**
+     * Creates an analyzer for lambda expressions in the current source unit.
+     */
     StaticTypesLambdaAnalyzer(final SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit;
     }
 
+    /**
+     * Returns {@code true} if the lambda can be emitted without capturing state from the enclosing context.
+     */
     boolean isNonCapturing(final MethodNode lambdaMethod, final Parameter[] sharedVariables) {
         return (sharedVariables == null || sharedVariables.length == 0)
             && !accessesInstanceMembers(lambdaMethod);
     }
 
+    /**
+     * Returns {@code true} if the lambda touches instance state from an enclosing class.
+     */
     boolean accessesInstanceMembers(final MethodNode lambdaMethod) {
         Boolean accessingInstanceMembers = lambdaMethod.getNodeMetaData(LAMBDA_ACCESSES_INSTANCE_MEMBERS);
         if (accessingInstanceMembers != null) return accessingInstanceMembers;
