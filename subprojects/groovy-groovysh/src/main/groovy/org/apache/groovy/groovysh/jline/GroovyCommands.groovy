@@ -87,6 +87,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         'YAML'     : 'groovy.yaml.YamlSlurper',
         'XML'      : 'groovy.xml.XmlParser',
         'TOML'     : 'groovy.toml.TomlSlurper',
+        'MARKDOWN' : 'groovy.markdown.MarkdownSlurper',
     ]
 
     /**
@@ -463,6 +464,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                         format = 'PROPERTIES'
                     } else if (ext.equalsIgnoreCase('csv')) {
                         format = 'CSV'
+                    } else if (ext.equalsIgnoreCase('md') || ext.equalsIgnoreCase('markdown')) {
+                        format = 'MARKDOWN'
                     } else if (ext.equalsIgnoreCase('txt') || ext.equalsIgnoreCase('text')) {
                         format = 'TEXT'
                     }
@@ -947,7 +950,13 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     private List<Completer> slurpCompleter(String command) {
         for (OptDesc o in compileOptDescs(command)) {
             if (o.shortOption()?.equals('-f')) {
-                o.valueCompleter = new StringsCompleter('JSON', 'GROOVY', 'NONE', 'TEXT', 'YAML', 'TOML', 'XML')
+                // Keep completion in sync with the formats /slurp actually
+                // accepts: parser-style ones come from `slurpers`; the rest
+                // are handled directly in slurpcmd's extension branches.
+                // Deriving from `slurpers.keySet()` prevents new entries
+                // (e.g. MARKDOWN, TOML) from drifting out of the completer.
+                def formats = (['CSV', 'GROOVY', 'JSON', 'NONE', 'PROPERTIES', 'TEXT'] + slurpers.keySet()).toSet().sort()
+                o.valueCompleter = new StringsCompleter(formats)
                 break
             }
         }
