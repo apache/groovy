@@ -475,7 +475,7 @@ class Main {
                 if (!OSUtils.IS_WINDOWS) {
                     setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
                 }
-                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *GROOVY_POSIX_CMDS, '/cd')
+                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', '/img', *GROOVY_POSIX_CMDS, '/cd')
                 addFileHighlight('/classloader', null, ['-a', '--add'])
                 addExternalHighlighterRefresh(printer::refresh)
                 addExternalHighlighterRefresh(scriptEngine::refresh)

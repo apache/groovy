@@ -720,6 +720,144 @@ groovy> /imports
 import java.util.concurrent.BlockingQueue
 --------------
 
+[[GroovyShell-img]]
+==== `/img`
+
+The `/img` command displays an image inline using JLine's terminal-graphics
+support (Sixel, Kitty, or iTerm2 protocols, auto-detected). The argument is
+either a local file path, an `http(s)://` URL, or a Groovy variable
+reference using the standard `$` syntax.
+
+[source,jshell]
+--------------
+groovy> /img chart.png
+groovy> /img --width=80 https://example.com/diagram.png
+groovy> img = new java.awt.image.BufferedImage(200, 100, 1)  // some BufferedImage
+groovy> /img $img
+--------------
+
+When the argument resolves to a Groovy value (rather than a path), `/img`
+will accept any of:
+
+* a `java.awt.image.BufferedImage` — used as-is
+* a `java.awt.image.RenderedImage` — drawn into a `BufferedImage`
+* anything with a `createBufferedImage(int, int)` method (e.g.
+  `org.jfree.chart.JFreeChart`) — duck-typed, no compile-time dependency
+* anything with a `toBufferedImage(int, int)` method (e.g. Smile's
+  `smile.plot.swing.Figure`) — duck-typed sibling for libraries that
+  follow the `to…` rather than `create…` naming convention
+* a `javax.swing.JComponent` (e.g. Smile's `Canvas` and `MultiFigurePane`) —
+  laid out and painted to a `BufferedImage` at the requested size
+
+So once you've grabbed JFreeChart you can render charts in the REPL
+without saving to a file:
+
+[source,jshell]
+--------------
+groovy> /grab org.jfree:jfreechart:1.5.6
+groovy> import org.jfree.data.category.DefaultCategoryDataset
+groovy> ds = new DefaultCategoryDataset()
+groovy> ds.addValue(3d, 'Series', 'Mon'); ds.addValue(5d, 'Series', 'Tue')
+groovy> ds.addValue(7d, 'Series', 'Wed'); ds.addValue(4d, 'Series', 'Thu')
+groovy> import org.jfree.chart.ChartFactory
+groovy> chart = ChartFactory.createBarChart('demo', 'day', 'count', ds)
+groovy> /img $chart --width=600 --height=400
+--------------
+
+image:{reldir_groovysh}/assets/img/repl_img_jfreechart.png[Using /img with JFreeChart]
+
+Smile is similar — `Figure.toBufferedImage(int, int)` matches the second
+duck-type, so a fresh `Figure` can be handed straight to `/img`. The
+following draws the classic Iris scatter plot:
+
+[source,jshell]
+--------------
+groovy> /grab com.github.haifengl:smile-io:3.1.0
+groovy> import smile.io.Read
+groovy> iris = Read.arff('iris.arff')
+groovy> import smile.plot.swing.ScatterPlot
+groovy> figure = ScatterPlot.of(iris, 'sepallength', 'sepalwidth', 'class', '*' as char).figure()
+groovy> figure.setAxisLabels('sepallength', 'sepalwidth')
+groovy> /img $figure --width=600 --height=400
+--------------
+
+image:{reldir_groovysh}/assets/img/repl_img_smile.png[Using /img with Smile]
+
+Smile's `Canvas` and `MultiFigurePane` are themselves `JComponent` subclasses,
+so the SPLOM (scatter-plot matrix) goes through the `JComponent` path with no
+extra wrapping:
+
+[source,jshell]
+--------------
+groovy> import smile.plot.swing.MultiFigurePane
+groovy> splom = MultiFigurePane.splom(iris, '*' as char, 'class')
+groovy> /img $splom --width=900 --height=900
+--------------
+
+Orson Charts gives 3D chart shapes (pie, bar, scatter, surface, …).
+`Chart3D` doesn't expose `createBufferedImage` directly, but pairs with
+`Chart3DPanel` (a `JComponent`) which reaches `/img` through the same
+JComponent path as Smile's SPLOM. Pairing that with Apache Commons CSV
+— handed a `population.csv` whose columns are `country` and `millions`
+— gives a 3D pie of the world's ten most populous countries:
+
+[source,jshell]
+--------------
+groovy> /grab org.apache.commons:commons-csv:1.14.1
+groovy> import static org.apache.commons.csv.CSVFormat.RFC4180 as CSV
+groovy> parser = CSV.builder().setHeader().setSkipHeaderRecord(true).build()
+groovy> records = parser.parse(new FileReader('population.csv'))
+groovy> /grab org.jfree:org.jfree.chart3d:2.1.1
+groovy> import module org.jfree.chart3d
+groovy> data = new StandardPieDataset3D()
+groovy> records.each { data.add(it.country, it.millions as double) }
+groovy> chart = Chart3DFactory.createPieChart('Top 10 by population (millions)', null, data)
+groovy> panel = new Chart3DPanel(chart)
+groovy> /img $panel --width=700 --height=420
+--------------
+
+image:{reldir_groovysh}/assets/img/repl_img_orson.png[Using /img with Orson Charts]
+
+XChart's `BitmapEncoder.getBufferedImage(chart)` yields a plain
+`BufferedImage`, which is the simplest path of all — assign it to a
+variable and hand it straight to `/img`. Combining that with the
+`/slurp` command (which prefers `groovy-csv`'s `CsvSlurper` and falls
+back to Apache Commons CSV) gives a declarative CSV-to-chart pipeline.
+Reading a `co2-mlo.csv` whose columns are `Year` and `Mean` (annual mean
+Mauna Loa CO2 in ppm) draws the iconic Keeling-curve line:
+
+[source,jshell]
+--------------
+groovy> /grab org.knowm.xchart:xchart:3.8.8
+groovy> rows = /slurp co2-mlo.csv
+groovy> import org.knowm.xchart.XYChartBuilder
+groovy> chart = new XYChartBuilder().title('Mauna Loa annual mean CO2').xAxisTitle('Year').yAxisTitle('CO2 (ppm)').width(600).height(400).build()
+groovy> chart.addSeries('CO2', rows.collect { it.Year as int }, rows.collect { it.Mean as double })
+groovy> import org.knowm.xchart.BitmapEncoder
+groovy> img = BitmapEncoder.getBufferedImage(chart)
+groovy> /img $img
+--------------
+
+image:{reldir_groovysh}/assets/img/repl_img_xchart.png[Using /img with XChart]
+
+The `--width` and `--height` options have two distinct meanings depending
+on the input. For raw-pixel inputs (file path, `http(s)://` URL,
+`BufferedImage`, `RenderedImage`), they control the rendered size in
+*terminal character cells*. For inputs that generate the image at the
+requested size (`createBufferedImage(int,int)`, `toBufferedImage(int,int)`,
+`JComponent`), they are *source-image pixels* — the terminal then renders
+the image at its natural fit. Aspect ratio is preserved by default
+(override with `--no-preserve-aspect-ratio`).
+
+If the active terminal doesn't speak any of the supported graphics protocols
+(common cases: macOS Terminal.app, VS Code's built-in terminal, JetBrains
+terminals, plain Windows console), `/img` prints a `[image: WxH, label]`
+summary line instead. Pass `--gui` to open a Swing window with the image
+regardless of terminal capability.
+
+The command requires the `java.desktop` module at runtime; on a JVM where
+that module is unavailable, `/img` is not registered.
+
 [[GroovyShell-inspect]]
 ==== `/inspect`
 

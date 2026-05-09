@@ -22,6 +22,8 @@ import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 
+import static groovy.test.GroovyAssert.shouldFail
+
 /**
  * Tests for the {@code /grab} command — Maven-coordinate dependency
  * resolution via Grape. The actual artifact-fetching test is forked and
@@ -49,5 +51,38 @@ class GrabTest extends SystemTestSupport {
         def cls = engine.execute("Class.forName('org.apache.commons.lang3.StringUtils')")
         assert cls != null
         assert cls.name == 'org.apache.commons.lang3.StringUtils'
+    }
+
+    @Test
+    void grabWithMalformedCoordsRaisesAClearError() {
+        // Coords must be group:module:version (3 colon-separated parts).
+        // An incomplete spec should fail fast with a targeted message
+        // rather than reaching the network and timing out.
+        def thrown = shouldFail(IllegalArgumentException) {
+            system.execute('/grab org.apache.commons:commons-lang3')
+        }
+        assert thrown.message.contains('Invalid command parameter')
+        assert thrown.message.contains('commons-lang3')
+    }
+
+    @Test
+    void grabWithUnknownTwoArgFlagRaisesAClearError() {
+        // Two-arg form only accepts -v/--verbose. Anything else (here a
+        // bogus -x) is rejected before any network attempt.
+        def thrown = shouldFail(IllegalArgumentException) {
+            system.execute('/grab -x foo:bar:1.0')
+        }
+        assert thrown.message.contains('Unknown command parameters')
+    }
+
+    @Test
+    void grabListEnumeratesCachedGrapes() {
+        // /grab --list calls Grape.instance.enumerateGrapes() which is
+        // local-only (no network); even with an empty cache it returns
+        // an empty map without throwing. Verifies the --list branch is
+        // reachable and produces output via the printer.
+        int before = printer.output.size()
+        system.execute('/grab --list')
+        assert printer.output.size() > before
     }
 }
