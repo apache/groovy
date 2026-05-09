@@ -586,6 +586,49 @@ apple
 banana
 ----
 
+[[GroovyShell-highlighter]]
+==== `/highlighter`
+
+The `/highlighter` command manages the nanorc theme system. Useful options
+include `--list` (show available themes), `--view=THEME` (preview a theme),
+`--switch=THEME` (change the active theme by rewriting your user-config
+`jnanorc`), and `--refresh` (reapply highlighting after a switch).
+
+Note: `--view` and `--switch` take *full filenames including the
+`.nanorctheme` extension*, not bare theme names. `/highlighter --list`
+shows the canonical form:
+
+[source,jshell]
+----
+groovy> /highlighter --list
+/Users/<you>/.groovy:
+dark.nanorctheme
+light.nanorctheme
+groovy> /highlighter --switch=light.nanorctheme
+groovy> /highlighter --refresh
+----
+
+Theme switching operates on user-config copies of `jnanorc` (used by the
+line reader and most commands) *and* `jlessrc` (used by `/less`); if a
+file is missing, that path silently no-ops on `--switch`. So a partial
+setup with only `jnanorc` will switch the prompt highlighting but leave
+`/less` permanently on whichever theme the classpath copy of `jlessrc`
+ships with.
+
+Once you create user-config copies, JLine resolves both the `theme`
+directive and the `include *.nanorc` entries *relative to the user-config
+directory* — the classpath copies are no longer consulted. So you also
+need the per-language syntax files (`groovy.nanorc`, `java.nanorc`,
+`json.nanorc`, `xml.nanorc`, `yaml.nanorc`, etc.) in the same directory,
+or you'll see the theme palette loaded but no actual highlighting (every
+file rendered as plain text). Easiest setup is to copy the entire
+`nanorc/` resource directory in one go:
+
+[source,bash]
+----
+cp <groovysh-src>/src/main/resources/nanorc/* ~/.groovy/
+----
+
 [[GroovyShell-history]]
 ==== `/history`
 

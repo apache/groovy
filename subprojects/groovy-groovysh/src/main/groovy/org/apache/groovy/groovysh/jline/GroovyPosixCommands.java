@@ -27,6 +27,7 @@
 package org.apache.groovy.groovysh.jline;
 
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
+import org.jline.builtins.ConfigurationPath;
 import org.jline.builtins.Less;
 import org.jline.builtins.Options;
 import org.jline.builtins.PosixCommands.Context;
@@ -1136,7 +1137,10 @@ public class GroovyPosixCommands {
             return;
         }
 
-        Less less = new Less(context.terminal(), context.currentDir(), opt);
+        ConfigurationPath cfg = (context instanceof GroovyPosixContext)
+                ? ((GroovyPosixContext) context).getConfigPath()
+                : null;
+        Less less = new Less(context.terminal(), context.currentDir(), opt, cfg);
         less.run(sources);
     }
 

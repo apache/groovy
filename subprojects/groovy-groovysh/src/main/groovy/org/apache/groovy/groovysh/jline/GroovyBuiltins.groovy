@@ -82,7 +82,7 @@ class GroovyBuiltins extends Builtins {
                 temp.text = engine.buffer
                 input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
             }
-            GroovyPosixCommands.less(new GroovyPosixContext(input.in(), new PrintStream(input.out()), new PrintStream(input.err()), workDir.get(), input.terminal(), engine::get), ['/less', *input.args()] as String[])
+            GroovyPosixCommands.less(new GroovyPosixContext(input.in(), new PrintStream(input.out()), new PrintStream(input.err()), workDir.get(), input.terminal(), engine::get, configPath), ['/less', *input.args()] as String[])
         } catch (Exception e) {
             saveException(e)
         }

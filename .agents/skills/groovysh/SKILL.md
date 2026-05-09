@@ -123,6 +123,17 @@ demonstrates the property under test:
    The no-arg `/save` form is a separate path that JSON-serialises
    `engine.sharedData` and *does* include variables. Round-trip tests
    for the file-form should exercise definitions, not bare variables.
+10. **`Less` and other highlight-aware JLine constructors silently
+    no-op highlighting if `ConfigurationPath` is omitted.** `Less` has
+    both 3-arg `(terminal, dir, opt)` and 4-arg
+    `(terminal, dir, opt, configPath)` constructors; the shorter form
+    compiles without warning but produces plain-text output. When
+    forking or wrapping these commands, plumb `configPath` through and
+    verify with a round-trip test (e.g. `GroovyPosixContextTest`). User-
+    visible symptom: plain text where coloured tokens are expected. We
+    hit this with `/less` after forking `PosixCommands`; `/nano` stayed
+    correct because it routes through `Commands.nano(...)`, which takes
+    `configPath` as a required argument.
 
 (Locale/platform/format brittleness is covered by the project-wide
 [`groovy-tests`](../groovy-tests/SKILL.md) skill — it's not unique to
