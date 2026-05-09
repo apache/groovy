@@ -59,6 +59,26 @@ class SlurpTest extends SystemTestSupport {
     }
 
     @Test
+    void slurpMarkdownProducesIterableOfElements() {
+        // Requires groovy.markdown.MarkdownSlurper; supplied via the
+        // testImplementation projects.groovyMarkdown dependency.
+        Path file = Files.writeString(tmp.resolve('notes.md'),
+                "# Title\n\nA paragraph.\n\n- item one\n- item two\n")
+        system.execute("doc = /slurp ${forwardSlashes(file)}")
+        def doc = console.getVariable('doc')
+        assert doc != null
+        // MarkdownDocument is Iterable<Map<String,Object>>; toList lets us
+        // assert without pinning to the exact element-type names (those
+        // belong to groovy-markdown's API and may evolve).
+        def elements = doc.toList()
+        assert elements.size() >= 2
+        def joined = elements.collect { it.values().toString() }.join(' ')
+        assert joined.contains('Title')
+        assert joined.contains('A paragraph.')
+        assert joined.contains('item one')
+    }
+
+    @Test
     void slurpCsvProducesListOfMaps() {
         // Requires groovy.csv.CsvSlurper on the classpath; supplied here via
         // the testImplementation projects.groovyCsv dependency.

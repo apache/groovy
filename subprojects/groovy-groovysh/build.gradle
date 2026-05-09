@@ -35,6 +35,7 @@ dependencies {
     implementation projects.groovyNio
     testImplementation projects.groovyTest
     testImplementation projects.groovyCsv         // for /slurp .csv default coverage
+    testImplementation projects.groovyMarkdown    // for /slurp .md default coverage
     testImplementation projects.groovyTestJunit6  // for @ForkedJvm in CSV fallback tests
     implementation "net.java.dev.jna:jna:${versions.jna}"
     implementation "org.jline:jansi:${versions.jline}"

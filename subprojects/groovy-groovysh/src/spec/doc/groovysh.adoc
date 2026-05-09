@@ -1043,7 +1043,7 @@ image:{reldir_groovysh}/assets/img/repl_show.png[Usage of the /show command, wid
 Slurp files to shared variables. Groovy has a bunch of slurpers for
 various formats like XML, JSON, YAML, etc. You can use those in your code
 if you like, but the `/slurp` command can be a convenience shortcut.
-It supports most of the common formats, including JSON, XML, YAML, CSV, TOML and property files.
+It supports most of the common formats, including JSON, XML, YAML, CSV, TOML, Markdown and property files.
 
 image:{reldir_groovysh}/assets/img/repl_slurp.png[Usage of the /slurp command, width=80%]
 
@@ -1070,6 +1070,9 @@ detail which may change in the future, the current behavior is as follows:
 | PROPERTIES | Returns a Properties file, which is a Map-like object.
 | CSV | Uses Apache Commons CSV if on the classpath. Assumes a header row which is used to
 create a list (the rows) of maps from column name to value.
+| MARKDOWN | Uses MarkdownSlurper from `groovy-markdown` if on the classpath. Returns a
+`MarkdownDocument` (an `Iterable<Map<String, Object>>` of structured elements). Triggered
+by `.md` and `.markdown` extensions.
 | TEXT | Reads the file as raw lines (or argument as a line).
 | NONE | If you want the raw text rather than parsed content.
 |===
