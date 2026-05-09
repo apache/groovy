@@ -117,6 +117,9 @@ public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConve
         return getAndPut(key, valueProvider, true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
@@ -178,6 +181,11 @@ public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConve
         return doWithReadLock(c -> c.values());
     }
 
+    /**
+     * Returns a live view of the cache entries.
+     *
+     * @return the cache entries
+     */
     @Override
     public Set<Entry<K, V>> entrySet() {
         return doWithReadLock(c -> c.entrySet());
@@ -199,6 +207,12 @@ public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConve
         return doWithReadLock(c -> c.containsKey(key));
     }
 
+    /**
+     * Determines whether the cache contains the specified stored value.
+     *
+     * @param value the value whose presence should be tested
+     * @return {@code true} if the cache contains the value
+     */
     @Override
     public boolean containsValue(Object value) {
         return doWithReadLock(c -> c.containsValue(value));
@@ -212,6 +226,11 @@ public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConve
         return doWithReadLock(c -> c.size());
     }
 
+    /**
+     * Returns whether the cache currently holds no entries.
+     *
+     * @return {@code true} if the cache is empty
+     */
     @Override
     public boolean isEmpty() {
         return size() == 0;
@@ -225,6 +244,11 @@ public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConve
         return doWithWriteLock(c -> c.remove(key));
     }
 
+    /**
+     * Copies all mappings from the supplied map into this cache.
+     *
+     * @param m the mappings to copy
+     */
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
         doWithWriteLock(c -> {
@@ -233,6 +257,11 @@ public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConve
         });
     }
 
+    /**
+     * Returns a live view of the keys in this cache.
+     *
+     * @return the cache keys
+     */
     @Override
     public Set<K> keySet() {
         return keys();
@@ -258,7 +287,10 @@ public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConve
     }
 
     /**
-     * {@inheritDoc}
+     * Returns the stored value unchanged.
+     *
+     * @param value the stored value
+     * @return {@code value}
      */
     @Override
     public Object convertValue(V value) {

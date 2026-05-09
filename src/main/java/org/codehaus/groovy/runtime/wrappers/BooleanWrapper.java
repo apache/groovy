@@ -18,7 +18,16 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code boolean} values that preserves the primitive constrained
+ * type.
+ */
 public class BooleanWrapper extends PojoWrapper {
+    /**
+     * Creates a wrapper for a boolean value.
+     *
+     * @param wrapped the boolean value to wrap
+     */
     public BooleanWrapper(final boolean wrapped) {
         super(wrapped ? Boolean.TRUE : Boolean.FALSE, boolean.class);
     }

@@ -18,7 +18,16 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code byte} values that preserves the primitive constrained
+ * type.
+ */
 public class ByteWrapper extends PojoWrapper {
+    /**
+     * Creates a wrapper for a byte value.
+     *
+     * @param wrapped the byte value to wrap
+     */
     public ByteWrapper(final byte wrapped) {
         super(wrapped, byte.class);
     }

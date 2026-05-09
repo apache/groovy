@@ -21,56 +21,90 @@ package org.codehaus.groovy.runtime.wrappers;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
+/**
+ * Wraps an existing {@link GroovyObject} while constraining the type it should
+ * present to the runtime.
+ */
 public class GroovyObjectWrapper extends Wrapper {
+    /**
+     * The wrapped Groovy object.
+     */
     protected final GroovyObject wrapped;
 
+    /**
+     * Creates a wrapper for a Groovy object constrained to the supplied type.
+     *
+     * @param wrapped the wrapped Groovy object
+     * @param constrainedType the type the wrapped object should report
+     */
     public GroovyObjectWrapper(final GroovyObject wrapped, final Class constrainedType) {
         super(constrainedType);
         this.wrapped = wrapped;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object unwrap() {
         return this.wrapped;
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
-    */
+    /**
+     * Returns a property value from the wrapped Groovy object.
+     *
+     * @param property the property name
+     * @return the resolved property value
+     */
     @Override
     public Object getProperty(final String property) {
         return this.wrapped.getProperty(property);
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
-    */
+    /**
+     * Invokes a method on the wrapped Groovy object.
+     *
+     * @param name the method name
+     * @param args the invocation arguments
+     * @return the invocation result
+     */
     @Override
     public Object invokeMethod(final String name, final Object args) {
         return this.wrapped.invokeMethod(name, args);
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
-    */
+    /**
+     * Updates the wrapped object's meta class.
+     *
+     * @param metaClass the new meta class
+     */
     @Override
     public void setMetaClass(final MetaClass metaClass) {
         this.wrapped.setMetaClass(metaClass);
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
-    */
+    /**
+     * Sets a property on the wrapped Groovy object.
+     *
+     * @param property the property name
+     * @param newValue the new property value
+     */
     @Override
     public void setProperty(final String property, final Object newValue) {
         this.wrapped.setProperty(property, newValue);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected Object getWrapped() {
         return this.wrapped;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected MetaClass getDelegatedMetaClass() {
         return this.wrapped.getMetaClass();

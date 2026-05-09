@@ -33,6 +33,11 @@ final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implement
 
     private final int maxSize;
 
+    /**
+     * Creates a protection storage with the supplied maximum size.
+     *
+     * @param maxSize the maximum number of protected entries to retain
+     */
     public LRUProtectionStorage(final int maxSize) {
         this.maxSize = maxSize;
     }

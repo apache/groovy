@@ -20,57 +20,98 @@ package org.codehaus.groovy.runtime.wrappers;
 
 import groovy.lang.MetaClass;
 
+/**
+ * Wraps a plain Java object and routes GroovyObject operations through a
+ * delegated {@link MetaClass}.
+ */
 public class PojoWrapper extends Wrapper {
+    /**
+     * The meta class used to dispatch GroovyObject operations to the wrapped
+     * object.
+     */
     protected MetaClass delegate;
+    /**
+     * The wrapped plain Java object.
+     */
     protected final Object wrapped;
 
+    /**
+     * Creates a wrapper for a plain Java object constrained to the supplied
+     * type.
+     *
+     * @param wrapped the wrapped object
+     * @param constrainedType the type the wrapped object should report
+     */
     public PojoWrapper(final Object wrapped, final Class constrainedType) {
         super(constrainedType);
         this.wrapped = wrapped;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object unwrap() {
         return this.wrapped;
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
-    */
+    /**
+     * Returns a property value from the wrapped object using the delegated meta
+     * class.
+     *
+     * @param property the property name
+     * @return the resolved property value
+     */
     @Override
     public Object getProperty(final String property) {
         return this.delegate.getProperty(this.wrapped, property);
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
-    */
+    /**
+     * Invokes a method on the wrapped object using the delegated meta class.
+     *
+     * @param methodName the method name
+     * @param arguments the invocation arguments
+     * @return the invocation result
+     */
     @Override
     public Object invokeMethod(final String methodName, final Object arguments) {
         return this.delegate.invokeMethod(this.wrapped, methodName, arguments);
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#setMetaClass(groovy.lang.MetaClass)
-    */
+    /**
+     * Sets the meta class used to dispatch GroovyObject operations for the
+     * wrapped object.
+     *
+     * @param metaClass the meta class to delegate to
+     */
     @Override
     public void setMetaClass(final MetaClass metaClass) {
         this.delegate = metaClass;
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
-    */
+    /**
+     * Sets a property on the wrapped object using the delegated meta class.
+     *
+     * @param property the property name
+     * @param newValue the new property value
+     */
     @Override
     public void setProperty(final String property, final Object newValue) {
         this.delegate.setProperty(this.wrapped, property, newValue);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected Object getWrapped() {
         return this.wrapped;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected MetaClass getDelegatedMetaClass() {
         return this.delegate;

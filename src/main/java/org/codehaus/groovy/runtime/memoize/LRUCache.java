@@ -33,17 +33,35 @@ import java.util.concurrent.ConcurrentMap;
 public final class LRUCache<K, V> implements MemoizeCache<K, V> {
     private final ConcurrentMap<K, V> map;
 
+    /**
+     * Creates an LRU cache with the supplied maximum size.
+     *
+     * @param maxCacheSize the maximum number of cached entries
+     */
     public LRUCache(final int maxCacheSize) {
         map = new ConcurrentLinkedHashMap.Builder<K, V>()
                 .maximumWeightedCapacity(maxCacheSize)
                 .build();
     }
 
+    /**
+     * Associates the specified value with the specified key in this cache.
+     *
+     * @param key the key with which the value is to be associated
+     * @param value the value to cache
+     * @return the previous value associated with {@code key}, or {@code null}
+     */
     @Override
     public V put(final K key, final V value) {
         return map.put(key, value);
     }
 
+    /**
+     * Returns the value associated with the supplied key.
+     *
+     * @param key the key to look up
+     * @return the cached value, or {@code null} if none is present
+     */
     @Override
     public V get(final K key) {
         return map.get(key);
@@ -55,8 +73,9 @@ public final class LRUCache<K, V> implements MemoizeCache<K, V> {
      *
      * The operation is completed atomically.
      *
-     * @param key
+     * @param key the key to look up
      * @param valueProvider provide the value if the associated value not found
+     * @return the cached or newly created value
      */
     @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {

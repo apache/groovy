@@ -108,8 +108,10 @@ public interface EvictableCache<K, V> extends MemoizeCache<K, V>, Map<K, V>/* */
     @FunctionalInterface
     interface Action<K, V, R> {
         /**
-         * Deal with the cache
-         * @param evictableCache
+         * Performs work against the supplied cache.
+         *
+         * @param evictableCache the cache to operate on
+         * @return the result produced by the action
          */
         R doWith(EvictableCache<K, V> evictableCache);
     }

@@ -26,15 +26,33 @@ public class Value {
     private final Object value;
     private final int column;
 
+    /**
+     * Creates a recorded assertion value.
+     *
+     * @param value the recorded value
+     * @param column the 1-based column in the normalized assertion text, or a
+     * non-positive value if the source position is unknown
+     */
     public Value(Object value, int column) {
         this.value = value;
         this.column = column;
     }
 
+    /**
+     * Returns the recorded value.
+     *
+     * @return the recorded value
+     */
     public Object getValue() {
         return value;
     }
 
+    /**
+     * Returns the source column associated with the recorded value.
+     *
+     * @return the 1-based column in the normalized assertion text, or a
+     * non-positive value if the source position is unknown
+     */
     public int getColumn() {
         return column;
     }

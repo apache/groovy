@@ -28,15 +28,31 @@ import java.util.List;
 public class ValueRecorder {
     private final List<Value> values = new ArrayList<Value>();
 
+    /**
+     * Removes all values recorded for the current assertion evaluation.
+     */
     public void clear() {
         values.clear();
     }
 
+    /**
+     * Records a value at the supplied anchor column and returns it unchanged.
+     *
+     * @param value the value produced while evaluating the assertion
+     * @param anchor the 1-based column in the normalized assertion text, or a
+     * non-positive value if the position is unknown
+     * @return {@code value}
+     */
     public Object record(Object value, int anchor) {
         values.add(new Value(value, anchor));
         return value;
     }
 
+    /**
+     * Returns the recorded values in recording order.
+     *
+     * @return the live list of recorded values
+     */
     public List<Value> getValues() {
         return values;
     }

@@ -24,5 +24,14 @@ package org.codehaus.groovy.runtime.memoize;
  * @since 5.0.0
  */
 public interface FlexibleCache<K, V> extends EvictableCache<K, V> {
+    /**
+     * Returns the value associated with {@code key}, creating it with the
+     * supplied provider when necessary and optionally caching the result.
+     *
+     * @param key the key to look up
+     * @param valueProvider supplies a value when the key is not cached
+     * @param shouldCache whether a newly created value should be stored
+     * @return the cached or newly created value
+     */
     V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache);
 }

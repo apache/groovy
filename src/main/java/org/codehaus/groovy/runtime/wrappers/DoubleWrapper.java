@@ -18,7 +18,16 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code double} values that preserves the primitive constrained
+ * type.
+ */
 public class DoubleWrapper extends PojoWrapper {
+    /**
+     * Creates a wrapper for a double value.
+     *
+     * @param wrapped the double value to wrap
+     */
     public DoubleWrapper(final double wrapped) {
         super(wrapped, double.class);
     }

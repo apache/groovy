@@ -18,7 +18,16 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code float} values that preserves the primitive constrained
+ * type.
+ */
 public class FloatWrapper extends PojoWrapper {
+    /**
+     * Creates a wrapper for a float value.
+     *
+     * @param wrapped the float value to wrap
+     */
     public FloatWrapper(final float wrapped) {
         super(wrapped, float.class);
     }

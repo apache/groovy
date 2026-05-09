@@ -18,7 +18,16 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code char} values that preserves the primitive constrained
+ * type.
+ */
 public class CharWrapper extends PojoWrapper {
+    /**
+     * Creates a wrapper for a char value.
+     *
+     * @param wrapped the char value to wrap
+     */
     public CharWrapper(final char wrapped) {
         super(wrapped, char.class);
     }

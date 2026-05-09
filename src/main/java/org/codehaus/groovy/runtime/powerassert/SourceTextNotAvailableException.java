@@ -29,7 +29,17 @@ import java.io.Serial;
 public class SourceTextNotAvailableException extends RuntimeException {
     @Serial private static final long serialVersionUID = -3815868502019514479L;
 
-    // only accepts AssertStatementS so that better error messages can be produced
+    /**
+     * Creates an exception describing why the source text for an assertion
+     * could not be obtained.
+     * <p>
+     * The constructor accepts an {@link AssertStatement} so the generated
+     * message can include the asserted expression text.
+     *
+     * @param stat the assertion statement whose source text was requested
+     * @param unit the source unit containing the assertion statement
+     * @param msg the failure reason to include in the generated message
+     */
     public SourceTextNotAvailableException(AssertStatement stat, SourceUnit unit, String msg) {
         super(String.format("%s for %s at (%d,%d)-(%d,%d) in %s",
                 msg, stat.getBooleanExpression().getText(), stat.getLineNumber(), stat.getColumnNumber(),
