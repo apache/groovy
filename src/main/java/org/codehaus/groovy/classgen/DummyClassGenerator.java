@@ -55,6 +55,14 @@ public class DummyClassGenerator extends ClassGenerator {
     private String internalBaseClassName;
 
 
+    /**
+     * Creates a new dummy class generator that produces class structures without implementation.
+     *
+     * @param context the generator context
+     * @param classVisitor the ASM class visitor to write to
+     * @param classLoader the class loader (currently unused)
+     * @param sourceFile the source file name (currently unused)
+     */
     public DummyClassGenerator(final GeneratorContext context, final ClassVisitor classVisitor, final ClassLoader classLoader, final String sourceFile) {
         this.context = context;
         this.cv = classVisitor;
@@ -63,6 +71,9 @@ public class DummyClassGenerator extends ClassGenerator {
     //--------------------------------------------------------------------------
     // GroovyClassVisitor interface
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode classNode) {
         try {
@@ -103,6 +114,9 @@ public class DummyClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         visitParameters(node, node.getParameters());
@@ -117,6 +131,9 @@ public class DummyClassGenerator extends ClassGenerator {
         mv.visitMaxs(0, 0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethod(final MethodNode node) {
         visitParameters(node, node.getParameters());
@@ -133,6 +150,9 @@ public class DummyClassGenerator extends ClassGenerator {
         mv.visitMaxs(0, 0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitField(final FieldNode fieldNode) {
         cv.visitField(
@@ -143,23 +163,46 @@ public class DummyClassGenerator extends ClassGenerator {
                 null);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitProperty(final PropertyNode statement) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitAnnotations(final AnnotatedNode node) {
     }
 
+    /**
+     * Visits the parameters declared by the supplied member node.
+     *
+     * @param node the owning constructor or method
+     * @param parameters the parameters to visit
+     */
     protected void visitParameters(final ASTNode node, final Parameter[] parameters) {
         for (Parameter parameter : parameters) {
             visitParameter(node, parameter);
         }
     }
 
+    /**
+     * Visits a single parameter declared by the supplied member node.
+     *
+     * @param node the owning constructor or method
+     * @param parameter the parameter to visit
+     */
     protected void visitParameter(final ASTNode node, final Parameter parameter) {
     }
 
+    /**
+     * Returns the compile unit associated with the class currently being emitted.
+     *
+     * @return the active compile unit
+     */
     protected CompileUnit getCompileUnit() {
         CompileUnit answer = classNode.getCompileUnit();
         if (answer == null) {

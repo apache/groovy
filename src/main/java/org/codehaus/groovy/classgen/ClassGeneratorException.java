@@ -27,10 +27,21 @@ public class ClassGeneratorException extends RuntimeException {
 
     @Serial private static final long serialVersionUID = 440899360174632769L;
 
+    /**
+     * Creates a new class generator exception with the specified message.
+     *
+     * @param message the detail message
+     */
     public ClassGeneratorException(String message) {
         super(message);
     }
 
+    /**
+     * Creates a new class generator exception with the specified message and cause.
+     *
+     * @param message the detail message
+     * @param cause the underlying cause of this exception
+     */
     public ClassGeneratorException(String message, Throwable cause) {
         super(message, cause);
     }

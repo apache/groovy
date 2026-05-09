@@ -100,19 +100,35 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private final SourceUnit source;
     private ClassNode currentClass;
 
+    /**
+     * Creates a new class completion verifier.
+     *
+     * @param source the source unit to verify
+     */
     public ClassCompletionVerifier(final SourceUnit source) {
         this.source = source;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
+    /**
+     * Returns the class node currently being verified.
+     *
+     * @return the current class node
+     */
     public ClassNode getClassNode() {
         return currentClass;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         ClassNode previousClass = currentClass;
@@ -571,6 +587,9 @@ out:        for (ClassNode sc : superTypes) {
         msg.append(')');
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethod(final MethodNode node) {
         inConstructor = false;
@@ -661,6 +680,9 @@ out:        for (ClassNode sc : superTypes) {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitField(final FieldNode node) {
         if (currentClass.getDeclaredField(node.getName()) != node) {
@@ -675,6 +697,9 @@ out:        for (ClassNode sc : superTypes) {
         super.visitField(node);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitProperty(final PropertyNode node) {
         if (currentClass.getProperty(node.getName()) != node) {
@@ -713,6 +738,9 @@ out:        for (ClassNode sc : superTypes) {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         if (expression.getOperation().getType() == Types.LEFT_SQUARE_BRACKET &&
@@ -767,6 +795,9 @@ out:        for (ClassNode sc : superTypes) {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         inConstructor = true; inStaticConstructor = false;
@@ -796,6 +827,9 @@ out:        for (ClassNode sc : superTypes) {
         super.visitConstructor(node);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitCatchStatement(final CatchStatement cs) {
         List<String> modifiers = new ArrayList<>();
@@ -819,6 +853,9 @@ out:        for (ClassNode sc : superTypes) {
         super.visitCatchStatement(cs);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitForLoop(final ForStatement fs) {
         if (fs.getValueVariable() != null) {
@@ -842,6 +879,9 @@ out:        for (ClassNode sc : superTypes) {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethodCallExpression(final MethodCallExpression mce) {
         super.visitMethodCallExpression(mce);
@@ -860,6 +900,9 @@ out:        for (ClassNode sc : superTypes) {
         addError("Invalid use of declaration inside method call.", exp);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         super.visitDeclarationExpression(expression);
@@ -889,12 +932,18 @@ out:        for (ClassNode sc : superTypes) {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstantExpression(final ConstantExpression expression) {
         super.visitConstantExpression(expression);
         checkStringExceedingMaximumLength(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitGStringExpression(final GStringExpression expression) {
         super.visitGStringExpression(expression);

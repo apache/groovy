@@ -59,6 +59,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Analyzes variable assignments to determine if variables are effectively final,
+ * which is required for use in closures and lambda expressions. This visitor tracks
+ * variable states through control flow to detect reassignments that would prevent
+ * a variable from being considered effectively final.
+ */
 public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
@@ -94,10 +100,21 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     private final Deque<Map<Variable, VariableState>> assignmentTracker = new LinkedList<>();
 
+    /**
+     * Creates a new final variable analyzer without a callback.
+     *
+     * @param sourceUnit the source unit being analyzed
+     */
     public FinalVariableAnalyzer(final SourceUnit sourceUnit) {
         this(sourceUnit, null);
     }
 
+    /**
+     * Creates a new final variable analyzer with a callback for non-final variable detection.
+     *
+     * @param sourceUnit the source unit being analyzed
+     * @param callback the callback to invoke when a variable is found to not be final, may be null
+     */
     public FinalVariableAnalyzer(final SourceUnit sourceUnit, final VariableNotFinalCallback callback) {
         this.callback = callback;
         this.sourceUnit = sourceUnit;
@@ -128,17 +145,30 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         return assignmentTracker.getLast();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * Determines if a variable is effectively final, meaning it is not reassigned after initialization.
+     * Parameters without any state information are considered effectively final by default.
+     *
+     * @param v the variable to check
+     * @return true if the variable is effectively final, false otherwise
+     */
     public boolean isEffectivelyFinal(Variable v) {
         VariableState state = getState().get(v);
         return (v instanceof Parameter && state == null)
                 || (state != null && state.isFinal());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBlockStatement(final BlockStatement block) {
         Set<Variable> old = declaredFinalVariables;
@@ -147,6 +177,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         declaredFinalVariables = old;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitArgumentlistExpression(ArgumentListExpression ale) {
         boolean old = inArgumentList;
@@ -155,6 +188,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         inArgumentList = old;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         boolean assignment = StaticTypeCheckingSupport.isAssignment(expression.getOperation().getType());
@@ -201,6 +237,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
         boolean old = inAssignmentRHS;
@@ -224,6 +263,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitPrefixExpression(final PrefixExpression expression) {
         inAssignmentRHS = expression.getExpression() instanceof VariableExpression;
@@ -232,6 +274,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         checkPrePostfixOperation(expression.getExpression(), expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitPostfixExpression(final PostfixExpression expression) {
         inAssignmentRHS = expression.getExpression() instanceof VariableExpression;
@@ -252,6 +297,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
         super.visitVariableExpression(expression);
@@ -269,6 +317,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitIfElse(final IfStatement ifElse) {
         visitStatement(ifElse);
@@ -306,6 +357,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitSwitch(SwitchStatement switchS) {
         visitStatement(switchS);
@@ -366,6 +420,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
         visitStatement(statement);
@@ -523,6 +580,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * Callback interface notified when effectively final analysis detects a problem.
+     */
     public interface VariableNotFinalCallback {
         /**
          * Callback called whenever an assignment transforms an effectively final variable into a non-final variable

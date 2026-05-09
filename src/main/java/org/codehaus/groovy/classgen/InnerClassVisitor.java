@@ -55,6 +55,12 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
+/**
+ * Processes inner classes during compilation, handling the creation of synthetic fields
+ * and parameters needed for inner class instances to reference their enclosing instances.
+ * This visitor identifies and transforms inner class constructor calls to pass the
+ * appropriate enclosing instance references.
+ */
 public class InnerClassVisitor extends InnerClassVisitorHelper {
 
     private ClassNode classNode;
@@ -63,10 +69,19 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
     private final SourceUnit sourceUnit;
     private boolean inClosure, processingObjInitStatements;
 
+    /**
+     * Creates a new inner class visitor.
+     *
+     * @param cu the compilation unit (currently unused but kept for API compatibility)
+     * @param su the source unit for error reporting
+     */
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
@@ -74,6 +89,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(ClassNode node) {
         classNode = node;
@@ -96,6 +114,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitField(FieldNode node) {
         currentField = node;
@@ -103,6 +124,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         currentField = null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitProperty(PropertyNode node) {
         final FieldNode field = node.getField();
@@ -112,6 +136,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         field.setInitialValueExpression(init);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClosureExpression(ClosureExpression closure) {
         boolean inClosurePrevious = inClosure;
@@ -120,6 +147,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         inClosure = inClosurePrevious;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void visitObjectInitializerStatements(ClassNode node) {
         processingObjInitStatements = true;
@@ -127,6 +157,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         processingObjInitStatements = false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         currentMethod = node;
@@ -142,6 +175,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         currentMethod = null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);

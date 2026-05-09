@@ -29,6 +29,9 @@ import org.objectweb.asm.MethodVisitor;
  */
 public abstract class BytecodeExpression extends Expression {
 
+    /**
+     * A no-operation bytecode expression that generates no instructions.
+     */
     public static final BytecodeExpression NOP = new BytecodeExpression() {
         @Override
         public void visit(final MethodVisitor visitor) {
@@ -36,25 +39,47 @@ public abstract class BytecodeExpression extends Expression {
         }
     };
 
+    /**
+     * Creates a new bytecode expression.
+     */
     public BytecodeExpression() {
     }
 
+    /**
+     * Creates a new bytecode expression with the specified type.
+     *
+     * @param type the type of the expression
+     */
     public BytecodeExpression(final ClassNode type) {
         setType(type);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getText() {
         return "<bytecode sequence>";
     }
 
+    /**
+     * Emits bytecode instructions using the provided method visitor.
+     *
+     * @param visitor the ASM method visitor to generate bytecode
+     */
     public abstract void visit(MethodVisitor visitor);
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitBytecodeExpression(this);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         return this;

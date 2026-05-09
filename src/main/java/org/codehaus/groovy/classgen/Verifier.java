@@ -153,9 +153,21 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
  */
 public class Verifier implements GroovyClassVisitor, Opcodes {
 
+    /**
+     * Metadata key used when swapping initializer statements during verification.
+     */
     public static final String SWAP_INIT = "__$swapInit";
+    /**
+     * Synthetic field name used to cache static metaclass initialization checks.
+     */
     public static final String STATIC_METACLASS_BOOL = "__$stMC";
+    /**
+     * Metadata key used to retain a property's original initializer expression.
+     */
     public static final String INITIAL_EXPRESSION = "INITIAL_EXPRESSION";
+    /**
+     * Metadata key marking methods generated to support default arguments.
+     */
     public static final String DEFAULT_PARAMETER_GENERATED = "DEFAULT_PARAMETER_GENERATED";
 
     private static final ClassNode GENERATED_ANNOTATION = ClassHelper.make(Generated.class);
@@ -165,7 +177,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static final ClassNode COMPILESTATIC_ANNOTATION = ClassHelper.make(CompileStatic.class);
 
     // NOTE: timeStamp constants shouldn't belong to Verifier but kept here for binary compatibility
+    /**
+     * Synthetic timestamp field used for backwards-compatible script metadata.
+     */
     public static final String __TIMESTAMP = "__timeStamp";
+    /**
+     * Alternate synthetic timestamp field retained for binary compatibility.
+     */
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
 
     private static final Parameter[] SET_METACLASS_PARAMS = {new Parameter(ClassHelper.METACLASS_TYPE, "mc")};
@@ -173,14 +191,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private ClassNode classNode;
     private MethodNode methodNode;
 
+    /**
+     * Returns the class node currently being verified.
+     *
+     * @return the current class node
+     */
     public ClassNode getClassNode() {
         return classNode;
     }
 
+    /**
+     * Sets the class node to be verified.
+     *
+     * @param classNode the class node to verify
+     */
     protected void setClassNode(final ClassNode classNode) {
         this.classNode = classNode;
     }
 
+    /**
+     * Returns the method node currently being verified.
+     *
+     * @return the current method node
+     */
     public MethodNode getMethodNode() {
         return methodNode;
     }
@@ -225,6 +258,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         this.classNode = node;
@@ -343,6 +379,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         visitor.visitClass(node);
     }
 
+    /**
+     * Creates the callback used when final-variable analysis finds invalid assignments.
+     *
+     * @return the callback passed to {@link FinalVariableAnalyzer}
+     */
     protected FinalVariableAnalyzer.VariableNotFinalCallback getFinalVariablesCallback() {
         return new FinalVariableAnalyzer.VariableNotFinalCallback() {
             @Override
@@ -503,6 +544,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * Adds a synthetic no-arg constructor when the class requires one.
+     *
+     * @param node the class being verified
+     */
     protected void addDefaultConstructor(final ClassNode node) {
         if (!node.getDeclaredConstructors().isEmpty()) return;
 
@@ -569,6 +615,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         );
     }
 
+    /**
+     * Adds the {@code GroovyObject} contract and supporting methods when needed.
+     *
+     * @param node the class being enhanced
+     * @param classInternalName the internal JVM name of the class
+     */
     protected void addGroovyObjectInterfaceAndMethods(final ClassNode node, final String classInternalName) {
         if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.GROOVY_OBJECT_TYPE);
         FieldNode metaClassField = getMetaClassField(node);
@@ -662,11 +714,28 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * Adds a method while preserving the legacy {@code addMethod$$bridge} entry point.
+     *
+     * @param node the target class
+     * @param shouldBeSynthetic whether the generated method should be marked synthetic
+     * @param name the method name
+     * @param modifiers the method modifiers
+     * @param returnType the method return type
+     * @param parameters the method parameters
+     * @param exceptions the declared exceptions
+     * @param code the method body
+     */
     @Deprecated // for binary compatibility only; do not use or override
     protected void addMethod$$bridge(final ClassNode node, final boolean shouldBeSynthetic, final String name, final int modifiers, final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
         addMethod(node, shouldBeSynthetic, name, modifiers, returnType, parameters, exceptions, code);
     }
 
+    /**
+     * Adds legacy synthetic timestamp fields for scripts and generated classes.
+     *
+     * @param node the class being enhanced
+     */
     @Deprecated(since = "2.4.0")
     protected void addTimeStamp(final ClassNode node) {
     }
@@ -687,6 +756,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         Statement stmt = node.getCode();
@@ -773,6 +845,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethod(final MethodNode node) {
         // GROOVY-3712: if it's a MOP method, it's an error as they aren't supposed to exist before ACG is invoked
@@ -805,15 +880,26 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * Ensures the supplied method has an explicit return statement when required.
+     *
+     * @param node the method to normalize
+     */
     protected void addReturnIfNeeded(final MethodNode node) {
         ReturnAdder adder = new ReturnAdder();
         adder.visitMethod(node);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitField(final FieldNode node) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitProperty(final PropertyNode node) {
         String name = node.getName();
@@ -902,6 +988,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         accessor.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
     }
 
+    /**
+     * Registers a generated property accessor or mutator with the current class.
+     *
+     * @param method the generated property method
+     */
     protected void addPropertyMethod(final MethodNode method) {
         classNode.addMethod(method);
         markAsGenerated(classNode, method);
@@ -933,6 +1024,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * Strategy invoked for each synthetic method or constructor generated for default arguments.
+     */
     @FunctionalInterface
     public interface DefaultArgsAction {
         void call(ArgumentListExpression arguments, Parameter[] parameters, MethodNode method);
@@ -1092,6 +1186,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         });
     }
 
+    /**
+     * Adds a synthetic constructor variant for default arguments.
+     *
+     * @param newParams the parameters of the generated constructor
+     * @param ctor the source constructor
+     * @param code the generated constructor body
+     * @param type the declaring type
+     */
     protected void addConstructor(final Parameter[] newParams, final ConstructorNode ctor, final Statement code, final ClassNode type) {
         ConstructorNode newConstructor = type.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
         newConstructor.putNodeMetaData(STATIC_COMPILE_NODE, ctor.getNodeMetaData(STATIC_COMPILE_NODE));
@@ -1122,6 +1224,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * Applies default-argument generation to a single method or constructor.
+     *
+     * @param action the generation strategy
+     * @param method the method or constructor to expand
+     */
     protected void addDefaultParameters(final DefaultArgsAction action, final MethodNode method) {
         Parameter[] parameters = method.getParameters();
 
@@ -1162,10 +1270,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * Adds the synthetic support code required by a generated closure class.
+     *
+     * @param node the closure class node
+     */
     protected void addClosureCode(InnerClassNode node) {
         // add a new invoke
     }
 
+    /**
+     * Adds object and static initializer wiring for the supplied class.
+     *
+     * @param node the class being enhanced
+     */
     protected void addInitialization(final ClassNode node) {
         boolean addSwapInit = moveOptimizedConstantsInitialization(node);
 
@@ -1187,6 +1305,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
+    /**
+     * Adds initializer statements to the supplied constructor context.
+     *
+     * @param node the class being enhanced
+     * @param constructorNode the constructor receiving initialization code
+     */
     protected void addInitialization(final ClassNode node, final ConstructorNode constructorNode) {
         Statement firstStatement = constructorNode.getFirstStatement();
 
@@ -1329,6 +1453,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     // TODO: add generics to collections
+    /**
+     * Routes a field initializer into the appropriate instance or static initialization block.
+     *
+     * @param list the instance-initializer statements
+     * @param staticList the static-initializer statements
+     * @param fieldNode the field whose initializer is being processed
+     * @param isEnumClassNode whether the declaring class is an enum
+     * @param initStmtsAfterEnumValuesInit enum statements that must run after constant initialization
+     * @param explicitStaticPropsInEnum explicitly declared static enum properties
+     */
     protected void addFieldInitialization(final List list, final List staticList, final FieldNode fieldNode, final boolean isEnumClassNode, final List initStmtsAfterEnumValuesInit, final Set explicitStaticPropsInEnum) {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
@@ -1378,6 +1512,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return BeanUtils.capitalize(name);
     }
 
+    /**
+     * Creates the bytecode-backed statement block for a generated property getter.
+     *
+     * @param propertyNode the property being served
+     * @param field the backing field
+     * @return the generated getter body
+     */
     protected Statement createGetterBlock(final PropertyNode propertyNode, final FieldNode field) {
         String owner = BytecodeHelper.getClassInternalName(classNode);
         return new BytecodeSequence(new BytecodeInstruction() {
@@ -1394,6 +1535,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         });
     }
 
+    /**
+     * Creates the bytecode-backed statement block for a generated property setter.
+     *
+     * @param propertyNode the property being updated
+     * @param field the backing field
+     * @return the generated setter body
+     */
     protected Statement createSetterBlock(final PropertyNode propertyNode, final FieldNode field) {
         String owner = BytecodeHelper.getClassInternalName(classNode);
         return new BytecodeSequence(new BytecodeInstruction() {
@@ -1412,9 +1560,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void visitGenericType(final GenericsType genericsType) {
     }
 
+    /**
+     * Extracts a timestamp value from a synthetic timestamp field name.
+     *
+     * @param fieldName the field name to inspect
+     * @return the parsed timestamp, or {@code null} if the name is not a timestamp field
+     */
     public static Long getTimestampFromFieldName(final String fieldName) {
         if (fieldName.startsWith(__TIMESTAMP__)) {
             try {
@@ -1426,6 +1583,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return null;
     }
 
+    /**
+     * Looks up the synthetic timestamp stored on a generated class.
+     *
+     * @param clazz the generated class to inspect
+     * @return the stored timestamp, or {@code Long.MAX_VALUE} if none is available
+     */
     public static long getTimestamp(final Class<?> clazz) {
         if (clazz.getClassLoader() instanceof GroovyClassLoader.InnerLoader innerLoader) {
             return innerLoader.getTimeStamp();
@@ -1442,6 +1605,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return Long.MAX_VALUE;
     }
 
+    /**
+     * Adds bridge methods needed to support covariant overrides.
+     *
+     * @param classNode the class being enhanced
+     */
     protected void addCovariantMethods(final ClassNode classNode) {
         Map<String, MethodNode> absInterfaceMethods = new HashMap<>();
         Map<String, MethodNode> allInterfaceMethods = new HashMap<>();

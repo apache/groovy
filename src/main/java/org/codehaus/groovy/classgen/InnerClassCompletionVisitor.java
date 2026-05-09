@@ -51,21 +51,38 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
+/**
+ * Completes the transformation of inner classes by adding synthetic fields and constructor
+ * parameters needed to maintain references to outer class instances. This visitor is run
+ * after {@link InnerClassVisitor} to finalize inner class construction.
+ */
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
     private ClassNode classNode;
     private FieldNode thisField;
     private final SourceUnit sourceUnit;
 
+    /**
+     * Creates a new inner class completion visitor.
+     *
+     * @param cu the compilation unit (currently unused but kept for API compatibility)
+     * @param su the source unit for error reporting
+     */
     public InnerClassCompletionVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         classNode = node;
@@ -83,6 +100,9 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         addThisReference(node);

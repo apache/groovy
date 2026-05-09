@@ -28,18 +28,34 @@ import java.util.LinkedList;
  * Abstract base class for generator of Java class versions of Groovy AST classes
  */
 public abstract class ClassGenerator extends ClassCodeVisitorSupport {
-    // inner classes created while generating bytecode
+    /**
+     * Inner classes queued while generating the current class.
+     */
     protected LinkedList<ClassNode> innerClasses = new LinkedList<ClassNode>();
 
+    /**
+     * Returns the list of inner classes that were created during bytecode generation.
+     *
+     * @return the list of inner classes
+     */
     public LinkedList<ClassNode> getInnerClasses() {
         return innerClasses;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return null;
     }
 
+    /**
+     * Visits a bytecode sequence during AST traversal. Subclasses should override
+     * this method to handle custom bytecode generation.
+     *
+     * @param bytecodeSequence the bytecode sequence to visit
+     */
     public void visitBytecodeSequence(BytecodeSequence bytecodeSequence) {
     }
 }

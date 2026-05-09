@@ -55,15 +55,27 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
 
+    /**
+     * Creates a new enum completion visitor.
+     *
+     * @param cu the compilation unit (currently unused but kept for API compatibility)
+     * @param su the source unit for error reporting
+     */
     public EnumCompletionVisitor(final CompilationUnit cu, final SourceUnit su) {
         sourceUnit = su;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         if (node.isEnum()

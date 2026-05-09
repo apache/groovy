@@ -61,15 +61,33 @@ public class AnnotationVisitor {
     private AnnotationNode annotation;
     private ClassNode reportClass;
 
+    /**
+     * Creates a new annotation visitor.
+     *
+     * @param source the source unit being compiled
+     * @param errorCollector the error collector for reporting validation errors
+     */
     public AnnotationVisitor(final SourceUnit source, final ErrorCollector errorCollector) {
         this.source = source;
         this.errorCollector = errorCollector;
     }
 
+    /**
+     * Sets the class to report errors against.
+     *
+     * @param node the class node for error reporting
+     */
     public void setReportClass(final ClassNode node) {
         this.reportClass = node;
     }
 
+    /**
+     * Visits and validates an annotation node, checking that it conforms to annotation metadata
+     * and enhancing the AST to reflect real annotation semantics.
+     *
+     * @param node the annotation node to visit and validate
+     * @return the validated and potentially modified annotation node
+     */
     public AnnotationNode visit(final AnnotationNode node) {
         this.annotation = node;
         setReportClass(node.getClassNode());
@@ -171,6 +189,13 @@ public class AnnotationVisitor {
         return type.implementsInterface(ClassHelper.Annotation_TYPE);
     }
 
+    /**
+     * Validates an annotation attribute value against its declared type.
+     *
+     * @param attrName the attribute name
+     * @param valueExpr the supplied value expression
+     * @param attrType the declared attribute type
+     */
     protected void visitExpression(final String attrName, final Expression valueExpr, final ClassNode attrType) {
         if (attrType.isArray()) {
             ClassNode itemType = attrType.getComponentType();
@@ -212,6 +237,12 @@ public class AnnotationVisitor {
         }
     }
 
+    /**
+     * Verifies that an annotation member return type is valid under Java annotation rules.
+     *
+     * @param attrType the declared return type
+     * @param node the node to report against on error
+     */
     public void checkReturnType(final ClassNode attrType, final ASTNode node) {
         if (attrType.isArray()) {
             checkReturnType(attrType.getComponentType(), node);
@@ -248,12 +279,26 @@ public class AnnotationVisitor {
         return ret;
     }
 
+    /**
+     * Validates each element of an array-valued annotation attribute.
+     *
+     * @param attrName the attribute name
+     * @param listExpr the list expression representing the attribute value
+     * @param elementType the declared component type
+     */
     protected void visitListExpression(final String attrName, final ListExpression listExpr, final ClassNode elementType) {
         for (Expression expression : listExpr.getExpressions()) {
             visitExpression(attrName, expression, elementType);
         }
     }
 
+    /**
+     * Validates an enum-valued annotation attribute.
+     *
+     * @param attrName the attribute name
+     * @param valueExpr the enum constant expression
+     * @param attrType the declared enum type
+     */
     protected void visitEnumExpression(final String attrName, final PropertyExpression valueExpr, final ClassNode attrType) {
         ClassNode valueType = valueExpr.getObjectExpression().getType();
         if (!valueType.isDerivedFrom(attrType)) {
@@ -261,6 +306,13 @@ public class AnnotationVisitor {
         }
     }
 
+    /**
+     * Validates a constant-valued annotation attribute.
+     *
+     * @param attrName the attribute name
+     * @param valueExpr the constant expression
+     * @param attrType the declared attribute type
+     */
     protected void visitConstantExpression(final String attrName, final ConstantExpression valueExpr, final ClassNode attrType) {
         ClassNode valueType = valueExpr.getType();
         if (!ClassHelper.getWrapper(valueType).isDerivedFrom(ClassHelper.getWrapper(attrType))) {
@@ -268,6 +320,13 @@ public class AnnotationVisitor {
         }
     }
 
+    /**
+     * Validates a nested annotation attribute.
+     *
+     * @param attrName the attribute name
+     * @param valueExpr the nested annotation expression
+     * @param attrType the declared annotation type
+     */
     protected void visitAnnotationExpression(final String attrName, final AnnotationConstantExpression valueExpr, final ClassNode attrType) {
         AnnotationNode annotationNode = (AnnotationNode) valueExpr.getValue();
         AnnotationVisitor visitor = new AnnotationVisitor(this.source, this.errorCollector);
@@ -275,14 +334,32 @@ public class AnnotationVisitor {
         visitor.visit(annotationNode);
     }
 
+    /**
+     * Reports an error against the current annotation.
+     *
+     * @param msg the error message
+     */
     protected void addError(final String msg) {
         addError(msg, this.annotation);
     }
 
+    /**
+     * Reports an error against the supplied AST node.
+     *
+     * @param msg the error message
+     * @param node the node to associate with the error
+     */
     protected void addError(final String msg, final ASTNode node) {
         this.errorCollector.addErrorAndContinue(msg + " in @" + this.reportClass.getName() + '\n', node, this.source);
     }
 
+    /**
+     * Checks for circular references in nested annotations, which would cause infinite recursion.
+     *
+     * @param searchClass the annotation class being searched for in the dependency chain
+     * @param attrType the attribute type to check
+     * @param startExp the expression where the check started, for error reporting
+     */
     public void checkCircularReference(final ClassNode searchClass, final ClassNode attrType, final Expression startExp) {
         if (!isValidAnnotationClass(attrType)) return;
         if (!(startExp instanceof AnnotationConstantExpression ace)) {
