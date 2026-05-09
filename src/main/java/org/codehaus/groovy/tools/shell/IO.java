@@ -106,6 +106,13 @@ public class IO implements Closeable {
         this.err = err;
     }
 
+    /**
+     * Attempts to create an ANSI-aware writer for the supplied stream.
+     *
+     * @param stream the output stream to wrap
+     * @return an ANSI render writer, or {@code null} if ANSI support is
+     * unavailable
+     */
     protected PrintWriter tryConstructRenderWriter(OutputStream stream) {
         // load via reflection to avoid hard-coded dependency on jansi jar
         try {
@@ -191,25 +198,53 @@ public class IO implements Closeable {
      * Verbosity for simple logging: QUIET, INFO, VERBOSE, DEBUG
      */
     public static final class Verbosity {
+        /**
+         * Minimal output.
+         */
         public static final Verbosity QUIET = new Verbosity("QUIET");
 
+        /**
+         * Normal informational output.
+         */
         public static final Verbosity INFO = new Verbosity("INFO");
 
+        /**
+         * Extra informational output.
+         */
         public static final Verbosity VERBOSE = new Verbosity("VERBOSE");
 
+        /**
+         * Debug-level output.
+         */
         public static final Verbosity DEBUG = new Verbosity("DEBUG");
 
+        /**
+         * The symbolic name of this verbosity level.
+         */
         public final String name;
 
         private Verbosity(final String name) {
             this.name = name;
         }
 
+        /**
+         * Returns the symbolic name of this verbosity level.
+         *
+         * @return the verbosity name
+         */
         @Override
         public String toString() {
             return name;
         }
 
+        /**
+         * Resolves a verbosity level by name.
+         *
+         * @param name the name to resolve
+         * @return the matching verbosity level
+         * @throws IllegalArgumentException if the name does not match a known
+         * level
+         */
         public static Verbosity forName(final String name) {
             assert name != null;
 

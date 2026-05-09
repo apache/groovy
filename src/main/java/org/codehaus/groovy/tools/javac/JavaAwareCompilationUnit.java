@@ -56,18 +56,41 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     private final boolean keepStubs;
     private final boolean memStubEnabled;
 
+    /**
+     * Creates a joint compilation unit with the default configuration.
+     */
     public JavaAwareCompilationUnit() {
         this(null, null, null);
     }
 
+    /**
+     * Creates a joint compilation unit with the supplied configuration.
+     *
+     * @param configuration the compiler configuration to use
+     */
     public JavaAwareCompilationUnit(final CompilerConfiguration configuration) {
         this(configuration, null, null);
     }
 
+    /**
+     * Creates a joint compilation unit with the supplied configuration and
+     * class loader.
+     *
+     * @param configuration the compiler configuration to use
+     * @param groovyClassLoader the Groovy class loader to use
+     */
     public JavaAwareCompilationUnit(final CompilerConfiguration configuration, final GroovyClassLoader groovyClassLoader) {
         this(configuration, groovyClassLoader, null);
     }
 
+    /**
+     * Creates a joint compilation unit with explicit Groovy and transform class
+     * loaders.
+     *
+     * @param configuration the compiler configuration to use
+     * @param groovyClassLoader the Groovy class loader to use
+     * @param transformClassLoader the class loader used for AST transforms
+     */
     public JavaAwareCompilationUnit(final CompilerConfiguration configuration, final GroovyClassLoader groovyClassLoader, final GroovyClassLoader transformClassLoader) {
         super(configuration, /*codeSource*/null, groovyClassLoader, transformClassLoader);
 
@@ -129,6 +152,13 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }, Phases.CONVERSION);
     }
 
+    /**
+     * Advances the compilation unit to the requested phase and triggers javac
+     * when the semantic analysis boundary is reached.
+     *
+     * @param phase the target compilation phase
+     * @throws CompilationFailedException if compilation fails
+     */
     @Override
     public void gotoPhase(final int phase) throws CompilationFailedException {
         super.gotoPhase(phase);
@@ -148,6 +178,12 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
     }
 
+    /**
+     * Configures the compilation unit and ensures the target directory is on
+     * the Groovy class loader classpath.
+     *
+     * @param configuration the compiler configuration to apply
+     */
     @Override
     public void configure(final CompilerConfiguration configuration) {
         super.configure(configuration);
@@ -171,6 +207,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         javaSources.add(file.getAbsolutePath());
     }
 
+    /**
+     * Adds Groovy or Java sources from the supplied path strings.
+     *
+     * @param paths the source paths to add
+     */
     @Override
     public void addSources(final String[] paths) {
         for (String path : paths) {
@@ -178,6 +219,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
     }
 
+    /**
+     * Adds Groovy or Java sources from the supplied files.
+     *
+     * @param files the source files to add
+     */
     @Override
     public void addSources(final File[] files) {
         for (File file : files) {
@@ -185,10 +231,20 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
         }
     }
 
+    /**
+     * Returns the factory used to create the backing Java compiler.
+     *
+     * @return the Java compiler factory
+     */
     public JavaCompilerFactory getCompilerFactory() {
         return compilerFactory;
     }
 
+    /**
+     * Sets the factory used to create the backing Java compiler.
+     *
+     * @param compilerFactory the Java compiler factory to use
+     */
     public void setCompilerFactory(final JavaCompilerFactory compilerFactory) {
         this.compilerFactory = compilerFactory;
     }

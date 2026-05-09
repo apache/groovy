@@ -42,6 +42,11 @@ public class GroovyStarter {
         System.exit(1);
     }
 
+    /**
+     * Bootstraps the requested Groovy launcher from command-line arguments.
+     *
+     * @param args launcher arguments
+     */
     public static void main(String[] args) {
         try {
             rootLoader(args);
@@ -50,6 +55,11 @@ public class GroovyStarter {
         }
     }
 
+    /**
+     * Configures the root loader and invokes the selected main class.
+     *
+     * @param args starter arguments
+     */
     public static void rootLoader(String[] args) {
         String conf = System.getProperty("groovy.starter.conf",null);
         final LoaderConfiguration lc = new LoaderConfiguration();

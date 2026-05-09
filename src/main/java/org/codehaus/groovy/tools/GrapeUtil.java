@@ -21,7 +21,18 @@ package org.codehaus.groovy.tools;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Utility methods for parsing compact Grape dependency coordinates.
+ */
 public class GrapeUtil {
+    /**
+     * Parses a dependency coordinate in Ivy/Grape shorthand form into its
+     * component parts.
+     *
+     * @param allstr the dependency coordinate to parse
+     * @return a map containing any parsed {@code group}, {@code module},
+     * {@code version}, {@code classifier}, and {@code ext} entries
+     */
     public static Map<String, Object> getIvyParts(String allstr) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         String ext = "";

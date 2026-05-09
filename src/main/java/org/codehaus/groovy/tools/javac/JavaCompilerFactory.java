@@ -20,6 +20,15 @@ package org.codehaus.groovy.tools.javac;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
+/**
+ * Factory for creating Java compiler instances used by joint compilation.
+ */
 public interface JavaCompilerFactory {
+    /**
+     * Creates a Java compiler for the supplied configuration.
+     *
+     * @param config the compiler configuration
+     * @return a Java compiler instance
+     */
     JavaCompiler createCompiler(CompilerConfiguration config);
 }

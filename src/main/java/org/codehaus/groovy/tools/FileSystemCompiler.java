@@ -61,10 +61,25 @@ public class FileSystemCompiler {
     private static boolean displayStackTraceOnError = false;
     private final CompilationUnit unit;
 
+    /**
+     * Creates a file-system compiler using the supplied configuration.
+     *
+     * @param configuration the compiler configuration to apply
+     * @throws ConfigurationException if the compilation unit cannot be created
+     */
     public FileSystemCompiler(CompilerConfiguration configuration) throws ConfigurationException {
         this(configuration, null);
     }
 
+    /**
+     * Creates a file-system compiler using the supplied configuration and
+     * optional prebuilt compilation unit.
+     *
+     * @param configuration the compiler configuration to apply
+     * @param cu an existing compilation unit to reuse, or {@code null} to build
+     * a suitable one
+     * @throws ConfigurationException if the compilation unit cannot be created
+     */
     public FileSystemCompiler(CompilerConfiguration configuration, CompilationUnit cu) throws ConfigurationException {
         if (cu != null) {
             unit = cu;
@@ -114,6 +129,12 @@ public class FileSystemCompiler {
         }
     }
 
+    /**
+     * Counts unreadable or missing source files in the supplied list.
+     *
+     * @param filenames the file names to validate
+     * @return the number of invalid file entries
+     */
     public static int checkFiles(String[] filenames) {
         int errors = 0;
 
@@ -131,6 +152,12 @@ public class FileSystemCompiler {
         return errors;
     }
 
+    /**
+     * Returns whether all supplied file names resolve to readable files.
+     *
+     * @param filenames the file names to validate
+     * @return {@code true} if every file exists and can be read
+     */
     public static boolean validateFiles(String[] filenames) {
         return checkFiles(filenames) == 0;
     }
@@ -172,6 +199,12 @@ public class FileSystemCompiler {
         }
     }
 
+    /**
+     * Creates and configures the command-line parser for compilation options.
+     *
+     * @param options the options object to bind parser results to
+     * @return the configured parser
+     */
     public static CommandLine configureParser(CompilationOptions options) {
         CommandLine parser = new CommandLine(options);
         parser.getCommandSpec().parser()
@@ -215,10 +248,30 @@ public class FileSystemCompiler {
         }
     }
 
+    /**
+     * Compiles the supplied source files using the given configuration.
+     *
+     * @param configuration the compiler configuration to use
+     * @param unit an existing compilation unit to reuse, or {@code null}
+     * @param filenames the source files to compile
+     * @throws Exception if compilation fails
+     */
     public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames) throws Exception {
         doCompilation(configuration, unit, filenames, true);
     }
 
+    /**
+     * Compiles the supplied source files using the given configuration and
+     * controls whether unnamed Groovy sources are searched relative to the
+     * provided file list.
+     *
+     * @param configuration the compiler configuration to use
+     * @param unit an existing compilation unit to reuse, or {@code null}
+     * @param filenames the source files to compile
+     * @param lookupUnnamedFiles whether to search for unnamed Groovy sources
+     * beside the listed files
+     * @throws Exception if compilation fails
+     */
     public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames, boolean lookupUnnamedFiles) throws Exception {
         File tmpDir = null;
         // if there are any joint compilation options set stubDir if not set
@@ -297,6 +350,11 @@ public class FileSystemCompiler {
         }
     }
 
+    /**
+     * Deletes the supplied file or directory tree if it exists.
+     *
+     * @param file the file or directory to delete
+     */
     public static void deleteRecursive(File file) {
         if (!file.exists()) {
             return;
@@ -312,20 +370,39 @@ public class FileSystemCompiler {
         }
     }
 
+    /**
+     * Compiles the sources at the supplied paths.
+     *
+     * @param paths the source paths to compile
+     * @throws Exception if compilation fails
+     */
     public void compile(String[] paths) throws Exception {
         unit.addSources(paths);
         unit.compile();
     }
 
+    /**
+     * Compiles the supplied source files.
+     *
+     * @param files the source files to compile
+     * @throws Exception if compilation fails
+     */
     public void compile(File[] files) throws Exception {
         unit.addSources(files);
         unit.compile();
     }
 
     /**
+     * Supplies version text for the {@code groovyc} command line.
+     *
      * @since 2.5
      */
     public static class VersionProvider implements IVersionProvider {
+        /**
+         * Returns the version banner displayed by the command line parser.
+         *
+         * @return the version banner lines
+         */
         @Override
         public String[] getVersion() {
             return new String[]{
@@ -337,6 +414,8 @@ public class FileSystemCompiler {
     }
 
     /**
+     * Command-line options accepted by the {@code groovyc} launcher.
+     *
      * @since 2.5
      */
     @Command(name = "groovyc",
@@ -418,6 +497,12 @@ public class FileSystemCompiler {
         @Option(names = {"--type-checked"}, description = "Use TypeChecked")
         private boolean typeChecked;
 
+        /**
+         * Builds a compiler configuration from the parsed command-line options.
+         *
+         * @return the configured compiler configuration
+         * @throws IOException if a configuration script cannot be read
+         */
         public CompilerConfiguration toCompilerConfiguration() throws IOException {
             // Setup the configuration data
             CompilerConfiguration configuration = new CompilerConfiguration();
@@ -496,6 +581,12 @@ public class FileSystemCompiler {
             return configuration;
         }
 
+        /**
+         * Expands the parsed source-file arguments, including {@code @}-files,
+         * into the list of file names to compile.
+         *
+         * @return the source file names, or {@code null} if expansion failed
+         */
         public String[] generateFileNames() {
             return generateFileNamesFromOptions(files);
         }

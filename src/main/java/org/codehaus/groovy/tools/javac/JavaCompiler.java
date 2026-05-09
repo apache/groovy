@@ -22,6 +22,17 @@ import org.codehaus.groovy.control.CompilationUnit;
 
 import java.util.List;
 
+/**
+ * Strategy interface for compiling Java sources during Groovy joint
+ * compilation.
+ */
 public interface JavaCompiler {
+    /**
+     * Compiles the supplied Java source files into the context of the provided
+     * Groovy compilation unit.
+     *
+     * @param files the Java source files to compile
+     * @param cu the owning Groovy compilation unit
+     */
     void compile(List<String> files, CompilationUnit cu);
 }

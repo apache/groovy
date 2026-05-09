@@ -51,6 +51,15 @@ public class RawJavaFileObject extends SimpleJavaFileObject {
         this.javaFilePath = Paths.get(uri);
     }
 
+    /**
+     * Returns the source content of the underlying file, caching it after the
+     * first read.
+     *
+     * @param ignoreEncodingErrors ignored because the file is read using the
+     * configured default charset
+     * @return the source content
+     * @throws IOException if the file cannot be read
+     */
     @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
         return null != src ? src : (src = Files.readString(javaFilePath, DEFAULT_CHARSET));
@@ -65,6 +74,12 @@ public class RawJavaFileObject extends SimpleJavaFileObject {
         return new File(uri).delete();
     }
 
+    /**
+     * Compares this file object by URI.
+     *
+     * @param o the object to compare against
+     * @return {@code true} if the other object represents the same URI
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -72,11 +87,21 @@ public class RawJavaFileObject extends SimpleJavaFileObject {
         return Objects.equals(uri, that.uri);
     }
 
+    /**
+     * Returns the hash code derived from the URI.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return Objects.hash(uri);
     }
 
+    /**
+     * Returns a diagnostic string for this file-backed Java file object.
+     *
+     * @return a string representation of this file object
+     */
     @Override
     public String toString() {
         return "RawJavaFileObject{" +

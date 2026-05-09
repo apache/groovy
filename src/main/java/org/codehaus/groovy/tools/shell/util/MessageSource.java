@@ -35,6 +35,11 @@ public class MessageSource
 
     private ResourceBundle[] cachedBundles;
 
+    /**
+     * Creates a message source backed by the named resource bundles.
+     *
+     * @param names the bundle base names to search
+     */
     public MessageSource(final String[] names) {
         assert names != null;
         assert names.length != 0;
@@ -42,6 +47,11 @@ public class MessageSource
         this.bundleNames = names;
     }
 
+    /**
+     * Creates a message source backed by a single named resource bundle.
+     *
+     * @param name the bundle base name
+     */
     public MessageSource(final String name) {
         this(new String[] { name });
     }
@@ -61,10 +71,22 @@ public class MessageSource
         return names;
     }
 
+    /**
+     * Creates a message source backed by bundles named after the supplied
+     * types.
+     *
+     * @param types the types whose names identify resource bundles
+     */
     public MessageSource(final Class[] types) {
         this(classNames(types));
     }
 
+    /**
+     * Creates a message source backed by the bundle named after the supplied
+     * type.
+     *
+     * @param type the type whose name identifies a resource bundle
+     */
     public MessageSource(final Class type) {
         this(new String[] { type.getName() });
     }

@@ -24,20 +24,37 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * Map from string keys to lazily created sets of strings.
+ */
 public class StringSetMap extends LinkedHashMap<String,Set<String>> {
 
     @Serial private static final long serialVersionUID = -8603734698633884431L;
 
+    /**
+     * Creates an empty map.
+     */
     public StringSetMap() {
         super();
     }
 
+    /**
+     * Creates a copy of another string-set map.
+     *
+     * @param other the map to copy
+     */
     public StringSetMap(StringSetMap other) {
         for (String key : other.keySet()) {
             get(key).addAll(other.get(key));
         }
     }
 
+    /**
+     * Returns the set for the supplied key, creating it if necessary.
+     *
+     * @param o the key whose set should be returned
+     * @return the existing or newly created set
+     */
     @Override
     public Set<String> get(Object o){
         String name = (String) o;
@@ -49,6 +66,9 @@ public class StringSetMap extends LinkedHashMap<String,Set<String>> {
         return set;
     }
 
+    /**
+     * Expands the relation represented by this map to its transitive closure.
+     */
     public void makeTransitiveHull() {
         Set<String> nameSet = new TreeSet<String>(keySet());
 

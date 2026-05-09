@@ -114,6 +114,9 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 
+/**
+ * Generates Java stub source for Groovy classes during joint compilation.
+ */
 public class JavaStubGenerator {
 
     private final String encoding;
@@ -125,10 +128,26 @@ public class JavaStubGenerator {
 
     private ModuleNode currentModule;
 
+    /**
+     * Creates a stub generator that writes to the supplied output directory
+     * using the default charset.
+     *
+     * @param outputPath the destination directory, or {@code null} for
+     * in-memory stubs
+     */
     public JavaStubGenerator(final File outputPath) {
         this(outputPath, false, Charset.defaultCharset().name());
     }
 
+    /**
+     * Creates a stub generator with explicit output options.
+     *
+     * @param outputPath the destination directory, or {@code null} for
+     * in-memory stubs
+     * @param requireSuperResolved whether generation should wait until the
+     * superclass is resolved
+     * @param encoding the source encoding to use for generated files
+     */
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final String encoding) {
         this.requireSuperResolved = requireSuperResolved;
         this.outputPath = outputPath;
@@ -145,6 +164,13 @@ public class JavaStubGenerator {
         dir.mkdirs();
     }
 
+    /**
+     * Generates a Java stub for the supplied class when it is eligible for
+     * stub generation.
+     *
+     * @param classNode the class to generate a stub for
+     * @throws FileNotFoundException if a file-based stub cannot be created
+     */
     public void generateClass(final ClassNode classNode) throws FileNotFoundException {
         // only attempt to render if super-class is resolved; else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
@@ -1195,10 +1221,18 @@ public class JavaStubGenerator {
 
     private final Set<JavaFileObject> javaStubCompilationUnitSet = new HashSet<>();
 
+    /**
+     * Returns the generated in-memory or file-backed Java file objects.
+     *
+     * @return the current set of generated Java stub compilation units
+     */
     public Set<JavaFileObject> getJavaStubCompilationUnitSet() {
         return javaStubCompilationUnitSet;
     }
 
+    /**
+     * Deletes generated stub files and clears the tracked stub set.
+     */
     public void clean() {
         Stream<JavaFileObject> javaFileObjectStream =
                 javaStubCompilationUnitSet.size() < 2

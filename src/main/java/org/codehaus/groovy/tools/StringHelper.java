@@ -21,6 +21,9 @@ package org.codehaus.groovy.tools;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * String utility methods used by Groovy command-line tooling.
+ */
 public class StringHelper {
     private static final char
         SPACE = ' ', SINGLE_QUOTE = '\'', DOUBLE_QUOTE = '"';

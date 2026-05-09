@@ -155,6 +155,12 @@ public class ErrorReporter {
         }
     }
 
+    /**
+     * Prints a line to the underlying output target using a mutable character
+     * buffer.
+     *
+     * @param line the line to print
+     */
     protected void println(StringBuffer line) {
         if (output instanceof PrintStream) {
             ((PrintStream) output).println(line);

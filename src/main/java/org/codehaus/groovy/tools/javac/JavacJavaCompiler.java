@@ -43,16 +43,32 @@ import java.util.Set;
 
 import static java.lang.System.Logger.Level.INFO;
 
+/**
+ * {@link JavaCompiler} implementation that delegates to the JDK system Java
+ * compiler.
+ */
 public class JavacJavaCompiler implements JavaCompiler {
 
     private static final System.Logger LOGGER = System.getLogger(JavacJavaCompiler.class.getName());
 
     private final CompilerConfiguration config;
 
+    /**
+     * Creates a javac-backed compiler for the supplied configuration.
+     *
+     * @param config the compiler configuration to use
+     */
     public JavacJavaCompiler(final CompilerConfiguration config) {
         this.config = Objects.requireNonNull(config);
     }
 
+    /**
+     * Compiles the supplied Java source files with javac and reports any
+     * errors back to the Groovy compilation unit.
+     *
+     * @param files the Java source files to compile
+     * @param cu the owning Groovy compilation unit
+     */
     @Override
     public void compile(final List<String> files, final CompilationUnit cu) {
         List<String> javacParameters = makeParameters(cu.getClassLoader());
