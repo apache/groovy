@@ -65,7 +65,7 @@ jobs:
       # fallback. The cache grows with new @Grab coordinates over time and
       # never gets invalidated by older ones being removed.
       - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes)"
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.groovy/grapes
           key: ${{ runner.os }}-grape-${{ github.run_id }}
@@ -106,7 +106,7 @@ jobs:
       # See the lts job for rationale; same prefix lets both jobs share
       # the cache.
       - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes)"
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.groovy/grapes
           key: ${{ runner.os }}-grape-${{ github.run_id }}
