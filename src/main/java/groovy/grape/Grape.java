@@ -18,6 +18,8 @@
  */
 package groovy.grape;
 
+import org.codehaus.groovy.tools.GrapeUtil;
+
 import java.net.URI;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -226,14 +228,29 @@ public class Grape {
     }
 
     /**
-     * Grabs a dependency expressed using the endorsed module shorthand.
+     * Grabs a dependency expressed as a single string.
+     * <p>
+     * Recognized forms:
+     * <ul>
+     *   <li>Maven shorthand: {@code group:module:version[:classifier][@ext]}</li>
+     *   <li>Ivy shorthand:   {@code group#module;version}</li>
+     *   <li>Endorsed module: a bare module name (legacy; resolves under the
+     *       {@code groovy.endorsed} group at the current Groovy version)</li>
+     * </ul>
      *
-     * @param endorsed the endorsed module notation
+     * @param endorsed the dependency notation
      */
     public static void grab(String endorsed) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
+                if (endorsed != null && (endorsed.indexOf(':') >= 0 || endorsed.indexOf('#') >= 0)) {
+                    Map<String, Object> parts = GrapeUtil.getIvyParts(endorsed);
+                    if (parts.get("group") != null && parts.get("module") != null) {
+                        grab(parts);
+                        return;
+                    }
+                }
                 instance.grab(endorsed);
             }
         }

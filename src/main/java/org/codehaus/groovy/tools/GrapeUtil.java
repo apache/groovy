@@ -26,8 +26,14 @@ import java.util.Map;
  */
 public class GrapeUtil {
     /**
-     * Parses a dependency coordinate in Ivy/Grape shorthand form into its
+     * Parses a dependency coordinate in Maven or Ivy shorthand form into its
      * component parts.
+     * <p>
+     * Recognized forms:
+     * <ul>
+     *   <li>Maven: {@code group:module:version[:classifier][@ext]}</li>
+     *   <li>Ivy:   {@code group#module;version} (translated internally to the Maven form before parsing)</li>
+     * </ul>
      *
      * @param allstr the dependency coordinate to parse
      * @return a map containing any parsed {@code group}, {@code module},
@@ -35,6 +41,12 @@ public class GrapeUtil {
      */
     public static Map<String, Object> getIvyParts(String allstr) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
+        if (allstr == null) return result;
+        // Accept the Ivy shorthand "group#module;version" by translating its separators to
+        // the Maven form before parsing. Neither '#' nor ';' is legal in a groupId, artifactId,
+        // or version (Ivy ranges use '[]()' not '#;'), so a straight replace cannot collide
+        // with the Maven form.
+        allstr = allstr.replace('#', ':').replace(';', ':');
         String ext = "";
         String[] parts;
         if (allstr.contains("@")) {

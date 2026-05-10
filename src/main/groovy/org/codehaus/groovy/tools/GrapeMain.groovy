@@ -150,18 +150,19 @@ class GrapeMain implements Runnable {
     }
 
     @Command(name = 'install', header = 'Installs a particular grape',
-            description = 'Installs the specified groovy module or maven artifact. If a version is specified that specific version will be installed, otherwise the most recent version will be used (as if `*` was passed in).')
+            description = ['Installs the specified groovy module or maven artifact. If a version is specified that specific version will be installed, otherwise the most recent version will be used (as if `*` was passed in).',
+                           'Accepts three coordinate forms: `group module [version] [classifier]` (positional), `group:module:version[:classifier][@ext]` (Maven shorthand), or `group#module;version` (Ivy shorthand).'])
     private static class Install implements Runnable {
         /**
-         * Module group to install.
+         * Module group to install, or a full coordinate in Maven/Ivy shorthand.
          */
-        @Parameters(index = '0', arity = '1', description = 'Which module group the module comes from. Translates directly to a Maven groupId or an Ivy Organization. Any group matching /groovy[x][\\..*]^/ is reserved and may have special meaning to the groovy endorsed modules.')
+        @Parameters(index = '0', arity = '1', description = 'Either the module group (Maven groupId / Ivy organisation), or a full coordinate in Maven shorthand `g:m:v[:c][@e]` or Ivy shorthand `g#m;v`. Any group matching /groovy[x][\\..*]^/ is reserved and may have special meaning to the groovy endorsed modules.')
         String group
 
         /**
-         * Module name to install.
+         * Module name to install. Optional when a shorthand coordinate is supplied as the first parameter.
          */
-        @Parameters(index = '1', arity = '1', description = 'The name of the module to load. Translated directly to a Maven artifactId or an Ivy artifact.')
+        @Parameters(index = '1', arity = '0..1', description = 'The name of the module to load. Translated directly to a Maven artifactId or an Ivy artifact. Omit when supplying a shorthand coordinate.')
         String module
 
         /**
@@ -203,7 +204,24 @@ class GrapeMain implements Runnable {
                 throw new CommandLine.ExecutionException(new CommandLine(this), "Grape engine not initialized")
             }
 
-            def result = engine.grab(autoDownload: true, group: group, module: module, version: version, classifier: classifier, noExceptions: true)
+            // If the first positional carries Maven/Ivy shorthand separators, parse it and let any
+            // explicit later positionals override what the shorthand supplied.
+            String g = group, m = module, v = version, c = classifier
+            if (g != null && (g.indexOf(':') >= 0 || g.indexOf('#') >= 0)) {
+                Map<String, Object> parts = GrapeUtil.getIvyParts(g)
+                if (parts.get('group') && parts.get('module')) {
+                    g = parts.group
+                    if (!m) m = parts.module as String
+                    if (v == '*' && parts.version) v = parts.version as String
+                    if (!c && parts.classifier) c = parts.classifier as String
+                }
+            }
+            if (!m) {
+                System.err.println "Missing module: pass three positionals or a shorthand like 'g:m:v'"
+                throw new CommandLine.ExecutionException(new CommandLine(this), "Missing module")
+            }
+
+            def result = engine.grab(autoDownload: true, group: g, module: m, version: v, classifier: c, noExceptions: true)
             if (result instanceof Exception) {
                 System.err.println "Error grabbing Grapes -- ${result.message}"
                 throw new CommandLine.ExecutionException(new CommandLine(this), "Failed to install grape", result)
