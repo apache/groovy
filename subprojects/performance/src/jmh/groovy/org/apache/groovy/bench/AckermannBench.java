@@ -36,13 +36,13 @@ import java.util.concurrent.TimeUnit;
  */
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(2)
+@Fork(value = 2, jvmArgsAppend = "-Xss8m")
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 public class AckermannBench {
 
-    @Param({"5", "6", "7", "8"})
+    @Param({"5", "6", "7"})
     private int n;
 
     /**
