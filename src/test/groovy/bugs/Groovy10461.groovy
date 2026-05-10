@@ -35,7 +35,7 @@ final class Groovy10461 {
             @Grab('com.fasterxml.jackson.core:jackson-databind:2.14.2')
             import com.fasterxml.jackson.databind.ObjectMapper
 
-            @Grab('io.rest-assured:rest-assured:4.4.0')
+            @Grab('io.rest-assured:rest-assured:4.5.0')
             import io.restassured.RestAssured
             import io.restassured.config.RestAssuredConfig
             import io.restassured.config.ObjectMapperConfig
