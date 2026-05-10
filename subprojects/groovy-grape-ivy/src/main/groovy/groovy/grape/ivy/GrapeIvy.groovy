@@ -42,6 +42,7 @@ import org.apache.ivy.core.module.id.ModuleId
 import org.apache.ivy.core.module.id.ModuleRevisionId
 import org.apache.ivy.core.report.ArtifactDownloadReport
 import org.apache.ivy.core.report.ResolveReport
+import org.apache.ivy.core.resolve.IvyNode
 import org.apache.ivy.core.resolve.ResolveOptions
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.matcher.ExactPatternMatcher
@@ -102,7 +103,8 @@ class GrapeIvy implements GrapeEngine {
         Message.setDefaultLogger(new PlatformLoggingMessageLogger())
 
         settings = new IvySettings()
-        settings.setVariable('user.home.url', new File(System.getProperty('user.home')).toURI().toURL() as String)
+        def url = new File(System.getProperty('user.home')).toURI().toURL() as String
+        settings.setVariable('user.home.url', url.endsWith("/") ? url[0..-2] : url)
         File grapeConfig = getLocalGrapeConfig()
         if (grapeConfig.exists()) {
             try {
@@ -451,7 +453,7 @@ class GrapeIvy implements GrapeEngine {
         }
 
         if (report.hasError()) {
-            throw new RuntimeException("Error grabbing Grapes -- ${report.getAllProblemMessages()}")
+            throw new RuntimeException("Error grabbing Grapes -- ${report.getAllProblemMessages()}${diagnoseHalfPopulatedLocalM2(report)}")
         }
         if (report.getDownloadSize() && reportDownloads) {
             System.err.println("Downloaded ${report.getDownloadSize() >> 10} Kbytes in ${report.getDownloadTime()}ms:\n  ${report.getAllArtifactsReports()*.toString().join('\n  ')}")
@@ -464,6 +466,66 @@ class GrapeIvy implements GrapeEngine {
         }
 
         report
+    }
+
+    /**
+     * When a download fails, check whether the local Maven cache has the POM but
+     * not the primary artifact for any failed dependency. Ivy binds artifact
+     * downloads to the resolver that resolved the descriptor, so a localm2 with
+     * only the POM blocks the chain from falling through to Maven Central.
+     */
+    private static String diagnoseHalfPopulatedLocalM2(ResolveReport report) {
+        File m2root = new File(System.getProperty('user.home'), '.m2/repository')
+        if (!m2root.isDirectory()) return ''
+        StringBuilder hint = new StringBuilder()
+        Set<String> seen = new LinkedHashSet<String>()
+        // Artifact-level failures ("download failed: g#a;v!a.jar") — primary half-population.
+        for (ArtifactDownloadReport adr : report.getFailedArtifactsReports()) {
+            String classifier = (String) adr.getArtifact().getExtraAttribute('classifier')
+            appendHintForCoord(adr.getArtifact().getModuleRevisionId(),
+                    adr.getArtifact().getName(),
+                    adr.getArtifact().getExt() ?: 'jar',
+                    classifier, m2root, hint, seen)
+        }
+        // Dependency-level failures ("unresolved dependency: g#a;v not found") — typical when
+        // the JAR-only-in-localm2 case combines with a transient Central descriptor lookup miss.
+        for (IvyNode node : report.getUnresolvedDependencies()) {
+            appendHintForCoord(node.getId(), node.getId().getName(), 'jar', null, m2root, hint, seen)
+        }
+        return hint.toString()
+    }
+
+    private static void appendHintForCoord(ModuleRevisionId mrid, String artName, String ext,
+                                           String classifier, File m2root, StringBuilder hint,
+                                           Set<String> seen) {
+        String org = mrid.getOrganisation()
+        String mod = mrid.getName()
+        String rev = mrid.getRevision()
+        String coord = "${org}:${mod}:${rev}".toString()
+        if (!seen.add(coord)) return
+        File dir = new File(m2root, "${org.replace('.', '/')}/${mod}/${rev}")
+        if (!dir.isDirectory()) return
+        File pom = new File(dir, "${mod}-${rev}.pom")
+        String suffix = classifier ? "-${classifier}" : ''
+        File primary = new File(dir, "${artName}-${rev}${suffix}.${ext}")
+        if (pom.exists() && !primary.exists()) {
+            File grapeIvyXml = new File(System.getProperty('user.home'),
+                    ".groovy/grapes/${org}/${mod}/ivy-${rev}.xml")
+            hint.append('\nHint: ').append(coord)
+                .append(' has a POM but no ').append(ext).append(' in your local Maven cache.\n')
+                .append('Either run:  mvn dependency:get -Dartifact=').append(coord).append('\n')
+                .append('or remove these so Grape can fetch from Maven Central:\n')
+                .append('  ').append(dir).append('\n')
+                .append('  ').append(grapeIvyXml).append(' (and ivy-')
+                .append(rev).append('.xml.original, ivydata-').append(rev).append('.properties)')
+        } else if (primary.exists() && !pom.exists()) {
+            hint.append('\nHint: ').append(coord)
+                .append(' has a ').append(ext).append(' but no POM in your local Maven cache.\n')
+                .append('Ivy needs the POM to resolve the descriptor; without it the chain falls through ')
+                .append('to Maven Central and any transient Central failure surfaces as "not found".\n')
+                .append('Either run:  mvn dependency:get -Dartifact=').append(coord).append('\n')
+                .append('or remove ').append(dir).append(' to force a clean fetch.')
+        }
     }
 
     private addIvyListener() {
