@@ -37,6 +37,22 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
+      # `setup-gradle` caches ~/.gradle/caches but NOT ~/.groovy/grapes,
+      # which is where @Grab-resolved artifacts (used by tests like
+      # GenericsSTCTest, MethodReferenceTest, …) land. Caching it makes
+      # the build resilient to transient Maven Central / CDN outages:
+      # once an artifact has been resolved on any prior run, subsequent
+      # runs reuse it from cache and don't re-hit the network.
+      #
+      # Same key prefix as `groovy-build-test.yml` so the two workflows
+      # share their accumulated Grape cache.
+      - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes)"
+        uses: actions/cache@v4
+        with:
+          path: ~/.groovy/grapes
+          key: ${{ runner.os }}-grape-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-grape-
       - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
       - name: Test with Gradle
         run: ./gradlew -Pcoverage=true jacocoAllReport

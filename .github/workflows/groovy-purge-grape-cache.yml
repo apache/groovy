@@ -1,0 +1,166 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Manually services the `actions/cache` entries that hold the persisted
+# `~/.groovy/grapes/` directory used by the build/test workflows.
+#
+# Two modes:
+#
+# * `delete-entries` — wholesale removal of cache entries via
+#   `gh cache delete`. Loses all cached JARs; the next regular workflow
+#   run will repopulate from fresh resolutions. Use when a JAR itself
+#   is corrupt or you want to start completely clean.
+#
+# * `scrub-ivydata` — restore the latest cache, delete only the
+#   `ivydata-*.properties` files (Ivy's per-artifact resolver-state
+#   cache, where transient "not found" responses get memoised), and
+#   save back under a fresh key. Preserves all the actual JARs and
+#   POMs. Use when CI is failing with `unresolved dependency` against
+#   artifacts that *do* exist on Maven Central — the classic poisoned-
+#   negative-cache symptom.
+#
+# After either mode, the next run of `Build and test` / `Build and test
+# for coverage` will pick up the cleaned (or absent) cache via the
+# `${{ runner.os }}-grape-` restore-keys prefix.
+
+name: Purge Grape cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'What to do'
+        required: true
+        type: choice
+        default: scrub-ivydata
+        options:
+          - scrub-ivydata
+          - delete-entries
+      key_prefix:
+        description: 'Cache key substring to match (delete-entries mode only; scrub-ivydata always operates on the latest cache per OS)'
+        required: false
+        default: 'grape-'
+      dry_run:
+        description: 'List/preview without modifying'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  # `actions: write` is required both for `gh cache delete` and for the
+  # `actions/cache` post-step that saves a fresh entry in scrub mode.
+  actions: write
+  contents: read
+
+jobs:
+  delete-entries:
+    if: ${{ inputs.mode == 'delete-entries' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🔍 List matching cache entries"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PREFIX: ${{ inputs.key_prefix }}
+        run: |
+          echo "Caches whose keys contain '${PREFIX}':"
+          gh cache list --limit 100 \
+            --json id,key,sizeInBytes,createdAt \
+            --jq ".[] | select(.key | contains(\"${PREFIX}\"))" \
+            | tee matches.json
+          echo
+          echo "Total matched: $(jq -s 'length' matches.json)"
+          echo "Total size:    $(jq -s 'map(.sizeInBytes) | add // 0' matches.json) bytes"
+      - name: "🗑️ Delete matching cache entries"
+        if: ${{ inputs.dry_run == false }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PREFIX: ${{ inputs.key_prefix }}
+        run: |
+          # `gh cache list` paginates by default; --limit 100 plus the
+          # loop below handles repos with many entries (purge tends to
+          # be one-shot anyway).
+          while true; do
+            ids=$(gh cache list --limit 100 \
+              --json id,key \
+              --jq ".[] | select(.key | contains(\"${PREFIX}\")) | .id")
+            if [ -z "$ids" ]; then
+              echo "No more matching caches."
+              break
+            fi
+            echo "$ids" | while read -r id; do
+              [ -z "$id" ] && continue
+              echo "Deleting cache id=$id"
+              gh cache delete "$id"
+            done
+          done
+
+  # Surgical scrub: per-OS, restore the most recent grape cache for that
+  # OS, delete only the `ivydata-*.properties` negative-cache markers,
+  # then let actions/cache's post-step save the cleaned tree under a
+  # fresh run-id-keyed entry. All JARs/POMs survive.
+  #
+  # The matrix mirrors the OSes that produce grape caches in the build
+  # workflows (Linux/Windows/macOS). Each scrubs its own key family.
+  scrub-ivydata:
+    if: ${{ inputs.mode == 'scrub-ivydata' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: "🍇 Restore latest grape cache for ${{ runner.os }}"
+        uses: actions/cache@v4
+        with:
+          path: ~/.groovy/grapes
+          # New entry key per run so the cleaned tree gets saved under a
+          # fresh tag (actions/cache won't overwrite an existing key).
+          # Restore-keys finds the most recent `<os>-grape-*` entry.
+          key: ${{ runner.os }}-grape-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-grape-
+      - name: "🔍 Inventory poisoned ivydata-*.properties markers"
+        shell: bash
+        run: |
+          if [ ! -d ~/.groovy/grapes ]; then
+            echo "No grape cache restored on ${{ runner.os }} — nothing to do."
+            exit 0
+          fi
+          echo "ivydata-*.properties files in ~/.groovy/grapes:"
+          # Print each file with size and mtime, plus a count.
+          # `find ... -printf` isn't portable to macOS, so use stat.
+          count=0
+          while IFS= read -r f; do
+            count=$((count + 1))
+            ls -l "$f"
+          done < <(find ~/.groovy/grapes -name 'ivydata-*.properties' 2>/dev/null)
+          echo
+          echo "Total markers: $count"
+      - name: "🧹 Scrub ivydata-*.properties markers"
+        if: ${{ inputs.dry_run == false }}
+        shell: bash
+        run: |
+          if [ ! -d ~/.groovy/grapes ]; then
+            echo "No grape cache restored — skipping."
+            exit 0
+          fi
+          deleted=$(find ~/.groovy/grapes -name 'ivydata-*.properties' -print -delete | wc -l)
+          echo "Deleted $deleted ivydata-*.properties marker(s)."
+          # Sanity-check that JARs survived. A non-zero count here is
+          # the whole point of scrub mode vs. delete-entries mode.
+          jars=$(find ~/.groovy/grapes -name '*.jar' 2>/dev/null | wc -l)
+          echo "JARs remaining in cache: $jars"
