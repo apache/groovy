@@ -12,6 +12,8 @@ github:
     - static-typing
     - compiler
     - apache
+  ghp_branch: gh-pages
+  ghp_path: /
 
 notifications:
   jira_options: link label comment
