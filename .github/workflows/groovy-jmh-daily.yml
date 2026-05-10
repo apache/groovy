@@ -87,6 +87,16 @@ jobs:
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} ${{ matrix.indyFlag }} -PjmhResultFormat=JSON
         timeout-minutes: 60
 
+      # Dashboards index: https://apache.github.io/groovy/
+      # Data is appended to dev/bench/jmh/<suite>/<indy>/data.js on the gh-pages branch.
+      # To remove a noisy / outage-affected run for commit <BAD_SHA> across all 10 dashboard files:
+      #   git checkout gh-pages
+      #   for F in $(find dev/bench/jmh -name data.js); do
+      #     sed 's/^window\.BENCHMARK_DATA = //; s/;[[:space:]]*$//' "$F" > /tmp/d.json
+      #     jq 'del(.entries[][] | select(.commit.id == "<BAD_SHA>"))' /tmp/d.json > /tmp/c.json
+      #     { printf 'window.BENCHMARK_DATA = '; cat /tmp/c.json; printf ';\n'; } > "$F"
+      #   done
+      #   git commit -am "Drop noisy benchmark run for <BAD_SHA>" && git push
       - name: Publish to dashboard
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
