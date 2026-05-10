@@ -39,20 +39,36 @@ jobs:
             pattern: '\\.bench\\.'
             indy: classic
             indyFlag: '-Pindy=false'
-          - suite: core
-            pattern: '\\.perf\\.[A-Z]'
+          - suite: core-ag
+            pattern: '\\.perf\\.[A-G]'
             indy: indy
             indyFlag: ''
-          - suite: core
-            pattern: '\\.perf\\.[A-Z]'
+          - suite: core-ag
+            pattern: '\\.perf\\.[A-G]'
             indy: classic
             indyFlag: '-Pindy=false'
-          - suite: grails
-            pattern: '\\.perf\\.grails\\.'
+          - suite: core-hz
+            pattern: '\\.perf\\.[H-Z]'
             indy: indy
             indyFlag: ''
-          - suite: grails
-            pattern: '\\.perf\\.grails\\.'
+          - suite: core-hz
+            pattern: '\\.perf\\.[H-Z]'
+            indy: classic
+            indyFlag: '-Pindy=false'
+          - suite: grails-ad
+            pattern: '\\.perf\\.grails\\.[A-D]'
+            indy: indy
+            indyFlag: ''
+          - suite: grails-ad
+            pattern: '\\.perf\\.grails\\.[A-D]'
+            indy: classic
+            indyFlag: '-Pindy=false'
+          - suite: grails-ez
+            pattern: '\\.perf\\.grails\\.[E-Z]'
+            indy: indy
+            indyFlag: ''
+          - suite: grails-ez
+            pattern: '\\.perf\\.grails\\.[E-Z]'
             indy: classic
             indyFlag: '-Pindy=false'
     runs-on: ubuntu-latest

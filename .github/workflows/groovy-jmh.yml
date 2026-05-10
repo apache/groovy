@@ -33,10 +33,14 @@ jobs:
         include:
           - suite: bench
             pattern: '\\.bench\\.'
-          - suite: core
-            pattern: '\\.perf\\.[A-Z]'
-          - suite: grails
-            pattern: '\\.perf\\.grails\\.'
+          - suite: core-ag
+            pattern: '\\.perf\\.[A-G]'
+          - suite: core-hz
+            pattern: '\\.perf\\.[H-Z]'
+          - suite: grails-ad
+            pattern: '\\.perf\\.grails\\.[A-D]'
+          - suite: grails-ez
+            pattern: '\\.perf\\.grails\\.[E-Z]'
     runs-on: ubuntu-latest
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
