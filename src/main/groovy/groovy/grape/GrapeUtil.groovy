@@ -27,6 +27,8 @@ import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
 
 import java.util.jar.JarFile
+import java.util.logging.Level
+import java.util.logging.Logger
 import java.util.zip.ZipEntry
 import java.util.zip.ZipException
 import java.util.zip.ZipFile
@@ -42,6 +44,7 @@ class GrapeUtil {
     private static final String METAINF_PREFIX = 'META-INF/services/'
     private static final String RUNNER_PROVIDER_CONFIG = GroovyRunner.name
     private static final boolean DEBUG_GRAPE = Boolean.getBoolean('groovy.grape.debug')
+    private static final Logger LOGGER = Logger.getLogger(GrapeUtil.name)
 
     /**
      * Adds a URI to a classloader's classpath via reflection.
@@ -90,7 +93,11 @@ class GrapeUtil {
                         }
                     }
                 } catch (ZipException e) {
-                    throw new RuntimeException("Grape could not load jar '$file'", e)
+                    // Corrupt JAR (e.g. truncated download from a CDN 429/partial response): skip
+                    // extension-method scanning rather than aborting the whole @Grab. If the JAR is
+                    // actually used, the corruption will surface where the bytes are needed; meanwhile
+                    // other JARs in this grab continue to register their extensions normally.
+                    LOGGER.log(Level.WARNING, "Grape could not process jar '${file}' for extension methods", e)
                 }
             }
         }
