@@ -39,11 +39,12 @@ import java.util.regex.Pattern
  * poisoning: returning null at descriptor-lookup time prevents Ivy from caching
  * the descriptor with resolver=localm2.
  *
- * Strictness is gated by -Dgroovy.grape.strict-localm2=true (default false for
- * this initial release; planned to flip to default-true in 6.1, drop the flag
- * in 7.0). Strictness is also automatically skipped for snapshot revisions
- * (Maven uses timestamp-suffixed filenames there), for non-m2-compatible
- * configurations, and when the resolver root is not a file URL.
+ * Strictness is enabled by default. Disable with -Dgroovy.grape.strict-localm2=false
+ * if you maintain a custom resolver setup where rejected POM-only entries cause
+ * legitimate problems (the resolver will still skip strictness automatically
+ * for snapshot revisions — Maven uses timestamp-suffixed filenames there — for
+ * non-m2-compatible configurations, and when the resolver root is not a file URL,
+ * so the opt-out should rarely be needed).
  */
 @CompileStatic
 class StrictLocalM2Resolver extends IBiblioResolver {
@@ -98,7 +99,7 @@ class StrictLocalM2Resolver extends IBiblioResolver {
 
     private boolean shouldEnforce() {
         if (!isM2compatible()) return false
-        Boolean.parseBoolean(System.getProperty(ENABLE_PROPERTY, 'false'))
+        Boolean.parseBoolean(System.getProperty(ENABLE_PROPERTY, 'true'))
     }
 
     /**
