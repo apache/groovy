@@ -66,6 +66,18 @@ import java.util.regex.Pattern
 @AutoFinal @CompileStatic
 class GrapeIvy implements GrapeEngine {
 
+    static {
+        // Maven Central's CDN (Fastly) has been observed rate-limiting / 404-ing
+        // requests that arrive with the JDK's default "Java/<version>" User-Agent.
+        // Ivy's URLHandler uses java.net.URLConnection, which honours -Dhttp.agent
+        // and Java's http.agent system property when constructing the User-Agent.
+        // Set a recognisable agent so Ivy's downloads aren't silently dropped.
+        // Respect any value the user has already set.
+        if (System.getProperty('http.agent') == null) {
+            System.setProperty('http.agent', 'Apache-Ivy Groovy-Grape')
+        }
+    }
+
     private static final List<String> DEFAULT_CONF = Collections.singletonList('default')
     private static final Map<String, Set<String>> MUTUALLY_EXCLUSIVE_KEYS = processGrabArgs([
             ['group', 'groupId', 'organisation', 'organization', 'org'],
