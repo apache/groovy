@@ -80,7 +80,7 @@ jobs:
       - name: "🐘 Setup Gradle"
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
       - name: "🔍 Setup TestLens"
-        uses: testlens-app/setup-testlens@v1
+        uses: testlens-app/setup-testlens@v1.9.0
       # Pre-warm the @Grab artifact cache by fetching each unique Maven-shorthand
       # coordinate referenced in test sources via `mvn dependency:get`. Maven uses
       # Apache HttpClient (vs Ivy's java.net.URLConnection), so it currently
