@@ -141,11 +141,11 @@ class GrapeIvy implements GrapeEngine {
         URL defaultConfig = GrapeIvy.getResource('defaultGrapeConfig.xml')
         URL effective = resolveGrapeConfigUrl() ?: defaultConfig
         try {
-            settings.load(effective)
+            loadIvySettings(effective)
         } catch (ParseException e) {
             LOGGER.log(Level.WARNING,
                 "Ivy config '${effective}' appears corrupt - ignoring and using default config. Error: ${e.message}", e)
-            settings.load(defaultConfig)
+            loadIvySettings(defaultConfig)
         }
         settings.setDefaultCache(getGrapeCacheDir())
         settings.setVariable('ivy.default.configuration.m2compatible', 'true')
@@ -290,6 +290,37 @@ class GrapeIvy implements GrapeEngine {
         }
         File f = new File(prop)
         return f.exists() ? f.toURI().toURL() : null
+    }
+
+    /**
+     * Loads the given URL into the Ivy settings. For {@code file:} URLs backed
+     * by a real file we route through the {@code load(File)} overload, because
+     * {@code IvySettings.load(File)} sets {@code ivy.settings.dir} to a filesystem
+     * path while {@code IvySettings.load(URL)} sets it to a {@code file:}-prefixed
+     * URL string. User-supplied ivysettings.xml files commonly interpolate
+     * {@code ${ivy.settings.dir}} into resolver patterns expecting a path
+     * (e.g. {@code <filesystem>} {@code ivy} / {@code artifact} patterns), so
+     * the URL form silently breaks those resolvers. Classpath / jar / http
+     * resources go through the URL overload since {@code ivy.settings.dir}
+     * isn't meaningful as a filesystem path for them anyway.
+     */
+    private void loadIvySettings(URL url) throws ParseException, IOException {
+        File asFile = urlAsLocalFile(url)
+        if (asFile != null) {
+            settings.load(asFile)
+        } else {
+            settings.load(url)
+        }
+    }
+
+    @PackageScope static File urlAsLocalFile(URL url) {
+        if (url == null || url.protocol != 'file') return null
+        try {
+            File f = new File(url.toURI())
+            return f.isFile() ? f : null
+        } catch (Exception ignored) {
+            return null
+        }
     }
 
     /**

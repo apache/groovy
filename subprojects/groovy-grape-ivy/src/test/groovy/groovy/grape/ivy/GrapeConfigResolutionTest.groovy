@@ -71,4 +71,39 @@ final class GrapeConfigResolutionTest {
     void returns_null_for_missing_filesystem_path() {
         assertNull GrapeIvy.resolveExplicitConfig('/nonexistent/no/such/file-grape.xml')
     }
+
+    @Test
+    void urlAsLocalFile_returns_file_for_existing_file_url(@TempDir File tmp) {
+        // GROOVY-8372 / testConf2 regression: IvySettings.load(File) and load(URL)
+        // set ivy.settings.dir differently (filesystem path vs file:-prefixed URL
+        // string). User-supplied ivysettings.xml files that interpolate
+        // ${ivy.settings.dir} into resolver patterns expect the path form, so we
+        // route file:-URLs back through the File overload via urlAsLocalFile.
+        File f = new File(tmp, 'custom-grape.xml')
+        f << '<ivysettings/>'
+        File mapped = GrapeIvy.urlAsLocalFile(f.toURI().toURL())
+        assertEquals f, mapped
+    }
+
+    @Test
+    void urlAsLocalFile_returns_null_for_non_file_url() {
+        // e.g. a jar:file:... or http:... URL — only file: URLs can be routed
+        // through the File overload. (jar: URLs are what classpath resources
+        // resolve to in production; in tests they often resolve to real files
+        // under build/resources/main/, which is a file: URL backed by a real
+        // file, so that case is covered by the "existing file url" test above.)
+        URL jarUrl = new URL('jar:file:/tmp/whatever.jar!/groovy/grape/ivy/foo.xml')
+        assertNull GrapeIvy.urlAsLocalFile(jarUrl)
+    }
+
+    @Test
+    void urlAsLocalFile_returns_null_for_nonexistent_file_url() {
+        URL bogus = new File('/nonexistent/no/such/file-grape.xml').toURI().toURL()
+        assertNull GrapeIvy.urlAsLocalFile(bogus)
+    }
+
+    @Test
+    void urlAsLocalFile_returns_null_for_null_input() {
+        assertNull GrapeIvy.urlAsLocalFile(null)
+    }
 }
