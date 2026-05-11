@@ -62,23 +62,32 @@ def grapeBridgeCache = (findProperty('groovy.grape.bridge-cache') ?:
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
     def grapeDirectory = new File(temporaryDir, '.groovy')
-    // GROOVY-12005 / 2026-05: Maven Central (Fastly) returns HTTP 404 with a 1-byte
-    // body for requests bearing the JDK URLConnection default User-Agent ("Java/<version>"),
-    // which Ivy's BasicURLHandler relies on. We must set http.agent as a JVM argument
-    // here rather than via systemProperty / a static initializer in GrapeIvy: by the
-    // time GrapeIvy's class init runs (lazily on first @Grab), the test JVM has already
-    // loaded HttpURLConnection and its agent is locked in. Passing it as `-Dhttp.agent`
-    // on the JVM command line guarantees it's set before any class is initialized.
-    // Tests pass with literally any non-"Java/*" value; see also the matching static
-    // initializer in GrapeIvy for CLI / standalone-script coverage.
     def options = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}",
-                   '-Duser.language=en', '-Duser.country=US',
-                   '-Dhttp.agent=Apache-Ivy_Groovy-Grape']
+                   '-Duser.language=en', '-Duser.country=US']
     jvmArgs(*options)
+    // GROOVY-12005 / 2026-05: Maven Central (Fastly) returns HTTP 404 with a
+    // 1-byte body for requests bearing the JDK URLConnection default User-Agent
+    // ("Java/<version>"), which Ivy 2.5.3's BasicURLHandler relies on. We adopt
+    // a Maven-shaped UA — Maven Resolver's HTTP transport sends this and the CDN
+    // doesn't 404 it. The Maven version string is decorative; the CDN's filter
+    // is on the bare "Java/<version>" default, not on Maven's specific version.
+    //
+    // http.agent must reach the test JVM as `-Dhttp.agent=...` on the command
+    // line: by the time GrapeIvy's matching static initializer runs (lazily on
+    // first @Grab), HttpURLConnection's userAgent static is already populated
+    // and our value would arrive too late. Using `systemProperty` rather than
+    // raw `jvmArgs` preserves the space-containing value as a single argument.
+    systemProperty 'http.agent',
+        "Apache-Maven/3.9.14 (Java ${System.getProperty('java.version')}; ${System.getProperty('os.name')} ${System.getProperty('os.version')})"
     systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperty 'groovy.testdb.props', testdb
+    }
+    // Forward StrictLocalM2Resolver opt-in to test JVMs. Accepts -P or -D.
+    def strictLocalM2 = findProperty('groovy.grape.strict-localm2') ?: System.properties['groovy.grape.strict-localm2']
+    if (strictLocalM2) {
+        systemProperty 'groovy.grape.strict-localm2', strictLocalM2
     }
     def headless = System.properties['java.awt.headless']
     if (headless == 'true') {
@@ -105,7 +114,7 @@ tasks.withType(Test).configureEach {
         println "Using ${executable} to run tests"
     }
 
-    forkEvery = 50
+    forkEvery = 40
     maxParallelForks = sharedConfiguration.isRunningOnCI ? 1 : (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)
     scanForTestClasses = true
     ignoreFailures = false

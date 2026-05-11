@@ -69,21 +69,28 @@ class GrapeIvy implements GrapeEngine {
     static {
         // GROOVY-12005 / 2026-05: Maven Central (Fastly) currently returns HTTP 404
         // with a 1-byte body for requests whose User-Agent is the JDK URLConnection
-        // default "Java/<version>". Any other value (curl/x.y, Apache-Ivy/..., etc.)
-        // gets the expected HTTP 200. Ivy 2.5.3 uses java.net.URLConnection under
-        // the hood, which honours -Dhttp.agent. We set it here so direct grape use
-        // (CLI `grape install`, `groovy script-with-@Grab.groovy`, embedded usage)
-        // gets a working agent — those paths load GrapeIvy before any other class
-        // touches the network, so this static init runs early enough.
+        // default "Java/<version>". Maven's own requests are not blocked, so we
+        // adopt a Maven-shaped User-Agent — that's the value Maven Resolver's HTTP
+        // transport sends, and it passes the CDN cleanly. Ivy 2.5.3's
+        // BasicURLHandler uses java.net.URLConnection, which honours -Dhttp.agent.
+        //
+        // This static initializer covers direct grape use (CLI `grape install`,
+        // `groovy script-with-@Grab.groovy`, embedded usage) — those paths load
+        // GrapeIvy before any other class touches the network, so it runs early
+        // enough that HttpURLConnection's userAgent static init reads our value.
         //
         // For test JVMs the same property MUST be set on the JVM command line —
-        // see the matching -Dhttp.agent in build-logic/.../org.apache.groovy-tested.gradle —
-        // because by the time GrapeIvy is class-loaded for the first @Grab in a test,
-        // the agent has already been cached deep in the JDK's HTTP machinery.
+        // see the matching `systemProperty 'http.agent', ...` in
+        // build-logic/.../org.apache.groovy-tested.gradle — because by the time
+        // GrapeIvy is class-loaded for the first @Grab in a test, HttpURLConnection
+        // has already been initialised and its userAgent is locked in.
         //
-        // Respect any value the user has already configured.
+        // Respect any value the user has already configured (e.g. -Dhttp.agent=…).
         if (System.getProperty('http.agent') == null) {
-            System.setProperty('http.agent', 'Apache-Ivy_Groovy-Grape')
+            // Maven version is decorative — the CDN's filter is on the bare
+            // "Java/<version>" default, not on a specific Maven version string.
+            String ua = "Apache-Maven/3.9.14 (Java ${System.getProperty('java.version')}; ${System.getProperty('os.name')} ${System.getProperty('os.version')})"
+            System.setProperty('http.agent', ua)
         }
     }
 
