@@ -67,7 +67,7 @@ tasks.withType(Test).configureEach {
     // Harmless when TestLens isn't on the classpath (no entries match).
     systemProperty 'groovy.junit6.forked.excludeClasspath', 'junit-platform-instrumentation'
 //    systemProperty 'groovy.grape.report.downloads', 'true'
-//    systemProperty 'ivy.message.logger.level', '4'
+    systemProperty 'ivy.message.logger.level', '4'
 
     jvmArgumentProviders.add(new TestCommandLineArgumentProvider(
         grapeRoot: grapeDirectory,
