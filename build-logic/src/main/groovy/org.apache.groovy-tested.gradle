@@ -49,7 +49,18 @@ def aggregator = TestResultAggregatorService.register(
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
     def grapeDirectory = new File(temporaryDir, '.groovy')
-    def options = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en', '-Duser.country=US']
+    // GROOVY-12005 / 2026-05: Maven Central (Fastly) returns HTTP 404 with a 1-byte
+    // body for requests bearing the JDK URLConnection default User-Agent ("Java/<version>"),
+    // which Ivy's BasicURLHandler relies on. We must set http.agent as a JVM argument
+    // here rather than via systemProperty / a static initializer in GrapeIvy: by the
+    // time GrapeIvy's class init runs (lazily on first @Grab), the test JVM has already
+    // loaded HttpURLConnection and its agent is locked in. Passing it as `-Dhttp.agent`
+    // on the JVM command line guarantees it's set before any class is initialized.
+    // Tests pass with literally any non-"Java/*" value; see also the matching static
+    // initializer in GrapeIvy for CLI / standalone-script coverage.
+    def options = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}",
+                   '-Duser.language=en', '-Duser.country=US',
+                   '-Dhttp.agent=Apache-Ivy_Groovy-Grape']
     jvmArgs(*options)
     systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
     def testdb = System.properties['groovy.testdb.props']

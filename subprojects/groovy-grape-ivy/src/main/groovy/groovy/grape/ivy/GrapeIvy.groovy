@@ -66,6 +66,27 @@ import java.util.regex.Pattern
 @AutoFinal @CompileStatic
 class GrapeIvy implements GrapeEngine {
 
+    static {
+        // GROOVY-12005 / 2026-05: Maven Central (Fastly) currently returns HTTP 404
+        // with a 1-byte body for requests whose User-Agent is the JDK URLConnection
+        // default "Java/<version>". Any other value (curl/x.y, Apache-Ivy/..., etc.)
+        // gets the expected HTTP 200. Ivy 2.5.3 uses java.net.URLConnection under
+        // the hood, which honours -Dhttp.agent. We set it here so direct grape use
+        // (CLI `grape install`, `groovy script-with-@Grab.groovy`, embedded usage)
+        // gets a working agent — those paths load GrapeIvy before any other class
+        // touches the network, so this static init runs early enough.
+        //
+        // For test JVMs the same property MUST be set on the JVM command line —
+        // see the matching -Dhttp.agent in build-logic/.../org.apache.groovy-tested.gradle —
+        // because by the time GrapeIvy is class-loaded for the first @Grab in a test,
+        // the agent has already been cached deep in the JDK's HTTP machinery.
+        //
+        // Respect any value the user has already configured.
+        if (System.getProperty('http.agent') == null) {
+            System.setProperty('http.agent', 'Apache-Ivy_Groovy-Grape')
+        }
+    }
+
     private static final List<String> DEFAULT_CONF = Collections.singletonList('default')
     private static final Map<String, Set<String>> MUTUALLY_EXCLUSIVE_KEYS = processGrabArgs([
             ['group', 'groupId', 'organisation', 'organization', 'org'],
