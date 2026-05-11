@@ -125,7 +125,7 @@ tasks.withType(Test).configureEach {
     String targetJavaHome = TargetJavaHomeSupport.targetJavaHome(project)
     if (targetJavaHome) {
         executable = TargetJavaHomeSupport.javaExecutable(targetJavaHome)
-        println "Using ${executable} to run tests"
+        TargetJavaHomeSupport.announceTestExecutableOnce(project, executable.toString())
     }
 
     forkEvery = 40

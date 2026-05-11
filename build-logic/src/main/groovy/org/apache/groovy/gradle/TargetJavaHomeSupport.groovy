@@ -20,11 +20,40 @@ package org.apache.groovy.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtraPropertiesExtension
+
+import java.util.concurrent.ConcurrentHashMap
 
 @CompileStatic
 final class TargetJavaHomeSupport {
 
+    private static final String ANNOUNCED_KEY = 'apacheGroovyAnnouncedTestExecutables'
+
     private TargetJavaHomeSupport() {}
+
+    /**
+     * Prints the "Using <java> to run tests" line only the first time a given
+     * executable path is seen in this Gradle invocation. State is held on the
+     * root project's extra properties so it resets per invocation (important
+     * under the Gradle daemon, where a build-logic static field would persist
+     * across builds).
+     */
+    static void announceTestExecutableOnce(Project project, String executable) {
+        if (!executable) return
+        ExtraPropertiesExtension ext = project.rootProject.extensions.extraProperties
+        Set<String> announced
+        synchronized (ext) {
+            if (ext.has(ANNOUNCED_KEY)) {
+                announced = (Set<String>) ext.get(ANNOUNCED_KEY)
+            } else {
+                announced = ConcurrentHashMap.newKeySet()
+                ext.set(ANNOUNCED_KEY, announced)
+            }
+        }
+        if (announced.add(executable)) {
+            println "Using ${executable} to run tests"
+        }
+    }
 
     /** Returns the trimmed value of the {@code target.java.home} Gradle property, or {@code null} if absent/blank. */
     static String targetJavaHome(Project project) {
