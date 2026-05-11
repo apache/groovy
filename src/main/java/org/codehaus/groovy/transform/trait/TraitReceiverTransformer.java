@@ -273,9 +273,20 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             // GROOVY-7213, GROOVY-7214, GROOVY-8282, GROOVY-8859, GROOVY-10106, GROOVY-10312
             MethodNode methodNode = findConcreteMethod(traitClass, call.getMethodAsString());
             if (methodNode != null) {
-                // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
-                Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
-                MethodCallExpression newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
+                MethodCallExpression newCall;
+                if (methodNode.isStatic() && !methodNode.isPrivate() && !inClosure) {
+                    // GROOVY-11985: dispatch unqualified/this-qualified calls to
+                    // public trait statics through the implementing class so an
+                    // override declared on the implementer is visible from trait code.
+                    Expression implClass = ClassHelper.isClassType(weaved.getOriginType()) ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
+                    newCall = callX(implClass, method, transform(arguments));
+                    newCall.setImplicitThis(false);
+                    newCall.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, methodNode.getReturnType());
+                } else {
+                    // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
+                    Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
+                    newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
+                }
                 newCall.setGenericsTypes(call.getGenericsTypes());
                 newCall.setSpreadSafe(call.isSpreadSafe());
                 newCall.setSourcePosition(call);
