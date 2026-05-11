@@ -19,7 +19,6 @@
 package groovy.grape.ivy
 
 import org.apache.ivy.core.module.id.ModuleRevisionId
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -31,8 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 
 final class StrictLocalM2ResolverTest {
 
-    private static final String ENABLE_PROPERTY = 'groovy.grape.strict-localm2'
-
     @TempDir
     File m2
 
@@ -43,12 +40,6 @@ final class StrictLocalM2ResolverTest {
         resolver = new StrictLocalM2Resolver()
         resolver.setRoot(m2.toURI().toURL().toString())
         resolver.setM2compatible(true)
-        System.setProperty(ENABLE_PROPERTY, 'true')
-    }
-
-    @AfterEach
-    void tearDown() {
-        System.clearProperty(ENABLE_PROPERTY)
     }
 
     @Test
@@ -130,17 +121,6 @@ final class StrictLocalM2ResolverTest {
         assertFalse resolver.shouldRejectAsHalfPopulated(
             ModuleRevisionId.newInstance('com.example', 'snap', '1.0-SNAPSHOT'),
             new File(dir, 'snap-1.0-SNAPSHOT.pom'))
-    }
-
-    @Test
-    void accepts_when_strictness_disabled_via_system_property() {
-        System.setProperty(ENABLE_PROPERTY, 'false')
-        File dir = layout('com.example', 'foo', '1.0')
-        writePom(dir, 'foo', '1.0', 'jar')
-        // No JAR; would normally reject.
-        assertFalse resolver.shouldRejectAsHalfPopulated(
-            ModuleRevisionId.newInstance('com.example', 'foo', '1.0'),
-            new File(dir, 'foo-1.0.pom'))
     }
 
     @Test

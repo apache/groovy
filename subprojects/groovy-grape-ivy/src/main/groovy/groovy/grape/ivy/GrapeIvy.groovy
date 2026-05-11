@@ -27,6 +27,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
+import groovy.transform.PackageScope
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.IvyContext
 import org.apache.ivy.core.event.IvyListener
@@ -58,6 +59,8 @@ import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import java.text.ParseException
+import java.util.logging.Level
+import java.util.logging.Logger
 import java.util.regex.Pattern
 
 /**
@@ -93,6 +96,8 @@ class GrapeIvy implements GrapeEngine {
             System.setProperty('http.agent', ua)
         }
     }
+
+    private static final Logger LOGGER = Logger.getLogger('groovy.grape.ivy')
 
     private static final List<String> DEFAULT_CONF = Collections.singletonList('default')
     private static final Map<String, Set<String>> MUTUALLY_EXCLUSIVE_KEYS = processGrabArgs([
@@ -133,16 +138,14 @@ class GrapeIvy implements GrapeEngine {
         settings = new IvySettings()
         def url = new File(System.getProperty('user.home')).toURI().toURL() as String
         settings.setVariable('user.home.url', url.endsWith("/") ? url[0..-2] : url)
-        File grapeConfig = getLocalGrapeConfig()
-        if (grapeConfig.exists()) {
-            try {
-                settings.load(grapeConfig)
-            } catch (ParseException e) {
-                System.err.println("Local Ivy config file '${grapeConfig.getCanonicalPath()}' appears corrupt - ignoring it and using default config instead\nError was: ${e.getMessage()}")
-                settings.load(GrapeIvy.getResource('defaultGrapeConfig.xml'))
-            }
-        } else {
-            settings.load(GrapeIvy.getResource('defaultGrapeConfig.xml'))
+        URL defaultConfig = GrapeIvy.getResource('defaultGrapeConfig.xml')
+        URL effective = resolveGrapeConfigUrl() ?: defaultConfig
+        try {
+            settings.load(effective)
+        } catch (ParseException e) {
+            LOGGER.log(Level.WARNING,
+                "Ivy config '${effective}' appears corrupt - ignoring and using default config. Error: ${e.message}", e)
+            settings.load(defaultConfig)
         }
         settings.setDefaultCache(getGrapeCacheDir())
         settings.setVariable('ivy.default.configuration.m2compatible', 'true')
@@ -209,7 +212,13 @@ class GrapeIvy implements GrapeEngine {
     /**
      * Returns the local Ivy grape configuration file.
      *
-     * @return the grape configuration file
+     * <p>Retained for backwards compatibility — only honors filesystem-path forms
+     * of {@code -Dgrape.config}. The runtime now resolves the active config
+     * through {@link #resolveGrapeConfigUrl}, which additionally accepts the
+     * {@code relaxed}, {@code default}, and {@code classpath:<resource>} shorthand
+     * forms.</p>
+     *
+     * @return the grape configuration file (may not exist on disk)
      */
     File getLocalGrapeConfig() {
         String grapeConfig = System.getProperty('grape.config')
@@ -218,6 +227,69 @@ class GrapeIvy implements GrapeEngine {
         } else {
             new File(getGrapeDir(), 'grapeConfig.xml')
         }
+    }
+
+    /**
+     * Resolves the active Grape Ivy config URL.
+     *
+     * <p>Precedence:</p>
+     * <ol>
+     *   <li>{@code -Dgrape.config=<value>} — see {@link #resolveExplicitConfig}.
+     *       If the value is set but cannot be resolved, a {@code WARNING} is
+     *       logged and the method returns null so the caller falls back to
+     *       {@code defaultGrapeConfig.xml}. (This matches the existing semantics
+     *       where a missing sys-prop file bypasses {@code ~/.groovy/grapeConfig.xml}.)</li>
+     *   <li>{@code ~/.groovy/grapeConfig.xml} (or the configured grape dir).</li>
+     *   <li>{@code null} — caller is expected to fall back to {@code defaultGrapeConfig.xml}.</li>
+     * </ol>
+     *
+     * @return the resolved config URL, or null if no override was selected
+     */
+    URL resolveGrapeConfigUrl() {
+        String prop = System.getProperty('grape.config')
+        if (prop) {
+            URL fromProp = resolveExplicitConfig(prop)
+            if (fromProp != null) {
+                LOGGER.log(Level.FINE, "Using grape.config='${prop}' (${fromProp})")
+                return fromProp
+            }
+            LOGGER.log(Level.WARNING,
+                "grape.config='${prop}' could not be resolved; falling back to defaultGrapeConfig.xml")
+            return null
+        }
+        File userConfig = new File(getGrapeDir(), 'grapeConfig.xml')
+        if (userConfig.exists()) {
+            return userConfig.toURI().toURL()
+        }
+        return null
+    }
+
+    /**
+     * Visible for testing: resolves a {@code -Dgrape.config=<value>} setting to a
+     * URL. Accepted forms:
+     * <ul>
+     *   <li>{@code relaxed} — packaged {@code relaxedGrapeConfig.xml} (plain
+     *       {@code <filesystem>} / {@code <ibiblio>} resolvers, no strictness).</li>
+     *   <li>{@code default} — packaged {@code defaultGrapeConfig.xml} (explicit
+     *       selection of the shipped default; useful for symmetry).</li>
+     *   <li>{@code classpath:<resource>} — arbitrary classpath resource looked up
+     *       via the GrapeIvy classloader, then the thread context classloader.</li>
+     *   <li>any other value — interpreted as a filesystem path.</li>
+     * </ul>
+     *
+     * @return the resolved URL, or null if the value could not be located
+     */
+    @PackageScope static URL resolveExplicitConfig(String prop) {
+        if (prop == 'relaxed') return GrapeIvy.getResource('relaxedGrapeConfig.xml')
+        if (prop == 'default') return GrapeIvy.getResource('defaultGrapeConfig.xml')
+        if (prop.startsWith('classpath:')) {
+            String name = prop.substring('classpath:'.length())
+            URL res = GrapeIvy.classLoader?.getResource(name)
+            if (res != null) return res
+            return Thread.currentThread().contextClassLoader?.getResource(name)
+        }
+        File f = new File(prop)
+        return f.exists() ? f.toURI().toURL() : null
     }
 
     /**

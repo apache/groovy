@@ -85,10 +85,9 @@ tasks.withType(Test).configureEach {
         systemProperty 'groovy.testdb.props', testdb
     }
     // Forward any groovy.grape.* property set on the Gradle command line (-P or -D)
-    // to the test JVM. Lets users override Grape behaviour — strict-localm2, debug
-    // flags, future settings — without adding one-off plumbing per flag. Project
-    // properties (-P) win over system properties (-D) when both are set, matching
-    // Gradle convention.
+    // to the test JVM. Lets users override Grape behaviour — debug flags, future
+    // settings — without adding one-off plumbing per flag. Project properties (-P)
+    // win over system properties (-D) when both are set, matching Gradle convention.
     def grapeProps = new LinkedHashMap<String, String>()
     project.properties.each { k, v ->
         if (k.toString().startsWith('groovy.grape.') && v != null) {
