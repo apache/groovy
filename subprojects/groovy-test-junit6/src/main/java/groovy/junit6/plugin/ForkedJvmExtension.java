@@ -121,6 +121,21 @@ public class ForkedJvmExtension implements InvocationInterceptor {
         if (parentInverting) {
             cmd.add("-D" + ExpectedToFailExtension.DEFERRED_TO_PARENT_PROP + "=true");
         }
+        // Always-inherited properties: things whose absence in the child JVM
+        // would cause confusing failures that don't reflect the test's intent.
+        // - http.agent: parent's User-Agent override (see org.apache.groovy-tested.gradle's
+        //   GROOVY-12005 comment). Maven Central's Cloudflare WAF returns HTTP 404
+        //   for requests bearing the JDK default "Java/<version>" agent; if a child
+        //   JVM doing @Grab inherits the parent's UA it stays consistent with the
+        //   parent test JVM's behaviour. Test authors can still override per-fork
+        //   via systemProperties=[] on @ForkedJvm — explicit entries land later on
+        //   the command line and win.
+        for (String name : new String[]{"http.agent"}) {
+            String value = System.getProperty(name);
+            if (value != null) {
+                cmd.add("-D" + name + "=" + value);
+            }
+        }
         // Inherited properties first, then explicit systemProperties — later -D wins on the JVM command line.
         for (String name : resolveInherited(config.inheritProperties())) {
             cmd.add("-D" + name + "=" + System.getProperty(name));
