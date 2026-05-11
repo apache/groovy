@@ -129,7 +129,9 @@ into the human-facing docs above.
 |---|---|
 | [`groovy-build`](.agents/skills/groovy-build/SKILL.md) | Gradle build changes — convention plugins, build files, dependency verification, ASM/ANTLR repackaging, OSGi, release pipeline |
 | [`groovy-internals`](.agents/skills/groovy-internals/SKILL.md) | Compiler and runtime work — parser, AST, type checker, transforms, class generation |
+| [`groovy-jira`](.agents/skills/groovy-jira/SKILL.md) | JIRA mechanics — JQL recipes, `Component/s` taxonomy, field ownership, and the "don't transition workflow states" rule for AI tooling |
 | [`groovy-tests`](.agents/skills/groovy-tests/SKILL.md) | Adding or modifying tests, including JIRA regression tests and executable AsciiDoc examples |
+| [`groovy-triage`](.agents/skills/groovy-triage/SKILL.md) | First-pass triage of JIRA issues and GitHub PRs — reproducing reports against `master`, finding duplicates, surfacing PR-readiness signals; advisory only, no committer actions |
 | [`groovysh`](.agents/skills/groovysh/SKILL.md) | Work in `subprojects/groovy-groovysh/` — REPL commands, JLine integration, vendored forks, terminal-aware test stack |
 
 ## Subproject guides
