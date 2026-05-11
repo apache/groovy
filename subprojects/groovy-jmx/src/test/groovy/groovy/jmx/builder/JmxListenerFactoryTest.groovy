@@ -22,10 +22,26 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import javax.management.ObjectName
+import java.util.logging.Level
+import java.util.logging.Logger
 
 import static groovy.test.GroovyAssert.shouldFail
 
 class JmxListenerFactoryTest {
+    static {
+        // Prime java.util.Timer's first-use init to absorb a JDK cgroup-v2 NPE that
+        // sporadically surfaces (CgroupV2Subsystem.getInstance) on containerized CI
+        // when the JMX timer test spins up its housekeeper thread. The trip is
+        // environmental and one-shot — after the JVM stashes whatever cgroup state
+        // it managed to resolve, later calls succeed.
+        try {
+            new java.util.Timer(true).cancel()
+        } catch (Throwable t) {
+            Logger.getLogger(JmxListenerFactoryTest.name).log(Level.FINE,
+                'Primed java.util.Timer init absorbed exception (likely JDK cgroup-v2)', t)
+        }
+    }
+
     def builder
 
     @BeforeEach
