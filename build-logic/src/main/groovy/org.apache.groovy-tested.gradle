@@ -84,10 +84,24 @@ tasks.withType(Test).configureEach {
     if (testdb) {
         systemProperty 'groovy.testdb.props', testdb
     }
-    // Forward StrictLocalM2Resolver opt-in to test JVMs. Accepts -P or -D.
-    def strictLocalM2 = findProperty('groovy.grape.strict-localm2') ?: System.properties['groovy.grape.strict-localm2']
-    if (strictLocalM2) {
-        systemProperty 'groovy.grape.strict-localm2', strictLocalM2
+    // Forward any groovy.grape.* property set on the Gradle command line (-P or -D)
+    // to the test JVM. Lets users override Grape behaviour — strict-localm2, debug
+    // flags, future settings — without adding one-off plumbing per flag. Project
+    // properties (-P) win over system properties (-D) when both are set, matching
+    // Gradle convention.
+    def grapeProps = new LinkedHashMap<String, String>()
+    project.properties.each { k, v ->
+        if (k.toString().startsWith('groovy.grape.') && v != null) {
+            grapeProps[k.toString()] = v.toString()
+        }
+    }
+    System.properties.each { k, v ->
+        if (k.toString().startsWith('groovy.grape.') && v != null) {
+            grapeProps.putIfAbsent(k.toString(), v.toString())
+        }
+    }
+    grapeProps.each { key, value ->
+        systemProperty key, value
     }
     def headless = System.properties['java.awt.headless']
     if (headless == 'true') {
