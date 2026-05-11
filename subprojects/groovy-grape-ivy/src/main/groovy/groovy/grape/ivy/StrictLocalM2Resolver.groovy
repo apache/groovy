@@ -39,17 +39,15 @@ import java.util.regex.Pattern
  * poisoning: returning null at descriptor-lookup time prevents Ivy from caching
  * the descriptor with resolver=localm2.
  *
- * Strictness is enabled by default. Disable with -Dgroovy.grape.strict-localm2=false
- * if you maintain a custom resolver setup where rejected POM-only entries cause
- * legitimate problems (the resolver will still skip strictness automatically
- * for snapshot revisions — Maven uses timestamp-suffixed filenames there — for
- * non-m2-compatible configurations, and when the resolver root is not a file URL,
- * so the opt-out should rarely be needed).
+ * Strict behaviour is unconditional — if this resolver is in use, the check
+ * runs. Operators who don't want it can simply not declare this resolver in
+ * their ~/.groovy/grapeConfig.xml, dropping back to the stock Ivy
+ * &lt;ibiblio&gt; resolver. Strictness is still skipped automatically for snapshot
+ * revisions (Maven uses timestamp-suffixed filenames there), for non-m2-compatible
+ * configurations, and when the resolver root is not a file URL.
  */
 @CompileStatic
 class StrictLocalM2Resolver extends IBiblioResolver {
-
-    private static final String ENABLE_PROPERTY = 'groovy.grape.strict-localm2'
 
     /** Maven packaging values whose primary artifact has a non-jar extension. */
     private static final Map<String, String> NON_JAR_PACKAGING_EXT = [
@@ -77,12 +75,12 @@ class StrictLocalM2Resolver extends IBiblioResolver {
 
     /**
      * Visible for testing: decide whether to reject this localm2 lookup as
-     * half-populated. Returns true iff strictness is enabled, the revision is
-     * not a snapshot, the resolver root is a file URL, and no primary artifact
-     * matching the POM's packaging exists alongside the POM.
+     * half-populated. Returns true iff the resolver is m2-compatible, the
+     * revision is not a snapshot, the resolver root is a file URL, and no
+     * primary artifact matching the POM's packaging exists alongside the POM.
      */
     boolean shouldRejectAsHalfPopulated(ModuleRevisionId mrid, File pomFile) {
-        if (!shouldEnforce()) return false
+        if (!isM2compatible()) return false
         if (mrid == null) return false
         String rev = mrid.revision
         if (rev != null && rev.endsWith('-SNAPSHOT')) return false
@@ -95,11 +93,6 @@ class StrictLocalM2Resolver extends IBiblioResolver {
         String ext = NON_JAR_PACKAGING_EXT.getOrDefault(packaging, 'jar')
         File primary = new File(m2dir, "${mrid.name}-${rev}.${ext}")
         return !primary.exists()
-    }
-
-    private boolean shouldEnforce() {
-        if (!isM2compatible()) return false
-        Boolean.parseBoolean(System.getProperty(ENABLE_PROPERTY, 'true'))
     }
 
     /**

@@ -19,7 +19,6 @@
 package groovy.grape.ivy
 
 import org.apache.ivy.core.module.id.ModuleRevisionId
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -29,8 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 
 final class StrictCachedGrapesResolverTest {
 
-    private static final String ENABLE_PROPERTY = 'groovy.grape.strict-cached-grapes'
-
     @TempDir
     File grapesRoot
 
@@ -39,12 +36,6 @@ final class StrictCachedGrapesResolverTest {
     @BeforeEach
     void setUp() {
         resolver = new StrictCachedGrapesResolver()
-        System.clearProperty(ENABLE_PROPERTY)  // exercise the default-on path
-    }
-
-    @AfterEach
-    void tearDown() {
-        System.clearProperty(ENABLE_PROPERTY)
     }
 
     @Test
@@ -79,17 +70,6 @@ final class StrictCachedGrapesResolverTest {
     }
 
     @Test
-    void accepts_when_disabled_via_system_property() {
-        System.setProperty(ENABLE_PROPERTY, 'false')
-        File moduleDir = layout('com.example', 'foo', '1.0')
-        File ivy = writeIvyStub(moduleDir, 'foo', '1.0')
-        // no .original — would normally be rejected, but strictness is off
-        assertFalse resolver.shouldRejectAsStub(
-            ModuleRevisionId.newInstance('com.example', 'foo', '1.0'),
-            ivy)
-    }
-
-    @Test
     void accepts_when_mrid_null() {
         File moduleDir = layout('com.example', 'foo', '1.0')
         File ivy = writeIvyStub(moduleDir, 'foo', '1.0')
@@ -103,10 +83,63 @@ final class StrictCachedGrapesResolverTest {
             null)
     }
 
+    @Test
+    void rejects_corrupt_primary_jar() {
+        File moduleDir = layout('com.example', 'foo', '1.0')
+        File ivy = writeIvyStub(moduleDir, 'foo', '1.0')
+        writeCorruptJar(moduleDir, 'foo', '1.0')
+        assertTrue resolver.shouldRejectAsCorruptArtifact(
+            ModuleRevisionId.newInstance('com.example', 'foo', '1.0'),
+            ivy)
+    }
+
+    @Test
+    void accepts_valid_primary_jar() {
+        File moduleDir = layout('com.example', 'foo', '1.0')
+        File ivy = writeIvyStub(moduleDir, 'foo', '1.0')
+        writeValidJar(moduleDir, 'foo', '1.0')
+        assertFalse resolver.shouldRejectAsCorruptArtifact(
+            ModuleRevisionId.newInstance('com.example', 'foo', '1.0'),
+            ivy)
+    }
+
+    @Test
+    void accepts_when_no_jar_present() {
+        File moduleDir = layout('com.example', 'foo', '1.0')
+        File ivy = writeIvyStub(moduleDir, 'foo', '1.0')
+        // no jars/ subdir at all — no JAR to validate
+        assertFalse resolver.shouldRejectAsCorruptArtifact(
+            ModuleRevisionId.newInstance('com.example', 'foo', '1.0'),
+            ivy)
+    }
+
     private File layout(String org, String mod, String rev) {
         File dir = new File(grapesRoot, "${org}/${mod}")
         dir.mkdirs()
         dir
+    }
+
+    private static File writeCorruptJar(File moduleDir, String mod, String rev) {
+        File jarsDir = new File(moduleDir, 'jars')
+        jarsDir.mkdirs()
+        File jar = new File(jarsDir, "${mod}-${rev}.jar")
+        jar.bytes = [0x00, 0x01, 0x02, 0x03] as byte[]
+        jar
+    }
+
+    private static File writeValidJar(File moduleDir, String mod, String rev) {
+        File jarsDir = new File(moduleDir, 'jars')
+        jarsDir.mkdirs()
+        File jar = new File(jarsDir, "${mod}-${rev}.jar")
+        def jos = new java.util.jar.JarOutputStream(new FileOutputStream(jar))
+        try {
+            jos.putNextEntry(new java.util.zip.ZipEntry('META-INF/MANIFEST.MF'))
+            jos.write('Manifest-Version: 1.0\n'.bytes)
+            jos.closeEntry()
+        } finally {
+            jos.close()
+        }
+        jar
     }
 
     private static File writeIvyStub(File dir, String mod, String rev) {
