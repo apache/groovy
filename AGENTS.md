@@ -128,6 +128,7 @@ into the human-facing docs above.
 | Skill | Use for |
 |---|---|
 | [`groovy-build`](.agents/skills/groovy-build/SKILL.md) | Gradle build changes — convention plugins, build files, dependency verification, ASM/ANTLR repackaging, OSGi, release pipeline |
+| [`groovy-fix-workflow`](.agents/skills/groovy-fix-workflow/SKILL.md) | Implementing a JIRA-tracked fix after triage — failing-test-first ordering, scope discipline, hand-back to a committer (no autonomous PR / JIRA comment / merge) |
 | [`groovy-internals`](.agents/skills/groovy-internals/SKILL.md) | Compiler and runtime work — parser, AST, type checker, transforms, class generation |
 | [`groovy-jira`](.agents/skills/groovy-jira/SKILL.md) | JIRA mechanics — JQL recipes, `Component/s` taxonomy, field ownership, and the "don't transition workflow states" rule for AI tooling |
 | [`groovy-tests`](.agents/skills/groovy-tests/SKILL.md) | Adding or modifying tests, including JIRA regression tests and executable AsciiDoc examples |
