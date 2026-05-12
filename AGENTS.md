@@ -125,17 +125,18 @@ checklist. Load the relevant skill *before* writing or modifying code
 in its area — the skill is more focused than this file and points
 into the human-facing docs above.
 
-| Skill | Use for |
-|---|---|
-| [`groovy-build`](.agents/skills/groovy-build/SKILL.md) | Gradle build changes — convention plugins, build files, dependency verification, ASM/ANTLR repackaging, OSGi, release pipeline |
+| Skill                                                                | Use for |
+|----------------------------------------------------------------------|---|
+| [`groovy-build`](.agents/skills/groovy-build/SKILL.md)               | Gradle build changes — convention plugins, build files, dependency verification, ASM/ANTLR repackaging, OSGi, release pipeline |
 | [`groovy-fix-workflow`](.agents/skills/groovy-fix-workflow/SKILL.md) | Implementing a JIRA-tracked fix after triage — failing-test-first ordering, scope discipline, hand-back to a committer (no autonomous PR / JIRA comment / merge) |
-| [`groovy-internals`](.agents/skills/groovy-internals/SKILL.md) | Compiler and runtime work — parser, AST, type checker, transforms, class generation |
-| [`groovy-jira`](.agents/skills/groovy-jira/SKILL.md) | JIRA mechanics — JQL recipes, `Component/s` taxonomy, field ownership, and the "don't transition workflow states" rule for AI tooling |
-| [`groovy-reassess`](.agents/skills/groovy-reassess/SKILL.md) | Bulk reassessment of old JIRA issues — selection, per-issue reproduction, classification (`fixed-on-master` / `still-fails-*` / `cannot-run-*` / …), report and evidence-package hand-back; read-only against JIRA |
-| [`groovy-reproducer`](.agents/skills/groovy-reproducer/SKILL.md) | Extracting and running a JIRA-reported reproducer — shape classification, adaptation without fabrication, bounded run, deterministic evidence (rev/JDK/command/output) and an outcome classification |
-| [`groovy-tests`](.agents/skills/groovy-tests/SKILL.md) | Adding or modifying tests, including JIRA regression tests and executable AsciiDoc examples |
-| [`groovy-triage`](.agents/skills/groovy-triage/SKILL.md) | First-pass triage of JIRA issues and GitHub PRs — reproducing reports against `master`, finding duplicates, surfacing PR-readiness signals; advisory only, no committer actions |
-| [`groovysh`](.agents/skills/groovysh/SKILL.md) | Work in `subprojects/groovy-groovysh/` — REPL commands, JLine integration, vendored forks, terminal-aware test stack |
+| [`groovy-internals`](.agents/skills/groovy-internals/SKILL.md)       | Compiler and runtime work — parser, AST, type checker, transforms, class generation |
+| [`groovy-jira`](.agents/skills/groovy-jira/SKILL.md)                 | JIRA mechanics — JQL recipes, `Component/s` taxonomy, field ownership, and the "don't transition workflow states" rule for AI tooling |
+| [`groovy-reassess`](.agents/skills/groovy-reassess/SKILL.md)         | Bulk reassessment of old JIRA issues — selection, per-issue reproduction, classification (`fixed-on-master` / `still-fails-*` / `cannot-run-*` / …), report and evidence-package hand-back; read-only against JIRA |
+| [`groovy-reproducer`](.agents/skills/groovy-reproducer/SKILL.md)     | Extracting and running a JIRA-reported reproducer — shape classification, adaptation without fabrication, bounded run, deterministic evidence (rev/JDK/command/output) and an outcome classification |
+| [`groovy-skills`](.agents/skills/groovy-skills/SKILL.md)             | Meta-skill — conventions for authoring or refactoring a `SKILL.md` (layout, frontmatter, section order, failure-mode framing, granularity heuristics, cross-linking, `AGENTS.md` table maintenance) |
+| [`groovy-tests`](.agents/skills/groovy-tests/SKILL.md)               | Adding or modifying tests, including JIRA regression tests and executable AsciiDoc examples |
+| [`groovy-triage`](.agents/skills/groovy-triage/SKILL.md)             | First-pass triage of JIRA issues and GitHub PRs — reproducing reports against `master`, finding duplicates, surfacing PR-readiness signals; advisory only, no committer actions |
+| [`groovysh`](.agents/skills/groovysh/SKILL.md)                       | Work in `subprojects/groovy-groovysh/` — REPL commands, JLine integration, vendored forks, terminal-aware test stack |
 
 ## Subproject guides
 
