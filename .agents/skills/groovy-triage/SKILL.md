@@ -18,137 +18,189 @@
 -->
 ---
 name: groovy-triage
-description: Guidance for AI-assisted triage of Apache Groovy JIRA issues and GitHub pull requests — reproducing reported bugs against `master`, finding duplicates, checking that JIRA component / affected-version fields are populated, and surfacing PR-readiness signals (linked JIRA, ASF license headers, drive-by reformatting, CI status) without taking committer-only actions. Use when grooming the JIRA backlog or doing a first-pass review on a PR.
+description: AI-tooling guardrails for triaging GROOVY JIRA issues and GitHub pull requests — points at the project's triage methodology in CONTRIBUTING.md, then adds the AI-specific constraints on top: triage output is always advisory and never posts to JIRA or PR autonomously; no workflow transitions, no closures, no merges; no `Assisted-by:` trailer on someone else's commit. Use when grooming the JIRA backlog or doing a first-pass review on a PR.
 license: Apache-2.0
 compatibility: claude, codex, copilot, cursor, gemini, aider
 metadata:
   audience: contributors to apache/groovy
-  scope: issue-and-pr-triage
+  scope: ai-tooling-triage-guardrails
 ---
 
 # Groovy triage
 
-Use this skill when the task is **triaging** — surfacing the state of
-a JIRA issue or a pull request and proposing next steps — rather than
-writing the fix itself. Triage output is *advisory*: it lands as a
-JIRA comment or PR review for a committer to act on. This skill never
-resolves a JIRA, sets a fix version, merges a PR, or closes anything
-without explicit committer instruction.
+This skill is the **AI-tooling layer** over the project's triage
+methodology. The methodology itself — how to triage a JIRA issue,
+how to triage a PR, how to draft a useful comment — lives in
+[`CONTRIBUTING.md`'s "Triaging issues and pull requests" section](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests).
+This skill cites it and adds the AI-specific guardrails: triage
+output stays as a draft for a human to post, never transitions
+workflow state, never resolves or closes anything autonomously,
+never edits someone else's commit message.
 
-For the JIRA *mechanics* the triage pass relies on — JQL recipes, the
-`Component/s` taxonomy, the field-ownership matrix, and the
-"don't transition workflow states" rule — load
-[`groovy-jira`](../groovy-jira/SKILL.md) alongside this skill.
-
-For the actual fix work, hand off to
-[`groovy-internals`](../groovy-internals/SKILL.md),
-[`groovy-tests`](../groovy-tests/SKILL.md),
-[`groovy-build`](../groovy-build/SKILL.md), or
-[`groovysh`](../groovysh/SKILL.md) depending on where the change lands.
+- [`groovy-jira`](../groovy-jira/SKILL.md) — pair with for the
+  JIRA-mechanics half of any triage pass (JQL, fields, components).
+- [`groovy-reproducer`](../groovy-reproducer/SKILL.md) — pair with
+  when the "attempt reproduction on `master`" step is the
+  load-bearing piece.
+- [`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md) — hand
+  off to once triage points at a real defect with an area.
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) — the canonical
+  source for the triage methodology this skill cites; load
+  alongside.
 
 ## When to use this skill
 
 **Use it for:**
 
-- Walking a JIRA issue: reading the report, attempting reproduction on `master`, searching for duplicates / related issues, checking that `Component/s`, `Affects Version/s`, `Priority`, and `Issue Type` are populated, and drafting a comment with findings.
-- First-pass review on a GitHub pull request: checking the PR links a JIRA, that new files carry the ASF header, that the diff matches the stated scope, and that CI is green — then drafting review comments.
-- Bulk grooming: producing a short, structured report across N issues or N PRs (one bullet per item) for a committer to scan.
+- Walking a JIRA issue: reproducing on `master`, finding
+  duplicates, checking fields, drafting a comment with findings.
+- First-pass review on a GitHub PR: linked JIRA, ASF headers, diff
+  shape, CI specificity, ICLA note, drafting a review.
+- Bulk grooming: producing a short structured report across N
+  issues or N PRs (one bullet per item) for a committer to scan.
 
 **Don't use it for:**
 
-- Actually fixing the bug — once triage points at a real defect, switch to the relevant area skill.
-- Setting JIRA workflow state (`In Progress`, `Resolved`, `Fix Version/s`) — that's a committer action; surface a recommendation instead.
-- Security reports. Suspected vulnerabilities go to <security@groovy.apache.org> per the ASF process, *not* into a public JIRA or PR comment. If a public issue or PR appears to disclose a vulnerability, flag privately to a committer and stop.
-- Anything outside `apache/groovy` — sister repos (`groovy-website`, etc.) have their own conventions.
+- Posting to JIRA, transitioning workflow state, merging a PR,
+  closing an issue, or any other committer action. The hand-back
+  contract (below) is firm.
+- Actually fixing the bug — once triage points at a real defect,
+  hand off to [`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md).
+- Security reports. Suspected vulnerabilities go to
+  <security@groovy.apache.org> per the ASF process, *not* into a
+  public JIRA or PR comment. If a public issue or PR appears to
+  disclose a vulnerability, flag privately to a committer and
+  stop.
+- Anything outside `apache/groovy` — sister repos
+  (`groovy-website`, etc.) have their own conventions.
 
 ## Read first
 
-- [`GOVERNANCE.md`](../../../GOVERNANCE.md) — where JIRA sits in the project's communication channels and what it's the canonical record of.
-- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) — JIRA reference convention in commits (`GROOVY-NNNNN: …`) and the regression-test contract that fixes are expected to satisfy.
-- [`AGENTS.md`](../../../AGENTS.md) — ASF licensing / provenance rules, the `Assisted-by:` trailer, and the "what *not* to do" list (drive-by reformat, speculative abstractions) — these are the signals to flag on PR triage.
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Triaging issues
+  and pull requests" — the canonical methodology this skill cites.
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Working with JIRA"
+  — fields, states, components, JQL recipes; pair with the triage
+  methodology.
+- [`AGENTS.md`](../../../AGENTS.md) — ASF licensing / provenance
+  rules, the `Assisted-by:` trailer convention, and the
+  "what *not* to do" list that drives most PR-triage findings.
 
 ## Top failure modes
 
-These are the recurring mistakes when AI tooling triages Groovy issues and PRs:
+These are the recurring mistakes specific to AI tooling doing
+triage:
 
-1. **Treating the reporter adversarially.** The default tone for JIRA comments is helpful and specific. Don't dismiss a report as "works for me" without showing what you ran. Don't suggest closing as "Cannot Reproduce" without a documented reproduction attempt against a stated `master` revision and the JDK noted in the issue.
-2. **Asking for a reproducer that's already inline.** Before requesting "a minimal example," check the description, comments, and any attachments. A surprising fraction of issues have a complete reproducer the LLM skipped past.
-3. **Not actually reproducing against `master`.** A report against `4.0.x` may already be fixed on `master`. Run the reproducer (or a stub of it) on `master` with the targeted Gradle test invocation before commenting. If it passes on `master`, say so explicitly and name the revision and JDK — that's the useful signal, not a guess.
-4. **Missing the duplicate.** `git log --grep='GROOVY-NNNN'` finds prior commits referencing a JIRA; a JIRA text search finds similar wording. Spend the search budget *before* writing a long analysis — a one-line "duplicate of GROOVY-XXXX, fixed in 4.0.Y" beats a 500-word root-cause summary of a known bug.
-5. **Confusing "the test passes" with "the bug is fixed."** A reporter's snippet may need adaptation to run as a `@Test`. If your adapted version passes but the original snippet (as a script) still fails, the bug isn't fixed — note the discrepancy.
-6. **Drive-by closure of stale issues.** The Groovy JIRA holds long-tail reports that remain valid even after years of silence. "Last activity 2019" is *not* sufficient grounds to recommend closure. Only recommend closure with a concrete reason: reproduction now passes on `master`, the affected version is past end-of-life, or the report duplicates a resolved issue (cite the JIRA).
-7. **PR triage that ignores the AGENTS.md "what *not* to do" list.** The list (drive-by reformatting, unsolicited refactors, hallucinated APIs, speculative abstractions, scratch files) is exactly what a first-pass reviewer should be flagging. If a PR diff is 80% whitespace, that's the headline finding.
-8. **Missing the JIRA reference on a bug-fix PR.** `CONTRIBUTING.md` calls for `GROOVY-NNNNN: …` in the commit message for issue-linked changes. If a PR claims to fix a bug but doesn't reference a JIRA, the triage comment should ask for one (or point out that pure refactors / docs PRs may legitimately have none).
-9. **Approving without an ICLA check on first-time contributors.** New external contributors need an ICLA on file for non-trivial changes. Don't assert ICLA status — the bot or a committer confirms it — but do flag "first-time contributor, ICLA status unknown" so the committer can check.
-10. **Conflating CI red with PR bad.** GitHub Actions on this repo include long-running and occasionally flaky jobs (joint-validation, JMH). Distinguish a genuine failure in `groovy-build-test` from a transient timeout in `grails-joint-validation`; quote the failing job name and the first failing test rather than just "CI red."
-11. **Writing an `Assisted-by:` trailer the contributor didn't ask for.** The trailer is the *contributor's* call to make on their own commit. Triage output is a comment, not a commit — don't suggest editing someone else's commit message to add the trailer; just point at [`AGENTS.md`](../../../AGENTS.md) if AI involvement is obvious and undisclosed.
+1. **Posting the draft.** Triage output is *advisory* — it lands as
+   a draft for a human to review and send. AI tooling does not post
+   comments, transition issues, merge PRs, or close anything. See
+   the hand-back contract below, and *Proposing a workflow
+   transition* in [`groovy-jira`](../groovy-jira/SKILL.md).
 
-For the JIRA-mechanics failure modes that used to live here — inventing `Fix Version/s`, transitioning workflow states, fabricating components, malformed JQL — see [`groovy-jira`](../groovy-jira/SKILL.md).
+2. **Writing an `Assisted-by:` trailer the contributor didn't ask
+   for.** The trailer is the *contributor's* call on their own
+   commit (see [`AGENTS.md`](../../../AGENTS.md)). Triage output is
+   a comment, not a commit; don't suggest editing someone else's
+   commit message to add the trailer — just point at AGENTS.md if
+   AI involvement is obvious and undisclosed.
 
-## Procedure for JIRA-issue triage
+3. **Approving without an ICLA check on first-time contributors.**
+   AI tooling cannot assert ICLA status; flag "first-time
+   contributor, ICLA status unknown" in the draft so the committer
+   can check.
 
-For each issue you triage:
+4. **Conflating CI red with PR bad.** GitHub Actions on this repo
+   include long-running and occasionally flaky jobs
+   (joint-validation, JMH). Distinguish a genuine failure in
+   `groovy-build-test` from a transient timeout in
+   `grails-joint-validation`; quote the failing job name and the
+   first failing test rather than just "CI red."
 
-1. **Read the full thread.** Description, all comments, attachments. Note the reported Groovy version, JDK, and OS. If the reporter included a stack trace, identify the top non-JDK frame — that's usually the entry point for "where in the code?"
-2. **Search for duplicates / related work.**
+5. **Hallucinated identifiers in PR-diff analysis.** When reviewing
+   a PR diff, AI tooling reaches for plausible-sounding API names
+   to "verify" the change. `git grep` the identifier first; if it
+   isn't there, that's a finding.
 
-   ```
-   git log --grep='GROOVY-<NNNN>'             # commits referencing this JIRA
-   git log --grep='<short distinctive phrase>' -- src/
-   ```
+6. **Drafting in a tone that overstates AI authority.** Triage
+   output is a recommendation a human posts under their name;
+   phrase it as a recommendation, not a verdict. "Looks fixed on
+   master at `<rev>` — may be a candidate for closing as Cannot
+   Reproduce" is a recommendation; "Closing this as Cannot
+   Reproduce" is theatre the human posting will have to walk back.
 
-   Plus a JQL text search — see the "Duplicate hunting by error string" recipe in [`groovy-jira`](../groovy-jira/SKILL.md). If you find a duplicate, stop and draft a "duplicate of …" comment.
+7. **Treating the reporter or PR author adversarially.** AI tooling
+   tends to default to dismissive phrasing ("works for me",
+   "without further information…") when the right move is patient
+   specificity. The default tone for any GROOVY-facing comment is
+   collaborative; the methodology in
+   [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#drafting-a-useful-comment-or-review)
+   holds for AI drafts too.
 
-3. **Attempt reproduction on `master`.**
-   - If the reporter gave a script: drop it into a temp file and run via `./gradlew run` or paste it into the relevant test class as a `@Test`. Capture the exact output.
-   - If the reporter gave a `@Test`-shaped snippet: follow [`groovy-tests`](../groovy-tests/SKILL.md) for placement and run targeted (`:test --tests <FQN>`).
-   - Record: the `master` revision (`git rev-parse --short HEAD`), the JDK (`java -version`), the targeted command, and the outcome.
+## Hand-back contract
 
-4. **Locate the code, lightly.** If the reproducer reaches the runtime/compiler, identify the package or class the failure flows through (top non-JDK frame in the trace, or `git log -p -S '<unique string>'` to find recent edits). Don't go deeper than "this lives under `org.codehaus.groovy.transform.stc.*`" unless asked — pointing the right area skill at it is the goal.
+AI-assisted triage produces drafts; humans post and act.
+Specifically, AI tooling does **not**:
 
-5. **Check JIRA fields.** Note (don't edit) what's missing or wrong. Field-ownership rules and `Component/s` suggestion guidance live in [`groovy-jira`](../groovy-jira/SKILL.md); apply them here.
+- Post a JIRA comment or PR review.
+- Transition any issue or merge any PR.
+- Close, resolve, or self-assign an issue.
+- Set or change any JIRA field (see
+  [`groovy-jira`](../groovy-jira/SKILL.md) for the full
+  field-by-field rule).
+- Edit anyone's commit message, including adding an `Assisted-by:`
+  trailer.
 
-6. **Draft the comment.** Structure it as: state of repro (passed / failed / could not run, with revision + JDK), duplicate search result, likely area of the code, suggested missing JIRA fields, recommended next action (e.g. "needs a minimal reproducer," "looks fixed on master — propose closing as Cannot Reproduce after a second pair of eyes," "appears to need a fix in `<area>`"). Keep it factual; don't editorialise.
+With explicit instruction, AI tooling *may*:
 
-7. **Don't transition the issue.** Even when the recommendation is clear, leave the workflow state to a committer (see [`groovy-jira`](../groovy-jira/SKILL.md)).
+- Produce a draft comment or review for a human to post.
+- Run a JQL query and return the result set (read-only).
+- Quote a `GROOVY-NNNNN` reference in text the human is drafting.
 
-## Procedure for PR triage
-
-For each PR:
-
-1. **Read the PR description and the linked JIRA (if any).** A bug-fix PR without a `GROOVY-NNNNN` reference is the first thing to flag; a docs / build-housekeeping PR without one is fine.
-2. **Scan the diff for shape, not just substance.**
-   - **New files:** every `.java`, `.groovy`, `.gradle`, `.xml` must carry the ASF license header. Missing header → flag.
-   - **Drive-by reformatting:** large whitespace-only hunks, end-of-line changes, or reordered imports outside the touched method signal a `what *not* to do` violation. Quote a representative file:line range.
-   - **Hallucinated identifiers:** API methods or flags that grep doesn't find in the codebase. Search `git grep` before assuming a name is real.
-   - **Scope creep:** does the diff match what the description and the JIRA say it should do? Surrounding refactors get called out.
-3. **Check for the regression test.** If the PR claims to fix a JIRA-tracked bug, [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) calls for an accompanying test. Confirm the new test exists, follows `Groovy<NNNN>` or `// GROOVY-<NNNN>`-comment naming (see [`groovy-tests`](../groovy-tests/SKILL.md)), and lives in a sensible location. Confirm it would fail without the production change — easiest check: revert just the production hunk, run the test, expect failure.
-4. **Look at CI.** Identify the *first* failing job and the *first* failing test in that job; quote them. Don't say "CI red" without specifics. Note known-flaky jobs (joint-validation, JMH) separately from core test failures.
-5. **Note ICLA / first-time-contributor signal.** Surface it as a note for the committer; don't gate review on it.
-6. **Draft the review.** Order findings by what would block merge first: license-header / scope / test, then style / drive-by reformat, then nits. Use the file-path:line format from this repo's conventions so committers can jump to each finding.
+The committer / contributor decides what gets posted and when.
 
 ## Validation checklist
 
-Before posting the triage output:
+Before declaring a triage draft ready for human review:
 
-- [ ] The comment / review is grounded in something you *ran* or *searched* — not speculation. Each non-trivial claim cites either a command output, a `git grep` hit, or a JIRA / file reference.
-- [ ] JIRA-mechanics checks pass — see the validation checklist in [`groovy-jira`](../groovy-jira/SKILL.md) (no workflow transitions, no invented `Fix Version/s`, suggested components are real, JQL leads with `project = GROOVY`).
-- [ ] No suggested edit to someone else's commit message (including `Assisted-by:` trailer).
-- [ ] If recommending closure of an old JIRA: a concrete reason (revision + JDK on which it now passes, or the duplicate JIRA-ID).
+- [ ] Each non-trivial claim is grounded in something run or
+      searched (command output, `git grep` hit, JIRA / file
+      reference) — not speculation.
+- [ ] No proposed JIRA workflow transition, closure, or merge.
+- [ ] No suggested edit to anyone's commit message (including
+      `Assisted-by:` trailer).
+- [ ] If recommending closure of an old JIRA: a concrete reason
+      (revision + JDK on which it now passes, or the duplicate
+      JIRA-ID).
 - [ ] If recommending duplicate: the duplicate JIRA is linked.
-- [ ] CI claims name the specific failing job and first failing test.
-- [ ] No security-sensitive detail in a public comment — if any suspicion of a vulnerability, route to <security@groovy.apache.org> and stop the public triage.
-- [ ] Reviewer / triage tone is helpful and specific; the comment would read fine to the reporter or PR author.
-- [ ] If AI tooling did substantive analysis, the *human* posting the comment is the one making the call; the triage output is a draft for them to review.
+- [ ] CI claims name the specific failing job and first failing
+      test.
+- [ ] ICLA status of first-time contributors is flagged, not
+      asserted.
+- [ ] No security-sensitive content in a draft destined for a
+      public comment.
+- [ ] Output reads as a draft for a human to review and send — not
+      a payload to be sent automatically.
 
 ## References
 
-- [`GOVERNANCE.md`](../../../GOVERNANCE.md) — JIRA's role as the canonical record; mailing list and Slack as the discussion channels.
-- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) — commit-message JIRA reference convention, regression-test requirement for JIRA-tracked fixes.
-- [`AGENTS.md`](../../../AGENTS.md) — ASF licensing / provenance, `Assisted-by:` convention, and the "what *not* to do" list that drives most PR-triage findings.
-- `.agents/skills/groovy-jira/SKILL.md` — JIRA mechanics (JQL, components, field ownership, workflow-state rule); pair with this skill on every triage pass.
-- `.agents/skills/groovy-tests/SKILL.md` — regression-test naming and placement; pair with this skill when the triage produces a "needs regression test" finding.
-- `.agents/skills/groovy-internals/SKILL.md` — hand off to this skill when triage points at a compiler/runtime defect.
-- `.agents/skills/groovy-build/SKILL.md` — hand off when triage points at a build / packaging defect.
-- `.agents/skills/groovysh/SKILL.md` — hand off when triage points at the REPL subproject.
-- ASF Generative Tooling guidance: <https://www.apache.org/legal/generative-tooling.html>.
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Triaging issues
+  and pull requests" — canonical methodology.
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Working with JIRA"
+  — fields, components, JQL, commit-reference convention.
+- [`AGENTS.md`](../../../AGENTS.md) — ASF licensing / provenance,
+  `Assisted-by:` convention, and the "what *not* to do" list that
+  drives most PR-triage findings.
+- `.agents/skills/groovy-jira/SKILL.md` — sister skill for the
+  JIRA-mechanics half; pair on every triage pass.
+- `.agents/skills/groovy-reproducer/SKILL.md` — pair with for the
+  "attempt reproduction on master" step.
+- `.agents/skills/groovy-fix-workflow/SKILL.md` — hand off to once
+  triage points at a real defect.
+- `.agents/skills/groovy-tests/SKILL.md` — regression-test naming
+  and placement; pair when triage produces a "needs regression
+  test" finding.
+- `.agents/skills/groovy-internals/SKILL.md` — hand off when
+  triage points at a compiler/runtime defect.
+- `.agents/skills/groovy-build/SKILL.md` — hand off when triage
+  points at a build / packaging defect.
+- `.agents/skills/groovysh/SKILL.md` — hand off when triage points
+  at the REPL subproject.

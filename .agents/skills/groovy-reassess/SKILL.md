@@ -42,8 +42,10 @@ elsewhere:
 - [`groovy-jira`](../groovy-jira/SKILL.md) — the JQL recipes that
   select the candidate set; the field-ownership rules; the
   "comment, don't transition" rule that applies at scale here.
-- [`groovy-triage`](../groovy-triage/SKILL.md) — the single-issue
-  triage workflow; pieces of it apply to each candidate.
+- [`groovy-triage`](../groovy-triage/SKILL.md) — AI guardrails
+  over the single-issue triage methodology in
+  [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests);
+  pieces of that methodology apply to each candidate.
 - [`groovy-reproducer`](../groovy-reproducer/SKILL.md) — the
   load-bearing per-issue piece: locate the reproducer, classify the
   shape, adapt, run, record evidence.
@@ -95,7 +97,7 @@ These are the recurring mistakes at the campaign level:
    say `fixed-on-master` with strong evidence, the campaign does
    *not* post 30 JIRA comments, transition 30 issues, or close
    anything. The output is a report; a committer decides whether
-   and how to publish it. See failure mode 1 in
+   and how to publish it. See *Transitioning workflow state* in
    [`groovy-jira`](../groovy-jira/SKILL.md) for the underlying rule.
 2. **Optimistic classification on weak evidence.** A reproducer
    that didn't compile is `cannot-run-extraction`, not
@@ -103,10 +105,10 @@ These are the recurring mistakes at the campaign level:
    reason; reach for the precise one. "Looks fine to me" is not a
    classification.
 3. **Confusing "passes on this JDK" with "fixed."** The classic
-   over-claim from [`groovy-reproducer`](../groovy-reproducer/SKILL.md)
-   failure mode 10, multiplied by the campaign size. Where the
-   verdict matters and a JDK retry is feasible, do it before
-   landing `fixed-on-master`.
+   over-claim from *Over-claiming "fixed" from a single-environment
+   pass* in [`groovy-reproducer`](../groovy-reproducer/SKILL.md),
+   multiplied by the campaign size. Where the verdict matters and
+   a JDK retry is feasible, do it before landing `fixed-on-master`.
 4. **Unbounded scope.** Trying to sweep 200 issues in one session
    blows context, produces low-quality bulk output, and means a
    crash at issue 150 is a 150-issue loss. Bound the candidate set
@@ -338,11 +340,15 @@ Before declaring a campaign session complete:
   and "what *not* to do" rules the campaign inherits.
 - `.agents/skills/groovy-jira/SKILL.md` — JQL recipes for selection;
   the comment-not-transition rule applied campaign-wide.
-- `.agents/skills/groovy-triage/SKILL.md` — single-issue workflow;
-  pieces apply to each candidate.
+- `.agents/skills/groovy-triage/SKILL.md` — AI guardrails over the
+  single-issue triage methodology in
+  [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests);
+  pieces of that methodology apply to each candidate.
 - `.agents/skills/groovy-reproducer/SKILL.md` — the per-issue load
   -bearing skill; the campaign is a loop over it.
-- `.agents/skills/groovy-fix-workflow/SKILL.md` — destination for
-  the `still-fails-same` tail.
+- `.agents/skills/groovy-fix-workflow/SKILL.md` — AI guardrails
+  over the fix workflow in
+  [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#fix-workflow);
+  destination for the `still-fails-same` tail.
 - `.agents/skills/groovy-tests/SKILL.md` — when an adapted `@Test`
   is kept as the starting point for a real regression test.

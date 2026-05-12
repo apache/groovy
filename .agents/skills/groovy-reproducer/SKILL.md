@@ -39,9 +39,11 @@ This skill is the load-bearing piece for both single-issue triage
 bulk-reassessment campaign — it doesn't speak about workflow, batch
 processing, or hand-back. For those, defer:
 
-- [`groovy-triage`](../groovy-triage/SKILL.md) — the surrounding
-  triage workflow for a single issue; it calls into this skill at
-  the "attempt reproduction on `master`" step.
+- [`groovy-triage`](../groovy-triage/SKILL.md) — the AI-tooling
+  layer over the single-issue triage methodology in
+  [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests);
+  it calls into this skill at the "attempt reproduction on
+  `master`" step.
 - [`groovy-reassess`](../groovy-reassess/SKILL.md) — the bulk
   reassessment campaign; it calls into this skill for every issue in
   the candidate set.
@@ -69,8 +71,11 @@ processing, or hand-back. For those, defer:
   exists — that's [`groovy-tests`](../groovy-tests/SKILL.md), and
   the regression test is the contributor's design call, not a
   reproduction of someone else's report.
-- Single-issue triage workflow as a whole — [`groovy-triage`](../groovy-triage/SKILL.md)
-  is the workflow; this skill is one of its steps.
+- Single-issue triage workflow as a whole — see
+  [`CONTRIBUTING.md`'s "Triaging issues" section](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests)
+  for the methodology and [`groovy-triage`](../groovy-triage/SKILL.md)
+  for the AI guardrails; this skill is one of its load-bearing
+  steps.
 - Bulk processing — [`groovy-reassess`](../groovy-reassess/SKILL.md)
   is the campaign layer; this skill handles one reproducer at a time.
 - Reporters' projects requiring a separate Gradle / Maven build (a
@@ -140,10 +145,11 @@ reproducers:
    bug indicator (stack traces, MOP errors, "expected X got Y") to
    stderr. Capture both streams and surface both in the evidence.
 9. **Comparing run output without normalising line endings or
-   locale.** Same trap as [`groovy-tests`](../groovy-tests/SKILL.md)
-   failure mode 11. Output captured on Windows uses `\r\n`; locale
-   shifts number/date formatting. Normalise before string-compare,
-   or compare on parsed values.
+   locale.** Same trap as *Locale-, platform-, or format-dependent
+   assertions* in [`groovy-tests`](../groovy-tests/SKILL.md). Output
+   captured on Windows uses `\r\n`; locale shifts number/date
+   formatting. Normalise before string-compare, or compare on parsed
+   values.
 10. **Over-claiming "fixed" from a single-environment pass.** A
     clean run on your laptop may be environment-luck, not a real
     fix — locale, charset, default JDK, file-encoding defaults all
@@ -178,8 +184,8 @@ or `main`. Recipe: save to a scratch `.groovy`, build a current
 distribution (`./gradlew :installDist` on the relevant subproject),
 and run with the built `groovy` binary. Or, for many cases, adapt as
 a `@Test` per [`groovy-tests`](../groovy-tests/SKILL.md) and run
-targeted — but be aware of failure mode 3 (script vs `@Test`
-semantics).
+targeted — but be aware of *Treating `@Test` adaptation as
+equivalent to a script run* above (script vs `@Test` semantics).
 
 **B. `@Test`-shaped snippet** — already class-and-annotation shaped.
 Recipe: place under `src/test/groovy/bugs/Groovy<NNNN>.groovy` (or
@@ -335,8 +341,9 @@ Before recording a verdict:
   shape that `@Test`-adapted reproducers fit into.
 - [`AGENTS.md`](../../../AGENTS.md) — the no-fabrication, no
   drive-by, no scratch-files-in-tree principles applied here.
-- `.agents/skills/groovy-triage/SKILL.md` — single-issue caller of
-  this skill.
+- `.agents/skills/groovy-triage/SKILL.md` — single-issue caller;
+  AI guardrails over the triage methodology in
+  [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests).
 - `.agents/skills/groovy-reassess/SKILL.md` — campaign-level caller
   of this skill.
 - `.agents/skills/groovy-tests/SKILL.md` — placement and naming

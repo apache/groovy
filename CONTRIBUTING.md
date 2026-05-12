@@ -151,6 +151,52 @@ git log --grep='GROOVY-12345'                                 # commits referenc
 git log --grep='GROOVY-' -- src/test/groovy/bugs/             # all bug-fix commits in core regression tests
 ```
 
+### Fix workflow
+
+For a JIRA-tracked bug, the order of operations is **test first,
+then fix**:
+
+1. **Write the failing regression test** (per the shapes above).
+2. **Confirm it fails on `master`** — run the targeted test and
+   watch the failure. This is the proof the test exercises the bug.
+3. **Implement the smallest fix that makes the test pass.** Trace
+   the cause up the call stack; a null-guard at the failure site is
+   often the symptom, not the cause. Don't add speculative
+   abstractions, configuration knobs, or "while I'm here" refactors.
+   See [What *not* to do](AGENTS.md) for the longer list of
+   surrounding-cleanup pitfalls.
+4. **Run the targeted test again.** Green.
+5. **Run the surrounding module's test pass** —
+   `./gradlew :<subproject>:test` or `./gradlew :test` with a
+   package filter — to catch nearby behaviour the fix regressed.
+6. **Diff the working tree.** Anything outside the regression test
+   and the production change needs a reason. Drive-by reformatting
+   and stray imports should be reverted; they hide real changes in
+   review.
+7. **Commit with a JIRA reference.** `GROOVY-NNNNN: <short subject>`
+   on the first line — see
+   [Submitting a pull request](#submitting-a-pull-request).
+
+A few specific traps:
+
+- **"Local IDE green" is not "build green".** An IDE test runner
+  bypasses Gradle's `Test` task configuration, including the
+  `junit.network` exclusion that gates `groovy/grape/` tests. The
+  signal that counts is `./gradlew :test --tests <FQN>`, not the
+  IDE play button.
+- **Targeted green is necessary but not sufficient.** The
+  surrounding module's test pass catches the nearby regression the
+  fix introduced. Skipping that step is the most common source of
+  "my fix broke CI."
+- **Sometimes the report describes intended behaviour.** If your
+  would-be regression test confirms documented behaviour rather
+  than contradicting it, the fix is a doc clarification or a
+  recommendation to close as Not A Bug — not a code change.
+- **Cross-repo fixes need committer coordination.** Some fixes
+  touch `groovy-website`, `groovy-eclipse`, or another ASF repo.
+  Those have their own conventions and reviewers; flag the
+  cross-repo need rather than auto-cloning and patching.
+
 ### Executable AsciiDoc examples
 
 Examples in the user-facing documentation under `src/spec/doc/` and
@@ -186,8 +232,23 @@ The pattern in three pieces:
    part of the normal test task.
 
 A change to a documented example normally touches *both* files in
-the same PR. A new tagged region should be referenced from at least
-one `include::` — orphaned tagged regions silently rot.
+the same PR.
+
+**Common pitfalls:**
+
+- **Mismatched tag and include.** The tag name in the AsciiDoc
+  `include::../test/X.groovy[tags=foo,...]` must match
+  `// tag::foo[]` / `// end::foo[]` in the Groovy test file.
+  Renaming one without the other silently breaks the include and
+  the build doesn't fail loudly.
+- **Editing only one side.** Documentation examples are
+  dual-edited: `src/spec/doc/<topic>.adoc` and
+  `src/spec/test/<TopicTest>.groovy` change together in the same
+  PR.
+- **Orphaned tagged regions.** A `// tag::...[] ... // end::...[]`
+  block in `src/spec/test/` that no AsciiDoc file `include::`'s
+  is dead weight. If you removed the include, remove the tagged
+  region too.
 
 ### Tests-preview
 
@@ -195,6 +256,67 @@ one `include::` — orphaned tagged regions silently rot.
 tests that depend on a JDK preview feature. Anything that needs
 `--enable-preview` to compile or run goes there, not in core
 `src/test/`.
+
+### Test-writing pitfalls
+
+A small set of recurring traps that look like flakiness or
+platform issues but are actually project-specific:
+
+- **`String.valueOf(object)` bypasses Groovy `MetaClass` dispatch.**
+  Using `String.valueOf(map)` produces Java's `{k=v}` rendering;
+  Groovy's `map.toString()` produces `[k:v]`. Tests that assert on
+  collection-stringification need `object.toString()` to pick up
+  the Groovy extensions. (`null.toString()` returns `'null'` in
+  Groovy, so no separate null guard is needed.)
+- **Locale-, line-ending-, and path-portability traps.** JVM
+  defaults for locale, timezone, line endings, file path
+  separators, and charset vary across CI agents and contributor
+  machines. Two specific traps that recur:
+  - **Path strings in a parsed command line.** A Windows-native
+    `Path.toString()` like `C:\Users\…\foo.json` interpolated
+    into a `system.execute("cmd ${file}")`-style invocation gets
+    its backslashes eaten by JLine's `DefaultParser`, which
+    treats `\` as an escape character. Forward-slash the path
+    before interpolating: `path.toString().replace('\\', '/')`.
+    Java NIO accepts forward-slash paths on Windows.
+  - **Output captured from `println`.** `PrintStream.println`
+    uses `System.lineSeparator()`, which is `\r\n` on Windows.
+    Line-aware assertions (`output.split('\n')`,
+    `output.contains('foo\n')`) silently fail on Windows. Use
+    Groovy's `String.normalize()` extension to collapse platform
+    line separators to `\n` before splitting or comparing.
+
+  Other defences: `Locale.ROOT` for date/number formatting,
+  explicit `StandardCharsets.UTF_8` rather than the platform
+  default, or assert on parsed values rather than their
+  stringified forms.
+- **`-Djunit.network=true` is required for tests under
+  `groovy/grape/`.** The `Test` task in
+  `org.apache.groovy-tested.gradle` applies an
+  `exclude buildExcludeFilter(...)` filter that drops anything
+  under `groovy/grape/` from execution unless `junit.network` is
+  set. Without it, `:groovy-grape-*:test --tests <FQN>` reports
+  `BUILD SUCCESSFUL` but no test results appear (and
+  `--rerun-tasks` reports `NO-SOURCE`). The test classes compile
+  normally; they just aren't run. Always pass
+  `-Djunit.network=true` when iterating on tests in
+  `subprojects/groovy-grape-*`.
+- **`-Djunit.network` on the Gradle CLI doesn't reach the test
+  JVM automatically.** Separate trap: a test that reads the
+  property at runtime — gated via
+  `@EnabledIfSystemProperty(named = 'junit.network', matches = 'true')`
+  — needs the subproject's `build.gradle` to forward it
+  explicitly:
+
+  ```groovy
+  tasks.named('test') {
+      def network = System.getProperty('junit.network')
+      if (network) systemProperty 'junit.network', network
+  }
+  ```
+
+  Without forwarding, the gated test always skips even with
+  `-Djunit.network=true` on the Gradle CLI.
 
 ### For agents working on tests
 
@@ -232,6 +354,328 @@ live in the separate [`groovy-website`](https://github.com/apache/groovy-website
 repository; see the [project contribute page](https://groovy.apache.org/)
 for how to contribute there.
 
+## Working with JIRA
+
+Bugs, feature requests, and improvements for Groovy are tracked at
+<https://issues.apache.org/jira/browse/GROOVY>. The live JIRA project
+is the canonical record of "what's planned, in progress, and done"
+(see [`GOVERNANCE.md`](GOVERNANCE.md) for how JIRA fits into the
+project's broader governance).
+
+This section covers the contributor-facing conventions: states,
+fields, components, JQL searches, and how JIRA links to commits and
+pull requests.
+
+### Issue states
+
+The GROOVY project uses the standard ASF JIRA workflow:
+
+- **Open** — filed, unassigned, not yet started.
+- **In Progress** — a contributor is actively working on it (typically self-assigned).
+- **Resolved** — fix has landed; awaiting verification or release.
+- **Closed** — terminal state, with a `Resolution` (Fixed / Won't Fix / Duplicate / Cannot Reproduce / Incomplete / Not A Bug / Done).
+- **Reopened** — a previously-resolved issue that came back; treat like Open, but read the prior resolution comment first.
+
+State transitions are a committer responsibility. Contributors
+comment on issues with findings, recommendations, and reproductions;
+committers move issues through the workflow as code lands. The rule
+of thumb: **comment, don't transition.**
+
+### Fields and who sets them
+
+| Field | Set by | Notes |
+|---|---|---|
+| `Summary` | Reporter; committer may tidy | A sharper rewording is fine as a comment. |
+| `Description` | Reporter | Don't rewrite someone else's report. |
+| `Issue Type` (Bug / Improvement / New Feature / Task / Sub-task) | Reporter; committer corrects | Flag a misclassification (e.g. a "Bug" that's really an "Improvement") as a comment. |
+| `Priority` | Committer / project | Don't infer from the reporter's tone ("URGENT!!!"); leave unless asked. |
+| `Component/s` | Reporter or committer | Suggest from the package or subproject the bug touches (see below). |
+| `Affects Version/s` | Reporter | The version the bug was hit on. If empty, ask the reporter; don't guess. |
+| `Fix Version/s` | Committer, on resolve | Set when an issue is being resolved, normally to the next release that will contain the fix. |
+| `Resolution` | Committer, on resolve | Filled in when an issue is resolved; an open issue with a resolution is malformed. |
+| `Assignee` | Self-assigning contributor or committer | Don't assign on someone else's behalf. |
+| `Labels` | Anyone (low ceremony) | Match existing labels; don't invent new ones. |
+| Workflow state | Committer | See above — comment, don't transition. |
+
+### Components
+
+The authoritative component list lives at the
+[GROOVY project's components page](https://issues.apache.org/jira/projects/GROOVY?selectedItem=com.atlassian.jira.jira-projects-plugin:components-page)
+and evolves over time, so refetch rather than relying on memory.
+
+When suggesting (or filing against) a component:
+
+1. Identify the package or subproject the bug reaches. The top
+   non-JDK frame of a stack trace, or the file that needs to change,
+   usually points at it.
+2. Map that area to a component using the live list. Component names
+   typically follow the area-of-the-codebase shape (parser, compiler,
+   type checker, AST transforms, runtime/MOP, a specific subproject
+   under `subprojects/`, build, docs).
+3. If multiple components fit, suggest the *narrower* one —
+   `Static Type Checker` over `Compiler` when the issue is
+   specifically STC.
+4. If none fit, propose the closest match and note the mismatch in a
+   comment — a recurring miss is a signal the component list needs a
+   new entry, which is a project-admin action.
+
+When *reading* a `Component/s` value already set, treat it as a
+routing hint, not a constraint. A bug filed against `Parser` that
+turns out to be a runtime issue gets re-suggested in a comment, not
+silently re-tagged.
+
+### Searching with JQL
+
+JIRA Query Language (JQL) is the search language used throughout the
+Atlassian JIRA UI and REST API; Atlassian's
+[JQL reference](https://support.atlassian.com/jira-service-management-cloud/docs/jql-fields/)
+covers the syntax. A few project conventions that prevent common
+pitfalls:
+
+- **Lead every query with `project = GROOVY`.** Apache's JIRA hosts
+  many projects; an unscoped query returns cross-project noise.
+- **Quote multi-word values:** `component = "Static Type Checker"`
+  is correct; `component = Static Type Checker` is a syntax error.
+- **Multi-value fields use `in`, not `=` with parentheses:**
+  `component in ("Parser", "Compiler")` is correct;
+  `component = ("Parser", "Compiler")` is not.
+
+Recurring search templates (substitute the bracketed placeholders):
+
+**Stale open issues (no activity in N days):**
+
+```jql
+project = GROOVY AND statusCategory != Done AND updated < -<N>d ORDER BY updated ASC
+```
+
+**Open issues in a component:**
+
+```jql
+project = GROOVY AND statusCategory != Done AND component = "<Component>" ORDER BY priority DESC, created DESC
+```
+
+**Open issues without a component (triage candidates):**
+
+```jql
+project = GROOVY AND statusCategory != Done AND component is EMPTY ORDER BY created DESC
+```
+
+**Open issues against an affected version:**
+
+```jql
+project = GROOVY AND statusCategory != Done AND affectedVersion = "<X.Y.Z>" ORDER BY priority DESC
+```
+
+**Resolved issues for a release (changelog mining):**
+
+```jql
+project = GROOVY AND fixVersion = "<X.Y.Z>" AND resolution = Fixed ORDER BY resolved DESC
+```
+
+**Recently opened (last N days), needs first-pass triage:**
+
+```jql
+project = GROOVY AND created > -<N>d ORDER BY created DESC
+```
+
+**Duplicate hunting by error string:**
+
+```jql
+project = GROOVY AND text ~ "<distinctive phrase>"
+```
+
+`text ~` searches summary, description, and comments. A distinctive
+phrase from a stack trace or error message works well; a common word
+like `NullPointerException` alone returns too many hits.
+
+**By reporter (for context on a reporter's prior issues):**
+
+```jql
+project = GROOVY AND reporter = "<asf-id>" ORDER BY created DESC
+```
+
+**Closed without a resolution (malformed state, surface to a committer):**
+
+```jql
+project = GROOVY AND statusCategory = Done AND resolution is EMPTY
+```
+
+**Sub-tasks of an epic / parent:**
+
+```jql
+project = GROOVY AND parent = GROOVY-<NNNN>
+```
+
+### Linking JIRA to commits and pull requests
+
+Every commit or pull request that fixes a JIRA-tracked issue
+references it using the full key, `GROOVY-NNNNN`, at the start of
+the commit subject. JIRA picks up the link via smart-commit handling;
+`git log --grep='GROOVY-NNNNN'` finds the change later. Variants
+like `[GROOVY-NNNNN]`, lowercase `groovy-`, or omitting the number
+break that search.
+
+- **From a commit subject:** `GROOVY-NNNNN: <short summary>` as the
+  first line.
+- **From a comment on issue A about issue B:** plain text
+  `GROOVY-NNNNN` is enough — JIRA auto-links it. Use this for
+  "see also" references; reserve the formal "Linked Issues"
+  relationship (is duplicated by / blocks / relates to / etc.) for
+  committers, since those are project-level metadata.
+- **From a branch name:** `GROOVY-NNNNN-<short-slug>` is a common
+  shape; not enforced, but it keeps the linkage visible in
+  `git branch`.
+- **Cross-references in comments:** if you cite another `GROOVY-NNNNN`
+  in a comment, include enough context that the cross-reference still
+  makes sense if the linked issue is later edited.
+
+### For agents working on JIRA
+
+The [`.agents/skills/groovy-jira/SKILL.md`](.agents/skills/groovy-jira/SKILL.md)
+skill operationalises this section for AI tooling: when to load it,
+how to draft a JIRA comment without overstepping, and the hand-back
+contract for any output that would post to JIRA. The conventions
+here are the canonical source; the skill cites them.
+
+## Triaging issues and pull requests
+
+Triage is the project's first-pass response to incoming bug reports
+and pull requests: reproducing what was reported, finding duplicates,
+suggesting next steps. Anyone with access to the
+[JIRA project](https://issues.apache.org/jira/browse/GROOVY) and the
+GitHub repository can help triage; committers act on the
+recommendations that come out of it.
+
+Triage output is **advisory**. It lands as a JIRA comment or a PR
+review for a committer to decide on. Triage does not resolve a JIRA,
+set a fix version, close anything, or merge a PR.
+
+### Triaging a JIRA issue
+
+For each issue:
+
+1. **Read the full thread.** Description, every comment, every
+   attachment. Note the reported Groovy version, JDK, and OS. If the
+   reporter included a stack trace, the top non-JDK frame usually
+   points at the area of the code involved.
+
+2. **Search for duplicates and related work** before writing a long
+   analysis. A one-line "duplicate of GROOVY-XXXX, fixed in 4.0.Y"
+   beats a 500-word root-cause summary of a known bug.
+
+   ```
+   git log --grep='GROOVY-<NNNN>'                # commits referencing the JIRA
+   git log --grep='<distinctive phrase>' -- src/ # prior edits in the area
+   ```
+
+   Plus a JQL text search — see the
+   [Duplicate hunting by error string](#searching-with-jql) recipe
+   above.
+
+3. **Attempt reproduction on `master`.** Drop the reporter's script
+   into a temp file and run it against a local build, or paste their
+   snippet into the relevant test class as a `@Test` and run
+   targeted (`./gradlew :test --tests <FQN>`). Record the `master`
+   revision (`git rev-parse --short HEAD`), the JDK
+   (`java -version`), the command, and the outcome. A reproducer
+   that's now passing on `master` is meaningful information; a
+   missing reproduction is speculation.
+
+4. **Locate the code, lightly.** If the failure reaches the
+   runtime/compiler, identify the package or class the stack flows
+   through — that's the "where" to point a fix at. Don't go deeper
+   than the area unless asked.
+
+5. **Check JIRA fields.** Note (don't edit) what's missing or
+   wrong; field-ownership rules and `Component/s` suggestion
+   guidance are above under
+   [Fields and who sets them](#fields-and-who-sets-them) and
+   [Components](#components).
+
+6. **Draft a comment** with: the state of the reproduction
+   (passed / failed / could not run, with revision + JDK), the
+   duplicate-search result, the likely area of the code, suggested
+   missing fields, and a recommended next action ("needs a minimal
+   reproducer," "looks fixed on master — propose closing as Cannot
+   Reproduce after a second pair of eyes," "appears to need a fix
+   in `<area>`"). Factual, helpful, specific.
+
+7. **Don't transition the issue.** Even when the recommendation is
+   clear, leave the workflow state to a committer.
+
+### Triaging a pull request
+
+For each PR:
+
+1. **Read the PR description and the linked JIRA (if any).** A
+   bug-fix PR without a `GROOVY-NNNNN` reference is the first thing
+   to flag; a docs / build-housekeeping PR without one is fine.
+
+2. **Scan the diff for shape, not just substance:**
+   - **New files** — every `.java`, `.groovy`, `.gradle`, `.xml`
+     must carry the ASF license header. Missing header → flag.
+   - **Drive-by reformatting** — large whitespace-only hunks,
+     end-of-line changes, or reordered imports outside the touched
+     method signal a scope violation (see
+     [What *not* to do in AGENTS.md](AGENTS.md)).
+   - **Hallucinated identifiers** — API methods or flags that
+     `git grep` doesn't find in the codebase. Search before
+     assuming a name is real.
+   - **Scope creep** — does the diff match what the description and
+     the JIRA say it should do? Surrounding refactors get called
+     out.
+
+3. **Check for the regression test.** If the PR claims to fix a
+   JIRA-tracked bug,
+   [Regression tests for JIRA fixes](#regression-tests-for-jira-fixes)
+   calls for an accompanying test. Confirm the test exists, follows
+   the project's naming, and would actually fail without the
+   production change (revert just the production hunk, run the
+   test, expect failure).
+
+4. **Look at CI.** Identify the *first* failing job and the
+   *first* failing test in that job; quote them. Don't say "CI red"
+   without specifics. Note known-flaky jobs (joint-validation, JMH)
+   separately from core test failures.
+
+5. **Note ICLA / first-time-contributor signal.** First-time
+   external contributors need an ICLA on file for non-trivial
+   changes. Don't assert ICLA status — the bot or a committer
+   confirms it — but flag "first-time contributor, ICLA status
+   unknown" so the committer can check.
+
+6. **Draft the review.** Order findings by what would block merge
+   first: license-header / scope / test, then style / drive-by
+   reformat, then nits. Use file-path:line references so committers
+   can jump to each finding.
+
+### Drafting a useful comment or review
+
+Whether triaging an issue or a PR, the output is:
+
+- **Grounded.** Each non-trivial claim cites either a command
+  output, a `git grep` hit, or a JIRA / file reference. Speculation
+  reads as filler.
+- **Helpful and specific.** The default tone is collaborative.
+  Don't dismiss a report as "works for me" without showing what you
+  ran.
+- **Phrased as recommendations, not directives.** "Looks fixed on
+  master at `<rev>` — may be a candidate for closing as Cannot
+  Reproduce" is a recommendation; "Closing this as Cannot
+  Reproduce" is a transition. Triage recommends; committers
+  transition.
+- **Free of security-sensitive content** in public comments.
+  Vulnerabilities go to <security@groovy.apache.org>, not into a
+  JIRA comment or a PR review.
+
+### For agents helping with triage
+
+The [`.agents/skills/groovy-triage/SKILL.md`](.agents/skills/groovy-triage/SKILL.md)
+skill operationalises this section for AI tooling — the AI-specific
+guardrails on top of the methodology described above, plus the
+hand-back contract that keeps any posting to JIRA or PR review in
+human hands.
+
 ## Submitting a pull request
 
 1. Fork <https://github.com/apache/groovy> and create a feature branch.
@@ -241,6 +685,12 @@ for how to contribute there.
    are three separate commits (or pull requests), not one.
 4. Run `./gradlew test` locally and confirm it passes.
 5. Open a pull request against `master`.
+
+If the change adds or alters public API, read
+[`COMPATIBILITY.md`](COMPATIBILITY.md) before opening the PR — API
+additions and breaking changes have a stricter review path, with
+the dev@ discussion described in
+[`GOVERNANCE.md`](GOVERNANCE.md).
 
 GitHub's [fork a repo](https://docs.github.com/en/get-started/quickstart/fork-a-repo)
 and [creating a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)

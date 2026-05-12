@@ -18,152 +18,164 @@
 -->
 ---
 name: groovysh
-description: Guidance for changes in subprojects/groovy-groovysh/ — REPL command implementations, JLine integration, vendored fork files, and the layered terminal-aware test stack. Use when modifying anything in that subproject's tree, bumping the JLine version, or syncing the vendored fork files against upstream.
+description: AI-tooling guardrails for changes in subprojects/groovy-groovysh/ — points at the subproject's canonical architecture doc (vendored JLine forks, three-layer test infrastructure, terminal-aware test patterns, command-specific quirks, JLine bump procedure), then adds the AI-specific constraints on top: no fabricated JLine API names, terminal tests must use `dumb(true).streams(...)`, no full-string ANSI assertions, fork-sync diffs go against the fork-base tag, no reformatting of fork files, hand-back for review. Use when modifying anything in that subproject's tree, bumping JLine, or syncing vendored fork files.
 license: Apache-2.0
 compatibility: claude, codex, copilot, cursor, gemini, aider
 metadata:
   audience: contributors to apache/groovy
-  scope: subproject-groovy-groovysh
+  scope: ai-tooling-groovysh-guardrails
 ---
 
 # groovysh
 
-Use this skill for work in the `subprojects/groovy-groovysh/` tree —
-the interactive Groovy REPL. The subproject is unusual in two ways:
+This skill is the **AI-tooling layer** over the `groovy-groovysh`
+subproject's architecture. The conventions themselves — the
+vendored JLine forks, the three-layer test infrastructure, the
+terminal-aware test patterns, command-specific quirks, and the
+JLine bump procedure — live in
+[`subprojects/groovy-groovysh/ARCHITECTURE.md`](../../../subprojects/groovy-groovysh/ARCHITECTURE.md).
+This skill cites them and adds the AI-specific guardrails: no
+fabricated JLine API names, terminal tests use
+`dumb(true).streams(...)`, no full-string ANSI assertions,
+fork-sync diffs against the fork-base tag, no reformatting of
+fork files.
 
-1. It vendors files from JLine because we can't depend on the upstream
-   `jline-groovy` artifact (circular dependency on Groovy itself).
-2. Its tests touch a real JLine `Terminal`, making them more
-   platform-sensitive than the rest of the codebase.
-
-This skill layers on top of [`groovy-tests`](../groovy-tests/SKILL.md) —
-load both together when adding tests for groovysh code.
+- [`groovy-tests`](../groovy-tests/SKILL.md) — pair with for
+  test conventions; this skill complements it for the
+  terminal-aware testing layer.
+- [`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md) — AI
+  guardrails for the surrounding fix workflow when a fix lands
+  in this subproject.
+- [`subprojects/groovy-groovysh/ARCHITECTURE.md`](../../../subprojects/groovy-groovysh/ARCHITECTURE.md)
+  — canonical subproject architecture; load alongside.
 
 ## When to use this skill
 
 **Use it for:**
 
-- REPL command changes (`subprojects/groovy-groovysh/src/main/groovy/.../jline/`).
-- Anything terminal-related: writing tests, integrating JLine APIs, image rendering.
+- REPL command changes
+  (`subprojects/groovy-groovysh/src/main/groovy/.../jline/`).
+- Anything terminal-related: writing tests, integrating JLine
+  APIs, image rendering.
 - Bumping the JLine version in `versions.properties`.
 - Syncing vendored fork files against upstream JLine.
 
 **Don't use it for:**
 
-- Pure compiler/runtime changes elsewhere — use [`groovy-internals`](../groovy-internals/SKILL.md).
-- Changes to the project-wide build (root `build.gradle`, `build-logic/`) — use [`groovy-build`](../groovy-build/SKILL.md).
+- Pure compiler/runtime changes elsewhere —
+  [`groovy-internals`](../groovy-internals/SKILL.md).
+- Changes to the project-wide build (root `build.gradle`,
+  `build-logic/`) — [`groovy-build`](../groovy-build/SKILL.md).
 
 ## Read first
 
-- [`subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc`](../../../subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc) — user-facing reference, the source of truth for command behaviour.
-- The test support classes under `subprojects/groovy-groovysh/src/test/.../commands/`: `ConsoleTestSupport` (engine + console + printer) and `SystemTestSupport` (adds dumb terminal + system registry).
-
-## Vendored JLine files
-
-Five BSD-licensed files under `src/main/groovy/.../jline/` (`GroovyEngine.java`,
-`PackageHelper.java`, `JrtJavaBasePackages.java`, `ObjectInspector.groovy`,
-`Utils.groovy`) are forks of JLine sources, kept in-tree because the
-upstream artifact (`org.jline:jline-groovy`) depends on `org.apache.groovy:groovy`
-and would create a circular dependency. `GroovyPosixCommands.java` is
-similarly derived but diverged enough to be Apache-licensed.
-
-If our customisations are merged upstream, the goal is to delete the
-in-tree forks and depend on the upstream artifact instead. Until then,
-treat the forks as code we own — but check the upstream version when
-bumping JLine, in case there are fixes worth picking up.
-
-## Test layers
-
-Three layers of decreasing portability — prefer the lowest one that
-demonstrates the property under test:
-
-1. **Engine** — `GroovyEngine` directly; no terminal, no registry. See `GroovyEngineTest`.
-2. **Registry** — `GroovySystemRegistry` over a dumb terminal. See `GroovySystemRegistryTest`.
-3. **Command** — full `SystemTestSupport` stack. See `DelTest`, `ImportTest` for printer-based assertions; `HelpCommandTest` for the `terminalOutput()` capture pattern when a builtin writes through `terminal.writer()` instead of the printer.
+- [`subprojects/groovy-groovysh/ARCHITECTURE.md`](../../../subprojects/groovy-groovysh/ARCHITECTURE.md)
+  — the canonical conventions this skill cites (vendored forks,
+  test layers, gotchas, JLine bump procedure).
+- [`subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc`](../../../subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc)
+  — user-facing reference, source of truth for command
+  behaviour.
 
 ## Top failure modes
 
-1. **`TerminalBuilder.builder().build()` in a test.** Auto-detects the
-   JVM's TTY and may probe native bindings. Use
-   `TerminalBuilder.builder().dumb(true).streams(...).build()` instead;
-   `SystemTestSupport` already does this.
-2. **Asserting on full terminal output strings.** Prefer
-   `printer.output` — the `DummyPrinter` captures `object.toString()`,
-   bypassing ANSI rendering. For JLine builtins that write through
-   `terminal.writer()` instead (e.g. `/help`), use
-   `SystemTestSupport.terminalOutput()` and assert on stable
-   substrings, never on full-string compares. The dumb terminal still
-   emits capability-probe escapes (`\e[?2027$p\e[c`) at startup, and
-   JLine layout/spacing shifts between releases.
-3. **Treating the vendored forks as independent.** They are tightly
-   coupled to the `GroovyEngine` deep fork — the small files reference
-   `GroovyEngine.Format` etc. Don't delete one without re-deriving the
-   coupling.
-4. **Confusing "we changed it" vs "upstream changed it".** When
-   syncing forks, diff against the *fork-base* tag (the JLine version
-   we originally forked from), not just current upstream. Otherwise
-   our renames look like upstream additions.
-5. **Network/Maven tests without `-Djunit.network=true` gating.**
-   `/grab` and similar pull from the network; they must be opt-in.
-6. **Hard-coded or implicit terminal width.** The dumb terminal
-   reports columns/rows of 0. If a test cares, set
-   `terminal.size = new Size(120, 40)` explicitly.
-7. **Calling `getWidth()`/`getHeight()` after a JLine bump.**
-   Deprecated since JLine 4.x; use `getColumns()`/`getRows()`.
-8. **`/grep` and similar Posix commands emit ANSI match highlights
-   by default.** The colour decision is per-command, not per-terminal,
-   so a dumb terminal doesn't suppress it. When unit-testing, pass
-   `--color=never` (or strip ANSI from the captured output) so
-   substring assertions match contiguously.
-9. **Assuming `/save <file>` captures variable assignments.** It
-   serialises `engine.buffer`, which in default mode includes only
-   `IMPORT|TYPE|METHOD` snippets — bare variable assignments aren't
-   there. Variables enter the buffer only when interpreter mode is
-   enabled (`GROOVYSH_OPTIONS[INTERPRETER_MODE_PREFERENCE_KEY] = true`).
-   The no-arg `/save` form is a separate path that JSON-serialises
-   `engine.sharedData` and *does* include variables. Round-trip tests
-   for the file-form should exercise definitions, not bare variables.
-10. **`Less` and other highlight-aware JLine constructors silently
-    no-op highlighting if `ConfigurationPath` is omitted.** `Less` has
-    both 3-arg `(terminal, dir, opt)` and 4-arg
-    `(terminal, dir, opt, configPath)` constructors; the shorter form
-    compiles without warning but produces plain-text output. When
-    forking or wrapping these commands, plumb `configPath` through and
-    verify with a round-trip test (e.g. `GroovyPosixContextTest`). User-
-    visible symptom: plain text where coloured tokens are expected. We
-    hit this with `/less` after forking `PosixCommands`; `/nano` stayed
-    correct because it routes through `Commands.nano(...)`, which takes
-    `configPath` as a required argument.
+These are the recurring mistakes specific to AI tooling working
+in `groovy-groovysh`:
 
-(Locale/platform/format brittleness is covered by the project-wide
-[`groovy-tests`](../groovy-tests/SKILL.md) skill — it's not unique to
-groovysh, though terminal-aware tests are particularly exposed.)
+1. **Hallucinated JLine API names.** JLine has a large API
+   surface that evolves between releases. AI tooling reaches
+   for plausible-sounding method or class names. `git grep` the
+   identifier in the working tree or the upstream JLine source
+   before depending on it.
 
-## Procedure for a JLine version bump
+2. **Auto-detecting `Terminal` in tests.**
+   `TerminalBuilder.builder().build()` probes the JVM's TTY and
+   may invoke native bindings. Use
+   `dumb(true).streams(...)` instead — see
+   [Test infrastructure](../../../subprojects/groovy-groovysh/ARCHITECTURE.md#test-infrastructure).
 
-1. Bump `versions.properties:jline=...`.
-2. Run `:groovy-groovysh:test`.
-3. Compile-scan for new deprecation warnings; fix at the call site.
-4. Diff each vendored fork against the new upstream tag. Pick up
-   substantive upstream fixes; skip cosmetic noise.
-5. Update this skill if any finding above changed.
+3. **Full-string assertions on terminal output.** ANSI escapes,
+   capability probes, and JLine layout shifts make full-string
+   compares brittle. Prefer `printer.output` for printer-based
+   tests, `terminalOutput()` for terminal-side capture, and
+   substring assertions over equality. See
+   [Subproject-specific gotchas](../../../subprojects/groovy-groovysh/ARCHITECTURE.md#subproject-specific-gotchas).
+
+4. **Fabricating fork content when syncing.** AI tooling, when
+   asked to sync the vendored forks against upstream, may
+   "smooth over" diffs in ways that obscure our customisations.
+   Diff against the *fork-base* tag and preserve our changes
+   explicitly — see
+   [Vendored JLine files](../../../subprojects/groovy-groovysh/ARCHITECTURE.md#vendored-jline-files).
+
+5. **Treating vendored forks as independent files.** The five
+   small forks reference `GroovyEngine.Format` etc. Don't
+   delete or move one without re-deriving the coupling.
+
+6. **Reformatting JLine fork files outside the change.** The
+   forks are derived from upstream BSD-licensed sources; their
+   formatting often differs from project house style. Don't
+   reformat — it makes future upstream-sync diffs unreadable.
+   Same as the project-wide "what *not* to do" rule in
+   [`AGENTS.md`](../../../AGENTS.md).
+
+7. **Calling deprecated JLine APIs in new code.** `getWidth()`
+   / `getHeight()` are deprecated since JLine 4.x; new code
+   uses `getColumns()` / `getRows()`. AI tooling defaults to
+   the older names if it's seen them in adjacent code — see
+   [Subproject-specific gotchas](../../../subprojects/groovy-groovysh/ARCHITECTURE.md#subproject-specific-gotchas).
+
+## Hand-back to a human
+
+AI tooling working in `groovy-groovysh` produces drafts; humans
+review and land. Mirrors
+[`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md)'s
+hand-back contract: no autonomous PR, no JIRA comment, no merge,
+no `Assisted-by:` trailer on someone else's commit. For a JLine
+version bump or fork sync, the hand-back artefact includes the
+bump itself, the fork-sync diffs (with fork-base tag named), the
+`:groovy-groovysh:test` outcome, and any deprecation warnings
+surfaced.
 
 ## Validation checklist
 
 Before declaring a groovysh change ready:
 
-- [ ] Tests use `dumb(true).streams(...)` for any terminal they construct.
-- [ ] Output assertions use stable substrings, not full-string compares. Prefer `printer.output`; for terminal-side use `terminalOutput()`; for Posix commands use the context's `out` buffer with `--color=never` where applicable.
-- [ ] No locale-, platform-, or width-dependent assumptions.
+- [ ] Tests use `dumb(true).streams(...)` for any terminal they
+      construct — see
+      [Test infrastructure](../../../subprojects/groovy-groovysh/ARCHITECTURE.md#test-infrastructure).
+- [ ] Output assertions use stable substrings, not full-string
+      compares. Prefer `printer.output`; for terminal-side use
+      `terminalOutput()`; for Posix commands use the context's
+      `out` buffer with `--color=never` where applicable.
+- [ ] No locale-, platform-, or width-dependent assumptions —
+      see
+      [Test-writing pitfalls](../../../CONTRIBUTING.md#test-writing-pitfalls).
 - [ ] `@AfterEach` closes any terminal the test constructed.
-- [ ] Network/Maven tests are gated by `-Djunit.network=true` or skipped.
-- [ ] No new calls to deprecated JLine APIs (`getWidth`/`getHeight`).
-- [ ] If a fork file was synced, the diff against fork-base distinguishes our changes from upstream.
+- [ ] Network/Maven tests are gated by `-Djunit.network=true`.
+- [ ] No new calls to deprecated JLine APIs
+      (`getWidth`/`getHeight`).
+- [ ] If a fork file was synced, the diff against fork-base
+      distinguishes our changes from upstream — see
+      [Vendored JLine files](../../../subprojects/groovy-groovysh/ARCHITECTURE.md#vendored-jline-files).
+- [ ] Verified JLine API names exist (`git grep` or upstream
+      source) — no hallucinated identifiers.
+- [ ] No fork files reformatted outside the change.
+- [ ] Commit message references `GROOVY-NNNNN` where
+      applicable; AI provenance trailer per
+      [`AGENTS.md`](../../../AGENTS.md) if AI assisted.
 
 ## References
 
-- [`subprojects/groovy-groovysh/AGENTS.md`](../../../subprojects/groovy-groovysh/AGENTS.md) — subproject pointer file that loads this skill.
-- [`subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc`](../../../subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc) — user-facing reference.
-- [`subprojects/groovy-groovysh/LICENSE`](../../../subprojects/groovy-groovysh/LICENSE) — provenance for the BSD-licensed vendored files.
-- [`groovy-tests`](../groovy-tests/SKILL.md) — sister skill for test conventions; load alongside this one.
+- [`subprojects/groovy-groovysh/ARCHITECTURE.md`](../../../subprojects/groovy-groovysh/ARCHITECTURE.md)
+  — canonical subproject architecture and conventions.
+- [`subprojects/groovy-groovysh/AGENTS.md`](../../../subprojects/groovy-groovysh/AGENTS.md)
+  — subproject AI-tooling pointer file.
+- [`subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc`](../../../subprojects/groovy-groovysh/src/spec/doc/groovysh.adoc)
+  — user-facing reference.
+- [`subprojects/groovy-groovysh/LICENSE`](../../../subprojects/groovy-groovysh/LICENSE)
+  — provenance for the BSD-licensed vendored files.
+- `.agents/skills/groovy-tests/SKILL.md` — sister skill for
+  test conventions; load alongside.
+- `.agents/skills/groovy-fix-workflow/SKILL.md` — AI guardrails
+  for the surrounding fix workflow.
 - [`AGENTS.md`](../../../AGENTS.md) — root agent guide.

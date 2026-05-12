@@ -21,21 +21,22 @@
 
 Subproject-specific supplement to the [root `AGENTS.md`](../../AGENTS.md).
 
-## What's special about this subproject
+For substantive guidance on working in this subproject — the
+vendored JLine forks, test infrastructure, subproject-specific
+gotchas, and the JLine bump procedure — see
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-- groovysh is the interactive Groovy REPL, built on JLine 4.x.
-- It vendors a small set of files derived from JLine sources, plus a
-  deep fork of `GroovyEngine.java` that we maintain ourselves.
-- Tests touch a real JLine `Terminal`, which makes them more
-  platform-sensitive than the rest of the codebase.
-
-For substantive guidance — what to read first, the vendored fork
-inventory, test layers, top failure modes, the JLine bump procedure,
-and the platform-fragility checklist — load the
+For AI-tooling guardrails over the conventions in
+`ARCHITECTURE.md`, load the
 [`groovysh`](../../.agents/skills/groovysh/SKILL.md) skill.
 
 ## References
 
-- [Root `AGENTS.md`](../../AGENTS.md) — licensing, commit conventions, project-wide rules.
-- [`src/spec/doc/groovysh.adoc`](src/spec/doc/groovysh.adoc) — user-facing reference.
-- [`LICENSE`](LICENSE) — provenance for the BSD-licensed vendored files.
+- [Root `AGENTS.md`](../../AGENTS.md) — licensing, commit
+  conventions, project-wide rules.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — canonical contributor
+  map for this subproject.
+- [`src/spec/doc/groovysh.adoc`](src/spec/doc/groovysh.adoc) —
+  user-facing reference.
+- [`LICENSE`](LICENSE) — provenance for the BSD-licensed
+  vendored files.

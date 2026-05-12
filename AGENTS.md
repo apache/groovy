@@ -127,27 +127,27 @@ into the human-facing docs above.
 
 | Skill                                                                | Use for |
 |----------------------------------------------------------------------|---|
-| [`groovy-build`](.agents/skills/groovy-build/SKILL.md)               | Gradle build changes — convention plugins, build files, dependency verification, ASM/ANTLR repackaging, OSGi, release pipeline |
-| [`groovy-fix-workflow`](.agents/skills/groovy-fix-workflow/SKILL.md) | Implementing a JIRA-tracked fix after triage — failing-test-first ordering, scope discipline, hand-back to a committer (no autonomous PR / JIRA comment / merge) |
-| [`groovy-internals`](.agents/skills/groovy-internals/SKILL.md)       | Compiler and runtime work — parser, AST, type checker, transforms, class generation |
-| [`groovy-jira`](.agents/skills/groovy-jira/SKILL.md)                 | JIRA mechanics — JQL recipes, `Component/s` taxonomy, field ownership, and the "don't transition workflow states" rule for AI tooling |
+| [`groovy-build`](.agents/skills/groovy-build/SKILL.md)               | AI-tooling guardrails over the Gradle build conventions in `ARCHITECTURE.md` — no fabricated DSL, no hard-coded versions, regenerate `verification-metadata.xml` after dependency changes, exercise installed builds after repackaging changes |
+| [`groovy-fix-workflow`](.agents/skills/groovy-fix-workflow/SKILL.md) | AI-tooling guardrails over the fix workflow in `CONTRIBUTING.md` — no autonomous PR opening or JIRA comments, no merges, no sibling-repo edits without committer flag, hand-back to a human |
+| [`groovy-internals`](.agents/skills/groovy-internals/SKILL.md)       | AI-tooling guardrails over the compiler/runtime architecture in `ARCHITECTURE.md` — no hallucinated AST shapes, verified identifiers, `ClassHelper` / `GeneralUtils` preferred, default-public-visibility trap, regression test before the fix |
+| [`groovy-jira`](.agents/skills/groovy-jira/SKILL.md)                 | AI-tooling guardrails over the JIRA conventions in `CONTRIBUTING.md` — no autonomous comments or workflow transitions, no fabricated field values, drafts go back to a human for review |
 | [`groovy-reassess`](.agents/skills/groovy-reassess/SKILL.md)         | Bulk reassessment of old JIRA issues — selection, per-issue reproduction, classification (`fixed-on-master` / `still-fails-*` / `cannot-run-*` / …), report and evidence-package hand-back; read-only against JIRA |
 | [`groovy-reproducer`](.agents/skills/groovy-reproducer/SKILL.md)     | Extracting and running a JIRA-reported reproducer — shape classification, adaptation without fabrication, bounded run, deterministic evidence (rev/JDK/command/output) and an outcome classification |
 | [`groovy-skills`](.agents/skills/groovy-skills/SKILL.md)             | Meta-skill — conventions for authoring or refactoring a `SKILL.md` (layout, frontmatter, section order, failure-mode framing, granularity heuristics, cross-linking, `AGENTS.md` table maintenance) |
-| [`groovy-tests`](.agents/skills/groovy-tests/SKILL.md)               | Adding or modifying tests, including JIRA regression tests and executable AsciiDoc examples |
-| [`groovy-triage`](.agents/skills/groovy-triage/SKILL.md)             | First-pass triage of JIRA issues and GitHub PRs — reproducing reports against `master`, finding duplicates, surfacing PR-readiness signals; advisory only, no committer actions |
-| [`groovysh`](.agents/skills/groovysh/SKILL.md)                       | Work in `subprojects/groovy-groovysh/` — REPL commands, JLine integration, vendored forks, terminal-aware test stack |
+| [`groovy-tests`](.agents/skills/groovy-tests/SKILL.md)               | AI-tooling guardrails over the test conventions in `CONTRIBUTING.md` — no fabricated assertions, regression tests that actually fail on master before the fix, no scratch files left behind, hand-back for review |
+| [`groovy-triage`](.agents/skills/groovy-triage/SKILL.md)             | AI-tooling guardrails over the triage methodology in `CONTRIBUTING.md` — output is always advisory and never posts to JIRA or PR autonomously; no transitions, closures, or merges |
+| [`groovysh`](.agents/skills/groovysh/SKILL.md)                       | AI-tooling guardrails over the `groovy-groovysh` subproject architecture in `subprojects/groovy-groovysh/ARCHITECTURE.md` — no fabricated JLine APIs, terminal tests use `dumb(true).streams(...)`, no full-string ANSI assertions, fork-sync diffs against fork-base |
 
 ## Subproject guides
 
-Some subprojects have their own `AGENTS.md` with content specific to
-that module — additional architecture, test infrastructure, or
-conventions that don't apply elsewhere. Load the relevant subproject's
+Some subprojects have their own architecture and conventions
+captured in a subproject-local `ARCHITECTURE.md` (with a thin
+`AGENTS.md` pointer alongside). Load the relevant subproject's
 guide when working in its directory tree.
 
 | Subproject | Scope |
 |---|---|
-| [`groovy-groovysh`](subprojects/groovy-groovysh/AGENTS.md) | Interactive REPL, JLine integration, vendored forks, terminal-aware test stack |
+| [`groovy-groovysh`](subprojects/groovy-groovysh/AGENTS.md) | Interactive REPL — vendored JLine forks, terminal-aware test infrastructure, JLine bump procedure (subproject `ARCHITECTURE.md` is the canonical contributor map) |
 
 ## Where to ask
 

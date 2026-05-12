@@ -53,6 +53,11 @@ When in doubt, prefer adding new code under `org.apache.groovy.*`; the
 older `org.codehaus.groovy.*` packages remain for legacy reasons but
 are kept stable for compatibility.
 
+Some subprojects with significant local complexity carry their own
+`ARCHITECTURE.md` alongside the source — see
+[`subprojects/groovy-groovysh/ARCHITECTURE.md`](subprojects/groovy-groovysh/ARCHITECTURE.md)
+for the worked example.
+
 ## Compilation pipeline
 
 The driver is `org.codehaus.groovy.control.CompilationUnit`. A
@@ -182,6 +187,47 @@ belongs:
   selects the parser. The ANTLR4 implementation is the only supported
   one; the older Antlr2-based parser has been removed.
 
+## Compiler and runtime conventions
+
+A few project-specific conventions on top of the architecture
+above. Each bites contributors quickly if missed:
+
+- **Default visibility in Groovy sources is `public`, not
+  package-private.** A `static foo()` method in a `.groovy` file
+  is `public static foo()`. For "visible for testing" helpers in
+  `.groovy` files, use `@groovy.transform.PackageScope` so
+  same-package tests see the method while external callers
+  don't. Some existing helpers in the tree (e.g. in
+  `groovy.grape.ivy.*`) omit the modifier and are technically
+  public; match that pattern only when you intend public
+  exposure.
+- **Explicit imports, not wildcards.** The codebase uses explicit
+  per-class imports; new code should match. IDE-default wildcard
+  imports get flagged in review.
+- **New code prefers `org.apache.groovy.*`.** Legacy code under
+  `org.codehaus.groovy.*` stays where it is for compatibility,
+  but new packages should follow the `org.apache.groovy.*`
+  convention.
+- **Mark non-public surface explicitly.** Use
+  `@groovy.transform.Internal` or place the code in a package
+  named `internal` to signal "no stability guarantee" — see the
+  Public API boundaries table below.
+- **Use `ClassHelper` for known `ClassNode` instances.** Fresh
+  `ClassNode` instances for primitives (`int`, `boolean`) or
+  common reference types (`String`, `Object`) break equality and
+  resolution. Prefer `ClassHelper.int_TYPE`,
+  `ClassHelper.STRING_TYPE`, `ClassHelper.make(SomeType.class)`,
+  etc.
+- **Use `GeneralUtils` factories over hand-built AST nodes.** The
+  helpers under `org.codehaus.groovy.ast.tools.GeneralUtils`
+  cover the common construction patterns and avoid the
+  shape-mismatch traps that hand-building tends to produce.
+- **Pick the earliest compile phase that works for an AST
+  transform.** Local transforms default to `CANONICALIZATION`;
+  transforms that need resolved types belong in
+  `INSTRUCTION_SELECTION` or later. See the
+  [Compilation pipeline](#compilation-pipeline) phase table.
+
 ## Generated code
 
 The following are produced by the build and regenerated on every
@@ -198,53 +244,108 @@ If a `.java` file under `build/generated/...` looks like the right
 thing to change, you are looking at the wrong file. The grammar fix
 goes in `src/antlr/`.
 
+## Build infrastructure
+
+The Gradle build is driven by:
+
+- **Convention plugins** under
+  `build-logic/src/main/groovy/org.apache.groovy-*.gradle`.
+  These describe the shape every subproject takes: `-base`,
+  `-common`, `-core`, `-library`, `-published-library`,
+  `-aggregating-project`, `-tested`, and so on. A subproject
+  applies the appropriate conventions and overrides only what's
+  specific to it.
+- **Shared types** under
+  `build-logic/src/main/groovy/org/apache/groovy/`. `Versions`,
+  `SharedConfiguration`, and `Services` hold the canonical
+  pinned versions and configuration the convention plugins read
+  from.
+- **Root** `build.gradle`, `settings.gradle`, and
+  `gradle.properties` for project-wide settings, version pins,
+  target bytecode, and build flags.
+
+A few build-side conventions:
+
+- **Cross-cutting build behaviour belongs in a convention
+  plugin**, not duplicated across subproject `build.gradle`
+  files. If two or more subprojects need the same configuration,
+  add it to the right `org.apache.groovy-*.gradle`; conversely,
+  don't push a one-off into a shared convention plugin.
+- **Versions flow through `gradle.properties` and the shared
+  `Versions` type**, not as `'group:artifact:1.2.3'` literals in
+  subproject builds. Ad-hoc version pins drift.
+- **Dependency changes require regenerating
+  `gradle/verification-metadata.xml`.** The build runs Gradle
+  dependency verification; an unverified artifact fails the
+  build. Regenerate with
+  `./gradlew --write-verification-metadata sha256,pgp help` and
+  inspect the diff before committing.
+- **ASM, ANTLR runtime, and picocli are jarjar-relocated** into
+  `groovyjarjar*` packages, configured via
+  `groovyLibrary { repackagedDependencies = ... }`. A wrong
+  repackaging rule produces a jar that compiles fine but fails
+  at runtime — run `./gradlew :groovy-binary:installGroovy` and
+  exercise `groovy` / `groovyc` against a non-trivial script
+  whenever a repackaging change lands.
+- **The configuration cache constrains build logic.** Custom
+  code must not access mutable `Project` state at execution
+  time. Prefer providers (`providers.gradleProperty`,
+  `providers.environmentVariable`, `Provider` chains) and
+  `tasks.register` / `configureEach` over eager realisation.
+- **Wrapper bumps need a Develocity compatibility check.** A
+  Gradle wrapper version bump can disable build scans or break a
+  plugin pinned in the root `plugins {}` block; check the
+  Develocity compatibility matrix linked in `build.gradle`
+  before bumping.
+- **Binary compatibility is enforced.**
+  `subprojects/binary-compatibility/` runs `japicmp` against a
+  baseline release. Don't suppress it for green CI — either
+  justify the change in the accepted-changes file or revert the
+  API breakage. See [`COMPATIBILITY.md`](COMPATIBILITY.md).
+
+For the canonical command sequence (targeted → subproject → full
+build, with the dependency-verification regeneration and
+installed-build smoke test), see
+[`CONTRIBUTING.md`](CONTRIBUTING.md). For the public API
+contract that the binary-compatibility check defends, see
+[`COMPATIBILITY.md`](COMPATIBILITY.md).
+
 ## Public API boundaries
 
 Groovy has a covenanted public API. The shape of a change determines
 which review path applies — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-| Package convention | Audience | Stability |
-|---|---|---|
-| `groovy.*` | End users (the public API surface) | Strongly stable; breaking changes need a major version |
-| `org.apache.groovy.*` | Mixed; preferred location for new code | Stable unless explicitly marked otherwise |
-| `org.codehaus.groovy.*` | Historical core; some user-visible, much internal | Stable in practice for things users have come to rely on; treat as public unless marked `@Internal` |
-| Anything annotated [`@groovy.transform.Internal`](src/main/java/groovy/transform/Internal.java) or in a package named `internal` | Implementation detail | No stability guarantee |
+| Package convention | Audience |
+|---|---|
+| `groovy.*` | End users — the public API surface |
+| `org.apache.groovy.*` | Mixed; preferred location for new code |
+| `org.codehaus.groovy.*` | Historical core — some user-visible, much internal |
+| Anything annotated [`@groovy.transform.Internal`](src/main/java/groovy/transform/Internal.java) or in a package named `internal` | Implementation detail |
 
-Binary compatibility against a baseline release is checked by the
-`subprojects/binary-compatibility/` module as part of the build. See
-[`COMPATIBILITY.md`](COMPATIBILITY.md) for the full stability story:
-what counts as breaking, the deprecation policy, and how the
-`japicmp`-based check is wired up.
+For the stability commitment each tier carries — what counts as
+breaking, the deprecation policy, the four-tier stability model
+(Public / Incubating / Internal / Generated), and how the
+`japicmp`-based binary-compatibility check is wired up — see
+[`COMPATIBILITY.md`](COMPATIBILITY.md). Binary compatibility against
+a baseline release is enforced by the
+`subprojects/binary-compatibility/` module as part of the build.
 
 ## Tests
 
-- Core: `src/test/`. New tests use JUnit 5
-  (`org.junit.jupiter.api.Test`); older tests are a mix of JUnit 3
-  (`extends GroovyTestCase`) and JUnit 4. Spock is bundled and
-  available, but the core repo's own tests are predominantly JUnit.
-- Module-specific: `subprojects/<module>/src/test/`. Same conventions
-  apply unless the module documents otherwise.
-- Documentation examples: `src/spec/test/` and
-  `subprojects/<module>/src/spec/test/`. These are real Groovy files
-  that the AsciiDoc sources `include::` to keep examples executable.
-  A change to a documented example normally touches both files
-  together.
-- Preview-feature tests:
-  `subprojects/tests-preview/src/test/` — use this when a test
-  depends on a JDK preview feature.
-- Regression tests for a fixed JIRA: standalone test classes follow
-  the `Groovy<NNNN>` naming (e.g. `Groovy11955.groovy`); a regression
-  added to an existing class gets a `// GROOVY-<NNNN>` comment
-  immediately above the new method. Either shape leaves the JIRA ID
-  searchable. See the "Tests" section in
-  [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full convention.
+Test code is laid out in parallel with source code:
 
-Run a single test with:
+| Directory | Purpose |
+|---|---|
+| `src/test/` | Core tests for the core jar |
+| `subprojects/<module>/src/test/` | Module-specific tests |
+| `src/spec/test/` and `subprojects/<module>/src/spec/test/` | Executable Groovy snippets that AsciiDoc sources `include::` to keep documentation examples runnable |
+| `subprojects/tests-preview/src/test/` | Tests that depend on JDK preview features |
 
-```
-./gradlew :test --tests <FullyQualifiedClassName>
-./gradlew :<subproject>:test --tests <FullyQualifiedClassName>
-```
+For test framework conventions (JUnit 5, regression-test naming, the
+fix-workflow ordering, the executable-AsciiDoc pattern, and
+test-writing pitfalls) and the targeted-run command sequence, see
+the "Tests" section in
+[`CONTRIBUTING.md`](CONTRIBUTING.md#tests).
 
 ## Where to read next
 

@@ -39,6 +39,13 @@ canonical source — if anything in this skill conflicts with the
 practice visible across the existing skills, the corpus wins and this
 skill is out of date.
 
+Worked examples in the corpus, when authoring a new skill:
+
+- [`groovy-tests`](../groovy-tests/SKILL.md) — exemplar for the multiple-procedures shape (`## Procedure for X` / `## Procedure for Y`).
+- [`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md) — exemplar for the single-procedure shape (plain `## Procedure`).
+- [`groovy-triage`](../groovy-triage/SKILL.md) and [`groovy-jira`](../groovy-jira/SKILL.md) — exemplar for the deferral split (workflow skill that defers mechanics to a sister skill).
+- [`groovy-reproducer`](../groovy-reproducer/SKILL.md) and [`groovy-reassess`](../groovy-reassess/SKILL.md) — exemplar for a load-bearing piece plus the campaign skill that loops over it.
+
 ## When to use this skill
 
 **Use it for:**
@@ -83,6 +90,92 @@ Recurring mistakes when authoring or reviewing skills:
 12. **Skills that aren't an example of themselves.** Especially this one: if a meta-skill can't be read as an example of the conventions it claims, the conventions are weaker than it says. Same trap for any procedural skill — a `groovy-tests` that doesn't itself follow the test conventions it teaches is a tell.
 13. **Marketing tone, emojis, hype.** None of the existing skills use them. The voice is terse, opinionated, cites paths and commands. "🎉 Welcome to the X skill!" is a tell the convention has been broken.
 14. **Verbose introductions.** Existing skills open with one short paragraph that *positions the skill against its neighbours* — what it is, what to pair with, what to hand off to. Anything longer than ~5 lines before `## When to use this skill` is over-introduced.
+15. **Putting universal contributor content in a skill instead of a human-facing doc.** If a rule applies equally to a human contributor making the same change — TDD ordering, scope discipline, JIRA conventions, codebase-specific gotchas, build mechanics — its canonical home is `CONTRIBUTING.md`, `ARCHITECTURE.md`, or another human-facing doc (or a subproject-local `ARCHITECTURE.md` for subproject-specific complexity). The skill cites the convention and adds the AI-specific guardrails on top. Trapping universal content in skill-only form makes the project's conventions invisible to humans browsing the repo and creates an AI-mediated literacy requirement for contributing — see *Skills are the AI layer over canonical docs* below.
+
+## Skills are the AI layer over canonical docs
+
+**Conventions are written for humans. Skills operationalise them
+for AI.**
+
+A convention's canonical home is a human-facing document at the
+repository root or — for subproject-local complexity — alongside
+the subproject's source. Skills cite the convention, sequence it
+into AI-suitable procedures, and add the AI-specific guardrails
+(hand-back contracts, autonomy limits, no-fabrication rules). If
+a rule could equally apply to a human contributor making the
+same change, the rule belongs in a human doc — the skill is its
+operational shadow, not its origin.
+
+Human-facing canonical docs in this project:
+
+- [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) — workflow,
+  tests, JIRA conventions, triage methodology, fix workflow,
+  test-writing pitfalls.
+- [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) — compilation
+  pipeline, compiler/runtime conventions, build infrastructure,
+  public API boundaries.
+- [`COMPATIBILITY.md`](../../../COMPATIBILITY.md) — stability
+  tiers, deprecation policy, binary-compatibility check.
+- [`GOVERNANCE.md`](../../../GOVERNANCE.md) — project
+  governance, mailing lists, JIRA's role.
+- [`AGENTS.md`](../../../AGENTS.md) — AI-contributor policy,
+  `Assisted-by:` convention, the "what *not* to do" list.
+- Subproject-local `ARCHITECTURE.md` when a subproject has
+  significant local complexity — e.g.
+  [`subprojects/groovy-groovysh/ARCHITECTURE.md`](../../../subprojects/groovy-groovysh/ARCHITECTURE.md)
+  for the vendored JLine forks and terminal-aware tests.
+
+**The test for any rule you're considering writing into a
+skill:** would a human contributor making the same change
+benefit from this rule? If yes, find or create its canonical
+home in a human doc; the skill should cite the rule, not
+restate it. AI-specific constraints (autonomy limits, hand-back
+contracts, no autonomous JIRA comments, no autonomous PRs) are
+different — they belong in skills because they don't apply to
+humans, who can't take those actions on autopilot anyway.
+
+This split keeps conventions discoverable to humans (no
+AI-mediated literacy requirement), keeps skills focused on
+AI-specific concerns, and means the project's docs remain
+authoritative if the AI tooling ecosystem changes.
+
+Worked examples in the corpus, each demonstrating the pattern:
+
+- **JIRA mechanics:** canonical in
+  [`CONTRIBUTING.md`'s "Working with JIRA" section](../../../CONTRIBUTING.md#working-with-jira);
+  AI guardrails in [`groovy-jira`](../groovy-jira/SKILL.md).
+- **Triage methodology:** canonical in
+  [`CONTRIBUTING.md`'s "Triaging" section](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests);
+  AI guardrails in [`groovy-triage`](../groovy-triage/SKILL.md).
+- **Fix workflow:** canonical in
+  [`CONTRIBUTING.md`'s "Fix workflow" section](../../../CONTRIBUTING.md#fix-workflow);
+  AI guardrails in
+  [`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md).
+- **Test conventions and pitfalls:** canonical in
+  [`CONTRIBUTING.md`'s "Tests" section](../../../CONTRIBUTING.md#tests);
+  AI guardrails in [`groovy-tests`](../groovy-tests/SKILL.md).
+- **Build infrastructure:** canonical in
+  [`ARCHITECTURE.md`'s "Build infrastructure" section](../../../ARCHITECTURE.md#build-infrastructure);
+  AI guardrails in [`groovy-build`](../groovy-build/SKILL.md).
+- **Compiler/runtime conventions:** canonical in
+  [`ARCHITECTURE.md`'s "Compiler and runtime conventions" section](../../../ARCHITECTURE.md#compiler-and-runtime-conventions);
+  AI guardrails in
+  [`groovy-internals`](../groovy-internals/SKILL.md).
+- **Subproject-local (groovysh):** canonical in
+  [`subprojects/groovy-groovysh/ARCHITECTURE.md`](../../../subprojects/groovy-groovysh/ARCHITECTURE.md);
+  AI guardrails in [`groovysh`](../groovysh/SKILL.md).
+
+Two skills in the corpus have no canonical-doc analog because
+they're AI-procedural-only:
+[`groovy-reproducer`](../groovy-reproducer/SKILL.md) (reproducer
+extraction shape taxonomy, evidence packages, batch state
+cleanup) and [`groovy-reassess`](../groovy-reassess/SKILL.md)
+(bulk-reassessment campaign mechanics, classification taxonomy,
+resumable session state). Humans don't formalise these as
+discrete activities; the skills exist because AI makes them
+tractable at scale. That's the legitimate "skill is the home"
+case — when the activity itself has no human-side analog, not
+when the convention does but you skipped promoting it.
 
 ## Conventions
 
@@ -122,13 +215,14 @@ The canonical order is:
 
 1. `# <Title>` — the skill name rendered as words (e.g. `Groovy tests`, not `groovy-tests`).
 2. **Opening paragraph (≤5 lines).** What this skill is, what to pair with, what to hand off to. Not a marketing intro — a positional one.
-3. `## When to use this skill` with **Use it for:** and **Don't use it for:** bullet lists.
-4. `## Read first` — pointers to authoritative docs (root or subproject `AGENTS.md`, `CONTRIBUTING.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `COMPATIBILITY.md`, external specs). Frames the skill as the working surface and those documents as the map.
-5. `## Top failure modes` — numbered, each with a **bold one-line name** followed by an explanation.
-6. *Optional* **reference sections** — zero or more named sections (e.g. `## Conventions`, `## Granularity heuristics`, a field-ownership table) that define the rules the procedures will defer to. Use when the rules don't fit inline in the procedure steps without bloating them. Skip if the procedures can carry the rules directly.
-7. One or more `## Procedure for …` sections — step-by-step, with commands and file references.
-8. `## Validation checklist` — literal `- [ ]` checkboxes; outcomes phrased as yes/no.
-9. `## References` — cross-links to other skills (with relationship described: "sister skill," "pair with," "hand off to," "defers to this skill for X") and external docs.
+3. *Optional but encouraged for workflow / mechanics skills:* **a short bullet list of related-skill pointers**, each naming the relationship (*pair with* / *defers to … for mechanics* / *hand off to* / *sister skill* / *exemplar for*). The newer corpus members (`groovy-triage`, `groovy-jira`, `groovy-fix-workflow`, `groovy-reproducer`, `groovy-reassess`, and this skill) open this way; older skills predate the pattern and would benefit from being retrofitted. Skip the list if the skill is fully self-contained and has no meaningful relationships to surface.
+4. `## When to use this skill` with **Use it for:** and **Don't use it for:** bullet lists.
+5. `## Read first` — pointers to authoritative docs (root or subproject `AGENTS.md`, `CONTRIBUTING.md`, `GOVERNANCE.md`, `ARCHITECTURE.md`, `COMPATIBILITY.md`, external specs). Frames the skill as the working surface and those documents as the map.
+6. `## Top failure modes` — numbered, each with a **bold one-line name** followed by an explanation.
+7. *Optional* **reference sections** — zero or more named sections (e.g. `## Conventions`, `## Granularity heuristics`, a field-ownership table) that define the rules the procedures will defer to. Use when the rules don't fit inline in the procedure steps without bloating them. Skip if the procedures can carry the rules directly.
+8. `## Procedure` (single flow) or one or more `## Procedure for …` sections (when the skill has more than one distinct flow) — step-by-step, with commands and file references. Use the `for …` suffix only when disambiguation between flows matters.
+9. `## Validation checklist` — literal `- [ ]` checkboxes; outcomes phrased as yes/no.
+10. `## References` — cross-links to other skills (with relationship described: "sister skill," "pair with," "hand off to," "defers to this skill for X") and external docs.
 
 A section may be omitted only when it would be empty after honest filling — e.g. a deeply niche skill might have no separate `Procedure` section because the entire skill is failure-modes-and-checklist. Don't pad sections to keep the order, and don't insert reference sections that just restate the procedure.
 
@@ -142,6 +236,8 @@ Every cross-skill reference names the relationship. Patterns the corpus uses:
 - "**defers to … for mechanics**" — this skill's procedure uses the other's vocabulary.
 
 A bare hyperlink with no relationship hint is a smell.
+
+Failure-mode references — within a skill or across skills — cite the failure mode's **italicised bold lead-in name**, never the position number. The number is unstable: renumbering a skill's failure-mode list silently breaks every numeric citation, here and elsewhere in the corpus. The name is the failure mode's identity, survives reordering, and lets a reader `Ctrl-F` to the entry. Example: "See *Inventing `Fix Version/s`* in [`groovy-jira`](../groovy-jira/SKILL.md)" — not "see failure mode 2 in groovy-jira".
 
 ## Granularity heuristics
 
@@ -163,14 +259,14 @@ When deciding whether a topic is its own skill or a section of an existing one:
 
 **Don't make it a skill if:**
 
-- The convention it describes doesn't yet exist in project practice (see failure mode 9).
+- The convention it describes doesn't yet exist in project practice (see *Drafting a skill before the convention exists in the codebase* above).
 - It's project-wide policy ([`AGENTS.md`](../../../AGENTS.md) territory) rather than area-specific procedure.
 
 ## Procedure for adding a new skill
 
 1. **Read the corpus.** Open every existing skill's frontmatter and `When to use this skill` block. Confirm your scope doesn't already belong to one of them.
 2. **Apply the granularity heuristics.** Decide skill vs. section. If section: stop here and edit the parent skill instead.
-3. **Identify anchor docs.** What in `CONTRIBUTING.md`, `GOVERNANCE.md`, `AGENTS.md`, `ARCHITECTURE.md`, `COMPATIBILITY.md`, or external specs grounds the rules this skill will encode? If there is no anchor for a rule, either find one or drop the rule.
+3. **Identify anchor docs.** Apply the *Skills are the AI layer over canonical docs* principle above: for each rule you'd put in the skill, decide whether its canonical home is `CONTRIBUTING.md`, `GOVERNANCE.md`, `AGENTS.md`, `ARCHITECTURE.md`, `COMPATIBILITY.md`, a subproject-local `ARCHITECTURE.md`, or an external spec. If a rule applies to a human contributor equally, its canonical home is a human-facing doc — promote it there first, and have the skill cite it. If a rule is genuinely AI-specific (autonomy limits, hand-back contracts, no-fabrication rules), it lives in the skill. If there's no anchor for a universal rule and no obvious place to put one, surface the gap (see *Drafting a skill before the convention exists in the codebase*) rather than fabricating one in the skill.
 4. **Draft the frontmatter.** Include the natural-language trigger phrases in `description:`; match the existing `compatibility` and `metadata` shape.
 5. **Draft the failure-mode list.** Aim for 5+ concrete entries. If you can't reach 5 genuine ones, the skill is probably too narrow.
 6. **Draft the procedure(s).** Step-by-step with commands and file references. Match the surrounding skills' density — terse and opinionated.
@@ -178,7 +274,7 @@ When deciding whether a topic is its own skill or a section of an existing one:
 8. **Cross-link.**
    - Outbound: name the relationship at every link.
    - Inbound: update the neighbouring skills that should mention this one in their `Don't use it for`, `References`, or failure-mode list. A new skill nobody points at is invisible.
-9. **Update [`AGENTS.md`](../../../AGENTS.md).** Add a row to the `## Skills` table, alphabetically.
+9. **Update [`AGENTS.md`](../../../AGENTS.md).** Add a row to the `## Skills` table, alphabetically. The table is whitespace-aligned for monospace readability; preserve the column padding when inserting the new row.
 10. **Self-consistency pass.** Read your skill as if you'd never seen it. Does it explain when to load it, what it's *not* for, and what to do? Does the validation checklist actually test the output, or just recap the steps?
 
 ## Procedure for splitting an existing skill
@@ -201,14 +297,17 @@ The [`groovy-triage`](../groovy-triage/SKILL.md) → [`groovy-jira`](../groovy-j
 Before declaring a new or refactored skill ready:
 
 - [ ] ASF license header is present, copied (not paraphrased) from an existing skill.
+- [ ] License header closes with `-->` immediately before the `---` frontmatter delimiter (the common transcription typo is closing it with `---`).
 - [ ] Frontmatter has `name`, `description`, `license`, `compatibility`, `metadata.audience`, `metadata.scope`.
 - [ ] `name` matches the directory name.
 - [ ] `description` contains the natural-language trigger phrases an agent or loader would match against.
-- [ ] Standard section order: opening paragraph, `When to use`, `Read first`, `Top failure modes`, *(optional reference sections)*, `Procedure(s)`, `Validation checklist`, `References`.
+- [ ] Standard section order: opening paragraph, *(optional related-skill bullet list)*, `When to use`, `Read first`, `Top failure modes`, *(optional reference sections)*, `Procedure(s)`, `Validation checklist`, `References`.
 - [ ] Both **Use it for** and **Don't use it for** lists are populated, with at least one entry each.
 - [ ] Every failure mode names a specific observed or plausible mistake (not an aphorism).
 - [ ] Every internal `[label](../<name>/SKILL.md)` link resolves to an actual file.
+- [ ] Failure-mode cross-references (within or across skills) cite the italicised lead-in name, not a position number.
 - [ ] Every mandate cites or links the authoritative source.
+- [ ] For each rule in the skill: would a human contributor making the same change benefit from it? If yes, the rule's canonical home is a human-facing doc (`CONTRIBUTING.md`, `ARCHITECTURE.md`, a subproject-local `ARCHITECTURE.md`, etc.); the skill cites it rather than restating it. AI-specific constraints (autonomy limits, hand-back contracts) stay in the skill.
 - [ ] Validation checklist tests outcomes, not steps.
 - [ ] Neighbouring skills that should reference this one have been updated (failure modes / `Don't use it for` / `References`).
 - [ ] Row added to (or removed from) the `## Skills` table in [`AGENTS.md`](../../../AGENTS.md), alphabetically.
@@ -218,5 +317,5 @@ Before declaring a new or refactored skill ready:
 ## References
 
 - [`AGENTS.md`](../../../AGENTS.md) — project-wide AI-contributor policy and the `## Skills` table this skill mutates.
-- [`groovy-build`](../groovy-build/SKILL.md), [`groovy-internals`](../groovy-internals/SKILL.md), [`groovy-tests`](../groovy-tests/SKILL.md), [`groovysh`](../groovysh/SKILL.md), [`groovy-triage`](../groovy-triage/SKILL.md), [`groovy-jira`](../groovy-jira/SKILL.md), [`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md) — the corpus this skill describes and the canonical source for any convention it leaves under-specified.
+- [`groovy-build`](../groovy-build/SKILL.md), [`groovy-fix-workflow`](../groovy-fix-workflow/SKILL.md), [`groovy-internals`](../groovy-internals/SKILL.md), [`groovy-jira`](../groovy-jira/SKILL.md), [`groovy-reassess`](../groovy-reassess/SKILL.md), [`groovy-reproducer`](../groovy-reproducer/SKILL.md), [`groovy-tests`](../groovy-tests/SKILL.md), [`groovy-triage`](../groovy-triage/SKILL.md), [`groovysh`](../groovysh/SKILL.md) — the corpus this skill describes and the canonical source for any convention it leaves under-specified.
 - The `groovy-triage` ↔ `groovy-jira` split — worked example of the "Procedure for splitting an existing skill" above.
