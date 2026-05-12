@@ -318,6 +318,18 @@ platform issues but are actually project-specific:
   Without forwarding, the gated test always skips even with
   `-Djunit.network=true` on the Gradle CLI.
 
+- **Treacherous substring matching in verification logic.** When
+  scripting verification (e.g. checking whether some token
+  survived a transformation), plain `.contains()` can silently
+  produce false positives near common prefixes —
+  `output.contains('xmlns:xs')` matches `xmlns:xsi` as a prefix.
+  Prefer anchored regex (`output =~ /xmlns:xs="/`) or parsed-tree
+  inspection (`new XmlSlurper().parseText(output)`) over substring
+  matching. The trap also bites verification logic written for
+  reassessments and triage probes, not just tests; the principle
+  applies anywhere you're matching tokens with shared prefixes
+  (`xs` / `xsi`, `groovy` / `groovy-`).
+
 ### For agents working on tests
 
 The [`.agents/skills/groovy-tests/SKILL.md`](.agents/skills/groovy-tests/SKILL.md)
@@ -506,6 +518,28 @@ project = GROOVY AND statusCategory = Done AND resolution is EMPTY
 project = GROOVY AND parent = GROOVY-<NNNN>
 ```
 
+#### Pool-selection heuristics for re-triage sweeps
+
+When picking a pool of issues to work through (whether by hand or
+in a tool-assisted sweep), the pool's *status mix* shapes what
+you'll find:
+
+- **`status = Reopened`** — small pool, over-represents
+  *feature-requests-disguised-as-bugs*: issues someone re-examined
+  and left open while pondering a spec change. Useful when the
+  goal is *"what spec debates is the project sitting on?"*.
+- **`status = Open AND affectedVersion in ("<EOL-versions>")`** —
+  larger pool, over-represents *silent fixes*, *real open bugs*,
+  and *partial fixes*. Useful when the goal is *"find what's been
+  silently resolved by later refactoring."* Target affected
+  versions that pre-date a known major refactor of the relevant
+  subsystem.
+
+The two pools answer different questions; choose deliberately
+rather than by default-sort. See *Nature analysis* under
+[Triaging issues and pull requests](#triaging-issues-and-pull-requests)
+for what the populations look like in practice.
+
 ### Linking JIRA to commits and pull requests
 
 Every commit or pull request that fixes a JIRA-tracked issue
@@ -559,9 +593,17 @@ For each issue:
    reporter included a stack trace, the top non-JDK frame usually
    points at the area of the code involved.
 
-2. **Search for duplicates and related work** before writing a long
-   analysis. A one-line "duplicate of GROOVY-XXXX, fixed in 4.0.Y"
-   beats a 500-word root-cause summary of a known bug.
+   Also scan for **historical baselines**: prior committer comments
+   that say "I just ran this on version X, here's what I got." These
+   are checkpoints the current triage can compare against — the
+   headline finding for an old issue may be "state unchanged since
+   the 2013 committer baseline" rather than the current state alone.
+
+2. **Search for duplicates and same-family related work** before
+   writing a long analysis. A one-line "duplicate of GROOVY-XXXX,
+   fixed in 4.0.Y" beats a 500-word root-cause summary of a known
+   bug. A "GROOVY-YYYY is in the same neighbourhood" pointer helps
+   the committer decide on batch-or-sequential treatment.
 
    ```
    git log --grep='GROOVY-<NNNN>'                # commits referencing the JIRA
@@ -570,7 +612,8 @@ For each issue:
 
    Plus a JQL text search — see the
    [Duplicate hunting by error string](#searching-with-jql) recipe
-   above.
+   above. The same JQL with a topic-keyword surfaces same-family
+   open issues: `project = GROOVY AND text ~ "<topic>"`.
 
 3. **Attempt reproduction on `master`.** Drop the reporter's script
    into a temp file and run it against a local build, or paste their
@@ -580,6 +623,21 @@ For each issue:
    (`java -version`), the command, and the outcome. A reproducer
    that's now passing on `master` is meaningful information; a
    missing reproduction is speculation.
+
+   When the issue thread contains **multiple distinct reproducers**
+   (the description plus a follow-up comment that demonstrates a
+   different symptom of the same root cause), run each. They may
+   have different fates: one silently fixed, another still broken
+   — that's a *split-candidate* signal (see step 7 below).
+
+   When the operator or expression under test spans **multiple
+   backing types** (range/index on `List` / `Object[]` / `int[]` /
+   `String`; GPath on Map / JSON / XML / POGO / POJO) or has
+   **multiple operator variants** (safe-navigation `?.` / `??.` /
+   `?[..]`), probing the same expression across the family is
+   often cheap and surfaces signal the reporter missed. See the
+   family taxonomies in [`ARCHITECTURE.md`'s "Operator families"
+   section](ARCHITECTURE.md#operator-families).
 
 4. **Locate the code, lightly.** If the failure reaches the
    runtime/compiler, identify the package or class the stack flows
@@ -592,15 +650,47 @@ For each issue:
    [Fields and who sets them](#fields-and-who-sets-them) and
    [Components](#components).
 
-6. **Draft a comment** with: the state of the reproduction
+6. **Search for documented workarounds.** Before recommending a
+   closure path, check three places:
+
+   - `src/spec/doc/` (user-facing docs) — `grep -rn '<topic>' src/spec/doc/`
+   - Groovydoc on the relevant source classes — `grep -B2 -A8` on
+     the source file
+   - JIRA comments — keywords like `workaround`, `prefix`,
+     `coerce`, `use ... instead`
+
+   The outcome shapes the recommended close path:
+
+   - **Workaround documented user-facing** → close as "Not A Bug"
+     or "Won't Fix"; cite the doc.
+   - **Workaround exists but is undocumented user-facing** → close
+     as "Not A Bug **+ add docs**". The documentation deliverable
+     is the actionable artefact; closing without it leaves the
+     surprise intact for the next user.
+   - **No workaround** → keep open OR re-type as Improvement (per
+     nature analysis, below).
+
+7. **Consider split candidacy.** When the issue bundles **multiple
+   reproducers with mixed fates** (some silently fixed, some still
+   broken) or **multiple user-visible symptoms with independently-
+   fixable causes**, recommend a split: close the original with a
+   per-case summary, suggest a focused new JIRA for the remaining
+   unfixed case(s) with the targeted reproducer. Old multi-case
+   JIRAs often resolve partially over time; the constructive close
+   path is a per-case status update plus carry-over.
+
+8. **Draft a comment** with: the state of the reproduction
    (passed / failed / could not run, with revision + JDK), the
    duplicate-search result, the likely area of the code, suggested
-   missing fields, and a recommended next action ("needs a minimal
-   reproducer," "looks fixed on master — propose closing as Cannot
-   Reproduce after a second pair of eyes," "appears to need a fix
-   in `<area>`"). Factual, helpful, specific.
+   missing fields, the workaround-search outcome, and a recommended
+   next action ("needs a minimal reproducer," "looks fixed on
+   master — propose closing as Cannot Reproduce after a second pair
+   of eyes," "appears intended-behaviour-but-undocumented; propose
+   closing + docs PR," "appears to need a fix in `<area>`,"
+   "consider splitting — A is fixed, B remains"). Factual, helpful,
+   specific.
 
-7. **Don't transition the issue.** Even when the recommendation is
+9. **Don't transition the issue.** Even when the recommendation is
    clear, leave the workflow state to a committer.
 
 ### Triaging a pull request
@@ -648,6 +738,36 @@ For each PR:
    first: license-header / scope / test, then style / drive-by
    reformat, then nits. Use file-path:line references so committers
    can jump to each finding.
+
+### Nature analysis: bug-as-advertised vs wouldn't-it-be-nice
+
+Before recommending a close path, ask: **is this not operating as
+advertised, or is this 'wouldn't it be nice if'?** The answer
+shapes the action differently from what the reproducer's outcome
+alone suggests. Two issues can both reproduce verbatim and need
+totally different closures.
+
+| Nature | Meaning | Recommended action |
+|---|---|---|
+| **bug-as-advertised** | A documented or implicit promise isn't being kept. The code does not deliver what its signature, Groovydoc, or spec says. | Fix it. The reproducer is the regression-test target. |
+| **bug-as-advertised, partial fix** | Originally multi-case; some cases silently fixed, others still broken. | Split — close original with per-case summary, open focused new JIRA for the remaining case(s). See "Consider split candidacy" in the procedure above. |
+| **feature-request** | The reporter wants a different spec; the behaviour matches what's promised. JIRA is correctly typed as Improvement. | Re-typing not needed. Decide on `dev@` whether to accept the Improvement. |
+| **feature-request-disguised-as-bug** | Same as above but mis-typed as Bug in JIRA — the reporter framed an unmet wish as a defect. | Recommend re-typing Bug → Improvement, then design discussion on `dev@`. |
+| **intended-and-documented** | Behaviour is correct *and* the docs clearly cover it. | Close as Not A Bug. The issue is the reporter not having found the docs; consider whether a docs cross-link or better discoverability would help. |
+
+Two pool-level observations are useful here:
+
+- **The Reopened pool over-represents the feature-request shapes.**
+  An issue that's been reopened is one someone re-examined and
+  consciously left open while pondering a spec change.
+- **The Open + EOL-affected-version pool over-represents the
+  bug-as-advertised shapes.** Issues nobody looked at while the
+  runtime/compiler under them was rewritten are more likely to be
+  silent fixes or genuine open bugs than wishlists.
+
+The distinction matters when choosing which JIRAs to work through
+in a re-triage pass: pick the pool that matches what you're
+hunting for.
 
 ### Drafting a useful comment or review
 

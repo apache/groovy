@@ -18,7 +18,7 @@
 -->
 ---
 name: groovy-reassess
-description: Running a bulk reassessment campaign over old GROOVY JIRA issues — narrow JQL selection, per-issue reproducer extraction and execution via `groovy-reproducer`, classification (`fixed-on-master` / `still-fails-same` / `still-fails-different` / `cannot-run-*` / `intended-behaviour` / `duplicate-of-resolved` / `timeout`), structured report and per-issue evidence package, and a strict hand-back contract — no JIRA comments, no transitions, no closures posted on behalf of the project. Use when sweeping old issues to surface candidates for closure (silently-fixed) and candidates for a real fix (still-failing).
+description: Running a bulk reassessment campaign over old GROOVY JIRA issues — narrow JQL selection (Reopened pool surfaces wishlists; Open+EOL surfaces silent fixes and real bugs), per-issue reproducer extraction and execution via `groovy-reproducer`, classification (`fixed-on-master` / `still-fails-same` / `still-fails-different` / `cannot-run-*` / `intended-behaviour` / `duplicate-of-resolved` / `timeout`), orthogonal `nature` analysis (`bug-as-advertised` vs `feature-request-disguised-as-bug` vs `intended-and-documented`), workaround search, related-JIRA scan, split-candidate assessment, structured report and per-issue evidence package, and a strict hand-back contract — no JIRA comments, no transitions, no closures posted on behalf of the project. Use when sweeping old issues to surface candidates for closure (silently-fixed), candidates for a real fix (still-failing), feature-requests-disguised-as-bugs, and documentation gaps.
 license: Apache-2.0
 compatibility: claude, codex, copilot, cursor, gemini, aider
 metadata:
@@ -164,10 +164,24 @@ These are the recurring mistakes at the campaign level:
 Selection drives the campaign's quality. Pick a *narrow*, *bounded*
 slice; do not boil the ocean.
 
+**Pool choice matters.** The pool-selection heuristics — which
+status / affected-version slices over-represent which natures —
+live in [`CONTRIBUTING.md`'s "Pool-selection heuristics for
+re-triage sweeps"](../../../CONTRIBUTING.md#pool-selection-heuristics-for-re-triage-sweeps).
+Choose the pool deliberately based on what the campaign is hunting
+for.
+
 JQL building blocks come from
 [`groovy-jira`](../groovy-jira/SKILL.md). Useful slices for
 reassessment:
 
+- **Reopened (wishlist hunting):** `project = GROOVY AND status =
+  Reopened ORDER BY updated ASC`. Small, well-bounded pool.
+- **Open + EOL bugs (silent-fix hunting):** `project = GROOVY AND
+  status = Open AND issuetype = Bug AND affectedVersion in
+  ("1.5.6", "1.6.0", "1.6.5", "1.7.0", "1.8.0") ORDER BY created
+  ASC`. The version list should target releases before a known
+  major refactor of the relevant subsystem.
 - **Age bucket × open:** `project = GROOVY AND statusCategory != Done
   AND created < "2020/01/01" AND created >= "2018/01/01"
   ORDER BY created ASC`. Buckets of two years are scannable; ten
@@ -176,9 +190,6 @@ reassessment:
   != Done AND component = "<X>" AND updated < -730d`. Pairs well
   with an area you know — your fix-side strength shapes the
   candidate set.
-- **Affected version end-of-life:** `project = GROOVY AND
-  statusCategory != Done AND affectedVersion = "2.4.x"` — versions
-  long out of support are high-yield for `fixed-on-master`.
 - **No component (triage-then-reassess):** `project = GROOVY AND
   statusCategory != Done AND component is EMPTY`. The reassessment
   can also produce a `Component/s` suggestion (see
@@ -186,9 +197,9 @@ reassessment:
 
 Cap the per-session set. A practical first pilot is 5–10 issues
 spanning *different reproducer shapes* (one runnable script, one
-attachment, one prose-only, one `@Grab`, one comment-with-snippet)
-so the pipeline meets each shape early. Pilots beat the first
-hundred issues you'd naturally pick.
+attachment, one prose-only-but-precise, one `@Grab`,
+one comment-with-snippet) so the pipeline meets each shape early.
+Pilots beat the first hundred issues you'd naturally pick.
 
 ## Procedure
 
@@ -205,20 +216,89 @@ For each campaign session:
    `original.<ext>`, `run.log`, `verdict.json`. This is *not* in
    the Groovy checkout.
 3. **For each issue, in order:**
-   - Skip if its `verdict.json` already exists and is well-formed
-     (resumability).
-   - Read the JIRA issue and skim comments for an obvious
-     "already fixed" / "won't fix" / "see GROOVY-XXXX" — early
-     classifications save time.
-   - Hand off to [`groovy-reproducer`](../groovy-reproducer/SKILL.md)
-     for extraction, adaptation, running, and evidence capture.
-   - Read the classification from `verdict.json`.
-   - Reset the working tree before the next issue.
+
+   **a. Resumability check.** Skip if its `verdict.json` already
+   exists and is well-formed. The per-issue evidence files on
+   disk are the resumption point — in-memory campaign state is
+   not.
+
+   **b. Triage the issue per
+   [`CONTRIBUTING.md`'s "Triaging a JIRA issue"](../../../CONTRIBUTING.md#triaging-a-jira-issue).**
+   That procedure is the canonical methodology — read the thread
+   (with historical baselines), search for duplicates and
+   same-family related work, attempt reproduction (including
+   per-reproducer execution when the thread contains multiple
+   distinct reproducers), locate the code, check JIRA fields,
+   search for documented workarounds, and assess split
+   candidacy. The bulk of the per-issue work is in that section.
+
+   **AI-specific recording** during this step — these are the
+   campaign's value-adds on top of the manual methodology:
+   - Historical baselines from comments → `verdict.json.cases[].history`
+   - Related-JIRA citations from the JQL scan → `verdict.json.notes`
+   - Per-reproducer outcomes (when multiple reproducers exist) →
+     `verdict.json.cases` (multi-case array)
+   - Workaround-search outcome and the close-path it implies →
+     `verdict.json.notes`
+   - Split-candidacy recommendation → `verdict.json.notes`
+
+   **c. Hand off to
+   [`groovy-reproducer`](../groovy-reproducer/SKILL.md)** for the
+   reproducer extraction, adaptation, running, and evidence
+   capture. This includes the optional cross-family probe when
+   the operation under test spans multiple types or operator
+   variants — see
+   [ARCHITECTURE.md "Operator families"](../../../ARCHITECTURE.md#operator-families)
+   for the family taxonomies.
+
+   **d. Apply nature analysis.** Per
+   [`CONTRIBUTING.md`'s "Nature analysis"](../../../CONTRIBUTING.md#nature-analysis-bug-as-advertised-vs-wouldnt-it-be-nice),
+   determine whether the issue is `bug-as-advertised`,
+   `feature-request-disguised-as-bug`, `intended-and-documented`,
+   etc. Record in `verdict.json.nature`. This is orthogonal to
+   `classification` (a still-reproducing wishlist and a
+   still-reproducing bug recommend different actions).
+
+   **e. Compose the final `verdict.json`.** Classification +
+   nature + cases (if multi-case) + cross-type-probe /
+   operator-variants-probe (if run) + notes with the close-path
+   recommendation. See
+   [`groovy-reproducer`](../groovy-reproducer/SKILL.md)'s
+   Evidence package section for the schema.
+
+   **f. Reset the working tree** before the next issue.
 4. **After the loop, build the report** (see below). Do *not*
    post anything.
 5. **Hand back** to the human — branch (if any local Groovy
    commits, e.g. adapted `@Test` files kept for follow-up),
    scratch corpus path, report path.
+
+## Nature analysis (AI-recording layer)
+
+The nature taxonomy and the "bug-as-advertised vs wouldn't-it-be-
+nice" question live in
+[`CONTRIBUTING.md`'s "Nature analysis" section](../../../CONTRIBUTING.md#nature-analysis-bug-as-advertised-vs-wouldnt-it-be-nice).
+That section is the canonical source; apply it per-issue during
+procedure step 3d above.
+
+This skill's contribution is to **record** the result in
+`verdict.json.nature` so the campaign-level aggregator can roll
+up nature classifications across the issue set (e.g. "of N
+issues reassessed, M classified as
+`feature-request-disguised-as-bug` — those rows recommend
+re-typing rather than fixing"). The allowed values:
+
+- `bug-as-advertised`
+- `bug-as-advertised-partial-fix` (paired with a split
+  recommendation in `notes`)
+- `feature-request` (correctly typed as Improvement; no re-type
+  needed)
+- `feature-request-disguised-as-bug` (Bug → Improvement re-type
+  recommendation)
+- `intended-and-documented`
+
+See the verdict-template `_field_help` for the schema. Apply
+exactly one value per verdict — `nature` is required.
 
 ## Classification taxonomy
 
@@ -282,6 +362,19 @@ The campaign produces:
   for a real regression test).
 - A short verbal summary: "Swept N issues. M `fixed-on-master`, K
   `still-fails-same`. Headlines: GROOVY-A, GROOVY-B, …."
+- **Split recommendations** for any issue where the reassessment
+  surfaced multiple cases with distinct fates (some silently fixed,
+  some still failing) or distinct user-visible symptoms.
+  Format: "close GROOVY-X with per-case summary; open new JIRA
+  for GROOVY-X-residual-A (the remaining case)."
+- **New-JIRA candidates** surfaced by cross-family probes — when
+  probing a sibling type or operator variant uncovered a bug the
+  original report didn't contain, flag it as a candidate for its
+  own JIRA. The verdict notes should sketch the 4-line reproducer.
+- **Documentation candidates** — issues where the close path is
+  "Not A Bug + add docs" (workaround exists but undocumented; spec
+  gap; behaviour-by-design but surprising). The report should
+  list each docs deliverable with a one-line scope.
 
 The campaign does **not**:
 
@@ -311,25 +404,48 @@ the project communicates.
 
 Before declaring a campaign session complete:
 
+- [ ] **Pool was chosen deliberately** (Reopened vs Open+EOL) and
+      the choice matches the campaign's goal (spec-debate review vs
+      silent-fix hunting).
 - [ ] Candidate set was bounded *before* the loop started; the
       bound is recorded in the report.
 - [ ] Per-issue evidence package on disk for every candidate, with
       `verdict.json` and a non-empty `description.md`.
-- [ ] Every classification used is one of the taxonomy entries; no
-      free-form labels.
+- [ ] Every `classification` used is one of the taxonomy entries;
+      every `nature` used is one of the nature values; no free-form
+      labels.
+- [ ] **`nature` populated** on every verdict — orthogonal to
+      classification.
+- [ ] **Historical baselines from the comment thread** are recorded
+      in `cases[].history` where applicable, so the headline
+      finding can be "unchanged since baseline X" rather than just
+      "current state is Y."
+- [ ] **Workaround search done** for every still-fails-* verdict
+      (`src/spec/doc/` + Groovydoc + JIRA comments). The
+      recommendation distinguishes "close as Not A Bug" from
+      "close + add docs."
+- [ ] **Related-JIRA scan** done for every verdict; same-family
+      issues cited in notes.
 - [ ] `fixed-on-master` rows include the rev and JDK in the
       evidence; the verdict isn't over-claimed.
 - [ ] `still-fails-same` rows are surfaced at the top of the
       report, not buried.
 - [ ] `cannot-run-*` rows have a concrete reason in the evidence
       (which dep failed, what was missing) — not "could not run."
+- [ ] **Split candidates flagged** for any issue with multi-case
+      mixed fates or distinct user-visible symptoms.
+- [ ] **Cross-family probe results recorded** in
+      `cross_type_probe` or `operator_variants_probe` when the
+      probe was run; any sibling-type bugs are flagged as new-JIRA
+      candidates.
 - [ ] No JIRA mutation occurred. No PR was opened. No dev@ post
       was sent.
 - [ ] The report opens with a summary stanza a committer can scan
       in 30 seconds.
 - [ ] Working tree was clean at the end of the session.
 - [ ] Hand-back artefact lists the scratch corpus path, the report
-      path, any local commits worth keeping, and the recommended
+      path, any local commits worth keeping, any split or
+      documentation candidates surfaced, and the recommended
       publication path (typically a single dev@ thread).
 
 ## References

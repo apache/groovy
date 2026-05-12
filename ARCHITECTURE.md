@@ -228,6 +228,58 @@ above. Each bites contributors quickly if missed:
   `INSTRUCTION_SELECTION` or later. See the
   [Compilation pipeline](#compilation-pipeline) phase table.
 
+## Operator families
+
+Several Groovy operators and expression forms are defined for
+**multiple backing types**, and behaviour across the members of a
+family is sometimes inconsistent. When investigating a bug
+reported for one type, probing the same expression across siblings
+often surfaces nuance the reporter missed — a hidden bug in a
+sibling type, confirmation that an asymmetry spans the whole
+family, or a project-wide spec gap that wasn't visible from a
+single-type report.
+
+### Type families
+
+| Family | Members | Notes |
+|---|---|---|
+| **Range / index operators** (`agg[idx]`, `agg[range]`) | `List` / `Object[]` / primitive arrays (`int[]`, `long[]`, …) / `String` / `CharSequence` | Different exception classes (`IndexOutOfBoundsException` vs `ArrayIndexOutOfBoundsException` vs `StringIndexOutOfBoundsException`). Negative-endpoint and out-of-range-negative semantics have historically diverged across types — see GROOVY-3974 for a concrete example surfaced by cross-type probing. |
+| **GPath expressions** (`x.y.z`, `x?.y`, `x*.y`) | In-memory (Map, List, nested combinations) / JSON (`JsonSlurper`) / XML (`XmlSlurper` / `XmlParser`) / POGO / Java POJO / SQL result sets (`groovy.sql.Sql`) | XML has special handling for attributes (`@attr` syntax) and returns empty `NodeChild` collections on missing children rather than null. Map/JSON return null on missing keys. POGOs and POJOs throw `MissingPropertyException` for missing properties — the asymmetry is by-design (each backend's natural type semantics) but surfaces as a cross-type inconsistency from the user's perspective. |
+| **Numeric coercion** (`+`, `-`, `*`, `/`, comparison) | `int` / `long` / `BigInteger` / `BigDecimal` / `double` / `Float` / `Long` (boxed) | Coercion rules vary; the result type of `int + BigDecimal` may surprise. |
+
+### Operator-variant families
+
+Some operators have **multiple syntactic variants** that share a
+family but dispatch differently:
+
+| Family | Variants | Dispatch notes |
+|---|---|---|
+| **Safe navigation** | `?.` (SAFE_DOT) / `??.` (SAFE_CHAIN_DOT — shorthand for chained `?.`) / `?[..]` (SAFE_INDEX) | `?.` and `??.` call `getProperty(String)`. `?[..]` calls `getAt(Object)`, but on POGOs that routes through `getProperty` for missing keys, so the variants behave identically for POGO missing-property access. |
+| **Spread** | `*.` / `*[..]` / `*:` | Different unpacking semantics across iteration / indexing / map-merge. |
+| **Equality / identity** | `==` / `.equals()` / `is` | `==` is `equals`-based in Groovy (not reference-equality as in Java); `is` is Java's `==` (reference). |
+| **Coercion** | `as` / `asType()` / constructor + `from` | Different conversion paths; `as` is statically-resolvable, `asType` is dynamic. |
+| **Range** | `..` / `..<` / `..>` | Endpoint inclusion / direction differences. |
+| **Elvis / null-coalesce** | `?:` and elaborations | Truthy-vs-null differences in the left-hand side. |
+
+### Why this matters for investigation
+
+For an investigation of a bug in one family member, probing across
+siblings is a recurring technique. A ~50-line probe script
+(constructing each backend, running the same expression, recording
+outcomes in a table) is usually enough to:
+
+- confirm whether an asymmetry the reporter found spans the family
+  or is type-specific;
+- surface a hidden bug in a sibling type the reporter didn't test
+  (and which may warrant its own JIRA);
+- reveal that what looks like a bug is actually consistent
+  documented behaviour with a documented or implicit workaround in
+  a sibling form.
+
+See `.agents/skills/groovy-reproducer/SKILL.md`'s "Cross-family
+probes" section for the AI-tooling pattern. The probe approach is
+equally useful when investigating by hand.
+
 ## Generated code
 
 The following are produced by the build and regenerated on every

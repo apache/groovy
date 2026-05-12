@@ -107,11 +107,16 @@ reproducers:
    stop. The reporter's specific code is what makes a reproduction
    trustworthy; an agent-written stand-in is a different exercise
    (and a different verdict).
-2. **Skipping the comment thread.** Reporters frequently post a
-   simplified reproducer in a comment after the initial description.
-   Reading only the description misses it. Inventory every code
-   block in the description *and* every comment *and* every
-   attachment before picking a candidate.
+2. **Skipping the comment thread, or only running the headline
+   reproducer.** Reporters frequently post a simplified reproducer
+   in a comment after the initial description, and may follow up
+   with additional cases that exercise different symptoms of the
+   same root cause. Inventory every code block in the description
+   *and* every comment *and* every attachment, and when distinct
+   reproducers exist, **run each and record per-reproducer
+   outcomes** — not just the headline one. The `cases` array in
+   `verdict.json` (see Evidence package below) carries
+   per-reproducer state for multi-case issues.
 3. **Treating `@Test` adaptation as equivalent to a script run.**
    Groovy scripts and class methods have different scoping (script
    bindings vs. fields, implicit `main`, `def` vs. typed locals).
@@ -172,6 +177,26 @@ reproducers:
     `~/.groovy/grapes/` (see GROOVY-12005). For a campaign,
     consider a per-sweep Grape root via `-Dgrape.root=<scratch>` so
     the user's everyday cache stays clean.
+14. **Treacherous substring matching in verification logic.** Same
+    trap covered in
+    [`CONTRIBUTING.md`'s "Test-writing pitfalls"](../../../CONTRIBUTING.md#test-writing-pitfalls)
+    — applies equally to reproduction verification scripts.
+    Substring matching near common prefixes (`xs` / `xsi`,
+    `groovy` / `groovy-`) silently produces false positives.
+    Prefer anchored regex or parsed-tree inspection. The
+    "verify identifiers" discipline applies to the verification
+    logic itself, not just the code under test — almost-shipped
+    false `fixed-on-master` results have hit this trap.
+15. **Reproducer-stale-due-to-API-evolution treated as a bug.**
+    Old reproducers may use classes that have moved or been
+    removed. A `ClassNotFoundException` on import isn't the
+    reporter's bug — it's mechanical adaptation territory. The
+    canonical mapping of class moves lives in the release notes
+    (Groovy 3.0 split-packages section is the largest); see
+    [ARCHITECTURE.md "Operator families"](../../../ARCHITECTURE.md#operator-families)
+    for the project-side context. Add the new import per that
+    mapping; don't classify as `still-fails-different` or
+    `cannot-run-environment`.
 
 ## Reproducer shape taxonomy
 
@@ -203,8 +228,23 @@ Recipe: classify `cannot-run-extraction`. The stack trace is a *hint
 about the area*, not a reproducer. Don't construct code to "make
 that stack trace appear"; that's fabrication.
 
-**E. Prose-only** — natural-language description, no code. Recipe:
-`cannot-run-extraction`. Don't write code from prose.
+**E-vague. Prose-only, no precise testable claim** —
+natural-language description without a specifiable behaviour
+("ConfigObject sometimes behaves weirdly"). Recipe:
+`cannot-run-extraction`. Don't write code from vague prose.
+
+**E-precise. Prose-only, but the prose IS a specifiable claim** —
+the description contains an algebraic / specifiable claim with no
+verbatim code but enough precision to construct a faithful test
+(e.g. *"`x?.y?.z` returns null on Maps but throws on POGOs"*).
+Recipe: construct a reproducer that tests **exactly that claim**
+— instantiate the explicit assertion, do not interpolate beyond
+it. Classify normally per the outcome. The distinction from
+fabrication: E-precise is *instantiation of an explicit claim*
+(the prose IS the spec); fabrication is *guessing at inputs,
+structure, or APIs the reporter didn't specify*. If the
+construction would require either, classify `cannot-run-extraction`
+and stop.
 
 **F. Attachment** — `.groovy`, `.java`, `.zip` (project), `.txt`
 (log), `.gz` (heap dump, etc.). For `.groovy` / `.java` files,
@@ -246,11 +286,36 @@ For each reproducer:
      (guessing a type, inventing a missing variable), stop and
      classify `cannot-run-extraction` with a note about what was
      missing.
-   - Shapes D, E: classify `cannot-run-extraction`; don't adapt.
+   - Shape D: classify `cannot-run-extraction`; don't adapt.
+   - Shape E-vague: classify `cannot-run-extraction`; don't write
+     code from prose without a precise claim.
+   - Shape E-precise: construct a reproducer that tests **only**
+     the explicit claim the prose makes. Cite the prose verbatim
+     in the comment header so the construction is auditable.
    - Shape F: per inner shape; for project zips, classify
      `needs-separate-workspace`.
    - Shape G: copy verbatim; flag for Grape-aware running.
    - Shape H: classify `needs-separate-workspace`.
+
+   **API-evolution adaptation.** Old reproducers may not compile
+   on modern Groovy because classes moved or were removed. This is
+   mechanical adaptation — *not* fabrication — when the move is
+   documented in the release notes. The Groovy 3.0 split-packages
+   refactor is the largest such reshuffle; see
+   [ARCHITECTURE.md "Operator families"](../../../ARCHITECTURE.md#operator-families)
+   for the project-side context (and the release-notes link there
+   for the canonical mapping).
+
+   When you make an adaptation under this rule:
+   - The body of the reproducer stays unchanged — only imports /
+     package references shift.
+   - Cite the release-notes section in `verdict.json.notes` so the
+     adaptation is auditable.
+   - If the adaptation requires *behavioural* changes (not just
+     imports) — e.g. a method signature changed — that's a
+     different classification: the reporter's claim might be
+     `still-fails-different` (if the new API behaves differently)
+     or you may need to escalate to `needs-info`.
 5. **Build the current Groovy distribution** if the reproducer is a
    script that needs the produced `groovy` binary. For `@Test`-shape
    reproducers, the Gradle test invocation handles the build.
@@ -262,10 +327,29 @@ For each reproducer:
    substring" is `same-failure`. "Fails with something different" is
    `different-failure`. "Doesn't fail" is `passes`. "Hangs past
    timeout" is `timeout`. "Errors before exercising the path" is
-   `cannot-run-*`.
-8. **Record the evidence package** before doing anything else.
-9. **Reset the working tree** if you adapted as a `@Test` (the
-   added file must not leak to the next issue).
+   `cannot-run-*`. For multi-case reproducers (a list of
+   assertions, a Shape-E-precise probe across backends), record
+   per-case state in `verdict.json.cases` so partial-fix patterns
+   are queryable — see Evidence package below.
+8. **Scan the JIRA's comment thread for historical baselines.** A
+   committer's prior "I just ran this on version X, here's what I
+   got" comment is a baseline worth comparing against, not just
+   the original report's claim. If found, record each baseline in
+   `verdict.json.cases[].history` (year, status, source). The
+   headline finding may be "the state hasn't changed since this
+   committer's baseline" rather than "the state is X today."
+9. **(Optional) Cross-family probe.** When the reproducer
+   exercises a behaviour defined for multiple backing types or via
+   multiple operator variants, run a quick probe across the
+   family — see *Cross-family probes* below. The probe is cheap
+   and consistently surfaces signal beyond the reporter's
+   framing (a project-wide spec gap, an additional bug in a
+   sibling type, or confirmation that the asymmetry spans the
+   whole operator family). Record results in
+   `verdict.json.cross_type_probe` or `.operator_variants_probe`.
+10. **Record the evidence package** before doing anything else.
+11. **Reset the working tree** if you adapted as a `@Test` (the
+    added file must not leak to the next issue).
 
 ## Run posture
 
@@ -275,8 +359,9 @@ For each reproducer:
   failures get the `cannot-run-dependency` classification; they are
   not "fixed."
 - **Filesystem:** scratch directory per issue, under
-  `~/work/groovy-reassessment/<KEY>/` (or wherever the campaign
-  layout puts it — see [`groovy-reassess`](../groovy-reassess/SKILL.md)).
+  `~/work/groovy-reassess/<campaign-id>/<JIRA-KEY>/` (or wherever
+  the campaign layout puts it — see
+  [`groovy-reassess`](../groovy-reassess/SKILL.md)).
   Don't write under the Groovy checkout.
 - **Working tree:** clean between reproducers. The
   added-and-then-removed `@Test` is the most common leak source.
@@ -286,6 +371,52 @@ For each reproducer:
 - **JDK selection:** record the JDK used. For verdicts where it
   matters (`passes`, `fixed-on-master`), retry on the
   originally-affected JDK via Gradle toolchains where reasonable.
+
+## Cross-family probes (AI-tooling pattern)
+
+When the reproducer exercises a behaviour defined for **multiple
+backing types** or **multiple operator variants** in the language,
+probe the others. The pattern is cheap (~50 line script per
+family) and consistently surfaces signal beyond the reporter's
+framing.
+
+The **family taxonomies** (type families like `List`/`Object[]`/
+primitive arrays/`String`; operator-variant families like the
+three safe-navigation variants) live in
+[ARCHITECTURE.md "Operator families"](../../../ARCHITECTURE.md#operator-families).
+That section is the canonical reference for what to probe across
+and why the family members behave as they do (dispatch paths,
+known asymmetries). Apply it during procedure step 9.
+
+This skill's contribution is the **AI-tooling pattern for
+*running* the probe**: a small Groovy script that exercises each
+family member, emits a comparison table, and gets saved alongside
+`reproducer.<ext>` as `cross-type-probe.groovy` or
+`operator-variants-probe.groovy`.
+
+Probe template structure:
+
+```groovy
+def probes = [
+    'Member A' : { -> /* construct backend A, exercise the expression */ },
+    'Member B' : { -> /* same expression on backend B */ },
+    // ...
+]
+probes.each { name, body ->
+    def outcome
+    try { outcome = body() } catch (Throwable t) { outcome = "THREW: ${t.class.simpleName}" }
+    println String.format("%-20s | %s", name, outcome)
+}
+```
+
+Record results in `verdict.json.cross_type_probe` /
+`.operator_variants_probe` (see Evidence package below).
+
+**Sanity check:** if the probe surfaces a *new* bug in a sibling
+type that the original report didn't mention, that often
+warrants its own JIRA (the verdict note should flag the new-JIRA
+candidate). The original issue's verdict still reflects the
+original report; the sibling-type bug is a separate finding.
 
 ## Evidence package
 
@@ -298,19 +429,53 @@ For each reproducer run, persist:
 - `original.<ext>` — the literal source from JIRA, untouched, when
   extracted.
 - `run.log` — stdout + stderr from the run, with the exact command
-  on the first line.
-- `verdict.json` — `{ "key": "GROOVY-NNNNN", "shape": "<A|B|…>",
-  "classification": "<one of: same-failure | different-failure |
-  passes | cannot-run-extraction | cannot-run-environment |
-  cannot-run-dependency | timeout | needs-separate-workspace>",
-  "rev": "<short-sha>", "jdk": "<vendor+version>",
-  "command": "<verbatim>", "runtime-ms": <int>,
-  "exit-code": <int>, "matched-original-failure": <bool>,
-  "notes": "<short>" }`.
+  on the first line plus `rev`, `jdk`, started/ended timestamps.
+- `cross-type-probe.<groovy|log>` and/or
+  `operator-variants-probe.<groovy|log>` — optional, when a
+  cross-family probe was run (see *Cross-family probes* above).
+- `cross-type-probe-findings.md` — optional, when the probe
+  surfaced project-wide signal worth surfacing separately.
+- `verdict.json` — the structured classification. Schema:
 
-This package is what a committer needs to trust the verdict, and it
-is what [`groovy-reassess`](../groovy-reassess/SKILL.md) feeds into
-its report.
+```json
+{
+  "key": "GROOVY-NNNNN",
+  "shape": "A | B | C | D | E-vague | E-precise | F | G | H",
+  "classification": "fixed-on-master | still-fails-same | still-fails-different | cannot-run-extraction | cannot-run-environment | cannot-run-dependency | timeout | intended-behaviour | duplicate-of-resolved | needs-separate-workspace",
+  "nature": "bug-as-advertised | bug-as-advertised-partial-fix | feature-request | feature-request-disguised-as-bug | intended-and-documented",
+  "rev": "<short-sha>",
+  "jdk": "<vendor + version>",
+  "command": "<verbatim>",
+  "runtime_ms": <int or null>,
+  "exit_code": <int>,
+  "matched_original_failure": <bool>,
+  "cases": [                                      // optional; multi-case reproducers only
+    {
+      "expr": "<expression / sub-case>",
+      "expected": "<expected outcome>",
+      "actual_master": "<observed on master>",
+      "match_on_master": <bool>,
+      "history": [{"year": <int>, "status": "...", "source": "..."}],
+      "note": "<short>"
+    }
+  ],
+  "cases_summary": "<one-line roll-up>",          // optional
+  "cross_type_probe": { "file": "...", "log": "...", "findings": "...", "summary": "..." },     // optional
+  "operator_variants_probe": { "file": "...", "log": "...", "summary": "..." },                 // optional
+  "notes": "<long-form analysis and recommendation>"
+}
+```
+
+Keys use **snake_case** (`runtime_ms`, not `runtime-ms`) so
+`jq` queries don't need quoting. The `nature` field is
+orthogonal to `classification` and answers the question "is
+this not operating as advertised, or is this wouldn't-it-be-nice?"
+— see [`groovy-reassess`](../groovy-reassess/SKILL.md) for how
+the campaign uses it.
+
+This package is what a committer needs to trust the verdict, and
+it is what [`groovy-reassess`](../groovy-reassess/SKILL.md) feeds
+into its report.
 
 ## Validation checklist
 
