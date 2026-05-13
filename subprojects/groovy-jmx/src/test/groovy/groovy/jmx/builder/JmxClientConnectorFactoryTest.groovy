@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
 import javax.management.remote.rmi.RMIConnector
 import javax.management.remote.rmi.RMIConnectorServer
@@ -30,6 +31,7 @@ import javax.management.remote.rmi.RMIConnectorServer
 import static groovy.test.GroovyAssert.shouldFail
 
 @ForkedJvm
+@ExtendWith(CgroupV2NpeMitigationExtension)
 final class JmxClientConnectorFactoryTest {
 
     private JmxBuilder builder
