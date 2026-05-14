@@ -591,14 +591,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         return null;
     }
 
-    private static int registerLen(Type[] args) {
-        int i = 0;
-        for (Type arg : args) {
-            i += registerLen(arg);
-        }
-        return i;
-    }
-
     private static int registerLen(final Type arg) {
         return arg == Type.DOUBLE_TYPE || arg == Type.LONG_TYPE ? 2 : 1;
     }
