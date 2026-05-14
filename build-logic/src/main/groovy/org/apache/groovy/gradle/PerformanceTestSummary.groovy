@@ -66,8 +66,15 @@ class PerformanceTestSummary extends DefaultTask {
         }
 
         def json = versions.collect { id, mean, stdDev ->
+            String series
+            if (id == 'current') {
+                series = 'compile@current'
+            } else {
+                def m = id =~ /^(\d+)\./
+                series = m.find() ? "compile@groovy-${m.group(1)}" : "compile@${id}"
+            }
             [
-                name : seriesName(id),
+                name : series,
                 unit : 'ms',
                 value: mean,
                 range: "±${df.format(stdDev)}".toString(),
@@ -77,11 +84,5 @@ class PerformanceTestSummary extends DefaultTask {
         def out = jsonReport.get().asFile
         out.parentFile.mkdirs()
         out.text = JsonOutput.prettyPrint(JsonOutput.toJson(json))
-    }
-
-    private static String seriesName(String id) {
-        if (id == 'current') return 'compile@current'
-        def m = id =~ /^(\d+)\./
-        return m.find() ? "compile@groovy-${m.group(1)}" : "compile@${id}"
     }
 }
