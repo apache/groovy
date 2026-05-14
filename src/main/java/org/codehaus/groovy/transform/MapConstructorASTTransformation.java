@@ -217,7 +217,6 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
 
     private static void createInitializers(final AbstractASTTransformation xform, final AnnotationNode aNode, final ClassNode cNode, final PropertyHandler handler, final boolean allNames, final List<String> excludes, final List<String> includes, final List<PropertyNode> list, final Parameter map, final BlockStatement block) {
         for (PropertyNode pNode : list) {
-            String name = pNode.getName();
             if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             Statement propInit = handler.createPropInit(xform, aNode, cNode, pNode, map);
             if (propInit != null) {
