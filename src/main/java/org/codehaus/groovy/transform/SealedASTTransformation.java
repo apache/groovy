@@ -21,18 +21,21 @@ package org.codehaus.groovy.transform;
 import groovy.transform.Sealed;
 import groovy.transform.SealedMode;
 import groovy.transform.SealedOptions;
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
@@ -109,7 +112,6 @@ public class SealedASTTransformation extends AbstractASTTransformation {
      *
      * @return true for a native sealed class
      */
-    @Incubating
     public static boolean sealedNative(AnnotatedNode node) {
         return node.getNodeMetaData(SealedMode.class) == SealedMode.NATIVE;
     }
@@ -121,9 +123,99 @@ public class SealedASTTransformation extends AbstractASTTransformation {
      *
      * @return true if a {@code Sealed} annotation is not required for this node
      */
-    @Incubating
     public static boolean sealedSkipAnnotation(AnnotatedNode node) {
         return Boolean.FALSE.equals(node.getNodeMetaData(SEALED_ALWAYS_ANNOTATE_KEY));
+    }
+
+    /**
+     * Reports whether {@code cNode} would receive native sealed bytecode for the
+     * given {@code targetBytecode} level. Independent of compile-phase ordering,
+     * so callers earlier than {@code SEMANTIC_ANALYSIS} (e.g. the joint-compile
+     * stub generator) can use it.
+     *
+     * @param cNode the class being checked
+     * @param targetBytecode the target bytecode level
+     *                       (see {@link CompilerConfiguration#getTargetBytecode()})
+     */
+    public static boolean wouldBeNativeSealed(final ClassNode cNode, final String targetBytecode) {
+        if (cNode == null || !cNode.isSealed()) return false;
+        if (targetBytecode == null || targetBytecode.trim().isEmpty()) return false;
+        if (!isAtLeast(targetBytecode, CompilerConfiguration.JDK17)) return false;
+        List<AnnotationNode> opts = cNode.getAnnotations(SEALED_OPTIONS_TYPE);
+        AnnotationNode options = opts.isEmpty() ? null : opts.get(0);
+        return getMode(options, "mode") != SealedMode.EMULATE;
+    }
+
+    /**
+     * Returns the explicitly-declared permitted-subclass list for {@code cNode},
+     * either from the populated {@code permittedSubclasses} field (after the
+     * transform has run) or from the {@code @Sealed} annotation's
+     * {@code permittedSubclasses} member. An empty list means no explicit list
+     * is declared in source — inference happens later via
+     * {@code SealedCompletionASTTransformation}. Independent of compile-phase
+     * ordering, so callers earlier than {@code SEMANTIC_ANALYSIS} can use it.
+     */
+    public static List<ClassNode> getDeclaredPermittedSubclasses(final ClassNode cNode) {
+        if (cNode == null) return Collections.emptyList();
+        List<ClassNode> populated = cNode.getPermittedSubclasses();
+        if (!populated.isEmpty()) return populated;
+        List<ClassNode> result = new ArrayList<>();
+        for (AnnotationNode anno : cNode.getAnnotations(SEALED_TYPE)) {
+            Expression m = anno.getMember("permittedSubclasses");
+            if (m instanceof ListExpression le) {
+                for (Expression e : le.getExpressions()) {
+                    if (e instanceof ClassExpression ce) result.add(ce.getType());
+                }
+            } else if (m instanceof ClassExpression ce) {
+                result.add(ce.getType());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the effective permitted-subclass list for {@code cNode}: the
+     * explicitly-declared list when present, otherwise the inferred list
+     * obtained by scanning the enclosing compilation unit for direct
+     * subtypes (mirroring {@code SealedCompletionASTTransformation}). Phase
+     * independent, so callers earlier than {@code CANONICALIZATION} can use it.
+     */
+    public static List<ClassNode> getEffectivePermittedSubclasses(final ClassNode cNode) {
+        List<ClassNode> declared = getDeclaredPermittedSubclasses(cNode);
+        if (!declared.isEmpty()) return declared;
+        if (cNode == null || cNode.getModule() == null) return declared;
+        if (cNode.getAnnotations(SEALED_TYPE).isEmpty()) return declared;
+        List<ClassNode> inferred = new ArrayList<>();
+        for (ClassNode possibleSubclass : cNode.getModule().getClasses()) {
+            if (possibleSubclass.equals(cNode)) continue;
+            if (cNode.equals(possibleSubclass.getSuperClass())) {
+                inferred.add(possibleSubclass);
+                continue;
+            }
+            for (ClassNode iface : possibleSubclass.getInterfaces()) {
+                if (cNode.equals(iface)) {
+                    inferred.add(possibleSubclass);
+                    break;
+                }
+            }
+        }
+        return inferred;
+    }
+
+    /**
+     * Reports whether the source for {@code cNode} uses
+     * {@code @SealedOptions(alwaysAnnotate=false)} — independent of compile-phase
+     * ordering, so callers earlier than {@code SEMANTIC_ANALYSIS} can use it.
+     */
+    public static boolean sealedSkipAnnotationFromSource(final ClassNode cNode) {
+        if (cNode == null) return false;
+        for (AnnotationNode opts : cNode.getAnnotations(SEALED_OPTIONS_TYPE)) {
+            Expression m = opts.getMember("alwaysAnnotate");
+            if (m instanceof ConstantExpression ce && Boolean.FALSE.equals(ce.getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static SealedMode getMode(AnnotationNode node, String name) {

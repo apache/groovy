@@ -19,7 +19,7 @@
 
 //////////////////////////////////////////
 
-= Sealed hierarchies (incubating)
+= Sealed hierarchies
 
 Sealed classes, interfaces and traits restrict which subclasses can extend/implement them.
 Prior to sealed classes, class hierarchy designers had two main options:
@@ -143,7 +143,7 @@ EMULATE::
 Indicates the class is sealed using the `@Sealed` annotation.
 This mechanism works with the Groovy compiler for JDK8+ but is not recognised by the Java compiler.
 AUTO::
-Produces a native record for JDK17+ and emulates the record otherwise.
+Produces a native sealed class for JDK17+ and emulates the sealed nature otherwise.
 
 Whether you use the `sealed` keyword or the `@Sealed` annotation
 is independent of the mode.

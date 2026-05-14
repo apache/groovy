@@ -18,7 +18,6 @@
  */
 package groovy.transform;
 
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
@@ -33,7 +32,6 @@ import java.lang.annotation.Target;
  * @since 4.0.0
  */
 @Documented
-@Incubating
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NonSealedASTTransformation")
