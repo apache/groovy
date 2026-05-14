@@ -18,8 +18,11 @@
  */
 package org.codehaus.groovy.tools.javac;
 
+import groovy.transform.NonSealed;
 import groovy.transform.PackageScope;
 import groovy.transform.PackageScopeTarget;
+import groovy.transform.Sealed;
+import groovy.transform.SealedOptions;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -113,6 +116,9 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecR
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
+import static org.codehaus.groovy.transform.SealedASTTransformation.getEffectivePermittedSubclasses;
+import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotationFromSource;
+import static org.codehaus.groovy.transform.SealedASTTransformation.wouldBeNativeSealed;
 
 /**
  * Generates Java stub source for Groovy classes during joint compilation.
@@ -125,6 +131,9 @@ public class JavaStubGenerator {
     private final List<ConstructorNode> constructors = new ArrayList<>();
     private final Map<String, MethodNode> propertyMethods = new LinkedHashMap<>();
     private final static ClassNode PACKAGE_SCOPE_TYPE = makeCached(PackageScope.class);
+    private final static ClassNode SEALED_TYPE = makeCached(Sealed.class);
+    private final static ClassNode NON_SEALED_TYPE = makeCached(NonSealed.class);
+    private final static ClassNode SEALED_OPTIONS_TYPE = makeCached(SealedOptions.class);
 
     private ModuleNode currentModule;
 
@@ -371,6 +380,21 @@ public class JavaStubGenerator {
             // as plain classes (the existing behaviour).
             boolean isRecordStub = !isEnum && !isInterface && !isAnnotationDefinition
                     && isNativeRecordStub(classNode);
+            // Emit native sealed declarations (sealed keyword + permits clause)
+            // when the class will receive native sealed bytecode. EMULATE mode
+            // is intentionally skipped: GEP-13 specifies emulated sealed types
+            // are invisible to the Java compiler.
+            boolean isSealedStub = !isAnnotationDefinition && !isEnum
+                    && isNativeSealedStub(classNode);
+            // Java requires final / sealed / non-sealed on every permitted
+            // subtype of a sealed type. Groovy allows implicit non-sealed, so
+            // emit the non-sealed keyword in the stub when the parent is
+            // sealed (or a sealed interface is implemented) and this class
+            // is neither final nor sealed.
+            boolean isNonSealedStub = !isAnnotationDefinition && !isEnum && !isInterface && !isRecordStub
+                    && !isSealedStub
+                    && (classNode.getModifiers() & Opcodes.ACC_FINAL) == 0
+                    && hasSealedSupertype(classNode);
             printAnnotations(out, classNode);
 
             int flags = classNode.getModifiers();
@@ -381,6 +405,9 @@ public class JavaStubGenerator {
             // a record is implicitly final; declaring it final is a javac error
             if (isRecordStub) flags &= ~Opcodes.ACC_FINAL;
             printModifiers(out, flags);
+
+            if (isSealedStub) out.print("sealed ");
+            else if (isNonSealedStub) out.print("non-sealed ");
 
             if (isInterface) {
                 if (isAnnotationDefinition) {
@@ -427,6 +454,17 @@ public class JavaStubGenerator {
                 out.print("    ");
                 printType(out, interfaces[interfaces.length - 1]);
             }
+            if (isSealedStub) {
+                List<ClassNode> permitted = getEffectivePermittedSubclasses(classNode);
+                if (!permitted.isEmpty()) {
+                    out.println();
+                    out.print("  permits ");
+                    for (int i = 0, n = permitted.size(); i < n; i += 1) {
+                        if (i > 0) out.print(", ");
+                        printType(out, permitted.get(i));
+                    }
+                }
+            }
             out.println(" {");
 
             printFields(out, classNode, isInterface, isRecordStub);
@@ -450,6 +488,31 @@ public class JavaStubGenerator {
         if (currentModule == null || currentModule.getContext() == null) return false;
         String targetBytecode = currentModule.getContext().getConfiguration().getTargetBytecode();
         return RecordTypeASTTransformation.wouldBeNativeRecord(classNode, targetBytecode);
+    }
+
+    private boolean isNativeSealedStub(final ClassNode classNode) {
+        if (currentModule == null || currentModule.getContext() == null) return false;
+        String targetBytecode = currentModule.getContext().getConfiguration().getTargetBytecode();
+        return wouldBeNativeSealed(classNode, targetBytecode);
+    }
+
+    private boolean hasSealedSupertype(final ClassNode classNode) {
+        if (isNativeSupertypeSealed(classNode.getSuperClass())) return true;
+        ClassNode[] ifaces = classNode.getInterfaces();
+        if (ifaces != null) {
+            for (ClassNode iface : ifaces) {
+                if (isNativeSupertypeSealed(iface)) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isNativeSupertypeSealed(final ClassNode supertype) {
+        if (supertype == null) return false;
+        // Already-compiled (e.g. JDK17+ sealed Java class loaded from bytecode).
+        if (supertype.isSealed() && !supertype.isPrimaryClassNode()) return true;
+        // Same compilation unit, will be emitted as native sealed.
+        return isNativeSealedStub(supertype);
     }
 
     private void printRecordHeader(final PrintWriter out, final ClassNode classNode) {
@@ -1037,9 +1100,19 @@ public class JavaStubGenerator {
     }
 
     private void printAnnotations(final PrintWriter out, final AnnotatedNode annotated) {
+        // @NonSealed and @SealedOptions have SOURCE retention, so they never appear in
+        // the bytecode surface a Java consumer sees — suppress them from the stub.
+        // @Sealed has RUNTIME retention; suppress it only when the source emits the
+        // sealed keyword and @SealedOptions(alwaysAnnotate=false) (parallels the
+        // bytecode-side filter in AsmClassGenerator).
+        boolean skipSealedAnno = annotated instanceof ClassNode cn
+                && isNativeSealedStub(cn) && sealedSkipAnnotationFromSource(cn);
         for (AnnotationNode annotation : annotated.getAnnotations()) {
-            if (!annotation.getClassNode().equals(PACKAGE_SCOPE_TYPE))
-                printAnnotation(out, annotation);
+            ClassNode type = annotation.getClassNode();
+            if (type.equals(PACKAGE_SCOPE_TYPE)) continue;
+            if (type.equals(NON_SEALED_TYPE) || type.equals(SEALED_OPTIONS_TYPE)) continue;
+            if (skipSealedAnno && type.equals(SEALED_TYPE)) continue;
+            printAnnotation(out, annotation);
         }
     }
 

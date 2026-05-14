@@ -629,7 +629,6 @@ public class ClassNode extends AnnotatedNode {
     /**
      * @return permitted subclasses of sealed type, may initially be empty in early compiler phases
      */
-    @Incubating
     public List<ClassNode> getPermittedSubclasses() {
         if (redirect != null)
             return redirect.getPermittedSubclasses();
@@ -637,7 +636,6 @@ public class ClassNode extends AnnotatedNode {
         return permittedSubclasses;
     }
 
-    @Incubating
     public void setPermittedSubclasses(final List<ClassNode> permittedSubclasses) {
         if (redirect != null) {
             redirect.setPermittedSubclasses(permittedSubclasses);
@@ -1916,7 +1914,6 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
      * @return {@code true} for native and emulated (annotation based) sealed classes
      * @since 4.0.0
      */
-    @Incubating
     public boolean isSealed() {
         if (redirect != null) return redirect.isSealed();
         return !getAnnotations(ClassHelper.SEALED_TYPE).isEmpty() || !getPermittedSubclasses().isEmpty();

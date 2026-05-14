@@ -18,8 +18,6 @@
  */
 package groovy.transform;
 
-import org.apache.groovy.lang.annotation.Incubating;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,7 +30,6 @@ import java.lang.annotation.Target;
  * @since 4.0.0
  */
 @Documented
-@Incubating
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface SealedOptions {

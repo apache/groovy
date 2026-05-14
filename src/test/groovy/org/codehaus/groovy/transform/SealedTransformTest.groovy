@@ -263,4 +263,117 @@ class SealedTransformTest {
             new Foo()
         '''
     }
+
+    // GEP-13: 'sealed' and 'permits' are restricted identifiers, not reserved
+    // keywords, so they remain usable as identifiers outside type-declaration
+    // contexts.
+    @Test
+    void testRestrictedIdentifiers() {
+        assertScript '''
+            def sealed = 42
+            def permits = [1, 2, 3]
+            assert sealed == 42
+            assert permits == [1, 2, 3]
+        '''
+        assertScript '''
+            int compute(int sealed, List permits) { sealed + permits.size() }
+            assert compute(10, [1, 2]) == 12
+        '''
+    }
+
+    // GEP-13: a permitted subtype with no sealed-related modifier is implicitly
+    // non-sealed; descendants past that boundary are unconstrained.
+    @Test
+    void testImplicitNonSealedPropagation() {
+        assertScript '''
+            sealed interface Shape permits Polygon, Circle {}
+            final class Circle implements Shape {}
+            class Polygon implements Shape {}          // implicit non-sealed
+            class RegularPolygon extends Polygon {}    // unrestricted
+            class Hexagon extends RegularPolygon {}    // unrestricted
+
+            assert new Circle() instanceof Shape
+            assert new Polygon() instanceof Shape
+            assert new RegularPolygon() instanceof Shape
+            assert new Hexagon() instanceof Shape
+        '''
+    }
+
+    // GEP-13: anonymous classes are not in the permits set and so cannot
+    // extend or implement a sealed type.
+    @Test
+    void testAnonymousClassNotPermitted() {
+        shouldFail(MultipleCompilationErrorsException, '''
+            sealed interface Shape permits Circle {}
+            final class Circle implements Shape {}
+            def x = new Shape() {}
+        ''')
+    }
+
+    // GEP-13: coercion-generated proxies must observe the permits set;
+    // 'x as Sealed' from a non-permitted source must fail.
+    @Test
+    void testCoercionFromNonPermittedSource() {
+        shouldFail '''
+            sealed interface Bar permits Foo {}
+            final class Foo implements Bar {}
+            def b = (new Object()) as Bar
+        '''
+    }
+
+    // GEP-13: @Sealed has RUNTIME retention; @NonSealed and @SealedOptions
+    // have SOURCE retention. EMULATE mode ensures @Sealed is the sole
+    // runtime carrier of sealed info, so its presence at runtime proves
+    // the retention contract.
+    @Test
+    void testAnnotationRetentions() {
+        assertScript '''
+            import groovy.transform.NonSealed
+            import groovy.transform.Sealed
+            import groovy.transform.SealedMode
+            import groovy.transform.SealedOptions
+
+            @SealedOptions(mode = SealedMode.EMULATE)
+            sealed class Shape permits Circle {}
+            @NonSealed class Circle extends Shape {}
+
+            assert Shape.getAnnotation(Sealed) != null
+            assert Circle.getAnnotation(NonSealed) == null
+            assert Shape.getAnnotation(SealedOptions) == null
+        '''
+    }
+
+    // GEP-13: @Delegate targeting a sealed type implicitly makes the
+    // enclosing class implement that sealed type, which is illegal when
+    // the enclosing class is not in the permits set.
+    // GEP-13: @Delegate must not introduce a non-permitted subtype of a
+    // sealed type. For sealed interfaces, DelegateASTTransformation omits
+    // the 'implements' clause (see GROOVY-7288); for sealed classes the
+    // wrapper never extends the target at all (single inheritance).
+    @Test
+    void testDelegateDoesNotMakeWrapperASealedSubtype() {
+        // Sealed interface — implicit and explicit interfaces=true.
+        assertScript '''
+            sealed interface Bar permits Foo {}
+            final class Foo implements Bar { void hi() {} }
+
+            class WrapperImplicit { @Delegate Bar inner = new Foo() }
+            class WrapperExplicit { @Delegate(interfaces=true) Bar inner = new Foo() }
+
+            assert !(new WrapperImplicit() instanceof Bar)
+            assert !WrapperImplicit.interfaces.contains(Bar)
+            assert !(new WrapperExplicit() instanceof Bar)
+            assert !WrapperExplicit.interfaces.contains(Bar)
+        '''
+        // Sealed class — wrapper neither extends nor implements it.
+        assertScript '''
+            sealed class Bar permits Foo { String name }
+            final class Foo extends Bar { Foo() { name = 'foo' } }
+
+            class Wrapper { @Delegate Bar inner = new Foo() }
+
+            assert Wrapper.superclass == Object
+            assert !(new Wrapper() instanceof Bar)
+        '''
+    }
 }
