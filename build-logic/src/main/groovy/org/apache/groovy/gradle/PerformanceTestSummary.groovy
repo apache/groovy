@@ -18,9 +18,12 @@
  */
 package org.apache.groovy.gradle
 
+import groovy.json.JsonOutput
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
@@ -31,6 +34,10 @@ class PerformanceTestSummary extends DefaultTask {
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
     final ConfigurableFileCollection csvFiles = project.objects.fileCollection()
+
+    @OutputFile
+    final RegularFileProperty jsonReport = project.objects.fileProperty()
+            .convention(project.layout.buildDirectory.file('performance-results.json'))
 
     @TaskAction
     void summarize() {
@@ -46,10 +53,10 @@ class PerformanceTestSummary extends DefaultTask {
             }
         }
 
-        versions = versions.sort { ((List) it)[1] }
-        def fastest = ((List) versions[0])[1]
+        def sorted = versions.toSorted { ((List) it)[1] }
+        def fastest = ((List) sorted[0])[1]
         def df = new DecimalFormat("#.##")
-        versions.each { version, mean, stdDev ->
+        sorted.each { version, mean, stdDev ->
             print "Groovy ${sprintf '%-20s', version} Average ${df.format(mean)}ms ± ${df.format(stdDev)}ms "
             if (mean > fastest) {
                 def diff = 100 * (mean - fastest) / fastest
@@ -57,5 +64,24 @@ class PerformanceTestSummary extends DefaultTask {
             }
             println()
         }
+
+        def json = versions.collect { id, mean, stdDev ->
+            [
+                name : seriesName(id),
+                unit : 'ms',
+                value: mean,
+                range: "±${df.format(stdDev)}".toString(),
+                extra: id,
+            ]
+        }
+        def out = jsonReport.get().asFile
+        out.parentFile.mkdirs()
+        out.text = JsonOutput.prettyPrint(JsonOutput.toJson(json))
+    }
+
+    private static String seriesName(String id) {
+        if (id == 'current') return 'compile@current'
+        def m = id =~ /^(\d+)\./
+        return m.find() ? "compile@groovy-${m.group(1)}" : "compile@${id}"
     }
 }
