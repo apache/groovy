@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778797815067,
+  "lastUpdate": 1778799612257,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -98,6 +98,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 476.57666666666665,
             "range": "±23.87",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "6b109a62a7987c2a9ab7a6c1456693f0a3f3bf58",
+          "message": "GROOVY-12008: Sealed types: graduate from incubating status",
+          "timestamp": "2026-05-14T12:58:56Z",
+          "url": "https://github.com/apache/groovy/commit/6b109a62a7987c2a9ab7a6c1456693f0a3f3bf58"
+        },
+        "date": 1778799610938,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 566.4366666666667,
+            "range": "±22.58",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 660.5866666666667,
+            "range": "±209.06",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 578.0333333333333,
+            "range": "±143.17",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 473.8833333333334,
+            "range": "±22.81",
             "unit": "ms",
             "extra": "5.0.6"
           }
