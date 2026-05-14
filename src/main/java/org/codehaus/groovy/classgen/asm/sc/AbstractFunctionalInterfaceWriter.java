@@ -247,13 +247,6 @@ public interface AbstractFunctionalInterfaceWriter {
         );
     }
 
-    private Object[] createBootstrapMethodArguments(final String samMethodDescriptor, final int implMethodKind,
-                                                    final ClassNode implClassNode, final MethodNode implMethodNode,
-                                                    final Parameter[] implMethodParameters, final boolean serializable) {
-        return createBootstrapMethodArguments(samMethodDescriptor, implMethodKind, implClassNode, implMethodNode,
-                implMethodParameters, serializable, ClassNode.EMPTY_ARRAY);
-    }
-
     /**
      * GROOVY-11998: builds the variadic args for {@code LambdaMetafactory.altMetafactory}
      * including {@code FLAG_MARKERS} when the cast target is an intersection.
