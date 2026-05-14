@@ -43,9 +43,9 @@
 <h1>Groovy compiler performance (normalised against current)</h1>
 <p class="intro">
   Each daily run compiles a fixed set of Groovy source files using <code>current</code>
-  (master) and the latest releases of Groovy 3.x, 4.x and 5.x. Every series is divided by
-  the <code>current</code> measurement from the same run, so <code>current = 1.0</code> by
-  construction. Values below 1 mean that version compiles faster than current; values above
+  (master) and the latest releases of Groovy 3.x, 4.x and 5.x. The <code>current</code>
+  measurement from the same run is divided by each series, so <code>current = 1.0</code> by
+  construction. Values above 1 mean that version compiles faster than current; values below
   1 mean it compiles slower. The trends show how current drifts relative to the released lines.
 </p>
 
@@ -108,7 +108,7 @@
       if (b.extra) latestVersions[s.name] = b.extra;
       datasets[idx].data.push({
         x,
-        y: b.value / current.value,
+        y: current.value / b.value,
         absMs: b.value,
         range: b.range || '',
         commit: (run.commit && run.commit.id) ? run.commit.id.slice(0, 7) : '',
@@ -151,7 +151,7 @@
           title: { display: true, text: 'Run date' },
         },
         y: {
-          title: { display: true, text: 'compile time / current  (ratio)' },
+          title: { display: true, text: 'speed relative to current  (higher = faster)' },
           grid: { color: 'rgba(0,0,0,0.06)' },
         },
       },
