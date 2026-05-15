@@ -18,8 +18,11 @@
  */
 package groovy.yaml;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.yaml.util.YamlConverter;
 
@@ -125,10 +128,17 @@ public class YamlSlurper {
      */
     public <T> T parseAs(Class<T> type, Reader reader) {
         try {
-            return new ObjectMapper(new YAMLFactory()).readValue(reader, type);
+            return mapper(new YAMLFactory()).readValue(reader, type);
         } catch (IOException e) {
             throw new YamlRuntimeException(e);
         }
+    }
+
+    static ObjectMapper mapper(YAMLFactory factory) {
+        return new ObjectMapper(factory)
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
     }
 
     /**

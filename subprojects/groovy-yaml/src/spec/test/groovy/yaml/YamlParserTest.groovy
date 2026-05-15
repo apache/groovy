@@ -179,4 +179,61 @@ version: 8
         assert 'java' == yaml[1].language
         assert 8 == yaml[1].version
     }
+
+    // tag::temporal_class[]
+    static class Event {
+        java.time.OffsetDateTime created
+        java.time.LocalDate effective
+        java.time.LocalTime windowStart
+        java.time.LocalDateTime updated
+        String name
+    }
+    // end::temporal_class[]
+
+    @Test
+    void testTemporalTypedRoundTrip() {
+        // tag::temporal_typed[]
+        def original = new Event(
+                created: java.time.OffsetDateTime.parse('1979-05-27T07:32:00-08:00'),
+                effective: java.time.LocalDate.of(1979, 5, 27),
+                windowStart: java.time.LocalTime.of(7, 32, 0),
+                updated: java.time.LocalDateTime.of(1979, 5, 27, 7, 32, 0),
+                name: 'demo')
+
+        def yaml = YamlBuilder.toYaml(original)
+        def parsed = new YamlSlurper().parseTextAs(Event, yaml)
+
+        assert parsed.created == original.created            // OffsetDateTime, non-UTC offset preserved
+        assert parsed.effective == original.effective        // LocalDate
+        assert parsed.windowStart == original.windowStart    // LocalTime
+        assert parsed.updated == original.updated            // LocalDateTime
+        assert parsed.name == original.name
+        // end::temporal_typed[]
+        assert parsed.created instanceof java.time.OffsetDateTime
+        assert parsed.effective instanceof java.time.LocalDate
+        assert parsed.windowStart instanceof java.time.LocalTime
+        assert parsed.updated instanceof java.time.LocalDateTime
+        // the round-tripped offset must remain -08:00, not normalised to Z
+        assert parsed.created.offset == java.time.ZoneOffset.ofHours(-8)
+    }
+
+    @Test
+    void testTemporalUntypedStringPath() {
+        // KNOWN LIMITATION: the untyped slurp path returns temporal values as
+        // String, not java.time.* types. YamlSlurper routes the untyped path
+        // through a YAML->JSON conversion, and JSON has no native temporal
+        // types. Use the typed parseAs/parseTextAs API for java.time.* fidelity.
+        // This test pins the current behaviour so a future change here is deliberate.
+        def parsed = new YamlSlurper().parseText('''
+created: 1979-05-27T07:32:00-08:00
+effective: 1979-05-27
+windowStart: 07:32:00
+''')
+        assert parsed.created == '1979-05-27T07:32:00-08:00'
+        assert parsed.effective == '1979-05-27'
+        assert parsed.windowStart == '07:32:00'
+        assert parsed.created instanceof String
+        assert parsed.effective instanceof String
+        assert parsed.windowStart instanceof String
+    }
 }

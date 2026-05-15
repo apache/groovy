@@ -82,13 +82,22 @@ The following table gives an overview of the YAML types and the corresponding Gr
 |null
 |`null`
 
-|date
-|`java.util.Date` based on the `yyyy-MM-dd'T'HH:mm:ssZ` date format
+|date/time
+|`java.lang.String` (see the note below)
 |===
 
 [NOTE]
 Whenever a value in YAML is `null`, `YamlSlurper` supplements it with the Groovy `null` value. This is in contrast to other
 YAML parsers that represent a `null` value with a library-provided singleton object.
+
+[NOTE]
+====
+For the untyped `parse`/`parseText` API, YAML date and time values are returned as
+`String`. `YamlSlurper` routes the untyped path through a YAML-to-JSON conversion,
+and JSON has no native temporal types. Use the typed `parseAs`/`parseTextAs` API
+(see <<yaml_typed_temporal>>) for `java.time.LocalDate`, `java.time.LocalTime`,
+`java.time.LocalDateTime`, and `java.time.OffsetDateTime` fidelity.
+====
 
 === Typed parsing
 
@@ -110,6 +119,23 @@ NOTE: For simple cases, Groovy's `as` coercion also works with the untyped resul
 `def config = new YamlSlurper().parseText(yaml) as ServerConfig`.
 The `parseTextAs` method uses Jackson databinding, which supports richer annotation-driven
 mapping via `@JsonProperty`, `@JsonFormat`, etc.
+
+[[yaml_typed_temporal]]
+=== Typed date and time values
+
+When a target type declares `java.time.*` fields, the typed `parseAs`/`parseTextAs`
+API and `YamlBuilder.toYaml` round-trip YAML temporal values with full fidelity,
+including the original zone offset for `OffsetDateTime`:
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=temporal_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=temporal_typed,indent=0]
+----
 
 === Builders
 

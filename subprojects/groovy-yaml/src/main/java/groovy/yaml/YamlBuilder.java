@@ -18,7 +18,6 @@
  */
 package groovy.yaml;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import groovy.json.JsonBuilder;
@@ -59,8 +58,8 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      */
     public static String toYaml(Object object) {
         try {
-            return new ObjectMapper(new YAMLFactory()
-                    .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER))
+            return YamlSlurper.mapper(new YAMLFactory()
+                            .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER))
                     .writeValueAsString(object);
         } catch (IOException e) {
             throw new YamlRuntimeException(e);
