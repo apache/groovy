@@ -26,7 +26,9 @@
 <link href="groovy.ico" type="image/x-icon" rel="shortcut icon">
 <link href="groovy.ico" type="image/x-icon" rel="icon">
 <script type="text/javascript">
-    targetPage = "" + window.location.search;
+    // Must be `var` (not let/const): it is read cross-frame as `top.targetPage`
+    // below, which requires it to be a property of the global object.
+    var targetPage = "" + window.location.search;
     if (targetPage != "" && targetPage != "undefined")
         targetPage = targetPage.substring(1);
     if (targetPage.indexOf(":") != -1)

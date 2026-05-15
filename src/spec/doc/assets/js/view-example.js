@@ -22,10 +22,10 @@ function toggle_result_block(e) {
 
 function insert_result_links() {
         $('.result').each(function (idx, node) {
-            znode = $(node);
-            p = $(znode.parent().children()[0]);
+            const znode = $(node);
+            const p = $(znode.parent().children()[0]);
             p.append(' <a class="view-result" href="#">[ view example ]</a>');
-            view_result_link = p.children().last();
+            const view_result_link = p.children().last();
             view_result_link.on('click', $.proxy(toggle_result_block, znode));
         });
         }
