@@ -21,7 +21,6 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.EmptyRange;
 import groovy.lang.GString;
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.lang.Range;
 import groovy.transform.stc.ClosureParams;
@@ -36,9 +35,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -3221,23 +3217,17 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Same logic as {@link #stripIndent(CharSequence)} if {@code forceGroovyBehavior} is {@code true},
-     * otherwise Java 13's {@code stripIndent} will be invoked.
+     * otherwise {@code stripIndent} from JDK 13+ will be invoked.
      *
      * @param self The CharSequence to strip the leading spaces from
-     * @param forceGroovyBehavior force groovy behavior to avoid conflicts with Java13's stripIndent
+     * @param forceGroovyBehavior force groovy behavior to avoid conflicts with Java stripIndent
      *
      * @since 3.0.0
      */
     @Incubating
     public static String stripIndent(final CharSequence self, final boolean forceGroovyBehavior) {
         if (!forceGroovyBehavior) {
-            try {
-                MethodHandle mh = MethodHandles.lookup().findVirtual(self.getClass(), "stripIndent", MethodType.methodType(String.class));
-                return (String) mh.bindTo(self).invokeWithArguments();
-            } catch (NoSuchMethodException | IllegalAccessException ignored) {
-            } catch (Throwable t) {
-                throw new GroovyRuntimeException(t);
-            }
+            return self.toString().stripIndent();
         }
 
         return stripIndent(self);
