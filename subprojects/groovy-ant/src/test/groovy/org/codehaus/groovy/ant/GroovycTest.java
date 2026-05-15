@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Unit tests for the {@link Groovyc} ant task.
@@ -65,6 +66,15 @@ final class GroovycTest {
         project = new Project();
         project.init();
         ProjectHelper.getProjectHelper().parse(project, antFile);
+
+        // The external jar used by the GROOVY-9197 joint-compilation test is resolved
+        // by the build (see groovy-ant build.gradle) rather than checked into the source
+        // tree, so its location is supplied via a system property.
+        String externalJar = System.getProperty("groovy.ant.test.externalJar");
+        if (externalJar != null) {
+            project.setProperty("externalJar", externalJar);
+        }
+
         project.executeTarget("clean");
 
         String altJavaHome = System.getProperty("java.home");
@@ -344,6 +354,9 @@ final class GroovycTest {
     // GROOVY-9197
     @Test
     void testJointCompilationPropagatesClasspath() {
+        assumeTrue(project.getProperty("externalJar") != null,
+            "External jar not supplied by the build (run via Gradle); "
+            + "skipping joint-compilation classpath-propagation test");
         ensureNotPresent("MakesExternalReference");
         project.executeTarget("jointForkedCompilation_ExternalJarOnClasspath");
         ensureResultOK("MakesExternalReference");
