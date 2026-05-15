@@ -18,7 +18,10 @@
  */
 package groovy.toml;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.toml.util.TomlConverter;
@@ -126,10 +129,21 @@ public class TomlSlurper {
      */
     public <T> T parseAs(Class<T> type, Reader reader) {
         try {
-            return new TomlMapper().readValue(reader, type);
+            return mapper().readValue(reader, type);
         } catch (IOException e) {
             throw new TomlRuntimeException(e);
         }
+    }
+
+    // TomlMapper is thread-safe once configured, so a single shared instance is reused
+    private static final TomlMapper MAPPER = TomlMapper.builder()
+            .addModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
+            .build();
+
+    static TomlMapper mapper() {
+        return MAPPER;
     }
 
     /**

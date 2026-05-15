@@ -18,7 +18,6 @@
  */
 package groovy.toml;
 
-import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import groovy.json.JsonBuilder;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
@@ -59,7 +58,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      */
     public static String toToml(Object object) {
         try {
-            return new TomlMapper().writeValueAsString(object);
+            return TomlSlurper.mapper().writeValueAsString(object);
         } catch (IOException e) {
             throw new TomlRuntimeException(e);
         }

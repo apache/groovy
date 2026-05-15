@@ -82,13 +82,23 @@ The following table gives an overview of the TOML types and the corresponding Gr
 |null
 |`null`
 
-|date
-|`java.util.Date` based on the `yyyy-MM-dd'T'HH:mm:ssZ` date format
+|offset/local date-time, local date, local time
+|`java.lang.String` (see the note below)
 |===
 
 [NOTE]
 Whenever a value in TOML is `null`, `TomlSlurper` supplements it with the Groovy `null` value. This is in contrast to other
 TOML parsers that represent a `null` value with a library-provided singleton object.
+
+[NOTE]
+====
+For the untyped `parse`/`parseText` API, TOML date and time values are returned as
+`String`. This is a limitation of the underlying Jackson TOML support, which only
+surfaces `java.time.*` types when a target type is supplied. Use the typed
+`parseAs`/`parseTextAs` API (see <<toml_typed_temporal>>) for `java.time.LocalDate`,
+`java.time.LocalTime`, `java.time.LocalDateTime`, and `java.time.OffsetDateTime`
+fidelity.
+====
 
 === Typed parsing
 
@@ -110,6 +120,23 @@ NOTE: For simple cases, Groovy's `as` coercion also works with the untyped resul
 `def config = new TomlSlurper().parseText(toml) as ServerConfig`.
 The `parseTextAs` method uses Jackson databinding, which supports richer annotation-driven
 mapping via `@JsonProperty`, `@JsonFormat`, etc.
+
+[[toml_typed_temporal]]
+=== Typed date and time values
+
+When a target type declares `java.time.*` fields, the typed `parseAs`/`parseTextAs`
+API and `TomlBuilder.toToml` round-trip TOML temporal values with full fidelity,
+including the original zone offset for `OffsetDateTime`:
+
+[source,groovy]
+----
+include::../test/groovy/toml/TomlParserTest.groovy[tags=temporal_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/toml/TomlParserTest.groovy[tags=temporal_typed,indent=0]
+----
 
 === Builders
 
