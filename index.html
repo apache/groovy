@@ -5,10 +5,13 @@
 <title>Apache Groovy Benchmark Dashboards</title>
 </head>
 <body>
-<h1>Apache Groovy JMH Benchmark Dashboards</h1>
-<p>Daily JMH performance trends, sharded by suite and indy mode. Each dashboard
-shows trend lines for individual benchmarks; data refreshes after the
-<code>jmh-daily</code> workflow runs at 06:00 UTC.</p>
+<h1>Apache Groovy Benchmark Dashboards</h1>
+<p>Daily JMH benchmark and performance trends, sharded by suite and indy mode. Each dashboard
+shows trend lines for individual benchmarks; data refreshes after the daily jobs run:
+<ul>
+    <li><code>jmh-daily</code> workflow runs at 06:00 UTC.</p></li>
+    <li><code>perf-daily</code> workflow runs at 06:30 UTC.</p></li>
+</ul>
 
 <h2>perf</h2>
 <ul>
@@ -36,5 +39,11 @@ shows trend lines for individual benchmarks; data refreshes after the
 <li><a href="dev/bench/jmh/grails-ez/indy/">grails-ez (E&ndash;Z) &mdash; indy</a></li>
 <li><a href="dev/bench/jmh/grails-ez/classic/">grails-ez (E&ndash;Z) &mdash; classic</a></li>
 </ul>
+
+<h2>summary</h2>
+<ul>
+    <li><a href="dev/bench/jmh/summary.html">trend (last 90 days)</a></li>
+</ul>
+
 </body>
 </html>
