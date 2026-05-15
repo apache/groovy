@@ -58,16 +58,18 @@ on:
         type: boolean
         default: false
 
-permissions:
-  # `actions: write` is required both for `gh cache delete` and for the
-  # `actions/cache` post-step that saves a fresh entry in scrub mode.
-  actions: write
-  contents: read
+# Permissions are scoped per-job (least privilege): both jobs only need
+# `actions: write` (for `gh cache delete` and the `actions/cache` save
+# post-step). Neither job checks out the repo, so no `contents` scope is
+# required; with an explicit per-job block, unlisted scopes default to none.
+permissions: {}
 
 jobs:
   delete-entries:
     if: ${{ inputs.mode == 'delete-entries' }}
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
     steps:
       - name: "🔍 List matching cache entries"
         env:
@@ -117,6 +119,8 @@ jobs:
   # workflows (Linux/Windows/macOS). Each scrubs its own key family.
   scrub-ivydata:
     if: ${{ inputs.mode == 'scrub-ivydata' }}
+    permissions:
+      actions: write
     strategy:
       fail-fast: false
       matrix:

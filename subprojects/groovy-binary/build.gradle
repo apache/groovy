@@ -171,6 +171,13 @@ distribution {
                             '.settings',       // used by Eclipse
                             '.classpath',      // used by Eclipse
                             '.gradle'          // used by Gradle
+                    if (project.projectDir.name == 'performance') {
+                        // The dashboard is only for the gh-pages published view
+                        // (it bundles third-party JS); it plays no part in
+                        // running performance tests from the source release, so
+                        // keep it out of the source distribution.
+                        exclude 'dashboard'
+                    }
                 }
             }
         }

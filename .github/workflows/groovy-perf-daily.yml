@@ -75,22 +75,26 @@ jobs:
       - name: Install custom dashboard page
         run: |
           set -euo pipefail
-          SRC=subprojects/performance/dashboard/index.html
+          # Sync the custom page AND its locally-vendored JS (vendor/) so the
+          # published dashboard has no third-party CDN runtime dependency.
+          SRC_DIR=subprojects/performance/dashboard
           DEST_DIR=dev/bench/perf/compiler
-          cp "$SRC" /tmp/perf-index.html
           git fetch origin gh-pages
           git worktree add /tmp/gh-pages gh-pages
-          mkdir -p "/tmp/gh-pages/$DEST_DIR"
-          if ! cmp -s /tmp/perf-index.html "/tmp/gh-pages/$DEST_DIR/index.html"; then
-            cp /tmp/perf-index.html "/tmp/gh-pages/$DEST_DIR/index.html"
-            cd /tmp/gh-pages
+          mkdir -p "/tmp/gh-pages/$DEST_DIR/vendor"
+          cp "$SRC_DIR/index.html" "/tmp/gh-pages/$DEST_DIR/index.html"
+          # Mirror vendor/ exactly (drop files removed upstream, e.g. on a
+          # version bump) but keep data.js and other generated siblings.
+          rsync -a --delete "$SRC_DIR/vendor/" "/tmp/gh-pages/$DEST_DIR/vendor/"
+          cd /tmp/gh-pages
+          git add "$DEST_DIR/index.html" "$DEST_DIR/vendor"
+          if git diff --cached --quiet; then
+            echo 'Custom dashboard page and vendored assets already up to date.'
+          else
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add "$DEST_DIR/index.html"
             git commit -m 'Update compiler performance dashboard page'
             git push origin gh-pages
-          else
-            echo 'Custom index.html already up to date.'
           fi
 
       - name: Upload reports-perf-compiler
