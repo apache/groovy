@@ -115,3 +115,34 @@ jobs:
         with:
           name: reports-jmh-${{ matrix.suite }}-${{ matrix.indy }}
           path: subprojects/performance/build/results/jmh/
+
+  # Single post-matrix job (avoids 10 matrix jobs racing on a gh-pages push):
+  # after every suite/mode has published its data.js, install the cross-suite
+  # summary page + its vendored JS into dev/bench/jmh/ on gh-pages.
+  publish-summary:
+    needs: benchmark
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # only this job needs gh-pages write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install JMH summary page
+        run: |
+          set -euo pipefail
+          SRC_DIR=subprojects/performance/dashboard
+          DEST_DIR=dev/bench/jmh
+          git fetch origin gh-pages
+          git worktree add /tmp/gh-pages gh-pages
+          mkdir -p "/tmp/gh-pages/$DEST_DIR/vendor"
+          cp "$SRC_DIR/jmh-summary.html" "/tmp/gh-pages/$DEST_DIR/summary.html"
+          rsync -a --delete "$SRC_DIR/vendor/" "/tmp/gh-pages/$DEST_DIR/vendor/"
+          cd /tmp/gh-pages
+          git add "$DEST_DIR/summary.html" "$DEST_DIR/vendor"
+          if git diff --cached --quiet; then
+            echo 'JMH summary page and vendored assets already up to date.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Update JMH performance summary page'
+            git push origin gh-pages
+          fi
