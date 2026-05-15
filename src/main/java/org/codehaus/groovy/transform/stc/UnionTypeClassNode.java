@@ -369,10 +369,11 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public boolean implementsInterface(final ClassNode classNode) {
+        if (classNode == null || !classNode.isInterface()) return false;
         for (ClassNode delegate : delegates) {
-            if (delegate.implementsInterface(classNode)) return true;
+            if (!delegate.implementsInterface(classNode)) return false;
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -385,15 +386,16 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public boolean isDerivedFrom(final ClassNode type) {
-        return getUnresolvedSuperClass(false).isDerivedFrom(type);
+        return this.equals(type)
+            || getUnresolvedSuperClass(false).isDerivedFrom(type);
     }
 
     @Override
-    public boolean isDerivedFromGroovyObject() {
+    public boolean isInterface() {
         for (ClassNode delegate : delegates) {
-            if (delegate.isDerivedFromGroovyObject()) return true;
+            if (!delegate.isInterface()) return false;
         }
-        return false;
+        return true;
     }
 
     @Override
