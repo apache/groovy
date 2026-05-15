@@ -18,9 +18,12 @@
  */
 package groovy.csv;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.apache.groovy.lang.annotation.Incubating;
 
 import java.io.File;
@@ -58,7 +61,18 @@ public class CsvSlurper {
      * and treats the first row as headers.
      */
     public CsvSlurper() {
-        this.mapper = new CsvMapper();
+        this.mapper = mapper();
+    }
+
+    // CsvMapper is thread-safe once configured, so a single shared instance is reused
+    private static final CsvMapper MAPPER = CsvMapper.builder()
+            .addModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
+            .build();
+
+    static CsvMapper mapper() {
+        return MAPPER;
     }
 
     /**

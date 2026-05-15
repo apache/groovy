@@ -53,7 +53,7 @@ public class CsvBuilder implements Writable {
      * for field escaping.
      */
     public CsvBuilder() {
-        this.mapper = new CsvMapper();
+        this.mapper = CsvSlurper.mapper();
     }
 
     /**
@@ -89,7 +89,7 @@ public class CsvBuilder implements Writable {
         if (data == null || data.isEmpty()) {
             return "";
         }
-        CsvMapper csvMapper = new CsvMapper();
+        CsvMapper csvMapper = CsvSlurper.mapper();
         Map<String, ?> first = data.iterator().next();
         CsvSchema.Builder schemaBuilder = CsvSchema.builder();
         for (String key : first.keySet()) {
@@ -116,7 +116,7 @@ public class CsvBuilder implements Writable {
         if (data == null || data.isEmpty()) {
             return "";
         }
-        CsvMapper csvMapper = new CsvMapper();
+        CsvMapper csvMapper = CsvSlurper.mapper();
         CsvSchema schema = csvMapper.schemaFor(type).withHeader();
         try {
             return csvMapper.writer(schema).writeValueAsString(data);

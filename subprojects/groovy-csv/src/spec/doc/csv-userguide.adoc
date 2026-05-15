@@ -78,6 +78,15 @@ include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_parsing,indent=0]
 include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_parsing_usage,indent=0]
 ----
 
+[NOTE]
+====
+CSV has no native types — every cell is text, so the untyped `parse`/`parseText`
+API always returns `String` values, including for date/time-looking columns. Use
+the typed `parseAs` API with `java.time.*` fields (see <<csv_typed_temporal>>) for
+`java.time.LocalDate`, `java.time.LocalTime`, `java.time.LocalDateTime`, and
+`java.time.OffsetDateTime` fidelity.
+====
+
 [[csv_csvbuilder]]
 == CsvBuilder
 
@@ -111,4 +120,20 @@ CSV written by `CsvBuilder` can be read back with `CsvSlurper`:
 [source,groovy]
 ----
 include::../test/groovy/csv/CsvBuilderTest.groovy[tags=round_trip,indent=0]
+----
+
+[[csv_typed_temporal]]
+=== Typed date and time values
+
+When a target type declares `java.time.*` fields, `CsvBuilder.toCsv` and the typed
+`CsvSlurper.parseAs` API round-trip temporal values with full fidelity:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=temporal_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=temporal_typed,indent=0]
 ----
