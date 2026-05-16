@@ -87,6 +87,15 @@ a| Enforces that `@Pure` methods have no side effects, with configurable strictn
 @Pure int twice() { value * 2 }  [.green]#// icon:check[] reads only#
 @Pure int bad()   { count++ }    [.red]#// icon:times[] field mutation#
 ----
+
+| <<Checking @Associative/@Reducer Combiners (Incubating),CombinerChecker>>
+a| Verifies a combiner passed to a parallel reduction carries the associativity contract those methods silently require
+
+[listing,subs="+quotes,macros"]
+----
+list.injectParallel(0, Maths.&add)        [.green]#// icon:check[] @Associative method#
+list.injectParallel(0) { a, b -> a - b }  [.red]#// icon:times[] non-associative: undefined result#
+----
 |===
 
 These checkers work with annotations from multiple libraries (JSpecify, JetBrains,
@@ -1241,3 +1250,144 @@ Both checkers can be used independently or together:
 @TypeChecked(extensions = ['groovy.typecheckers.ModifiesChecker',
                            'groovy.typecheckers.PurityChecker'])
 ----
+
+== Checking @Associative/@Reducer Combiners (Incubating)
+
+The parallel `Collection` reductions split, reorder, and recombine their input.
+That is only correct when the combining function is *associative* --
+`combine(a, combine(b, c))` must equal `combine(combine(a, b), c)` -- and, for
+the seeded `injectParallel`, when the seed is an *identity* for the combiner.
+A non-associative combiner (subtraction, division, exponentiation) compiles
+and runs, but produces a different, non-deterministic result depending on how
+the work was partitioned. This is among the hardest bug classes to detect by
+testing alone. (Note: associativity is distinct from commutativity --
+concatenation, for example, is associative but not commutative, and is a
+perfectly valid parallel combiner over an ordered source; this checker is
+about associativity and identity, not encounter order.)
+
+`@Associative` and `@Reducer` (in `groovy.transform`) let a combiner *declare*
+the contract; `CombinerChecker` verifies, at compile time, that combiners
+reaching `sumParallel`/`injectParallel` carry it.
+
+[source,groovy]
+----
+import groovy.transform.Associative
+import groovy.transform.Reducer
+
+class Maths {
+    @Associative              static int add(int a, int b) { a + b }
+    @Reducer(zero = '0')      static int plus(int a, int b) { a + b }
+}
+----
+
+=== Modes
+
+Associativity is undecidable in general, so the checker is deliberately
+conservative and false-positive averse (a type-checking extension has only an
+error channel).
+
+`default` (lenient):: flags only high-confidence problems -- a non-associative
+operator (`-`, `/`, `%`, `**`) applied directly to the two combiner parameters, and a
+`injectParallel` seed that contradicts a `@Reducer`'s declared `zero()`. An
+ordinary associative inline closure such as `{ a, b -> a + b }` is never
+flagged.
+`strict`:: additionally requires the combiner to be a method reference to an
+`@Associative`/`@Reducer` method; inline closures and un-annotated references
+are rejected.
+
+[source,groovy]
+----
+// lenient (default)
+@TypeChecked(extensions = 'groovy.typecheckers.CombinerChecker')
+
+// strict -- only declared, verifiable combiners allowed
+@TypeChecked(extensions = "groovy.typecheckers.CombinerChecker(mode: 'strict')")
+----
+
+=== Examples
+
+[listing,subs="+quotes,macros"]
+----
+[1,2,3].injectParallel(0, Maths.&add)       [.green]#// icon:check[] declared @Associative#
+[1,2,3].injectParallel(0) { a,b -> a + b }  [.green]#// icon:check[] lenient: associative#
+[1,2,3].injectParallel(0) { a,b -> a - b }  [.red]#// icon:times[] non-associative#
+[1,2,3].injectParallel(5, Maths.&plus)      [.red]#// icon:times[] seed != @Reducer zero '0'#
+----
+
+=== Recognising Monoid/Semigroup carriers
+
+Groovy deliberately ships no `Monoid`/`Semigroup` of its own, but a combiner
+sourced from such a type in an external library (Functional Java, Palatable
+Lambda, Purefun, ...) already *carries* the associativity contract -- a
+`Semigroup` is an associative operation; a `Monoid` is that plus an identity.
+The checker therefore accepts a method-reference (or thin delegating closure)
+whose owner is such a carrier, with the same trust level as `@Associative`
+(an asserted contract, not a proof). Carriers are matched by simple type name
+(`Monoid`/`Semigroup` by default, extensible via the `monoids`/`semigroups`
+options) so there is no dependency on any library.
+
+[listing,subs="+quotes,macros"]
+----
+def m = new IntSum()   // implements Monoid
+[1,2,3].injectParallel(m.zero(), m.&append)  [.green]#// icon:check[] Monoid carries identity#
+[1,2,3].sumParallel(s.&append) // s: Semigroup [.green]#// icon:check[] associative; no seed needed#
+[1,2,3].injectParallel(0, s.&append)         [.red]#// icon:times[] Semigroup has no identity#
+----
+
+This last case is a high-confidence positive the type distinction makes
+possible: a seeded `injectParallel` needs an identity, which a `Semigroup`
+categorically lacks -- only a `Monoid` provides one.
+
+=== JDK stream reductions
+
+Beyond Groovy's parallel `Collection` methods, the checker also covers
+`java.util.stream.{Stream,IntStream,LongStream,DoubleStream}#reduce` (the
+same way `RegexChecker` covers `java.util.regex` types). All combiner shapes,
+the identity check, and Monoid/Semigroup carrier recognition apply unchanged;
+the three overloads map onto the existing model -- `reduce(op)` is unseeded,
+`reduce(id, op)` and `reduce(id, acc, combiner)` are seeded (the last
+argument, i.e. the merge operator, is the associativity-critical one).
+
+Because these resolve to a real interface method, recognition is gated on the
+receiver type (`java.util.stream.*`) rather than name alone, keeping the
+generic name `reduce` from causing false positives. Note that `Stream.reduce`
+is contractually required to be associative *even for sequential streams*, so
+flagging is spec-correct independently of `.parallel()` -- unlike Groovy's
+sequential `inject`, which is a deterministic left fold and is deliberately
+never flagged.
+
+[listing,subs="+quotes,macros"]
+----
+[1,2,3].stream().reduce(0) { a,b -> a + b }  [.green]#// icon:check[] associative#
+[1,2,3].stream().reduce(0) { a,b -> a - b }  [.red]#// icon:times[] non-associative#
+[1,2,3].stream().reduce(0, s.&append) // Semigroup [.red]#// icon:times[] no identity#
+----
+
+=== Limitations
+
+This is a safety net, not a guarantee:
+
+* It runs only under `@TypeChecked`/`@CompileStatic`; dynamic code is
+  unchecked.
+* Associativity cannot be proven, only asserted (via the annotations) or
+  ruled out for obvious cases. The annotations are intended to be backed by
+  tests (for example auto-derived property-based tests).
+* An inline lambda has no declaration site for the annotation; the declarable
+  contract is available only for named, referenced combiner methods.
+* The inline-closure check is purely syntactic: it matches the operator token
+  ({{-}}, {{/}}, {{%}}, {{**}}) and assumes operators carry their conventional
+  meaning. Groovy lets operators be overloaded (and Groovy 6 adds {{+=}} via
+  {{plusEqual}}), which breaks that assumption both ways: a denylisted operator
+  could be overloaded to something associative (a possible false positive),
+  and -- the converse -- a normally-associative operator such as {{+}} or
+  {{*}} could be overloaded to be non-associative. The latter is poor style
+  and is an explicit *non-goal*: the checker does not attempt to detect it.
+  The check deliberately stays minimal and errs toward silence; the
+  declaration paths (`@Associative`/`@Reducer`, Monoid/Semigroup carriers) are
+  the reliable, overloading-immune way to assert the contract.
+
+=== Relationship to @Pure and @Memoized
+
+A parallel combiner should normally also be side-effect-free; pairing this
+checker with `<<Checking @Pure Purity (Incubating),PurityChecker>>` (which
+already treats `@Memoized` methods as purity-obligated) gives both guarantees.
