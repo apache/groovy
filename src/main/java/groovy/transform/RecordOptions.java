@@ -137,6 +137,15 @@ public @interface RecordOptions {
      * </pre>
      * Unknown keys in the map are ignored, and if the values would not change
      * the object, then the original object is returned.
+     * <p>
+     * A key may also be a dotted <em>nested path</em> (e.g.
+     * {@code copyWith('address.city': 'NYC')}); every node on the path must
+     * itself provide {@code copyWith(Map)}. A transactional block form is also
+     * generated, in which {@code old} is the original object and
+     * {@code prop.modify { }} is a single-field shorthand:
+     * {@code copyWith { name = old.name.toUpperCase(); address.city = 'y' }}.
+     * Use the {@code old} form to reach a real same-named {@code modify}
+     * method on a value type, or simply for clarity.
      *
      * If a method called {@code copyWith} that takes a single parameter already
      * exists in the class, then this setting is ignored, and no method is generated.

@@ -25,6 +25,7 @@ import groovy.transform.CompilationUnitAware;
 import groovy.transform.ImmutableBase;
 import groovy.transform.options.PropertyHandler;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
+import org.apache.groovy.ast.tools.CopyWithUtils;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -292,6 +293,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                 ),
                 returnS(varX("this", cNode))
         ));
+        body.addStatement(CopyWithUtils.nestedFlattenStmt("map"));
         body.addStatement(declS(localVarX("dirty", ClassHelper.boolean_TYPE), ConstantExpression.PRIM_FALSE));
         body.addStatement(declS(localVarX("construct", HMAP_TYPE), ctorX(HMAP_TYPE)));
 
@@ -317,6 +319,9 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         for (PropertyNode pNode : pList) {
             map.addAnnotation(createNamedParam(pNode.getName(), pNode.getType(), false));
         }
+
+        CopyWithUtils.addCopyWithIdentityMethod(cNode);
+        CopyWithUtils.addCopyWithBlockMethod(cNode);
     }
 
     /**
