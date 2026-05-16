@@ -75,6 +75,16 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private boolean inClosure;
 
+    /**
+     * Creates a transformer that rewrites trait receiver access against the woven receiver.
+     *
+     * @param thisObject the synthetic receiver expression used for rewritten calls
+     * @param unit the source unit that receives transformation errors
+     * @param traitClass the trait currently being transformed
+     * @param traitHelper the helper class generated for the trait
+     * @param fieldHelper the helper class generated for trait field access
+     * @param knownFields the trait field names that require remapping
+     */
     public TraitReceiverTransformer(final VariableExpression thisObject, final SourceUnit unit, final ClassNode traitClass,
                                     final ClassNode traitHelper, final ClassNode fieldHelper, final Collection<String> knownFields) {
         this.weaved = thisObject;
@@ -85,11 +95,22 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         this.knownFields = knownFields;
     }
 
+    /**
+     * Returns the source unit used for diagnostics.
+     *
+     * @return the current source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return unit;
     }
 
+    /**
+     * Rewrites trait expressions that reference {@code this}, {@code super}, or trait fields.
+     *
+     * @param exp the expression to transform
+     * @return the transformed expression
+     */
     @Override
     public Expression transform(final Expression exp) {
         if (exp instanceof BinaryExpression) {

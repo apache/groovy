@@ -30,25 +30,52 @@ class TraitHelpersTuple {
     private final ClassNode fieldHelper;
     private final ClassNode staticFieldHelper;
 
+    /**
+     * Creates a tuple without a static field helper.
+     *
+     * @param helper the generated trait helper class
+     * @param fieldHelper the generated instance field helper class
+     */
     public TraitHelpersTuple(final ClassNode helper, final ClassNode fieldHelper) {
         this(helper, fieldHelper, null);
     }
 
+    /**
+     * Creates a tuple of helper classes associated with a trait.
+     *
+     * @param helper the generated trait helper class
+     * @param fieldHelper the generated instance field helper class
+     * @param staticFieldHelper the generated static field helper class
+     */
     public TraitHelpersTuple(final ClassNode helper, final ClassNode fieldHelper, final ClassNode staticFieldHelper) {
         this.helper = helper;
         this.fieldHelper = fieldHelper;
         this.staticFieldHelper = staticFieldHelper;
     }
 
+    /**
+     * Returns the generated trait helper class.
+     *
+     * @return the helper class node
+     */
     public ClassNode getHelper() {
         return helper;
     }
 
+    /**
+     * Returns the generated instance field helper class.
+     *
+     * @return the field helper class node
+     */
     public ClassNode getFieldHelper() {
         return fieldHelper;
     }
 
     /**
+     * Returns the generated static field helper class.
+     *
+     * @return the static field helper class node, or {@code null} when none is needed
+     *
      * @since 2.5.1
      */
     public ClassNode getStaticFieldHelper() {

@@ -45,16 +45,33 @@ class NAryOperationRewriter extends ClassCodeExpressionTransformer {
     private final SourceUnit sourceUnit;
     private final Collection<String> knownFields;
 
+    /**
+     * Creates a rewriter for compound operations that target trait fields.
+     *
+     * @param sourceUnit the source unit that receives rewrite errors
+     * @param knownFields the trait field names that need special handling
+     */
     public NAryOperationRewriter(final SourceUnit sourceUnit, final Collection<String> knownFields) {
         this.sourceUnit = sourceUnit;
         this.knownFields = knownFields;
     }
 
+    /**
+     * Returns the source unit used for rewrite diagnostics.
+     *
+     * @return the current source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * Rewrites compound assignments and rejects unsupported prefix or postfix updates on trait fields.
+     *
+     * @param exp the expression to transform
+     * @return the rewritten expression
+     */
     @Override
     public Expression transform(final Expression exp) {
         if (exp instanceof BinaryExpression) {

@@ -114,16 +114,34 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
+    /**
+     * Metadata key that marks trait-generated calls requiring dynamic dispatch.
+     */
     public static final String DO_DYNAMIC = TraitReceiverTransformer.class + ".doDynamic";
+
+    /**
+     * Metadata key that stores an expression replacement to apply after type checking.
+     */
     public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class + ".replacement";
 
     private CompilationUnit compilationUnit;
 
+    /**
+     * Stores the compilation unit so generated helper classes can register follow-up transformations.
+     *
+     * @param unit the active compilation unit
+     */
     @Override
     public void setCompilationUnit(final CompilationUnit unit) {
         this.compilationUnit = unit;
     }
 
+    /**
+     * Rewrites a trait declaration into the interface and helper classes used during compilation.
+     *
+     * @param nodes the annotation and annotated nodes participating in the transformation
+     * @param source the source unit being transformed
+     */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         AnnotatedNode node = (AnnotatedNode) nodes[1];

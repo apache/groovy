@@ -86,6 +86,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public abstract class TraitComposer {
 
     /**
+     * Deprecated alias for {@link StaticCompilationVisitor#COMPILESTATIC_CLASSNODE}.
+     *
      * @deprecated
      */
     @Deprecated(since = "6.0.0")
