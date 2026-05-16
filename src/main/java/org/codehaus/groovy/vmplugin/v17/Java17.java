@@ -31,6 +31,11 @@ import org.codehaus.groovy.vmplugin.v16.Java16;
 @SuppressWarnings("removal")
 public class Java17 extends Java16 {
 
+    /**
+     * Returns the Java feature version handled by this plugin.
+     *
+     * @return {@code 17}
+     */
     @Override
     public int getVersion() {
         return 17;

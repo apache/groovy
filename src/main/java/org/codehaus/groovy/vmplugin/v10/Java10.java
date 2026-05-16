@@ -29,11 +29,21 @@ import java.util.Arrays;
 @SuppressWarnings("removal")
 public class Java10 extends Java9 {
 
+    /**
+     * Returns the Java feature version handled by this plugin.
+     *
+     * @return {@code 10}
+     */
     @Override
     public int getVersion() {
         return 10;
     }
 
+    /**
+     * Returns the default Groovy method extensions available on Java 10.
+     *
+     * @return the plugin default Groovy method classes
+     */
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
         Class<?>[] answer = super.getPluginDefaultGroovyMethods();

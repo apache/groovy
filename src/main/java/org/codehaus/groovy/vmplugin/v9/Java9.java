@@ -60,11 +60,13 @@ import java.util.stream.Collectors;
 @SuppressWarnings("removal")
 public class Java9 extends Java8 {
 
+    /** {@inheritDoc} */
     @Override
     public int getVersion() {
         return 9;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
         Class<?>[] answer = super.getPluginDefaultGroovyMethods();
@@ -76,6 +78,7 @@ public class Java9 extends Java8 {
         return answer;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Map<String, Set<String>> getDefaultImportClasses(final String[] packageNames) {
         List<String> javaPackages = new ArrayList<>(4);
@@ -135,6 +138,7 @@ public class Java9 extends Java8 {
 
     //--------------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
         try {
@@ -146,6 +150,7 @@ public class Java9 extends Java8 {
 
     //--------------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, Class<?> caller) {
         if (metaMethod instanceof CachedMethod cachedMethod) {
@@ -210,6 +215,7 @@ public class Java9 extends Java8 {
 
     //--------------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public boolean trySetAccessible(final AccessibleObject ao) {
         return ao.trySetAccessible();
@@ -253,6 +259,7 @@ public class Java9 extends Java8 {
         return checkAccessible(callerClass, declaringClass, member.getModifiers(), true);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean checkAccessible(final Class<?> accessingClass, final Class<?> declaringClass, final int memberModifiers, final boolean allowIllegalAccess) {
         Module accessingModule = accessingClass.getModule();

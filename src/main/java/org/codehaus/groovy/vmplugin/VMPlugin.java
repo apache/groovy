@@ -41,16 +41,54 @@ import java.util.Set;
  */
 public interface VMPlugin {
 
+    /**
+     * Returns plugin-specific default Groovy methods.
+     *
+     * @return the default Groovy method classes contributed by this plugin
+     */
     Class[] getPluginDefaultGroovyMethods();
+
+    /**
+     * Returns plugin-specific static Groovy methods.
+     *
+     * @return the static Groovy method classes contributed by this plugin
+     */
     Class[] getPluginStaticGroovyMethods();
 
+    /**
+     * Adds VM-specific metadata to the given class node.
+     *
+     * @param node the class node to enrich
+     */
     void setAdditionalClassInformation(ClassNode node);
+
+    /**
+     * Configures the supplied class node from its runtime type information.
+     *
+     * @param unit the compile unit that owns the class node
+     * @param node the class node to configure
+     */
     void configureClassNode(CompileUnit unit, ClassNode node);
 
+    /**
+     * Copies runtime annotation metadata into the supplied annotation node.
+     *
+     * @param node the annotation node to configure
+     */
     void configureAnnotation(AnnotationNode node);
+
+    /**
+     * Copies values from an annotation definition onto another annotation node.
+     *
+     * @param definition the source annotation definition
+     * @param node the annotation node to update
+     */
     default void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode node) {
     }
 
+    /**
+     * Invalidates cached call sites maintained by the plugin.
+     */
     void invalidateCallSites();
 
     /**

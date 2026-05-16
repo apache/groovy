@@ -40,11 +40,23 @@ import java.util.stream.Collectors;
 @SuppressWarnings("removal")
 public class Java16 extends Java10 {
 
+    /**
+     * Returns the Java feature version handled by this plugin.
+     *
+     * @return {@code 16}
+     */
     @Override
     public int getVersion() {
         return 16;
     }
 
+    /**
+     * Returns a handle for invoking the supplied method, including proxy default methods.
+     *
+     * @param method the method to invoke
+     * @param receiver the bound receiver
+     * @return a bound invocation handle or a wrapped failure
+     */
     @Override
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         try {
@@ -63,6 +75,14 @@ public class Java16 extends Java10 {
         }
     }
 
+    /**
+     * Invokes a handle produced by {@link #getInvokeSpecialHandle(Method, Object)}.
+     *
+     * @param handle the handle or deferred failure to invoke
+     * @param args the invocation arguments
+     * @return the invocation result
+     * @throws Throwable if invocation fails
+     */
     @Override
     public Object invokeHandle(final Object handle, final Object[] args) throws Throwable {
         if (handle instanceof ProxyDefaultMethodHandle) {
@@ -73,6 +93,13 @@ public class Java16 extends Java10 {
         return mh.invokeWithArguments(args);
     }
 
+    /**
+     * Adds record component metadata when the runtime class is a record.
+     *
+     * @param cu the owning compile unit
+     * @param cn the class node to update
+     * @param c the runtime class
+     */
     @Override
     protected void makeRecordComponents(final CompileUnit cu, final ClassNode cn, final Class<?> c) {
         if (c.isRecord()) cn.setRecordComponents(Arrays.stream(c.getRecordComponents()).map(rc -> {
@@ -82,8 +109,14 @@ public class Java16 extends Java10 {
         }).collect(Collectors.toList()));
     }
 
-    @Override
+    /**
+     * Returns the component names declared by a record class.
+     *
+     * @param maybeRecord the class to inspect
+     * @return the record component names, or the inherited fallback result
+     */
     @Incubating
+    @Override
     public List<String> getRecordComponentNames(Class<?> maybeRecord) {
         if (maybeRecord.isRecord()) {
             return Arrays.stream(maybeRecord.getRecordComponents()).map(RecordComponent::getName).toList();

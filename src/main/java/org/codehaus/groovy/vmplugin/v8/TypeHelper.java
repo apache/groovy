@@ -30,6 +30,12 @@ import java.math.BigInteger;
  */
 public class TypeHelper {
 
+    /**
+     * Returns the primitive type for a wrapper class when one exists.
+     *
+     * @param c the type to unbox
+     * @return the primitive counterpart, or the original type
+     */
     protected static Class<?> getUnboxedType(Class<?> c) {
         if (c == null || c.isPrimitive())                ;
         else if (c ==   Boolean.class) c =   Boolean.TYPE;
@@ -91,12 +97,24 @@ public class TypeHelper {
         return callSiteType;
     }
 
+    /**
+     * Checks whether the type belongs to Groovy's integral-int category.
+     *
+     * @param x the type to test
+     * @return {@code true} if the type is treated as an int-like type
+     */
     protected static boolean isIntCategory(Class<?> x) {
         return x == Integer.class || x == int.class ||
                 x == Byte.class || x == byte.class ||
                 x == Short.class || x == short.class;
     }
 
+    /**
+     * Checks whether the type belongs to Groovy's integral-long category.
+     *
+     * @param x the type to test
+     * @return {@code true} if the type is treated as a long-like type
+     */
     protected static boolean isLongCategory(Class<?> x) {
         return x == Long.class || x == long.class ||
                 isIntCategory(x);
@@ -106,10 +124,22 @@ public class TypeHelper {
         return x == BigInteger.class || isLongCategory(x);
     }
 
+    /**
+     * Checks whether the type belongs to Groovy's BigDecimal category.
+     *
+     * @param x the type to test
+     * @return {@code true} if the type is treated as a BigDecimal-like type
+     */
     protected static boolean isBigDecCategory(Class<?> x) {
         return x == BigDecimal.class || isBigIntCategory(x);
     }
 
+    /**
+     * Checks whether the type belongs to Groovy's floating-point category.
+     *
+     * @param x the type to test
+     * @return {@code true} if the type is treated as a double-like type
+     */
     protected static boolean isDoubleCategory(Class<?> x) {
         return x == Float.class || x == float.class ||
                 x == Double.class || x == double.class ||

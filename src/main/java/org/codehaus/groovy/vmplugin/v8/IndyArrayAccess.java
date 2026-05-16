@@ -117,10 +117,22 @@ public class IndyArrayAccess {
         return i;
     }
 
+    /**
+     * Tests whether an array index is already non-negative.
+     *
+     * @param index the candidate index
+     * @return {@code true} if the index is non-negative
+     */
     public static boolean notNegative(int index) {
         return index >= 0;
     }
 
+    /**
+     * Returns an array getter handle adapted to the supplied call-site type.
+     *
+     * @param type the target call-site type
+     * @return a getter handle for the array element access
+     */
     public static MethodHandle arrayGet(MethodType type) {
         Class<?> key = type.parameterType(0);
         MethodHandle res = getterMap.get(key);
@@ -130,6 +142,12 @@ public class IndyArrayAccess {
         return res;
     }
 
+    /**
+     * Returns an array setter handle adapted to the supplied call-site type.
+     *
+     * @param type the target call-site type
+     * @return a setter handle for the array element access
+     */
     public static MethodHandle arraySet(MethodType type) {
         Class<?> key = type.parameterType(0);
         MethodHandle res = setterMap.get(key);

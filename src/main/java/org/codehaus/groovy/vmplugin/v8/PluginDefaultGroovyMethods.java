@@ -157,26 +157,31 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.transform = transform;
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean cancel(final boolean mayInterruptIfRunning) {
             return delegate.cancel(mayInterruptIfRunning);
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean isCancelled() {
             return delegate.isCancelled();
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean isDone() {
             return delegate.isDone();
         }
 
+        /** {@inheritDoc} */
         @Override
         public E get() throws InterruptedException, ExecutionException {
             return transform.call(delegate.get());
         }
 
+        /** {@inheritDoc} */
         @Override
         public E get(final long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return transform.call(delegate.get(timeout, unit));
@@ -692,136 +697,312 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns a single-element stream for the supplied object.
+     *
+     * @param self the source element
+     * @param <T> the element type
+     * @return a stream containing {@code self}
+     */
     @Deprecated
     public static <T> Stream<T> stream(final T self) {
         return Stream.of(self);
     }
 
+    /**
+     * Returns a stream over the supplied array.
+     *
+     * @param self the source array
+     * @param <T> the element type
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final T[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code int} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Integer> stream(final int[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code long} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Long> stream(final long[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code double} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Double> stream(final double[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code char} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Character> stream(final char[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code byte} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Byte> stream(final byte[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code short} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Short> stream(final short[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code boolean} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Boolean> stream(final boolean[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code float} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Float> stream(final float[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied enumeration.
+     *
+     * @param self the source enumeration
+     * @param <T> the element type
+     * @return a stream over the enumeration contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Enumeration<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied iterable.
+     *
+     * @param self the source iterable
+     * @param <T> the element type
+     * @return a stream over the iterable contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Iterable<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied iterator.
+     *
+     * @param self the source iterator
+     * @param <T> the element type
+     * @return a stream over the iterator contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Iterator<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied spliterator.
+     *
+     * @param self the source spliterator
+     * @param <T> the element type
+     * @return a stream over the spliterator contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Spliterator<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns an empty stream for Groovy's null-object sentinel.
+     *
+     * @param self the null-object sentinel
+     * @param <T> the element type
+     * @return an empty stream
+     */
     @Deprecated
     public static <T> Stream<T> stream(final NullObject self) {
         return Stream.empty();
     }
 
+    /**
+     * Returns a stream over the supplied optional value.
+     *
+     * @param self the source optional
+     * @param <T> the element type
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Optional<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns an {@link IntStream} over the supplied optional int value.
+     *
+     * @param self the source optional int
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static IntStream stream(final OptionalInt self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a {@link LongStream} over the supplied optional long value.
+     *
+     * @param self the source optional long
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static LongStream stream(final OptionalLong self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a {@link DoubleStream} over the supplied optional double value.
+     *
+     * @param self the source optional double
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static DoubleStream stream(final OptionalDouble self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns an {@link IntStream} over the supplied {@code int} array.
+     *
+     * @param self the source array
+     * @return an int stream over the array contents
+     */
     @Deprecated
     public static IntStream intStream(final int[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Returns a {@link LongStream} over the supplied {@code long} array.
+     *
+     * @param self the source array
+     * @return a long stream over the array contents
+     */
     @Deprecated
     public static LongStream longStream(final long[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Returns a {@link DoubleStream} over the supplied {@code double} array.
+     *
+     * @param self the source array
+     * @return a double stream over the array contents
+     */
     @Deprecated
     public static DoubleStream doubleStream(final double[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Collects the stream elements into a typed array.
+     *
+     * @param self the source stream
+     * @param type the component type of the target array
+     * @param <T> the element type
+     * @return an array containing the stream elements
+     */
     @Deprecated
     public static <T> T[] toArray(final Stream<? extends T> self, final Class<T> type) {
         return StreamGroovyMethods.toArray(self, type);
     }
 
+    /**
+     * Collects the stream elements into a list.
+     *
+     * @param self the source stream
+     * @param <T> the element type
+     * @return a list containing the stream elements
+     */
     @Deprecated
     public static <T> List<T> toList(final Stream<T> self) {
         return StreamGroovyMethods.toList(self);
     }
 
+    /**
+     * Collects the base-stream elements into a list.
+     *
+     * @param self the source base stream
+     * @param <T> the element type
+     * @return a list containing the stream elements
+     */
     @Deprecated
     public static <T> List<T> toList(final BaseStream<T, ? extends BaseStream> self) {
         return StreamGroovyMethods.toList(self);
     }
 
+    /**
+     * Collects the stream elements into a set.
+     *
+     * @param self the source stream
+     * @param <T> the element type
+     * @return a set containing the stream elements
+     */
     @Deprecated
     public static <T> Set<T> toSet(final Stream<T> self) {
         return StreamGroovyMethods.toSet(self);
     }
 
+    /**
+     * Collects the base-stream elements into a set.
+     *
+     * @param self the source base stream
+     * @param <T> the element type
+     * @return a set containing the stream elements
+     */
     @Deprecated
     public static <T> Set<T> toSet(final BaseStream<T, ? extends BaseStream> self) {
         return StreamGroovyMethods.toSet(self);

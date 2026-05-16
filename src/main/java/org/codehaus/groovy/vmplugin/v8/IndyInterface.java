@@ -95,6 +95,11 @@ public class IndyInterface {
          */
         private final String name;
 
+        /**
+         * Creates a call type for the given bootstrap name.
+         *
+         * @param callSiteName the bootstrap call-site name
+         */
         CallType(String callSiteName) {
             this.name = callSiteName;
         }
@@ -106,10 +111,21 @@ public class IndyInterface {
             return name;
         }
 
+        /**
+         * Resolves a call type by its bootstrap call-site name.
+         *
+         * @param callSiteName the bootstrap call-site name
+         * @return the matching call type, or {@code null} if none matches
+         */
         public static CallType fromCallSiteName(String callSiteName) {
             return NAME_CALLTYPE_MAP.get(callSiteName);
         }
 
+        /**
+         * Returns the ordinal used as the call-site dispatch id.
+         *
+         * @return the call-type order number
+         */
         public int getOrderNumber() {
             return ordinal();
         }
@@ -172,6 +188,9 @@ public class IndyInterface {
         }
     }
 
+    /**
+     * Shared switch point invalidated when metaclass state changes.
+     */
     protected static SwitchPoint switchPoint = new SwitchPoint();
 
     static {
@@ -284,6 +303,19 @@ public class IndyInterface {
         private final Object[] arguments;
         private MethodHandleWrapper result;
 
+        /**
+         * Creates a supplier that computes fallback handles lazily.
+         *
+         * @param callSite the current call site
+         * @param sender the sending class
+         * @param methodName the method name
+         * @param callID the call-type id
+         * @param safeNavigation whether safe navigation is enabled
+         * @param thisCall whether the invocation is a {@code this} call
+         * @param spreadCall whether spread-call semantics are active
+         * @param dummyReceiver the synthetic receiver placeholder
+         * @param arguments the invocation arguments
+         */
         FallbackSupplier(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
             this.callSite = callSite;
             this.sender = sender;
@@ -296,6 +328,11 @@ public class IndyInterface {
             this.arguments = arguments;
         }
 
+        /**
+         * Returns the cached fallback result, computing it on first use.
+         *
+         * @return the fallback method-handle wrapper
+         */
         MethodHandleWrapper get() {
             if (null == result) {
                 result = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);

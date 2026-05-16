@@ -56,6 +56,11 @@ public class VMPluginFactory {
         return null;
     }
 
+    /**
+     * Returns the VM plugin selected for the current runtime.
+     *
+     * @return the active VM plugin, or {@code null} if initialization failed
+     */
     public static VMPlugin getPlugin() {
         return PLUGIN;
     }

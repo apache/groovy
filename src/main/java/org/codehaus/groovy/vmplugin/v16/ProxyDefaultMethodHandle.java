@@ -34,11 +34,24 @@ class ProxyDefaultMethodHandle {
     private final Proxy proxy;
     private final Method method;
 
+    /**
+     * Creates a wrapper for invoking a proxy default method.
+     *
+     * @param proxy the proxy instance
+     * @param method the default interface method
+     */
     ProxyDefaultMethodHandle(Proxy proxy, Method method) {
         this.proxy = proxy;
         this.method = method;
     }
 
+    /**
+     * Invokes the wrapped default method with the supplied arguments.
+     *
+     * @param arguments the invocation arguments
+     * @return the invocation result
+     * @throws Throwable if the invocation fails
+     */
     Object invokeWithArguments(Object... arguments) throws Throwable {
         return InvocationHandler.invokeDefault(proxy, method, arguments);
     }
