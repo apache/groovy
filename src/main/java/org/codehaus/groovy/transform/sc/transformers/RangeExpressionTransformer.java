@@ -58,10 +58,21 @@ public class RangeExpressionTransformer {
 
     private final StaticCompilationTransformer transformer;
 
+    /**
+     * Creates a range-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param transformer the shared transformer context
+     */
     public RangeExpressionTransformer(final StaticCompilationTransformer transformer) {
         this.transformer = transformer;
     }
 
+    /**
+     * Rewrites an {@link IntRange} expression into a direct constructor call when possible.
+     *
+     * @param range the range expression to transform
+     * @return the transformed expression
+     */
     public Expression transformRangeExpression(final RangeExpression range) {
         if (INTRANGE_TYPE.equals(range.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE))) {
             Expression inclLeft = constX(!range.isExclusiveLeft(),true), inclRight = constX(!range.isExclusiveRight(),true);

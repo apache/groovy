@@ -27,13 +27,27 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 
+/**
+ * Simplifies casts and coercions that the static compiler can safely emit directly.
+ */
 public class CastExpressionOptimizer {
     private final StaticCompilationTransformer transformer;
 
+    /**
+     * Creates a cast optimizer backed by the owning static compilation transformer.
+     *
+     * @param staticCompilationTransformer the shared transformer context
+     */
     public CastExpressionOptimizer(StaticCompilationTransformer staticCompilationTransformer) {
         transformer = staticCompilationTransformer;
     }
 
+    /**
+     * Rewrites a cast expression when the cast or coercion can be simplified.
+     *
+     * @param cast the cast expression to transform
+     * @return the optimized expression
+     */
     public Expression transformCastExpression(final CastExpression cast) {
         if (cast.isCoerce()) {
             Expression expression = cast.getExpression();

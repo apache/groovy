@@ -67,6 +67,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
+/**
+ * Rewrites binary expressions into forms that generate better static-compilation bytecode.
+ */
 public class BinaryExpressionTransformer {
     private static final MethodNode COMPARE_TO_METHOD = ClassHelper.COMPARABLE_TYPE.getMethods("compareTo").get(0);
     private static final ConstantExpression CONSTANT_MINUS_ONE = constX(-1, true);
@@ -77,10 +80,21 @@ public class BinaryExpressionTransformer {
 
     private final StaticCompilationTransformer staticCompilationTransformer;
 
+    /**
+     * Creates a binary-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param staticCompilationTransformer the shared transformer context
+     */
     public BinaryExpressionTransformer(final StaticCompilationTransformer staticCompilationTransformer) {
         this.staticCompilationTransformer = staticCompilationTransformer;
     }
 
+    /**
+     * Transforms a binary expression when a static-compilation-specific optimization applies.
+     *
+     * @param bin the binary expression to transform
+     * @return the optimized expression, or the regular transformed expression when no optimization applies
+     */
     public Expression transformBinaryExpression(final BinaryExpression bin) {
         Expression leftExpression = bin.getLeftExpression();
         Expression rightExpression = bin.getRightExpression();

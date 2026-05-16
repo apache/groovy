@@ -33,8 +33,17 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 
+/**
+ * Rewrites variable expressions that stand in for property, enum, field, or direct method access.
+ */
 class VariableExpressionTransformer {
 
+    /**
+     * Rewrites a variable expression when static-compilation metadata identifies a more specific target.
+     *
+     * @param ve the variable expression to transform
+     * @return the transformed expression, or the original expression if no rewrite applies
+     */
     Expression transformVariableExpression(final VariableExpression ve) {
         Expression xe = tryTransformImplicitReceiver(ve);
         if (xe == null) {

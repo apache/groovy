@@ -36,34 +36,72 @@ import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.IFNONNULL;
 import static org.objectweb.asm.Opcodes.IFNULL;
 
+/**
+ * Specializes a comparison against {@code null} for static compilation.
+ */
 public class CompareToNullExpression extends BinaryExpression {
     private final boolean equalsNull;
 
+    /**
+     * Creates a comparison between an expression and {@code null}.
+     *
+     * @param expression the expression being compared
+     * @param equalsNull {@code true} for {@code == null}; {@code false} for {@code != null}
+     */
     public CompareToNullExpression(final Expression expression, final boolean equalsNull) {
         super(expression, Token.newSymbol(equalsNull ? "==" : "!=", -1, -1), ConstantExpression.NULL);
         super.setType(ClassHelper.boolean_TYPE);
         this.equalsNull = equalsNull;
     }
 
+    /**
+     * Returns the expression being compared with {@code null}.
+     *
+     * @return the compared expression
+     */
     public Expression getObjectExpression() {
         return getLeftExpression();
     }
 
+    /**
+     * Prevents replacing the compared expression after construction.
+     *
+     * @param expression ignored
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public void setLeftExpression(final Expression expression) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Prevents changing the fixed {@code null} right-hand operand.
+     *
+     * @param expression ignored
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public void setRightExpression(final Expression expression) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Prevents changing the fixed boolean result type of this expression.
+     *
+     * @param type ignored
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public void setType(final org.codehaus.groovy.ast.ClassNode type) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Transforms the compared expression while preserving the {@code null}-comparison semantics.
+     *
+     * @param transformer the expression transformer to apply
+     * @return a transformed {@code null}-comparison expression
+     */
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         Expression ret = new CompareToNullExpression(transformer.transform(getObjectExpression()), equalsNull);
@@ -72,6 +110,11 @@ public class CompareToNullExpression extends BinaryExpression {
         return ret;
     }
 
+    /**
+     * Emits direct {@code null}-comparison bytecode for this expression.
+     *
+     * @param visitor the visitor to accept
+     */
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         if (!(visitor instanceof AsmClassGenerator)) {

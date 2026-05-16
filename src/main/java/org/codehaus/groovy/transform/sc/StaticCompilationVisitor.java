@@ -99,22 +99,53 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  */
 public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
+    /**
+     * Class node for {@link TypeChecked}.
+     */
     public static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
+    /**
+     * Class node for {@link CompileStatic}.
+     */
     public static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
 
+    /**
+     * Class node for {@link ArrayList}.
+     */
     public static final ClassNode  ARRAYLIST_CLASSNODE = ClassHelper.makeWithoutCaching(ArrayList.class);
+    /**
+     * {@link ArrayList#add(Object)} method node.
+     */
     public static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getDeclaredMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "o")});
+    /**
+     * No-arg {@link ArrayList} constructor node.
+     */
     public static final MethodNode ARRAYLIST_CONSTRUCTOR = ARRAYLIST_CLASSNODE.getDeclaredConstructor(Parameter.EMPTY_ARRAY);
 
+    /**
+     * Creates a static compilation visitor for the supplied source unit and class.
+     *
+     * @param unit the source unit being processed
+     * @param node the class node to visit
+     */
     public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node) {
         super(unit, node);
     }
 
+    /**
+     * Returns the annotations that trigger static type checking in this visitor.
+     *
+     * @return the supported type-checking annotations
+     */
     @Override
     protected ClassNode[] getTypeCheckingAnnotations() {
         return new ClassNode[]{TYPECHECKED_CLASSNODE, COMPILESTATIC_CLASSNODE};
     }
 
+    /**
+     * Visits a class and attaches the metadata required by the static compiler.
+     *
+     * @param node the class node to process
+     */
     @Override
     public void visitClass(final ClassNode node) {
         boolean skip = shouldSkipClassNode(node);
@@ -178,11 +209,21 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    /**
+     * Visits a constructor and records static-compilation metadata for it.
+     *
+     * @param node the constructor to process
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         visitConstructorOrMethod(node);
     }
 
+    /**
+     * Visits a method and records static-compilation metadata for it.
+     *
+     * @param node the method to process
+     */
     @Override
     public void visitMethod(final MethodNode node) {
         visitConstructorOrMethod(node);
@@ -198,6 +239,11 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    /**
+     * Resolves and stores the direct target for a statically compiled method call.
+     *
+     * @param call the method call expression to inspect
+     */
     @Override
     public void visitMethodCallExpression(final MethodCallExpression call) {
         super.visitMethodCallExpression(call);
@@ -215,6 +261,11 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    /**
+     * Resolves and stores the direct target for a statically compiled constructor call.
+     *
+     * @param call the constructor call expression to inspect
+     */
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
@@ -241,6 +292,11 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    /**
+     * Finalizes inferred loop-variable types for statically compiled {@code for} loops.
+     *
+     * @param statement the loop statement to process
+     */
     @Override
     public void visitForLoop(final ForStatement statement) {
         super.visitForLoop(statement);
@@ -254,6 +310,11 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    /**
+     * Removes post-type-checking lambda rewrites that are incompatible with static compilation.
+     *
+     * @param expression the lambda expression to process
+     */
     @Override
     public void visitLambdaExpression(final LambdaExpression expression) {
         super.visitLambdaExpression(expression);
@@ -263,6 +324,11 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    /**
+     * Marks receivers for property expressions that still require dynamic resolution.
+     *
+     * @param expression the property expression to process
+     */
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
         super.visitPropertyExpression(expression);
@@ -272,6 +338,14 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         }
     }
 
+    /**
+     * Resolves a property reference and records the owning type for later static compilation.
+     *
+     * @param pexp the property expression being resolved
+     * @param checkForReadOnly whether read-only properties should be considered
+     * @param visitor an optional callback for the matched member
+     * @return {@code true} if a matching property-like member exists
+     */
     @Override
     protected boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
         Expression objectExpression = pexp.getObjectExpression();
@@ -352,6 +426,15 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         return exists;
     }
 
+    /**
+     * Stores binary-expression target metadata alongside the resolved method.
+     *
+     * @param expr the expression being resolved
+     * @param receiver the candidate receiver type
+     * @param name the method name
+     * @param args the argument types
+     * @return the resolved method, or {@code null} if resolution fails
+     */
     @Override
     protected MethodNode findMethodOrFail(final Expression expr, final ClassNode receiver, final String name, final ClassNode... args) {
         MethodNode methodNode = super.findMethodOrFail(expr, receiver, name, args);
@@ -363,6 +446,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Indicates whether the supplied node is marked for static compilation.
+     *
+     * @param node the class or method node to inspect
+     * @return {@code true} if the node is statically compiled
+     */
     public static boolean isStaticallyCompiled(final AnnotatedNode node) {
         if (node != null && node.getNodeMetaData(STATIC_COMPILE_NODE) != null) {
             return Boolean.TRUE.equals(node.getNodeMetaData(STATIC_COMPILE_NODE));

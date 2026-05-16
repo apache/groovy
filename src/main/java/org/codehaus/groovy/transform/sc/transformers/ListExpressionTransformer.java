@@ -42,14 +42,28 @@ import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
+/**
+ * Rewrites list expressions into specialized static-compilation forms when possible.
+ */
 class ListExpressionTransformer {
 
     private final StaticCompilationTransformer scTransformer;
 
+    /**
+     * Creates a list-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param scTransformer the shared transformer context
+     */
     ListExpressionTransformer(final StaticCompilationTransformer scTransformer) {
         this.scTransformer = scTransformer;
     }
 
+    /**
+     * Rewrites a list expression when the static compiler can emit a more direct representation.
+     *
+     * @param le the list expression to transform
+     * @return the transformed expression
+     */
     Expression transformListExpression(final ListExpression le) {
         MethodNode mn = le.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (mn instanceof ConstructorNode) {

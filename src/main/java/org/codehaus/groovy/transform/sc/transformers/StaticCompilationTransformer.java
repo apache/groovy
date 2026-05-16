@@ -54,7 +54,13 @@ import java.util.Map;
  */
 public class StaticCompilationTransformer extends ClassCodeExpressionTransformer {
 
+    /**
+     * Class node for {@link ScriptBytecodeAdapter}.
+     */
     protected static final ClassNode BYTECODE_ADAPTER_CLASS = ClassHelper.make(ScriptBytecodeAdapter.class);
+    /**
+     * Comparison helpers on {@link ScriptBytecodeAdapter} keyed by Groovy token type.
+     */
     protected static final Map<Integer, MethodNode> BYTECODE_BINARY_ADAPTERS = Maps.of(
         Types.COMPARE_EQUAL, BYTECODE_ADAPTER_CLASS.getMethods("compareEqual").get(0),
         Types.COMPARE_GREATER_THAN, BYTECODE_ADAPTER_CLASS.getMethods("compareGreaterThan").get(0),
@@ -84,29 +90,61 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final MapExpressionTransformer mapExpressionTransformer = new MapExpressionTransformer(this);
     private final CastExpressionOptimizer castExpressionTransformer = new CastExpressionOptimizer(this);
 
+    /**
+     * Creates a static compilation transformer for the supplied source unit and visitor.
+     *
+     * @param unit the source unit being transformed
+     * @param visitor the visitor providing type-checking metadata
+     */
     public StaticCompilationTransformer(final SourceUnit unit, final StaticTypeCheckingVisitor visitor) {
         this.unit = unit;
         this.staticCompilationVisitor = visitor;
     }
 
+    /**
+     * Returns the source unit currently being transformed.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return unit;
     }
 
+    /**
+     * Returns the type chooser used by this transformer.
+     *
+     * @return the static types type chooser
+     */
     public StaticTypesTypeChooser getTypeChooser() {
         return typeChooser;
     }
 
+    /**
+     * Returns the class currently enclosing the transformation context.
+     *
+     * @return the current enclosing class node
+     */
     public ClassNode getClassNode() {
         return staticCompilationVisitor.getTypeCheckingContext().getEnclosingClassNode();
     }
 
+    /**
+     * Visits a statement container within the current class or method.
+     *
+     * @param code the code container to visit
+     */
     @Override
     public void visitClassCodeContainer(final Statement code) {
         super.visitClassCodeContainer(code);
     }
 
+    /**
+     * Dispatches expression transformation to the specialized helper for the expression type.
+     *
+     * @param expr the expression to transform
+     * @return the transformed expression
+     */
     @Override
     public Expression transform(final Expression expr) {
         if (expr instanceof StaticMethodCallExpression) {
@@ -155,12 +193,22 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         return super.transform(expr);
     }
 
+    /**
+     * Visits a class and then recursively visits its inner classes.
+     *
+     * @param node the class node to process
+     */
     @Override
     public void visitClass(final ClassNode node) {
         super.visitClass(node);
         node.getInnerClasses().forEachRemaining(this::visitClass);
     }
 
+    /**
+     * Preserves constant field initializers that must remain inline for later compilation phases.
+     *
+     * @param node the field to process
+     */
     @Override
     public void visitField(final FieldNode node) {
         // GROOVY-11624: post-ResolveVisitor, pre-Verifier constant inlining; do not replace initializer expression "x"+WHY with "x".plus(WHY)
@@ -170,6 +218,12 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         super.visitField(node);
     }
 
+    /**
+     * Visits a constructor or method unless it is explicitly marked to skip static compilation.
+     *
+     * @param node the method or constructor to process
+     * @param isConstructor whether {@code node} is a constructor
+     */
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         if (staticCompilationVisitor.isSkipMode(node)) {

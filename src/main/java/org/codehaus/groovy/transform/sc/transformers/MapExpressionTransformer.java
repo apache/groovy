@@ -30,14 +30,28 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.LinkedHashMap;
 
+/**
+ * Rewrites map expressions into simpler constructor calls when possible.
+ */
 class MapExpressionTransformer {
 
     private final StaticCompilationTransformer scTransformer;
 
+    /**
+     * Creates a map-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param scTransformer the shared transformer context
+     */
     MapExpressionTransformer(final StaticCompilationTransformer scTransformer) {
         this.scTransformer = scTransformer;
     }
 
+    /**
+     * Rewrites a map expression when static compilation can bypass helper-based map creation.
+     *
+     * @param me the map expression to transform
+     * @return the transformed expression
+     */
     Expression transformMapExpression(final MapExpression me) {
         if (me.getMapEntryExpressions().isEmpty()) { // GROOVY-11309: skip SBA.createMap
             ClassNode linkedHashMap = ClassHelper.makeWithoutCaching(LinkedHashMap.class);
