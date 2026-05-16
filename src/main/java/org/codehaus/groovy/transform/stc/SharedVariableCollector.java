@@ -35,19 +35,29 @@ public class SharedVariableCollector extends ClassCodeVisitorSupport {
     private final SourceUnit unit;
     private boolean visited;
 
+    /**
+     * Creates a collector for the supplied source unit.
+     */
     public SharedVariableCollector(final SourceUnit unit) {
         this.unit = unit;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected SourceUnit getSourceUnit() {
         return unit;
     }
 
+    /**
+     * Returns the collected closure-shared variable expressions.
+     */
     public Set<VariableExpression> getClosureSharedExpressions() {
         return Collections.unmodifiableSet(closureSharedExpressions);
     }
 
+    /**
+     * Records closure-shared variables while avoiding recursive closure traversal.
+     */
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
         if (visited) {

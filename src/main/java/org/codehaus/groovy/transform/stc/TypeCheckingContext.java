@@ -45,8 +45,14 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 
+/**
+ * Holds mutable state shared across a static type-checking visit.
+ */
 public class TypeCheckingContext {
 
+    /**
+     * Creates a context for the supplied type-checking visitor.
+     */
     public TypeCheckingContext(final StaticTypeCheckingVisitor visitor) {
         this.visitor = visitor;
     }
@@ -56,29 +62,45 @@ public class TypeCheckingContext {
         pushErrorCollector(source.getErrorCollector());
     }*/
 
+    /** Visitor that owns this context. */
     protected final StaticTypeCheckingVisitor visitor;
+    /** Source unit currently being type checked. */
     protected       SourceUnit source;
 
+    /**
+     * Returns the source unit currently being type checked.
+     */
     public SourceUnit getSource() {
         return source;
     }
 
     //--------------------------------------------------------------------------
 
+    /** Compilation unit associated with the current type-checking run. */
     protected CompilationUnit compilationUnit;
 
+    /**
+     * Returns the compilation unit associated with this context.
+     */
     public CompilationUnit getCompilationUnit() {
         return compilationUnit;
     }
 
+    /**
+     * Sets the compilation unit associated with this context.
+     */
     public void setCompilationUnit(final CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit;
     }
 
     //--------------------------------------------------------------------------
 
+    /** Error collectors stacked for nested type-checking operations. */
     protected final LinkedList<ErrorCollector> errorCollectors = new LinkedList<>();
 
+    /**
+     * Pushes a fresh error collector derived from the current compiler configuration.
+     */
     public ErrorCollector pushErrorCollector() {
         CompilerConfiguration config = Optional.ofNullable(getErrorCollector())
                 .map(ErrorCollector::getConfiguration).orElseGet(() -> getSource().getConfiguration());
@@ -88,14 +110,23 @@ public class TypeCheckingContext {
         return collector;
     }
 
+    /**
+     * Pushes the supplied error collector.
+     */
     public void pushErrorCollector(final ErrorCollector collector) {
         errorCollectors.addFirst(collector);
     }
 
+    /**
+     * Pops the current error collector.
+     */
     public ErrorCollector popErrorCollector() {
         return errorCollectors.removeFirst();
     }
 
+    /**
+     * Returns the current error collector, or {@code null} if none is active.
+     */
     public ErrorCollector getErrorCollector() {
         if (errorCollectors.isEmpty()) {
             return null;
@@ -103,6 +134,9 @@ public class TypeCheckingContext {
         return errorCollectors.getFirst();
     }
 
+    /**
+     * Returns the active error collector stack.
+     */
     public List<ErrorCollector> getErrorCollectors() {
         return Collections.unmodifiableList(errorCollectors);
     }
@@ -120,10 +154,16 @@ public class TypeCheckingContext {
         return temporaryIfBranchTypeInformation.peek().computeIfAbsent(o, x -> new LinkedList<>());
     }
 
+    /**
+     * Pushes a temporary type-information frame.
+     */
     public void pushTemporaryTypeInfo() {
         temporaryIfBranchTypeInformation.push(new HashMap<>());
     }
 
+    /**
+     * Pops the current temporary type-information frame.
+     */
     public void popTemporaryTypeInfo() {
         temporaryIfBranchTypeInformation.pop();
     }
@@ -137,6 +177,7 @@ public class TypeCheckingContext {
      */
     protected DelegationMetadata delegationMetadata;
 
+    /** Indicates whether the current visit happens in a static context. */
     protected boolean isInStaticContext;
 
     /**
@@ -144,6 +185,7 @@ public class TypeCheckingContext {
      */
     protected ClassNode lastImplicitItType;
 
+    /** Optional filter restricting which methods should be visited. */
     protected Set<MethodNode> methodsToBeVisited = Collections.emptySet();
 
     /**
@@ -153,6 +195,7 @@ public class TypeCheckingContext {
      */
     protected Map<VariableExpression, List<ClassNode>> ifElseForWhileAssignmentTracker;
 
+    /** Methods already visited during the current checking pass. */
     protected Set<MethodNode> alreadyVisitedMethods = new HashSet<>();
 
     /**
@@ -168,20 +211,28 @@ public class TypeCheckingContext {
      */
     protected final Map<VariableExpression, List<ClassNode>> closureSharedVariablesAssignmentTypes = new HashMap<>();
 
+    /** Types tracked for variables introduced by control structures. */
     protected       Map<Parameter, ClassNode> controlStructureVariables = new HashMap<>();
 
     // this map is used to ensure that two errors are not reported on the same line/column
+    /** Source positions that already produced a type-checking error. */
     protected final Set<Long> reportedErrors = new TreeSet<>();
 
     //--------------------------------------------------------------------------
 
     // TODO: replace with general node stack and filters
+    /** Stack of enclosing class nodes. */
     protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<>();
+    /** Stack of enclosing methods. */
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<>();
+    /** Stack of enclosing method-call expressions. */
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<>();
+    /** Stack of enclosing switch statements. */
     protected final LinkedList<SwitchStatement> switchStatements = new LinkedList<>();
+    /** Stack of enclosing closures. */
     protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<>();
     // stores the current binary expression. This is used when assignments are made with a null object, for type inference
+    /** Stack of enclosing binary expressions. */
     protected final LinkedList<BinaryExpression> enclosingBinaryExpressions = new LinkedList<>();
 
     /**
@@ -215,6 +266,9 @@ public class TypeCheckingContext {
         return Collections.unmodifiableList(enclosingBinaryExpressions);
     }
 
+    /**
+     * Indicates whether the expression is the left-hand side of the current assignment.
+     */
     public boolean isTargetOfEnclosingAssignment(final Expression expression) {
         return Optional.ofNullable(getEnclosingBinaryExpression()).filter(be ->
             be.getLeftExpression() == expression && StaticTypeCheckingSupport.isAssignment(be.getOperation().getType())
@@ -390,22 +444,37 @@ public class TypeCheckingContext {
         private final ClosureExpression closureExpression;
         private final List<ClassNode> returnTypes = new LinkedList<>();
 
+        /**
+         * Creates metadata for an enclosing closure.
+         */
         public EnclosingClosure(final ClosureExpression closureExpression) {
             this.closureExpression = closureExpression;
         }
 
+        /**
+         * Returns the wrapped closure expression.
+         */
         public ClosureExpression getClosureExpression() {
             return closureExpression;
         }
 
+        /**
+         * Returns the return types collected for the closure body.
+         */
         public List<ClassNode> getReturnTypes() {
             return returnTypes;
         }
 
+        /**
+         * Records another inferred closure return type.
+         */
         public void addReturnType(final ClassNode type) {
             returnTypes.add(type);
         }
 
+        /**
+         * Returns a diagnostic representation of this closure context.
+         */
         @Override
         public String toString() {
             return "EnclosingClosure{closureExpression=" + closureExpression.getText() + ", returnTypes=" + returnTypes + "}";

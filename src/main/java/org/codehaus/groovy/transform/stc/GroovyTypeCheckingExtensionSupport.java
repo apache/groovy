@@ -159,11 +159,15 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return value;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Map<String, Object> getOptions() {
         return extensionParameters;
     }
 
+    /**
+     * Compares extensions by script specification and compilation unit.
+     */
     @Override
     public boolean equals(Object that) {
         if (that == this) return true;
@@ -172,6 +176,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return Objects.equals(scriptPath,support.scriptPath) && Objects.equals(compilationUnit,support.compilationUnit);
     }
 
+    /**
+     * Returns a hash code based on the script specification and compilation unit.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(scriptPath, compilationUnit);
@@ -179,10 +186,14 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Enables or disables debug logging for the backing extension.
+     */
     public void setDebug(final boolean debug) {
         this.debug = debug;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setup() {
         ImportCustomizer ic = new ImportCustomizer();
@@ -276,6 +287,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public void finish() {
         if (delegateExtension != null) { typeCheckingVisitor.extension.removeHandler(delegateExtension);
@@ -291,6 +303,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onMethodSelection(final Expression expression, final MethodNode target) {
         List<Closure> onMethodSelection = eventHandlers.get("onMethodSelection");
@@ -301,6 +314,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void afterMethodCall(final MethodCall call) {
         List<Closure> onMethodSelection = eventHandlers.get("afterMethodCall");
@@ -311,8 +325,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+   /** {@inheritDoc} */
    @Override
-    public boolean beforeMethodCall(final MethodCall call) {
+   public boolean beforeMethodCall(final MethodCall call) {
        setHandled(false);
        List<Closure> onMethodSelection = eventHandlers.get("beforeMethodCall");
        if (onMethodSelection != null) {
@@ -323,6 +338,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
        return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleUnresolvedVariableExpression(final VariableExpression vexp) {
         setHandled(false);
@@ -335,6 +351,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
         setHandled(false);
@@ -347,6 +364,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleUnresolvedAttribute(final AttributeExpression aexp) {
         setHandled(false);
@@ -359,6 +377,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void afterVisitMethod(final MethodNode node) {
         List<Closure> list = eventHandlers.get("afterVisitMethod");
@@ -369,6 +388,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean beforeVisitClass(final ClassNode node) {
         setHandled(false);
@@ -381,6 +401,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void afterVisitClass(final ClassNode node) {
         List<Closure> list = eventHandlers.get("afterVisitClass");
@@ -391,6 +412,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean beforeVisitMethod(final MethodNode node) {
         setHandled(false);
@@ -403,6 +425,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleIncompatibleAssignment(final ClassNode lhsType, final ClassNode rhsType, final Expression assignmentExpression) {
         setHandled(false);
@@ -415,6 +438,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleIncompatibleReturnType(final ReturnStatement returnStatement, ClassNode inferredReturnType) {
         setHandled(false);
@@ -427,6 +451,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
@@ -449,6 +474,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return methodList;
     }
 
+    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
     public List<MethodNode> handleAmbiguousMethods(final List<MethodNode> nodes, final Expression origin) {
@@ -549,6 +575,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
         private GroovyTypeCheckingExtensionSupport extension;
 
+        /**
+         * Resolves properties against the backing extension before falling back to the script.
+         */
         @Override
         public Object getProperty(final String name) {
             try {
@@ -558,6 +587,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
             }
         }
 
+        /**
+         * Writes properties to the backing extension when possible.
+         */
         @Override
         public void setProperty(final String name, final Object value) {
             try {
@@ -567,6 +599,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
             }
         }
 
+        /**
+         * Registers DSL event handlers or delegates unknown methods to the extension.
+         */
         public Object methodMissing(final String name, final Object args) {
             if (name.startsWith("is") && name.endsWith("Expression") && args instanceof Object[] array && array.length == 1) {
                 Object target = array[0];

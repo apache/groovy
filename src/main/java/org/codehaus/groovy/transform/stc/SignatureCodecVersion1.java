@@ -52,6 +52,9 @@ public class SignatureCodecVersion1 implements SignatureCodec {
 
     private final ClassLoader classLoader;
 
+    /**
+     * Creates a codec that resolves classes with the supplied loader.
+     */
     public SignatureCodecVersion1(final ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
@@ -116,6 +119,7 @@ public class SignatureCodecVersion1 implements SignatureCodec {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String encode(final ClassNode node) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
@@ -217,6 +221,7 @@ public class SignatureCodecVersion1 implements SignatureCodec {
         return result;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ClassNode decode(final String signature) {
         DataInputStream dis = new DataInputStream(

@@ -54,10 +54,14 @@ import java.util.Map;
  */
 public class TypeCheckingExtension {
 
+    /** Visitor that owns this extension instance. */
     protected final StaticTypeCheckingVisitor typeCheckingVisitor;
 
     private Map<String, Object> options = Collections.emptyMap();
 
+    /**
+     * Creates an extension bound to the supplied type-checking visitor.
+     */
     public TypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         this.typeCheckingVisitor = typeCheckingVisitor;
     }
@@ -311,26 +315,44 @@ public class TypeCheckingExtension {
         typeCheckingVisitor.storeType(exp, cn);
     }
 
+    /**
+     * Checks whether the property exists for the supplied access mode.
+     */
     public boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly) {
         return typeCheckingVisitor.existsProperty(pexp, checkForReadOnly);
     }
 
+    /**
+     * Checks whether the property exists and optionally visits the resolved member.
+     */
     public boolean existsProperty(final PropertyExpression pexp, final boolean checkForReadOnly, final ClassCodeVisitorSupport visitor) {
         return typeCheckingVisitor.existsProperty(pexp, checkForReadOnly, visitor);
     }
 
+    /**
+     * Returns the inferred argument types for the supplied argument list.
+     */
     public ClassNode[] getArgumentTypes(final ArgumentListExpression args) {
         return typeCheckingVisitor.getArgumentTypes(args);
     }
 
+    /**
+     * Returns the direct target method selected for the expression, if any.
+     */
     public MethodNode getTargetMethod(final Expression expression) {
         return expression.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
     }
 
+    /**
+     * Creates a {@link ClassNode} for the supplied runtime type.
+     */
     public ClassNode classNodeFor(Class type) {
         return ClassHelper.make(type);
     }
 
+    /**
+     * Creates a {@link ClassNode} for the supplied type name.
+     */
     public ClassNode classNodeFor(String type) {
         return ClassHelper.make(type);
     }
@@ -350,6 +372,9 @@ public class TypeCheckingExtension {
         return null;
     }
 
+    /**
+     * Returns a parameterized view of the supplied base type.
+     */
     public ClassNode parameterizedType(final ClassNode baseType, final ClassNode... genericsTypeArguments) {
         if (baseType.isArray()) {
             return parameterizedType(baseType.getComponentType(), genericsTypeArguments).makeArray();

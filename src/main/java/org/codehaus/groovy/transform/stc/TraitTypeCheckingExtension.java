@@ -42,10 +42,16 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClas
  */
 public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
 
+    /**
+     * Creates the trait-specific type-checking extension.
+     */
     public TraitTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         super(typeCheckingVisitor);
     }
 
+    /**
+     * Resolves trait super calls and helper-backed trait method dispatch.
+     */
     @Override
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
         String[] decomposed = Traits.decomposeSuperCallName(name);
@@ -95,6 +101,9 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         return Collections.emptyList();
     }
 
+    /**
+     * Resolves synthetic trait static-field accessor properties.
+     */
     @Override
     public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
         var objectExpression = pexp.getObjectExpression();

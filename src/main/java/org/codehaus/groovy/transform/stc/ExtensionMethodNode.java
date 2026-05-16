@@ -45,10 +45,16 @@ public class ExtensionMethodNode extends MethodNode {
         this(extensionMethodNode, name, modifiers, returnType, parameters, exceptions, code, false);
     }
 
+    /**
+     * Returns the original extension method represented by this synthetic node.
+     */
     public MethodNode getExtensionMethodNode() {
         return extensionMethodNode;
     }
 
+    /**
+     * Indicates whether this node models a static extension method.
+     */
     public boolean isStaticExtension() {
         return isStaticExtension;
     }

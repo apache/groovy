@@ -48,11 +48,15 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
  * @since 3.0.0
  */
 public abstract class AbstractExtensionMethodCache {
+    /** Caches extension methods per class loader. */
     final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
     private final String disabledString = SystemUtil.getSystemPropertySafe(getDisablePropertyName());
     private final boolean disabling = disabledString != null;
     private final Set<String> disabledNames = disabling ? new HashSet<>(Arrays.asList(disabledString.split(","))) : null;
 
+    /**
+     * Returns the cached extension methods for the supplied class loader.
+     */
     public Map<String, List<MethodNode>> get(ClassLoader loader) {
         return cache.getAndPut(loader, this::getMethodsFromClassLoader);
     }
@@ -110,6 +114,9 @@ public abstract class AbstractExtensionMethodCache {
         return Collections.unmodifiableMap(methods);
     }
 
+    /**
+     * Adds implementation-specific extension classes to the scan sets.
+     */
     protected abstract void addAdditionalClassesToScan(Set<Class> instanceExtClasses, Set<Class> staticExtClasses);
 
     private void scan(Map<String, List<MethodNode>> accumulator, Iterable<Class> allClasses, boolean isStatic) {
@@ -128,8 +135,19 @@ public abstract class AbstractExtensionMethodCache {
         }
     }
 
+    /**
+     * Returns the system property used to disable selected extension methods.
+     */
     protected abstract String getDisablePropertyName();
+
+    /**
+     * Returns a predicate that excludes methods from the cache.
+     */
     protected abstract Predicate<MethodNode> getMethodFilter();
+
+    /**
+     * Maps an extension method to the cache key used during lookup.
+     */
     protected abstract Function<MethodNode, String> getMethodMapper();
 
     private void accumulate(Map<String, List<MethodNode>> accumulator, boolean isStatic, MethodNode metaMethod,
