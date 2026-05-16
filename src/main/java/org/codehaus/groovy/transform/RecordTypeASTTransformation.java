@@ -25,6 +25,7 @@ import groovy.transform.RecordBase;
 import groovy.transform.RecordOptions;
 import groovy.transform.RecordTypeMode;
 import groovy.transform.options.PropertyHandler;
+import org.apache.groovy.ast.tools.CopyWithUtils;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.MethodNode;
 import org.apache.groovy.lang.annotation.Incubating;
@@ -83,6 +84,7 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.arrayX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
@@ -94,13 +96,21 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.equalsNullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.hasDeclaredMethod;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.indexX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isTrueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapEntryX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.orX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.plusX;
@@ -466,9 +476,22 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         ArgumentListExpression args = new ArgumentListExpression();
         Parameter mapParam = param(GenericsUtils.nonGeneric(MAP_TYPE), NAMED_ARGS);
         Expression mapArg = varX(mapParam);
+        BlockStatement body = new BlockStatement();
+        body.addStatement(CopyWithUtils.nestedFlattenStmt(NAMED_ARGS));
+        // Honour the documented identity contract: an empty/no-op map (after
+        // flattening unknown and unchanged nested keys away) returns the
+        // original instance, so an unchanged graph yields the original root.
+        body.addStatement(ifS(
+                orX(equalsNullX(mapArg), eqX(callX(mapArg, "size"), constX(0))),
+                returnS(varX("this"))));
+        body.addStatement(declS(localVarX("dirty", boolean_TYPE), ConstantExpression.PRIM_FALSE));
         for (PropertyNode pNode : pList) {
             String name = pNode.getName();
             args.addExpression(ternaryX(callX(mapArg, "containsKey", args(constX(name))), propX(mapArg, name), thisPropX(true, name)));
+            body.addStatement(ifS(
+                    andX(callX(mapArg, "containsKey", args(constX(name))),
+                            neX(propX(mapArg, name), thisPropX(true, name))),
+                    assignS(varX("dirty", boolean_TYPE), ConstantExpression.TRUE)));
             ClassNode pType = pNode.getType();
             ClassNode type = pType.getPlainNodeReference();
             type.setGenericsPlaceHolder(pType.isGenericsPlaceHolder());
@@ -479,8 +502,16 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             namedParam.addMember("required", constX(false, true));
             mapParam.addAnnotation(namedParam);
         }
-        Statement body = returnS(ctorX(cNode.getPlainNodeReference(), args));
+        // Return the original instance when nothing effectively changed;
+        // otherwise keep the constructor call as the method's final return
+        // expression, exactly as before (static compilation resolves the
+        // constructor target in that position).
+        body.addStatement(ifS(notX(isTrueX(varX("dirty", boolean_TYPE))),
+                returnS(varX("this"))));
+        body.addStatement(returnS(ctorX(cNode.getPlainNodeReference(), args)));
         addGeneratedMethod(cNode, COPY_WITH, ACC_PUBLIC | ACC_FINAL, cNode.getPlainNodeReference(), params(mapParam), ClassNode.EMPTY_ARRAY, body);
+
+        CopyWithUtils.addCopyWithBlockMethod(cNode);
     }
 
     private void createRecordToString(ClassNode cNode) {

@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -85,6 +86,11 @@ public class RecordCompletionASTTransformation extends AbstractASTTransformation
         ConstructorNode consNode = cNode.getDeclaredConstructor(params.toArray(Parameter.EMPTY_ARRAY));
         if (consNode != null) {
             Statement code = copyWith.getCode();
+            // nested-aware copyWith wraps the return in a block (the leading
+            // statement resolves nested-path keys); unwrap to the return.
+            if (code instanceof BlockStatement bs && !bs.getStatements().isEmpty()) {
+                code = bs.getStatements().get(bs.getStatements().size() - 1);
+            }
             if (code instanceof ReturnStatement rs) {
                 Expression expr = rs.getExpression();
                 if (expr instanceof ConstructorCallExpression) {
