@@ -97,8 +97,17 @@ import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // note: BigInteger and BigDecimal are also imported by default
     // `java.util` is used much frequently, so place it before `java.io`, et al.
+    /**
+     * Default package imports available to Groovy source.
+     */
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.util.", "java.io.", "java.net.", "java.time.", "groovy.lang.", "groovy.util."};
+    /**
+     * Shared empty array constant for import-prefix lookups.
+     */
     public static final String[] EMPTY_STRING_ARRAY = {};
+    /**
+     * Placeholder name used for wildcard generic arguments.
+     */
     public static final String QUESTION_MARK = "?";
 
     private final CompilationUnit compilationUnit;
@@ -239,6 +248,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Internal signal used to restart resolution after adding a newly discovered source unit.
+     */
     @SuppressWarnings("serial")
     static class Interrupt extends CompilationFailedException {
         private Interrupt(final ProcessingUnit unit) {
@@ -248,24 +260,50 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Creates a resolve visitor for the supplied compilation unit.
+     *
+     * @param compilationUnit the compilation unit being resolved
+     */
     public ResolveVisitor(final CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit;
     }
 
+    /**
+     * Replaces the class-node resolver used for classpath lookups.
+     *
+     * @param classNodeResolver the resolver to use
+     */
     public void setClassNodeResolver(final ClassNodeResolver classNodeResolver) {
         this.classNodeResolver = classNodeResolver;
     }
 
+    /**
+     * Starts resolving class references from the supplied class node.
+     *
+     * @param node the class to resolve
+     * @param source the source unit containing the class
+     */
     public void startResolving(final ClassNode node, final SourceUnit source) {
         this.source = source;
         visitClass(node);
     }
 
+    /**
+     * Returns the source unit currently being resolved.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
+    /**
+     * Resolves the declared type of a field before visiting its contents.
+     *
+     * @param node the field to visit
+     */
     @Override
     public void visitField(final FieldNode node) {
         Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
@@ -283,6 +321,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Resolves the declared type of a property before visiting its contents.
+     *
+     * @param node the property to visit
+     */
     @Override
     public void visitProperty(final PropertyNode node) {
         Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
@@ -304,6 +347,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return !Modifier.isStatic(mods) || Traits.isTrait(node); // GROOVY-8864, GROOVY-11508
     }
 
+    /**
+     * Resolves types referenced by a constructor or method signature.
+     *
+     * @param node the executable member to inspect
+     * @param isConstructor whether {@code node} is a constructor
+     */
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         MethodNode oldMethod = currentMethod;
@@ -370,6 +419,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         addError("unable to resolve class " + type.toString(false) + msg, node);
     }
 
+    /**
+     * Attempts to resolve an unqualified type against visible inner classes.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveToInner(final ClassNode type) {
         // we do not do our name mangling to find an inner class
         // if the type is a ConstructedClassWithPackage, because in this case we
@@ -395,10 +450,25 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    /**
+     * Resolves a type using the standard Groovy lookup rules.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolve(final ClassNode type) {
         return resolve(type, true, true, true);
     }
 
+    /**
+     * Resolves a type while selectively enabling parts of the standard lookup sequence.
+     *
+     * @param type the type to resolve
+     * @param testModuleImports whether module imports should be consulted
+     * @param testDefaultImports whether default imports should be consulted
+     * @param testStaticInnerClasses whether static inner-class resolution should be attempted
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolve(final ClassNode type, final boolean testModuleImports, final boolean testDefaultImports, final boolean testStaticInnerClasses) {
         GenericsType[] genericsTypes = type.getGenericsTypes();
         resolveGenericsTypes(genericsTypes);
@@ -447,6 +517,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return resolved;
     }
 
+    /**
+     * Resolves a type name against nested classes visible from the current class hierarchy.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveNestedClass(final ClassNode type) {
         if (type instanceof ConstructedNestedClass || type instanceof ConstructedClassWithPackage) return false;
 
@@ -518,6 +594,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return new String(chars);
     }
 
+    /**
+     * Resolves a qualified type name by treating suffix segments as static inner classes.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveFromStaticInnerClasses(final ClassNode type) {
         // a class consisting of a vanilla name can never be
         // a static inner class, because at least one dot is
@@ -544,6 +626,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    /**
+     * Resolves a type through Groovy's default imports.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveFromDefaultImports(final ClassNode type) {
         // we do not resolve a vanilla name starting with a lower case letter
         // try to resolve against a default import, because we know that the
@@ -580,6 +668,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         DEFAULT_IMPORT_CLASS_AND_PACKAGES_CACHE.putAll(VMPluginFactory.getPlugin().getDefaultImportClasses(DEFAULT_IMPORTS));
     }
 
+    /**
+     * Resolves a type against the supplied import prefixes.
+     *
+     * @param type the type to resolve
+     * @param packagePrefixes the package prefixes to test
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveFromDefaultImports(final ClassNode type, final String[] packagePrefixes) {
         String typeName = type.getName();
 
@@ -606,6 +701,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    /**
+     * Resolves a type from classes already known to the current compile unit.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveFromCompileUnit(final ClassNode type) {
         // look into the compile unit if there is a class with that name
         CompileUnit compileUnit = currentClass.getCompileUnit();
@@ -695,6 +796,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    /**
+     * Resolves a type using module package, regular imports, star imports, and module-expanded imports.
+     *
+     * @param type the type to resolve
+     * @param testModuleImports whether module-level imports should be consulted
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveFromModule(final ClassNode type, final boolean testModuleImports) {
         ModuleNode module = currentClass.getModule();
         if (module == null) return false;
@@ -806,6 +914,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    /**
+     * Resolves a type via the configured {@link ClassNodeResolver}.
+     *
+     * @param type the type to resolve
+     * @return {@code true} if the type was resolved
+     */
     protected boolean resolveToOuter(final ClassNode type) {
         String name = type.getName();
         if (classNodeResolver == null)
@@ -833,6 +947,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    /**
+     * Resolves and rewrites expressions while traversing the current class.
+     *
+     * @param exp the expression to transform
+     * @return the transformed expression
+     */
     @Override
     public Expression transform(final Expression exp) {
         if (exp == null) return null;
@@ -949,6 +1069,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return pe;
     }
 
+    /**
+     * Resolves type references embedded in a property expression.
+     *
+     * @param pe the property expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformPropertyExpression(final PropertyExpression pe) {
         Expression objectExpression = pe.getObjectExpression(), property;
         boolean ipe = inPropertyExpression, itlp = isTopLevelProperty;
@@ -1052,6 +1178,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return clazzExpression.getType().isInterface() && "this".equals(expression.getPropertyAsString());
     }
 
+    /**
+     * Resolves variable expressions that may actually reference types.
+     *
+     * @param ve the variable expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformVariableExpression(final VariableExpression ve) {
         visitAnnotations(ve);
         Variable v = ve.getAccessedVariable();
@@ -1101,6 +1233,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return !Character.isLowerCase(name.charAt(0));
     }
 
+    /**
+     * Resolves type references appearing in binary expressions.
+     *
+     * @param be the binary expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformBinaryExpression(final BinaryExpression be) {
         Expression left = transform(be.getLeftExpression());
         if (be.getOperation().isA(Types.ASSIGNMENT_OPERATOR) && left instanceof ClassExpression ce) {
@@ -1155,6 +1293,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return be;
     }
 
+    /**
+     * Resolves declared types and defaults inside a closure expression.
+     *
+     * @param ce the closure expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformClosureExpression(final ClosureExpression ce) {
         boolean oldInClosure = inClosure;
         inClosure = true;
@@ -1174,6 +1318,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ce;
     }
 
+    /**
+     * Resolves constructor call target types.
+     *
+     * @param cce the constructor call to transform
+     * @return the transformed expression
+     */
     protected Expression transformConstructorCallExpression(final ConstructorCallExpression cce) {
         if (!cce.isUsingAnonymousInnerClass()) { // GROOVY-9642
             ClassNode cceType = cce.getType();
@@ -1190,6 +1340,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
     }
 
+    /**
+     * Resolves receiver, method, and argument types for a method call.
+     *
+     * @param mce the method call to transform
+     * @return the transformed expression
+     */
     protected Expression transformMethodCallExpression(final MethodCallExpression mce) {
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
@@ -1206,6 +1362,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
+    /**
+     * Resolves declared variable types in a declaration expression.
+     *
+     * @param de the declaration expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformDeclarationExpression(final DeclarationExpression de) {
         visitAnnotations(de);
         Expression oldLeft = de.getLeftExpression();
@@ -1236,6 +1398,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Resolves annotation constants encountered in expression form.
+     *
+     * @param ace the annotation constant expression to transform
+     * @return the original expression
+     */
     protected Expression transformAnnotationConstantExpression(final AnnotationConstantExpression ace) {
         visitAnnotation((AnnotationNode) ace.getValue());
         return ace;
@@ -1246,6 +1414,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (node.isArray()) visitTypeAnnotations(node.getComponentType());
     }
 
+    /**
+     * Resolves an annotation type and its member values.
+     *
+     * @param node the annotation to visit
+     */
     @Override
     protected void visitAnnotation(final AnnotationNode node) {
         Collection<AnnotationNode> collector = currentClass.getNodeMetaData(AnnotationNode[].class);
@@ -1277,6 +1450,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Resolves imports, headers, and member types for the supplied class.
+     *
+     * @param node the class to visit
+     */
     @Override
     public void visitClass(final ClassNode node) {
         ClassNode oldNode = currentClass; currentClass = node;
@@ -1417,6 +1595,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Resolves the declared exception type for a catch parameter.
+     *
+     * @param cs the catch statement to visit
+     */
     @Override
     public void visitCatchStatement(final CatchStatement cs) {
         resolveOrFail(cs.getExceptionType(), cs);
@@ -1437,6 +1620,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Resolves the declared loop variable type for a {@code for} statement.
+     *
+     * @param forLoop the loop to visit
+     */
     @Override
     public void visitForLoop(final ForStatement forLoop) {
         if (forLoop.getValueVariable() != null) {
@@ -1445,6 +1633,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         super.visitForLoop(forLoop);
     }
 
+    /**
+     * Updates the current variable scope while visiting a block statement.
+     *
+     * @param block the block to visit
+     */
     @Override
     public void visitBlockStatement(final BlockStatement block) {
         VariableScope oldScope = currentScope;

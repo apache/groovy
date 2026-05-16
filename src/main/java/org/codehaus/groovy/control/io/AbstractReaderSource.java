@@ -30,8 +30,16 @@ import java.io.IOException;
  */
 public abstract class AbstractReaderSource implements ReaderSource {
 
+    /**
+     * Compiler configuration used to decode the source.
+     */
     protected CompilerConfiguration configuration;
 
+    /**
+     * Creates a reader source backed by the supplied compiler configuration.
+     *
+     * @param configuration the compiler configuration to use
+     */
     public AbstractReaderSource(final CompilerConfiguration configuration) {
         this.configuration = configuration != null ? configuration : CompilerConfiguration.DEFAULT;
     }

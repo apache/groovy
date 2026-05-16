@@ -1017,6 +1017,11 @@ public class CompilerConfiguration {
         this.scriptBaseClass = scriptBaseClass;
     }
 
+    /**
+     * Returns the parser plugin factory to use for source parsing.
+     *
+     * @return the configured parser plugin factory
+     */
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
             pluginFactory = ParserPluginFactory.antlr4();
@@ -1024,14 +1029,29 @@ public class CompilerConfiguration {
         return pluginFactory;
     }
 
+    /**
+     * Sets the parser plugin factory to use for source parsing.
+     *
+     * @param pluginFactory the parser plugin factory to use
+     */
     public void setPluginFactory(final ParserPluginFactory pluginFactory) {
         this.pluginFactory = pluginFactory;
     }
 
+    /**
+     * Replaces the set of recognized script file extensions.
+     *
+     * @param scriptExtensions the script extensions to use
+     */
     public void setScriptExtensions(final Set<String> scriptExtensions) {
         this.scriptExtensions = Optional.ofNullable(scriptExtensions).orElseGet(LinkedHashSet::new);
     }
 
+    /**
+     * Returns the recognized script file extensions.
+     *
+     * @return the configured script extensions
+     */
     public Set<String> getScriptExtensions() {
         if (scriptExtensions == null || scriptExtensions.isEmpty()) {
             /*
@@ -1045,26 +1065,56 @@ public class CompilerConfiguration {
         return scriptExtensions;
     }
 
+    /**
+     * Returns the default file extension used for generated scripts.
+     *
+     * @return the default script extension
+     */
     public String getDefaultScriptExtension() {
         return defaultScriptExtension;
     }
 
+    /**
+     * Sets the default file extension used for generated scripts.
+     *
+     * @param defaultScriptExtension the default script extension
+     */
     public void setDefaultScriptExtension(final String defaultScriptExtension) {
         this.defaultScriptExtension = defaultScriptExtension;
     }
 
+    /**
+     * Indicates whether Groovy sources should be recompiled when they change.
+     *
+     * @return {@code true} if recompilation is enabled
+     */
     public boolean getRecompileGroovySource() {
         return recompileGroovySource;
     }
 
+    /**
+     * Sets whether changed Groovy sources should be recompiled.
+     *
+     * @param recompile {@code true} to enable recompilation checks
+     */
     public void setRecompileGroovySource(final boolean recompile) {
         recompileGroovySource = recompile;
     }
 
+    /**
+     * Returns the minimum interval between recompilation checks.
+     *
+     * @return the recompilation interval in milliseconds
+     */
     public int getMinimumRecompilationInterval() {
         return minimumRecompilationInterval;
     }
 
+    /**
+     * Sets the minimum interval between recompilation checks.
+     *
+     * @param time the recompilation interval in milliseconds
+     */
     public void setMinimumRecompilationInterval(final int time) {
         minimumRecompilationInterval = Math.max(0,time);
     }
@@ -1273,10 +1323,20 @@ public class CompilerConfiguration {
         this.disabledGlobalASTTransformations = disabledGlobalASTTransformations;
     }
 
+    /**
+     * Returns the optional bytecode post-processor.
+     *
+     * @return the configured bytecode post-processor, or {@code null}
+     */
     public BytecodeProcessor getBytecodePostprocessor() {
         return bytecodePostprocessor;
     }
 
+    /**
+     * Sets the bytecode post-processor applied to generated classes.
+     *
+     * @param bytecodePostprocessor the post-processor to use
+     */
     public void setBytecodePostprocessor(final BytecodeProcessor bytecodePostprocessor) {
         this.bytecodePostprocessor = bytecodePostprocessor;
     }

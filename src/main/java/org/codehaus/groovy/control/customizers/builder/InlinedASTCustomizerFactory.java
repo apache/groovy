@@ -44,11 +44,27 @@ import java.util.Map;
 @SuppressWarnings("unchecked")
 public class InlinedASTCustomizerFactory extends AbstractFactory implements PostCompletionFactory {
 
+    /**
+     * Indicates that inline customizer nodes accept nested closure content.
+     *
+     * @return {@code true}
+     */
     @Override
     public boolean isHandlesNodeChildren() {
         return true;
     }
 
+    /**
+     * Creates the backing map used to build a proxy customizer.
+     *
+     * @param builder the active builder
+     * @param name the node name
+     * @param value the supplied node value
+     * @param attributes the node attributes
+     * @return the backing attribute map
+     * @throws InstantiationException if instantiation fails
+     * @throws IllegalAccessException if access fails
+     */
     @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         if (attributes.isEmpty() || !attributes.containsKey("phase")) {
@@ -59,6 +75,14 @@ public class InlinedASTCustomizerFactory extends AbstractFactory implements Post
         return result;
     }
 
+    /**
+     * Stores the inline customization closure on the backing node.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param childContent the nested closure content
+     * @return {@code false} to continue normal processing
+     */
     @Override
     public boolean onNodeChildren(final FactoryBuilderSupport builder, final Object node, final Closure childContent) {
         if (node instanceof Map) {
@@ -67,6 +91,14 @@ public class InlinedASTCustomizerFactory extends AbstractFactory implements Post
         return false;
     }
 
+    /**
+     * Builds the proxy-backed compilation customizer once the node is complete.
+     *
+     * @param factory the active builder
+     * @param parent the parent node
+     * @param node the completed node
+     * @return the generated customizer or the original node
+     */
     @Override
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
         if (node instanceof Map map) {

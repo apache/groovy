@@ -46,10 +46,23 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
     private Closure<Boolean> sourceUnitValidator;
     private Closure<Boolean> classValidator;
 
+    /**
+     * Creates a source-aware wrapper around another compilation customizer.
+     *
+     * @param delegate the customizer to invoke when the source matches
+     */
     public SourceAwareCustomizer(CompilationCustomizer delegate) {
         super(delegate);
     }
 
+    /**
+     * Invokes the delegate only when the source and class validators accept the current input.
+     *
+     * @param source the source unit being customized
+     * @param context the current generator context
+     * @param classNode the class node being customized
+     * @throws CompilationFailedException if the delegate fails
+     */
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
         String fileName = source.getName();
@@ -62,22 +75,48 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
         }
     }
 
+    /**
+     * Sets the predicate used to validate source base names.
+     *
+     * @param baseNameValidator the validator to use
+     */
     public void setBaseNameValidator(final Closure<Boolean> baseNameValidator) {
         this.baseNameValidator = baseNameValidator;
     }
 
+    /**
+     * Sets the predicate used to validate source file extensions.
+     *
+     * @param extensionValidator the validator to use
+     */
     public void setExtensionValidator(final Closure<Boolean> extensionValidator) {
         this.extensionValidator = extensionValidator;
     }
 
+    /**
+     * Sets the predicate used to validate whole source units.
+     *
+     * @param sourceUnitValidator the validator to use
+     */
     public void setSourceUnitValidator(final Closure<Boolean> sourceUnitValidator) {
         this.sourceUnitValidator = sourceUnitValidator;
     }
 
+    /**
+     * Sets the predicate used to validate class nodes.
+     *
+     * @param classValidator the validator to use
+     */
     public void setClassValidator(final Closure<Boolean> classValidator) {
         this.classValidator = classValidator;
     }
 
+    /**
+     * Checks whether a source file name is accepted by the base-name and extension validators.
+     *
+     * @param fileName the file name to inspect
+     * @return {@code true} if the file name is accepted
+     */
     public boolean accept(String fileName) {
         int ext = fileName.lastIndexOf('.');
         String baseName = ext<0?fileName:fileName.substring(0, ext);
@@ -85,18 +124,42 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
         return acceptExtension(extension) && acceptBaseName(baseName);
     }
 
+    /**
+     * Checks whether a class node is accepted.
+     *
+     * @param cnode the class node to inspect
+     * @return {@code true} if the class is accepted
+     */
     public boolean acceptClass(ClassNode cnode) {
         return classValidator == null || classValidator.call(cnode);
     }
 
+    /**
+     * Checks whether a source unit is accepted.
+     *
+     * @param unit the source unit to inspect
+     * @return {@code true} if the source is accepted
+     */
     public boolean acceptSource(SourceUnit unit) {
         return sourceUnitValidator==null || sourceUnitValidator.call(unit);
     }
 
+    /**
+     * Checks whether a file extension is accepted.
+     *
+     * @param extension the extension to inspect
+     * @return {@code true} if the extension is accepted
+     */
     public boolean acceptExtension(String extension) {
         return extensionValidator==null || extensionValidator.call(extension);
     }
 
+    /**
+     * Checks whether a base file name is accepted.
+     *
+     * @param baseName the base file name to inspect
+     * @return {@code true} if the base name is accepted
+     */
     public boolean acceptBaseName(String baseName) {
         return baseNameValidator==null || baseNameValidator.call(baseName);
     }

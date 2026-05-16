@@ -29,9 +29,22 @@ import java.io.Serial;
 public class CompilationFailedException extends GroovyRuntimeException {
 
     @Serial private static final long serialVersionUID = 4500269747315896966L;
-    protected int phase;   // The phase in which the failures occurred
-    protected ProcessingUnit unit;    // The *Unit object this exception wraps
+    /**
+     * Compilation phase in which the failure occurred.
+     */
+    protected int phase;
+    /**
+     * Processing unit that reported the failure.
+     */
+    protected ProcessingUnit unit;
 
+    /**
+     * Creates a compilation failure with an underlying cause.
+     *
+     * @param phase the phase in which the failure occurred
+     * @param unit the processing unit that failed
+     * @param cause the underlying cause
+     */
     public CompilationFailedException(int phase, ProcessingUnit unit, Throwable cause) {
         super(Phases.getDescription(phase) + " failed", cause);
         this.phase = phase;
@@ -39,6 +52,12 @@ public class CompilationFailedException extends GroovyRuntimeException {
     }
 
 
+    /**
+     * Creates a compilation failure without an underlying cause.
+     *
+     * @param phase the phase in which the failure occurred
+     * @param unit the processing unit that failed
+     */
     public CompilationFailedException(int phase, ProcessingUnit unit) {
         super(Phases.getDescription(phase) + " failed");
         this.phase = phase;

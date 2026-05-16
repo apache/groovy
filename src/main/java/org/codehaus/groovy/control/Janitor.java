@@ -28,10 +28,18 @@ import java.util.Set;
 public class Janitor implements HasCleanup {
     private final Set<HasCleanup> pending = new HashSet<>();
 
+    /**
+     * Registers a cleanup participant to be closed later.
+     *
+     * @param object the cleanup participant to register
+     */
     public void register(HasCleanup object) {
         pending.add(object);
     }
 
+    /**
+     * Invokes cleanup on all registered participants and clears the registry.
+     */
     @Override
     public void cleanup() {
         for (HasCleanup object : pending) {

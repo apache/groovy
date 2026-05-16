@@ -86,6 +86,12 @@ public class WarningMessage extends LocatedMessage {
         this.importance = importance;
     }
 
+    /**
+     * Writes this warning with a {@code warning: } prefix.
+     *
+     * @param writer the destination writer
+     * @param janitor the cleanup helper for temporary source access
+     */
     @Override
     public void write(final PrintWriter writer, final Janitor janitor) {
         writer.print("warning: ");

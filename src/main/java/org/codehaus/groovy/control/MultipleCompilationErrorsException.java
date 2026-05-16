@@ -31,8 +31,16 @@ public class MultipleCompilationErrorsException extends
         CompilationFailedException {
 
     @Serial private static final long serialVersionUID = 8583586586290252555L;
+    /**
+     * Collector containing the aggregated compilation errors.
+     */
     protected ErrorCollector collector;
 
+    /**
+     * Creates an exception that wraps the supplied error collector.
+     *
+     * @param ec the collector to wrap, or {@code null} to create an empty one
+     */
     public MultipleCompilationErrorsException(ErrorCollector ec) {
         super(0, null);
         if (ec == null) {
@@ -45,10 +53,20 @@ public class MultipleCompilationErrorsException extends
         }
     }
 
+    /**
+     * Returns the collector containing the recorded compilation errors.
+     *
+     * @return the wrapped error collector
+     */
     public ErrorCollector getErrorCollector() {
         return collector;
     }
 
+    /**
+     * Formats the aggregated compilation errors as a message string.
+     *
+     * @return the formatted error message
+     */
     @Override
     public String getMessage() {
         Writer data = new StringBuilderWriter();

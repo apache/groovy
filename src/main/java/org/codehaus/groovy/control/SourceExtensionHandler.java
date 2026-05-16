@@ -36,6 +36,12 @@ import java.util.Set;
  */
 public class SourceExtensionHandler {
 
+    /**
+     * Loads the registered source file extensions visible to the supplied class loader.
+     *
+     * @param loader the class loader used to discover extension descriptors
+     * @return the registered source extensions, including {@code groovy}
+     */
     public static Set<String> getRegisteredExtensions(ClassLoader loader) {
         Set<String> extensions = new LinkedHashSet<String>();
         extensions.add("groovy");

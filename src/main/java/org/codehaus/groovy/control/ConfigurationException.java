@@ -28,7 +28,10 @@ import java.io.Serial;
 public class ConfigurationException extends RuntimeException implements GroovyExceptionInterface {
     @Serial private static final long serialVersionUID = -3844401402301111613L;
 
-    protected Exception cause;   // The phase in which the failures occurred
+    /**
+     * Underlying configuration failure, if one is available.
+     */
+    protected Exception cause;
 
     /**
      * Initializes the exception from a cause exception.

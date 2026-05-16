@@ -54,15 +54,28 @@ public class LabelVerifier extends PrePostStatementVisitor {
     private Set<String> availableLabels;
     private Map<String, Statement> undefinedLabels;
 
+    /**
+     * Creates a verifier for label usage in one source unit.
+     *
+     * @param src the source unit to report errors against
+     */
     public LabelVerifier(SourceUnit src) {
         source = src;
     }
 
+    /**
+     * Returns the source unit currently being verified.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
+    /**
+     * Reports any labeled break or continue statements that could not be matched.
+     */
     protected void assertNoLabelsMissed() {
         for (Map.Entry<String, Statement> entry : undefinedLabels.entrySet()) {
             String kind = (entry.getValue() instanceof BreakStatement ? "break" : "continue");
@@ -70,6 +83,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         }
     }
 
+    /**
+     * Registers any labels introduced by the current statement.
+     *
+     * @param s the statement being entered
+     */
     @Override
     protected void visitStatement(Statement s) {
         List<String> labels = s.getStatementLabels();
@@ -78,6 +96,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         }
     }
 
+    /**
+     * Removes any labels that go out of scope after visiting the current statement.
+     *
+     * @param s the statement being exited
+     */
     @Override
     protected void postVisitStatement(Statement s) {
         List<String> labels = s.getStatementLabels();
@@ -86,6 +109,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         }
     }
 
+    /**
+     * Resets label-tracking state before verifying a class code block.
+     *
+     * @param code the statement container to verify
+     */
     @Override
     protected void visitClassCodeContainer(Statement code) {
         inIf     = false;
@@ -102,6 +130,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Verifies labels inside an {@code if}/{@code else} statement.
+     *
+     * @param cond the conditional statement to inspect
+     */
     @Override
     public void visitIfElse(IfStatement cond) {
         visitStatement(cond);
@@ -114,6 +147,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         postVisitStatement(cond);
     }
 
+    /**
+     * Verifies labels inside a {@code for} loop.
+     *
+     * @param loop the loop to inspect
+     */
     @Override
     public void visitForLoop(ForStatement loop) {
         visitStatement(loop);
@@ -125,6 +163,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         postVisitStatement(loop);
     }
 
+    /**
+     * Verifies labels inside a {@code while} loop.
+     *
+     * @param loop the loop to inspect
+     */
     @Override
     public void visitWhileLoop(WhileStatement loop) {
         visitStatement(loop);
@@ -136,6 +179,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         postVisitStatement(loop);
     }
 
+    /**
+     * Verifies labels inside a {@code do}/{@code while} loop.
+     *
+     * @param loop the loop to inspect
+     */
     @Override
     public void visitDoWhileLoop(DoWhileStatement loop) {
         visitStatement(loop);
@@ -147,6 +195,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         postVisitStatement(loop);
     }
 
+    /**
+     * Verifies labels inside a {@code switch} statement.
+     *
+     * @param switchStatement the switch statement to inspect
+     */
     @Override
     public void visitSwitch(SwitchStatement switchStatement) {
         visitStatement(switchStatement);
@@ -159,6 +212,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         postVisitStatement(switchStatement);
     }
 
+    /**
+     * Verifies that a {@code break} statement appears in a valid context.
+     *
+     * @param breakStatement the break statement to inspect
+     */
     @Override
     public void visitBreakStatement(BreakStatement breakStatement) {
         String label = breakStatement.getLabel();
@@ -176,6 +234,11 @@ public class LabelVerifier extends PrePostStatementVisitor {
         }
     }
 
+    /**
+     * Verifies that a {@code continue} statement appears in a valid loop context.
+     *
+     * @param continueStatement the continue statement to inspect
+     */
     @Override
     public void visitContinueStatement(ContinueStatement continueStatement) {
         if (!inLoop) { // GROOVY-3908
@@ -192,55 +255,108 @@ public class LabelVerifier extends PrePostStatementVisitor {
 
 //------------------------------------------------------------------------------
 
+/**
+ * Statement visitor that invokes hooks before and after each statement visit.
+ */
 abstract class PrePostStatementVisitor extends ClassCodeVisitorSupport {
 
+    /**
+     * Handles statement-entry bookkeeping.
+     *
+     * @param statement the statement being entered
+     */
     @Override
     protected abstract void visitStatement(Statement statement);
 
+    /**
+     * Handles statement-exit bookkeeping.
+     *
+     * @param statement the statement being exited
+     */
     protected abstract void postVisitStatement(Statement statement);
 
+    /**
+     * Visits an assert statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitAssertStatement(AssertStatement statement) {
         super.visitAssertStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a block statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitBlockStatement(BlockStatement statement) {
         super.visitBlockStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a break statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitBreakStatement(BreakStatement statement) {
         super.visitBreakStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a case statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitCaseStatement(CaseStatement statement) {
         super.visitCaseStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a catch statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitCatchStatement(CatchStatement statement) {
         super.visitCatchStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a continue statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitContinueStatement(ContinueStatement statement) {
         super.visitContinueStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a do-while loop and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitDoWhileLoop(DoWhileStatement statement) {
         super.visitDoWhileLoop(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits an empty statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitEmptyStatement(EmptyStatement statement) {
         visitStatement(statement); // TODO: Move to super?
@@ -248,54 +364,99 @@ abstract class PrePostStatementVisitor extends ClassCodeVisitorSupport {
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits an expression statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitExpressionStatement(ExpressionStatement statement) {
         super.visitExpressionStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a for loop and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitForLoop(ForStatement statement) {
         super.visitForLoop(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits an if-else statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitIfElse(IfStatement statement) {
         super.visitIfElse(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a return statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitReturnStatement(ReturnStatement statement) {
         super.visitReturnStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a switch statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitSwitch(SwitchStatement statement) {
         super.visitSwitch(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a synchronized statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
         super.visitSynchronizedStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a throw statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitThrowStatement(ThrowStatement statement) {
         super.visitThrowStatement(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a try-catch-finally statement and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitTryCatchFinally(TryCatchStatement statement) {
         super.visitTryCatchFinally(statement);
         postVisitStatement(statement);
     }
 
+    /**
+     * Visits a while loop and then runs post-visit bookkeeping.
+     *
+     * @param statement the statement to visit
+     */
     @Override
     public void visitWhileLoop(WhileStatement statement) {
         super.visitWhileLoop(statement);

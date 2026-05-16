@@ -32,16 +32,40 @@ import java.util.Map;
  * @since 2.1.0
  */
 public class SecureASTCustomizerFactory extends AbstractFactory {
+    /**
+     * Indicates that secure AST customizer nodes accept nested closure content.
+     *
+     * @return {@code true}
+     */
     @Override
     public boolean isHandlesNodeChildren() {
         return true;
     }
 
+    /**
+     * Creates a secure AST customizer.
+     *
+     * @param builder the active builder
+     * @param name the node name
+     * @param value the supplied node value
+     * @param attributes the node attributes
+     * @return a new {@link SecureASTCustomizer}
+     * @throws InstantiationException if instantiation fails
+     * @throws IllegalAccessException if access fails
+     */
     @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         return new SecureASTCustomizer();
     }
 
+    /**
+     * Executes nested builder content against the secure customizer.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param childContent the nested closure content
+     * @return {@code false} to continue normal processing
+     */
     @Override
     public boolean onNodeChildren(final FactoryBuilderSupport builder, final Object node, final Closure childContent) {
         if (node instanceof SecureASTCustomizer) {

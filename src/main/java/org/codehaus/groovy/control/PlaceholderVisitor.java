@@ -28,14 +28,28 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
+/**
+ * Marks repeated underscore placeholders used in tuple and closure parameters.
+ */
 public class PlaceholderVisitor extends ClassCodeVisitorSupport {
     private static final String PLACEHOLDER = "Underscore_Placeholder";
     private SourceUnit source;
 
+    /**
+     * Creates a visitor for placeholder analysis.
+     *
+     * @param compilationUnit the owning compilation unit
+     * @param source the source unit being visited
+     */
     public PlaceholderVisitor(CompilationUnit compilationUnit, SourceUnit source) {
         this.source = source;
     }
 
+    /**
+     * Returns the source unit currently being visited.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
@@ -86,10 +100,17 @@ public class PlaceholderVisitor extends ClassCodeVisitorSupport {
         }
         super.visitClosureExpression(expression);
     }
+
     private static void markAsPlaceholder(ASTNode node) {
         node.setNodeMetaData(PLACEHOLDER, Boolean.TRUE);
     }
 
+    /**
+     * Checks whether the supplied node has been marked as a placeholder.
+     *
+     * @param node the node to inspect
+     * @return {@code true} if the node is a placeholder
+     */
     public static boolean isPlaceholder(ASTNode node) {
         return Boolean.TRUE.equals(node.getNodeMetaData(PLACEHOLDER));
     }

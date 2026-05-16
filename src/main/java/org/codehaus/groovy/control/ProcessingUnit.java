@@ -125,6 +125,11 @@ public abstract class ProcessingUnit {
         return Phases.getDescription(phase);
     }
 
+    /**
+     * Indicates whether the current phase has finished successfully.
+     *
+     * @return {@code true} if the current phase is complete
+     */
     public boolean isPhaseComplete() {
         return phaseComplete;
     }

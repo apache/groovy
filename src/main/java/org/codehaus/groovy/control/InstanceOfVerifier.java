@@ -26,8 +26,16 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.syntax.Types;
 
+/**
+ * Verifies that {@code instanceof} checks do not use unsupported target types.
+ */
 public abstract class InstanceOfVerifier extends ClassCodeVisitorSupport {
 
+    /**
+     * Validates {@code instanceof} expressions against primitive and generic target types.
+     *
+     * @param expression the binary expression to inspect
+     */
     @Override
     public void visitBinaryExpression(BinaryExpression expression) {
         if (expression.getOperation().isA(Types.INSTANCEOF_OPERATOR) &&

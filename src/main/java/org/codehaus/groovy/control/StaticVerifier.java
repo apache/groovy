@@ -40,16 +40,32 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
     private MethodNode methodNode;
     private SourceUnit sourceUnit;
 
+    /**
+     * Returns the source unit currently being verified.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * Starts verification for the supplied class and source unit.
+     *
+     * @param node the class to verify
+     * @param unit the owning source unit
+     */
     public void visitClass(ClassNode node, SourceUnit unit) {
         sourceUnit = unit;
         visitClass(node);
     }
 
+    /**
+     * Tracks closure nesting while visiting closure expressions.
+     *
+     * @param ce the closure expression to visit
+     */
     @Override
     public void visitClosureExpression(ClosureExpression ce) {
         boolean oldInClosure = inClosure;
@@ -58,6 +74,11 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         inClosure = oldInClosure;
     }
 
+    /**
+     * Tracks whether the visitor is inside a special constructor call.
+     *
+     * @param cce the constructor call to visit
+     */
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression cce) {
         boolean oldIsSpecialConstructorCall = inSpecialConstructorCall;
@@ -66,6 +87,12 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         inSpecialConstructorCall = oldIsSpecialConstructorCall;
     }
 
+    /**
+     * Tracks the current method or constructor while verifying static references.
+     *
+     * @param node the method or constructor being visited
+     * @param isConstructor whether {@code node} is a constructor
+     */
     @Override
     public void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         MethodNode oldMethodNode = methodNode;
@@ -85,6 +112,11 @@ public class StaticVerifier extends ClassCodeVisitorSupport {
         methodNode = oldMethodNode;
     }
 
+    /**
+     * Reports dynamic variable access that is illegal in static contexts.
+     *
+     * @param ve the variable expression to inspect
+     */
     @Override
     public void visitVariableExpression(VariableExpression ve) {
         if (ve.getAccessedVariable() instanceof DynamicVariable && (ve.isInStaticContext() || inSpecialConstructorCall) && !inClosure) {

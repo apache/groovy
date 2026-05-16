@@ -30,9 +30,22 @@ import java.util.Objects;
 public class ExceptionMessage extends Message {
 
     private final Exception cause;
+    /**
+     * Indicates whether debug output is enabled for this message.
+     */
     protected final boolean debug;
+    /**
+     * Processing unit that reported the exception.
+     */
     protected final ProcessingUnit owner;
 
+    /**
+     * Creates an exception-backed compilation message.
+     *
+     * @param cause the underlying exception
+     * @param debug whether debug output is enabled
+     * @param owner the owning processing unit
+     */
     public ExceptionMessage(final Exception cause, final boolean debug, final ProcessingUnit owner) {
         this.cause = Objects.requireNonNull(cause);
         this.debug = debug;

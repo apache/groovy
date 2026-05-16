@@ -31,23 +31,53 @@ public class SimpleMessage extends Message {
 
     /** used when {@link #message} is an I18N identifier */
     protected Object data;
+    /**
+     * Message text to render.
+     */
     protected String message;
+    /**
+     * Processing unit that owns the message.
+     */
     protected ProcessingUnit owner;
 
+    /**
+     * Creates a simple message with no auxiliary data.
+     *
+     * @param message the message text
+     * @param owner the owning processing unit
+     */
     public SimpleMessage(final String message, final ProcessingUnit owner) {
         this(message, null, owner);
     }
 
+    /**
+     * Creates a simple message with optional auxiliary data.
+     *
+     * @param message the message text
+     * @param data supplemental message data
+     * @param owner the owning processing unit
+     */
     public SimpleMessage(final String message, final Object data, final ProcessingUnit owner) {
         this.message = message;
         this.owner = owner;
         this.data = data;
     }
 
+    /**
+     * Returns the message text.
+     *
+     * @return the message text
+     */
     public String getMessage() {
         return message;
     }
 
+    /**
+     * Writes this message, prefixing it with the source name when available.
+     *
+     * @param writer the destination writer
+     * @param janitor the cleanup helper for temporary source access
+     */
     @Override
     public void write(final PrintWriter writer, final Janitor janitor) {
         if (owner instanceof SourceUnit) {

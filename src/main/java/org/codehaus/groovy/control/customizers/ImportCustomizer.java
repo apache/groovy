@@ -52,10 +52,20 @@ public class ImportCustomizer extends CompilationCustomizer {
 
     private final List<Import> imports = new LinkedList<>();
 
+    /**
+     * Creates an import customizer that runs during conversion.
+     */
     public ImportCustomizer() {
         super(CompilePhase.CONVERSION);
     }
 
+    /**
+     * Applies the configured imports to the module represented by the current class.
+     *
+     * @param source the source unit being customized
+     * @param context the current generator context
+     * @param classNode the class node being customized
+     */
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
         ModuleNode ast = source.getAST();
@@ -99,21 +109,49 @@ public class ImportCustomizer extends CompilationCustomizer {
         }
     }
 
+    /**
+     * Adds a regular import with an explicit alias.
+     *
+     * @param alias the import alias
+     * @param className the fully qualified class name to import
+     * @return this customizer
+     */
     public ImportCustomizer addImport(final String alias, final String className) {
         imports.add(new Import(ImportType.regular, alias, ClassHelper.make(className)));
         return this;
     }
 
+    /**
+     * Adds a static import for a single member without an alias.
+     *
+     * @param className the fully qualified declaring class name
+     * @param fieldName the static member name
+     * @return this customizer
+     */
     public ImportCustomizer addStaticImport(final String className, final String fieldName) {
         imports.add(new Import(ImportType.staticImport, fieldName, ClassHelper.make(className), fieldName));
         return this;
     }
 
+    /**
+     * Adds a static import for a single member with an alias.
+     *
+     * @param alias the alias to expose
+     * @param className the fully qualified declaring class name
+     * @param fieldName the static member name
+     * @return this customizer
+     */
     public ImportCustomizer addStaticImport(final String alias, final String className, final String fieldName) {
         imports.add(new Import(ImportCustomizer.ImportType.staticImport, alias, ClassHelper.make(className), fieldName));
         return this;
     }
 
+    /**
+     * Adds one or more regular imports.
+     *
+     * @param classNames the fully qualified class names to import
+     * @return this customizer
+     */
     public ImportCustomizer addImports(final String... classNames) {
         for (String className : classNames) {
             addImport(className);
@@ -121,6 +159,12 @@ public class ImportCustomizer extends CompilationCustomizer {
         return this;
     }
 
+    /**
+     * Adds one or more star imports.
+     *
+     * @param packageNames the package names to import from
+     * @return this customizer
+     */
     public ImportCustomizer addStarImports(final String... packageNames) {
         for (String packageName : packageNames) {
             addStarImport(packageName);
@@ -128,6 +172,12 @@ public class ImportCustomizer extends CompilationCustomizer {
         return this;
     }
 
+    /**
+     * Adds one or more static star imports.
+     *
+     * @param classNames the fully qualified class names to import members from
+     * @return this customizer
+     */
     public ImportCustomizer addStaticStars(final String... classNames) {
         for (String className : classNames) {
             addStaticStar(className);

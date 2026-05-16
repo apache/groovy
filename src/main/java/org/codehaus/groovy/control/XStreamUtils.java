@@ -29,10 +29,19 @@ import java.net.URI;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.WARNING;
 
+/**
+ * Serializes AST structures to XML for debugging.
+ */
 public abstract class XStreamUtils {
 
     private static final System.Logger LOGGER = System.getLogger(XStreamUtils.class.getName());
 
+    /**
+     * Serializes the supplied AST object to an XML file next to the named source.
+     *
+     * @param name the source name or URI used to derive the XML file name
+     * @param ast the AST object to serialize
+     */
     public static void serialize(final String name, final Object ast) {
         if (name == null || name.isEmpty()) return;
 

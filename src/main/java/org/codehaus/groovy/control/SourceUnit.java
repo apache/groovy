@@ -344,14 +344,29 @@ public class SourceUnit extends ProcessingUnit {
         getErrorCollector().addWarning(new WarningMessage(WarningMessage.POSSIBLE_ERRORS, text, token, this));
     }
 
+    /**
+     * Adds a non-fatal syntax error to this source unit.
+     *
+     * @param se the syntax error to record
+     */
     public void addErrorAndContinue(final SyntaxException se) {
         getErrorCollector().addErrorAndContinue(se, this);
     }
 
+    /**
+     * Returns the reader source backing this source unit.
+     *
+     * @return the underlying reader source
+     */
     public ReaderSource getSource() {
         return source;
     }
 
+    /**
+     * Replaces the reader source backing this source unit.
+     *
+     * @param source the new reader source
+     */
     public void setSource(ReaderSource source) {
         this.source = source;
     }

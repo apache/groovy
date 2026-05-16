@@ -48,6 +48,11 @@ public class FileReaderSource extends AbstractReaderSource {
         this.file = file;
     }
 
+    /**
+     * Returns the underlying source file.
+     *
+     * @return the backing file
+     */
     public File getFile() {
         return file;
     }

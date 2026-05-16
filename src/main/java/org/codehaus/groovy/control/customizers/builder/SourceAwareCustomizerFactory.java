@@ -80,6 +80,17 @@ import java.util.Map;
  */
 public class SourceAwareCustomizerFactory extends AbstractFactory implements PostCompletionFactory {
 
+    /**
+     * Creates the mutable source options collected from the builder node.
+     *
+     * @param builder the active builder
+     * @param name the node name
+     * @param value the supplied node value
+     * @param attributes the node attributes
+     * @return the collected source options
+     * @throws InstantiationException if instantiation fails
+     * @throws IllegalAccessException if access fails
+     */
     @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         SourceOptions data = new SourceOptions();
@@ -96,6 +107,13 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         return data;
     }
 
+    /**
+     * Captures the nested compilation customizer selected for the source-aware wrapper.
+     *
+     * @param builder the active builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     @Override
     public void setChild(final FactoryBuilderSupport builder, final Object parent, final Object child) {
         if (child instanceof CompilationCustomizer && parent instanceof SourceOptions) {
@@ -103,6 +121,14 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         }
     }
 
+    /**
+     * Converts the collected source options into a configured {@link SourceAwareCustomizer}.
+     *
+     * @param factory the active builder
+     * @param parent the parent node
+     * @param node the completed node
+     * @return the configured source-aware customizer
+     */
     @Override
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
         SourceOptions data = (SourceOptions) node;
@@ -157,20 +183,50 @@ public class SourceAwareCustomizerFactory extends AbstractFactory implements Pos
         sourceAwareCustomizer.setBaseNameValidator(basenameValidator);
     }
 
+    /**
+     * Collected builder options used to create a {@link SourceAwareCustomizer}.
+     */
     public static class SourceOptions {
+        /**
+         * Delegate customizer to invoke when the source matches.
+         */
         public CompilationCustomizer delegate;
         // validate with closures
+        /**
+         * Validator for file extensions.
+         */
         public Closure<Boolean> extensionValidator;
+        /**
+         * Validator for source units.
+         */
         public Closure<Boolean> unitValidator;
+        /**
+         * Validator for base file names.
+         */
         public Closure<Boolean> basenameValidator;
+        /**
+         * Validator for class nodes.
+         */
         public Closure<Boolean> classValidator;
 
         // validate with one string
+        /**
+         * Single accepted file extension.
+         */
         public String extension;
+        /**
+         * Single accepted base file name.
+         */
         public String basename;
 
         // validate with list of strings
+        /**
+         * Accepted file extensions.
+         */
         public List<String> extensions;
+        /**
+         * Accepted base file names.
+         */
         public List<String> basenames;
     }
 }
