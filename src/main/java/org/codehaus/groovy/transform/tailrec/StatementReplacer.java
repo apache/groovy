@@ -39,15 +39,27 @@ import java.util.function.Consumer;
  * Within @TailRecursive it is used to swap ReturnStatements with looping back to RECUR label
  */
 public class StatementReplacer extends CodeVisitorSupport {
+    /**
+     * Creates a replacer with the supplied predicate and replacement strategy.
+     *
+     * @param when decides whether a statement should be replaced
+     * @param replaceWith creates the replacement statement
+     */
     public StatementReplacer(Closure<Boolean> when, Closure<Statement> replaceWith) {
         this.when = when;
         this.replaceWith = replaceWith;
     }
 
+    /**
+     * Replaces matching statements within the supplied AST subtree.
+     *
+     * @param root the AST subtree to mutate
+     */
     public void replaceIn(ASTNode root) {
         root.visit(this);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitClosureExpression(ClosureExpression expression) {
         closureLevel++;
@@ -58,6 +70,7 @@ public class StatementReplacer extends CodeVisitorSupport {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitBlockStatement(final BlockStatement block) {
         List<Statement> copyOfStatements = new ArrayList<>(block.getStatements());
@@ -69,6 +82,7 @@ public class StatementReplacer extends CodeVisitorSupport {
         super.visitBlockStatement(block);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitIfElse(final IfStatement ifElse) {
         replaceIfNecessary(ifElse.getIfBlock(), ifElse::setIfBlock);
@@ -76,18 +90,21 @@ public class StatementReplacer extends CodeVisitorSupport {
         super.visitIfElse(ifElse);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitForLoop(final ForStatement forLoop) {
         replaceIfNecessary(forLoop.getLoopBlock(), forLoop::setLoopBlock);
         super.visitForLoop(forLoop);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitWhileLoop(final WhileStatement loop) {
         replaceIfNecessary(loop.getLoopBlock(), loop::setLoopBlock);
         super.visitWhileLoop(loop);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitDoWhileLoop(final DoWhileStatement loop) {
         replaceIfNecessary(loop.getLoopBlock(), loop::setLoopBlock);
@@ -112,26 +129,56 @@ public class StatementReplacer extends CodeVisitorSupport {
         return closureLevel > 0;
     }
 
+    /**
+     * Returns the predicate that decides whether a statement should be replaced.
+     *
+     * @return the replacement predicate
+     */
     public Closure<Boolean> getWhen() {
         return when;
     }
 
+    /**
+     * Sets the predicate that decides whether a statement should be replaced.
+     *
+     * @param when the replacement predicate
+     */
     public void setWhen(Closure<Boolean> when) {
         this.when = when;
     }
 
+    /**
+     * Returns the closure that builds replacement statements.
+     *
+     * @return the replacement closure
+     */
     public Closure<Statement> getReplaceWith() {
         return replaceWith;
     }
 
+    /**
+     * Sets the closure that builds replacement statements.
+     *
+     * @param replaceWith the replacement closure
+     */
     public void setReplaceWith(Closure<Statement> replaceWith) {
         this.replaceWith = replaceWith;
     }
 
+    /**
+     * Returns the current closure nesting depth.
+     *
+     * @return the number of enclosing closures being visited
+     */
     public int getClosureLevel() {
         return closureLevel;
     }
 
+    /**
+     * Sets the current closure nesting depth.
+     *
+     * @param closureLevel the closure nesting depth
+     */
     public void setClosureLevel(int closureLevel) {
         this.closureLevel = closureLevel;
     }

@@ -53,12 +53,27 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.minus;
  * parameters that are only handed through must not be copied at all.
  */
 public class ReturnStatementToIterationConverter {
+    /**
+     * Creates a converter that uses the default recurrence statement.
+     */
     public ReturnStatementToIterationConverter() {}
 
+    /**
+     * Creates a converter that uses the supplied recurrence statement.
+     *
+     * @param recurStatement the statement that advances to the next iteration
+     */
     public ReturnStatementToIterationConverter(Statement recurStatement) {
         this.recurStatement = recurStatement;
     }
 
+    /**
+     * Converts a recursive return statement into iterative assignments followed by the recur statement.
+     *
+     * @param statement the return statement to convert
+     * @param positionMapping the parameter mapping keyed by argument position
+     * @return the converted statement, or the original statement if it is not a method call
+     */
     public Statement convert(ReturnStatement statement, final Map<Integer, Map<String, Object>> positionMapping) {
         Expression recursiveCall = statement.getExpression();
         if (!isAMethodCalls(recursiveCall)) return statement;
@@ -148,14 +163,23 @@ public class ReturnStatementToIterationConverter {
         replacer.replaceIn(binary);
     }
 
+    /**
+     * Returns the statement used to trigger the next iteration.
+     *
+     * @return the recurrence statement
+     */
     public Statement getRecurStatement() {
         return recurStatement;
     }
 
+    /**
+     * Sets the statement used to trigger the next iteration.
+     *
+     * @param recurStatement the recurrence statement to use
+     */
     public void setRecurStatement(Statement recurStatement) {
         this.recurStatement = recurStatement;
     }
 
     private Statement recurStatement = AstHelper.recurStatement();
 }
-

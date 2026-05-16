@@ -31,10 +31,16 @@ import org.codehaus.groovy.classgen.ReturnAdder;
  * tail-recursion is detected by having the recursive call within the return statement.
  */
 public class ReturnAdderForClosures extends CodeVisitorSupport {
+    /**
+     * Adds explicit return statements to closures contained in the supplied method.
+     *
+     * @param method the method whose closures should be normalized
+     */
     public synchronized void visitMethod(MethodNode method) {
         method.getCode().visit(this);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitClosureExpression(ClosureExpression expression) {
         //Create a dummy method with the closure's code as the method's code. Then user ReturnAdder, which only works for methods.

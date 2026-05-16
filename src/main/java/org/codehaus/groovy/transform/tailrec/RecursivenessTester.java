@@ -51,6 +51,12 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.transpose;
  * </ul>
  */
 public class RecursivenessTester {
+    /**
+     * Tests whether the supplied call node is recursive within the supplied method node.
+     *
+     * @param params a map containing {@code method} and {@code call} entries
+     * @return {@code true} if the call is recursive; {@code false} otherwise
+     */
     public boolean isRecursive(Map<String, ASTNode> params) {
         ASTNode method = params.get("method");
         assert MethodNode.class.equals(method.getClass());
@@ -64,6 +70,13 @@ public class RecursivenessTester {
         return isRecursive((MethodNode) method, (StaticMethodCallExpression) call);
     }
 
+    /**
+     * Tests whether an instance-style method call is recursive.
+     *
+     * @param method the enclosing method
+     * @param call the method call to inspect
+     * @return {@code true} if the call targets the enclosing method; {@code false} otherwise
+     */
     @SuppressWarnings("Instanceof")
     public boolean isRecursive(MethodNode method, MethodCallExpression call) {
         if (!isCallToThis(call)) return false;
@@ -73,6 +86,13 @@ public class RecursivenessTester {
         return methodParamsMatchCallArgs(method, call);
     }
 
+    /**
+     * Tests whether a static method call is recursive.
+     *
+     * @param method the enclosing method
+     * @param call the static method call to inspect
+     * @return {@code true} if the call targets the enclosing method; {@code false} otherwise
+     */
     public boolean isRecursive(MethodNode method, StaticMethodCallExpression call) {
         if (!method.isStatic()) return false;
         if (!method.getDeclaringClass().equals(call.getOwnerType())) return false;

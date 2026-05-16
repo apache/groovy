@@ -20,10 +20,20 @@ package org.codehaus.groovy.transform.tailrec;
 
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
+/**
+ * Receives notifications whenever a variable expression is replaced.
+ */
 public interface VariableReplacedListener {
+    /** No-op listener instance. */
     VariableReplacedListener NULL = (oldVar, newVar) -> {
         //do nothing
     };
 
+    /**
+     * Called after a variable expression has been replaced.
+     *
+     * @param oldVar the original variable expression
+     * @param newVar the replacement variable expression
+     */
     void variableReplaced(VariableExpression oldVar, VariableExpression newVar);
 }

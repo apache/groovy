@@ -48,6 +48,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
  * </ol>
  */
 public class InWhileLoopWrapper {
+    /**
+     * Wraps the supplied method body in the loop structure used by the tail-recursion transform.
+     *
+     * @param method the method to rewrite
+     */
     public void wrap(MethodNode method) {
         BlockStatement oldBody = (BlockStatement) method.getCode();
         TryCatchStatement tryCatchStatement = tryCatchS(oldBody, EmptyStatement.INSTANCE, catchS(param(ClassHelper.make(GotoRecurHereException.class), "ignore"), new ContinueStatement(InWhileLoopWrapper.LOOP_LABEL)));
@@ -60,6 +65,9 @@ public class InWhileLoopWrapper {
         method.setCode(newBody);
     }
 
+    /** Label targeted by synthesized {@code continue} statements. */
     public static final String LOOP_LABEL = "_RECUR_HERE_";
+
+    /** Exception instance thrown from closures to restart the generated loop. */
     public static final GotoRecurHereException LOOP_EXCEPTION = new GotoRecurHereException();
 }

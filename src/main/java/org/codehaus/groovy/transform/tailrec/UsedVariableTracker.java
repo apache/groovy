@@ -23,12 +23,21 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * Tracks replacement variables that are actually used while rewriting expressions.
+ */
 public class UsedVariableTracker implements VariableReplacedListener {
+    /** {@inheritDoc} */
     @Override
     public void variableReplaced(VariableExpression oldVar, VariableExpression newVar) {
         usedVariableNames.add(newVar.getName());
     }
 
+    /**
+     * Returns the names of replacement variables that were referenced.
+     *
+     * @return the used replacement variable names
+     */
     public Set<String> getUsedVariableNames() {
         return usedVariableNames;
     }
