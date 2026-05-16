@@ -145,23 +145,46 @@ public class CompileStack {
 
     private final WriterController controller;
 
+    /**
+     * Represents a label range for exception handling or other scoping.
+     */
     protected static class LabelRange {
+        /** Start label of the recorded range. */
         public Label start;
+        /** End label of the recorded range. */
         public Label end;
     }
 
+    /**
+     * Records a block for finally or other special handling.
+     */
     public static class BlockRecorder {
         private boolean isEmpty = true;
+        /** Callback used when visiting the block outside its recorded range. */
         public Runnable excludedStatement;
+        /** Label ranges covered by this recorder. */
         public final LinkedList<LabelRange> ranges = new LinkedList<>();
 
+        /**
+         * Creates an empty block recorder.
+         */
         public BlockRecorder() {
         }
 
+        /**
+         * Creates a block recorder with an excluded statement.
+         *
+         * @param excludedStatement the statement to exclude from the block
+         */
         public BlockRecorder(final Runnable excludedStatement) {
             this.excludedStatement = excludedStatement;
         }
 
+        /**
+         * Starts a new range at the given label.
+         *
+         * @param start the start label
+         */
         public void startRange(final Label start) {
             LabelRange range = new LabelRange();
             range.start = start;
@@ -169,25 +192,40 @@ public class CompileStack {
             isEmpty = false;
         }
 
+        /**
+         * Closes the current range at the given label.
+         *
+         * @param end the end label
+         */
         public void closeRange(final Label end) {
             ranges.getLast().end = end;
         }
     }
 
     private static class ExceptionTableEntry {
+        /** Start label of the protected range. */
         Label start, end, goal;
+        /** Internal name of the caught exception type, or {@code null} for catch-all. */
         String sig;
     }
 
     private class StateStackElement {
+        /** Variable scope active when the state was pushed. */
         final VariableScope scope;
+        /** Continue label active when the state was pushed. */
         final Label continueLabel;
+        /** Break label active when the state was pushed. */
         final Label breakLabel;
+        /** Stack variables visible when the state was pushed. */
         final Map<String, BytecodeVariable> stackVariables;
+        /** Named labels for the current block when the state was pushed. */
         final Map<String, Label> currentBlockNamedLabels;
+        /** Finally-block recorders active when the state was pushed. */
         final LinkedList<BlockRecorder> finallyBlocks;
+        /** Whether the saved state is inside a special constructor call. */
         final boolean inSpecialConstructorCall;
 
+        /** Captures the current compile-stack state. */
         StateStackElement() {
             scope = CompileStack.this.scope;
             continueLabel = CompileStack.this.continueLabel;
@@ -201,22 +239,36 @@ public class CompileStack {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Creates a CompileStack managed by the given controller.
+     *
+     * @param controller the writer controller for the current compilation
+     */
     public CompileStack(final WriterController controller) {
         this.controller = controller;
     }
 
+    /** Returns the current break label, or {@code null} if not inside a breakable construct. */
     public Label getBreakLabel() {
         return breakLabel;
     }
 
+    /** Returns the current continue label, or {@code null} if not inside a loop. */
     public Label getContinueLabel() {
         return continueLabel;
     }
 
+    /** Returns the current variable scope. */
     public VariableScope getScope() {
         return scope;
     }
 
+    /**
+     * Saves the current compilation state onto an internal stack so that it can
+     * be restored by a later call to {@link #pop()}. Every {@code push*} method
+     * calls this internally; it is also exposed for callers that need a bare
+     * state snapshot without additional label setup.
+     */
     public void pushState() {
         stateStack.add(new StateStackElement());
         stackVariables = new HashMap<>(stackVariables);
@@ -264,6 +316,11 @@ public class CompileStack {
         thisEndLabel = endLabel;
     }
 
+    /**
+     * Restores the compilation state that was saved by the matching {@code push*} call,
+     * and emits end-labels for all local variables declared within the scope that
+     * is being popped.
+     */
     public void pop() {
         setEndLabels();
         popState();
@@ -280,6 +337,14 @@ public class CompileStack {
         return defineTemporaryVariable(var.getName(), var.getType(), store);
     }
 
+    /**
+     * Returns a variable by name, throwing a {@link org.codehaus.groovy.GroovyBugError}
+     * if it does not exist. Convenience overload of
+     * {@link #getVariable(String, boolean)} with {@code mustExist = true}.
+     *
+     * @param variableName the name to look up
+     * @return the corresponding {@link BytecodeVariable}
+     */
     public BytecodeVariable getVariable(final String variableName) {
         return getVariable(variableName, true);
     }
@@ -425,6 +490,17 @@ public class CompileStack {
         scope = null;
     }
 
+    /**
+     * Adds a typed or untyped exception handler to the exception table for
+     * the current method. Typed entries (non-null {@code sig}) are emitted
+     * before untyped ones to ensure correct handler ordering in the bytecode.
+     *
+     * @param start the start label of the guarded range
+     * @param end   the end label of the guarded range
+     * @param goal  the label of the handler block
+     * @param sig   the internal name of the caught exception type, or {@code null}
+     *              for a catch-all handler
+     */
     public void addExceptionBlock(final Label start, final Label end, final Label goal, final String sig) {
         // this code is in an extra method to avoid
         // lazy initialization issues
@@ -686,6 +762,11 @@ public class CompileStack {
         nextVariableIndex = localVariableOffset;
     }
 
+    /**
+     * Wraps the current stack value in a {@code groovy.lang.Reference} for the given variable slot.
+     *
+     * @param reference the variable that will receive the created reference
+     */
     void createReference(final BytecodeVariable reference) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitTypeInsn(NEW, "groovy/lang/Reference");
@@ -695,6 +776,12 @@ public class CompileStack {
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
 
+    /**
+     * Pushes the JVM default initial value for the supplied type.
+     *
+     * @param type the variable type to initialize
+     * @param mv the method visitor receiving the bytecode
+     */
     static void pushInitValue(final ClassNode type, final MethodVisitor mv) {
         if (ClassHelper.isPrimitiveDouble(type)) {
             mv.visitInsn(DCONST_0);
@@ -720,6 +807,17 @@ public class CompileStack {
         return defineVariable(v, v.getOriginType(), initFromStack);
     }
 
+    /**
+     * Defines a variable for the given AST variable using an explicitly specified
+     * bytecode type (which may differ from the declared type, e.g. when widening
+     * for closure-shared variables).
+     *
+     * @param v             the AST variable to define
+     * @param variableType  the bytecode type to assign to the slot
+     * @param initFromStack if {@code true} the top of the operand stack is stored
+     *                      into the new slot; otherwise a default/null value is used
+     * @return the created {@link BytecodeVariable}
+     */
     public BytecodeVariable defineVariable(final Variable v, final ClassNode variableType, final boolean initFromStack) {
         String name = v.getName();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -777,6 +875,14 @@ public class CompileStack {
         nextVariableIndex += 1;
     }
 
+    /**
+     * Applies any pending finally blocks on the path to {@code label}.
+     * Walks the state stack to determine which finally blocks are between the
+     * current position and the target label and inlines their bytecode.
+     *
+     * @param label        the target label (break or continue destination)
+     * @param isBreakLabel {@code true} for a break label, {@code false} for continue
+     */
     public void applyFinallyBlocks(final Label label, final boolean isBreakLabel) {
         StateStackElement before = null;
         search: {
@@ -839,27 +945,56 @@ public class CompileStack {
         mv.visitLabel(start);
     }
 
+    /**
+     * Applies all currently active finally blocks for a normal (non-jump) fall-through.
+     */
     public void applyBlockRecorder() {
         applyBlockRecorder(finallyBlocks);
     }
 
+    /** Returns {@code true} if there are any active finally/synchronized blocks on the stack. */
     public boolean hasBlockRecorder() {
         return !finallyBlocks.isEmpty();
     }
 
+    /**
+     * Pushes a new {@link BlockRecorder} (finally or synchronized guard) onto the
+     * block-recorder stack and saves state so that {@link #pop()} will remove it.
+     *
+     * @param recorder the recorder to push
+     */
     public void pushBlockRecorder(final BlockRecorder recorder) {
         pushState();
         finallyBlocks.addFirst(recorder);
     }
 
+    /**
+     * Marks {@code finallyBlock} as currently being visited so that recursive
+     * finally-block application does not re-enter it.
+     *
+     * @param finallyBlock the block being visited
+     */
     public void pushBlockRecorderVisit(final BlockRecorder finallyBlock) {
         visitedBlocks.add(finallyBlock);
     }
 
+    /**
+     * Removes {@code finallyBlock} from the visited-block set after its inline
+     * emission is complete.
+     *
+     * @param finallyBlock the block that finished being visited
+     */
     public void popBlockRecorderVisit(final BlockRecorder finallyBlock) {
         visitedBlocks.remove(finallyBlock);
     }
 
+    /**
+     * Writes the exception-table entries for all label ranges recorded in {@code block}.
+     *
+     * @param block the block recorder containing the try-range labels
+     * @param goal  the handler label
+     * @param sig   the internal name of the caught type, or {@code null} for catch-all
+     */
     public void writeExceptionTable(final BlockRecorder block, final Label goal, final String sig) {
         if (block.isEmpty) return;
         MethodVisitor mv = controller.getMethodVisitor();
@@ -868,38 +1003,60 @@ public class CompileStack {
         }
     }
 
+    /** Returns {@code true} if the current expression is being compiled as a left-hand side. */
     public boolean isLHS() {
         return lhs;
     }
 
+    /**
+     * Pushes a new left-hand-side flag onto the LHS stack.
+     *
+     * @param lhs {@code true} if the next expression is compiled as an assignment target
+     */
     public void pushLHS(final boolean lhs) {
         lhsStack.add(lhs);
         this.lhs = lhs;
     }
 
+    /** Pops the top left-hand-side flag, restoring the previous LHS state. */
     public void popLHS() {
         lhsStack.removeLast();
         lhs = lhsStack.getLast();
     }
 
+    /** Returns {@code true} if the current {@code this} reference is implicit (no explicit qualifier). */
     public boolean isImplicitThis() {
         return implicitThis;
     }
 
+    /**
+     * Pushes a new implicit-this flag onto the stack.
+     *
+     * @param implicitThis {@code true} if {@code this} is used implicitly in the current context
+     */
     public void pushImplicitThis(final boolean implicitThis) {
         implicitThisStack.add(implicitThis);
         this.implicitThis = implicitThis;
     }
 
+    /** Pops the top implicit-this flag, restoring the previous state. */
     public void popImplicitThis() {
         implicitThisStack.removeLast();
         implicitThis = implicitThisStack.getLast();
     }
 
+    /**
+     * Returns {@code true} if the current context is inside a special constructor call
+     * ({@code super(...)} or {@code this(...)}).
+     */
     public boolean isInSpecialConstructorCall() {
         return inSpecialConstructorCall;
     }
 
+    /**
+     * Enters a special constructor call context ({@code super(...)} or {@code this(...)}).
+     * Pushes state so that {@link #pop()} will restore the previous context.
+     */
     public void pushInSpecialConstructorCall() {
         pushState();
         inSpecialConstructorCall = true;

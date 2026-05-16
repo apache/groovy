@@ -35,12 +35,23 @@ public class MethodPointerExpressionWriter {
 
     private static final MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
 
+    /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
 
+    /**
+     * Creates a method pointer expression writer with the given controller.
+     *
+     * @param controller the writer controller
+     */
     public MethodPointerExpressionWriter(final WriterController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Generates bytecode for a method pointer expression.
+     *
+     * @param pointerOrReference the method pointer expression
+     */
     public void writeMethodPointerExpression(final MethodPointerExpression pointerOrReference) {
         pointerOrReference.getExpression().visit(controller.getAcg());
         OperandStack operandStack = controller.getOperandStack();

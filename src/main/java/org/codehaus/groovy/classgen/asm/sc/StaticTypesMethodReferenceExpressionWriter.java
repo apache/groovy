@@ -638,6 +638,9 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 createDeserializeMethodParameters(),
                 ClassNode.EMPTY_ARRAY,
                 new BytecodeSequence(new BytecodeInstruction() {
+                    /**
+                     * Rebuilds the captured receiver before recreating the method reference.
+                     */
                     @Override
                     public void visit(final MethodVisitor mv) {
                         if (capturing) {

@@ -21,16 +21,35 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 
+/**
+ * Generates bytecode for lambda expressions.
+ */
 public class LambdaWriter extends ClosureWriter {
 
+    /**
+     * Creates a lambda writer with the given controller.
+     *
+     * @param controller the writer controller
+     */
     public LambdaWriter(final WriterController controller) {
         super(controller);
     }
 
+    /**
+     * Generates bytecode for a lambda expression.
+     *
+     * @param expression the lambda expression to generate bytecode for
+     */
     public void writeLambda(final LambdaExpression expression) {
         super.writeClosure(expression);
     }
 
+    /**
+     * Gets the shared variables for a lambda expression.
+     *
+     * @param expression the lambda expression
+     * @return the shared variables
+     */
     protected Parameter[] getLambdaSharedVariables(final LambdaExpression expression) {
         return super.getClosureSharedVariables(expression);
     }

@@ -171,6 +171,9 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         if (code == null) return name;
         final Object[] found = new Object[1];
         CodeVisitorSupport cv = new CodeVisitorSupport() {
+            /**
+             * Detects whether the candidate name is already referenced in the statement block.
+             */
             @Override
             public void visitVariableExpression(VariableExpression expression) {
                 if (expression.getName().equals(name)) found[0] = Boolean.TRUE;

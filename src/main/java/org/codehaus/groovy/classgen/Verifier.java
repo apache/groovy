@@ -386,6 +386,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      */
     protected FinalVariableAnalyzer.VariableNotFinalCallback getFinalVariablesCallback() {
         return new FinalVariableAnalyzer.VariableNotFinalCallback() {
+            /**
+             * Reports reassignment of final variables and parameters.
+             */
             @Override
             public void variableNotFinal(Variable var, final Expression bexp) {
                 if (var instanceof VariableExpression) {
@@ -405,6 +408,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
             }
 
+            /**
+             * Reports final variables that may be read before initialization.
+             */
             @Override
             public void variableNotAlwaysInitialized(final VariableExpression var) {
                 if (isFinal(var.getAccessedVariable().getModifiers()))
@@ -574,6 +580,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 Parameter.EMPTY_ARRAY,
                 ClassNode.EMPTY_ARRAY,
                 new BytecodeSequence(new BytecodeInstruction() {
+                    /**
+                     * Emits the synthetic {@code $getStaticMetaClass} implementation.
+                     */
                     @Override
                     public void visit(final MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
@@ -629,6 +638,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
             metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
             Statement getMetaClassCode = new BytecodeSequence(new BytecodeInstruction() {
+                /**
+                 * Emits the lazy-loading body for the generated {@code getMetaClass} method.
+                 */
                 @Override
                 public void visit(final MethodVisitor mv) {
                     Label nullLabel = new Label();
@@ -678,6 +690,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 setMetaClassCode = stmt(ctorX(ClassHelper.make(IllegalArgumentException.class), constX("cannot set read-only meta class")));
             } else {
                 setMetaClassCode = new BytecodeSequence(new BytecodeInstruction() {
+                    /**
+                     * Emits the body for the generated {@code setMetaClass} method.
+                     */
                     @Override
                     public void visit(final MethodVisitor mv) {
                         /*
@@ -742,10 +757,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private static void checkReturnInObjectInitializer(final List<Statement> init) {
         GroovyCodeVisitor visitor = new CodeVisitorSupport() {
+            /**
+             * Skips nested closures so their {@code return} statements remain valid.
+             */
             @Override
             public void visitClosureExpression(final ClosureExpression expression) {
                 // return is OK in closures in object initializers
             }
+            /**
+             * Rejects {@code return} statements used directly in object initializers.
+             */
             @Override
             public void visitReturnStatement(final ReturnStatement statement) {
                 throw new RuntimeParserException("'return' is not allowed in object initializer", statement);
@@ -766,6 +787,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             stmt.visit(new VerifierCodeVisitor(getClassNode()));
             // check for uninitialized-this references
             stmt.visit(new CodeVisitorSupport() {
+                /**
+                 * Tracks closure nesting while validating constructor code.
+                 */
                 @Override
                 public void visitClosureExpression(final ClosureExpression ce) {
                     boolean oldInClosure = inClosure;
@@ -774,6 +798,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     inClosure = oldInClosure;
                 }
 
+                /**
+                 * Tracks whether the current traversal is inside a special constructor call.
+                 */
                 @Override
                 public void visitConstructorCallExpression(final ConstructorCallExpression cce) {
                     boolean oldIsSpecialConstructorCall = inSpecialConstructorCall;
@@ -782,6 +809,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     inSpecialConstructorCall = oldIsSpecialConstructorCall;
                 }
 
+                /**
+                 * Validates method calls that occur before {@code this} is fully initialized.
+                 */
                 @Override
                 public void visitMethodCallExpression(final MethodCallExpression mce) {
                     if (inSpecialConstructorCall && isThisObjectExpression(mce)) {
@@ -805,6 +835,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     }
                 }
 
+                /**
+                 * Rejects non-static member access before a special constructor call completes.
+                 */
                 @Override
                 public void visitVariableExpression(final VariableExpression ve) {
                     // before this/super ctor call completes, only params and static or outer members are accessible
@@ -1029,6 +1062,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      */
     @FunctionalInterface
     public interface DefaultArgsAction {
+        /**
+         * Handles one generated argument list for a default-parameter variant.
+         *
+         * @param arguments the arguments to pass to the generated member
+         * @param parameters the parameters for the generated member
+         * @param method the source method or constructor being expanded
+         */
         void call(ArgumentListExpression arguments, Parameter[] parameters, MethodNode method);
     }
 
@@ -1058,6 +1098,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             GroovyCodeVisitor visitor = new CodeVisitorSupport() {
                 private boolean inClosure;
 
+                /**
+                 * Tracks closure nesting while synthesizing default-parameter methods.
+                 */
                 @Override
                 public void visitClosureExpression(final ClosureExpression e) {
                     boolean saved = inClosure; inClosure = true;
@@ -1065,6 +1108,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     inClosure = saved;
                 }
 
+                /**
+                 * Materializes removed default-parameter values as locals when needed.
+                 */
                 @Override
                 public void visitVariableExpression(final VariableExpression e) {
                     if (e.getAccessedVariable() instanceof Parameter p) {
@@ -1118,6 +1164,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             // GROOVY-5681: set anon. inner enclosing method reference
             visitor = new CodeVisitorSupport() {
+                /**
+                 * Associates anonymous inner classes with the generated helper method.
+                 */
                 @Override
                 public void visitConstructorCallExpression(final ConstructorCallExpression call) {
                     if (call.isUsingAnonymousInnerClass()) {
@@ -1156,6 +1205,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
             }
             GroovyCodeVisitor visitor = new CodeVisitorSupport() {
+                /**
+                 * Rejects references to parameters replaced by constructor default values.
+                 */
                 @Override
                 public void visitVariableExpression(final VariableExpression e) {
                     if (e.getAccessedVariable() instanceof Parameter p) {
@@ -1203,6 +1255,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         // set anon. inner enclosing method reference
         code.visit(new CodeVisitorSupport() {
+            /**
+             * Associates anonymous inner classes with the generated constructor.
+             */
             @Override
             public void visitConstructorCallExpression(final ConstructorCallExpression call) {
                 if (call.isUsingAnonymousInnerClass()) {
@@ -1293,6 +1348,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (addSwapInit) {
             BytecodeSequence seq = new BytecodeSequence(new BytecodeInstruction() {
+                /**
+                 * Invokes the synthetic swap-initializer hook.
+                 */
                 @Override
                 public void visit(MethodVisitor mv) {
                     mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(node), SWAP_INIT, "()V", false);
@@ -1522,6 +1580,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected Statement createGetterBlock(final PropertyNode propertyNode, final FieldNode field) {
         String owner = BytecodeHelper.getClassInternalName(classNode);
         return new BytecodeSequence(new BytecodeInstruction() {
+            /**
+             * Emits the field load and return for a generated property getter.
+             */
             @Override
             public void visit(final MethodVisitor mv) {
                 if (field.isStatic()) {
@@ -1545,6 +1606,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected Statement createSetterBlock(final PropertyNode propertyNode, final FieldNode field) {
         String owner = BytecodeHelper.getClassInternalName(classNode);
         return new BytecodeSequence(new BytecodeInstruction() {
+            /**
+             * Emits the field store for a generated property setter.
+             */
             @Override
             public void visit(final MethodVisitor mv) {
                 if (field.isStatic()) {
@@ -1820,6 +1884,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 cleanParameters(oldMethod.getParameters()),
                 oldMethod.getExceptions(),
                 new BytecodeSequence(new BytecodeInstruction() {
+                    /**
+                     * Emits the bridge-method adapter and its necessary casts.
+                     */
                     @Override
                     public void visit(final MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
@@ -1988,6 +2055,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             ((SwapInitInstruction) getInstructions().get(0)).statement = this;
         }
 
+        /**
+         * Captures the active writer controller before delegating to the bytecode sequence.
+         */
         @Override
         public void visit(final GroovyCodeVisitor visitor) {
             if (visitor instanceof AsmClassGenerator) {
@@ -1999,6 +2069,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         private static class SwapInitInstruction extends BytecodeInstruction {
             private SwapInitStatement statement;
 
+            /**
+             * Emits the deferred call-site array initialization.
+             */
             @Override
             public void visit(final MethodVisitor mv) {
                 statement.controller.getCallSiteWriter().makeCallSiteArrayInitializer();

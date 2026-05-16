@@ -37,16 +37,30 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 public class UnaryExpressionHelper {
 
     // unary plus, unary minus, bitwise negation
+    /** Adapter call used for unary plus expressions. */
     static final MethodCaller unaryPlus = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "unaryPlus");
+    /** Adapter call used for unary minus expressions. */
     static final MethodCaller unaryMinus = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "unaryMinus");
+    /** Adapter call used for bitwise negation expressions. */
     static final MethodCaller bitwiseNegate = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitwiseNegate");
 
+    /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
 
+    /**
+     * Creates an unary expression helper with the given controller.
+     *
+     * @param controller the writer controller
+     */
     public UnaryExpressionHelper(final WriterController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Generates bytecode for a unary plus expression.
+     *
+     * @param expression the unary plus expression
+     */
     public void writeUnaryPlus(UnaryPlusExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(controller.getAcg());
@@ -56,6 +70,11 @@ public class UnaryExpressionHelper {
         controller.getAssertionWriter().record(expression);
     }
 
+    /**
+     * Generates bytecode for a unary minus expression.
+     *
+     * @param expression the unary minus expression
+     */
     public void writeUnaryMinus(UnaryMinusExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(controller.getAcg());
@@ -65,6 +84,11 @@ public class UnaryExpressionHelper {
         controller.getAssertionWriter().record(expression);
     }
 
+    /**
+     * Generates bytecode for a bitwise negation expression.
+     *
+     * @param expression the bitwise negation expression
+     */
     public void writeBitwiseNegate(BitwiseNegationExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(controller.getAcg());
@@ -74,6 +98,11 @@ public class UnaryExpressionHelper {
         controller.getAssertionWriter().record(expression);
     }
 
+    /**
+     * Generates bytecode for a logical not expression.
+     *
+     * @param expression the not expression
+     */
     public void writeNotExpression(NotExpression expression) {
         Expression subExpression = expression.getExpression();
         int mark = controller.getOperandStack().getStackLength();

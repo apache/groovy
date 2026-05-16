@@ -276,6 +276,9 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
                 if (currentMethod instanceof ConstructorNode ctor) {
                     boolean[] precedesSuperOrThisCall = new boolean[1];
                     GroovyCodeVisitor visitor = new CodeVisitorSupport() {
+                        /**
+                         * Detects whether the target constructor call is reached before another special call.
+                         */
                         @Override
                         public void visitConstructorCallExpression(ConstructorCallExpression cce) {
                             if (cce == call) {

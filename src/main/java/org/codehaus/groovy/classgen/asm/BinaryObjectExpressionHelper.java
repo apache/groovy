@@ -24,72 +24,125 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.BytecodeInterface8;
 import org.objectweb.asm.MethodVisitor;
 
+/**
+ * Binary expression helper used for object operations that fall back to dynamic dispatch.
+ */
 public class BinaryObjectExpressionHelper extends BinaryExpressionWriter {
     private static final MethodCaller arrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "objectArrayGet");
     private static final MethodCaller arraySet = MethodCaller.newStatic(BytecodeInterface8.class, "objectArraySet");
 
+    /**
+     * Creates an object-specialized binary expression helper.
+     *
+     * @param controller the active writer controller
+     */
     public BinaryObjectExpressionHelper(WriterController controller) {
         super(controller, arraySet, arrayGet);
     }
 
     // dummy methods
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean write(int operation, boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected boolean writeDivision(boolean simulate) {
         if (simulate) return false;
         throw new GroovyBugError("should not reach here");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getBitwiseOperationBytecode(int type) {
         return -1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getCompareCode() {
         return -1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ClassNode getNormalOpResultType() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ClassNode getDevisionOpResultType() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getStandardOperationBytecode(int type) {
         return -1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void removeTwoOperands(MethodVisitor mv) {}
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void writePlusPlus(MethodVisitor mv) {}
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void writeMinusMinus(MethodVisitor mv) {}
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void doubleTwoOperands(MethodVisitor mv) {}
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ClassNode getArrayGetResultType() {
     	return ClassHelper.OBJECT_TYPE.getPlainNodeReference();

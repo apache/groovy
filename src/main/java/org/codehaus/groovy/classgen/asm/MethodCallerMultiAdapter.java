@@ -20,12 +20,26 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.objectweb.asm.MethodVisitor;
 
+/**
+ * Multi-adapter for method callers that handles different argument counts and safe/spread-safe variants.
+ */
 public class MethodCallerMultiAdapter {
     private MethodCaller[] methods;
+    /** Whether to skip generating safe ({@code ?.}) and spread-safe ({@code *?.}) variants. */
     boolean skipSpreadSafeAndSafe;
 
+    /** Maximum number of direct (non-N-arg) argument slots; variants above this use the N-arg method. */
     public static final int MAX_ARGS = 0;
 
+    /**
+     * Creates a multi-adapter for static methods with optional safe and spread-safe variants.
+     *
+     * @param theClass the class containing the methods
+     * @param baseName the base method name
+     * @param createNArgs whether to create numbered argument variants
+     * @param skipSpreadSafeAndSafe whether to skip safe and spread-safe variants
+     * @return a new MethodCallerMultiAdapter
+     */
     public static MethodCallerMultiAdapter newStatic(Class theClass, String baseName, boolean createNArgs, boolean skipSpreadSafeAndSafe) {
         MethodCallerMultiAdapter mcma = new MethodCallerMultiAdapter();
         mcma.skipSpreadSafeAndSafe = skipSpreadSafeAndSafe;
@@ -61,10 +75,12 @@ public class MethodCallerMultiAdapter {
     }
 
     /**
-     * @param methodVisitor
+     * Invokes the appropriate method based on argument count and safety flags.
+     *
+     * @param methodVisitor the method visitor to write to
      * @param numberOfArguments a value &gt; 0 describing how many arguments are additionally used for the method call
-     * @param safe
-     * @param spreadSafe
+     * @param safe whether to use the safe variant
+     * @param spreadSafe whether to use the spread-safe variant
      */
     public void call(MethodVisitor methodVisitor, int numberOfArguments, boolean safe, boolean spreadSafe) {
         int offset = 0;

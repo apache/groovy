@@ -365,6 +365,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         } else {
             code = block(
                 new BytecodeSequence(new BytecodeInstruction() {
+                    /**
+                     * Restores the captured lambda receiver from the serialized form.
+                     */
                     @Override
                     public void visit(final MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);

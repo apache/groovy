@@ -524,10 +524,18 @@ public class AsmClassGenerator extends ClassGenerator {
                     classVisitor.visitNestMember(nest);
                     toVisit.put(nest, expr);
                 }
+
+                /**
+                 * Registers nested closures as additional nest members.
+                 */
                 @Override
                 public  void visitClosureExpression(final ClosureExpression expression) {
                     visitNested("closure", expression);
                 }
+
+                /**
+                 * Registers statically compiled functional-interface lambdas as nest members.
+                 */
                 @Override
                 public  void visitLambdaExpression(final LambdaExpression expression) {
                     if (Boolean.TRUE.equals(innerClass.getNodeMetaData(org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE))
@@ -1930,6 +1938,12 @@ public class AsmClassGenerator extends ClassGenerator {
         visitTupleExpression(expression, false);
     }
 
+    /**
+     * Visits a tuple expression and stores its values in a new object array.
+     *
+     * @param expression the tuple expression to visit
+     * @param useWrapper {@code true} to wrap special constructor-call arguments when needed
+     */
     void visitTupleExpression(final TupleExpression expression, final boolean useWrapper) {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = expression.getExpressions().size();
@@ -2121,6 +2135,9 @@ public class AsmClassGenerator extends ClassGenerator {
         final Label tableEnd = new Label();
         final Label[] labels = new Label[size];
         instructions.add(new BytecodeInstruction() {
+            /**
+             * Emits the switch dispatch for the requested closure index.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 mv.visitVarInsn(ILOAD, 1);
@@ -2134,6 +2151,9 @@ public class AsmClassGenerator extends ClassGenerator {
             Expression expr = expressions.get(i);
             labels[i] = label;
             instructions.add(new BytecodeInstruction() {
+                /**
+                 * Marks the current case label and drops the placeholder stack value.
+                 */
                 @Override
                 public void visit(MethodVisitor mv) {
                     mv.visitLabel(label);
@@ -2143,6 +2163,9 @@ public class AsmClassGenerator extends ClassGenerator {
             });
             instructions.add(expr);
             instructions.add(new BytecodeInstruction() {
+                /**
+                 * Jumps to the shared return label after evaluating a case body.
+                 */
                 @Override
                 public void visit(MethodVisitor mv) {
                     mv.visitJumpInsn(GOTO, tableEnd);
@@ -2152,6 +2175,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // default case
         instructions.add(new BytecodeInstruction() {
+            /**
+             * Marks the default branch of the closure-index switch.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 mv.visitLabel(dflt);
@@ -2164,6 +2190,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // return
         instructions.add(new BytecodeInstruction() {
+            /**
+             * Emits the shared return path for the generated closure-index switch.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 mv.visitLabel(tableEnd);

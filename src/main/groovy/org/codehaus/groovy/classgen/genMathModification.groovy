@@ -36,6 +36,9 @@ def ops = [
         'rightShiftUnsigned'
 ]
 
+/**
+ * Maps boxed numeric type names to their primitive counterparts.
+ */
 def numbers = ['Byte':'byte', 'Short':'short', 'Integer':'int', 'Long':'long', 'Float':'float', 'Double':'double']
 
 ops.each { op ->

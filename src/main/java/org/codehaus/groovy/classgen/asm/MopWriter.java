@@ -44,31 +44,57 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 
+/**
+ * Generates bytecode for Meta Object Protocol (MOP) methods.
+ */
 public class MopWriter {
 
+    /**
+     * Factory interface for creating MopWriter instances.
+     */
     @FunctionalInterface
     public interface Factory {
+        /**
+         * Creates a MopWriter with the given controller.
+         *
+         * @param controller the writer controller
+         * @return a new MopWriter instance
+         */
         MopWriter create(WriterController controller);
     }
 
+    /**
+     * Default factory for MopWriter instances.
+     */
     public static final Factory FACTORY = MopWriter::new;
 
     private static class MopKey {
+        /** Cached hash code for the method signature key. */
         final int hash;
+        /** Method name represented by this key. */
         final String name;
+        /** Parameter types represented by this key. */
         final Parameter[] params;
 
+        /**
+         * Creates a key for the supplied method name and parameters.
+         *
+         * @param name the method name
+         * @param params the method parameters
+         */
         MopKey(final String name, final Parameter[] params) {
             this.name = name;
             this.params = params;
             hash = name.hashCode() << 2 + params.length;
         }
 
+        /** {@inheritDoc} */
         @Override
         public int hashCode() {
             return hash;
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean equals(final Object obj) {
             if (!(obj instanceof MopKey other)) {
@@ -80,12 +106,21 @@ public class MopWriter {
 
     //--------------------------------------------------------------------------
 
+    /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
 
+    /**
+     * Creates a MopWriter with the given controller.
+     *
+     * @param controller the writer controller
+     */
     public MopWriter(final WriterController controller) {
         this.controller = requireNonNull(controller);
     }
 
+    /**
+     * Generates MOP methods for the current class.
+     */
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();
         if (!ClassHelper.isGeneratedFunction(classNode)) {
@@ -222,6 +257,14 @@ public class MopWriter {
         return (methodName.startsWith("this$") || methodName.startsWith("super$")) && !methodName.contains("$dist$");
     }
 
+    /**
+     * Checks if two parameter arrays are equal.
+     *
+     * @param p1 first parameter array
+     * @param p2 second parameter array
+     * @return true if parameters are equal
+     * @deprecated Use {@link org.codehaus.groovy.ast.tools.ParameterUtils#parametersEqual(Parameter[], Parameter[])} instead
+     */
     @Deprecated
     public static boolean equalParameterTypes(final Parameter[] p1, final Parameter[] p2) {
         return ParameterUtils.parametersEqual(p1, p2);

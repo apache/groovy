@@ -71,21 +71,44 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 
+/**
+ * Generates bytecode for closure expressions.
+ */
 public class ClosureWriter {
 
+    /**
+     * Field name for the outer instance reference.
+     */
     public static final String OUTER_INSTANCE = "_outerInstance";
+    /**
+     * Field name for the this object reference.
+     */
     public static final String THIS_OBJECT = "_thisObject";
 
+    /**
+     * Marker interface for using existing reference.
+     */
     protected interface UseExistingReference {
     }
 
+    /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
     private final Map<Expression, ClassNode> closureClasses = new HashMap<>();
 
+    /**
+     * Creates a closure writer with the given controller.
+     *
+     * @param controller the writer controller
+     */
     public ClosureWriter(final WriterController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Generates bytecode for a closure expression.
+     *
+     * @param expression the closure expression
+     */
     public void writeClosure(final ClosureExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -135,6 +158,13 @@ public class ClosureWriter {
         controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE, localVariableParams.length);
     }
 
+    /**
+     * Loads a closure-shared variable reference onto the operand stack, looking it up
+     * as a field, local variable, or outer closure field as appropriate.
+     *
+     * @param name       the variable name to load
+     * @param controller the writer controller for the enclosing class
+     */
     public static void loadReference(final String name, final WriterController controller) {
         CompileStack compileStack = controller.getCompileStack();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -164,6 +194,14 @@ public class ClosureWriter {
         }
     }
 
+    /**
+     * Returns the existing generated class for a closure expression, or creates and registers
+     * a new one if none exists yet.
+     *
+     * @param expression the closure expression to compile as an inner class
+     * @param modifiers  the access modifiers for the generated class
+     * @return the generated closure class node
+     */
     public ClassNode getOrAddClosureClass(final ClosureExpression expression, final int modifiers) {
         ClassNode closureClass = closureClasses.get(expression);
         if (closureClass == null) {
@@ -188,6 +226,13 @@ public class ClosureWriter {
         return !ClassHelper.isObjectType(classNode) && !ClassHelper.isObjectType(classNode.getComponentType());
     }
 
+    /**
+     * Creates a new inner class node representing the compiled form of a closure expression.
+     *
+     * @param expression the closure expression to compile
+     * @param modifiers  the access modifiers for the generated class
+     * @return the newly created closure class node
+     */
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         ClassNode classNode = controller.getClassNode();
         ClassNode rootClass = controller.getOutermostClass();
@@ -233,6 +278,9 @@ public class ClosureWriter {
             doCall.setVariableScope(varScope.copy());
 
             new CodeVisitorSupport() {
+                /**
+                 * Associates anonymous inner classes with the generated {@code doCall} method.
+                 */
                 @Override
                 public void visitConstructorCallExpression(final ConstructorCallExpression cce) {
                     if (cce.isUsingAnonymousInnerClass()) { // GROOVY-11846
@@ -268,6 +316,12 @@ public class ClosureWriter {
         return answer;
     }
 
+    /**
+     * Adds a synthetic {@code serialVersionUID} field to the closure class,
+     * derived from a hash of the class name.
+     *
+     * @param classNode the closure class node to add the field to
+     */
     protected void addSerialVersionUIDField(final ClassNode classNode) {
         // just to hash the full class name for better performance.
         // The full spec for `serialVersionUID` is here:
@@ -292,6 +346,16 @@ public class ClosureWriter {
         return hash;
     }
 
+    /**
+     * Adds a synthetic {@code public} constructor to the closure inner class that accepts
+     * the outer instance, {@code this} object, and all captured local variable references.
+     *
+     * @param expression          the closure expression
+     * @param localVariableParams parameters for closure-shared local variables
+     * @param answer              the closure inner class node
+     * @param block               the constructor body
+     * @return the created constructor node
+     */
     protected ConstructorNode addConstructor(final ClosureExpression expression, final Parameter[] localVariableParams, final InnerClassNode answer, final BlockStatement block) {
         Parameter[] params = new Parameter[2 + localVariableParams.length];
         params[0] = new Parameter(ClassHelper.OBJECT_TYPE, OUTER_INSTANCE);
@@ -304,6 +368,13 @@ public class ClosureWriter {
         return constructorNode;
     }
 
+    /**
+     * Adds synthetic private fields to the closure inner class for each captured
+     * local variable parameter, promoting them to {@code Reference} holders.
+     *
+     * @param closureClass        the closure inner class node
+     * @param localVariableParams the closure-shared local variable parameters
+     */
     protected void addFieldsForLocalVariables(final InnerClassNode closureClass, final Parameter[] localVariableParams) {
         for (Parameter param : localVariableParams) {
             String     paramName = param.getName();
@@ -325,6 +396,15 @@ public class ClosureWriter {
         }
     }
 
+    /**
+     * Creates the block statement for the closure's synthetic constructor, setting up
+     * the {@code super(outerInstance, thisObject)} call and captured variable references.
+     *
+     * @param expression      the closure expression
+     * @param outerClass      the class declaring the closure
+     * @param thisClassNode   the {@code this} type in scope at the closure declaration site
+     * @return the block statement for the constructor body
+     */
     protected BlockStatement createBlockStatementForConstructor(final ClosureExpression expression, final ClassNode outerClass, final ClassNode thisClassNode) {
         BlockStatement block = new BlockStatement();
         // this block does not get a source position, because we don't
@@ -340,13 +420,24 @@ public class ClosureWriter {
         return block;
     }
 
+    /**
+     * Visitor that rewrites {@link org.codehaus.groovy.ast.expr.VariableExpression} nodes
+     * whose accessed variable is a {@link org.codehaus.groovy.ast.FieldNode} in an outer class
+     * to instead reference the corresponding field in the generated closure inner class.
+     */
     protected static class CorrectAccessedVariableVisitor extends CodeVisitorSupport {
         private InnerClassNode icn;
 
+        /**
+         * Creates a visitor for the generated closure class.
+         *
+         * @param icn the generated closure class
+         */
         public CorrectAccessedVariableVisitor(final InnerClassNode icn) {
             this.icn = icn;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitVariableExpression(final VariableExpression expression) {
             Variable v = expression.getAccessedVariable();
@@ -371,6 +462,12 @@ public class ClosureWriter {
      * same method, in this case the constructor. A closure should not
      * have more than one constructor!
      */
+    /**
+     * Strips initial-value expressions from parameters that are closure-shared,
+     * ensuring the closure constructor is not duplicated.
+     *
+     * @param params the parameters to mutate in-place
+     */
     protected static void removeInitialValues(final Parameter[] params) {
         for (int i = 0; i < params.length; i++) {
             if (params[i].hasInitialExpression()) {
@@ -381,6 +478,13 @@ public class ClosureWriter {
         }
     }
 
+    /**
+     * Emits a {@code super(outerInstance, thisObject)} constructor call for a generated
+     * closure class. Returns {@code false} if the current class is not a generated closure.
+     *
+     * @param call the constructor call expression representing {@code super(...)}
+     * @return {@code true} if the closure constructor call was emitted
+     */
     public boolean addGeneratedClosureConstructorCall(final ConstructorCallExpression call) {
         ClassNode classNode = controller.getClassNode();
         if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) return false;
@@ -406,6 +510,13 @@ public class ClosureWriter {
         return true;
     }
 
+    /**
+     * Collects the closure-shared local variables referenced by a closure expression
+     * as an array of {@link Parameter}s, using the type chooser to infer each variable's type.
+     *
+     * @param expression the closure expression
+     * @return the array of parameters representing captured shared variables
+     */
     protected Parameter[] getClosureSharedVariables(final ClosureExpression expression) {
         ClassNode classNode = controller.getClassNode();
         TypeChooser typeChooser = controller.getTypeChooser();
@@ -426,6 +537,11 @@ public class ClosureWriter {
         return refs;
     }
 
+    /**
+     * Loads the effective {@code this} reference onto the operand stack — either the
+     * actual receiver for a regular method, or the result of {@code getThisObject()} for
+     * a generated closure/lambda.
+     */
     protected void loadThis() {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ALOAD, 0);

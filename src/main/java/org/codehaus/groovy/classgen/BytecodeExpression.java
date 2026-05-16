@@ -33,6 +33,9 @@ public abstract class BytecodeExpression extends Expression {
      * A no-operation bytecode expression that generates no instructions.
      */
     public static final BytecodeExpression NOP = new BytecodeExpression() {
+        /**
+         * Performs no bytecode emission.
+         */
         @Override
         public void visit(final MethodVisitor visitor) {
             // do nothing

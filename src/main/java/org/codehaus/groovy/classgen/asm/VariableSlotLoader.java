@@ -22,28 +22,52 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.objectweb.asm.MethodVisitor;
 
+/**
+ * A bytecode expression that loads a variable from a specific slot index.
+ */
 public class VariableSlotLoader extends BytecodeExpression {
 
     private final int idx;
     private final OperandStack operandStack;
 
+    /**
+     * Creates a variable slot loader with a specified type and index.
+     *
+     * @param type the type of the variable
+     * @param index the slot index of the variable
+     * @param os the operand stack
+     */
     public VariableSlotLoader(ClassNode type, int index, OperandStack os) {
         super(type);
         this.idx = index;
         this.operandStack = os;
     }
 
+    /**
+     * Creates a variable slot loader with a specified index.
+     *
+     * @param index the slot index of the variable
+     * @param os the operand stack
+     */
     public VariableSlotLoader(int index, OperandStack os) {
         this.idx = index;
         this.operandStack = os;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visit(MethodVisitor mv) {
         operandStack.load(this.getType(), idx);
         operandStack.remove(1);
     }
 
+    /**
+     * Returns the slot index of the variable.
+     *
+     * @return the variable slot index
+     */
     public int getIndex(){
         return idx;
     }

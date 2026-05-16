@@ -43,6 +43,13 @@ import java.util.Map;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 
+/**
+ * Central coordinator for Groovy-to-bytecode compilation of a single class.
+ * Owns all the specialized sub-writers (statements, expressions, closures,
+ * call sites, etc.) and the shared compilation infrastructure (operand stack,
+ * compile stack, type chooser). Must be initialized with {@link #init} before
+ * use.
+ */
 public class WriterController {
     private AsmClassGenerator acg;
     private MethodVisitor methodVisitor;

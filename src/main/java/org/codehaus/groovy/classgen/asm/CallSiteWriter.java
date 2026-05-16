@@ -98,11 +98,19 @@ public class CallSiteWriter {
         REF_DESC                = "L"+REF_CLASS+";",
         METHOD_OO_DESC          = "(Ljava/lang/Object;)Ljava/lang/Object;",
         CREATE_CSA_METHOD       = "$createCallSiteArray";
+    /**
+     * Sentinel name for constructor calls.
+     */
     public static final String CONSTRUCTOR = "<$constructor$>";
     private final List<String> callSites = new ArrayList<String>(32);
     private int callSiteArrayVarIndex = -1;
     private final WriterController controller;
 
+    /**
+     * Creates a call site writer with the given controller.
+     *
+     * @param wc the writer controller
+     */
     public CallSiteWriter(WriterController wc) {
         this.controller = wc;
         ClassNode node = controller.getClassNode();
@@ -111,6 +119,9 @@ public class CallSiteWriter {
         }
     }
 
+    /**
+     * Generates bytecode to load the call site array into a local variable.
+     */
     public void makeSiteEntry() {
         if (controller.isNotClinit()) {
             MethodVisitor mv = controller.getMethodVisitor();
@@ -124,6 +135,9 @@ public class CallSiteWriter {
         }
     }
 
+    /**
+     * Generates the call site array field and accessor methods.
+     */
     public void generateCallSiteArray() {
         if (!controller.getClassNode().isInterface()) {
             controller.getClassVisitor().visitField(MOD_PRIVSS, CALLSITE_FIELD, REF_DESC, null, null);
@@ -228,6 +242,12 @@ public class CallSiteWriter {
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
+    /**
+     * Prepares a call-site entry for the named method on the bytecode operand stack,
+     * loading the call-site array and selecting the slot for {@code message}.
+     *
+     * @param message the method name for which to prepare the call site
+     */
     public void prepareCallSite(String message) {
         MethodVisitor mv = controller.getMethodVisitor();
         if (controller.isNotClinit()) {
@@ -244,6 +264,14 @@ public class CallSiteWriter {
         prepareSiteAndReceiver(receiver, methodName, implicitThis, false);
     }
 
+    /**
+     * Generates bytecode to prepare the call site and receiver for a method call.
+     *
+     * @param receiver the receiver expression
+     * @param methodName the method name
+     * @param implicitThis whether the receiver is implicit 'this'
+     * @param lhs whether this is on the left-hand side of an assignment
+     */
     protected void prepareSiteAndReceiver(Expression receiver, String methodName, boolean implicitThis, boolean lhs) {
         //site
         prepareCallSite(methodName);
@@ -258,6 +286,11 @@ public class CallSiteWriter {
         compileStack.popImplicitThis();
     }
 
+    /**
+     * Visits an argument expression and ensures it is boxed.
+     *
+     * @param exp the argument expression
+     */
     protected void visitBoxedArgument(Expression exp) {
         exp.visit(controller.getAcg());
         if (!(exp instanceof TupleExpression)) {
@@ -267,10 +300,25 @@ public class CallSiteWriter {
         }
     }
 
+    /**
+     * Generates a single-argument method call.
+     *
+     * @param receiver the receiver expression
+     * @param message the method name
+     * @param arguments the argument expression
+     */
     public final void makeSingleArgumentCall(Expression receiver, String message, Expression arguments) {
         makeSingleArgumentCall(receiver, message, arguments, false);
     }
 
+    /**
+     * Generates a single-argument method call with optional safe navigation.
+     *
+     * @param receiver the receiver expression
+     * @param message the method name
+     * @param arguments the argument expression
+     * @param safe whether to use safe navigation
+     */
     public void makeSingleArgumentCall(Expression receiver, String message, Expression arguments, boolean safe) {
         OperandStack operandStack = controller.getOperandStack();
         int m1 = operandStack.getStackLength();
@@ -282,16 +330,43 @@ public class CallSiteWriter {
         operandStack.replace(ClassHelper.OBJECT_TYPE, m2-m1);
     }
 
+    /**
+     * Generates a GroovyObject getProperty call.
+     *
+     * @param receiver the receiver expression
+     * @param methodName the property name
+     * @param safe whether to use safe navigation
+     * @param implicitThis whether the receiver is implicit 'this'
+     */
     public void makeGroovyObjectGetPropertySite(Expression receiver, String methodName, boolean safe, boolean implicitThis) {
         prepareSiteAndReceiver(receiver, methodName, implicitThis);
         invokeSafe(safe, "callGroovyObjectGetProperty", "callGroovyObjectGetPropertySafe");
     }
 
+    /**
+     * Generates a general getProperty call.
+     *
+     * @param receiver the receiver expression
+     * @param methodName the property name
+     * @param safe whether to use safe navigation
+     * @param implicitThis whether the receiver is implicit 'this'
+     */
     public void makeGetPropertySite(Expression receiver, String methodName, boolean safe, boolean implicitThis) {
         prepareSiteAndReceiver(receiver, methodName, implicitThis);
         invokeSafe(safe, "callGetProperty", "callGetPropertySafe");
     }
 
+    /**
+     * Generates a general method call through the call site infrastructure.
+     *
+     * @param receiver the receiver expression
+     * @param message the method name
+     * @param arguments the arguments expression
+     * @param safe whether to use safe navigation
+     * @param implicitThis whether the receiver is implicit 'this'
+     * @param callCurrent whether to call on the current object
+     * @param callStatic whether this is a static method call
+     */
     public void makeCallSite(final Expression receiver, final String message, final Expression arguments,
             final boolean safe, final boolean implicitThis, final boolean callCurrent, final boolean callStatic) {
         prepareSiteAndReceiver(receiver, message, implicitThis);
@@ -364,10 +439,18 @@ public class CallSiteWriter {
         os.replace(ClassHelper.OBJECT_TYPE, operandsToReplace);
     }
 
+    /**
+     * Returns the list of call site names.
+     *
+     * @return the call site names
+     */
     public List<String> getCallSites() {
         return callSites;
     }
 
+    /**
+     * Generates bytecode to initialize the call site array field to null.
+     */
     public void makeCallSiteArrayInitializer() {
         final String classInternalName = BytecodeHelper.getClassInternalName(controller.getClassNode());
         MethodVisitor mv = controller.getMethodVisitor();
@@ -375,10 +458,23 @@ public class CallSiteWriter {
         mv.visitFieldInsn(PUTSTATIC, classInternalName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
     }
 
+    /**
+     * Checks if any call sites have been used.
+     *
+     * @return true if call sites have been used
+     */
     public boolean hasCallSiteUse() {
         return callSiteArrayVarIndex>=0;
     }
 
+    /**
+     * Generates a fallback call for attribute or property access.
+     *
+     * @param expression the property expression
+     * @param objectExpression the object expression
+     * @param name the property name
+     * @param adapter the method caller adapter
+     */
     public void fallbackAttributeOrPropertySite(PropertyExpression expression, Expression objectExpression, String name, MethodCallerMultiAdapter adapter) {
         if (controller.getCompileStack().isLHS()) controller.getOperandStack().box();
         controller.getInvocationWriter().makeCall(

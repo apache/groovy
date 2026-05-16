@@ -130,6 +130,9 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.SWAP;
 
+/**
+ * Emits bytecode for dynamic binary expressions.
+ */
 public class BinaryExpressionHelper {
     // compare
     private static final MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
@@ -148,22 +151,41 @@ public class BinaryExpressionHelper {
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
     private static final MethodCaller isNotCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isNotCase");
 
+    /**
+     * Coordinates the active bytecode-generation state.
+     */
     protected final WriterController controller;
     private final UnaryExpressionHelper unaryExpressionHelper;
 
+    /**
+     * Creates a binary expression helper for the supplied controller.
+     *
+     * @param wc the active writer controller
+     */
     public BinaryExpressionHelper(final WriterController wc) {
         this.controller = wc;
         this.unaryExpressionHelper = new UnaryExpressionHelper(wc);
     }
 
+    /**
+     * @return the active writer controller
+     */
     public WriterController getController() {
         return controller;
     }
 
+    /**
+     * @return the helper used for {@code isCase} dispatch
+     */
     public MethodCaller getIsCaseMethod() {
         return isCaseMethod;
     }
 
+    /**
+     * Evaluates the supplied binary expression.
+     *
+     * @param expression the expression to compile
+     */
     public void eval(final BinaryExpression expression) {
         switch (expression.getOperation().getType()) {
         case EQUAL: // = (aka assignment)
@@ -376,6 +398,15 @@ public class BinaryExpressionHelper {
         }
     }
 
+    /**
+     * Emits an array-style assignment using the dynamic {@code putAt} protocol.
+     *
+     * @param parent the original assignment expression
+     * @param receiver the array or indexable receiver
+     * @param index the subscript expression
+     * @param rhsValueLoader an expression that reloads the right-hand value
+     * @param safe whether the receiver access is null-safe
+     */
     protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
         // let's replace this assignment to a subscript operator with a method call
         // e.g. x[5] = 10 --> ScriptBytecodeAdapter.invokeMethod(senderClass, x, "putAt", [5, 10])
@@ -386,6 +417,11 @@ public class BinaryExpressionHelper {
             rhsValueLoader.visit(controller.getAcg()); // assignment expression value
     }
 
+    /**
+     * Rewrites and evaluates the Elvis-assignment form.
+     *
+     * @param expression the Elvis-assignment expression
+     */
     public void evaluateElvisEqual(final BinaryExpression expression) {
         Expression lhs = expression.getLeftExpression();
         Expression rhs = elvisX(lhs, expression.getRightExpression());
@@ -398,6 +434,12 @@ public class BinaryExpressionHelper {
         evaluateEqual(assignment, false);
     }
 
+    /**
+     * Evaluates an assignment expression.
+     *
+     * @param expression the assignment expression
+     * @param defineVariable whether the left-hand side declares a new variable
+     */
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
         AsmClassGenerator acg = controller.getAcg();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -719,6 +761,12 @@ public class BinaryExpressionHelper {
         }
     }
 
+    /**
+     * Evaluates a comparison expression, using primitive helpers when possible.
+     *
+     * @param compareMethod the dynamic comparison helper
+     * @param expression the comparison expression
+     */
     protected void evaluateCompareExpression(final MethodCaller compareMethod, final BinaryExpression expression) {
         Expression leftExp = expression.getLeftExpression();
         Expression rightExp = expression.getRightExpression();
@@ -836,6 +884,12 @@ public class BinaryExpressionHelper {
         mv.visitLabel(end);
     }
 
+    /**
+     * Evaluates a dynamic binary operator by invoking the named helper method.
+     *
+     * @param message the operator method name
+     * @param expression the expression to compile
+     */
     protected void evaluateBinaryExpression(final String message, final BinaryExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
         // ensure VariableArguments are read, not stored
@@ -849,6 +903,13 @@ public class BinaryExpressionHelper {
         compileStack.popLHS();
     }
 
+    /**
+     * Evaluates a compound assignment whose left-hand side is a subscript expression.
+     *
+     * @param method the operator method name
+     * @param expression the compound assignment expression
+     * @param leftBinExpr the indexed left-hand side
+     */
     protected void evaluateArrayAssignmentWithOperator(final String method, final BinaryExpression expression, final BinaryExpression leftBinExpr) {
         // e.g. x[a] += b
         // to avoid loading x and a twice we transform the expression to use
@@ -878,6 +939,12 @@ public class BinaryExpressionHelper {
         compileStack.removeVar(receiver.getIndex());
     }
 
+    /**
+     * Evaluates an operator-assignment expression such as {@code +=}.
+     *
+     * @param method the operator method name
+     * @param expression the assignment expression
+     */
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression bexp) {
@@ -1016,6 +1083,11 @@ public class BinaryExpressionHelper {
         if (usesSubscript != null) compileStack.removeVar(usesSubscript.getIndex());
     }
 
+    /**
+     * Evaluates a postfix increment or decrement expression.
+     *
+     * @param expression the postfix expression
+     */
     public void evaluatePostfixMethod(final PostfixExpression expression) {
         int op = expression.getOperation().getType();
         switch (op) {
@@ -1028,6 +1100,11 @@ public class BinaryExpressionHelper {
         }
     }
 
+    /**
+     * Evaluates a prefix increment or decrement expression.
+     *
+     * @param expression the prefix expression
+     */
     public void evaluatePrefixMethod(final PrefixExpression expression) {
         int type = expression.getOperation().getType();
         switch (type) {
@@ -1107,11 +1184,22 @@ public class BinaryExpressionHelper {
         // other cases don't need storing, so nothing to be done for them
     }
 
+    /**
+     * Emits the method call used to implement a prefix or postfix operation.
+     *
+     * @param op the token type
+     * @param method the helper method name
+     * @param expression the receiver expression
+     * @param orig the original prefix/postfix expression
+     */
     protected void writePostOrPrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
         // at this point the receiver will be already on the stack
         // in a[1]++ the method will be "++" aka "next" and the receiver a[1]
         ClassNode exprType = controller.getTypeChooser().resolveType(expression, controller.getClassNode());
         Expression callSiteReceiverSwap = new BytecodeExpression(exprType) {
+            /**
+             * Reorders the receiver and call-site objects for the synthetic increment call.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 OperandStack operandStack = controller.getOperandStack();
@@ -1145,6 +1233,11 @@ public class BinaryExpressionHelper {
         // would be a.getAt(1).next() for the rhs, "lhs" code is a.putAt(1, rhs)
     }
 
+    /**
+     * Evaluates a ternary or Elvis expression.
+     *
+     * @param expression the expression to compile
+     */
     public void evaluateTernary(final TernaryExpression expression) {
         if (expression instanceof ElvisOperatorExpression) {
             evaluateElvisExpression(expression);

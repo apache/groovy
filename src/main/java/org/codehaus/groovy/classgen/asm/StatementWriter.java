@@ -62,17 +62,36 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
 import static org.objectweb.asm.Opcodes.*;
 
+/**
+ * Generates bytecode for Groovy statements by visiting AST statement nodes
+ * and emitting corresponding JVM instructions via the {@link WriterController}.
+ * Handles control flow (loops, branches, try/catch), synchronization, assertions,
+ * and expression statements.
+ */
 public class StatementWriter {
 
     private static final MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
     private static final MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
 
+    /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
 
+    /**
+     * Creates a statement writer backed by the given controller.
+     *
+     * @param controller the writer controller for the current compilation
+     */
     public StatementWriter(final WriterController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Emits bytecode labels for any statement labels attached to {@code statement}.
+     * Called before emitting the body of every statement so that named labels
+     * ({@code break foo} / {@code continue foo}) resolve correctly.
+     *
+     * @param statement the statement whose labels should be emitted
+     */
     protected void writeStatementLabel(final Statement statement) {
         List<String> labels = statement.getStatementLabels();
         if (labels != null) {
@@ -84,6 +103,14 @@ public class StatementWriter {
         }
     }
 
+    /**
+     * Generates bytecode for a block statement by visiting each contained statement.
+     * Pushes the block's variable scope, emits the statements, and pops afterward.
+     * Named labels on the block create a breakable region so that {@code break label}
+     * within the block jumps to the end of it.
+     *
+     * @param block the block statement to compile
+     */
     public void writeBlockStatement(final BlockStatement block) {
         writeStatementLabel(block);
 
@@ -107,6 +134,13 @@ public class StatementWriter {
         operandStack.popDownTo(mark);
     }
 
+    /**
+     * Generates bytecode for a for statement.
+     * Delegates to {@link #writeForLoopWithClosureList} for C-style loops (using a
+     * {@link ClosureListExpression}), or to {@link #writeForInLoop} for for-in loops.
+     *
+     * @param statement the for statement to compile
+     */
     public void writeForStatement(final ForStatement statement) {
         if (statement.getCollectionExpression() instanceof ClosureListExpression) {
             writeForLoopWithClosureList(statement);
@@ -115,6 +149,13 @@ public class StatementWriter {
         }
     }
 
+    /**
+     * Generates bytecode for a for-in loop by calling {@code iterator()} on the
+     * collection expression and delegating loop control to
+     * {@link #writeForInLoopControlAndBlock}.
+     *
+     * @param statement the for-in statement to compile
+     */
     protected void writeForInLoop(final ForStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitForLoop");
         writeStatementLabel(statement);
@@ -132,6 +173,14 @@ public class StatementWriter {
         compileStack.pop();
     }
 
+    /**
+     * Emits the loop-control structure and body for a for-in loop.
+     * Assumes the iterator object is already on the operand stack.
+     * Declares loop variables, emits the {@code hasNext}/{@code next} check-and-advance,
+     * generates the loop body, and handles index-variable increment when present.
+     *
+     * @param statement the for-in statement whose control and body should be emitted
+     */
     protected void writeForInLoopControlAndBlock(ForStatement statement) {
         CompileStack compileStack = controller.getCompileStack();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -184,14 +233,34 @@ public class StatementWriter {
         compileStack.removeVar(iterator);
     }
 
+    /**
+     * Emits the {@link java.util.Iterator#hasNext()} call via the given visitor.
+     * Overrideable so subclasses can substitute a specialized or inlined variant.
+     *
+     * @param mv the method visitor to write to
+     */
     protected void writeIteratorHasNext(final MethodVisitor mv) {
         iteratorHasNextMethod.call(mv);
     }
 
+    /**
+     * Emits the {@link java.util.Iterator#next()} call via the given visitor.
+     * Overrideable so subclasses can substitute a specialized or inlined variant.
+     *
+     * @param mv the method visitor to write to
+     */
     protected void writeIteratorNext(final MethodVisitor mv) {
         iteratorNextMethod.call(mv);
     }
 
+    /**
+     * Generates bytecode for a C-style {@code for(init; cond; incr)} loop.
+     * The collection expression is a {@link ClosureListExpression} whose middle
+     * element is the boolean condition, lower elements are initializers, and
+     * upper elements are incrementors.
+     *
+     * @param statement the for statement with a {@link ClosureListExpression} collection
+     */
     protected void writeForLoopWithClosureList(final ForStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitForLoop");
         writeStatementLabel(statement);
@@ -288,6 +357,11 @@ public class StatementWriter {
         controller.getOperandStack().jump(IFEQ, breakLabel);
     }
 
+    /**
+     * Generates bytecode for a while loop.
+     *
+     * @param statement the while statement to compile
+     */
     public void writeWhileLoop(final WhileStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitWhileLoop");
         writeStatementLabel(statement);
@@ -309,6 +383,11 @@ public class StatementWriter {
         compileStack.pop();
     }
 
+    /**
+     * Generates bytecode for a do-while loop.
+     *
+     * @param statement the do-while statement to compile
+     */
     public void writeDoWhileLoop(final DoWhileStatement statement) {
         writeStatementLabel(statement);
 
@@ -331,6 +410,11 @@ public class StatementWriter {
         compileStack.pop();
     }
 
+    /**
+     * Generates bytecode for an if/else statement.
+     *
+     * @param statement the if statement to compile
+     */
     public void writeIfElse(final IfStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitIfElse");
         writeStatementLabel(statement);
@@ -352,6 +436,14 @@ public class StatementWriter {
         mv.visitLabel(exitPath);
     }
 
+    /**
+     * Generates bytecode for a try/catch/finally statement.
+     * Handles exception table registration, finally-block inlining at every
+     * exit path, and a catch-all rethrow for exceptions not handled by
+     * any {@code catch} clause.
+     *
+     * @param statement the try/catch/finally statement to compile
+     */
     public void writeTryCatchFinally(final TryCatchStatement statement) {
         writeStatementLabel(statement);
 
@@ -469,6 +561,13 @@ public class StatementWriter {
         br.closeRange(label);
     }
 
+    /**
+     * Generates bytecode for a switch statement.
+     * Each {@code case} expression is compared using Groovy's {@code isCase} operator,
+     * so non-integer switch expressions are supported.
+     *
+     * @param statement the switch statement to compile
+     */
     public void writeSwitch(final SwitchStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitSwitch");
         writeStatementLabel(statement);
@@ -528,6 +627,12 @@ public class StatementWriter {
         mv.visitLabel(l0);
     }
 
+    /**
+     * Generates bytecode for a break statement, applying any intervening
+     * finally blocks before the jump.
+     *
+     * @param statement the break statement to compile
+     */
     public void writeBreak(final BreakStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitBreakStatement");
         writeStatementLabel(statement);
@@ -537,6 +642,12 @@ public class StatementWriter {
         controller.getMethodVisitor().visitJumpInsn(GOTO, label);
     }
 
+    /**
+     * Generates bytecode for a continue statement, applying any intervening
+     * finally blocks before the jump.
+     *
+     * @param statement the continue statement to compile
+     */
     public void writeContinue(final ContinueStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitContinueStatement");
         writeStatementLabel(statement);
@@ -546,6 +657,14 @@ public class StatementWriter {
         controller.getMethodVisitor().visitJumpInsn(GOTO, label);
     }
 
+    /**
+     * Generates bytecode for a synchronized statement.
+     * Stores the monitor object in a local variable, emits
+     * {@code MONITORENTER}/{@code MONITOREXIT} guards, and registers
+     * a catch-all exception handler that exits the monitor before rethrowing.
+     *
+     * @param statement the synchronized statement to compile
+     */
     public void writeSynchronized(final SynchronizedStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitSynchronizedStatement");
         writeStatementLabel(statement);
@@ -590,12 +709,23 @@ public class StatementWriter {
         compileStack.removeVar(index);
     }
 
+    /**
+     * Generates bytecode for an assert statement.
+     *
+     * @param statement the assert statement to compile
+     */
     public void writeAssert(final AssertStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitAssertStatement");
         writeStatementLabel(statement);
         controller.getAssertionWriter().writeAssertStatement(statement);
     }
 
+    /**
+     * Generates bytecode for a throw statement.
+     * Casts the expression to {@code Throwable} and emits {@code ATHROW}.
+     *
+     * @param statement the throw statement to compile
+     */
     public void writeThrow(final ThrowStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitThrowStatement");
         writeStatementLabel(statement);
@@ -610,6 +740,14 @@ public class StatementWriter {
         controller.getOperandStack().remove(1);
     }
 
+    /**
+     * Generates bytecode for a return statement.
+     * For void methods emits {@code RETURN} after applying any finally blocks.
+     * For value-returning methods evaluates the expression, casts it to the
+     * declared return type, and emits the appropriate typed return instruction.
+     *
+     * @param statement the return statement to compile
+     */
     public void writeReturn(final ReturnStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitReturnStatement");
         writeStatementLabel(statement);
@@ -648,6 +786,14 @@ public class StatementWriter {
         }
     }
 
+    /**
+     * Generates bytecode for an expression statement.
+     * Evaluates the expression and discards any value left on the operand stack.
+     * Marks method-call and binary expressions so that unused return values
+     * are elided rather than boxed.
+     *
+     * @param statement the expression statement to compile
+     */
     public void writeExpressionStatement(final ExpressionStatement statement) {
         Expression expression = statement.getExpression();
 

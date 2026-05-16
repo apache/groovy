@@ -34,12 +34,23 @@ import static org.objectweb.asm.Opcodes.FREM;
 import static org.objectweb.asm.Opcodes.FSUB;
 import static org.objectweb.asm.Opcodes.POP2;
 
+/**
+ * Binary expression helper specialized for {@code float} operations.
+ */
 public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
 
+    /**
+     * Creates a {@code float}-specialized binary expression helper.
+     *
+     * @param controller the active writer controller
+     */
     public BinaryFloatExpressionHelper(WriterController controller) {
         super(controller, floatArraySet, floatArrayGet);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void doubleTwoOperands(MethodVisitor mv) {
         mv.visitInsn(DUP2);
@@ -49,33 +60,51 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         floatArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "fArrayGet"),
         floatArraySet = MethodCaller.newStatic(BytecodeInterface8.class, "fArraySet");
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected boolean writeBitwiseOp(int type, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getBitwiseOperationBytecode(int type) {
         return -1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getCompareCode() {
         return FCMPG;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.float_TYPE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected boolean writeShiftOp(int type, boolean simulate) {
         if (!simulate) throw new GroovyBugError("should not reach here");
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getShiftOperationBytecode(int type) {
         return -1;
@@ -90,28 +119,43 @@ public class BinaryFloatExpressionHelper extends BinaryExpressionWriter {
         FREM,           //  MOD         203
     };
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void removeTwoOperands(MethodVisitor mv) {
         mv.visitInsn(POP2);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void writeMinusMinus(MethodVisitor mv) {
         mv.visitInsn(FCONST_1);
         mv.visitInsn(FSUB);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void writePlusPlus(MethodVisitor mv) {
         mv.visitInsn(FCONST_1);
         mv.visitInsn(FADD);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ClassNode getDevisionOpResultType() {
         return ClassHelper.BigDecimal_TYPE;

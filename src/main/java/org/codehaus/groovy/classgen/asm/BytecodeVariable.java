@@ -27,7 +27,13 @@ import org.objectweb.asm.Label;
  */
 public class BytecodeVariable {
 
+    /**
+     * Sentinel metadata for the implicit {@code this} receiver.
+     */
     public static final BytecodeVariable THIS_VARIABLE = new BytecodeVariable();
+    /**
+     * Sentinel metadata for the implicit {@code super} receiver.
+     */
     public static final BytecodeVariable SUPER_VARIABLE = new BytecodeVariable();
 
     private final int index;
@@ -48,6 +54,14 @@ public class BytecodeVariable {
         dynamicTyped = true;
     }
 
+    /**
+     * Creates bytecode metadata for a local variable slot.
+     *
+     * @param index the JVM local-variable index
+     * @param type the variable type
+     * @param name the variable name
+     * @param prevCurrent the previous current-variable index
+     */
     public BytecodeVariable(final int index, final ClassNode type, final String name, final int prevCurrent) {
         this.index = index;
         this.type = type;
@@ -63,27 +77,49 @@ public class BytecodeVariable {
         return index;
     }
 
+    /**
+     * @return the source-level variable name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * @return the variable type
+     */
     public ClassNode getType() {
         return type;
     }
 
+    /**
+     * Updates the tracked variable type.
+     *
+     * @param type the new variable type
+     */
     public void setType(final ClassNode type) {
         this.type = type;
         dynamicTyped = dynamicTyped || ClassHelper.isDynamicTyped(type);
     }
 
+    /**
+     * @return the previous current-variable index
+     */
     public int getPrevIndex() {
         return prevCurrent;
     }
 
+    /**
+     * @return whether the variable uses dynamic typing
+     */
     public boolean isDynamicTyped() {
         return dynamicTyped;
     }
 
+    /**
+     * Marks whether the variable should be treated as dynamically typed.
+     *
+     * @param dynamicTyped {@code true} if the variable is dynamically typed
+     */
     public void setDynamicTyped(final boolean dynamicTyped) {
         this.dynamicTyped = dynamicTyped;
     }
@@ -95,26 +131,50 @@ public class BytecodeVariable {
         return holder;
     }
 
+    /**
+     * Marks whether this variable must be stored through a holder object.
+     *
+     * @param holder {@code true} if the variable is closure-shared
+     */
     public void setHolder(final boolean holder) {
         this.holder = holder;
     }
 
+    /**
+     * @return the start label used for local-variable table metadata
+     */
     public Label getStartLabel() {
         return startLabel;
     }
 
+    /**
+     * Sets the start label used for local-variable table metadata.
+     *
+     * @param startLabel the starting label
+     */
     public void setStartLabel(final Label startLabel) {
         this.startLabel = startLabel;
     }
 
+    /**
+     * @return the end label used for local-variable table metadata
+     */
     public Label getEndLabel() {
         return endLabel;
     }
 
+    /**
+     * Sets the end label used for local-variable table metadata.
+     *
+     * @param endLabel the ending label
+     */
     public void setEndLabel(final Label endLabel) {
         this.endLabel = endLabel;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return name + "(index=" + index + ",type=" + type + ",holder="+holder+")";
