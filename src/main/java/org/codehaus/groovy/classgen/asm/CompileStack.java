@@ -554,13 +554,7 @@ public class CompileStack {
         pushVariableScope(scope);
         continueLabel = new Label();
         breakLabel = new Label();
-        if (labelNames != null) {
-            for (String labelName: labelNames) {
-                if (labelName == null) continue;
-                namedLoopBreakLabel.put(labelName, breakLabel);
-                namedLoopContinueLabel.put(labelName, continueLabel);
-            }
-        }
+        registerNamedLabels(labelNames, breakLabel, continueLabel);
     }
 
     /**
@@ -582,13 +576,7 @@ public class CompileStack {
         pushState();
         continueLabel = new Label();
         breakLabel = new Label();
-        if (labelNames != null) {
-            for (String labelName: labelNames) {
-                if (labelName == null) continue;
-                namedLoopBreakLabel.put(labelName, breakLabel);
-                namedLoopContinueLabel.put(labelName, continueLabel);
-            }
-        }
+        registerNamedLabels(labelNames, breakLabel, continueLabel);
     }
 
     /**
@@ -607,8 +595,23 @@ public class CompileStack {
      * @return the break label
      */
     public Label pushSwitch() {
+        return pushSwitch(null);
+    }
+
+    /**
+     * Creates a new break label, registers it as the named break target for each
+     * label name, and pushes an element onto the state stack so that a later call
+     * to {@link #pop()} restores the previous state.
+     *
+     * @param labelNames the statement labels on the switch (may be {@code null})
+     * @return the break label
+     *
+     * @since 6.0.0
+     */
+    public Label pushSwitch(final List<String> labelNames) {
         pushState();
         breakLabel = new Label();
+        registerNamedLabels(labelNames, breakLabel, null);
         return breakLabel;
     }
 
@@ -623,13 +626,22 @@ public class CompileStack {
     public Label pushBreakable(final List<String> labelNames) {
         pushState();
         Label namedBreakLabel = new Label();
-        if (labelNames != null) {
-            for (String labelName: labelNames) {
-                if (labelName == null) continue;
+        registerNamedLabels(labelNames, namedBreakLabel, null);
+        return namedBreakLabel;
+    }
+
+    private void registerNamedLabels(final List<String> labelNames, final Label namedBreakLabel, final Label namedContinueLabel) {
+        if (labelNames == null) return;
+
+        for (String labelName : labelNames) {
+            if (labelName == null) continue;
+            if (namedBreakLabel != null) {
                 namedLoopBreakLabel.put(labelName, namedBreakLabel);
             }
+            if (namedContinueLabel != null) {
+                namedLoopContinueLabel.put(labelName, namedContinueLabel);
+            }
         }
-        return namedBreakLabel;
     }
 
     /**

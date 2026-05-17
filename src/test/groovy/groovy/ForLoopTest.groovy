@@ -253,4 +253,31 @@ final class ForLoopTest {
         }
         assert counter == 10, "The body of the for loop wasn't executed, it should have looped 10 times."
     }
+
+    @Test
+    void testRuntimeCompiledForLoopsCoverOptimizedWriters() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            void runStaticLoops() {
+                for (int i, int v in new int[]{0, 1, 2}) {
+                    assert i == v
+                    continue
+                }
+                for (int i, Integer v in Collections.enumeration([0, 1, 2])) {
+                    assert i == v
+                    continue
+                }
+            }
+
+            runStaticLoops()
+
+            int total = 0
+            for (int i = 0, j = 2; i < 3; i += 1, j -= 1) {
+                total += i + j
+            }
+            assert total == 6
+        '''
+    }
 }

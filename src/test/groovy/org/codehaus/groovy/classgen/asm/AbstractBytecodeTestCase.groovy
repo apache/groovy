@@ -27,6 +27,10 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.analysis.Analyzer
+import org.objectweb.asm.tree.analysis.BasicInterpreter
+import org.objectweb.asm.util.Printer
 import org.objectweb.asm.util.TraceClassVisitor
 
 import java.security.CodeSource
@@ -37,11 +41,13 @@ import java.security.CodeSource
 abstract class AbstractBytecodeTestCase {
 
     Class clazz
+    byte[] classBytes
     Map extractionOptions
     InstructionSequence sequence
 
     @BeforeEach
     void setUp() {
+        classBytes = null
         extractionOptions = [method: 'run']
     }
 
@@ -59,7 +65,7 @@ abstract class AbstractBytecodeTestCase {
             if (unit != null) {
                 try {
                     def firstClass = unit.classes.find { it.name == unit.firstClassNode.name }
-                    sequence = extractSequence(firstClass.bytes, extractionOptions)
+                    captureClassBytesAndSequence(firstClass, extractionOptions)
                     if (extractionOptions.print) println(sequence)
                 } catch (e) {
                     // probably an error in the script
@@ -78,6 +84,7 @@ abstract class AbstractBytecodeTestCase {
         options = [method: 'run', classNamePattern: '.*script', *: options]
         sequence = null
         clazz = null
+        classBytes = null
         def cu = new CompilationUnit()
         def su = cu.addSource('script', scriptText)
         cu.compile(Phases.CONVERSION)
@@ -88,12 +95,12 @@ abstract class AbstractBytecodeTestCase {
 
         for (gc in cu.classes) {
             if (gc.name ==~ options.classNamePattern) {
-                sequence = extractSequence(gc.bytes, options)
+                captureClassBytesAndSequence(gc, options)
             }
         }
         if (sequence == null && cu.classes) {
             def gc = cu.classes.find { it.name == cu.firstClassNode.name }
-            sequence = extractSequence(gc.bytes, options)
+            captureClassBytesAndSequence(gc, options)
         }
         for (gc in cu.classes) {
             try {
@@ -117,24 +124,16 @@ abstract class AbstractBytecodeTestCase {
             @Override
             MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String... exceptions) {
                 if (options.method == name) {
-                    // last in "tcv.p.text" is a list that will be filled by "super.visit"
-                    tcv.p.text.add(tcv.p.text.size() - 2, '--BEGIN--\n')
-                    try {
+                    return withSelectionMarkers(tcv) {
                         super.visitMethod(access, name, desc, signature, exceptions)
-                    } finally {
-                        tcv.p.text.add('--END--\n')
                     }
                 }
             }
             @Override
             FieldVisitor visitField(final int access, final String name, final String desc, final String signature, final Object value) {
                 if (options.field == name) {
-                    // last in "tcv.p.text" is a list that will be filled by "super.visit"
-                    tcv.p.text.add(tcv.p.text.size() - 2, '--BEGIN--\n')
-                    try {
+                    return withSelectionMarkers(tcv) {
                         super.visitField(access, name, desc, signature, value)
-                    } finally {
-                        tcv.p.text.add('--END--\n')
                     }
                 }
             }
@@ -142,6 +141,46 @@ abstract class AbstractBytecodeTestCase {
 
         new ClassReader(bytes).accept(tcv, 0)
         new InstructionSequence(instructions: out.toString().split('\n')*.trim())
+    }
+
+    protected List<String> compileAndFindUnreachableInstructions(Map options = [:], final String scriptText) {
+        options = [method: 'run', *: options]
+        compile(options, scriptText)
+        assert classBytes != null: 'No class bytes were captured during compilation'
+        findUnreachableInstructions(classBytes, options.method)
+    }
+
+    protected List<String> findUnreachableInstructions(final byte[] bytes, final String methodName) {
+        def classNode = new ClassNode()
+        new ClassReader(bytes).accept(classNode, ClassReader.EXPAND_FRAMES)
+
+        def methodNode = classNode.methods.find { it.name == methodName }
+        assert methodNode != null: "Method '${methodName}' was not found in ${classNode.name}"
+
+        def frames = new Analyzer(new BasicInterpreter()).analyze(classNode.name, methodNode)
+        def unreachable = []
+        for (int i = 0; i < methodNode.instructions.size(); i += 1) {
+            def instruction = methodNode.instructions.get(i)
+            if (instruction.opcode >= 0 && frames[i] == null) {
+                unreachable << "${i}:${Printer.OPCODES[instruction.opcode]}"
+            }
+        }
+        unreachable
+    }
+
+    private void captureClassBytesAndSequence(final gc, final Map options) {
+        classBytes = gc.bytes
+        sequence = extractSequence(gc.bytes, options)
+    }
+
+    private static <T> T withSelectionMarkers(final TraceClassVisitor traceClassVisitor, final Closure<T> visitAction) {
+        // The penultimate entry is the method/field body container populated by super.visit*.
+        traceClassVisitor.p.text.add(traceClassVisitor.p.text.size() - 2, '--BEGIN--\n')
+        try {
+            visitAction.call()
+        } finally {
+            traceClassVisitor.p.text.add('--END--\n')
+        }
     }
 }
 

@@ -38,7 +38,6 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.Enumeration;
 import java.util.Objects;
-import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -48,10 +47,8 @@ import static org.objectweb.asm.Opcodes.CALOAD;
 import static org.objectweb.asm.Opcodes.DALOAD;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.FALOAD;
-import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IALOAD;
 import static org.objectweb.asm.Opcodes.ICONST_0;
-import static org.objectweb.asm.Opcodes.ICONST_M1;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.IF_ICMPGE;
@@ -119,12 +116,11 @@ public class StaticTypesStatementWriter extends StatementWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         AsmClassGenerator acg = controller.getAcg();
 
-        BytecodeVariable indexVariable = Optional.ofNullable(loop.getIndexVariable()).map(iv -> {
-            mv.visitInsn(ICONST_M1); return compileStack.defineVariable(iv, true);
-        }).orElse(null);
+        BytecodeVariable indexVariable = defineLoopIndexVariable(loop);
         BytecodeVariable valueVariable = compileStack.defineVariable(loop.getValueVariable(), arrayType.getComponentType(), false);
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
+        boolean bodyMayReachContinue = GeneralUtils.mayReachLoopCondition(loop);
 
         // load array on stack
         arrayExpression.visit(acg);
@@ -161,7 +157,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         // loop body
         loop.getLoopBlock().visit(acg);
 
-        mv.visitJumpInsn(GOTO, continueLabel);
+        writeLoopBackEdge(continueLabel, bodyMayReachContinue);
 
         mv.visitLabel(breakLabel);
 
@@ -202,12 +198,11 @@ public class StaticTypesStatementWriter extends StatementWriter {
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        BytecodeVariable indexVariable = Optional.ofNullable(loop.getIndexVariable()).map(iv -> {
-            mv.visitInsn(ICONST_M1); return compileStack.defineVariable(iv, true);
-        }).orElse(null);
+        BytecodeVariable indexVariable = defineLoopIndexVariable(loop);
         BytecodeVariable valueVariable = compileStack.defineVariable(loop.getValueVariable(), false);
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
+        boolean bodyMayReachContinue = GeneralUtils.mayReachLoopCondition(loop);
 
         collectionExpression.visit(controller.getAcg());
 
@@ -231,7 +226,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         }
 
         loop.getLoopBlock().visit(controller.getAcg());
-        mv.visitJumpInsn(GOTO, continueLabel);
+        writeLoopBackEdge(continueLabel, bodyMayReachContinue);
 
         mv.visitLabel(breakLabel);
     }
