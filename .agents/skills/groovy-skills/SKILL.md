@@ -239,6 +239,10 @@ A bare hyperlink with no relationship hint is a smell.
 
 Failure-mode references — within a skill or across skills — cite the failure mode's **italicised bold lead-in name**, never the position number. The number is unstable: renumbering a skill's failure-mode list silently breaks every numeric citation, here and elsewhere in the corpus. The name is the failure mode's identity, survives reordering, and lets a reader `Ctrl-F` to the entry. Example: "See *Inventing `Fix Version/s`* in [`groovy-jira`](../groovy-jira/SKILL.md)" — not "see failure mode 2 in groovy-jira".
 
+### Voice
+
+Procedure and instruction text uses imperative / infinitive form — verb-first ("Run the targeted test", "To classify an issue, …"), not second person ("You should run …"). A `SKILL.md` is read by another agent, not a human reader; the imperative form is terser and generalises better across models and prompt styles. The corpus already follows this; match it.
+
 ## Granularity heuristics
 
 When deciding whether a topic is its own skill or a section of an existing one:
@@ -267,15 +271,16 @@ When deciding whether a topic is its own skill or a section of an existing one:
 1. **Read the corpus.** Open every existing skill's frontmatter and `When to use this skill` block. Confirm your scope doesn't already belong to one of them.
 2. **Apply the granularity heuristics.** Decide skill vs. section. If section: stop here and edit the parent skill instead.
 3. **Identify anchor docs.** Apply the *Skills are the AI layer over canonical docs* principle above: for each rule you'd put in the skill, decide whether its canonical home is `CONTRIBUTING.md`, `GOVERNANCE.md`, `AGENTS.md`, `ARCHITECTURE.md`, `COMPATIBILITY.md`, a subproject-local `ARCHITECTURE.md`, or an external spec. If a rule applies to a human contributor equally, its canonical home is a human-facing doc — promote it there first, and have the skill cite it. If a rule is genuinely AI-specific (autonomy limits, hand-back contracts, no-fabrication rules), it lives in the skill. If there's no anchor for a universal rule and no obvious place to put one, surface the gap (see *Drafting a skill before the convention exists in the codebase*) rather than fabricating one in the skill.
-4. **Draft the frontmatter.** Include the natural-language trigger phrases in `description:`; match the existing `compatibility` and `metadata` shape.
-5. **Draft the failure-mode list.** Aim for 5+ concrete entries. If you can't reach 5 genuine ones, the skill is probably too narrow.
-6. **Draft the procedure(s).** Step-by-step with commands and file references. Match the surrounding skills' density — terse and opinionated.
-7. **Draft the validation checklist.** Outcomes, not steps. Each item answerable yes/no.
-8. **Cross-link.**
+4. **Anchor on three to five concrete invocation examples.** Before drafting any prose, write down how the skill will actually be invoked: what the user says, what the agent does in response, and what the apply/hand-back step is. Underspecified skills generate generic boilerplate; the examples are also where the `description:` trigger phrases come from (see *Frontmatter `description:` that doesn't include the natural-language trigger phrases* in the failure modes). Don't start writing without them.
+5. **Draft the frontmatter.** Include the natural-language trigger phrases in `description:` (derived from step 4's examples); match the existing `compatibility` and `metadata` shape.
+6. **Draft the failure-mode list.** Aim for 5+ concrete entries. If you can't reach 5 genuine ones, the skill is probably too narrow.
+7. **Draft the procedure(s).** Step-by-step with commands and file references. Match the surrounding skills' density — terse and opinionated.
+8. **Draft the validation checklist.** Outcomes, not steps. Each item answerable yes/no.
+9. **Cross-link.**
    - Outbound: name the relationship at every link.
    - Inbound: update the neighbouring skills that should mention this one in their `Don't use it for`, `References`, or failure-mode list. A new skill nobody points at is invisible.
-9. **Update [`AGENTS.md`](../../../AGENTS.md).** Add a row to the `## Skills` table, alphabetically. The table is whitespace-aligned for monospace readability; preserve the column padding when inserting the new row.
-10. **Self-consistency pass.** Read your skill as if you'd never seen it. Does it explain when to load it, what it's *not* for, and what to do? Does the validation checklist actually test the output, or just recap the steps?
+10. **Update [`AGENTS.md`](../../../AGENTS.md).** Add a row to the `## Skills` table, alphabetically. The table is whitespace-aligned for monospace readability; preserve the column padding when inserting the new row.
+11. **Self-consistency pass.** Read your skill as if you'd never seen it. Does it explain when to load it, what it's *not* for, and what to do? Does the validation checklist actually test the output, or just recap the steps?
 
 ## Procedure for splitting an existing skill
 
@@ -300,7 +305,8 @@ Before declaring a new or refactored skill ready:
 - [ ] License header closes with `-->` immediately before the `---` frontmatter delimiter (the common transcription typo is closing it with `---`).
 - [ ] Frontmatter has `name`, `description`, `license`, `compatibility`, `metadata.audience`, `metadata.scope`.
 - [ ] `name` matches the directory name.
-- [ ] `description` contains the natural-language trigger phrases an agent or loader would match against.
+- [ ] `description` contains the natural-language trigger phrases an agent or loader would match against, derived from concrete invocation examples (not invented after the fact).
+- [ ] Procedure / instruction text is in imperative / infinitive voice, not second person.
 - [ ] Standard section order: opening paragraph, *(optional related-skill bullet list)*, `When to use`, `Read first`, `Top failure modes`, *(optional reference sections)*, `Procedure(s)`, `Validation checklist`, `References`.
 - [ ] Both **Use it for** and **Don't use it for** lists are populated, with at least one entry each.
 - [ ] Every failure mode names a specific observed or plausible mistake (not an aphorism).

@@ -158,6 +158,20 @@ These are the recurring mistakes at the campaign level:
     issues swept, M classified each way, K headline findings — and
     *then* the table. The committer's first 30 seconds with the
     report should produce a decision about whether to read on.
+14. **Reading verdict skew as a result instead of a defect.**
+    When a sweep comes back almost all `cannot-run-extraction`
+    (or all one classification), the likely cause is not "the
+    pool is genuinely all unreproducible" but that extraction or
+    the run harness regressed mid-campaign. Before reporting,
+    inspect a sample of `original.<ext>` / `run.log` from the
+    skewed issues; a systematic extraction break invalidates the
+    batch.
+15. **Widening the pool when the query returns nothing.** An
+    empty or surprisingly tiny candidate set after applying the
+    JQL is a signal the filter is wrong — surface it and stop,
+    do **not** silently relax the query to "get some results".
+    A campaign run against a pool the user didn't choose is
+    worse than no campaign.
 
 ## Selecting the candidate set
 
@@ -205,10 +219,19 @@ Pilots beat the first hundred issues you'd naturally pick.
 
 For each campaign session:
 
-1. **Pick the candidate set.** JQL from
+1. **Pick the candidate set, then echo it back for
+   confirmation.** JQL from
    [`groovy-jira`](../groovy-jira/SKILL.md), capped (see above).
-   Persist the candidate list to disk before the loop starts so a
-   crash leaves a recoverable plan.
+   Before the loop starts, print the resolved query and the
+   candidate list (key + summary, with the count) and get an
+   explicit go/cap-down/cancel from the user — a fuzzy filter
+   that pulled in issues the user didn't mean to sweep is far
+   cheaper to catch here than after burning reproduction budget
+   on them. Starting the campaign is not standing authorisation
+   for whatever set the JQL happened to return (see
+   [`AGENTS.md`](../../../AGENTS.md#untrusted-input-and-confirmation)).
+   Persist the confirmed candidate list to disk before the loop
+   starts so a crash leaves a recoverable plan.
 2. **Set up the scratch corpus.** A directory hierarchy under
    `~/work/groovy-reassess/<campaign-id>/`, one subdirectory per
    issue. Per [`groovy-reproducer`](../groovy-reproducer/SKILL.md),
@@ -217,10 +240,15 @@ For each campaign session:
    the Groovy checkout.
 3. **For each issue, in order:**
 
-   **a. Resumability check.** Skip if its `verdict.json` already
-   exists and is well-formed. The per-issue evidence files on
-   disk are the resumption point — in-memory campaign state is
-   not.
+   **a. Resumability check (rev-aware).** Read any existing
+   `verdict.json`: if it is well-formed *and* its recorded `rev`
+   matches the current branch revision, skip — done. If it
+   exists but was produced against a *different* `rev`, the
+   verdict is stale; ask whether to refresh it or reuse it for
+   this report, and record the choice. If only partial evidence
+   files exist (no `verdict.json`), resume that issue rather than
+   restarting the campaign. The per-issue evidence files on disk
+   are the resumption point — in-memory campaign state is not.
 
    **b. Triage the issue per
    [`CONTRIBUTING.md`'s "Triaging a JIRA issue"](../../../CONTRIBUTING.md#triaging-a-jira-issue).**
@@ -249,7 +277,17 @@ For each campaign session:
    the operation under test spans multiple types or operator
    variants — see
    [ARCHITECTURE.md "Operator families"](../../../ARCHITECTURE.md#operator-families)
-   for the family taxonomies.
+   for the family taxonomies. **Its step-6 safety gate runs per
+   reproducer and is not waived by the campaign's set-level
+   authorisation** (echo-and-confirm in step 1 approved *which
+   issues* to sweep, not arbitrary code execution). In an
+   unattended sweep a reproducer the pre-screen flags is **not
+   run**: record `needs-safety-review`, add it to the
+   end-of-run batch for a human to review the code and decide,
+   and continue the sweep — one flagged reproducer does not
+   block the campaign. Comment/attachment-sourced code on an old
+   issue has typically never been triaged; it gets the same gate
+   as fresh code, not a pass for being "old".
 
    **d. Apply nature analysis.** Per
    [`CONTRIBUTING.md`'s "Nature analysis"](../../../CONTRIBUTING.md#nature-analysis-bug-as-advertised-vs-wouldnt-it-be-nice),
@@ -318,6 +356,7 @@ Per-issue (from `groovy-reproducer`):
 | `cannot-run-dependency` | `@Grab` resolution failed (dep gone from configured repos). | Often correlates with very old issues; needs-info or close as Incomplete. |
 | `timeout` | Hung past the configured bound. | Human review — might be the bug, might be a hung adaptation. |
 | `needs-separate-workspace` | Reproducer is a multi-file project. | Spin up an isolated workspace if it matters; otherwise leave open. |
+| `needs-safety-review` | The step-6 safety gate in [`groovy-reproducer`](../groovy-reproducer/SKILL.md) flagged the code (process spawn, network, secret read, `@Grab`, …) and no human was present to authorise the run. | **Not run.** Batch it for a human to review the code and decide run/sandbox/skip — never auto-run on the pre-screen alone. Comment/attachment-sourced code on an old issue is *not* covered by the issue's historical triage. |
 
 Campaign-level adds:
 
@@ -346,10 +385,79 @@ A reassessment report has three layers:
    next action.
 3. **Per-issue evidence packages** (filesystem; not inlined in the
    report). The report links into them.
+4. **Methodology / limitations footer.** A short closing block:
+   the pool-selection reasoning (which JQL, why this pool), the
+   bound applied, how many sessions the campaign spanned and
+   whether any verdicts were reused stale across a rev change
+   (see *Resumability check*), and the environment limitations
+   that qualify the findings (JDK, OS, anything `cannot-run-*`
+   skewed). This makes a multi-session campaign auditable and
+   stops a reader over-reading a bounded pilot as exhaustive.
 
 Suggested filename for the report: `report.md` inside the campaign
 scratch directory. A committer reading it should be able to decide
 "yes I'll act on these N items" in a single scan.
+
+## Campaign dashboard
+
+For a sweep of more than a handful of issues, a rendered HTML
+dashboard over the `verdict.json` corpus is the fastest way for a
+committer to triage where to spend attention. **Do not emit this
+HTML token-by-token.** A vetted generator ships in this skill's
+directory and is the required path, per the
+[Helper mechanisms and token economy](../../../AGENTS.md#helper-mechanisms-and-token-economy)
+policy — rendering a multi-KB document on every campaign is the
+single most token-expensive step here, the inputs and layout
+change rarely, and maintainer token budgets are a shared resource:
+
+```
+groovy .agents/skills/groovy-reassess/dashboard.groovy \
+       <campaign-dir> [out.html]
+```
+
+It reads `<campaign-dir>/*/verdict.json` (the schema in
+[`groovy-reproducer`](../groovy-reproducer/SKILL.md)) and renders
+the methodology below. This section *is* the documented manual
+equivalent — render by hand only if the generator is unavailable.
+
+**What the dashboard presents:**
+
+- **Hero cards** — candidates, still-failing, fixed-on-master,
+  partial-fix, intended-behaviour, unrun.
+- **Classification × nature cross-tab** — the load-bearing view.
+  A still-failing *bug-as-advertised* and a still-failing
+  *feature-request-disguised-as-bug* are both "still-fails-same"
+  but recommend opposite actions; the flat per-classification
+  tables in *Report shape* hide that, the cross-tab surfaces it.
+- **Health rating** — `< 5%` still-failing → *Healthy*, `< 20%`
+  → *Needs attention*, else *Action needed*. These thresholds
+  are **proposed defaults pending team review**; tune them in
+  the generator's documented block, not ad hoc per run.
+- **Action / hygiene / closure panels** — direct fixes
+  (still-failing × bug-as-advertised), partial fixes, tracker
+  hygiene (re-type candidates), feature requests, Not-A-Bug
+  closure candidates, and new-issue candidates surfaced by
+  cross-family probes.
+- **Staleness** — for still-failing issues, the span derived
+  *only* from recorded `cases[].history` baselines. No
+  fabricated filing dates.
+
+**Aggregation guardrails (the generator enforces these; keep them
+if you ever render by hand):**
+
+- A `verdict.json` that fails to parse, **or whose
+  `schema_version` is not the one the generator understands**, is
+  **surfaced as a visible error in the output, never silently
+  dropped, coerced, or counted as zero** — a skewed total from
+  swallowed failures (or a field-sniffed mis-read of an
+  unrecognised schema generation) is worse than a loud one. The
+  version contract lives in
+  [`groovy-reproducer`](../groovy-reproducer/SKILL.md).
+- **Exactly one campaign directory** per dashboard. Never walk
+  upward or merge sibling campaigns into one view without an
+  explicit instruction — cross-campaign aggregation invites the
+  *Reading verdict skew as a result instead of a defect* trap.
+- Counts are derived from the corpus, never asserted from memory.
 
 ## Hand-back to a human
 
@@ -438,6 +546,10 @@ Before declaring a campaign session complete:
       `cross_type_probe` or `operator_variants_probe` when the
       probe was run; any sibling-type bugs are flagged as new-JIRA
       candidates.
+- [ ] If a dashboard was produced: it was rendered with
+      `dashboard.groovy` (not emitted token-by-token), over a
+      single campaign directory, and any unparseable `verdict.json`
+      is surfaced in the output rather than silently dropped.
 - [ ] No JIRA mutation occurred. No PR was opened. No dev@ post
       was sent.
 - [ ] The report opens with a summary stanza a committer can scan

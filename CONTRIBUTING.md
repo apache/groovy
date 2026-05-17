@@ -658,6 +658,17 @@ For each issue:
    above. The same JQL with a topic-keyword surfaces same-family
    open issues: `project = GROOVY AND text ~ "<topic>"`.
 
+   **Linked-PR and recent-fix signals.** A still-open PR
+   referencing the issue is a strong *bug-confirmed, fix in
+   progress* signal; a merged PR while the issue is still open is
+   a strong *already-fixed, needs closing* signal. Scan commits
+   since the filing date for the key or edits to the cited code
+   (`git log --since=<filed-date> --grep='GROOVY-<NNNN>'`,
+   `git log --since=<filed-date> -- <cited path>`). Before
+   claiming "fixed", confirm the candidate commit *actually
+   touches the cited code* — a key match in a commit message is
+   not proof the cited behaviour changed.
+
 3. **Attempt reproduction on `master`.** Drop the reporter's script
    into a temp file and run it against a local build, or paste their
    snippet into the relevant test class as a `@Test` and run
@@ -811,6 +822,30 @@ Two pool-level observations are useful here:
 The distinction matters when choosing which JIRAs to work through
 in a re-triage pass: pick the pool that matches what you're
 hunting for.
+
+### Recommended disposition
+
+Step 8's recommended next action should resolve to **exactly
+one** of the dispositions below. "Close as fixed *and*
+needs-info" means the analysis isn't finished — pick one or
+record "could not run". The disposition follows from the
+reproduction outcome (step 3), the duplicate/recent-fix search
+(step 2), and the nature analysis above; it is a *recommendation*
+for a committer, never a transition the triager performs.
+
+| Disposition | Propose when | Recommended close path |
+|---|---|---|
+| **fixed-on-master** | Reproduction passes on `master` *and* a commit since the filing date actually touches the cited code. | Cannot Reproduce, after a second pair of eyes. |
+| **bug-confirmed** | Reproduction fails on `master`; nature is *bug-as-advertised*. | Keep open; point a fix at the located area (step 4). |
+| **intended-behaviour** | Behaviour matches the documented or implicit promise; nature is *intended-and-documented*. | Not A Bug — add a docs cross-link if discoverability was the real gap. |
+| **feature-request** | Behaviour matches spec; the reporter wants a *different* spec (nature *feature-request[-disguised-as-bug]*). | Re-type Bug→Improvement if mis-typed; design discussion on `dev@`. |
+| **duplicate** | A same-root issue exists (step 2). | Close as duplicate, citing the canonical key and fix version. |
+| **needs-info** | No runnable reproducer and the description is not a specifiable claim. | Keep open; request a minimal reproducer — do not guess a disposition. |
+| **split** | Multiple reproducers/symptoms with mixed fates (step 7). | Per-case summary on the original + focused new JIRA(s) for the unfixed case(s). |
+
+If the evidence doesn't support exactly one, the honest
+disposition is **needs-info** or "could not run", not a
+confident guess.
 
 ### Drafting a useful comment or review
 

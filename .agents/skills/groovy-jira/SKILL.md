@@ -138,6 +138,32 @@ These are the recurring mistakes when AI tooling reaches for JIRA:
    lowercase `groovy-12345` break the search-by-grep workflow
    contributors and tooling rely on.
 
+## Helper scripts
+
+Two vetted helpers ship in this skill's directory so the agent does
+not re-derive the ASF JIRA REST calls on every run — per the
+[Helper mechanisms and token economy](../../../AGENTS.md#helper-mechanisms-and-token-economy)
+policy (the JIRA REST v2 API is stable and these change rarely; the
+`curl` + `jq` inside each script is the documented manual
+equivalent if you need to adapt it):
+
+- [`jira-search.sh`](jira-search.sh) — `jira-search.sh '<JQL>'
+  [max]` → tab-separated candidate list (key, dates, type,
+  attachment count, components, summary). Use for the
+  candidate-set selection in
+  [`groovy-reassess`](../groovy-reassess/SKILL.md) and the
+  duplicate / related-issue scans in triage.
+- [`jira-issue.sh`](jira-issue.sh) — `jira-issue.sh GROOVY-NNNNN
+  [out-dir]` → `issue.json` + a rendered `description.md`
+  (fields, description, every comment), and lists attachment URLs
+  for manual download.
+
+Both are read-only and anonymous (no auth, no mutation) — they do
+not change the read-only / hand-back posture this skill enforces.
+Prefer them over an ad-hoc `curl`; fall back to the inline command
+only if a script is unavailable or the query needs a field they
+don't request.
+
 ## Drafting a JIRA comment
 
 When the task is to produce a JIRA comment a human will review and
