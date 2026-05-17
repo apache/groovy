@@ -85,13 +85,13 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew -Pgroovy.grape.bridge-cache=true -Pcoverage=true jacocoAllReport
         timeout-minutes: 60
-      - name: SonarCloud analysis (with coverage)
-        env:
-          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
-        run: ./gradlew -Pcoverage=true sonar
-        timeout-minutes: 20
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
+      - name: SonarCloud analysis (with coverage)
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+        run: ./gradlew -Pcoverage=true sonar
+        timeout-minutes: 20

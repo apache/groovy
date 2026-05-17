@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.tools;
 
 import groovy.lang.MetaProperty;
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -38,10 +39,12 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
+import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
@@ -56,18 +59,23 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.LoopingStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.runtime.GeneratedClosure;
@@ -464,7 +472,7 @@ public class GeneralUtils {
 
     /**
      * Returns a constant expression with the default value for the given type
-     * (i.e., {@code false} for boolean, {@code 0} for numbers or {@code null}.
+     * (i.e., {@code false} for boolean, {@code 0} for numbers or {@code null}).
      *
      * @since 4.0.0
      */
@@ -1264,26 +1272,359 @@ public class GeneralUtils {
             return false;
         } else if (statement instanceof ThrowStatement) {
             return false;
-        } else if (statement instanceof BlockStatement) {
-            List<Statement> list = ((BlockStatement) statement).getStatements();
+        } else if (statement instanceof BlockStatement blockStmt) {
+            List<Statement> list = blockStmt.getStatements();
             final int last = list.size() - 1;
             if (!maybeFallsThrough(list.get(last))) return false;
             for (int i = 0; i < last; i += 1)
                 if (!maybeFallsThrough(list.get(i))) return false;
-        } else if (statement instanceof IfStatement) {
-            return maybeFallsThrough(((IfStatement) statement).getElseBlock())
-                || maybeFallsThrough(((IfStatement) statement).getIfBlock());
-        } else if (statement instanceof SwitchStatement) {
-            // TODO
-        } else if (statement instanceof TryCatchStatement tryCatch) {
-            if (!maybeFallsThrough(tryCatch.getFinallyStatement())) return false;
-            for (CatchStatement cs : tryCatch.getCatchStatements())
+        } else if (statement instanceof IfStatement ifStmt) {
+            return maybeFallsThrough(ifStmt.getElseBlock())
+                || maybeFallsThrough(ifStmt.getIfBlock());
+        } else if (statement instanceof LoopingStatement loopingStmt) {
+            return maybeFallsThroughLoop(loopingStmt);
+        } else if (statement instanceof SwitchStatement switchStmt) {
+            return maybeFallsThroughSwitch(switchStmt);
+        } else if (statement instanceof TryCatchStatement tryCatchStmt) {
+            if (!maybeFallsThrough(tryCatchStmt.getFinallyStatement())) return false;
+            for (CatchStatement cs : tryCatchStmt.getCatchStatements())
                 if (maybeFallsThrough(cs.getCode())) return true;
-            return maybeFallsThrough(tryCatch.getTryStatement());
-        } else if (statement instanceof SynchronizedStatement) {
-            return maybeFallsThrough(((SynchronizedStatement) statement).getCode());
+            return maybeFallsThrough(tryCatchStmt.getTryStatement());
+        } else if (statement instanceof SynchronizedStatement syncStmt) {
+            return maybeFallsThrough(syncStmt.getCode());
         }
 
         return true;
+    }
+
+    /**
+     * Returns {@code true} if the given statement is effectively empty — i.e. it is {@code null},
+     * an {@link EmptyStatement}, or a {@link BlockStatement} whose every nested statement is itself
+     * empty (recursively).  This is subtly different from {@link Statement#isEmpty()}, which only
+     * checks whether a {@link BlockStatement} has zero entries, not whether those entries are all
+     * empty.
+     */
+    @Internal
+    public static boolean isEmptyStatement(final Statement statement) {
+        if (statement == null || statement.isEmpty()) return true;
+        if (statement instanceof BlockStatement blockStatement) {
+            for (Statement subStatement : blockStatement.getStatements()) {
+                if (!isEmptyStatement(subStatement)) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns the compile-time constant boolean value of a loop condition expression.
+     * Handles nested {@link BooleanExpression} / {@link NotExpression} wrappers and
+     * an absent (empty) condition, which is always {@code true} (e.g. {@code for(;;)}).
+     * Returns {@link ConditionValue#UNKNOWN} when the value cannot be determined statically.
+     */
+    @Internal
+    public static ConditionValue constantBooleanValue(Expression expression) {
+        if (expression instanceof EmptyExpression) {
+            return ConditionValue.ALWAYS_TRUE; // empty for-loop condition is always true (e.g. for(;;))
+        }
+        boolean reverse = false;
+        while (expression instanceof BooleanExpression boolExpr) {
+            if (boolExpr instanceof NotExpression) reverse = !reverse;
+            expression = boolExpr.getExpression();
+        }
+        if (expression instanceof ConstantExpression ce && ce.getValue() instanceof Boolean) {
+            return ((Boolean) ce.getValue()) != reverse ? ConditionValue.ALWAYS_TRUE : ConditionValue.ALWAYS_FALSE;
+        }
+        return ConditionValue.UNKNOWN;
+    }
+
+    /**
+     * Indicates whether switch-case code may fall through into the next case body.
+     */
+    @Internal
+    public static boolean maybeFallsThroughToNextSwitchCase(final Statement statement, final SwitchStatement switchStatement) {
+        Objects.requireNonNull(switchStatement);
+        return analyzeStatementFlow(statement).mayContinue;
+    }
+
+    private static boolean maybeFallsThroughSwitch(final SwitchStatement statement) {
+        return analyzeStatementFlow(statement).mayContinue;
+    }
+
+    private static boolean maybeFallsThroughLoop(final LoopingStatement statement) {
+        return analyzeLoopFlow(statement).mayContinue;
+    }
+
+    /**
+     * Indicates whether execution of a loop body may reach the loop's condition/update step.
+     */
+    @Internal
+    public static boolean mayReachLoopCondition(final LoopingStatement statement) {
+        StatementFlow flow = analyzeStatementFlow(statement.getLoopBlock());
+        Set<String> loopLabels = labelSet(((Statement) statement).getStatementLabels());
+        return mayReachLoopCondition(flow, loopLabels);
+    }
+
+    private static boolean mayReachLoopCondition(final StatementFlow flow, final Set<String> loopLabels) {
+        return flow.mayContinue || flow.mayContinueUnlabeled || flow.continuesToAny(loopLabels);
+    }
+
+    private static boolean mayBreakTo(final StatementFlow flow, final Set<String> labels) {
+        return flow.mayBreakUnlabeled || flow.breaksToAny(labels);
+    }
+
+    private static StatementFlow analyzeStatementFlow(final Statement statement) {
+        if (statement.isEmpty()) return StatementFlow.FALL_THROUGH;
+
+        if (statement instanceof BreakStatement breakStatement) {
+            return StatementFlow.breakFlow(breakStatement.getLabel());
+        } else if (statement instanceof ContinueStatement continueStatement) {
+            return StatementFlow.continueFlow(continueStatement.getLabel());
+        } else if (statement instanceof ReturnStatement || statement instanceof ThrowStatement) {
+            return StatementFlow.ABRUPT;
+        } else if (statement instanceof BlockStatement block) {
+            StatementFlow flow = StatementFlow.FALL_THROUGH;
+            for (Statement subStatement : block.getStatements()) {
+                flow = flow.then(analyzeStatementFlow(subStatement));
+                if (!flow.mayContinue) break;
+            }
+            return flow.consumeLabels(labelSet(block.getStatementLabels()));
+        } else if (statement instanceof IfStatement ifStatement) {
+            StatementFlow thenFlow = analyzeStatementFlow(ifStatement.getIfBlock());
+            StatementFlow elseFlow = analyzeStatementFlow(ifStatement.getElseBlock());
+            return thenFlow.or(elseFlow);
+        } else if (statement instanceof TryCatchStatement tryCatch) {
+            StatementFlow finallyFlow = analyzeStatementFlow(tryCatch.getFinallyStatement());
+            StatementFlow bodyFlow = analyzeStatementFlow(tryCatch.getTryStatement());
+            for (CatchStatement catchStatement : tryCatch.getCatchStatements()) {
+                bodyFlow = bodyFlow.or(analyzeStatementFlow(catchStatement.getCode()));
+            }
+            return bodyFlow.thenFinally(finallyFlow);
+        } else if (statement instanceof SynchronizedStatement synchronizedStatement) {
+            return analyzeStatementFlow(synchronizedStatement.getCode());
+        } else if (statement instanceof LoopingStatement loopingStatement) {
+            return analyzeLoopFlow(loopingStatement);
+        } else if (statement instanceof SwitchStatement switchStatement) {
+            return analyzeNestedSwitchFlow(switchStatement);
+        }
+
+        return StatementFlow.of(maybeFallsThrough(statement), Set.of(), Set.of());
+    }
+
+    private static StatementFlow analyzeLoopFlow(final LoopingStatement statement) {
+        StatementFlow flow = analyzeStatementFlow(statement.getLoopBlock());
+        ConditionValue condition = loopCondition(statement);
+        Set<String> loopLabels = labelSet(((Statement) statement).getStatementLabels());
+        boolean mayBreakOutOfLoop = mayBreakTo(flow, loopLabels);
+        boolean mayReachLoopCondition = mayReachLoopCondition(flow, loopLabels);
+        boolean mayExitViaCondition = mayExitLoopViaCondition(statement, condition, mayReachLoopCondition);
+        boolean mayRunLoopBlock = mayRunLoopBlock(statement, condition);
+        Set<String> breakLabels = mayRunLoopBlock ? withoutLabels(flow.breakLabels, loopLabels) : Set.of();
+        Set<String> continueLabels = mayRunLoopBlock ? withoutLabels(flow.continueLabels, loopLabels) : Set.of();
+        return StatementFlow.of(mayBreakOutOfLoop || mayExitViaCondition, breakLabels, continueLabels);
+    }
+
+    private static boolean mayRunLoopBlock(final LoopingStatement statement, final ConditionValue condition) {
+        return !(statement instanceof WhileStatement || isClassicForLoop(statement))
+            || condition != ConditionValue.ALWAYS_FALSE;
+    }
+
+    private static boolean mayExitLoopViaCondition(final LoopingStatement statement, final ConditionValue condition, final boolean bodyMayContinue) {
+        if (statement instanceof DoWhileStatement) {
+            return bodyMayContinue && condition != ConditionValue.ALWAYS_TRUE;
+        }
+        if (statement instanceof ForStatement forStatement && !isClassicForLoop(forStatement)) {
+            return true;
+        }
+        return condition != ConditionValue.ALWAYS_TRUE;
+    }
+
+    private static boolean isClassicForLoop(final LoopingStatement statement) {
+        return statement instanceof ForStatement
+            && ((ForStatement) statement).getCollectionExpression() instanceof ClosureListExpression;
+    }
+
+    private static ConditionValue loopCondition(final LoopingStatement statement) {
+        if (statement instanceof WhileStatement whileStatement) {
+            return constantBooleanValue(whileStatement.getBooleanExpression());
+        }
+        if (statement instanceof DoWhileStatement doWhileStatement) {
+            return constantBooleanValue(doWhileStatement.getBooleanExpression());
+        }
+        if (statement instanceof ForStatement forStatement
+                && forStatement.getCollectionExpression() instanceof ClosureListExpression closureListExpression) {
+            List<Expression> expressions = closureListExpression.getExpressions();
+            if (!expressions.isEmpty()) {
+                return constantBooleanValue(expressions.get((expressions.size() - 1) / 2));
+            }
+        }
+        return ConditionValue.UNKNOWN;
+    }
+
+    private static Set<String> labelSet(final List<String> labels) {
+        if (labels == null || labels.isEmpty()) return Set.of();
+        return new LinkedHashSet<>(labels);
+    }
+
+    private static StatementFlow analyzeNestedSwitchFlow(final SwitchStatement statement) {
+        Set<String> switchLabels = labelSet(statement.getStatementLabels());
+        StatementFlow nextFlow = flowAfterSwitch(statement.getDefaultStatement(), switchLabels);
+        StatementFlow switchFlow = nextFlow;
+
+        List<CaseStatement> caseStatements = statement.getCaseStatements();
+        for (int i = caseStatements.size() - 1; i >= 0; i -= 1) {
+            StatementFlow flow = analyzeStatementFlow(caseStatements.get(i).getCode());
+            boolean mayBreakSwitch = mayBreakTo(flow, switchLabels);
+            Set<String> breakLabels = withoutLabels(flow.breakLabels, switchLabels);
+            nextFlow = StatementFlow.of(
+                mayBreakSwitch || (flow.mayContinue && nextFlow.mayContinue),
+                union(breakLabels, flow.mayContinue ? nextFlow.breakLabels : Set.of()),
+                union(flow.continueLabels, flow.mayContinue ? nextFlow.continueLabels : Set.of())
+            );
+            switchFlow = nextFlow.or(switchFlow);
+        }
+
+        return switchFlow;
+    }
+
+    private static StatementFlow flowAfterSwitch(final Statement statement, final Set<String> switchLabels) {
+        StatementFlow flow = analyzeStatementFlow(statement);
+        return StatementFlow.of(
+            mayBreakTo(flow, switchLabels) || flow.mayContinue,
+            withoutLabels(flow.breakLabels, switchLabels),
+            flow.continueLabels
+        );
+    }
+
+    private static Set<String> union(final Set<String> left, final Set<String> right) {
+        if (left.isEmpty()) return right;
+        if (right.isEmpty()) return left;
+
+        Set<String> labels = new LinkedHashSet<>(left);
+        labels.addAll(right);
+        return labels;
+    }
+
+    private static Set<String> withoutLabels(final Set<String> labels, final Set<String> removedLabels) {
+        if (labels.isEmpty() || removedLabels.isEmpty()) return labels;
+
+        Set<String> remainingLabels = new LinkedHashSet<>(labels);
+        remainingLabels.removeAll(removedLabels);
+        return remainingLabels;
+    }
+
+    /**
+     * Represents the flow of control through a switch case or loop body, tracking whether execution may continue past the end of the block
+     * @param mayContinue whether execution may continue past the end of the block (i.e. not all paths return, throw, or break out of the block)
+     * @param mayBreakUnlabeled whether the block may be exited via an unlabeled break statement
+     * @param breakLabels the set of labels of break statements that may exit the block (if any)
+     */
+    private record StatementFlow(boolean mayContinue, boolean mayBreakUnlabeled, Set<String> breakLabels,
+                                 boolean mayContinueUnlabeled, Set<String> continueLabels) {
+        /**
+         * Code always terminates abruptly via {@code return}, {@code throw}, or {@code continue}.
+         */
+        static final StatementFlow ABRUPT = new StatementFlow(false, false, Set.of(), false, Set.of());
+        /**
+         * Code may continue after this statement and does not leave unresolved breaks behind.
+         */
+        static final StatementFlow FALL_THROUGH = new StatementFlow(true, false, Set.of(), false, Set.of());
+
+        static StatementFlow breakFlow(final String label) {
+            if (label == null) return flow(false, true, Set.of(), false, Set.of());
+            return flow(false, false, Set.of(label), false, Set.of());
+        }
+
+        static StatementFlow continueFlow(final String label) {
+            if (label == null) return flow(false, false, Set.of(), true, Set.of());
+            return flow(false, false, Set.of(), false, Set.of(label));
+        }
+
+        static StatementFlow of(final boolean mayContinue, final Set<String> breakLabels, final Set<String> continueLabels) {
+            return flow(mayContinue, false, breakLabels, false, continueLabels);
+        }
+
+        private static StatementFlow flow(final boolean mayContinue, final boolean mayBreakUnlabeled, final Set<String> breakLabels,
+                                          final boolean mayContinueUnlabeled, final Set<String> continueLabels) {
+            if (!mayContinue && !mayBreakUnlabeled && breakLabels.isEmpty() && !mayContinueUnlabeled && continueLabels.isEmpty()) {
+                return ABRUPT;
+            }
+            if (mayContinue && !mayBreakUnlabeled && breakLabels.isEmpty() && !mayContinueUnlabeled && continueLabels.isEmpty()) {
+                return FALL_THROUGH;
+            }
+            return new StatementFlow(mayContinue, mayBreakUnlabeled, breakLabels, mayContinueUnlabeled, continueLabels);
+        }
+
+        StatementFlow then(final StatementFlow next) {
+            if (!mayContinue) return this;
+            if (!mayBreakUnlabeled && breakLabels.isEmpty() && !mayContinueUnlabeled && continueLabels.isEmpty()) return next;
+            return flow(
+                next.mayContinue,
+                mayBreakUnlabeled || next.mayBreakUnlabeled,
+                union(breakLabels, next.breakLabels),
+                mayContinueUnlabeled || next.mayContinueUnlabeled,
+                union(continueLabels, next.continueLabels)
+            );
+        }
+
+        StatementFlow or(final StatementFlow other) {
+            return flow(
+                mayContinue || other.mayContinue,
+                mayBreakUnlabeled || other.mayBreakUnlabeled,
+                union(breakLabels, other.breakLabels),
+                mayContinueUnlabeled || other.mayContinueUnlabeled,
+                union(continueLabels, other.continueLabels)
+            );
+        }
+
+        StatementFlow thenFinally(final StatementFlow finallyFlow) {
+            return flow(
+                finallyFlow.mayContinue && mayContinue,
+                finallyFlow.mayBreakUnlabeled || (finallyFlow.mayContinue && mayBreakUnlabeled),
+                union(finallyFlow.breakLabels, finallyFlow.mayContinue ? breakLabels : Set.of()),
+                finallyFlow.mayContinueUnlabeled || (finallyFlow.mayContinue && mayContinueUnlabeled),
+                union(finallyFlow.continueLabels, finallyFlow.mayContinue ? continueLabels : Set.of())
+            );
+        }
+
+        StatementFlow consumeLabels(final Set<String> labels) {
+            if (labels.isEmpty() || breakLabels.isEmpty()) return this;
+
+            Set<String> remainingBreakLabels = withoutLabels(breakLabels, labels);
+            boolean consumedBreak = remainingBreakLabels.size() != breakLabels.size();
+            return flow(mayContinue || consumedBreak, mayBreakUnlabeled, remainingBreakLabels, mayContinueUnlabeled, continueLabels);
+        }
+
+        boolean breaksToAny(final Set<String> labels) {
+            if (labels.isEmpty() || breakLabels.isEmpty()) return false;
+
+            for (String label : labels) {
+                if (breakLabels.contains(label)) return true;
+            }
+            return false;
+        }
+
+        boolean continuesToAny(final Set<String> labels) {
+            if (labels.isEmpty() || continueLabels.isEmpty()) return false;
+
+            for (String label : labels) {
+                if (continueLabels.contains(label)) return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Represents the compile-time constant value of a boolean loop-condition or branch expression.
+     * Used by flow analysis to avoid emitting unreachable bytecode.
+     */
+    @Internal
+    public enum ConditionValue {
+        /** The boolean expression always evaluates to {@code false}. */
+        ALWAYS_FALSE,
+        /** The boolean expression always evaluates to {@code true}. */
+        ALWAYS_TRUE,
+        /** The value cannot be determined at compile time. */
+        UNKNOWN
     }
 }

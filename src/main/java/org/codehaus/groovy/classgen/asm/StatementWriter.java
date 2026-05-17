@@ -22,14 +22,11 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -37,7 +34,6 @@ import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -59,8 +55,28 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
-import static org.objectweb.asm.Opcodes.*;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ConditionValue;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constantBooleanValue;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isEmptyStatement;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mayReachLoopCondition;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThroughToNextSwitchCase;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.IADD;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.ICONST_M1;
+import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNULL;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.MONITORENTER;
+import static org.objectweb.asm.Opcodes.MONITOREXIT;
+import static org.objectweb.asm.Opcodes.NOP;
+import static org.objectweb.asm.Opcodes.RETURN;
 
 /**
  * Generates bytecode for Groovy statements by visiting AST statement nodes
@@ -187,15 +203,13 @@ public class StatementWriter {
         OperandStack operandStack = controller.getOperandStack();
 
         // declare the loop index and value variables
-        BytecodeVariable indexVariable = Optional.ofNullable(statement.getIndexVariable()).map(iv -> {
-            mv.visitInsn(ICONST_M1); // initialize to -1 so increment can pair with next()
-            return compileStack.defineVariable(iv, true);
-        }).orElse(null);
+        BytecodeVariable indexVariable = defineLoopIndexVariable(statement);
         BytecodeVariable valueVariable = compileStack.defineVariable(statement.getValueVariable(), false);
 
         // get the iterator and generate the loop control
         int iterator = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
         Label breakLabel = compileStack.getBreakLabel(), continueLabel = compileStack.getContinueLabel();
+        boolean bodyMayReachContinue = mayReachLoopCondition(statement);
 
         mv.visitVarInsn(ALOAD, iterator);
         mv.visitJumpInsn(IFNULL, breakLabel);
@@ -227,10 +241,24 @@ public class StatementWriter {
 
         // generate the loop body
         statement.getLoopBlock().visit(controller.getAcg());
-        mv.visitJumpInsn(GOTO, continueLabel);
+        writeLoopBackEdge(continueLabel, bodyMayReachContinue);
 
         mv.visitLabel(breakLabel);
         compileStack.removeVar(iterator);
+    }
+
+    protected final BytecodeVariable defineLoopIndexVariable(final ForStatement statement) {
+        CompileStack compileStack = controller.getCompileStack();
+        return Optional.ofNullable(statement.getIndexVariable()).map(iv -> {
+            controller.getMethodVisitor().visitInsn(ICONST_M1); // initialize to -1 so increment can pair with next()
+            return compileStack.defineVariable(iv, true);
+        }).orElse(null);
+    }
+
+    protected final void writeLoopBackEdge(final Label continueLabel, final boolean bodyMayReachContinue) {
+        if (bodyMayReachContinue) {
+            controller.getMethodVisitor().visitJumpInsn(GOTO, continueLabel);
+        }
     }
 
     /**
@@ -287,30 +315,25 @@ public class StatementWriter {
 
         Label cond = new Label();
         mv.visitLabel(cond);
-        // visit condition leave boolean on stack
-        {
-            int mark = controller.getOperandStack().getStackLength();
-            Expression condExpr = expressions.get(condIndex);
-            condExpr.visit(controller.getAcg());
-            controller.getOperandStack().castToBool(mark, true);
+        ConditionValue conditionValue = visitConditionOfLoopStatement(expressions.get(condIndex), breakLabel, mv);
+        boolean bodyMayReachContinue = mayReachLoopCondition(statement);
+        if (conditionValue != ConditionValue.ALWAYS_FALSE) {
+            // Generate the loop body
+            statement.getLoopBlock().visit(controller.getAcg());
+
+            if (bodyMayReachContinue) {
+                // visit increment
+                mv.visitLabel(continueLabel);
+                // fix for being on the wrong line when debugging for loop
+                controller.getAcg().onLineNumber(statement, "increment condition");
+                for (int i = condIndex + 1; i < size; i += 1) {
+                    visitExpressionOfLoopStatement(expressions.get(i));
+                }
+
+                // jump to test the condition again
+                writeLoopBackEdge(cond, true);
+            }
         }
-        // jump if we don't want to continue
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        controller.getOperandStack().jump(IFEQ, breakLabel);
-
-        // Generate the loop body
-        statement.getLoopBlock().visit(controller.getAcg());
-
-        // visit increment
-        mv.visitLabel(continueLabel);
-        // fix for being on the wrong line when debugging for loop
-        controller.getAcg().onLineNumber(statement, "increment condition");
-        for (int i = condIndex + 1; i < size; i += 1) {
-            visitExpressionOfLoopStatement(expressions.get(i));
-        }
-
-        // jump to test the condition again
-        mv.visitJumpInsn(GOTO, cond);
 
         // loop end
         mv.visitLabel(breakLabel);
@@ -334,27 +357,21 @@ public class StatementWriter {
         }
     }
 
-    private void visitConditionOfLoopingStatement(final BooleanExpression expression, final Label breakLabel, final MethodVisitor mv) {
-        Expression expr = expression;
-        boolean reverse = false;
-        do { // undo arbitrary nesting of (Boolean|Not)Expressions
-            if (expr instanceof NotExpression) reverse = !reverse;
-            expr = ((BooleanExpression) expr).getExpression();
-        } while (expr instanceof BooleanExpression);
-
-        // optimize constant boolean condition
-        if (expr instanceof ConstantExpression && ((ConstantExpression) expr).getValue() instanceof Boolean) {
-            if (((ConstantExpression) expr).isFalseExpression() && !reverse) {
-                mv.visitJumpInsn(GOTO, breakLabel); // unconditional exit
-                return;
-            } else {
-                // unconditional loop
-                return;
-            }
+    private ConditionValue visitConditionOfLoopStatement(final Expression expression, final Label breakLabel, final MethodVisitor mv) {
+        ConditionValue conditionValue = constantBooleanValue(expression);
+        if (conditionValue == ConditionValue.ALWAYS_FALSE) {
+            mv.visitJumpInsn(GOTO, breakLabel); // unconditional exit
+            return conditionValue;
+        }
+        if (conditionValue == ConditionValue.ALWAYS_TRUE) {
+            return conditionValue; // unconditional loop
         }
 
+        int mark = controller.getOperandStack().getStackLength();
         expression.visit(controller.getAcg());
+        controller.getOperandStack().castToBool(mark, true);
         controller.getOperandStack().jump(IFEQ, breakLabel);
+        return ConditionValue.UNKNOWN;
     }
 
     /**
@@ -370,14 +387,15 @@ public class StatementWriter {
         compileStack.pushLoop(statement.getStatementLabels());
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
+        boolean bodyMayReachContinue = mayReachLoopCondition(statement);
 
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitLabel(continueLabel);
 
-        visitConditionOfLoopingStatement(statement.getBooleanExpression(), breakLabel, mv);
-        statement.getLoopBlock().visit(controller.getAcg());
-
-        mv.visitJumpInsn(GOTO, continueLabel);
+        if (visitConditionOfLoopStatement(statement.getBooleanExpression(), breakLabel, mv) != ConditionValue.ALWAYS_FALSE) {
+            statement.getLoopBlock().visit(controller.getAcg());
+            writeLoopBackEdge(continueLabel, bodyMayReachContinue);
+        }
         mv.visitLabel(breakLabel);
 
         compileStack.pop();
@@ -401,10 +419,12 @@ public class StatementWriter {
         mv.visitLabel(blockLabel);
 
         statement.getLoopBlock().visit(controller.getAcg());
-        mv.visitLabel(continueLabel); // GROOVY-11739: continue jumps to condition
-        visitConditionOfLoopingStatement(statement.getBooleanExpression(), breakLabel, mv);
-
-        mv.visitJumpInsn(GOTO, blockLabel);
+        if (mayReachLoopCondition(statement)) {
+            mv.visitLabel(continueLabel); // GROOVY-11739: continue jumps to condition
+            if (visitConditionOfLoopStatement(statement.getBooleanExpression(), breakLabel, mv) != ConditionValue.ALWAYS_FALSE) {
+                mv.visitJumpInsn(GOTO, blockLabel);
+            }
+        }
         mv.visitLabel(breakLabel);
 
         compileStack.pop();
@@ -534,7 +554,7 @@ public class StatementWriter {
         final CompileStack compileStack = controller.getCompileStack();
 
         recorder.excludedStatement = () -> {
-            if (finallyStatement == null || finallyStatement instanceof EmptyStatement) return;
+            if (isEmptyStatement(finallyStatement)) return;
 
             final VariableScope originalScope = compileStack.getScope();
             compileStack.pop();
@@ -578,7 +598,7 @@ public class StatementWriter {
 
         // switch does not have a continue label; use enclosing continue label
         CompileStack compileStack = controller.getCompileStack();
-        Label breakLabel = compileStack.pushSwitch();
+        Label breakLabel = compileStack.pushSwitch(statement.getStatementLabels());
 
         int switchVariableIndex = compileStack.defineTemporaryVariable("switch", exprType, true);
 
@@ -591,24 +611,26 @@ public class StatementWriter {
 
         int i = 0;
         for (Iterator<CaseStatement> iter = caseStatements.iterator(); iter.hasNext(); i += 1) {
-            writeCaseStatement(iter.next(), switchVariableIndex, labels[i], labels[i + 1]);
+            writeCaseStatement(iter.next(), statement, switchVariableIndex, labels[i], labels[i + 1]);
         }
 
         statement.getDefaultStatement().visit(controller.getAcg());
 
-        controller.getMethodVisitor().visitLabel(breakLabel);
+        if (maybeFallsThrough(statement) || statement.getStatementLabels() != null) {
+            controller.getMethodVisitor().visitLabel(breakLabel);
+        }
         compileStack.removeVar(switchVariableIndex);
         compileStack.pop();
     }
 
-    private void writeCaseStatement(final CaseStatement statement, final int switchVariableIndex, final Label thisLabel, final Label nextLabel) {
-        controller.getAcg().onLineNumber(statement, "visitCaseStatement");
+    private void writeCaseStatement(final CaseStatement caseStatement, final SwitchStatement switchStatement, final int switchVariableIndex, final Label thisLabel, final Label nextLabel) {
+        controller.getAcg().onLineNumber(caseStatement, "visitCaseStatement");
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
         mv.visitVarInsn(ALOAD, switchVariableIndex);
 
-        statement.getExpression().visit(controller.getAcg());
+        caseStatement.getExpression().visit(controller.getAcg());
         operandStack.box();
         controller.getBinaryExpressionHelper().getIsCaseMethod().call(mv);
         operandStack.replace(ClassHelper.boolean_TYPE);
@@ -617,10 +639,10 @@ public class StatementWriter {
 
         mv.visitLabel(thisLabel);
 
-        statement.getCode().visit(controller.getAcg());
+        caseStatement.getCode().visit(controller.getAcg());
 
         // now if we don't finish with a break we need to jump past the next comparison
-        if (nextLabel != null) {
+        if (nextLabel != null && maybeFallsThroughToNextSwitchCase(caseStatement.getCode(), switchStatement)) {
             mv.visitJumpInsn(GOTO, nextLabel);
         }
 
@@ -699,13 +721,18 @@ public class StatementWriter {
         compileStack.writeExceptionTable(fb, catchAll, null);
         compileStack.pop(); //pop fb
 
-        finallyPart.run();
-        mv.visitJumpInsn(GOTO, synchronizedEnd);
+        boolean fallthrough = maybeFallsThrough(statement.getCode());
+        if (fallthrough) {
+            finallyPart.run();
+            mv.visitJumpInsn(GOTO, synchronizedEnd);
+        }
         mv.visitLabel(catchAll);
         finallyPart.run();
         mv.visitInsn(ATHROW);
 
-        mv.visitLabel(synchronizedEnd);
+        if (fallthrough) {
+            mv.visitLabel(synchronizedEnd);
+        }
         compileStack.removeVar(index);
     }
 
