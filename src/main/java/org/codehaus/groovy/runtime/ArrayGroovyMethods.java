@@ -77,6 +77,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoublePredicate;
@@ -11139,6 +11141,103 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Iterator<Tuple2<Long, Long>> zipping(long[] self, long[] other) {
         return DefaultGroovyMethods.zip(new LongArrayIterator(self), new LongArrayIterator(other));
+    }
+
+    //--------------------------------------------------------------------------
+    // groupConsecutive
+
+    /**
+     * Splits this array into a list of sublists, each a maximal run of
+     * adjacent elements considered equal (number-aware coercion).
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 1, 2, 2, 2, 3, 1, 1]
+     * assert nums.groupConsecutive() == [[1, 1], [2, 2, 2], [3], [1, 1]]
+     * </pre>
+     *
+     * @param self an array
+     * @return a list of the runs of adjacent equal elements
+     * @see DefaultGroovyMethods#groupConsecutive(Iterable)
+     * @since 6.0.0
+     */
+    public static <T> List<List<T>> groupConsecutive(T[] self) {
+        return DefaultGroovyMethods.groupConsecutive(new ArrayIterable<>(self));
+    }
+
+    /**
+     * Splits this array into runs of adjacent elements whose key, as computed
+     * by the given function, is equal (number-aware coercion).
+     * <pre class="language-groovy groovyTestCase">
+     * String[] fruit = ['apple', 'avocado', 'banana', 'cherry', 'citrus', 'date']
+     * assert fruit.groupConsecutive{ it[0] } == [['apple', 'avocado'], ['banana'], ['cherry', 'citrus'], ['date']]
+     * </pre>
+     *
+     * @param self an array
+     * @param keyFn extracts the grouping key for each element
+     * @return a list of the runs of adjacent key-equal elements
+     * @see DefaultGroovyMethods#groupConsecutive(Iterable, java.util.function.Function)
+     * @since 6.0.0
+     */
+    public static <T, K> List<List<T>> groupConsecutive(T[] self, Function<? super T, ? extends K> keyFn) {
+        return DefaultGroovyMethods.groupConsecutive(new ArrayIterable<>(self), keyFn);
+    }
+
+    /**
+     * Splits this array into runs where the given predicate, applied to the
+     * current run's previous element and the next element, holds. Use this to
+     * opt out of the default number-aware equality.
+     * <pre class="language-groovy groovyTestCase">
+     * Number[] ns = [1, 1L, 1.0, 2, 2]
+     * assert ns.groupConsecutive{ a, b {@code ->} a.equals(b) } == [[1], [1L], [1.0], [2, 2]]
+     * </pre>
+     *
+     * @param self an array
+     * @param sameRun tests whether the next element continues the current run
+     * @return a list of the runs
+     * @see DefaultGroovyMethods#groupConsecutive(Iterable, java.util.function.BiPredicate)
+     * @since 6.0.0
+     */
+    public static <T> List<List<T>> groupConsecutive(T[] self, BiPredicate<? super T, ? super T> sameRun) {
+        return DefaultGroovyMethods.groupConsecutive(new ArrayIterable<>(self), sameRun);
+    }
+
+    //--------------------------------------------------------------------------
+    // zipWithNext
+
+    /**
+     * Returns a list of all the successive adjacent pairs from this array
+     * (a sliding window of size 2, step 1).
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4]
+     * assert nums.zipWithNext() == [[1, 2], [2, 3], [3, 4]]
+     * </pre>
+     *
+     * @param self an array
+     * @return a list of the adjacent pairs
+     * @see DefaultGroovyMethods#zipWithNext(Iterable)
+     * @since 6.0.0
+     */
+    public static <T> List<Tuple2<T, T>> zipWithNext(T[] self) {
+        return DefaultGroovyMethods.zipWithNext(new ArrayIterable<>(self));
+    }
+
+    /**
+     * Applies the combiner to each successive adjacent pair from this array,
+     * returning the list of results.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4]
+     * assert nums.zipWithNext{ a, b {@code ->} b - a } == [1, 1, 1]
+     * String[] letters = ['a', 'b', 'c', 'd']
+     * assert letters.zipWithNext{ a, b {@code ->} a + b } == ['ab', 'bc', 'cd']
+     * </pre>
+     *
+     * @param self an array
+     * @param combiner a function applied to each adjacent pair
+     * @return a list of the combined adjacent pairs
+     * @see DefaultGroovyMethods#zipWithNext(Iterable, java.util.function.BiFunction)
+     * @since 6.0.0
+     */
+    public static <T, R> List<R> zipWithNext(T[] self, BiFunction<? super T, ? super T, ? extends R> combiner) {
+        return DefaultGroovyMethods.zipWithNext(new ArrayIterable<>(self), combiner);
     }
 
     //--------------------------------------------------------------------------

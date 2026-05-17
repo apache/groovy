@@ -156,6 +156,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -18455,6 +18457,346 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(left.hasNext() ? left.next() : leftDefault,
                                 right.hasNext() ? right.next() : rightDefault);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // zipWithNext
+
+    /**
+     * Returns a list of all the successive adjacent pairs from this Iterable
+     * (a sliding window of size 2, step 1). The result has one fewer element
+     * than the input; an empty or single-element Iterable yields an empty list.
+     * Each pair is a {@link Tuple2}, which is also a {@code List}.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 4].zipWithNext() == [[1, 2], [2, 3], [3, 4]]
+     * assert [].zipWithNext() == []
+     * assert [42].zipWithNext() == []
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a list of the adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T> List<Tuple2<T, T>> zipWithNext(Iterable<T> self) {
+        List<Tuple2<T, T>> result = new ArrayList<>();
+        addAll(result, zipWithNext(self.iterator()));
+        return result;
+    }
+
+    /**
+     * Applies the combiner to each successive adjacent pair from this Iterable,
+     * returning the list of results. The result has one fewer element than the
+     * input; an empty or single-element Iterable yields an empty list.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 4].zipWithNext{ a, b {@code ->} b - a } == [1, 1, 1]
+     * assert [3, 1, 4, 1, 5].zipWithNext{ a, b {@code ->} a {@code <=} b } == [false, true, false, true]
+     * assert 'abcd'.toList().zipWithNext{ a, b {@code ->} a + b } == ['ab', 'bc', 'cd']
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param combiner a function applied to each adjacent pair
+     * @return a list of the combined adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T, R> List<R> zipWithNext(Iterable<T> self, BiFunction<? super T, ? super T, ? extends R> combiner) {
+        List<R> result = new ArrayList<>();
+        addAll(result, zipWithNext(self.iterator(), combiner));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator of all the successive adjacent pairs from this Iterator.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3].iterator().zipWithNext().toList() == [[1, 2], [2, 3]]
+     * </pre>
+     *
+     * @param self an Iterator
+     * @return an iterator of the adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T> Iterator<Tuple2<T, T>> zipWithNext(Iterator<T> self) {
+        return new ZipWithNextIterator<>(self);
+    }
+
+    /**
+     * Returns a (lazy) iterator applying the combiner to each successive
+     * adjacent pair from this Iterator.
+     *
+     * @param self an Iterator
+     * @param combiner a function applied to each adjacent pair
+     * @return an iterator of the combined adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T, R> Iterator<R> zipWithNext(Iterator<T> self, BiFunction<? super T, ? super T, ? extends R> combiner) {
+        Iterator<Tuple2<T, T>> pairs = new ZipWithNextIterator<>(self);
+        return new Iterator<R>() {
+            @Override
+            public boolean hasNext() {
+                return pairs.hasNext();
+            }
+
+            @Override
+            public R next() {
+                Tuple2<T, T> pair = pairs.next();
+                return combiner.apply(pair.getV1(), pair.getV2());
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    private static final class ZipWithNextIterator<T> implements Iterator<Tuple2<T, T>> {
+        private final Iterator<T> delegate;
+        private T prev;
+        private boolean hasPrev;
+
+        private ZipWithNextIterator(Iterator<T> delegate) {
+            this.delegate = delegate;
+            if (delegate.hasNext()) {
+                prev = delegate.next();
+                hasPrev = true;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasPrev && delegate.hasNext();
+        }
+
+        @Override
+        public Tuple2<T, T> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            T curr = delegate.next();
+            Tuple2<T, T> pair = new Tuple2<>(prev, curr);
+            prev = curr;
+            return pair;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // groupConsecutive
+
+    /**
+     * Splits this Iterable into a list of sublists, each a maximal run of
+     * adjacent elements considered equal. Element order is preserved and the
+     * same value may appear in more than one run (unlike {@link #groupBy(Iterable, Closure)},
+     * which builds a map). Equality uses Groovy's number-aware coercion,
+     * consistent with {@link #unique(Collection)}.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 1, 2, 2, 2, 3, 1, 1].groupConsecutive() == [[1, 1], [2, 2, 2], [3], [1, 1]]
+     * assert [1, 1L, 1.0, 2, 2].groupConsecutive() == [[1, 1L, 1.0], [2, 2]]
+     * assert [].groupConsecutive() == []
+     * assert [7].groupConsecutive() == [[7]]
+     * // run-length encoding; "dedupe consecutive" is just the run heads
+     * assert 'aaabbbcccd'.toList().groupConsecutive().collect{ run {@code ->} [run[0], run.size()] } == [['a', 3], ['b', 3], ['c', 3], ['d', 1]]
+     * assert 'aaabbbcccd'.toList().groupConsecutive()*.first().join() == 'abcd'
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a list of the runs of adjacent equal elements
+     * @since 6.0.0
+     */
+    public static <T> List<List<T>> groupConsecutive(Iterable<T> self) {
+        List<List<T>> result = new ArrayList<>();
+        addAll(result, groupConsecutive(self.iterator()));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator over the runs of adjacent equal elements
+     * (number-aware coercion).
+     *
+     * @param self an Iterator
+     * @return an iterator over the runs of adjacent equal elements
+     * @since 6.0.0
+     */
+    public static <T> Iterator<List<T>> groupConsecutive(Iterator<T> self) {
+        return new GroupConsecutiveIterator<>(self, (a, b) -> coercedEquals(a, b));
+    }
+
+    /**
+     * Splits this Iterable into runs of adjacent elements whose key, as
+     * computed by the given function, is equal (number-aware coercion).
+     * {@code keyFn} is evaluated exactly once per element.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['apple', 'avocado', 'banana', 'cherry', 'citrus', 'date'].groupConsecutive{ it[0] } == [['apple', 'avocado'], ['banana'], ['cherry', 'citrus'], ['date']]
+     * assert [1, 3, 5, 2, 4, 7, 9].groupConsecutive{ it % 2 } == [[1, 3, 5], [2, 4], [7, 9]]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param keyFn extracts the grouping key for each element
+     * @return a list of the runs of adjacent key-equal elements
+     * @since 6.0.0
+     */
+    public static <T, K> List<List<T>> groupConsecutive(Iterable<T> self, Function<? super T, ? extends K> keyFn) {
+        List<List<T>> result = new ArrayList<>();
+        addAll(result, groupConsecutive(self.iterator(), keyFn));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator over the runs of adjacent key-equal elements.
+     * {@code keyFn} is evaluated exactly once per element.
+     *
+     * @param self an Iterator
+     * @param keyFn extracts the grouping key for each element
+     * @return an iterator over the runs of adjacent key-equal elements
+     * @since 6.0.0
+     */
+    public static <T, K> Iterator<List<T>> groupConsecutive(Iterator<T> self, Function<? super T, ? extends K> keyFn) {
+        return new GroupConsecutiveByKeyIterator<>(self, keyFn);
+    }
+
+    /**
+     * Splits this Iterable into runs where the given predicate, applied to the
+     * current run's previous element and the next element, holds. Use this to
+     * opt out of the default number-aware equality, e.g.
+     * {@code { a, b -> Objects.equals(a, b) }} for strict equality or
+     * {@code { a, b -> (a <=> b) == 0 }} for natural-order equivalence.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 1L, 1.0, 2, 2].groupConsecutive{ a, b {@code ->} a.equals(b) } == [[1], [1L], [1.0], [2, 2]]
+     * assert [1.0G, 1.00G, 2.0G].groupConsecutive{ a, b {@code ->} (a {@code <=>} b) == 0 } == [[1.0, 1.00], [2.0]]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param sameRun tests whether the next element continues the current run
+     * @return a list of the runs
+     * @since 6.0.0
+     */
+    public static <T> List<List<T>> groupConsecutive(Iterable<T> self, BiPredicate<? super T, ? super T> sameRun) {
+        List<List<T>> result = new ArrayList<>();
+        addAll(result, groupConsecutive(self.iterator(), sameRun));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator over the runs determined by the given predicate.
+     *
+     * @param self an Iterator
+     * @param sameRun tests whether the next element continues the current run
+     * @return an iterator over the runs
+     * @since 6.0.0
+     */
+    public static <T> Iterator<List<T>> groupConsecutive(Iterator<T> self, BiPredicate<? super T, ? super T> sameRun) {
+        return new GroupConsecutiveIterator<>(self, sameRun);
+    }
+
+    private static final class GroupConsecutiveIterator<T> implements Iterator<List<T>> {
+        private final Iterator<T> delegate;
+        private final BiPredicate<? super T, ? super T> sameRun;
+        private T pending;
+        private boolean hasPending;
+
+        private GroupConsecutiveIterator(Iterator<T> delegate, BiPredicate<? super T, ? super T> sameRun) {
+            this.delegate = delegate;
+            this.sameRun = sameRun;
+            if (delegate.hasNext()) {
+                pending = delegate.next();
+                hasPending = true;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasPending;
+        }
+
+        @Override
+        public List<T> next() {
+            if (!hasPending) throw new NoSuchElementException();
+            List<T> run = new ArrayList<>();
+            run.add(pending);
+            T prev = pending;
+            hasPending = false;
+            while (delegate.hasNext()) {
+                T curr = delegate.next();
+                if (sameRun.test(prev, curr)) {
+                    run.add(curr);
+                    prev = curr;
+                } else {
+                    pending = curr;
+                    hasPending = true;
+                    break;
+                }
+            }
+            return run;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class GroupConsecutiveByKeyIterator<T, K> implements Iterator<List<T>> {
+        private final Iterator<T> delegate;
+        private final Function<? super T, ? extends K> keyFn;
+        private T pending;
+        private K pendingKey;
+        private boolean hasPending;
+
+        private GroupConsecutiveByKeyIterator(Iterator<T> delegate, Function<? super T, ? extends K> keyFn) {
+            this.delegate = delegate;
+            this.keyFn = keyFn;
+            if (delegate.hasNext()) {
+                pending = delegate.next();
+                pendingKey = keyFn.apply(pending); // key computed once for the first element
+                hasPending = true;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasPending;
+        }
+
+        @Override
+        public List<T> next() {
+            if (!hasPending) throw new NoSuchElementException();
+            List<T> run = new ArrayList<>();
+            run.add(pending);
+            K prevKey = pendingKey;
+            hasPending = false;
+            while (delegate.hasNext()) {
+                T curr = delegate.next();
+                K currKey = keyFn.apply(curr); // each element's key evaluated exactly once
+                if (coercedEquals(prevKey, currKey)) {
+                    run.add(curr);
+                    prevKey = currKey; // advance, mirroring the adjacent-pair semantics
+                } else {
+                    pending = curr;
+                    pendingKey = currKey; // carried to the next run, not recomputed
+                    hasPending = true;
+                    break;
+                }
+            }
+            return run;
         }
 
         @Override
