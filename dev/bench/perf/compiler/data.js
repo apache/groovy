@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778917014330,
+  "lastUpdate": 1779003829381,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -248,6 +248,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 477.1333333333334,
             "range": "±20.96",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "7f4fb8afd4c72bb5da84bb74fc9181c607f4dce8",
+          "message": "AI readiness: sandboxed reproducers",
+          "timestamp": "2026-05-17T05:26:09Z",
+          "url": "https://github.com/apache/groovy/commit/7f4fb8afd4c72bb5da84bb74fc9181c607f4dce8"
+        },
+        "date": 1779003828707,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 544.22,
+            "range": "±21.69",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 640.9433333333334,
+            "range": "±217.73",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 553.47,
+            "range": "±141.1",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 475.52666666666664,
+            "range": "±21.18",
             "unit": "ms",
             "extra": "5.0.6"
           }
