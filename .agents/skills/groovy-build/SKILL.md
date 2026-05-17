@@ -130,6 +130,11 @@ changes:
    compiles fine but blows up at runtime. After any repackaging
    change, run `./gradlew :groovy-binary:installGroovy` and
    exercise `groovy` / `groovyc` against a non-trivial script.
+   On a machine with SDKMAN, `unset GROOVY_HOME` first — else the
+   launcher silently runs a different Groovy (or fails with
+   `ClassNotFoundException: org.codehaus.groovy.tools.GroovyStarter`)
+   and the smoke test proves nothing. See
+   ["Running your local build"](../../../CONTRIBUTING.md#running-your-local-build).
 
 5. **Editing generated ANTLR sources to "fix" a parser problem.**
    `build/generated/sources/antlr4/...` is regenerated on every
@@ -162,6 +167,34 @@ changes:
     review-culture rule as code: drive-by reformatting hides
     intent and is rejected. See the "what *not* to do" list in
     [`AGENTS.md`](../../../AGENTS.md).
+
+11. **Downloading a JDK without asking.** `sdk install java
+    <ver>` (or toolchain auto-provisioning) pulls a large
+    artifact onto the user's machine. AI tooling reaches for it
+    to make a version-specific build or test "just work." Try
+    the JDK that launched Gradle first, then a locally-installed
+    candidate (`sdk list java`, `~/.sdkman/candidates/java/`);
+    only if none fits, surface that the JDK is missing and let
+    the contributor decide. The download is a side effect with
+    network, disk, and time cost — it is the contributor's call,
+    like the dev@ discussion in *Adding a new runtime dependency
+    without flagging dev@ discussion* above.
+
+12. **Leaving a machine-specific JDK override in a tracked
+    file.** To build or test against a specific JDK the
+    supported knob is the `-Ptarget.java.home=<java-home>`
+    Gradle property (command line, or `~/.gradle/gradle.properties`)
+    — see
+    ["Building and testing against a specific JDK"](../../../CONTRIBUTING.md#building-and-testing-against-a-specific-jdk)
+    and the three-knobs bullet in
+    [Build infrastructure](../../../ARCHITECTURE.md#build-infrastructure).
+    AI tooling instead edits `gradle.properties` or a
+    `build.gradle` toolchain block to force a JDK and forgets to
+    revert it, committing a machine-specific path or a changed
+    `targetJavaVersion` / `groovyTargetBytecodeVersion`. Those
+    properties are the single source of truth and move per Groovy
+    version; don't pin them to investigate. If a tracked file
+    must change to reproduce something, revert before hand-back.
 
 ## Procedure
 
@@ -203,7 +236,9 @@ changes:
    ./gradlew :groovy-binary:installGroovy
    ```
 
-   See
+   `unset GROOVY_HOME` first on SDKMAN machines, or the launcher
+   exercises a different Groovy / fails with the `GroovyStarter`
+   `ClassNotFoundException`. See
    ["Running your local build"](../../../CONTRIBUTING.md#running-your-local-build).
 
 7. **For API-affecting changes, run binary compatibility
@@ -232,6 +267,10 @@ Before declaring the change ready:
       project-wide) — see
       [Build infrastructure](../../../ARCHITECTURE.md#build-infrastructure).
 - [ ] No hard-coded versions in subproject build files.
+- [ ] No machine-specific JDK path or `targetJavaVersion` /
+      `groovyTargetBytecodeVersion` override left in a tracked
+      file; JDK targeting used `-Ptarget.java.home`, not a
+      tracked-file edit. No JDK was downloaded without asking.
 - [ ] Dependency changes are reflected in
       `gradle/verification-metadata.xml`; only the affected
       entries are touched.
@@ -240,7 +279,8 @@ Before declaring the change ready:
       change.
 - [ ] If repackaging or distribution changed:
       `:groovy-binary:installGroovy` produced a working install,
-      exercised against a non-trivial script.
+      exercised against a non-trivial script with `GROOVY_HOME`
+      unset so the local build actually ran.
 - [ ] `./gradlew :<subproject>:check` passes locally.
 - [ ] `./gradlew build` passes — including
       `:binary-compatibility:check` — or any API breakage is

@@ -174,7 +174,11 @@ When making a compiler/runtime change:
 6. **For end-to-end behaviour, exercise an installed build** —
    `./gradlew :groovy-binary:installGroovy` and run a script
    against it. Tests verify code; an installed build verifies
-   the `groovy` / `groovyc` launchers see the change. See
+   the `groovy` / `groovyc` launchers see the change.
+   `unset GROOVY_HOME` first on SDKMAN machines, or the launcher
+   runs a different Groovy / fails with `ClassNotFoundException:
+   org.codehaus.groovy.tools.GroovyStarter` and the check proves
+   nothing. See
    ["Running your local build"](../../../CONTRIBUTING.md#running-your-local-build).
 
 ## Hand-back to a human

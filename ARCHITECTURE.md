@@ -326,6 +326,22 @@ A few build-side conventions:
 - **Versions flow through `gradle.properties` and the shared
   `Versions` type**, not as `'group:artifact:1.2.3'` literals in
   subproject builds. Ad-hoc version pins drift.
+- **JDK and bytecode targeting are three separate knobs.**
+  `targetJavaVersion` sets the Java `source`/`target`
+  compatibility level for the project's Java sources and
+  Javadoc; `groovyTargetBytecodeVersion` sets the bytecode level
+  the forked Groovy compiler emits (passed as
+  `-Dgroovy.target.bytecode`). Both are pinned in
+  `gradle.properties` and read through `SharedConfiguration` —
+  that file is the single source of truth, so docs and skills
+  cite the property names, never the values (they change per
+  Groovy version). Neither controls *which* JVM runs the build
+  or tests: the build compiles with whatever JDK launched
+  Gradle, and tests run on that same JDK unless
+  `-Ptarget.java.home=<java-home>` overrides the test JVM (the
+  build then auto-derives the matching toolchain from that JDK's
+  `release` file). See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
+  the recipe.
 - **Dependency changes require regenerating
   `gradle/verification-metadata.xml`.** The build runs Gradle
   dependency verification; an unverified artifact fails the

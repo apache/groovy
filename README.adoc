@@ -132,6 +132,8 @@ To build you will need:
 
 * {jdk}[JDK 17+]
 
+The build compiles with whichever JDK runs `gradlew`. To target a different bytecode level, or to run tests on a different JDK, see the "Building and testing against a specific JDK" section in `CONTRIBUTING.md`.
+
 To build everything using Gradle, use the following command (`./gradlew` on Unix-like systems):
 
     gradlew clean dist

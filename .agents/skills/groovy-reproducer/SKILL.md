@@ -197,6 +197,23 @@ reproducers:
     for the project-side context. Add the new import per that
     mapping; don't classify as `still-fails-different` or
     `cannot-run-environment`.
+16. **Running script reproducers with `GROOVY_HOME` pointing at a
+    SDKMAN install.** Shapes A and G run via the built `groovy`
+    launcher. On a machine with SDKMAN (or anything that exports
+    `GROOVY_HOME`), the launcher uses *that* Groovy, not the one
+    you just built — so a `passes` / `fixed-on-master` verdict
+    can be against an entirely different version, or the launcher
+    fails outright with `ClassNotFoundException:
+    org.codehaus.groovy.tools.GroovyStarter`. Both are
+    environment artefacts, not the reporter's bug — and distinct
+    from *Reproducer-stale-due-to-API-evolution treated as a bug*
+    above, which is a `ClassNotFoundException` on *import*, not
+    at launcher start. `unset GROOVY_HOME` before any launcher
+    run — see
+    ["Running your local build"](../../../CONTRIBUTING.md#running-your-local-build).
+    This is the highest-blast-radius false-`fixed-on-master`
+    trap in a campaign: every script-shape verdict is wrong if
+    it fires.
 
 ## Reproducer shape taxonomy
 
@@ -207,7 +224,10 @@ recipe for each is the meat of this skill.
 the description or a comment, with imports and a top-level expression
 or `main`. Recipe: save to a scratch `.groovy`, build a current
 distribution (`./gradlew :installDist` on the relevant subproject),
-and run with the built `groovy` binary. Or, for many cases, adapt as
+and run with the built `groovy` binary (`unset GROOVY_HOME` first
+on SDKMAN machines — see *Running script reproducers with
+`GROOVY_HOME` pointing at a SDKMAN install* above). Or, for many
+cases, adapt as
 a `@Test` per [`groovy-tests`](../groovy-tests/SKILL.md) and run
 targeted — but be aware of *Treating `@Test` adaptation as
 equivalent to a script run* above (script vs `@Test` semantics).
@@ -365,12 +385,35 @@ For each reproducer:
   Don't write under the Groovy checkout.
 - **Working tree:** clean between reproducers. The
   added-and-then-removed `@Test` is the most common leak source.
+- **`GROOVY_HOME`:** for any script-shape (A/G) run via the
+  built `groovy` launcher, `unset GROOVY_HOME` (or point it at
+  the local install) first — otherwise the launcher runs a
+  different Groovy or fails with the `GroovyStarter`
+  `ClassNotFoundException`. See *Running script reproducers with
+  `GROOVY_HOME` pointing at a SDKMAN install* in Top failure
+  modes.
 - **Grape cache:** for a campaign with many `@Grab` reproducers,
   consider `-Dgrape.root=<scratch>` so the user's
   `~/.groovy/grapes/` stays clean.
 - **JDK selection:** record the JDK used. For verdicts where it
   matters (`passes`, `fixed-on-master`), retry on the
-  originally-affected JDK via Gradle toolchains where reasonable.
+  originally-affected JDK — but the mechanism depends on how the
+  reproducer is being run:
+  - **`@Test`-shaped (shape B, or shape A adapted as a `@Test`),
+    run through Gradle:** pass
+    `-Ptarget.java.home=<java-home>`; the build runs the tests
+    on that JVM and auto-selects the matching toolchain. See
+    ["Building and testing against a specific JDK"](../../../CONTRIBUTING.md#building-and-testing-against-a-specific-jdk).
+  - **Script-shaped (shape A run directly, shape G), run with
+    the built `groovy` launcher:** `-Ptarget.java.home` does
+    *not* apply — it only governs the Gradle test JVM. The
+    launcher runs on whatever `JAVA_HOME` (or the environment
+    manager's active JDK) points at; set that to the target JDK
+    before invoking `groovy`.
+
+  Either way, use a JDK already on the machine; don't download
+  one without asking (see *Downloading a JDK without asking* in
+  [`groovy-build`](../groovy-build/SKILL.md)).
 
 ## Cross-family probes (AI-tooling pattern)
 
@@ -497,6 +540,10 @@ Before recording a verdict:
       before any "passes" verdict was claimed.
 - [ ] For `passes`: the run environment is qualified; the verdict
       doesn't over-claim "fixed" from a single environment.
+- [ ] For script-shape (A/G) runs: `GROOVY_HOME` was unset (or
+      pointed at the local install) so the built Groovy actually
+      ran — not a SDKMAN one, and no `GroovyStarter`
+      `ClassNotFoundException`.
 - [ ] Working tree was reset (no leftover scratch test class).
 - [ ] Evidence package was written before the next issue started.
 

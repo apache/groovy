@@ -64,8 +64,51 @@ to run a script against the build you just produced.
 On Unix-like systems, if you have SDKMAN (or any other tool that
 sets `GROOVY_HOME` to a fixed installation), `unset GROOVY_HOME`
 before running the launchers — otherwise they pick up that
-environment variable instead of using the local build, and your
-changes appear not to take effect.
+environment variable instead of using the local build. Depending
+on what `GROOVY_HOME` points at, the symptom is either that your
+changes appear not to take effect (it ran a different Groovy), or
+some launchers fail outright with:
+
+```
+Error: Could not find or load main class org.codehaus.groovy.tools.GroovyStarter
+Caused by: java.lang.ClassNotFoundException: org.codehaus.groovy.tools.GroovyStarter
+```
+
+This is not a broken build and is not worth a JIRA issue — it is
+a stale or mismatched `GROOVY_HOME`. `unset GROOVY_HOME` (or point
+it at the local install) and re-run.
+
+### Building and testing against a specific JDK
+
+Three things determine "which Java" is involved, and they are
+independent:
+
+- **The JDK that builds the code** — whatever JVM launched
+  `./gradlew` (subject to the minimum stated under *Building and
+  testing* above). Use an environment manager (SDKMAN, `jenv`,
+  Mise, asdf) or `JAVA_HOME` to pick it; this repository
+  deliberately ships **no** `.sdkmanrc`, so the build does not
+  pin a JDK for you.
+- **The bytecode the artifacts target** — `targetJavaVersion`
+  (Java sources) and `groovyTargetBytecodeVersion` (Groovy
+  sources) in `gradle.properties`. These are the single source
+  of truth and move with the Groovy version; change them there,
+  never inline. Changing them changes what the produced jars
+  target, not the JDK you build with. See
+  [`COMPATIBILITY.md`](COMPATIBILITY.md) for the supported range.
+- **The JDK the tests run on** — the build JDK by default. To
+  run tests on a *different* JDK without changing the build JDK,
+  pass its home directory:
+
+  ```
+  ./gradlew :test --tests <FQN> -Ptarget.java.home=/path/to/jdk
+  ```
+
+  The build prints `Using <java> to run tests` once per JVM so
+  you can confirm the override took effect, and it selects a
+  matching Gradle toolchain automatically. Set the property once
+  in `~/.gradle/gradle.properties` if you always test on the
+  same alternate JDK.
 
 ## Tests
 
