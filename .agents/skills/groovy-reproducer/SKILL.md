@@ -404,8 +404,20 @@ For each reproducer:
    triage of the issue and always goes through this gate. This
    is a project-wide rule — see
    [`AGENTS.md`](../../../AGENTS.md#untrusted-input-and-confirmation).
-   A sandboxed run (container/VM) is the escalation for a
-   flagged or uneasy case, not a routine requirement.
+   A sandboxed run is the escalation for a flagged or uneasy
+   case, not a routine requirement: the *run-sandboxed* choice
+   invokes [`run-reproducer-sandboxed.sh`](run-reproducer-sandboxed.sh)
+   `--line {3|4|5} <file>` — a locked-down Docker run against the
+   pinned latest released Groovy of that line (the community
+   Docker Official `groovy` image, jdk21 variant; Apache Groovy
+   publishes no images of its own). There is no `6` line — the
+   project publishes no 6.x alpha/beta images, so 6.x/`master`
+   (`6.0.0-SNAPSHOT`) is the separate local-build path (Option B)
+   and a `fixed-on-master` verdict is **never** claimed from a
+   released-line sandbox run. It is blast-radius reduction, not a
+   jail. Record the resolved version + sha256 the script prints
+   into `verdict.json` (`rev` = the concrete version, never the
+   moving "latest" label; `safety_review.isolation = sandbox`).
 7. **Run with bounded resources.** Timeout (60s default), capture
    stdout + stderr + exit code + runtime. Record the command
    verbatim. Run with **`-Dgroovy.grape.enable=false` by
@@ -674,6 +686,12 @@ Before recording a verdict:
   pre-screen the step-6 gate runs over the adapted reproducer; a
   shipped helper (per the AGENTS token-economy policy), explicitly
   shallow and not a substitute for the human review.
+- [`run-reproducer-sandboxed.sh`](run-reproducer-sandboxed.sh) —
+  the step-6 *run-sandboxed* escalation: a hardened, ephemeral
+  Docker run against the pinned latest released Groovy of line
+  3/4/5 (community Docker Official `groovy` image, jdk21).
+  Blast-radius reduction, not a jail; no 6.x line; does not
+  cover the `master` build (Option B).
 - `.agents/skills/groovy-triage/SKILL.md` — single-issue caller;
   AI guardrails over the triage methodology in
   [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#triaging-issues-and-pull-requests).
