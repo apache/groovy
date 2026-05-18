@@ -26,6 +26,7 @@ import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.apache.groovy.groovysh.jline.GroovyPosixCommands
 import org.apache.groovy.groovysh.jline.GroovyPosixContext
+import org.apache.groovy.groovysh.jline.GroovyPrinter
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.apache.groovy.groovysh.util.DocFinder
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -41,7 +42,6 @@ import org.jline.console.CommandMethods
 import org.jline.console.CommandRegistry
 import org.jline.console.ConsoleEngine
 import org.jline.console.Printer
-import org.jline.console.impl.DefaultPrinter
 import org.jline.console.impl.JlineCommandRegistry
 import org.jline.console.impl.SystemHighlighter
 import org.jline.keymap.KeyMap
@@ -420,7 +420,7 @@ class Main {
             }
             def interpreterMode = Boolean.parseBoolean(System.getProperty("groovysh.interpreterMode", "true"))
             scriptEngine.put('GROOVYSH_OPTIONS', [interpreterMode: interpreterMode])
-            Printer printer = new DefaultPrinter(scriptEngine, configPath)
+            Printer printer = new GroovyPrinter(scriptEngine, configPath)
 
             scriptEngine.put(GroovyEngine.NANORC_VALUE, rootURL.toString())
             Path jnanorc = root.resolve('jnanorc')
