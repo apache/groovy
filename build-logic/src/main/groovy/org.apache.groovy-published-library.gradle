@@ -21,6 +21,7 @@ import org.cyclonedx.model.License
 import org.cyclonedx.model.LicenseChoice
 import org.cyclonedx.model.OrganizationalContact
 import org.cyclonedx.model.OrganizationalEntity
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 
 plugins {
     id 'maven-publish'
@@ -819,9 +820,7 @@ publishing {
 }
 
 signing {
-    required = {
-        sharedConfiguration.signing.shouldSign(gradle.taskGraph)
-    }
+    required = sharedConfiguration.signing.shouldSign()
     sign publishing.publications.maven
     if (sharedConfiguration.signing.useGpgCmd.get()) {
         useGpgCmd()
@@ -829,7 +828,9 @@ signing {
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
-    if (sharedConfiguration.signing.shouldSign(gradle.taskGraph)) {
+    boolean shouldSign = sharedConfiguration.signing.shouldSign(taskGraph)
+    signing.required = shouldSign
+    if (shouldSign) {
         // Use Java 6's console or Swing to read input (not suitable for CI)
         if (!sharedConfiguration.signing.hasAllKeyDetails()) {
             printf '\n\nWe have to sign some things in this build.' +
@@ -855,6 +856,12 @@ gradle.taskGraph.whenReady { taskGraph ->
             printf '\nThanks.\n\n'
             System.out.flush()
         }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    if (repository.name == 'LocalFile') {
+        mustRunAfter(rootProject.tasks.named('clean'))
     }
 }
 

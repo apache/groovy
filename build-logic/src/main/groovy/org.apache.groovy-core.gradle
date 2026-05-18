@@ -72,11 +72,12 @@ tasks.named('jar') {
 
 tasks.named('jarjar') { JarJarTask jjt ->
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
-    jjt.withManifest {
-        instruction '-nouses', 'true'
-        instruction 'Export-Package', "*;version=${groovyBundleVersion}"
-        instruction 'Eclipse-ExtensibleAPI', 'true' // GROOVY-8713, GROOVY-11582
-    }
+    jjt.bndInstruction('-nouses', 'true')
+    jjt.bndInstruction('Export-Package', "*;version=${groovyBundleVersion}")
+    jjt.bndInstruction('Eclipse-ExtensibleAPI', 'true')  // GROOVY-8713, GROOVY-11582
+    jjt.bndInstruction('DynamicImport-Package', '*')     // GROOVY-3192
+    jjt.bndInstruction('Eclipse-BuddyPolicy', 'dependent') // GROOVY-5571
+    jjt.bndInstruction('Main-Class', 'groovy.ui.GroovyMain')
 }
 
 // Gradle classloading magic with Groovy will only work if it finds a *jar*
@@ -92,9 +93,9 @@ def bootstrapJar = tasks.register('bootstrapJar', Jar) {
 
 // The main Groovy compile tasks has a special setup because
 // it uses the "bootstrap compiler"
-tasks.withType(GroovyCompile).configureEach {
+tasks.withType(GroovyCompile).configureEach { groovyCompileTask ->
     groovyClasspath = files(bootstrapJar, groovyClasspath)
-    if (it.name == 'compileGroovy') {
+    if (groovyCompileTask.name == 'compileGroovy') {
         classpath = files(bootstrapJar, classpath)
     }
     options.incremental = true
@@ -112,6 +113,8 @@ interface CoreServices {
 }
 
 def execOperations = objects.newInstance(CoreServices).execOperations
+def bridgerClasspath = files(rootProject.configurations.tools)
+def classesToBridge = groovyCore.classesToBridge
 
 tasks.named('compileJava') {
     options.fork = true
@@ -120,9 +123,9 @@ tasks.named('compileJava') {
 
     doLast {
         execOperations.javaexec { spec ->
-            spec.classpath(rootProject.configurations.tools)
+            spec.classpath(bridgerClasspath)
             spec.mainClass = 'org.jboss.bridger.Bridger'
-            spec.args(groovyCore.classesToBridge.asList().collect { it.absolutePath })
+            spec.args(classesToBridge.asList().collect { it.absolutePath })
         }
     }
 }
@@ -159,16 +162,16 @@ def generateGrammarSourceTask = tasks.named("generateGrammarSource") {
 
     doLast {
         def parserFilePattern = 'Groovy*'
-        def outputPath = generateGrammarSource.outputDirectory.canonicalPath
-        def parserPackagePath = "${outputPath}/${PARSER_PACKAGE_NAME.replace('.', '/')}"
-        file(parserPackagePath).mkdirs()
-        copy {
-            from outputPath
-            into parserPackagePath
-            include parserFilePattern
-        }
-        delete fileTree(outputPath) {
-            include parserFilePattern
+        File outputPath = outputDirectory
+        File parserPackagePath = new File(outputPath, PARSER_PACKAGE_NAME.replace('.', '/'))
+        parserPackagePath.mkdirs()
+        outputPath.listFiles()?.findAll { it.name.startsWith('Groovy') }?.each { file ->
+            java.nio.file.Files.copy(
+                    file.toPath(),
+                    new File(parserPackagePath, file.name).toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            )
+            file.delete()
         }
     }
 }

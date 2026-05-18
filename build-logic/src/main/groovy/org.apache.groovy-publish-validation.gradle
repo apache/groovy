@@ -18,10 +18,12 @@
  */
 
 tasks.withType(PublishToMavenRepository).configureEach {
+    def isReleaseVersion = sharedConfiguration.isReleaseVersion.get()
     doLast {
-        if (sharedConfiguration.isReleaseVersion.get()) {
-            pluginManager.withPlugin('java') {
-                project.configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each {
+        if (isReleaseVersion) {
+            def publishedProject = delegate.project
+            if (publishedProject.pluginManager.hasPlugin('java')) {
+                publishedProject.configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each {
                     if (it.moduleVersion.id.version.endsWith("-SNAPSHOT")) {
                         throw new GradleException("Found snapshot dependency for non-snapshot Groovy: " + it.moduleVersion)
                     }

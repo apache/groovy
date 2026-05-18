@@ -18,16 +18,16 @@
  */
 package org.apache.groovy.gradle
 
+import aQute.bnd.osgi.Analyzer
 import groovy.transform.AutoFinal
 
 import javax.inject.Inject
 
-import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.java.archives.Manifest
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -46,19 +46,25 @@ class JarJarTask extends DefaultTask {
 
     @InputFile
     @Classpath
-    final RegularFileProperty from = project.objects.fileProperty()
+    final RegularFileProperty from
 
     @InputFiles
     @Classpath
-    final ConfigurableFileCollection repackagedLibraries = project.objects.fileCollection()
+    final ConfigurableFileCollection repackagedLibraries
 
     @InputFiles
     @Classpath
-    final ConfigurableFileCollection jarjarToolClasspath = project.objects.fileCollection()
+    final ConfigurableFileCollection jarjarToolClasspath
 
-    final protected osgi = project.rootProject.extensions.osgi
+    /**
+     * Classpath passed to the BND {@link Analyzer} for OSGi import resolution.
+     * Typically the project's {@code runtimeClasspath}.
+     */
+    @Classpath
+    final ConfigurableFileCollection bndClasspath
 
-    final protected String projectName = project.name
+    @Internal
+    final String projectName
 
     @Input
     @Optional
@@ -84,22 +90,53 @@ class JarJarTask extends DefaultTask {
     Map<String, String> includedResources = [:]
 
     @OutputFile
-    final RegularFileProperty outputFile = project.objects.fileProperty()
+    final RegularFileProperty outputFile
 
     @Input
     boolean createManifest = true
 
+    /**
+     * BND instructions used when generating the OSGi manifest.
+     * Entries override the default analyzer properties unless explicitly appended
+     * through {@link #appendBndInstruction(String, String)}.
+     */
+    @Input
+    Map<String, String> bndInstructions = [:]
+
     private final FileSystemOperations fs
 
-    private List<Action<? super Manifest>> manifestTweaks = []
-
     @Inject
-    JarJarTask(FileSystemOperations fileSystemOperations) {
+    JarJarTask(ObjectFactory objects, FileSystemOperations fileSystemOperations) {
         this.fs = fileSystemOperations
+        this.from = objects.fileProperty()
+        this.repackagedLibraries = objects.fileCollection()
+        this.jarjarToolClasspath = objects.fileCollection()
+        this.bndClasspath = objects.fileCollection()
+        this.outputFile = objects.fileProperty()
+        this.projectName = project.name
     }
 
-    void withManifest(Action<? super Manifest> action) {
-        manifestTweaks.add(action)
+    /**
+     * Sets a BND manifest instruction, replacing any previous value for {@code key}.
+     */
+    void bndInstruction(String key, String value) {
+        setBndInstruction(key, value)
+    }
+
+    /**
+     * Sets a BND manifest instruction, replacing any previous value for {@code key}.
+     */
+    void setBndInstruction(String key, String value) {
+        bndInstructions[key] = value
+    }
+
+    /**
+     * Appends a BND manifest instruction using a comma separator, matching BND's
+     * syntax for multi-value headers such as {@code Require-Capability}.
+     */
+    void appendBndInstruction(String key, String value) {
+        def existing = bndInstructions.get(key)
+        bndInstructions[key] = existing != null ? "${existing},${value}" : value
     }
 
     @Internal
@@ -164,13 +201,28 @@ class JarJarTask extends DefaultTask {
 
         // Step 3: generate an OSGi manifest referencing the repackaged classes
         if (createManifest) {
-            def mf = osgi.osgiManifest {
-                symbolicName = this.projectName
-                instruction 'Import-Package', '*;resolution:=optional'
-                classesDir = tmpJar
+            def analyzer = new Analyzer()
+            try {
+                analyzer.setJar(tmpJar)
+                bndClasspath.files.each { File f ->
+                    if (f.exists()) {
+                        analyzer.addClasspath(f)
+                    }
+                }
+                // Defaults — all overridable by entries in bndInstructions
+                analyzer.setProperty('Bundle-SymbolicName', projectName)
+                analyzer.setProperty('Import-Package', '*;resolution:=optional')
+                // Strip BND-generated housekeeping headers that must not appear in released jars
+                analyzer.setProperty('-removeheaders',
+                    'Bnd-LastModified,Tool,Created-By,Originally-Created-By,Ant-Version')
+                // User-specified instructions (override defaults above)
+                bndInstructions.each { k, v -> analyzer.setProperty(k, v) }
+
+                def manifest = analyzer.calcManifest()
+                manifestFile.withOutputStream { os -> manifest.write(os) }
+            } finally {
+                analyzer.close()
             }
-            manifestTweaks*.execute(mf)
-            mf.writeTo(manifestFile)
 
             ant.zip(destfile: outputFile, modificationtime: tstamp, update: true) {
                 zipfileset(dir: manifestFile.parent, includes: manifestFile.name, prefix: 'META-INF')

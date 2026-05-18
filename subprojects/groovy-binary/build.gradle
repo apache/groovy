@@ -21,7 +21,6 @@ import org.apache.tools.ant.filters.ReplaceTokens
 plugins {
     id 'org.apache.groovy-distribution'
     id 'org.apache.groovy-published-library'
-    id 'org.apache.groovy-asciidoctor'
 }
 
 //only used when testing locally built artifacts, not for publishing
@@ -39,12 +38,14 @@ docAggregation {
             '**/*.interp' // Antlr generated file
 }
 
-tasks.named('asciidoctor') {
-    attributes reldir_root: '.',
-            reldir_jmx: '.',
-            reldir_swing: '.',
-            reldir_console: '.',
-            reldir_groovysh: '.'
+if (sharedConfiguration.isDocumentationBuild) {
+    tasks.named('asciidoctor') {
+        attributes reldir_root: '.',
+                reldir_jmx: '.',
+                reldir_swing: '.',
+                reldir_console: '.',
+                reldir_groovysh: '.'
+    }
 }
 
 distribution {
@@ -137,11 +138,13 @@ distribution {
         into('html/gapi') {
             from tasks.named('groovydocAll')
         }
-        into('html/documentation') {
-            from configurations.allAsciidoc
-            from tasks.named('asciidoctor')
-            from tasks.named('asciidoctorPdf')
-            exclude '.asciidoctor'
+        if (sharedConfiguration.isDocumentationBuild) {
+            into('html/documentation') {
+                from configurations.allAsciidoc
+                from tasks.named('asciidoctor')
+                from tasks.named('asciidoctorPdf')
+                exclude '.asciidoctor'
+            }
         }
         into('html/groovy-jdk') {
             from tasks.named('docGDK')

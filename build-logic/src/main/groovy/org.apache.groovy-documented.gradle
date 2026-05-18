@@ -63,9 +63,11 @@ tasks.withType(Javadoc).configureEach {
         if (JavaVersion.current() >= JavaVersion.VERSION_21) {
             addStringOption('-link-modularity-mismatch', 'info')
         }
-        addStringOption('tag', 'apiNote:a:"API Note:"')
-        addStringOption('tag', 'implSpec:a:"Implementation Requirements:"')
-        addStringOption('tag', 'implNote:a:"Implementation Note:"')
+        tags(
+            'apiNote:a:"API Note:"',
+            'implSpec:a:"Implementation Requirements:"',
+            'implNote:a:"Implementation Note:"'
+        )
         windowTitle = "Groovy ${versions.groovy}"
         docTitle = "Groovy ${versions.groovy}"
         classpath += project.file('src/main/java') // to pick up package.html

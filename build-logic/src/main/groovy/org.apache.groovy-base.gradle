@@ -36,7 +36,6 @@ plugins {
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-internal'
     id 'org.apache.groovy-tested'
-    id 'org.apache.groovy-asciidoctor'
 }
 
 /**
@@ -45,6 +44,13 @@ plugins {
  */
 if (sharedConfiguration.hasCodeCoverage.get()) {
     pluginManager.apply(JacocoPlugin)
+}
+
+if (sharedConfiguration.isDocumentationBuild && layout.projectDirectory.dir('src/spec/doc').asFile.isDirectory()) {
+    // asciidoctor-gradle-jvm 4.0.5 still emits a Gradle 9 deprecation during apply.
+    // Keep docs builds opt-in, but leave warnings enabled so unrelated deprecations stay visible.
+    // TODO: Drop this note once the build can move to asciidoctor-gradle-jvm 4.0.6+.
+    pluginManager.apply('org.apache.groovy-asciidoctor')
 }
 
 def groovyLibrary = project.extensions.create('groovyLibrary', GroovyLibraryExtension, sharedConfiguration, java)
@@ -96,6 +102,16 @@ configurations {
                 artifact(it)
             }
         }
+    }
+    asciidocElements {
+        canBeConsumed = true
+        canBeResolved = false
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.DOCUMENTATION))
+            attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType, DocsType.USER_MANUAL))
+        }
+        // No artifact — projects without src/spec/doc produce an empty variant.
+        // org.apache.groovy-asciidoctor.gradle adds the actual artifact when applied.
     }
     javadocClasspath {
         canBeConsumed = true
@@ -185,10 +201,14 @@ tasks.withType(Jar).configureEach { jar ->
 tasks.register('jarjar', JarJarTask) {
     String projectName = project.name
     from = jar.archiveFile
+    // Eagerly resolve the module list so the componentFilter closure captures only a
+    // plain List<String> — never the GroovyLibraryExtension object — keeping the task
+    // compatible with the Gradle configuration cache.
+    List<String> repackagedDeps = groovyLibrary.repackagedDependencies.get()
     repackagedLibraries.from configurations.runtimeClasspath.incoming.artifactView {
         componentFilter { component ->
             if (component instanceof ModuleComponentIdentifier) {
-                return component.module in groovyLibrary.repackagedDependencies.get()
+                return component.module in repackagedDeps
             }
             return false
         }
@@ -213,12 +233,23 @@ tasks.register('jarjar', JarJarTask) {
     ]
     outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${(it.archiveClassifier.get() && it.archiveClassifier.get() != 'raw') ? '-' + it.archiveClassifier.get() : ''}.jar") }
 
-    withManifest {
-        String autoModName = "org.apache.${projectName.replace('-','.')}"
-        attributes('Automatic-Module-Name': autoModName, 'Bundle-Name': "Groovy module: $projectName")
-        groovyLibrary.configureManifest(it, excludedFromManifest)
-        classpath = configurations.runtimeClasspath
-    }
+    // All manifest data is stored as plain serializable values so the task is
+    // compatible with the Gradle configuration cache.
+    bndClasspath.from(configurations.runtimeClasspath)
+    String gbv = sharedConfiguration.groovyBundleVersion.get()
+    bndInstruction('Automatic-Module-Name', "org.apache.${projectName.replace('-', '.')}")
+    bndInstruction('Bundle-Name', "Groovy module: $projectName")
+    bndInstruction('Bundle-ManifestVersion', '2')
+    bndInstruction('Bundle-Description', 'Groovy Runtime')
+    bndInstruction('Bundle-Vendor', 'The Apache Software Foundation')
+    bndInstruction('Bundle-Version', gbv)
+    bndInstruction('Bundle-License', 'Apache-2.0')
+    bndInstruction('Specification-Title', 'Groovy: a powerful, multi-faceted language for the JVM')
+    bndInstruction('Specification-Vendor', 'The Apache Software Foundation')
+    bndInstruction('Specification-Version', gbv)
+    bndInstruction('Implementation-Title', 'Groovy: a powerful, multi-faceted language for the JVM')
+    bndInstruction('Implementation-Vendor', 'The Apache Software Foundation')
+    bndInstruction('Implementation-Version', gbv)
 }
 
 tasks.withType(AbstractCompile).configureEach {

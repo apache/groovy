@@ -26,10 +26,15 @@ plugins {
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-aggregating-project'
     id 'org.apache.groovy-doc-aggregator'
-    id 'org.asciidoctor.jvm.pdf'
 }
 
 def distributionExtension = project.extensions.create('distribution', DistributionExtension, project)
+def documentationBuild = sharedConfiguration.isDocumentationBuild && layout.projectDirectory.dir('src/spec/doc').asFile.isDirectory()
+
+if (documentationBuild) {
+    pluginManager.apply('org.apache.groovy-asciidoctor')
+    pluginManager.apply('org.asciidoctor.jvm.pdf')
+}
 
 configurations {
     baseProjects {
@@ -133,6 +138,9 @@ def distBin = tasks.register('distBin', Zip) {
 
 def distSdk = tasks.register("distSdk", Zip) {
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
+    // Capture project.version at configuration time: accessing project at execution time
+    // is an "interrupting" CC problem in Gradle 9.x and causes a Gradle-internal exception.
+    def projectVersion = project.version.toString()
     description = 'Generates the binary, sources, documentation and full distributions'
     archiveBaseName = 'apache-groovy'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -149,10 +157,9 @@ def distSdk = tasks.register("distSdk", Zip) {
         with distributionExtension.srcSpec
     }
     doFirst {
-        def av = project.version.toString()
-        if ((av.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
-                || (!av.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
-            throw new GradleException("Incoherent versions. Found groovyVersion=$av and groovyBundleVersion=${versions.groovyBundle}")
+        if ((projectVersion.endsWith('SNAPSHOT') && !groovyBundleVersion.endsWith('SNAPSHOT'))
+                || (!projectVersion.endsWith('SNAPSHOT') && groovyBundleVersion.endsWith('SNAPSHOT'))) {
+            throw new GradleException("Incoherent versions. Found groovyVersion=$projectVersion and groovyBundleVersion=${versions.groovyBundle}")
         }
     }
 }
@@ -198,21 +205,28 @@ tasks.register("installGroovy", Sync) {
 }
 
 tasks.register("doc") {
-    dependsOn 'javadocAll', 'groovydocAll', 'docGDK', 'asciidocAll', 'asciidoctorPdf'
+    dependsOn 'javadocAll', 'groovydocAll', 'docGDK'
+    if (documentationBuild) {
+        dependsOn 'asciidocAll', 'asciidoctorPdf'
+    }
 }
 
 tasks.register("asciidocAll", Copy) {
     from configurations.allAsciidoc
-    from tasks.named('asciidoctor')
+    if (documentationBuild) {
+        from tasks.named('asciidoctor')
+    }
     into layout.buildDirectory.dir("asciidocAll/html5")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-tasks.named('asciidoctorPdf') {
-    baseDirFollowsSourceFile()
-    logDocuments = true
-    sourceDir = file('src/spec/doc')
-    outputDir = layout.buildDirectory.dir("asciidocAll/pdf")
+if (documentationBuild) {
+    tasks.named('asciidoctorPdf') {
+        baseDirFollowsSourceFile()
+        logDocuments = true
+        sourceDir = file('src/spec/doc')
+        outputDir = layout.buildDirectory.dir("asciidocAll/pdf")
+    }
 }
 
 // The Groovy distribution module isn't a Java library

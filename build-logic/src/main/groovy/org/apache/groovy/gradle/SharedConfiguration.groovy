@@ -33,6 +33,24 @@ import org.gradle.api.tasks.Nested
 
 @CompileStatic
 class SharedConfiguration {
+    private static final List<String> DOCUMENTATION_TASK_NAMES = [
+            'asciidocAll',
+            'asciidoctor',
+            'asciidoctorPdf',
+            'doc',
+            'docGDK',
+            'dist',
+            'distBin',
+            'distDoc',
+            'distSdk',
+            'groovydocAll',
+            'javadocAll'
+    ]
+    private static final List<String> APACHE_PUBLISH_TASK_PATHS = [
+            ':artifactoryPublish',
+            ':publishAllPublicationsToApacheRepository'
+    ]
+
     final Provider<String> groovyVersion
     final Provider<Boolean> isReleaseVersion
     final Provider<Date> buildDate
@@ -45,6 +63,7 @@ class SharedConfiguration {
     final Provider<Boolean> hasCodeCoverage
     final Provider<String> targetJavaVersion
     final Provider<String> groovyTargetBytecodeVersion
+    final boolean isDocumentationBuild
     final boolean isRunningOnCI
 
     @Nested
@@ -71,16 +90,24 @@ class SharedConfiguration {
                 .orElse(providers.systemProperty("installDirectory"))
         isRunningOnCI = detectCi(rootProjectDirectory, logger)
         artifactory = new Artifactory(layout, providers, logger)
-        signing = new Signing(this, objects, providers)
+        boolean apachePublishRequested = startParameter.taskNames.any { String taskName ->
+            isApachePublishTask(taskName)
+        }
+        signing = new Signing(this, objects, providers, apachePublishRequested)
         binaryCompatibilityBaselineVersion = providers.gradleProperty("binaryCompatibilityBaseline")
+        // Evaluate eagerly at construction time (startParameter is available here) so that
+        // no lazy provider captures a StartParameter reference, which Gradle would otherwise
+        // need to serialize for the configuration cache.
+        boolean hasJacocoTask = startParameter.taskNames.any { String name -> name.contains('jacoco') }
         hasCodeCoverage = providers.gradleProperty("coverage")
                 .map { Boolean.valueOf(it) }
-                .orElse(
-                        providers.provider { startParameter.taskNames.any { it =~ /jacoco/ } }
-                )
+                .orElse(hasJacocoTask)
                 .orElse(false)
         targetJavaVersion = providers.gradleProperty("targetJavaVersion")
         groovyTargetBytecodeVersion = providers.gradleProperty("groovyTargetBytecodeVersion")
+        isDocumentationBuild = startParameter.taskNames.any { String taskName ->
+            isDocumentationTask(taskName)
+        }
         File javaHome = new File(providers.systemProperty('java.home').get())
         String javaVersion = providers.systemProperty('java.version').get()
         String userdir = providers.systemProperty('user.dir').get()
@@ -93,6 +120,102 @@ class SharedConfiguration {
         def isCi = file.absolutePath =~ $/teamcity|jenkins|hudson|/home/runner/work/|travis/$
         logger.lifecycle "Detected ${isCi ? 'Continuous Integration environment' : 'development environment'}"
         isCi
+    }
+
+    private static boolean isDocumentationTask(String taskName) {
+        String normalized = taskName.toLowerCase(Locale.ROOT)
+        normalized.contains('asciidoc') ||
+                normalized.contains('asciidoctor') ||
+                normalized.contains('javadoc') ||
+                normalized.contains('groovydoc') ||
+                normalized.endsWith('doc') ||
+                normalized.endsWith(':doc') ||
+                normalized.contains('docgdk') ||
+                normalized == 'dist' ||
+                normalized.startsWith('dist') ||
+                normalized.contains(':dist') ||
+                matchesTaskAbbreviation(taskName, DOCUMENTATION_TASK_NAMES)
+    }
+
+    private static boolean isApachePublishTask(String taskName) {
+        String normalized = taskName.trim()
+        normalized == 'artifactoryPublish' ||
+                normalized.endsWith(':artifactoryPublish') ||
+                normalized == 'publishAllPublicationsToApacheRepository' ||
+                normalized.endsWith(':publishAllPublicationsToApacheRepository')
+    }
+
+    // Gradle keeps the originally requested selector in startParameter.taskNames and expands
+    // task abbreviations only later, after configuration. Recognize camel-case prefixes here
+    // so requests like `jA` still opt into the documentation wiring they resolve to.
+    private static boolean matchesTaskAbbreviation(String taskName, List<String> candidateTaskNames) {
+        String selector = taskSelector(taskName)
+        selector && candidateTaskNames.any { String candidateTaskName ->
+            matchesTaskSelector(selector, candidateTaskName)
+        }
+    }
+
+    private static String taskSelector(String taskName) {
+        String normalized = taskName.trim()
+        int lastSeparator = normalized.lastIndexOf(':')
+        lastSeparator >= 0 ? normalized.substring(lastSeparator + 1) : normalized
+    }
+
+    private static boolean matchesTaskSelector(String requestedTaskName, String actualTaskName) {
+        if (actualTaskName.regionMatches(true, 0, requestedTaskName, 0, requestedTaskName.length())) {
+            return true
+        }
+
+        List<String> requestedSegments = taskNameSegments(requestedTaskName)
+        List<String> actualSegments = taskNameSegments(actualTaskName)
+        if (requestedSegments.size() > actualSegments.size()) {
+            return false
+        }
+
+        for (int i = 0; i < requestedSegments.size(); i += 1) {
+            String requestedSegment = requestedSegments.get(i).toLowerCase(Locale.ROOT)
+            String actualSegment = actualSegments.get(i).toLowerCase(Locale.ROOT)
+            if (!actualSegment.startsWith(requestedSegment)) {
+                return false
+            }
+        }
+        true
+    }
+
+    private static List<String> taskNameSegments(String taskName) {
+        List<String> segments = []
+        StringBuilder currentSegment = new StringBuilder()
+        for (int i = 0; i < taskName.length(); i += 1) {
+            char current = taskName.charAt(i)
+            if (current in ['-', '_', '.']) {
+                if (currentSegment.length() > 0) {
+                    segments.add(currentSegment.toString())
+                    currentSegment.setLength(0)
+                }
+                continue
+            }
+            if (currentSegment.length() > 0 && startsNewSegment(taskName, i, currentSegment.charAt(currentSegment.length() - 1))) {
+                segments.add(currentSegment.toString())
+                currentSegment.setLength(0)
+            }
+            currentSegment.append(current)
+        }
+        if (currentSegment.length() > 0) {
+            segments.add(currentSegment.toString())
+        }
+        segments
+    }
+
+    private static boolean startsNewSegment(String taskName, int index, char previous) {
+        char current = taskName.charAt(index)
+        if (!Character.isUpperCase(current)) {
+            return false
+        }
+        if (Character.isLowerCase(previous)) {
+            return true
+        }
+        int nextIndex = index + 1
+        nextIndex < taskName.length() && Character.isLowerCase(taskName.charAt(nextIndex))
     }
 
     static class Artifactory {
@@ -136,6 +259,7 @@ class SharedConfiguration {
 
     static class Signing {
         private final SharedConfiguration config
+        private final boolean apachePublishRequested
         final Property<String> keyId
         final Property<String> secretKeyRingFile
         final Property<String> password
@@ -143,7 +267,7 @@ class SharedConfiguration {
         final Provider<Boolean> forceSign
         final Provider<Boolean> trySign
 
-        Signing(SharedConfiguration config, ObjectFactory objects, ProviderFactory providers) {
+        Signing(SharedConfiguration config, ObjectFactory objects, ProviderFactory providers, boolean apachePublishRequested) {
             keyId = objects.property(String).convention(
                     providers.gradleProperty("signing.keyId")
             )
@@ -160,11 +284,17 @@ class SharedConfiguration {
             trySign = providers.gradleProperty("trySign")
                     .map { Boolean.valueOf(it) }.orElse(false)
             this.config = config
+            this.apachePublishRequested = apachePublishRequested
+        }
+
+        boolean shouldSign() {
+            trySign.get() || (config.isReleaseVersion.get() &&
+                    (forceSign.get() || apachePublishRequested))
         }
 
         boolean shouldSign(TaskExecutionGraph taskGraph) {
             trySign.get() || (config.isReleaseVersion.get() &&
-                    (forceSign.get() || [':artifactoryPublish', ':publishAllPublicationsToApacheRepository'].any {
+                    (forceSign.get() || apachePublishRequested || APACHE_PUBLISH_TASK_PATHS.any {
                         taskGraph.hasTask(it)
                     }))
         }

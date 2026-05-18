@@ -55,9 +55,14 @@ dependencies {
 
 tasks.withType(Test).configureEach {
     // Supply the external jar (resolved, not checked in) to the GROOVY-9197 Ant test.
+    // Accessing 'configurations' inside doFirst (execution time) is forbidden by the
+    // configuration cache; capture a CC-safe ConfigurableFileCollection at configuration
+    // time instead, and resolve it lazily when the task action runs.
+    def externalJarFiles = objects.fileCollection()
+        .from(configurations.named('externalJarForJointCompilationTest'))
+    inputs.files externalJarFiles
     doFirst {
-        systemProperty 'groovy.ant.test.externalJar',
-            configurations.externalJarForJointCompilationTest.singleFile.absolutePath
+        systemProperty 'groovy.ant.test.externalJar', externalJarFiles.singleFile.absolutePath
     }
 
     Integer feature = TargetJavaHomeSupport.featureVersionFromReleaseFile(TargetJavaHomeSupport.targetJavaHome(project))

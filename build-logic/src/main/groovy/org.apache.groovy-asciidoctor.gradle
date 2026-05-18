@@ -40,6 +40,13 @@ configurations {
 }
 
 tasks.withType(AbstractAsciidoctorTask).configureEach {
+    // asciidoctor-gradle-jvm 4.0.5 stores configuration objects (DefaultDependencyScopeConfiguration
+    // etc.) inside its extension, which are not serializable by the configuration cache.
+    // Remove this call once the plugin ships a CC-compatible release.
+    notCompatibleWithConfigurationCache(
+        'asciidoctor-gradle-jvm 4.0.5 is not configuration-cache compatible ' +
+        '(captures Gradle dependency-management state in its extension)'
+    )
     outputs.cacheIf { true }
     usesService(ConcurrentExecutionControlBuildService.restrict(AbstractAsciidoctorTask, gradle))
     configurations 'asciidocExtensions'

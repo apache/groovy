@@ -256,10 +256,10 @@ licenseReport {
     ]
 }
 
-gradle.taskGraph.whenReady { graph ->
-    if (graph.hasTask(':generateLicenseReport') && gradle.startParameter.parallelProjectExecutionEnabled) {
-        throw new GradleException('generateLicenseReport is not compatible with parallel builds (Gradle 9+ issue). Please re-run with: ./gradlew generateLicenseReport --no-parallel')
-    }
+if (gradle.startParameter.parallelProjectExecutionEnabled && gradle.startParameter.taskNames.any {
+    it == 'generateLicenseReport' || it.endsWith(':generateLicenseReport')
+}) {
+    throw new GradleException('generateLicenseReport is not compatible with parallel builds (Gradle 9+ issue). Please re-run with: ./gradlew generateLicenseReport --no-parallel')
 }
 
 sonarqube {

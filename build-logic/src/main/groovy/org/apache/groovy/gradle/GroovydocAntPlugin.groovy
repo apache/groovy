@@ -20,6 +20,7 @@ package org.apache.groovy.gradle
 
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
+import groovy.ant.AntBuilder
 
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -70,6 +71,24 @@ class GroovydocAntPlugin implements Plugin<Project> {
     @CompileDynamic
     private static void configureGroovydocTasks(Project project, GroovydocAntExtension extension) {
         project.tasks.withType(Groovydoc).configureEach { gdoc ->
+            def conventionalSourceDirs = project.files('src/main/groovy', 'src/main/java')
+            if (!gdoc.ext.has('groovydocSourceDirs')) {
+                SourceSetContainer sourceSets = project.extensions.findByType(SourceSetContainer)
+                def main = sourceSets?.findByName('main')
+                if (main != null) {
+                    def configuredSourceDirs = project.files(main.groovy.srcDirs + main.java.srcDirs)
+                    if (!configuredSourceDirs.files.empty) {
+                        gdoc.ext.groovydocSourceDirs = configuredSourceDirs
+                    }
+                }
+                if (!gdoc.ext.has('groovydocSourceDirs')) {
+                    if (!conventionalSourceDirs.files.empty) {
+                        gdoc.ext.groovydocSourceDirs = conventionalSourceDirs
+                    }
+                }
+            }
+            def antSourceDirs = resolveSourceDirectoriesInput(project, gdoc, conventionalSourceDirs)
+
             gdoc.inputs.property('antJavaVersion', extension.javaVersion.orElse(''))
             gdoc.inputs.property('antShowInternal', extension.showInternal)
             gdoc.inputs.property('antNoIndex', extension.noIndex)
@@ -81,6 +100,9 @@ class GroovydocAntPlugin implements Plugin<Project> {
             gdoc.inputs.files(extension.additionalStylesheets)
                     .withPropertyName('antAdditionalStylesheets')
                     .optional(true)
+            gdoc.inputs.files(project.files(antSourceDirs))
+                    .withPropertyName('antSourceDirs')
+                    .optional(true)
 
             if (!extension.useAntBuilder.get()) {
                 return
@@ -88,17 +110,21 @@ class GroovydocAntPlugin implements Plugin<Project> {
 
             gdoc.actions.clear()
             gdoc.doLast {
-                executeGroovydoc(gdoc, extension, project)
+                GroovydocAntPlugin.executeGroovydoc(delegate as Groovydoc, extension, antSourceDirs)
             }
         }
     }
 
     @CompileDynamic
-    private static void executeGroovydoc(Groovydoc gdoc, GroovydocAntExtension extension, Project project) {
+    private static void executeGroovydoc(Groovydoc gdoc, GroovydocAntExtension extension, Object sourceDirectories) {
         File destDir = resolveFile(gdoc.destinationDir)
         destDir.mkdirs()
 
-        List<File> sourceDirs = resolveSourceDirectories(gdoc, project)
+        def runtimeSourceDirectories = gdoc.ext.has('groovydocSourceDirs') ? gdoc.ext.groovydocSourceDirs : sourceDirectories
+        List<File> sourceDirs = normalizeSourceDirectories(runtimeSourceDirectories, gdoc.name)
+        if (sourceDirs.isEmpty()) {
+            sourceDirs = inferSourceDirectories(gdoc.source.files)
+        }
         if (sourceDirs.isEmpty()) {
             throw new GradleException(
                     "Groovydoc task '${gdoc.name}': no source directories found. " +
@@ -113,7 +139,9 @@ class GroovydocAntPlugin implements Plugin<Project> {
             )
         }
 
-        project.ant.taskdef(
+        AntBuilder ant = new AntBuilder()
+
+        ant.taskdef(
                 name: 'groovydoc',
                 classname: 'org.codehaus.groovy.ant.Groovydoc',
                 classpath: classpath.asPath
@@ -150,8 +178,8 @@ class GroovydocAntPlugin implements Plugin<Project> {
         def overviewText = gdoc.overviewText
         if (overviewText != null) {
             File overviewTmp = new File(
-                    project.layout.buildDirectory.get().asFile,
-                    "tmp/${gdoc.name}/overview.html"
+                    gdoc.temporaryDir,
+                    'overview.html'
             )
             overviewTmp.parentFile.mkdirs()
             overviewTmp.text = overviewText.asString()
@@ -161,7 +189,7 @@ class GroovydocAntPlugin implements Plugin<Project> {
         def links = gdoc.links ?: []
         def extraStylesheets = extension.additionalStylesheets.files
 
-        project.ant.groovydoc(antArgs) {
+        ant.groovydoc(antArgs) {
             links.each { l ->
                 link(packages: (l.packages ?: []).join(','), href: l.url ?: '')
             }
@@ -172,31 +200,55 @@ class GroovydocAntPlugin implements Plugin<Project> {
     }
 
     @CompileDynamic
-    private static List<File> resolveSourceDirectories(Groovydoc gdoc, Project project) {
+    private static Object resolveSourceDirectoriesInput(Project project, Groovydoc gdoc, FileCollection conventionalSourceDirs) {
         def override = gdoc.ext.has('groovydocSourceDirs') ? gdoc.ext.groovydocSourceDirs : null
         if (override != null) {
-            Collection<File> files
-            if (override instanceof FileCollection) {
-                files = ((FileCollection) override).files
-            } else if (override instanceof Collection) {
-                files = (Collection<File>) override
-            } else {
-                files = project.files(override).files
-            }
-            return files.findAll { it.exists() }.unique() as List<File>
+            return override
         }
 
         SourceSetContainer sourceSets = project.extensions.findByType(SourceSetContainer)
-        if (sourceSets != null) {
-            def main = sourceSets.findByName('main')
-            if (main != null) {
-                List<File> dirs = []
-                dirs.addAll(main.groovy.srcDirs.findAll { it.exists() })
-                dirs.addAll(main.java.srcDirs.findAll { it.exists() })
-                return dirs.unique()
+        def main = sourceSets?.findByName('main')
+        if (main != null) {
+            def configuredSourceDirs = project.files(main.groovy.srcDirs + main.java.srcDirs)
+            if (!configuredSourceDirs.files.empty) {
+                return configuredSourceDirs
             }
         }
-        []
+        conventionalSourceDirs
+    }
+
+    @CompileDynamic
+    private static List<File> normalizeSourceDirectories(Object value, String taskName) {
+        if (value == null) {
+            return []
+        }
+        Collection<File> files
+        if (value instanceof FileCollection) {
+            files = ((FileCollection) value).files
+        } else if (value instanceof Collection) {
+            files = (Collection<File>) value
+        } else {
+            throw new GradleException("Groovydoc task '${taskName}': source directories must be a FileCollection or Collection<File>.")
+        }
+        files.findAll { it.exists() }.unique() as List<File>
+    }
+
+    @CompileDynamic
+    private static List<File> inferSourceDirectories(Collection<File> files) {
+        files.collectMany { File file ->
+            File dir = file.directory ? file : file.parentFile
+            if (dir == null) {
+                return []
+            }
+            String path = dir.absolutePath.replace('\\', '/')
+            for (String marker : ['/src/main/java', '/src/main/groovy', '/src/antlr', '/build/generated/sources/antlr4']) {
+                int idx = path.indexOf(marker)
+                if (idx >= 0) {
+                    return [new File(path.substring(0, idx + marker.length()))]
+                }
+            }
+            [dir]
+        }.findAll { it.exists() }.unique() as List<File>
     }
 
     @CompileDynamic

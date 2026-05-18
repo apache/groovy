@@ -19,6 +19,8 @@
 package org.apache.groovy.gradle
 
 import groovy.transform.CompileStatic
+import org.gradle.process.CommandLineArgumentProvider
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.dsl.DependencyHandler
@@ -28,7 +30,13 @@ import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskContainer
@@ -43,7 +51,7 @@ class PerformanceTestsExtension {
     private final DependencyHandler dependencies
     private final SourceSetContainer sourceSets
     private final ProjectLayout layout
-    private final List<File> testFiles = []
+    private final ConfigurableFileCollection testFiles
 
     @Inject
     PerformanceTestsExtension(ObjectFactory objects,
@@ -59,10 +67,11 @@ class PerformanceTestsExtension {
         this.dependencies = dependencies
         this.sourceSets = sourceSets
         this.layout = layout
+        this.testFiles = objects.fileCollection()
     }
 
     void testFiles(FileCollection files) {
-        testFiles.addAll(files.asList())
+        testFiles.from(files)
     }
 
     void versions(String... versions) {
@@ -106,21 +115,52 @@ class PerformanceTestsExtension {
             ].each { conf.dependencies.add(dependencies.create(it)) }
         }
         def outputFile = layout.buildDirectory.file("compilation-stats-${version}.csv")
+        def compilationClasspath = objects.fileCollection().from(groovyConf)
+        def performanceArguments = objects.newInstance(CompilerPerformanceTestArguments)
+        performanceArguments.outputFile.set(outputFile)
+        performanceArguments.compilationClasspath.from(compilationClasspath)
+        performanceArguments.testFiles.from(testFiles)
         def perfTest = tasks.register("performanceTestGroovy${version}", JavaExec) { je ->
             je.group = "Performance tests"
             je.mainClass.set('org.apache.groovy.perf.CompilerPerformanceTest')
             je.classpath(groovyConf, sourceSets.getByName('test').output)
             je.jvmArgs = ['-Xms512m', '-Xmx512m']
             je.outputs.file(outputFile)
-            je.doFirst {
-                def args = [outputFile.get().toString(), "-cp", groovyConf.asPath]
-                args.addAll(testFiles.collect { it.toString() })
-                je.setArgs(args)
-                println je.args.asList()
-            }
+            je.argumentProviders.add(performanceArguments)
         }
         tasks.named("performanceTests", PerformanceTestSummary) { pts ->
-            pts.csvFiles.from(perfTest)
+            pts.dependsOn(perfTest)
+            pts.csvFiles.from(outputFile)
+        }
+    }
+
+    @CompileStatic
+    static class CompilerPerformanceTestArguments implements CommandLineArgumentProvider {
+        @Internal
+        final RegularFileProperty outputFile
+
+        @Classpath
+        final ConfigurableFileCollection compilationClasspath
+
+        @InputFiles
+        @PathSensitive(PathSensitivity.RELATIVE)
+        final ConfigurableFileCollection testFiles
+
+        @Inject
+        CompilerPerformanceTestArguments(ObjectFactory objects) {
+            outputFile = objects.fileProperty()
+            compilationClasspath = objects.fileCollection()
+            testFiles = objects.fileCollection()
+        }
+
+        @Override
+        Iterable<String> asArguments() {
+            List<String> args = new ArrayList<>(testFiles.files.size() + 3)
+            args.add(outputFile.get().asFile.absolutePath)
+            args.add('-cp')
+            args.add(compilationClasspath.asPath)
+            args.addAll(testFiles.files.collect { File file -> file.absolutePath })
+            args
         }
     }
 }
