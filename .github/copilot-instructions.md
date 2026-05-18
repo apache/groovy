@@ -20,3 +20,21 @@
 See [`../AGENTS.md`](../AGENTS.md) for project-specific guidance for AI
 coding assistants contributing to Apache Groovy, including ASF licensing
 and provenance requirements.
+
+## Reviewing tests (inline Javadoc tests)
+
+Groovy tests many methods inline: a `<pre class="...groovyTestCase">`
+block inside a Javadoc/GroovyDoc comment is **extracted and executed as
+a real JUnit test** by `groovy.test.JavadocAssertionTestSuite`
+(`src/test/groovy/MainJavadocAssertionTest.groovy` for `src/main`;
+subprojects have their own `*JavadocAssertionTest`). This is the
+standard test form for the GDK (`DefaultGroovyMethods`,
+`ArrayGroovyMethods`, and similar) — the worked `assert` examples in a
+method's Javadoc *are* its test suite.
+
+Therefore, when a change adds or contains `groovyTestCase` Javadoc
+blocks covering the new behaviour, **do not flag it as "missing tests"
+or "no accompanying unit tests"** — the tests are present and run in
+CI. Only flag genuinely untested behaviour (no `groovyTestCase` block
+and nothing else exercising it). Canonical detail: see "Inline Javadoc
+tests" in [`../CONTRIBUTING.md`](../CONTRIBUTING.md).

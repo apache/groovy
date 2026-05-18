@@ -74,7 +74,11 @@ bug, no scratch files left behind, hand-back for review.
 
 - [`CONTRIBUTING.md`](../../../CONTRIBUTING.md) "Tests" — the
   canonical conventions this skill cites (framework, naming,
-  AsciiDoc pattern, targeted runs, pitfalls).
+  AsciiDoc pattern, targeted runs, pitfalls). Includes the
+  **inline Javadoc test** convention: a
+  `<pre class="...groovyTestCase">` block in a doc comment is run
+  as a real JUnit test by `JavadocAssertionTestSuite` and is the
+  standard test form for the GDK — see "Inline Javadoc tests" there.
 - [`ARCHITECTURE.md`](../../../ARCHITECTURE.md) "Tests" — the
   test-layout map.
 - [`COMPATIBILITY.md`](../../../COMPATIBILITY.md) — what
@@ -122,6 +126,14 @@ tests:
    Spock works but isn't the house style; don't import
    `spock.lang.Specification` in a new test class without a
    specific reason.
+
+7. **Treating `groovyTestCase`-covered behaviour as untested.**
+   A `<pre class="...groovyTestCase">` block in a method's
+   Javadoc *is* its test (run by `JavadocAssertionTestSuite`) —
+   the GDK is tested this way. Don't add a redundant `*Test.groovy`
+   for, or report "missing tests" on, behaviour already covered by
+   such a block; add/extend the inline block instead. See
+   [Inline Javadoc tests](../../../CONTRIBUTING.md#inline-javadoc-tests).
 
 ## Procedure
 

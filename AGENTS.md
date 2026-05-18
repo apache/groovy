@@ -79,6 +79,16 @@ The short form:
 JDK 17+ is required. Use the Gradle wrapper (`./gradlew` / `gradlew.bat`);
 do not invoke a system `gradle`.
 
+Note the **inline Javadoc test** convention: a
+`<pre class="...groovyTestCase">` block in a Javadoc/GroovyDoc comment
+is extracted and run as a real JUnit test by
+`groovy.test.JavadocAssertionTestSuite`. It is the standard test form
+for the GDK (`DefaultGroovyMethods`, `ArrayGroovyMethods`, …) — adding
+such blocks *is* adding tests; don't add or demand a separate
+`*Test.groovy` for behaviour already covered by them. Canonical
+detail: "Inline Javadoc tests" in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Coding conventions
 
 Follow what's already in the tree. Specifically:

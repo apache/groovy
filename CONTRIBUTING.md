@@ -155,6 +155,25 @@ Static helpers worth knowing:
 - `gls.CompilableTestSupport` — base class used by spec tests when a
   test needs to assert a snippet compiles.
 
+### Inline Javadoc tests
+
+Groovy has a first-class testing form that is easy to miss: a
+`<pre class="...groovyTestCase">` block inside a Javadoc/GroovyDoc
+comment is **executed as a real test**. `groovy.test.JavadocAssertionTestSuite`
+/ `JavadocAssertionTestBuilder` scan source comments, extract each such
+block, and run its `assert` statements as JUnit tests
+(`src/test/groovy/MainJavadocAssertionTest.groovy` covers `src/main`;
+subprojects have their own `*JavadocAssertionTest`). This is the
+standard way the GDK (`DefaultGroovyMethods`, `ArrayGroovyMethods`,
+etc.) is tested — the worked examples in a method's Javadoc *are* its
+test suite, doubling as documentation.
+
+Consequences when adding or reviewing a GDK-style method: a change that
+adds `groovyTestCase` blocks covering the new behaviour **is** adding
+tests — there need not be a separate `*Test.groovy`. Conversely, an
+`assert` in such a block that doesn't hold will fail the build, so keep
+the examples runnable and correct.
+
 ### Regression tests for JIRA fixes
 
 Every bug fix that has a JIRA needs a test that fails on `master`
