@@ -4403,7 +4403,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, K> Map<K, List<T>> groupByMany(
         T[] self,
-        @ClosureParams(FirstParam.Component.class) Closure<? extends Iterable<? extends K>> keyFn
+        Function<? super T, ? extends Iterable<? extends K>> keyFn
     ) {
         return DefaultGroovyMethods.groupByMany(Arrays.asList(self), keyFn);
     }
@@ -4421,8 +4421,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, U, K> Map<K, List<U>> groupByMany(
         T[] self,
-        @ClosureParams(FirstParam.Component.class) Closure<? extends U> valueFn,
-        @ClosureParams(FirstParam.Component.class) Closure<? extends Iterable<? extends K>> keyFn
+        Function<? super T, ? extends U> valueFn,
+        Function<? super T, ? extends Iterable<? extends K>> keyFn
     ) {
         return DefaultGroovyMethods.groupByMany(Arrays.asList(self), valueFn, keyFn);
     }
@@ -5298,20 +5298,20 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Determines if the array is sorted using the given Closure to determine order.
-     * <p>
-     * If the Closure has two parameters it is used like a traditional Comparator.
-     * Otherwise, the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for further comparison.
+     * Determines if the array is sorted in non-descending order of the keys
+     * returned by the given key extractor. Keys are compared number-aware.
+     * For a custom ordering use {@link #isSorted(Object[], Comparator)} (a
+     * two-arg closure coerces to a Comparator).
      *
-     * @param self    the array to check
-     * @param closure a 1 or 2 arg Closure used to determine the ordering
-     * @return true if the array elements are sorted according to the closure
+     * @param self         the array to check
+     * @param keyExtractor extracts the sort key from each element
+     * @return true if the array elements are sorted by key in non-descending order
      * @see #isSorted(Object[], Comparator)
      * @since 6.0.0
      */
-    public static <T> boolean isSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure<?> closure) {
-        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+    public static <T> boolean isSorted(T[] self, Function<? super T, ?> keyExtractor) {
+        Comparator<Object> byKey = new NumberAwareComparator<>();
+        Comparator<T> comparator = (a, b) -> byKey.compare(keyExtractor.apply(a), keyExtractor.apply(b));
         return isSorted(self, comparator);
     }
 

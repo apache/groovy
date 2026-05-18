@@ -8092,12 +8092,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, K> Map<K, List<T>> groupByMany(
         Iterable<T> self,
-        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Iterable<? extends K>> keyFn
+        Function<? super T, ? extends Iterable<? extends K>> keyFn
     ) {
         Map<K, List<T>> result = new HashMap<>();
 
         for (T item : self) {
-            Iterable<? extends K> keys = keyFn.call(item);
+            Iterable<? extends K> keys = keyFn.apply(item);
             if (keys == null) continue;
 
             for (K key : keys) {
@@ -8141,18 +8141,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, U, K> Map<K, List<U>> groupByMany(
         Iterable<T> self,
-        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends U> valueFn,
-        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Iterable<? extends K>> keyFn
+        Function<? super T, ? extends U> valueFn,
+        Function<? super T, ? extends Iterable<? extends K>> keyFn
     ) {
         Map<K, List<U>> result = new HashMap<>();
 
         for (T item : self) {
-            Iterable<? extends K> keys = keyFn.call(item);
+            Iterable<? extends K> keys = keyFn.apply(item);
             if (keys == null) continue;
 
             for (K key : keys) {
                 result.computeIfAbsent(key, k -> new ArrayList<>())
-                    .add(valueFn.call(item));
+                    .add(valueFn.apply(item));
             }
         }
 
@@ -9881,25 +9881,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Determines if the Iterable is sorted using the given Closure to determine order.
-     * <p>
-     * If the Closure has two parameters it is used like a traditional Comparator.
-     * Otherwise, the Closure is assumed to take a single parameter and return a
-     * Comparable (typically an Integer) which is then used for further comparison.
+     * Determines if the Iterable is sorted in non-descending order of the
+     * keys returned by the given key extractor. Keys are compared
+     * number-aware, consistent with {@link #isSorted(Iterable)}. For a
+     * custom ordering use {@link #isSorted(Iterable, Comparator)} (a
+     * two-arg closure coerces to a Comparator).
      * <pre class="language-groovy groovyTestCase">
      * assert ["hi","hey","hello"].isSorted { it.length() }
      * assert !["hello","hi","hey"].isSorted { it.length() }
-     * assert ["hi","hey","hello"].isSorted { a, b {@code ->} a.length() {@code <=>} b.length() }
+     * assert ["hi","hey","hello"].isSorted { a, b {@code ->} a.length() {@code <=>} b.length() } // Comparator overload
      * </pre>
      *
-     * @param self    the Iterable to check
-     * @param closure a 1 or 2 arg Closure used to determine the ordering
-     * @return true if the elements are sorted according to the closure
+     * @param self         the Iterable to check
+     * @param keyExtractor extracts the sort key from each element
+     * @return true if the elements are sorted by key in non-descending order
      * @see #isSorted(Iterable, Comparator)
      * @since 6.0.0
      */
-    public static <T> boolean isSorted(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+    public static <T> boolean isSorted(Iterable<T> self, Function<? super T, ?> keyExtractor) {
+        Comparator<Object> byKey = new NumberAwareComparator<>();
+        Comparator<T> comparator = (a, b) -> byKey.compare(keyExtractor.apply(a), keyExtractor.apply(b));
         return isSorted(self, comparator);
     }
 
@@ -9940,22 +9941,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Determines if the Iterator elements are sorted using the given Closure to determine order.
-     * <p>
-     * If the Closure has two parameters it is used like a traditional Comparator.
-     * Otherwise, the Closure is assumed to take a single parameter and return a
-     * Comparable which is then used for further comparison.
+     * Determines if the Iterator elements are sorted in non-descending order
+     * of the keys returned by the given key extractor. Keys are compared
+     * number-aware. For a custom ordering use
+     * {@link #isSorted(Iterator, Comparator)} (a two-arg closure coerces to
+     * a Comparator).
      * <p>
      * The iterator will be exhausted of elements after determining the sorted status.
      *
-     * @param self    the Iterator to check
-     * @param closure a 1 or 2 arg Closure used to determine the ordering
-     * @return true if the elements are sorted according to the closure
+     * @param self         the Iterator to check
+     * @param keyExtractor extracts the sort key from each element
+     * @return true if the elements are sorted by key in non-descending order
      * @see #isSorted(Iterator, Comparator)
      * @since 6.0.0
      */
-    public static <T> boolean isSorted(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
-        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+    public static <T> boolean isSorted(Iterator<T> self, Function<? super T, ?> keyExtractor) {
+        Comparator<Object> byKey = new NumberAwareComparator<>();
+        Comparator<T> comparator = (a, b) -> byKey.compare(keyExtractor.apply(a), keyExtractor.apply(b));
         return isSorted(self, comparator);
     }
 
@@ -9992,19 +9994,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Determines if the Map entries are sorted using the given Closure to determine order.
-     * <p>
-     * If the Closure has two parameters it is used like a traditional Comparator on entries.
-     * Otherwise, the Closure is assumed to take a single entry parameter and return a
-     * Comparable which is then used for further comparison.
+     * Determines if the Map entries are sorted in non-descending order of the
+     * keys returned by the given entry key extractor. Keys are compared
+     * number-aware. For a custom ordering use
+     * {@link #isSorted(Map, Comparator)} (a two-arg closure over entries
+     * coerces to a Comparator).
      *
-     * @param self      the Map to check
-     * @param condition a Closure used as a comparator
-     * @return true if the map entries are sorted according to the closure
+     * @param self         the Map to check
+     * @param keyExtractor extracts the sort key from each Map.Entry
+     * @return true if the map entries are sorted by key in non-descending order
+     * @see #isSorted(Map, Comparator)
      * @since 6.0.0
      */
-    public static <K, V> boolean isSorted(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>","Map.Entry<K,V>,Map.Entry<K,V>"}) Closure condition) {
-        Comparator<Map.Entry<K,V>> comparator = (condition.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(condition) : new ClosureComparator<>(condition);
+    public static <K, V> boolean isSorted(Map<K, V> self, Function<? super Map.Entry<K, V>, ?> keyExtractor) {
+        Comparator<Object> byKey = new NumberAwareComparator<>();
+        Comparator<Map.Entry<K, V>> comparator = (a, b) -> byKey.compare(keyExtractor.apply(a), keyExtractor.apply(b));
         return isSorted(self, comparator);
     }
 
