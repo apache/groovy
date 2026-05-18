@@ -21,6 +21,7 @@ package groovy.lang;
 import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -292,5 +293,41 @@ public class TupleTest extends GroovyTestCase {
         } catch (Exception e) {
             assert false : e.getMessage();
         }
+    }
+
+    // Regression coverage for making Tuple equality symmetric with List
+    // (broaden Tuple.equals from `instanceof Tuple` to `instanceof List`,
+    // keeping Groovy's number-aware element comparison consistent with
+    // DefaultGroovyMethods.equals(List, List)).
+    public void testTupleEqualsBehavesLikeList() throws Exception {
+        Tuple2<Integer, Integer> t = new Tuple2<>(1, 2);
+        List<Integer> list = Arrays.asList(1, 2);
+
+        // .equals() symmetric in both operand orders
+        assertEquals("Tuple2.equals(List)", t, list);
+        assertEquals("List.equals(Tuple2)", list, t);
+        // hashCode is already the List formula, so it stays consistent
+        assertEquals("hashCode parity with List", t.hashCode(), list.hashCode());
+
+        // Groovy == in both operand orders
+        assertScript(
+                "def t = new Tuple2(1, 2)\n" +
+                "assert t == [1, 2]\n" +
+                "assert [1, 2] == t\n" +
+                // number-aware elements, consistent with equals(List, List)
+                "assert t == [1L, 2L]\n" +
+                "assert [1L, 2L] == t\n");
+
+        // number-aware elements via .equals(), consistent with equals(List, List)
+        assertEquals("number-aware elements", t, Arrays.asList(1L, 2L));
+
+        // unchanged: Tuple vs Tuple
+        assertEquals("Tuple vs Tuple", new Tuple2<>(1, 2), new Tuple2<>(1, 2));
+        // empty tuple vs empty list
+        assertEquals("empty Tuple vs empty List", tuple(), Arrays.asList());
+
+        // guardrails: differing size / content are not equal
+        assertNotEquals(t, Arrays.asList(1, 2, 3), "size mismatch");
+        assertNotEquals(t, Arrays.asList(1, 9), "content mismatch");
     }
 }

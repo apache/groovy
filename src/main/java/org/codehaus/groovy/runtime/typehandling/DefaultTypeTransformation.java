@@ -1190,6 +1190,14 @@ public class DefaultTypeTransformation {
         if (left == right) return true;
         if (left == null) return right instanceof NullObject;
         if (right == null) return left instanceof NullObject;
+        // An object that is both Comparable and a List (e.g. Tuple) must use
+        // list equality here, consistent with how a plain (non-Comparable)
+        // List is compared, rather than taking the Comparable/compareTo
+        // short-circuit below; otherwise `tuple == [..]` would be asymmetric
+        // with `[..] == tuple` and inconsistent with Tuple.equals(List).
+        if (left instanceof List && right instanceof List) {
+            return DefaultGroovyMethods.equals((List) left, (List) right);
+        }
         if (left instanceof Comparable) {
             return compareToWithEqualityCheck(left, right, true) == 0;
         }
