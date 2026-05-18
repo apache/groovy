@@ -64,10 +64,10 @@ draft a human committer reviews and posts.
   links. The hand-back contract (below) is firm.
 - Triage workflow itself (reproducing, drafting findings, PR-readiness
   checks) — that's [`groovy-triage`](../groovy-triage/SKILL.md).
-- Security-sensitive issues. Suspected vulnerabilities go to
-  <security@groovy.apache.org>, not into JIRA or a public comment.
-  If a public JIRA appears to disclose a vulnerability, flag
-  privately to a committer and stop.
+- Security-sensitive issues. Suspected vulnerabilities are reported
+  privately per [`SECURITY.md`](../../../.github/SECURITY.md), not into
+  JIRA or a public comment. If a public JIRA appears to disclose a
+  vulnerability, flag privately to a committer and stop.
 - Workflow administration (creating versions, renaming components,
   editing the workflow itself) — that's a project-admin action.
 
@@ -184,7 +184,8 @@ post:
    a duplicate citation names the linked JIRA; a `Component/s`
    suggestion names the package path it derives from.
 5. **No security-sensitive content** in a public JIRA comment.
-   Vulnerabilities go to <security@groovy.apache.org>.
+   Vulnerabilities are reported privately per
+   [`SECURITY.md`](../../../.github/SECURITY.md).
 6. **Stop at the draft.** Output is text for a human to review and
    post. The human assesses tone, accuracy, and timing.
 

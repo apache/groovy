@@ -100,9 +100,20 @@ For API/behaviour changes, add or update tests alongside the code change.
   <https://issues.apache.org/jira/browse/GROOVY>.
 - Keep commits focused. A bug fix, a refactor, and a formatting pass are
   three separate commits (or PRs), not one.
+- For security-related changes, follow the **Disclosure hygiene for
+  contributors** rule in [`SECURITY.md`](.github/SECURITY.md) — it is
+  the canonical policy and binds AI tooling identically: never state
+  the security nature of a change in a commit message, PR title, or PR
+  body, and report vulnerabilities only via the private addresses in
+  that file, never via a public commit, PR, or issue.
 - Run the build locally before opening a PR.
 
 ## What *not* to do
+
+This contributor discipline is canonical in
+[`CONTRIBUTING.md`](CONTRIBUTING.md) (the fix-workflow's "smallest fix"
+and "diff the working tree" steps); the list below is the AI-tooling
+restatement, not a second source of truth.
 
 - Don't reformat code outside the lines your change actually touches,
   even if the surrounding style differs from your or the project's

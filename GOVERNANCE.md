@@ -186,6 +186,7 @@ the place to call it out.
 ## Cross-references
 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — submitting a change.
+- [`SECURITY.md`](.github/SECURITY.md) — supported versions, private vulnerability reporting, and disclosure hygiene for contributors (binds AI tooling identically).
 - [`COMPATIBILITY.md`](COMPATIBILITY.md) — what counts as breaking, and therefore what needs a dev@ discussion before landing.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — repository layout and compilation pipeline.
 - [`AGENTS.md`](AGENTS.md) — AI-contributor supplement; AI-assisted contributions follow the same governance as any other.

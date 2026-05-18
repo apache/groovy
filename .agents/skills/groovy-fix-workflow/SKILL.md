@@ -73,9 +73,9 @@ mistakes AI tooling specifically tends to make.
   those; the TDD shape applies less directly.
 - Documentation-only fixes where there is no behavioural change to
   test.
-- Security-sensitive fixes. Suspected vulnerabilities go to
-  <security@groovy.apache.org>; the fix is prepared privately and
-  lands through a different channel.
+- Security-sensitive fixes. Suspected vulnerabilities are reported
+  privately per [`SECURITY.md`](../../../.github/SECURITY.md); the fix
+  is prepared privately and lands through a different channel.
 
 ## Read first
 
@@ -166,6 +166,19 @@ implementing a fix:
     (see *Reaching for the symptom-fix when the cause is a frame
     up* above), not a hard problem.
 
+11. **A commit message that advertises the security nature of the
+    fix.** AI tooling naturally writes "fixes the security hole",
+    "hardens against injection", "patches the vulnerability" when the
+    change touches security-adjacent code (parsing, deserialization,
+    classloading, sandboxing). Even for a fix *not* routed as a CVE,
+    the commit message, PR title, and PR body must describe the
+    behaviour change neutrally — see
+    [`AGENTS.md`](../../../AGENTS.md) "Commits, PRs, and issue
+    references". A security-revealing public commit defeats the
+    coordinated-disclosure process. (A fix that *is* a coordinated
+    vulnerability response is out of scope for this skill — see
+    *When to use this skill*.)
+
 ## Procedure
 
 When triage has produced a reproducer and pointed at an area:
@@ -190,7 +203,10 @@ When triage has produced a reproducer and pointed at an area:
    [`CONTRIBUTING.md`](../../../CONTRIBUTING.md#fix-workflow)** —
    failing test on `master` first, smallest fix, targeted run
    green, module run green, scope check, commit with
-   `GROOVY-NNNNN:` reference.
+   `GROOVY-NNNNN:` reference. Before finalising the commit body,
+   scrub any language that reveals the security nature of a
+   security-adjacent change (failure mode 11); describe the
+   behaviour change neutrally.
 
 3. **Stop at the commit.** Don't open a PR, post a JIRA comment,
    self-assign, transition workflow state, or push to anyone's
@@ -262,6 +278,9 @@ Before producing the hand-back artefact:
 - [ ] If authoring as a contributor: `Assisted-by:` trailer
       follows the [`AGENTS.md`](../../../AGENTS.md) policy; not
       added to anyone else's commit.
+- [ ] Commit message / PR title / PR body do not reference the
+      security nature of a security-adjacent change (neutral
+      wording per [`AGENTS.md`](../../../AGENTS.md)).
 - [ ] No PR opened, JIRA comment posted, workflow transition
       proposed, or merge attempted on autopilot.
 - [ ] Hand-back artefact lists branch, commit, gradle commands and
