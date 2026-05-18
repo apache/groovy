@@ -5141,7 +5141,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     static boolean coercedEquals(Object o1, Object o2) {
-        if (o1 instanceof Comparable) {
+        // An object that is both Comparable and a List (e.g. Tuple) must be
+        // compared as a List here, consistent with how a plain (non-Comparable)
+        // List is compared by DefaultTypeTransformation.compareEqual, rather
+        // than taking the Comparable/numberAwareCompareTo short-circuit below;
+        // otherwise nested Tuple/List equality (element-wise list equals)
+        // would be inconsistent with `==` and with Tuple.equals(List).
+        if (o1 instanceof Comparable && !(o1 instanceof List && o2 instanceof List)) {
             if (!(o2 instanceof Comparable && numberAwareCompareTo((Comparable) o1, (Comparable) o2) == 0)) {
                 return false;
             }

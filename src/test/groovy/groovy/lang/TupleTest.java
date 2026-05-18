@@ -330,4 +330,35 @@ public class TupleTest extends GroovyTestCase {
         assertNotEquals(t, Arrays.asList(1, 2, 3), "size mismatch");
         assertNotEquals(t, Arrays.asList(1, 9), "content mismatch");
     }
+
+    // Nested Tuple/List equality: the element comparator (coercedEquals) used
+    // by list/set/map equals and unique() must treat a Tuple like a List,
+    // consistent with == / compareEqual / Tuple.equals(List).
+    public void testNestedTupleEquality() throws Exception {
+        assertEquals("[Tuple2].equals([[..]])",
+                Arrays.asList(new Tuple2<>(1, 2), new Tuple2<>(2, 3)),
+                Arrays.asList(Arrays.asList(1, 2), Arrays.asList(2, 3)));
+        assertEquals("[[..]].equals([Tuple2])",
+                Arrays.asList(Arrays.asList(1, 2), Arrays.asList(2, 3)),
+                Arrays.asList(new Tuple2<>(1, 2), new Tuple2<>(2, 3)));
+
+        // Groovy == nested, both operand orders, number-aware
+        assertScript(
+                "assert [new Tuple2(1, 2), new Tuple2(2, 3)] == [[1, 2], [2, 3]]\n" +
+                "assert [[1, 2], [2, 3]] == [new Tuple2(1, 2), new Tuple2(2, 3)]\n" +
+                "assert [new Tuple2(1, 2)] == [[1L, 2L]]\n" +
+                "assert new Tuple2(1, 2) == new Tuple2(1L, 2L)\n" +
+                "assert [new Tuple2(1, 2)] == [new Tuple2(1L, 2L)]\n");
+
+        // number-heterogeneous tuple .equals() (previously risked CCE via compareTo)
+        assertEquals("Tuple2(1,2).equals(Tuple2(1L,2L))",
+                new Tuple2<>(1, 2), new Tuple2<>(1L, 2L));
+
+        // unique()/toUnique() must dedupe a Tuple and its equivalent List
+        assertScript(
+                "assert [new Tuple2(1, 2), [1, 2]].unique().size() == 1\n" +
+                "assert [new Tuple2(1, 2), new Tuple2(1, 2)].unique().size() == 1\n" +
+                "assert [[1, 2], [1, 2]].unique().size() == 1\n" +
+                "assert [new Tuple2(1, 2), new Tuple2(3, 4)].unique().size() == 2\n");
+    }
 }
