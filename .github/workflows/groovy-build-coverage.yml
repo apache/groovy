@@ -85,12 +85,22 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew -Pgroovy.grape.bridge-cache=true -Pcoverage=true jacocoAllReport
         timeout-minutes: 60
+      # Coverage upload is best-effort: fork PRs run without secrets and
+      # codecov-action falls back to a tokenless upload that can fail/be
+      # rate-limited. A failed upload must not fail the build or skip the
+      # Sonar step that follows it.
       - name: Upload coverage to Codecov
+        continue-on-error: true
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
+      # SonarCloud needs SONARCLOUD_TOKEN, which GitHub does not expose to
+      # pull_request runs from forks. The Sonar Gradle plugin has no
+      # tokenless fallback, so it would always fail on fork PRs — skip it
+      # there cleanly instead.
       - name: SonarCloud analysis (with coverage)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
         run: ./gradlew -Pcoverage=true sonar
