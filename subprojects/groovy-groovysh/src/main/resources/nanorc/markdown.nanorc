@@ -30,6 +30,14 @@ SECTION:    "^[=\-]+[[:space:]]*$"
 # ATX headings: # H1 through ###### H6
 TITLE:      "^#{1,6}[[:space:]].*$"
 
+# Fenced code blocks: ```lang ... ``` (and ~~~ fences). Declared before
+# the inline rules below so the multi-line span wins over the emphasis,
+# inline-code and link patterns that would otherwise color inside it.
+# Symmetric start/end is valid for a highlight rule (the start==end
+# rejection only applies to the $BLOCK_COMMENT directive).
+STRING:     start="```" end="```"
+STRING:     start="~~~" end="~~~"
+
 # Emphasis (italic): *text* or _text_
 VARIABLE:   "(\*[^*]+\*)"  "(_[^_]+_)"
 
@@ -51,6 +59,3 @@ LINK:       "\<https?://[^[:space:])>]+"
 
 # GFM tables (lines bracketed by |)
 ATTRIBUTE:  "^[[:space:]]*\|.*\|[[:space:]]*$"
-
-# Fenced code blocks (triple backticks)
-$BLOCK_COMMENT: "```, ```"
