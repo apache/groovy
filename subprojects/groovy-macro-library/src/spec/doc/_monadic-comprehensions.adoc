@@ -1,0 +1,175 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+[[monadic-comprehensions]]
+= Monadic comprehensions (Incubating)
+
+The `groovy-macro-library` module provides `DO`, a comprehension macro that
+rewrites a sequence of `name in source` generators followed by a body into a
+chain of bind operations on the *carrier* type. It gives Scala-style
+for-comprehension / Haskell-style do-notation ergonomics to any type with
+monadic shape — `Optional`, `Stream`, `CompletableFuture`, Groovy's
+`Awaitable` and `DataflowVariable`, and user-defined types that opt in.
+
+NOTE: `DO` is incubating (since Groovy 6.0) and may change. The macro is
+compile-time only; the generated code calls the `Comprehensions` runtime
+support in core, so a program using `DO` needs only the core `groovy` jar at
+runtime — `groovy-macro-library` is a compile-time dependency.
+
+[source,groovy]
+----
+include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_basic,indent=0]
+----
+
+== Desugaring
+
+Every generator becomes a bind; the body is the innermost closure body and
+must itself yield a value of the carrier type (the do-notation rule — there is
+no implicit lifting in this version). The example above expands to:
+
+[source,groovy]
+----
+Comprehensions.bind(Optional.of(2)) { a ->
+    Comprehensions.bind(Optional.of(3)) { b ->
+        Optional.of(a + b)
+    }
+}
+----
+
+Because the macro expands before type information is available, it does not
+emit a carrier-specific method name directly. `Comprehensions.bind` resolves
+the right operation at runtime; under `@CompileStatic` the
+`groovy.typecheckers.MonadicChecker` extension supplies the static types (see
+<<monadic-static>>).
+
+IMPORTANT: For all but the most trivial uses, `DO` under `@CompileStatic` or
+`@TypeChecked` requires the `MonadicChecker` extension
+(`@CompileStatic(extensions = 'groovy.typecheckers.MonadicChecker')`). The
+runtime dispatcher signature `Comprehensions.bind(Object, Closure):Object`
+erases the carrier's element type and the comprehension's result type, so
+without the extension each generator's bound name and the whole `DO`
+expression both fall through to `Object` &mdash; which the static type
+checker will reject as soon as the body or downstream code does anything
+type-specific with either. See <<monadic-static>>.
+
+A name bound by an earlier generator is in scope in the source expression of
+every later generator and in the body:
+
+[source,groovy]
+----
+include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_dependent,indent=0]
+----
+
+Short-circuiting is delivered by the carrier, not by the macro: an empty or
+failed carrier simply propagates and the body is never evaluated.
+
+[source,groovy]
+----
+include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_shortcircuit,indent=0]
+----
+
+== Participating carriers
+
+A type participates as a carrier when, in order, the first match winning:
+
+. it is on the standard allow-list — `java.util.Optional`,
+  `java.util.stream.Stream`, `java.util.concurrent.CompletionStage` (covering
+  `CompletableFuture`), and `groovy.concurrent.Awaitable` (covering
+  `DataflowVariable`);
+. it is _structural_ — it has a single-argument `flatMap` (and, for the map
+  role, `map`);
+. it is annotated `@groovy.transform.Monadic`, optionally declaring
+  non-conventional method names.
+
+The allow-list also recognises common Functional Java carriers by name &mdash;
+`fj.data.Option`, `fj.data.List`, `fj.data.Stream`, `fj.data.Validation` and
+`fj.P1` &mdash; using that library's `bind`/`map` convention. Groovy takes no
+dependency on Functional Java; the names are matched reflectively, and the
+generator closure is coerced to `fj.F` automatically. `fj.data.Either` is not
+directly monadic in Functional Java (bind lives on its `.right()`/`.left()`
+projections) and is not a carrier; use a projection explicitly.
+
+NOTE: `Awaitable` and `DataflowVariable` bind via `thenCompose`; their `then`
+method is the _map_ operation, not bind. `DO` over `Awaitable` therefore
+composes asynchronous values without an imperative `await` at each step:
+
+[source,groovy]
+----
+include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_awaitable,indent=0]
+----
+
+`Stream` yields the usual cartesian composition:
+
+[source,groovy]
+----
+include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_stream,indent=0]
+----
+
+A user type opts in with `@Monadic`, which may name a non-conventional bind
+and map method:
+
+[source,groovy]
+----
+include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_monadic,indent=0]
+----
+
+The monad laws (left identity, right identity, associativity) are not enforced
+by the compiler; as with `@Reducer`/`@Associative`, lawful behaviour is the
+participating type's responsibility.
+
+[[monadic-static]]
+== Static type checking
+
+Activate the `MonadicChecker` type-checking extension to use `DO` under
+`@CompileStatic` or `@TypeChecked`. It types each generator's bound name as
+the carrier's element type (so the body type-checks), restores the
+comprehension's result type, and rejects a non-participating carrier with a
+compile error naming the type and the missing shape:
+
+[source,groovy]
+----
+include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_static,indent=0]
+----
+
+TIP: The typical symptom of forgetting the extension is a static type
+checking error reporting that some operation cannot be found on `Object`
+&mdash; either inside the body (a generator's bound name has erased to
+`Object`) or on the `DO` expression itself (the result has erased to
+`Object`). Adding `extensions = 'groovy.typecheckers.MonadicChecker'` to
+the `@CompileStatic`/`@TypeChecked` annotation resolves it.
+
+[[monadic-when]]
+== When to use `DO`
+
+`DO` is a value-composition notation. It complements, rather than competes
+with, the concurrency constructs: use imperative `async`/`await` when code
+reads as a sequence of dependent steps you intend to run now (see
+<<async-prefer-values>> and <<async-choose-right-tool>>); reach for `DO`
+when the composed value is the deliverable — an `Awaitable` to combine
+further, an `Optional`/validation result, a parser result, or a custom
+`Result` type — and you want one uniform notation across carriers.
+
+CAUTION: This version is deliberately narrow. The body must yield a carrier
+value (no implicit `pure`/`unit` lifting); there are no `if` guard clauses;
+and each `DO` works over a single carrier (nest `DO` blocks for more).
+`break`/`continue` are not valid in the body, and `return` follows the
+standard closure rule. These are the same closure-body constraints the
+`@Parallel` for-loop transform documents.

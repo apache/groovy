@@ -16,21 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
-}
+package fj
 
-dependencies {
-    implementation rootProject
-    implementation projects.groovyMacro
-    testImplementation projects.groovyTest
-    testImplementation projects.groovyTypecheckers // MonadicChecker @CompileStatic tests
-}
-
-groovyLibrary {
-    optionalModule()
-    withoutBinaryCompatibilityChecks()
-    moduleDescriptor {
-        extensionClasses = 'org.apache.groovy.macrolib.MacroLibGroovyMethods'
-    }
+/**
+ * Test-only stand-in for Functional Java's {@code fj.F} function interface,
+ * so the name-keyed carrier path can be exercised without depending on the
+ * (unmaintained) Functional Java library. Mirrors its single-abstract-method
+ * shape so the closure-to-SAM coercion is genuinely tested.
+ */
+interface F<A, B> {
+    B f(A a)
 }
