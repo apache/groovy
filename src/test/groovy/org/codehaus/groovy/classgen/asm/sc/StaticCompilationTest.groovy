@@ -266,11 +266,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'ALOAD 1',
                 'ICONST_0',
                 'ILOAD 2',
-                'INVOKEDYNAMIC set([III)V [',
-                '// handle kind 0x6 : INVOKESTATIC',
-                'org/codehaus/groovy/vmplugin/v8/IndyInterface.staticArrayAccess',
-                '// arguments: none',
-                ']',
+                'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
                 'L1',
                 'LINENUMBER 4',
                 'RETURN'
