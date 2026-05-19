@@ -36,7 +36,9 @@ import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
  * Multi type dispatcher for binary expression backend combining indy and static compilation
  *
  * @since 2.5.0
+ * @deprecated 6.0.0
  */
+@Deprecated(since = "6.0.0")
 public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpressionMultiTypeDispatcher {
     /**
      * Creates a dispatcher that combines static compilation and indy array access.
