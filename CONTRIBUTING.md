@@ -303,6 +303,16 @@ The pattern in three pieces:
 A change to a documented example normally touches *both* files in
 the same PR.
 
+**Spec tests are curated examples, not exhaustive coverage.** Tests
+under `src/spec/test/` (and `subprojects/<module>/src/spec/test/`) are
+deliberately chosen to read well as user documentation — clear,
+representative examples, usually the happy path. Error cases, edge
+cases, additional coverage, and regression tests for tracked bugs
+typically (though not exclusively) live in the ordinary `src/test/`
+tree instead, where they need not double as documentation. A spec test
+runs as a real test and *is* that coverage: there is no need to
+duplicate, in `src/test/`, what a spec test already exercises.
+
 **Common pitfalls:**
 
 - **Mismatched tag and include.** The tag name in the AsciiDoc

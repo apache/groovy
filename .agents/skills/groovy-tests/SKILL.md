@@ -135,6 +135,15 @@ tests:
    such a block; add/extend the inline block instead. See
    [Inline Javadoc tests](../../../CONTRIBUTING.md#inline-javadoc-tests).
 
+8. **Duplicating spec-test coverage into `src/test/`.** Tests under
+   `src/spec/test/` are curated to read as user documentation and
+   run as real tests; a spec test *is* that behaviour's coverage.
+   Don't re-add it under `src/test/` or report a spec example as
+   untested. New error/edge/regression coverage belongs in the
+   ordinary `src/test/` tree (it need not double as docs); a *good
+   user-facing example* belongs in the spec test. See
+   [Executable AsciiDoc examples](../../../CONTRIBUTING.md#executable-asciidoc-examples).
+
 ## Procedure
 
 When writing or modifying a test:

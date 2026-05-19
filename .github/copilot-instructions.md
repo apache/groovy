@@ -38,3 +38,19 @@ or "no accompanying unit tests"** — the tests are present and run in
 CI. Only flag genuinely untested behaviour (no `groovyTestCase` block
 and nothing else exercising it). Canonical detail: see "Inline Javadoc
 tests" in [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+## Reviewing tests (spec tests)
+
+Tests under `src/spec/test/` (and `subprojects/<module>/src/spec/test/`)
+are executable examples `include::`'d into the user-facing AsciiDoc
+docs; they run as real tests. They are deliberately curated to read as
+documentation — clear, representative examples, usually the happy path.
+Error cases, edge cases, extra coverage, and regression tests for
+tracked bugs typically live in the ordinary `src/test/` tree instead.
+
+Therefore: a spec test **is** that behaviour's coverage. Do not flag a
+spec example as "untested", and **do not request that spec coverage be
+duplicated** in `src/test/`. Only ask for additional `src/test/`
+coverage for behaviour (error/edge cases) genuinely not exercised
+anywhere. Canonical detail: see "Executable AsciiDoc examples" in
+[`../CONTRIBUTING.md`](../CONTRIBUTING.md).

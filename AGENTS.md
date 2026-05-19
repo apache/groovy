@@ -89,6 +89,14 @@ such blocks *is* adding tests; don't add or demand a separate
 detail: "Inline Javadoc tests" in
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+Likewise the **spec-test** convention: tests under `src/spec/test/`
+are curated to read as user documentation (clear, representative
+examples) and run as real tests — error/edge/coverage/regression tests
+typically live in the ordinary `src/test/` tree. A spec test *is* its
+coverage; don't duplicate it in `src/test/` or report it as untested.
+Canonical detail: "Executable AsciiDoc examples" in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Coding conventions
 
 Follow what's already in the tree. Specifically:
