@@ -534,3 +534,5 @@ type, e.g. `AtomicInteger` for a shared counter, or thread-safe types from
 
 All keywords (`async`, `await`, `defer`) are contextual — they can still be
 used as variable or method names in existing code.
+
+include::../../../subprojects/groovy-macro-library/src/spec/doc/_monadic-comprehensions.adoc[leveloffset=+1]

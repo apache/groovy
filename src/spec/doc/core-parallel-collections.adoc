@@ -302,6 +302,10 @@ because blocking one doesn't consume an OS thread.
 |Mixed
 |`async`/`await` with `Pool.io()`
 |Virtual threads handle both compute and I/O
+
+|Value composition over a monadic carrier (`Optional`, `Awaitable`, `Stream`, ...)
+|`DO` comprehensions (`groovy-macro-library`)
+|Flattens nested `flatMap`/`thenCompose` chains into uniform `name in source` notation
 |===
 
 To illustrate, consider processing 100 items where each involves
