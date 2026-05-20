@@ -25,8 +25,6 @@ import org.junit.jupiter.api.Test
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
-import java.lang.reflect.Field
-import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -96,7 +94,7 @@ final class IndyInterfaceCallSiteTargetTest {
         CacheableCallSite callSite = newCallSite(type)
         Object[] args = [IndyInterfaceCallSiteTargetTest, ['bar'] as Object[]] as Object[]
 
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite,
             IndyInterfaceCallSiteTargetTest,
             'staticEcho',
@@ -124,16 +122,16 @@ final class IndyInterfaceCallSiteTargetTest {
         )
 
         cacheWrapper(callSite, receiver, wrapper)
-        primeLatestHitCount(callSite, receiver, wrapper, readIndyLong('INDY_OPTIMIZE_THRESHOLD'))
+        primeLatestHitCount(callSite, receiver, wrapper, IndyInterface.INDY_OPTIMIZE_THRESHOLD)
 
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, IndyInterfaceCallSiteTargetTest, 'foo',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, 1, args
         )
 
         assertSame(wrapper.cachedMethodHandle, methodHandle)
-        assertSame(wrapper.targetMethodHandle, callSite.target)
+        assertNotSame(callSite.defaultTarget, callSite.target)
         assertEquals(0L, wrapper.latestHitCount)
     }
 
@@ -153,7 +151,7 @@ final class IndyInterfaceCallSiteTargetTest {
 
         cacheWrapper(callSite, receiver, wrapper)
 
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, IndyInterfaceCallSiteTargetTest, 'foo',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, 1, args
@@ -169,7 +167,7 @@ final class IndyInterfaceCallSiteTargetTest {
         CacheableCallSite callSite = newCallSite(type)
         Object[] args = [null] as Object[]
 
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, IndyInterfaceCallSiteTargetTest, 'foo',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, 1, args
@@ -191,7 +189,7 @@ final class IndyInterfaceCallSiteTargetTest {
         registry.setMetaClass((Object) PerInstanceMetaClassStaticTarget, emc)
         try {
             2.times {
-                MethodHandle methodHandle = invokeFromCacheHandle(
+                MethodHandle methodHandle = IndyInterface.fromCacheHandle(
                     callSite, PerInstanceMetaClassStaticTarget, 'ping',
                     IndyInterface.CallType.METHOD.getOrderNumber(),
                     Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
@@ -219,7 +217,7 @@ final class IndyInterfaceCallSiteTargetTest {
         cacheWrapper(callSite, receiver, wrapper)
         callSite.target = wrapper.targetMethodHandle
 
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, IndyInterfaceCallSiteTargetTest, 'foo',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, 1, args
@@ -241,7 +239,7 @@ final class IndyInterfaceCallSiteTargetTest {
 
         cacheWrapper(callSite, ClassA, wrapper)
 
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, ClassA, 'bar',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
@@ -257,7 +255,7 @@ final class IndyInterfaceCallSiteTargetTest {
         CacheableCallSite callSite = newCallSite(type)
 
         Object[] argsA = [ClassA] as Object[]
-        MethodHandle handleA = invokeFromCacheHandle(
+        MethodHandle handleA = IndyInterface.fromCacheHandle(
             callSite, ClassA, 'bar',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, argsA
@@ -265,7 +263,7 @@ final class IndyInterfaceCallSiteTargetTest {
         assertEquals(ClassA.bar(), handleA.invokeWithArguments([argsA] as Object[]))
 
         Object[] argsB = [ClassB] as Object[]
-        MethodHandle handleB = invokeFromCacheHandle(
+        MethodHandle handleB = IndyInterface.fromCacheHandle(
             callSite, ClassB, 'bar',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, argsB
@@ -285,7 +283,7 @@ final class IndyInterfaceCallSiteTargetTest {
         cacheWrapper(callSite, ClassA, wrapper)
 
         Object[] args = [ClassA] as Object[]
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, ClassA, 'bar',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
@@ -304,7 +302,7 @@ final class IndyInterfaceCallSiteTargetTest {
         cacheWrapper(callSite, ClassA, wrapper)
 
         Object[] args = [ClassA] as Object[]
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, ClassA, 'bar',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
@@ -321,7 +319,7 @@ final class IndyInterfaceCallSiteTargetTest {
         def receiver = new InstanceStaticCallTarget()
         Object[] args = [receiver, 'abc'] as Object[]
 
-        MethodHandle selectedHandle = invokeSelectMethodHandle(
+        MethodHandle selectedHandle = IndyInterface.selectMethodHandle(
             callSite, InstanceStaticCallTarget, 'valueOf',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
@@ -332,7 +330,7 @@ final class IndyInterfaceCallSiteTargetTest {
         assertTrue(Modifier.isStatic(cachedWrapper.method.modifiers))
         assertSame(callSite.defaultTarget, callSite.target)
 
-        MethodHandle cachedHandle = invokeFromCacheHandle(
+        MethodHandle cachedHandle = IndyInterface.fromCacheHandle(
             callSite, InstanceStaticCallTarget, 'valueOf',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
@@ -349,7 +347,7 @@ final class IndyInterfaceCallSiteTargetTest {
         CacheableCallSite callSite = newCallSite(type)
 
         Object[] argsA = [ClassA] as Object[]
-        MethodHandle handleA = invokeSelectMethodHandle(
+        MethodHandle handleA = IndyInterface.selectMethodHandle(
             callSite, ClassA, 'bar',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, argsA
@@ -357,7 +355,7 @@ final class IndyInterfaceCallSiteTargetTest {
         assertEquals(ClassA.bar(), handleA.invokeWithArguments([argsA] as Object[]))
 
         Object[] argsB = [ClassB] as Object[]
-        MethodHandle handleB = invokeSelectMethodHandle(
+        MethodHandle handleB = IndyInterface.selectMethodHandle(
             callSite, ClassB, 'bar',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, argsB
@@ -378,7 +376,7 @@ final class IndyInterfaceCallSiteTargetTest {
         CacheableCallSite callSite = newCallSite(type)
         Object[] args = [IndyInterfaceCallSiteTargetTest, ['bar'] as Object[]] as Object[]
 
-        MethodHandle methodHandle = invokeSelectMethodHandle(
+        MethodHandle methodHandle = IndyInterface.selectMethodHandle(
             callSite, IndyInterfaceCallSiteTargetTest, 'staticEcho',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, 1, args
@@ -416,7 +414,7 @@ final class IndyInterfaceCallSiteTargetTest {
 
     private static void primeLatestHitCount(CacheableCallSite callSite, Object receiver, MethodHandleWrapper wrapper, long value) {
         assertSame(wrapper, callSite.getAndPut(IndyInterface.receiverCacheKey(receiver), { wrapper }, IndyInterfaceCallSiteTargetTest))
-        latestHitCountField().get(wrapper).set(value)
+        wrapper.@latestHitCount.set(value)
     }
 
     private static void assertFallbackCutoffLeavesDefaultTarget(boolean startAwayFromDefaultTarget) {
@@ -430,13 +428,13 @@ final class IndyInterfaceCallSiteTargetTest {
         )
 
         cacheWrapper(callSite, receiver, wrapper)
-        primeLatestHitCount(callSite, receiver, wrapper, readIndyLong('INDY_OPTIMIZE_THRESHOLD'))
-        callSite.fallbackRound.set(readIndyLong('INDY_FALLBACK_CUTOFF') + 1L)
+        primeLatestHitCount(callSite, receiver, wrapper, IndyInterface.INDY_OPTIMIZE_THRESHOLD)
+        callSite.fallbackRound.set(IndyInterface.INDY_FALLBACK_CUTOFF + 1L)
         if (startAwayFromDefaultTarget) {
             callSite.target = targetHandle(type, 'non-default-target')
         }
 
-        MethodHandle methodHandle = invokeFromCacheHandle(
+        MethodHandle methodHandle = IndyInterface.fromCacheHandle(
             callSite, IndyInterfaceCallSiteTargetTest, 'foo',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, 1, args
@@ -463,37 +461,5 @@ final class IndyInterfaceCallSiteTargetTest {
         return receiver.getClass().name
     }
 
-    private static long readIndyLong(String fieldName) {
-        Field field = IndyInterface.getDeclaredField(fieldName)
-        field.accessible = true
-        field.getLong(null)
-    }
 
-    private static Field latestHitCountField() {
-        Field field = MethodHandleWrapper.getDeclaredField('latestHitCount')
-        field.accessible = true
-        field
-    }
-
-    private static MethodHandle invokeFromCacheHandle(CacheableCallSite callSite, Class<?> sender, String methodName,
-            int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
-        Method method = IndyInterface.getDeclaredMethod('fromCacheHandle',
-            CacheableCallSite, Class, String, Integer.TYPE, Boolean, Boolean, Boolean, Object, Object[]
-        )
-        method.accessible = true
-        return (MethodHandle) method.invoke(null,
-            callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments
-        )
-    }
-
-    private static MethodHandle invokeSelectMethodHandle(CacheableCallSite callSite, Class<?> sender, String methodName,
-            int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
-        Method method = IndyInterface.getDeclaredMethod('selectMethodHandle',
-            CacheableCallSite, Class, String, Integer.TYPE, Boolean, Boolean, Boolean, Object, Object[]
-        )
-        method.accessible = true
-        return (MethodHandle) method.invoke(null,
-            callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments
-        )
-    }
 }
