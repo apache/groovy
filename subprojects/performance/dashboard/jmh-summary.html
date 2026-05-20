@@ -48,11 +48,14 @@
   Benchmarks reported as <code>ops/ms</code> are kept as-is; benchmarks reported
   in time-per-op units (<code>ms/op</code>, <code>us/op</code>, &hellip;) are
   inverted, so on both charts <strong>higher is always faster</strong> and
-  <code>1.0</code> means "in line with the last 90 days". Each line is the
-  <em>geometric</em> mean of those per-benchmark ratios across a suite. The
-  <code>core</code> and <code>grails</code> suites each recombine their two
-  CI-split halves (A&ndash;G/H&ndash;Z, A&ndash;D/E&ndash;Z); <code>indy</code>
-  and <code>classic</code> are kept on separate charts.
+  <code>1.0</code> means "in line with the last 90 days". Each solid line is the
+  <em>geometric</em> mean of those per-benchmark ratios across a suite; the
+  dashed overlay is a 7-run rolling median of those points, which smooths
+  through CI-runner noise so the trend stays readable when an individual
+  runner has a slow day. Click any solid-line point to open its commit on
+  GitHub. The <code>core</code> and <code>grails</code> suites each recombine
+  their two CI-split halves (A&ndash;G/H&ndash;Z, A&ndash;D/E&ndash;Z);
+  <code>indy</code> and <code>classic</code> are kept on separate charts.
 </p>
 
 <h2>Invokedynamic (<code>indy</code>)</h2>
@@ -79,6 +82,7 @@
 (function () {
   const DAY = 864e5;
   const WINDOW = 90 * DAY;             // trailing baseline window
+  const ROLLING_WINDOW = 7;            // runs (≈ days, daily cron) for the smoothed median overlay
 
   // Logical suite -> the CI-split data.js files that make it up. The A-G/H-Z
   // and A-D/E-Z splits exist only to cut CI wall-clock; they are recombined here.
@@ -164,6 +168,22 @@
     return points;
   }
 
+  // Trailing rolling median of the per-run y values; robust to a single slow
+  // runner (the user's most common cause of an obvious-outlier point).
+  function rollingMedianSeries(points, window) {
+    const out = [];
+    for (let i = 0; i < points.length; i++) {
+      const lo = Math.max(0, i - window + 1);
+      const ys = [];
+      for (let j = lo; j <= i; j++) ys.push(points[j].y);
+      ys.sort((a, b) => a - b);
+      const mid = Math.floor(ys.length / 2);
+      const med = ys.length % 2 ? ys[mid] : (ys[mid - 1] + ys[mid]) / 2;
+      out.push({ x: points[i].x, y: med, n: ys.length });
+    }
+    return out;
+  }
+
   const baselineLine = {
     id: 'baselineLine',
     afterDatasetsDraw(chart) {
@@ -191,6 +211,23 @@
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
+        onClick(evt, elements, chart) {
+          // Find the nearest raw-series point under the cursor (median-overlay
+          // points have no commitUrl and stay inert).
+          const hit = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: false }, true);
+          for (const el of hit) {
+            const p = chart.data.datasets[el.datasetIndex].data[el.index];
+            if (p && p.commitUrl) { window.open(p.commitUrl, '_blank', 'noopener'); return; }
+          }
+        },
+        onHover(evt, elements, chart) {
+          const hit = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: false }, true);
+          const clickable = hit.some(el => {
+            const p = chart.data.datasets[el.datasetIndex].data[el.index];
+            return p && p.commitUrl;
+          });
+          chart.canvas.style.cursor = clickable ? 'pointer' : 'default';
+        },
         scales: {
           x: {
             type: 'time',
@@ -213,8 +250,11 @@
               },
               label(item) {
                 const r = item.raw;
+                const suffix = r.commit !== undefined
+                  ? r.n + ' benchmarks'
+                  : r.n + '-run window';
                 return item.dataset.label + ': ' + item.parsed.y.toFixed(3) +
-                  ' x  (' + r.n + ' benchmarks)';
+                  ' x  (' + suffix + ')';
               },
             },
           },
@@ -252,6 +292,18 @@
           tension: 0.15,
           spanGaps: true,
           data: points,
+        });
+        datasets.push({
+          label: suite.label + ' (' + ROLLING_WINDOW + '-run median)',
+          borderColor: suite.color,
+          backgroundColor: suite.color,
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          tension: 0.15,
+          spanGaps: true,
+          data: rollingMedianSeries(points, ROLLING_WINDOW),
         });
       }
       renderChart(mode.canvas, datasets);
