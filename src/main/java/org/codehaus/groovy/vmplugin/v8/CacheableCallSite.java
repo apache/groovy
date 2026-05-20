@@ -51,6 +51,9 @@ public class CacheableCallSite extends MutableCallSite {
     private final AtomicLong fallbackRound = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
+    private volatile MethodHandle picChain;
+    private Object[] picKeys;
+    private int picCount;
     private final Map<Object, SoftReference<MethodHandleWrapper>> lruCache =
             new LinkedHashMap<Object, SoftReference<MethodHandleWrapper>>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
                 @Serial private static final long serialVersionUID = 7785958879964294463L;
@@ -164,6 +167,33 @@ public class CacheableCallSite extends MutableCallSite {
         }
     }
 
+    public void recordInPic(Object key, int maxPicSize) {
+        if (picKeys == null) picKeys = new Object[maxPicSize];
+        if (picCount < picKeys.length) {
+            picKeys[picCount++] = key;
+        }
+    }
+
+    public boolean picIncludes(Object key) {
+        if (picKeys == null) return false;
+        for (int i = 0; i < picCount; i++) {
+            if (picKeys[i] == key) return true;
+        }
+        return false;
+    }
+
+    public MethodHandle getPicChain() {
+        return picChain;
+    }
+
+    public void setPicChain(MethodHandle picChain) {
+        this.picChain = picChain;
+    }
+
+    public int getPicCount() {
+        return picCount;
+    }
+
     private static final class MRUEntry {
         final Object key;
         final MethodHandleWrapper wrapper;
@@ -195,7 +225,9 @@ public class CacheableCallSite extends MutableCallSite {
      */
     public void resetFallbackCount() {
         fallbackCount.set(0);
-        fallbackRound.incrementAndGet();
+        picCount = 0;
+        picChain = null;
+        picKeys = null;
     }
 
     /**

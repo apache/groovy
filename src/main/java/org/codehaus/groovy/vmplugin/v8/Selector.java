@@ -162,9 +162,28 @@ public abstract class Selector {
      */
     public boolean catchException = true;
     /**
+     * Indicates whether the global SwitchPoint should be skipped for this selector.
+     */
+    public boolean skipSwitchPoint = false;
+    /**
+     * Custom fallback method handle to use during re-linking or PIC building.
+     */
+    public MethodHandle fallback;
+    /**
      * Call-site category associated with this selector.
      */
     public CallType callType;
+
+    public static MethodHandle maybeWrapWithExceptionHandler(MethodHandle handle, boolean catchException) {
+        if (handle == null || !catchException) return handle;
+        Class<?> returnType = handle.type().returnType();
+        if (returnType != Object.class) {
+            MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
+            return MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
+        } else {
+            return MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
+        }
+    }
 
     /**
      * Cache values for read-only access
@@ -1033,17 +1052,8 @@ public abstract class Selector {
          * Adds the standard exception handler.
          */
         public void addExceptionHandler() {
-            //TODO: if we would know exactly which paths require the exceptions
-            //      and which paths not, we can sometimes save this guard
-            if (handle == null || !catchException) return;
-            Class<?> returnType = handle.type().returnType();
-            if (returnType != Object.class) {
-                MethodType mtype = MethodType.methodType(returnType, GroovyRuntimeException.class);
-                handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION.asType(mtype));
-            } else {
-                handle = MethodHandles.catchException(handle, GroovyRuntimeException.class, UNWRAP_EXCEPTION);
-            }
-            if (LOG_ENABLED) LOG.info("added GroovyRuntimeException unwrapper");
+            handle = maybeWrapWithExceptionHandler(handle, catchException);
+            if (handle != null && LOG_ENABLED) LOG.info("added GroovyRuntimeException unwrapper");
         }
 
         /**
@@ -1052,7 +1062,7 @@ public abstract class Selector {
         public void setGuards(Object receiver) {
             if (!cache || handle == null) return;
 
-            MethodHandle fallback = callSite.getFallbackTarget();
+            MethodHandle fallback = this.fallback != null ? this.fallback : callSite.getFallbackTarget();
 
             // special guards for receiver
             if (receiver instanceof GroovyObject go) {
@@ -1087,8 +1097,10 @@ public abstract class Selector {
             }
 
             // handle constant metaclass and category changes
-            handle = switchPoint.guardWithTest(handle, fallback);
-            if (LOG_ENABLED) LOG.info("added switch point guard");
+            if (!skipSwitchPoint) {
+                handle = switchPoint.guardWithTest(handle, fallback);
+                if (LOG_ENABLED) LOG.info("added switch point guard");
+            }
 
             java.util.function.Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
