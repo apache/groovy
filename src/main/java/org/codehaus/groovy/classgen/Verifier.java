@@ -1625,7 +1625,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     /**
-     * {@inheritDoc}
+     * Extension point invoked when traversing a generic type; the default implementation does nothing.
      */
     public void visitGenericType(final GenericsType genericsType) {
     }

@@ -313,7 +313,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
         makeIndyCall(invokeMethod, receiver, false, safe, message, arguments);
     }
 
-    /** {@inheritDoc} */
+    /** Emits an {@code invokedynamic} property-get call site with the given flags. */
     protected void writeGetProperty(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis, final boolean groovyObject) {
         var descriptor = prepareIndyCall(receiver, implicitThis) + ")Ljava/lang/Object;";
         int flags = 0;
