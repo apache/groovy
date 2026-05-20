@@ -411,11 +411,11 @@ final class IndyInterfaceCallSiteTargetTest {
     }
 
     private static void cacheWrapper(CacheableCallSite callSite, Object receiver, MethodHandleWrapper wrapper) {
-        callSite.put(receiverClassName(receiver), wrapper)
+        callSite.put(IndyInterface.receiverCacheKey(receiver), wrapper)
     }
 
     private static void primeLatestHitCount(CacheableCallSite callSite, Object receiver, MethodHandleWrapper wrapper, long value) {
-        assertSame(wrapper, callSite.getAndPut(receiverClassName(receiver), { wrapper }))
+        assertSame(wrapper, callSite.getAndPut(IndyInterface.receiverCacheKey(receiver), { wrapper }, IndyInterfaceCallSiteTargetTest))
         latestHitCountField().get(wrapper).set(value)
     }
 
@@ -449,10 +449,10 @@ final class IndyInterfaceCallSiteTargetTest {
 
     private static MethodHandleWrapper requireCachedWrapper(CacheableCallSite callSite, Object receiver) {
         AtomicInteger providerCalls = new AtomicInteger()
-        MethodHandleWrapper wrapper = callSite.getAndPut(receiverClassName(receiver), { key ->
+        MethodHandleWrapper wrapper = callSite.getAndPut(IndyInterface.receiverCacheKey(receiver), { key ->
             providerCalls.incrementAndGet()
             MethodHandleWrapper.getNullMethodHandleWrapper()
-        })
+        }, IndyInterfaceCallSiteTargetTest)
         assertEquals(0, providerCalls.get())
         wrapper
     }

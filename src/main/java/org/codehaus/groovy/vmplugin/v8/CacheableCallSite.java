@@ -46,13 +46,13 @@ public class CacheableCallSite extends MutableCallSite {
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
     private final MethodHandles.Lookup lookup;
-    private volatile SoftReference<MethodHandleWrapper> latestHitMethodHandleWrapperSoftReference = null;
+    private volatile MRUEntry mruEntry;
     private final AtomicLong fallbackCount = new AtomicLong();
     private final AtomicLong fallbackRound = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
-    private final Map<String, SoftReference<MethodHandleWrapper>> lruCache =
-            new LinkedHashMap<String, SoftReference<MethodHandleWrapper>>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
+    private final Map<Object, SoftReference<MethodHandleWrapper>> lruCache =
+            new LinkedHashMap<Object, SoftReference<MethodHandleWrapper>>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
                 @Serial private static final long serialVersionUID = 7785958879964294463L;
 
                 /**
@@ -79,57 +79,97 @@ public class CacheableCallSite extends MutableCallSite {
     }
 
     /**
+     * Returns the cached method-handle wrapper for the receiver key if it is the most recently used.
+     *
+     * @param key the receiver cache key
+     * @return the cached wrapper, or {@code null} if not found or not MRU
+     */
+    public MethodHandleWrapper get(Object key) {
+        MRUEntry entry = mruEntry;
+        if (entry != null && entry.key == key) {
+            return entry.wrapper;
+        }
+        return null;
+    }
+
+    /**
      * Returns a cached method-handle wrapper for the receiver class, computing and storing it if needed.
      *
-     * @param className the receiver cache key
+     * @param key the receiver cache key
      * @param valueProvider the provider used to compute a missing entry
+     * @param sender the caller class
      * @return the cached or newly created wrapper
      */
-    public MethodHandleWrapper getAndPut(String className, MemoizeCache.ValueProvider<? super String, ? extends MethodHandleWrapper> valueProvider) {
+    public MethodHandleWrapper getAndPut(Object key, MemoizeCache.ValueProvider<? super Object, ? extends MethodHandleWrapper> valueProvider, Class<?> sender) {
         MethodHandleWrapper result = null;
         SoftReference<MethodHandleWrapper> resultSoftReference;
         synchronized (lruCache) {
-            resultSoftReference = lruCache.get(className);
+            resultSoftReference = lruCache.get(key);
             if (null != resultSoftReference) {
                 result = resultSoftReference.get();
                 if (null == result) removeAllStaleEntriesOfLruCache();
             }
 
             if (null == result) {
-                result = valueProvider.provide(className);
+                result = valueProvider.provide(key);
                 resultSoftReference = new SoftReference<>(result);
-                lruCache.put(className, resultSoftReference);
+                lruCache.put(key, resultSoftReference);
             }
         }
-        final SoftReference<MethodHandleWrapper> mhwsr = latestHitMethodHandleWrapperSoftReference;
-        final MethodHandleWrapper methodHandleWrapper = null == mhwsr ? null : mhwsr.get();
 
-        if (methodHandleWrapper == result) {
-            result.incrementLatestHitCount();
-        } else {
-            result.resetLatestHitCount();
-            if (null != methodHandleWrapper) methodHandleWrapper.resetLatestHitCount();
-            latestHitMethodHandleWrapperSoftReference = resultSoftReference;
-        }
+        updateMRU(key, result, sender);
 
         return result;
+    }
+
+    private void updateMRU(Object key, MethodHandleWrapper result, Class<?> sender) {
+        if (result == null || result == MethodHandleWrapper.getNullMethodHandleWrapper()) return;
+
+        // Leak-Awareness: only store strongly if the target loader is safe
+        var method = result.getMethod();
+        if (method != null) {
+            Class<?> declaringClass = method.getDeclaringClass().getTheClass();
+            if (isSafeLoader(sender.getClassLoader(), declaringClass.getClassLoader())) {
+                mruEntry = new MRUEntry(key, result);
+            }
+        }
+    }
+
+    private static boolean isSafeLoader(ClassLoader callerLoader, ClassLoader targetLoader) {
+        if (targetLoader == null) return true; // Bootstrap is always safe
+        if (callerLoader == targetLoader) return true;
+        ClassLoader cl = callerLoader;
+        while (cl != null) {
+            if (cl == targetLoader) return true;
+            cl = cl.getParent();
+        }
+        return false;
     }
 
     /**
      * Stores a method-handle wrapper under the supplied cache key.
      *
-     * @param name the receiver cache key
+     * @param key the receiver cache key
      * @param mhw the wrapper to cache
      * @return the previously cached wrapper, or {@code null} if none existed
      */
-    public MethodHandleWrapper put(String name, MethodHandleWrapper mhw) {
+    public MethodHandleWrapper put(Object key, MethodHandleWrapper mhw) {
         synchronized (lruCache) {
             final SoftReference<MethodHandleWrapper> methodHandleWrapperSoftReference;
-            methodHandleWrapperSoftReference = lruCache.put(name, new SoftReference<>(mhw));
+            methodHandleWrapperSoftReference = lruCache.put(key, new SoftReference<>(mhw));
             if (null == methodHandleWrapperSoftReference) return null;
             final MethodHandleWrapper methodHandleWrapper = methodHandleWrapperSoftReference.get();
             if (null == methodHandleWrapper) removeAllStaleEntriesOfLruCache();
             return methodHandleWrapper;
+        }
+    }
+
+    private static final class MRUEntry {
+        final Object key;
+        final MethodHandleWrapper wrapper;
+        MRUEntry(Object key, MethodHandleWrapper wrapper) {
+            this.key = key;
+            this.wrapper = wrapper;
         }
     }
 
