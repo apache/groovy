@@ -37,7 +37,30 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Represents a cacheable call site, which can reduce the cost of resolving methods
+ * Represents a cacheable call site, which manages a multi-level caching hierarchy for dynamic method dispatch.
+ * <p>
+ * To minimize the overhead of dynamic method selection and invocation, this class maintains three levels of caching:
+ * <ol>
+ *   <li><b>Level 1: Polymorphic Inline Cache (PIC) Chain</b>:
+ *       A site-local, bounded chain of guarded method handles (default size 4) stored directly in the {@link #getTarget() target}.
+ *       This is the fastest path, allowing the JVM's JIT compiler to inline calls for the hottest receiver shapes.
+ *       It is managed via {@link #getPicChain()} and updated by {@code IndyInterface.optimizeCallSite}.
+ *   </li>
+ *   <li><b>Level 2: Most Recently Used (MRU) Entry</b>:
+ *       A {@code volatile} field {@link #mruEntry} that stores a single {@link MethodHandleWrapper} for the most recently successful hit.
+ *       Accessed via {@link #get(Object)}, it provides a lock-free path for monomorphic or low-polymorphic call sites
+ *       that fall through the PIC chain. It uses identity-based keys to avoid allocations.
+ *   </li>
+ *   <li><b>Level 3: Least Recently Used (LRU) Cache</b>:
+ *       A synchronized {@link LinkedHashMap} {@link #lruCache} (default size 8) that stores {@link SoftReference}s to
+ *       {@link MethodHandleWrapper}s. This serves as the megamorphic fallback, preventing full re-selection
+ *       for shapes that have been seen before but are not currently in the PIC or MRU.
+ *   </li>
+ * </ol>
+ * <p>
+ * <b>Leak-Awareness:</b> To prevent permanent ClassLoader leaks, Level 2 (MRU) uses strong references only when
+ * the target class belongs to a safe ClassLoader (same or parent). Level 3 (LRU) always uses {@link SoftReference}s
+ * to allow the JVM to reclaim Metaspace under memory pressure.
  *
  * @since 3.0.0
  */

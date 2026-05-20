@@ -40,10 +40,21 @@ import java.util.stream.Stream;
 
 /**
  * Bytecode level interface for bootstrap methods used by invokedynamic.
- * This class provides a logging ability by using the boolean system property
- * groovy.indy.logging. Other than that this class contains the
- * interfacing methods with bytecode for invokedynamic as well as some helper
- * methods and classes.
+ * <p>
+ * This class provides the core logic for the {@code invokedynamic} (Indy) support in Groovy.
+ * It handles the bootstrap process, method selection via {@link Selector}, and the
+ * optimization lifecycle of {@link CacheableCallSite}.
+ * <p>
+ * <b>Optimization Lifecycle:</b>
+ * <ol>
+ *   <li><b>Bootstrap:</b> The JVM calls one of the bootstrap methods (e.g., {@code bootstrap}) when an {@code invokedynamic} instruction is first encountered.</li>
+ *   <li><b>Initial Linkage:</b> The call site is initialized with a fallback target (adapter pointing to {@link #fromCacheHandle}).</li>
+ *   <li><b>Execution & Selection:</b> On first execution, {@code fromCacheHandle} uses a {@link Selector} to find the target method and create a guarded {@link java.lang.invoke.MethodHandle}.</li>
+ *   <li><b>Promotion & PIC:</b> After reaching {@link #INDY_OPTIMIZE_THRESHOLD} hits for a stable shape, {@link #optimizeCallSite} promotes the handle into a
+ *       Polymorphic Inline Cache (PIC) chain directly in the call site target for maximum JIT optimization.</li>
+ * </ol>
+ * <p>
+ * Logging can be enabled using the system property {@code groovy.indy.logging=true}.
  */
 public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 1_000L);
