@@ -63,10 +63,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
@@ -1109,7 +1107,7 @@ public abstract class Selector {
 
             // guards for receiver and parameter
             Class<?>[] pt = handle.type().parameterArray();
-            if (Arrays.stream(args).anyMatch(Objects::isNull)) {
+            if (anyArgIsNull(args)) {
                 for (int i = 0; i < args.length; i++) {
                     MethodHandle test;
                     var arg = args[i];
@@ -1126,9 +1124,9 @@ public abstract class Selector {
                     test = MethodHandles.dropArguments(test, 0, drops);
                     handle = MethodHandles.guardWithTest(test, handle, fallback);
                 }
-            } else if (Arrays.stream(pt).anyMatch(nonFinalOrNullUnsafe)) {
+            } else if (anyTypeIsNonFinalOrNullUnsafe(pt, nonFinalOrNullUnsafe)) {
                 MethodHandle test = SAME_CLASSES
-                        .bindTo(Arrays.stream(args).map(Object::getClass).toArray(Class[]::new))
+                        .bindTo(getArgClasses(args))
                         .asCollector(Object[].class, pt.length)
                         .asType(MethodType.methodType(boolean.class, pt));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
@@ -1274,5 +1272,36 @@ public abstract class Selector {
             sender = sender.getEnclosingClass();
         }
         return sender;
+    }
+
+    /**
+     * Returns {@code true} if any element in the array is {@code null}.
+     */
+    private static boolean anyArgIsNull(Object[] args) {
+        for (Object arg : args) {
+            if (arg == null) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if any type in the array satisfies the predicate.
+     */
+    private static boolean anyTypeIsNonFinalOrNullUnsafe(Class<?>[] pt, java.util.function.Predicate<Class<?>> predicate) {
+        for (Class<?> t : pt) {
+            if (predicate.test(t)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns an array of runtime classes for the given arguments.
+     */
+    private static Class<?>[] getArgClasses(Object[] args) {
+        Class<?>[] classes = new Class<?>[args.length];
+        for (int i = 0; i < args.length; i++) {
+            classes[i] = args[i].getClass();
+        }
+        return classes;
     }
 }
