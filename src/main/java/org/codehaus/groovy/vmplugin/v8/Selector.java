@@ -814,6 +814,7 @@ public abstract class Selector {
                 } catch (ReflectiveOperationException e) {
                     throw new GroovyBugError(e);
                 }
+                catchException = false;
                 if (isStaticCategoryTypeMethod) {
                     handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
                     handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
@@ -828,6 +829,7 @@ public abstract class Selector {
                 // generic meta method invocation path
                 handle = META_METHOD_INVOKER;
                 handle = handle.bindTo(method);
+                catchException = false;
                 if (spread) {
                     args = originalArguments;
                     skipSpreadCollector = true;
