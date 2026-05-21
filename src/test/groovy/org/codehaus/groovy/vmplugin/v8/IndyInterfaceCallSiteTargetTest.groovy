@@ -142,6 +142,16 @@ final class IndyInterfaceCallSiteTargetTest {
     }
 
     @Test
+    void testResetFallbackCountAdvancesRound() {
+        CacheableCallSite callSite = newCallSite(MethodType.methodType(Object, Object))
+        assertEquals(0L, callSite.fallbackRound.get())
+        callSite.resetFallbackCount()
+        assertEquals(1L, callSite.fallbackRound.get())
+        callSite.resetFallbackCount()
+        assertEquals(2L, callSite.fallbackRound.get())
+    }
+
+    @Test
     void testFromCacheHandleSkipsTargetChangesWhenCachedWrapperCannotSetTarget() {
         MethodType type = MethodType.methodType(Object, IndyInterfaceCallSiteTargetTest)
         CacheableCallSite callSite = newCallSite(type)

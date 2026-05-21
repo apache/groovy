@@ -18,23 +18,24 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
-import org.apache.groovy.util.SystemUtil;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.memoize.MemoizeCache;
-
 import java.io.Serial;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.groovy.util.SystemUtil;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
 /**
  * Represents a cacheable call site, which manages a multi-level caching hierarchy for dynamic method dispatch.
@@ -69,14 +70,39 @@ public class CacheableCallSite extends MutableCallSite {
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
     private final MethodHandles.Lookup lookup;
+    /**
+     * Stores the most recently accessed entry.
+     * <p>
+     * <b>Concurrency:</b> Marked as {@code volatile} to ensure thread-safe publication of the entry
+     * across different threads, allowing {@link #get(Object)} to remain lock-free.
+     */
     private volatile MRUEntry mruEntry;
     private final AtomicLong fallbackCount = new AtomicLong();
     private final AtomicLong fallbackRound = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
+    /**
+     * The direct target of the call site before global guards are applied.
+     * <p>
+     * <b>Concurrency:</b> {@code volatile} ensures that updates to the PIC chain are immediately
+     * visible to all threads during high-speed dispatch.
+     */
     private volatile MethodHandle picChain;
-    private Object[] picKeys;
-    private int picCount;
+
+    /**
+     * Keys corresponding to the handles in the {@link #picChain}.
+     * <p>
+     * <b>Concurrency:</b> {@code final} for safe visibility during concurrent lookups.
+     */
+    private final Object[] picKeys;
+
+    /**
+     * The number of active entries in the PIC.
+     * <p>
+     * <b>Concurrency:</b> {@code volatile} for safe visibility. Modifications are further
+     * protected by {@code synchronized} blocks to ensure atomicity.
+     */
+    private volatile int picCount;
     private final Map<Object, SoftReference<MethodHandleWrapper>> lruCache =
             new LinkedHashMap<Object, SoftReference<MethodHandleWrapper>>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
                 @Serial private static final long serialVersionUID = 7785958879964294463L;
@@ -101,6 +127,7 @@ public class CacheableCallSite extends MutableCallSite {
      */
     public CacheableCallSite(MethodType type, MethodHandles.Lookup lookup) {
         super(type);
+        this.picKeys = new Object[IndyInterface.INDY_PIC_SIZE];
         this.lookup = lookup;
     }
 
@@ -120,6 +147,9 @@ public class CacheableCallSite extends MutableCallSite {
 
     /**
      * Returns a cached method-handle wrapper for the receiver class, computing and storing it if needed.
+     * <p>
+     * <b>Concurrency:</b> Synchronizes on {@link #lruCache} to protect the non-thread-safe
+     * {@link LinkedHashMap} and to ensure that a missing entry is only computed once.
      *
      * @param key the receiver cache key
      * @param valueProvider the provider used to compute a missing entry
@@ -174,6 +204,8 @@ public class CacheableCallSite extends MutableCallSite {
 
     /**
      * Stores a method-handle wrapper under the supplied cache key.
+     * <p>
+     * <b>Concurrency:</b> Synchronizes on {@link #lruCache} for thread-safe access to the underlying map.
      *
      * @param key the receiver cache key
      * @param mhw the wrapper to cache
@@ -190,15 +222,63 @@ public class CacheableCallSite extends MutableCallSite {
         }
     }
 
-    public void recordInPic(Object key, int maxPicSize) {
-        if (picKeys == null) picKeys = new Object[maxPicSize];
+    /**
+     * Promotes a new receiver shape to the PIC if it is not already present and space is available.
+     * <p>
+     * <b>Concurrency:</b> Synchronizes on {@code this} to atomically manage the
+     * promotion of receiver shapes into the PIC chain. This prevents multiple threads
+     * from corrupting the chain metadata or redundant JIT invalidations.
+     *
+     * @param key the receiver cache key
+     * @param updater the callback used to build the new PIC link
+     */
+    public void maybeUpdatePic(Object key, UnaryOperator<MethodHandle> updater) {
+        synchronized (this) {
+            for (int i = 0; i < picCount; i++) {
+                if (picKeys[i] == key) return;
+            }
+            if (picCount < picKeys.length) {
+                MethodHandle currentChain = picChain != null ? picChain : defaultTarget;
+                MethodHandle newChain = updater.apply(currentChain);
+                if (newChain != null) {
+                    picChain = newChain;
+                    picKeys[picCount++] = key;
+                }
+            }
+        }
+    }
+
+    /**
+     * Resets the PIC and targets to the default state if not already reset.
+     * <p>
+     * <b>Concurrency:</b> Synchronizes on {@code this} to safely reset the
+     * target and PIC metadata when the site becomes too megamorphic.
+     */
+    public void resetPicAndTarget() {
+        synchronized (this) {
+            if (getTarget() != defaultTarget) {
+                setTarget(defaultTarget);
+                resetFallbackCount();
+            }
+        }
+    }
+
+    public synchronized void recordInPic(Object key) {
         if (picCount < picKeys.length) {
             picKeys[picCount++] = key;
         }
     }
 
-    public boolean picIncludes(Object key) {
-        if (picKeys == null) return false;
+    /**
+     * Checks if a receiver shape is already present in the PIC.
+     * <p>
+     * <b>Concurrency:</b> Marked as {@code synchronized} to prevent reading inconsistent state
+     * while the PIC is being updated.
+     *
+     * @param key the receiver cache key
+     * @return {@code true} if the key is in the PIC
+     */
+    public synchronized boolean picIncludes(Object key) {
         for (int i = 0; i < picCount; i++) {
             if (picKeys[i] == key) return true;
         }
@@ -213,7 +293,7 @@ public class CacheableCallSite extends MutableCallSite {
         this.picChain = picChain;
     }
 
-    public int getPicCount() {
+    public synchronized int getPicCount() {
         return picCount;
     }
 
@@ -245,12 +325,16 @@ public class CacheableCallSite extends MutableCallSite {
 
     /**
      * Resets the fallback count and advances the fallback round marker.
+     * <p>
+     * <b>Concurrency:</b> Marked as {@code synchronized} to atomically clear all PIC-related
+     * state, ensuring threads see a consistent "empty" state.
      */
-    public void resetFallbackCount() {
+    public synchronized void resetFallbackCount() {
         fallbackCount.set(0);
+        fallbackRound.incrementAndGet();
         picCount = 0;
         picChain = null;
-        picKeys = null;
+        Arrays.fill(picKeys, null);
     }
 
     /**

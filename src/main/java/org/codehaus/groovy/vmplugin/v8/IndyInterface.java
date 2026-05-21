@@ -60,7 +60,7 @@ public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 1_000L);
     private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 1_000L);
     private static final long INDY_FALLBACK_CUTOFF = SystemUtil.getLongSafe("groovy.indy.fallback.cutoff", 100L);
-    private static final int INDY_PIC_SIZE = SystemUtil.getIntegerSafe("groovy.indy.pic.size", 4);
+    static final int INDY_PIC_SIZE = SystemUtil.getIntegerSafe("groovy.indy.pic.size", 4);
 
     /**
      * Flags for method and property calls.
@@ -201,8 +201,11 @@ public class IndyInterface {
 
     /**
      * Shared switch point invalidated when metaclass state changes.
+     * <p>
+     * <b>Concurrency:</b> {@code volatile} ensures that global invalidations are immediately
+     * visible to all threads across the JVM, causing them to fall back from JIT-optimized handles.
      */
-    protected static SwitchPoint switchPoint = new SwitchPoint();
+    protected static volatile SwitchPoint switchPoint = new SwitchPoint();
 
     static {
         GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> invalidateSwitchPoints());
@@ -210,6 +213,10 @@ public class IndyInterface {
 
     /**
      * Callback for constant metaclass update change
+     * <p>
+     * <b>Concurrency:</b> Synchronizes on {@code IndyInterface.class} to atomically replace
+     * the global switch point and invalidate the old one, preventing race conditions during
+     * simultaneous MetaClass changes.
      */
     protected static void invalidateSwitchPoints() {
         if (LOG_ENABLED) {
@@ -426,24 +433,17 @@ public class IndyInterface {
             }
         } else {
             Object receiverKey = receiverCacheKey(arguments[0]);
-            if (!callSite.picIncludes(receiverKey) && callSite.getPicCount() < INDY_PIC_SIZE) {
+            callSite.maybeUpdatePic(receiverKey, picChain -> {
                 Selector selector = Selector.getSelector(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments);
                 selector.skipSwitchPoint = true;
-                MethodHandle picChain = callSite.getPicChain();
-                if (picChain == null) picChain = callSite.getDefaultTarget();
                 selector.fallback = picChain;
                 selector.setCallSiteTarget();
-
-                MethodHandle newChain = selector.handle;
-                callSite.setPicChain(newChain);
-
                 // wrap with top-level SwitchPoint guard
-                MethodHandle target = switchPoint.guardWithTest(newChain, callSite.getDefaultTarget());
+                MethodHandle target = switchPoint.guardWithTest(selector.handle, callSite.getDefaultTarget());
                 callSite.setTarget(target);
-                callSite.recordInPic(receiverKey, INDY_PIC_SIZE);
-
                 if (LOG_ENABLED) LOG.info("call site target updated with PIC link, pic size: " + callSite.getPicCount());
-            }
+                return selector.handle;
+            });
         }
         mhw.resetLatestHitCount();
     }
@@ -467,9 +467,17 @@ public class IndyInterface {
         MethodHandle defaultTarget = callSite.getDefaultTarget();
         long fallbackCount = callSite.incrementFallbackCount();
         if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (callSite.getTarget() != defaultTarget)) {
-            callSite.setTarget(defaultTarget);
-            if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
-            callSite.resetFallbackCount();
+            /**
+             * <b>Concurrency:</b> Synchronizes on the {@code callSite} to safely reset the
+             * target and PIC metadata when the site becomes too megamorphic.
+             */
+            synchronized (callSite) {
+                if (callSite.getTarget() != defaultTarget) {
+                    callSite.setTarget(defaultTarget);
+                    if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
+                    callSite.resetFallbackCount();
+                }
+            }
         }
 
         if (callSite.getTarget() == defaultTarget) {
