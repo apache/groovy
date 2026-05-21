@@ -424,7 +424,8 @@ final class IndyInterfaceCallSiteTargetTest {
 
     private static void primeLatestHitCount(CacheableCallSite callSite, Object receiver, MethodHandleWrapper wrapper, long value) {
         assertSame(wrapper, callSite.getAndPut(IndyInterface.receiverCacheKey(receiver), { wrapper }, IndyInterfaceCallSiteTargetTest))
-        wrapper.@latestHitCount.set(value)
+        wrapper.resetLatestHitCount()
+        wrapper.addLatestHitCount(value)
     }
 
     private static void assertFallbackCutoffLeavesDefaultTarget(boolean startAwayFromDefaultTarget) {
@@ -452,7 +453,7 @@ final class IndyInterfaceCallSiteTargetTest {
 
         assertSame(wrapper.cachedMethodHandle, methodHandle)
         assertSame(callSite.defaultTarget, callSite.target)
-        assertEquals(0L, wrapper.latestHitCount)
+        assertEquals(0L, wrapper.getLatestHitCount())
     }
 
     private static MethodHandleWrapper requireCachedWrapper(CacheableCallSite callSite, Object receiver) {

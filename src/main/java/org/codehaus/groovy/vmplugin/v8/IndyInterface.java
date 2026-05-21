@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import groovy.lang.GroovySystem;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -205,6 +206,7 @@ public class IndyInterface {
      * <b>Concurrency:</b> {@code volatile} ensures that global invalidations are immediately
      * visible to all threads across the JVM, causing them to fall back from JIT-optimized handles.
      */
+    @SuppressWarnings("java:S3077")
     protected static volatile SwitchPoint switchPoint = new SwitchPoint();
 
     static {
@@ -371,9 +373,9 @@ public class IndyInterface {
     }
 
     private static final Object NULL_KEY = new Object();
-    private static final ClassValue<Object> STATIC_KEYS = new ClassValue<Object>() {
+    private static final ClassValue<Object> STATIC_KEYS = new ClassValue<>() {
         @Override
-        protected Object computeValue(Class<?> type) {
+        protected Object computeValue(@NonNull Class<?> type) {
             return new Object();
         }
     };
@@ -388,16 +390,14 @@ public class IndyInterface {
         MethodHandleWrapper mhw = callSite.get(receiverKey);
         if (mhw != null) {
             mhw.incrementLatestHitCount();
-            if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
-                if (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD) {
-                    optimizeCallSite(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments, mhw);
-                }
+            if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD && callSite.picInsertIfMissing(receiverKey)) {
+                optimizeCallSite(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments, receiverKey, mhw);
             }
             return mhw.getCachedMethodHandle();
         }
 
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
-        mhw = callSite.getAndPut(receiverKey, (theKey) -> {
+        mhw = callSite.getAndPut(receiverKey, theKey -> {
             MethodHandleWrapper fallback = fallbackSupplier.get();
             if (fallback.isCanSetTarget()) return fallback;
             return NULL_METHOD_HANDLE_WRAPPER;
@@ -418,21 +418,20 @@ public class IndyInterface {
                 }
             }
 
-            if (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD) {
-                optimizeCallSite(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments, mhw);
+            if (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD && callSite.picInsertIfMissing(receiverKey)) {
+                optimizeCallSite(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments, receiverKey, mhw);
             }
         }
 
         return mhw.getCachedMethodHandle();
     }
 
-    private static void optimizeCallSite(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments, MethodHandleWrapper mhw) {
+    private static void optimizeCallSite(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments, Object receiverKey, MethodHandleWrapper mhw) {
         if (callSite.getFallbackRound().get() > INDY_FALLBACK_CUTOFF) {
             if (callSite.getTarget() != callSite.getDefaultTarget()) {
                 callSite.setTarget(callSite.getDefaultTarget());
             }
         } else {
-            Object receiverKey = receiverCacheKey(arguments[0]);
             callSite.maybeUpdatePic(receiverKey, picChain -> {
                 Selector selector = Selector.getSelector(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments);
                 selector.skipSwitchPoint = true;
@@ -466,18 +465,8 @@ public class IndyInterface {
 
         MethodHandle defaultTarget = callSite.getDefaultTarget();
         long fallbackCount = callSite.incrementFallbackCount();
-        if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (callSite.getTarget() != defaultTarget)) {
-            /**
-             * <b>Concurrency:</b> Synchronizes on the {@code callSite} to safely reset the
-             * target and PIC metadata when the site becomes too megamorphic.
-             */
-            synchronized (callSite) {
-                if (callSite.getTarget() != defaultTarget) {
-                    callSite.setTarget(defaultTarget);
-                    if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
-                    callSite.resetFallbackCount();
-                }
-            }
+        if (callSite.tryResetToDefaultTarget(defaultTarget, INDY_FALLBACK_THRESHOLD, fallbackCount)) {
+            if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
         }
 
         if (callSite.getTarget() == defaultTarget) {

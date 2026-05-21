@@ -21,7 +21,7 @@ package org.codehaus.groovy.vmplugin.v8;
 import groovy.lang.MetaMethod;
 
 import java.lang.invoke.MethodHandle;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Wrap method handles
@@ -33,7 +33,7 @@ class MethodHandleWrapper {
     private final MethodHandle targetMethodHandle;
     private final MetaMethod method;
     private final boolean canSetTarget;
-    private final AtomicLong latestHitCount = new AtomicLong(0);
+    private final LongAdder latestHitCount = new LongAdder();
 
     /**
      * Creates a wrapper for the cached and relink targets of a meta method.
@@ -88,18 +88,25 @@ class MethodHandleWrapper {
 
     /**
      * Increments the hit count for the latest inline-cache hit.
-     *
-     * @return the updated hit count
      */
-    public long incrementLatestHitCount() {
-        return latestHitCount.incrementAndGet();
+    public void incrementLatestHitCount() {
+        latestHitCount.increment();
     }
 
     /**
      * Resets the latest-hit counter.
      */
     public void resetLatestHitCount() {
-        latestHitCount.set(0);
+        latestHitCount.reset();
+    }
+
+    /**
+     * Adds the specified value to the latest-hit counter.
+     *
+     * @param value the value to add
+     */
+    public void addLatestHitCount(long value) {
+        latestHitCount.add(value);
     }
 
     /**
@@ -108,7 +115,7 @@ class MethodHandleWrapper {
      * @return the current latest-hit counter
      */
     public long getLatestHitCount() {
-        return latestHitCount.get();
+        return latestHitCount.sum();
     }
 
     /**
