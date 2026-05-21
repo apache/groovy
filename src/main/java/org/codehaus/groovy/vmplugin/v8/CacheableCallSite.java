@@ -160,25 +160,41 @@ public class CacheableCallSite extends MutableCallSite {
      */
     MethodHandleWrapper getAndPut(Object key, MemoizeCache.ValueProvider<? super Object, ? extends MethodHandleWrapper> valueProvider, Class<?> sender) {
         MethodHandleWrapper result = null;
-        SoftReference<MethodHandleWrapper> resultSoftReference;
+
+        // First check under lock (fast path — already in cache)
         synchronized (lruCache) {
-            resultSoftReference = lruCache.get(key);
+            SoftReference<MethodHandleWrapper> resultSoftReference = lruCache.get(key);
             if (null != resultSoftReference) {
                 result = resultSoftReference.get();
                 if (null == result) {
                     lruCache.remove(key);
                 }
             }
+        }
 
-            if (null == result) {
-                result = valueProvider.provide(key);
-                resultSoftReference = new SoftReferenceWithKey(key, result, REFERENCE_QUEUE, lruCache);
-                lruCache.put(key, resultSoftReference);
+        // Compute outside lock if not found (expensive operation — method selection)
+        if (null == result) {
+            result = valueProvider.provide(key);
+
+            // Second check under lock — another thread may have stored it in the meantime
+            synchronized (lruCache) {
+                SoftReference<MethodHandleWrapper> existingRef = lruCache.get(key);
+                if (existingRef != null) {
+                    MethodHandleWrapper existing = existingRef.get();
+                    if (existing != null) {
+                        // Another thread already computed and stored; use theirs
+                        result = existing;
+                    } else {
+                        // Reference was cleared; replace it
+                        lruCache.put(key, new SoftReferenceWithKey(key, result, REFERENCE_QUEUE, lruCache));
+                    }
+                } else {
+                    lruCache.put(key, new SoftReferenceWithKey(key, result, REFERENCE_QUEUE, lruCache));
+                }
             }
         }
 
         updateMRU(key, result, sender);
-
         return result;
     }
 
