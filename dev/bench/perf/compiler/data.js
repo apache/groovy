@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779350703344,
+  "lastUpdate": 1779437078516,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -498,6 +498,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 373.17999999999995,
             "range": "±18.12",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "e9b9cf1ec53ceb86f6b1e3cd88d630ab3234f3ca",
+          "message": "GROOVY-12027: Align CompilerConfiguration with JDK17 minimum (fix some tests and docs)",
+          "timestamp": "2026-05-22T05:22:33Z",
+          "url": "https://github.com/apache/groovy/commit/e9b9cf1ec53ceb86f6b1e3cd88d630ab3234f3ca"
+        },
+        "date": 1779437077169,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 550.4366666666667,
+            "range": "±22.46",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 649.9833333333333,
+            "range": "±212.07",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 573.7033333333334,
+            "range": "±143.14",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 483.34666666666664,
+            "range": "±20.9",
             "unit": "ms",
             "extra": "5.0.6"
           }
