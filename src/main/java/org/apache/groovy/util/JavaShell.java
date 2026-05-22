@@ -81,7 +81,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * additionally written to disk by {@code compileAllTo}). See the {@code javac} documentation
  * for the complete list of supported flags.
  */
-@Incubating
 public class JavaShell {
     private static final String MAIN_METHOD_NAME = "main";
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
@@ -194,6 +193,10 @@ public class JavaShell {
 
     private void doCompile(String className, String src, Iterable<String> options) throws IOException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        if (compiler == null) {
+            throw new IllegalStateException("JavaShell requires a JDK at runtime; "
+                    + "ToolProvider.getSystemJavaCompiler() returned null (running on a JRE?).");
+        }
         try (BytesJavaFileManager bjfm = new BytesJavaFileManager(compiler.getStandardFileManager(null, locale, charset))) {
             StringBuilderWriter out = new StringBuilderWriter();
             JavaCompiler.CompilationTask task =
@@ -240,6 +243,7 @@ public class JavaShell {
      * @throws JavaShellCompilationException if the source fails to compile
      * @since 6.0.0
      */
+    @Incubating
     public Map<String, Path> compileAllTo(String className, Iterable<String> options,
                                            String src, Path outputDir)
         throws IOException {
@@ -269,6 +273,7 @@ public class JavaShell {
      * @throws JavaShellCompilationException if the source fails to compile
      * @since 6.0.0
      */
+    @Incubating
     public Map<String, Path> compileAllTo(String className, String src, Path outputDir)
         throws IOException {
         return compileAllTo(className, Collections.emptyList(), src, outputDir);

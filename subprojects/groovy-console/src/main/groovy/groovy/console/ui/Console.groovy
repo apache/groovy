@@ -1628,7 +1628,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             Optional<String> optionalPrimaryClassName = findPrimaryClassName(src)
             if (optionalPrimaryClassName.isPresent()) {
                 def js = new JavaShell(Thread.currentThread().contextClassLoader)
-                js.run(optionalPrimaryClassName.get(), src)
+                js.run(optionalPrimaryClassName.get(), src, Console.this.scriptArgsArray)
             } else {
                 System.err.println('Initial parsing successful but no public class found. Compile/run will not proceed.')
             }
