@@ -15069,6 +15069,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // takeIf
+
+    /**
+     * Returns this object if it satisfies the given predicate, or {@code null}
+     * otherwise. Useful for guarding a value through a chain, particularly with
+     * the Elvis or safe-navigation operators.
+     * <pre class="language-groovy groovyTestCase">
+     * assert 'hello'.takeIf{ it.startsWith('h') } == 'hello'
+     * assert 'hello'.takeIf{ it.startsWith('z') } == null
+     * assert ('input'.takeIf{ it.startsWith('http') } ?: "https://input") == 'https://input'
+     * assert [1, 2, 3].takeIf{ !it.isEmpty() }?.size() == 3
+     * assert [].takeIf{ !it.isEmpty() }?.size() == null
+     * </pre>
+     * The predicate is invoked with the receiver as its argument; the receiver
+     * is not used as a delegate. The receiver is passed through to the predicate
+     * unchanged, including when it is {@code null}.
+     *
+     * @param self      the object to test
+     * @param condition the predicate applied to {@code self}
+     * @return {@code self} if {@code condition.test(self)} is {@code true}, otherwise {@code null}
+     * @since 6.0.0
+     */
+    public static <T> T takeIf(T self, Predicate<? super T> condition) {
+        return condition.test(self) ? self : null;
+    }
+
+    //--------------------------------------------------------------------------
     // takeRight
 
     /**
