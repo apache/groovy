@@ -11624,7 +11624,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an integer that is the index of the first element of the second partition
      * @since 5.0.0
      */
-    public static <T> int partitionPoint(List<T> self, IntRange range, Predicate<T> condition) {
+    public static <T> int partitionPoint(List<T> self, IntRange range, Predicate<? super T> condition) {
         Objects.requireNonNull(self);
         RangeInfo info = range.subListBorders(self.size());
         Objects.checkFromToIndex(info.from, info.to, self.size());
@@ -11671,7 +11671,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an integer that is the index of the first element of the second partition
      * @since 5.0.0
      */
-    public static <T> int partitionPoint(List<T> self, Predicate<T> condition) {
+    public static <T> int partitionPoint(List<T> self, Predicate<? super T> condition) {
         return partitionPoint(self, new IntRange(true, 0, self.size() - 1), condition);
     }
 
