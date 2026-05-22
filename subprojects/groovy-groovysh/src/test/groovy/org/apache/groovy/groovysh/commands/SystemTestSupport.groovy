@@ -19,6 +19,7 @@
 package org.apache.groovy.groovysh.commands
 
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
+import org.jline.terminal.Size
 import org.jline.terminal.Terminal
 import org.jline.terminal.TerminalBuilder
 import org.junit.jupiter.api.AfterEach
@@ -47,9 +48,8 @@ import java.util.function.Supplier
  *       {@code [k:v]}.
  *   <li>{@link #terminalOutput()} — for JLine builtins that write directly
  *       through {@code terminal.writer()} (e.g. {@code /help}). Returns the
- *       raw bytes decoded as UTF-8; the dumb terminal also emits a couple of
- *       capability-probe escapes at startup, so prefer substring matches over
- *       full-string compares.
+ *       raw bytes decoded as UTF-8; prefer substring matches over full-string
+ *       compares to stay robust across JLine cosmetic changes.
  * </ul>
  *
  * See {@code subprojects/groovy-groovysh/AGENTS.md} for the platform-fragility
@@ -67,8 +67,16 @@ abstract class SystemTestSupport extends ConsoleTestSupport {
         super.setUp()
         Supplier workDir = { configPath.getUserConfig('.') }
         terminalBytes = new ByteArrayOutputStream()
+        // type('dumb') is the canonical dumb terminal selector — dumb(true) is silently
+        // ignored when custom streams are set, which would otherwise leave us with a
+        // PosixPtyTerminal typed xterm-256color and an active grapheme-cluster probe
+        // writing capability-probe escapes to terminalBytes. graphemeCluster(false) is
+        // belt-and-braces, and an explicit Size avoids the 0x0 path in JLine's help
+        // renderer which truncates via setLength(width).
         terminal = TerminalBuilder.builder()
-                .dumb(true)
+                .type('dumb')
+                .graphemeCluster(false)
+                .size(new Size(80, 24))
                 .streams(new ByteArrayInputStream(new byte[0]), terminalBytes)
                 .encoding(StandardCharsets.UTF_8)
                 .name('groovysh-test')
