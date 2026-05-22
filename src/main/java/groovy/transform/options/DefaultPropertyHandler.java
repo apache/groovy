@@ -62,9 +62,7 @@ public class DefaultPropertyHandler extends PropertyHandler {
      */
     @Override
     public boolean validateAttributes(final AbstractASTTransformation xform, final AnnotationNode anno) {
-        boolean success = true;
-      //success |= isValidAttribute(xform, anno, "");
-        return success;
+        return true;
     }
 
     /**
