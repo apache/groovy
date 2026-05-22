@@ -21,6 +21,10 @@
 
 = Testing Guide
 
+ifndef::guide-integrating[]
+:guide-integrating: guide-integrating.adoc
+endif::[]
+
 == Introduction
 
 The Groovy programming language comes with great support for writing tests. In addition to the language
@@ -354,6 +358,43 @@ cobertura {
 
 Several output formats can be chosen for Cobertura coverage reports and test code coverage reports can be added to
 continuous integration build tasks.
+
+==== JavaShell
+
+The `org.apache.groovy.util.JavaShell` class (covered in detail in the
+<<{guide-integrating}#integ-javashell,integration guide>>) is also useful in tests when you need
+real Java classes alongside your Groovy code. It avoids two recurring frictions:
+
+* you can declare Java fixture classes _inside_ the test that uses them, instead of adding
+  `src/test/java/...` files that exist only to support one Groovy test;
+* you can capture genuine `javac`-emitted bytecode for use cases such as comparing what the
+  Groovy compiler produces against what Java produces for an equivalent source — useful when
+  asserting joint-compilation behaviour, annotation-processing output, or `@CompileStatic`
+  codegen equivalence.
+
+A short fixture example:
+
+[source,groovy]
+----
+include::../test/testingguide/JavaShellExampleTests.groovy[tags=javashell_test_fixture,indent=0]
+----
+<1> compile a Java POJO in-memory; no `.java` file is added to the test source tree
+<2> attach `JavaShell`'s class loader to a `GroovyShell` so the test's Groovy code can resolve
+    the freshly-compiled class
+<3> exercise the fixture from Groovy
+
+For a bytecode-equivalence assertion, `compileAllTo` writes the generated `.class` files to a
+temporary directory from which the bytes can be read and fed into a bytecode-diff tool of choice
+(ASM, `javap` output, etc.). The corresponding Groovy-side bytecode can be obtained through the
+`GroovyClassLoader` / `CompilationUnit` paths used elsewhere in Groovy's own test suite.
+
+[source,groovy]
+----
+include::../test/testingguide/JavaShellExampleTests.groovy[tags=javashell_bytecode_capture,indent=0]
+----
+<1> compile and write the Java class to a temp directory
+<2> read the class bytes back from disk
+<3> compare against equivalent Groovy bytes obtained however best suits your test
 
 == Testing with JUnit
 
