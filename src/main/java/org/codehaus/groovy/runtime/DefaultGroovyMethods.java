@@ -2023,6 +2023,56 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // clamp
+
+    /**
+     * Constrains a Comparable value to lie within the inclusive range
+     * <code>[lower, upper]</code>. Returns <code>lower</code> if <code>self</code>
+     * is less than <code>lower</code>, <code>upper</code> if <code>self</code> is
+     * greater than <code>upper</code>, otherwise <code>self</code>.
+     * <pre class="language-groovy groovyTestCase">
+     * assert 10.clamp(1, 15) == 10
+     * assert 10.clamp(1, 5) == 5
+     * assert 10.clamp(12, 20) == 12
+     * assert 'a'.clamp('b', 'z') == 'b'
+     * </pre>
+     *
+     * @param self  a Comparable value
+     * @param lower the inclusive lower bound
+     * @param upper the inclusive upper bound
+     * @return the clamped value
+     * @throws IllegalArgumentException if <code>lower</code> is greater than <code>upper</code>
+     * @since 6.0.0
+     */
+    public static <T extends Comparable<? super T>> T clamp(T self, T lower, T upper) {
+        if (ScriptBytecodeAdapter.compareGreaterThan(lower, upper)) {
+            throw new IllegalArgumentException("lower bound (" + lower + ") must not be greater than upper bound (" + upper + ")");
+        }
+        if (ScriptBytecodeAdapter.compareLessThan(self, lower)) return lower;
+        if (ScriptBytecodeAdapter.compareGreaterThan(self, upper)) return upper;
+        return self;
+    }
+
+    /**
+     * Constrains a Comparable value to lie within the given Range.
+     * <pre class="language-groovy groovyTestCase">
+     * assert 10.clamp(12..20) == 12
+     * assert 10.clamp(1..5) == 5
+     * </pre>
+     *
+     * @param self  a Comparable value
+     * @param range a Range defining the inclusive bounds
+     * @return the clamped value
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends Comparable<? super T>> T clamp(T self, Range<T> range) {
+        T lower = range.isReverse() ? (T) range.getTo() : (T) range.getFrom();
+        T upper = range.isReverse() ? (T) range.getFrom() : (T) range.getTo();
+        return clamp(self, lower, upper);
+    }
+
+    //--------------------------------------------------------------------------
     // collate
 
     /**
