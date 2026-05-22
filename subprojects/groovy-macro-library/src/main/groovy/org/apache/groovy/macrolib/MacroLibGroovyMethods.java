@@ -57,7 +57,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 /**
  * Macro library helpers for string and named-value expansion.
  *
- * @since 2.5.0
+ * @since 4.0.0
  */
 public final class MacroLibGroovyMethods {
     private MacroLibGroovyMethods() {}
@@ -215,6 +215,7 @@ public final class MacroLibGroovyMethods {
      * @param ctx the current macro context
      * @param exps the generators (each {@code name in expression}) followed by the body closure
      * @return the nested bind-chain expression
+     * @since 6.0.0
      */
     @Macro
     public static Expression DO(MacroContext ctx, final Expression... exps) {
@@ -285,6 +286,7 @@ public final class MacroLibGroovyMethods {
      * @param self the receiver
      * @param args the runtime values
      * @return never returns normally
+     * @since 6.0.0
      */
     public static Object DO(Object self, Object... args) {
         throw new IllegalStateException("MacroLibGroovyMethods.DO(Object...) should never be called at runtime. Are you sure you are using it correctly?");

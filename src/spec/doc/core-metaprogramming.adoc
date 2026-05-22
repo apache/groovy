@@ -3324,6 +3324,27 @@ def nullObject = null
 assert null == safe(safe(nullObject.hashcode()).toString())
 ----
 
+===== Disabling macro methods
+
+The `groovy.macro.disable` system property suppresses selected `@Macro`
+methods from extension lookup before macro expansion runs. Its value is a
+comma-separated list of bare method names; any macro method whose name
+appears in the list is filtered out of the macro extension cache. For
+example, compiling with `-Dgroovy.macro.disable=DO,SVI` skips both the `DO`
+and `SVI` macros that ship with the `groovy-macro-library` module.
+
+A few details to be aware of:
+
+* *Bare-name matching only.* Every overload of a disabled name is filtered
+  together, and the same name in different modules collides globally. There
+  is no per-signature form (unlike `groovy.extension.disable`, which accepts
+  `name(type1,type2,...)` for regular extension methods).
+* *Read once at compiler startup.* The property is captured when the macro
+  extension cache is first initialised, so it must be set as a `-D` argument
+  to the JVM that runs the Groovy compiler.
+* *No whitespace trimming.* Entries are split on commas only, so write
+  `-Dgroovy.macro.disable=DO,SVI`, not `-Dgroovy.macro.disable=DO, SVI`.
+
 ==== Testing AST transformations
 ===== Separating source trees
 

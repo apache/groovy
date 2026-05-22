@@ -19,7 +19,6 @@
 package org.codehaus.groovy.macro.runtime;
 
 import groovy.lang.Closure;
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
@@ -43,8 +42,6 @@ import static org.codehaus.groovy.macro.methods.MacroGroovyMethods.DOLLAR_VALUE;
  *
  * @since 2.5.0
  */
-
-@Incubating
 public enum MacroBuilder {
     /** Shared macro builder instance. */
     INSTANCE;

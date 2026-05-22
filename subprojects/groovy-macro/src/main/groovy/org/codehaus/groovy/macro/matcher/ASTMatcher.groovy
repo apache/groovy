@@ -1052,15 +1052,14 @@ class ASTMatcher extends ContextualClassCodeVisitor {
     }
 
     /**
-     * TODO: experimental!
-     *
-     * Annotates an AST node with matching contraints. This method should be called
-     * on an AST intended to be used as a pattern only. It will put node metadata on
-     * the AST node allowing customized behavior in pattern matching.
+     * Annotates an AST node with matching constraints. Call this on an AST
+     * intended to be used as a pattern only; it attaches node metadata that
+     * customises behaviour during pattern matching.
      *
      * @param pattern a pattern AST
      * @param constraintsSpec a closure specification of matching constraints
      * @return the same pattern, annotated with constraints
+     * @since 2.5.0
      */
     static ASTNode withConstraints(ASTNode pattern, @DelegatesTo(value=MatchingConstraintsBuilder, strategy=Closure.DELEGATE_ONLY) Closure constraintsSpec) {
         def builder = new MatchingConstraintsBuilder()

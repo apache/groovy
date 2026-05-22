@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.macro.runtime;
 
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
@@ -28,8 +27,6 @@ import org.codehaus.groovy.control.SourceUnit;
  *
  * @since 2.5.0
  */
-
-@Incubating
 public class MacroContext {
 
     private final MethodCallExpression call;

@@ -34,6 +34,8 @@ class MatchingConstraintsBuilder {
     Set<String> placeholders = new LinkedHashSet<>()
     /**
      * Placeholder names that can absorb multiple arguments.
+     *
+     * @since 5.0.0
      */
     Set<String> varargPlaceholders = new LinkedHashSet<>()
     /**
@@ -92,6 +94,7 @@ class MatchingConstraintsBuilder {
      *
      * @param names the vararg placeholder names
      * @return this builder
+     * @since 5.0.0
      */
     MatchingConstraintsBuilder varargPlaceholder(String... names) {
         names.each { String it -> varargPlaceholders.add(it) }
