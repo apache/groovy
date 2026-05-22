@@ -81,17 +81,17 @@ public class CompilerConfiguration {
     /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. */
     @Deprecated public static final String JDK10 = "10";
     /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. */
-    public static final String JDK11 = "11";
+    @Deprecated public static final String JDK11 = "11";
     /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. */
-    public static final String JDK12 = "12";
+    @Deprecated public static final String JDK12 = "12";
     /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. */
-    public static final String JDK13 = "13";
+    @Deprecated public static final String JDK13 = "13";
     /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. */
-    public static final String JDK14 = "14";
+    @Deprecated public static final String JDK14 = "14";
     /** This (<code>"15"</code>) is the value for targetBytecode to compile for a JDK 15. */
-    public static final String JDK15 = "15";
+    @Deprecated public static final String JDK15 = "15";
     /** This (<code>"16"</code>) is the value for targetBytecode to compile for a JDK 16. */
-    public static final String JDK16 = "16";
+    @Deprecated public static final String JDK16 = "16";
     /** This (<code>"17"</code>) is the value for targetBytecode to compile for a JDK 17. */
     public static final String JDK17 = "17";
     /** This (<code>"18"</code>) is the value for targetBytecode to compile for a JDK 18. */
@@ -119,12 +119,6 @@ public class CompilerConfiguration {
      * JDK version to bytecode version mapping.
      */
     public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Maps.of(
-            JDK11, Opcodes.V11,
-            JDK12, Opcodes.V12,
-            JDK13, Opcodes.V13,
-            JDK14, Opcodes.V14,
-            JDK15, Opcodes.V15,
-            JDK16, Opcodes.V16,
             JDK17, Opcodes.V17,
             JDK18, Opcodes.V18,
             JDK19, Opcodes.V19,
@@ -659,6 +653,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 11+
      */
+    @Deprecated
     public static boolean isPostJDK11(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK11);
     }
@@ -669,6 +664,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 12+
      */
+    @Deprecated
     public static boolean isPostJDK12(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK12);
     }
@@ -679,6 +675,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 13+
      */
+    @Deprecated
     public static boolean isPostJDK13(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK13);
     }
@@ -689,6 +686,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 14+
      */
+    @Deprecated
     public static boolean isPostJDK14(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK14);
     }
@@ -699,6 +697,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 15+
      */
+    @Deprecated
     public static boolean isPostJDK15(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK15);
     }
@@ -709,6 +708,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 16+
      */
+    @Deprecated
     public static boolean isPostJDK16(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK16);
     }
@@ -1181,7 +1181,7 @@ public class CompilerConfiguration {
         if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(javaVersion)) {
             return javaVersion;
         }
-        return JDK11;
+        return JDK17;
     }
 
     /**

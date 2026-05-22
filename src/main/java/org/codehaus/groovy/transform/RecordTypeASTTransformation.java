@@ -214,7 +214,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     public static boolean wouldBeNativeRecord(final ClassNode cNode, final String targetBytecode) {
         if (cNode == null || cNode.getAnnotations(MY_TYPE).isEmpty()) return false;
         if (targetBytecode == null || targetBytecode.trim().isEmpty()) return false;
-        if (!isAtLeast(targetBytecode, CompilerConfiguration.JDK16)) return false;
+        if (!isAtLeast(targetBytecode, CompilerConfiguration.JDK17)) return false;
         AnnotationNode options = getRecordOptions(cNode);
         return getMode(options, "mode") != RecordTypeMode.EMULATE;
     }
