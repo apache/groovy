@@ -11664,6 +11664,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * // predicate of reverse logic examples:
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it > 4 } == 3
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it >= 4 } == 5
+     * // empty input
+     * assert [].partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy list
@@ -11672,6 +11674,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static <T> int partitionPoint(List<T> self, Predicate<? super T> condition) {
+        Objects.requireNonNull(self);
+        if (self.isEmpty()) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.size() - 1), condition);
     }
 

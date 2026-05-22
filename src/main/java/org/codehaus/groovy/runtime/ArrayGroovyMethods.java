@@ -6921,6 +6921,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
      * assert arr.partitionPoint{ it &lt;= 0 } == 0
+     * // empty input
+     * assert (new Integer[0]).partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -6929,6 +6931,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static <T> int partitionPoint(T[] self, Predicate<? super T> condition) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.length - 1), condition);
     }
 
@@ -6999,6 +7003,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
      * assert arr.partitionPoint{ it &lt;= 0 } == 0
+     * // empty input
+     * assert (new char[0]).partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7007,6 +7013,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static int partitionPoint(char[] self, IntPredicate condition) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.length - 1), condition);
     }
 
@@ -7077,6 +7085,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
      * assert arr.partitionPoint{ it &lt;= 0 } == 0
+     * // empty input
+     * assert (new short[0]).partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7085,6 +7095,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static int partitionPoint(short[] self, IntPredicate condition) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.length - 1), condition);
     }
 
@@ -7155,6 +7167,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
      * assert arr.partitionPoint{ it &lt;= 0 } == 0
+     * // empty input
+     * assert (new int[0]).partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7163,6 +7177,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static int partitionPoint(int[] self, IntPredicate condition) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.length - 1), condition);
     }
 
@@ -7233,6 +7249,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
      * assert arr.partitionPoint{ it &lt;= 0 } == 0
+     * // empty input
+     * assert (new long[0]).partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7241,6 +7259,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static int partitionPoint(long[] self, LongPredicate condition) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.length - 1), condition);
     }
 
@@ -7311,6 +7331,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
      * assert arr.partitionPoint{ it &lt;= 0 } == 0
+     * // empty input
+     * assert (new float[0]).partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7319,6 +7341,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static int partitionPoint(float[] self, DoublePredicate condition) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.length - 1), condition);
     }
 
@@ -7389,6 +7413,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
      * assert arr.partitionPoint{ it &lt;= 0 } == 0
+     * // empty input
+     * assert (new double[0]).partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7397,6 +7423,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static int partitionPoint(double[] self, DoublePredicate condition) {
+        Objects.requireNonNull(self);
+        if (self.length == 0) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.length - 1), condition);
     }
 
