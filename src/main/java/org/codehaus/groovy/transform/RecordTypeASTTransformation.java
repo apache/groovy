@@ -195,7 +195,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     /**
      * Predicts whether {@code cNode} will be compiled as a native JVM record.
      * Mirrors the decision logic in {@link #doProcessRecordType} (presence of
-     * {@code @RecordBase}, target bytecode {@code >= 16}, and
+     * {@code @RecordBase}, target bytecode {@code >= 17}, and
      * {@code @RecordOptions(mode != EMULATE)}) so callers running before the
      * transform itself fires can act on the same outcome.
      * <p>
@@ -290,12 +290,11 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
         stubs.forEach(cNode::removeMethod);
         AnnotationNode options = getRecordOptions(cNode);
-        RecordTypeMode mode = getMode(options, "mode");
         String targetBytecode = (sourceUnit != null) ? sourceUnit.getConfiguration().getTargetBytecode() : null;
-        String message = (targetBytecode != null)
-                ? "Expecting JDK16+ but found " + targetBytecode
-                : "Expecting JDK16+ but unable to determine target bytecode";
         List<PropertyNode> pList = Collections.unmodifiableList(getInstanceProperties(cNode));
+        // At Groovy 6's JDK17 floor, wouldBeNativeRecord is true unless the
+        // user explicitly opted out via @RecordOptions(mode=EMULATE), so the
+        // "explicit NATIVE but JDK too old" arm is unreachable here.
         boolean isNative = wouldBeNativeRecord(cNode, targetBytecode);
         if (isNative) {
             String scName = cNode.getUnresolvedSuperClass().getName();
@@ -318,8 +317,6 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 rec.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
                 cNode.getRecordComponents().add(rec);
             }
-        } else if (mode == RecordTypeMode.NATIVE) {
-            addError(message + " when attempting to create a native record", cNode);
         } else {
             createBeanInfoClass(cNode);
         }

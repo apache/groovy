@@ -247,31 +247,6 @@ final class RecordTest {
     }
 
     @Test
-    void testRecordLikeOnJDK16withTargetBytecode15() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        shell.@config.targetBytecode = '15'
-        assertScript shell, '''
-            record Person(String name) {}
-            assert Person.superclass != java.lang.Record
-        '''
-    }
-
-    @Test
-    void testAttemptedNativeRecordWithTargetBytecode15ShouldFail() {
-        assumeTrue(isAtLeastJdk('16.0'))
-
-        shell.@config.targetBytecode = '15'
-        def err = shouldFail shell, '''
-            @RecordType(mode=RecordTypeMode.NATIVE)
-            class Person {
-                String name
-            }
-        '''
-        assert err.message.contains('Expecting JDK16+ but found 15 when attempting to create a native record')
-    }
-
-    @Test
     void testNativeRecordWithSuperClassShouldFail() {
         assumeTrue(isAtLeastJdk('16.0'))
 

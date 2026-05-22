@@ -309,11 +309,11 @@ The `@RecordOptions` annotation (part of `@RecordType`) supports a `mode` annota
 which can take one of three values (with `AUTO` being the default):
 
 NATIVE::
-Produces a class similar to what Java would do. Produces an error when compiling on JDKs earlier than JDK16.
+Produces a class similar to what Java would do.
 EMULATE::
-Produces a record-like class for all JDK versions.
+Produces a record-like class.
 AUTO::
-Produces a native record for JDK16+ and emulates the record otherwise.
+Equivalent to `NATIVE` at Groovy 6's JDK17+ baseline (default).
 
 Whether you use the `record` keyword or the `@RecordType` annotation
 is independent of the mode.
