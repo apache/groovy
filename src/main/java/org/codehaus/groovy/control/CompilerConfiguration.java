@@ -112,6 +112,8 @@ public class CompilerConfiguration {
     public static final String JDK25 = "25";
     /** This (<code>"26"</code>) is the value for targetBytecode to compile for a JDK 26. */
     public static final String JDK26 = "26";
+    /** This (<code>"27"</code>) is the value for targetBytecode to compile for a JDK 27. */
+    public static final String JDK27 = "27";
 
     /**
      * JDK version to bytecode version mapping.
@@ -132,7 +134,8 @@ public class CompilerConfiguration {
             JDK23, Opcodes.V23,
             JDK24, Opcodes.V24,
             JDK25, Opcodes.V25,
-            JDK26, Opcodes.V26
+            JDK26, Opcodes.V26,
+            JDK27, Opcodes.V27
     );
 
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
