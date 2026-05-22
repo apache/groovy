@@ -53,6 +53,9 @@ class Dataflows {
     /**
      * Reading a property awaits the corresponding DataflowVariable's value.
      * Creates the variable on demand if it doesn't exist yet.
+     *
+     * @param name the variable name
+     * @return the bound value of the variable
      */
     def propertyMissing(String name) {
         AsyncSupport.await(getOrCreate(name))
@@ -61,6 +64,9 @@ class Dataflows {
     /**
      * Writing a property binds the corresponding DataflowVariable.
      * Creates the variable on demand if it doesn't exist yet.
+     *
+     * @param name the variable name
+     * @param value the value to bind
      */
     void propertyMissing(String name, value) {
         getOrCreate(name).bind(value)
@@ -80,6 +86,9 @@ class Dataflows {
 
     /**
      * Returns {@code true} if the named variable has been bound.
+     *
+     * @param name the variable name
+     * @return {@code true} if the variable exists and has been bound
      */
     boolean isBound(String name) {
         def v = variables.get(name)

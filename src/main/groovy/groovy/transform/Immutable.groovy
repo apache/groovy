@@ -201,12 +201,24 @@ import java.lang.annotation.Target
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 @interface Immutable {
-    /** No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only. */
+    /**
+     * No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only.
+     *
+     * @return additional classes treated as immutable for legacy handling
+     */
     Class[] knownImmutableClasses() default []
 
-    /** No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only. */
+    /**
+     * No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only.
+     *
+     * @return additional property names treated as immutable for legacy handling
+     */
     String[] knownImmutables() default []
 
-    /** No longer used directly but instead collected from {@link ImmutableBase}. Remains for legacy handling only. */
+    /**
+     * No longer used directly but instead collected from {@link ImmutableBase}. Remains for legacy handling only.
+     *
+     * @return {@code true} if copy-with support should be enabled for legacy handling
+     */
     boolean copyWith() default false
 }

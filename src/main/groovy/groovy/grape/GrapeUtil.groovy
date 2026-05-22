@@ -48,6 +48,9 @@ class GrapeUtil {
 
     /**
      * Adds a URI to a classloader's classpath via reflection.
+     *
+     * @param loader the class loader to update
+     * @param uri the URI to add to the class path
      */
     static void addURL(ClassLoader loader, URI uri) {
         // Dynamic invocation needed as addURL is not part of ClassLoader interface

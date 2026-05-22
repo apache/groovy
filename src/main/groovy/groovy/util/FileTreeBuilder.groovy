@@ -114,7 +114,7 @@ class FileTreeBuilder {
     /**
      * Creates a file with the specified name and the contents from the source file (copy).
      * @param name name of the file to be created
-     * @param contents the contents of the file
+     * @param source the source file to copy
      * @return the file being created
      */
     File file(String name, File source) {

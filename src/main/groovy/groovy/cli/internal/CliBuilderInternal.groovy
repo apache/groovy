@@ -249,6 +249,10 @@ class CliBuilderInternal {
 
     /**
      * Internal method: Detect option specification method calls.
+     *
+     * @param name the invoked option name
+     * @param args the invocation arguments
+     * @return the generated option handle, or the delegated meta-class result
      */
     def invokeMethod(String name, Object args) {
         if (args instanceof Object[]) {
@@ -305,6 +309,9 @@ class CliBuilderInternal {
     /**
      * Make options accessible from command line args with parser.
      * Returns null on bad command lines after displaying usage message.
+     *
+     * @param args the command line arguments to parse
+     * @return the parsed option accessor, or {@code null} if parsing fails
      */
     OptionAccessor parse(args) {
         CommandLine commandLine = createCommandLine()
@@ -354,6 +361,11 @@ class CliBuilderInternal {
     // implementation details -------------------------------------
     /**
      * Internal method: How to create an OptionSpec from the specification.
+     *
+     * @param shortname the short option name, or {@code '_'} for long-only options
+     * @param details the option attributes in Commons CLI form
+     * @param description the option description
+     * @return the constructed option specification
      */
     CommandLine.Model.OptionSpec option(shortname, Map details, description) {
         CommandLine.Model.OptionSpec.Builder builder

@@ -115,6 +115,7 @@ import java.lang.annotation.Target
      *
      * For even finer-grained control see {@code applyToAllMembers}.
      *
+     * @return {@code true} if interrupt checks apply to all classes in the compilation unit
      * @see #applyToAllMembers()
      */
     boolean applyToAllClasses() default true
@@ -127,6 +128,7 @@ import java.lang.annotation.Target
      * Set to true (the default) for blanket coverage of isInterrupted checks on all methods, loops
      * and closures within the class/script.
      *
+     * @return {@code true} if interrupt checks apply to all members of the annotated class or script
      * @since 2.2.0
      * @see #applyToAllClasses()
      */
@@ -135,11 +137,15 @@ import java.lang.annotation.Target
     /**
      * By default an isInterrupted check is added to the start of all user-defined methods. To turn this off simply
      * set this parameter to false.
+     *
+     * @return {@code true} if an interruption check is added at method entry
      */
     boolean checkOnMethodStart() default true
 
     /**
      * Sets the type of exception which is thrown.
+     *
+     * @return the exception type thrown when the current thread is interrupted
      */
     Class thrown() default InterruptedException
 }

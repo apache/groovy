@@ -97,6 +97,7 @@ import java.util.concurrent.TimeoutException
      *
      * For even finer-grained control see {@code applyToAllMembers}.
      *
+     * @return {@code true} if timeout checks apply to all classes in the compilation unit
      * @see #applyToAllMembers()
      */
     boolean applyToAllClasses() default true
@@ -110,28 +111,38 @@ import java.util.concurrent.TimeoutException
      * Set to true (the default) for blanket coverage of timeout checks on all methods, loops
      * and closures within the class/script.
      *
-     * @since 2.2.0* @see #applyToAllClasses()
+     * @return {@code true} if timeout checks apply to all members of the annotated class or script
+     * @since 2.2.0
+     * @see #applyToAllClasses()
      */
     boolean applyToAllMembers() default true
 
     /**
      * By default a time check is added to the start of all user-defined methods. To turn this off
      * simply set this parameter to false.
+     *
+     * @return {@code true} if a timeout check is added at method entry
      */
     boolean checkOnMethodStart() default true
 
     /**
-     * The maximum elapsed time the script will be allowed to run for. By default it is measure in seconds
+     * The maximum elapsed time the script will be allowed to run for. By default it is measured in seconds.
+     *
+     * @return the timeout threshold
      */
     long value()
 
     /**
      * The TimeUnit of the value parameter. By default it is TimeUnit.SECONDS.
+     *
+     * @return the time unit for {@link #value()}
      */
     TimeUnit unit() default TimeUnit.SECONDS
 
     /**
      * The type of exception thrown when timeout is reached.
+     *
+     * @return the exception type thrown when the timeout expires
      */
     Class thrown() default TimeoutException
 }

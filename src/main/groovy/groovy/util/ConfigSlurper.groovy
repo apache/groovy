@@ -111,6 +111,8 @@ class ConfigSlurper {
 
     /**
      * Sets any additional variables that should be placed into the binding when evaluating Config scripts
+     *
+     * @param vars the variables to expose to configuration scripts
      */
     void setBinding(Map vars) {
         this.bindingVars = vars
@@ -119,7 +121,8 @@ class ConfigSlurper {
     /**
      * Parses a ConfigObject instances from an instance of java.util.Properties
      *
-     * @param The java.util.Properties instance
+     * @param properties the properties to convert
+     * @return the parsed configuration object
      */
     ConfigObject parse(Properties properties) {
         ConfigObject config = new ConfigObject()
@@ -166,6 +169,8 @@ class ConfigSlurper {
     /**
      * Parse the given script as a string and return the configuration object
      *
+     * @param script the script text to parse
+     * @return the parsed configuration object
      * @see ConfigSlurper#parse(groovy.lang.Script)
      */
     ConfigObject parse(String script) {
@@ -175,6 +180,8 @@ class ConfigSlurper {
     /**
      * Create a new instance of the given script class and parse a configuration object from it
      *
+     * @param scriptClass the script class to instantiate
+     * @return the parsed configuration object
      * @see ConfigSlurper#parse(groovy.lang.Script)
      */
     ConfigObject parse(Class scriptClass) {
