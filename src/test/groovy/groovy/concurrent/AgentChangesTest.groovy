@@ -179,9 +179,9 @@ final class AgentChangesTest {
             try {
                 def collected = []
                 async {
-                    Thread.sleep(30)  // let consumer subscribe
+                    Thread.sleep(100) // let consumer subscribe
                     3.times { agent.send { it + 1 } }
-                    Thread.sleep(50)
+                    Thread.sleep(100) // let the sends propagate before shutdown
                     agent.shutdown()
                 }
 

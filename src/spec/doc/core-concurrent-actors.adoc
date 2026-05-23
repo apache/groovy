@@ -219,19 +219,98 @@ assert balance == 70.0
 account.stop()
 ----
 
+[[actors-options]]
+== Construction options
+
+Actors take an optional `ActorOptions` configuring the mailbox, the
+executor, and a handful of opt-in behaviours. The builder is
+value-based; each `with*` method returns a new configuration.
+
+[source,groovy]
+----
+import groovy.concurrent.Actor
+import groovy.concurrent.ActorOptions
+
+def options = ActorOptions.DEFAULTS
+    .withBoundedMailbox(1000, ActorOptions.Overflow.BLOCK)
+
+def actor = Actor.reactor(handler, options)
+----
+
+=== Bounded mailbox
+
+By default the mailbox is unbounded. For backpressure — or to cap
+memory when producers can outrun the actor — configure a capacity and
+an overflow policy:
+
+[source,groovy]
+----
+import groovy.concurrent.ActorOptions.Overflow
+
+// BLOCK — sender blocks until capacity is free
+ActorOptions.DEFAULTS.withBoundedMailbox(100, Overflow.BLOCK)
+
+// FAIL — send throws IllegalStateException when the mailbox is full
+ActorOptions.DEFAULTS.withBoundedMailbox(100, Overflow.FAIL)
+
+// DROP_NEWEST — the incoming message is silently dropped; for
+// sendAndGet, the returned Awaitable binds to IllegalStateException
+ActorOptions.DEFAULTS.withBoundedMailbox(100, Overflow.DROP_NEWEST)
+----
+
+A handler that calls `ctx.self().send(...)` on a full `BLOCK` mailbox
+would deadlock (the handler is the actor's only consumer). The actor
+detects this and fails fast with `IllegalStateException` rather than
+parking the worker thread.
+
+=== Per-actor executor
+
+Actors default to a shared async executor (virtual threads on
+JDK 21+). For workload isolation, hand the actor its own executor:
+
+[source,groovy]
+----
+import java.util.concurrent.Executors
+
+def pool = Executors.newSingleThreadExecutor()
+def actor = Actor.reactor(handler,
+    ActorOptions.DEFAULTS.withExecutor(pool))
+----
+
+Other options — `withStashBound` and `withCurrentSelf` — are covered
+in the <<actors-fsm,FSM section>> where they're directly used.
+
 [[actors-lifecycle]]
 == Lifecycle
 
-Both actors and agents support lifecycle management:
+Both actors and agents support lifecycle management. An actor has a
+three-state lifecycle:
+
+[cols="1,1,3"]
+|===
+|`isActive()` |`isTerminated()` |Meaning
+
+|`true`  |`false` |Accepting new sends and processing them.
+|`false` |`false` |Draining — `stop()` was called, no new sends are
+accepted, but already-queued messages are still being processed.
+|`false` |`true`  |Terminated — the worker thread has exited; all
+queued messages are processed and any stashed `sendAndGet` replies
+have been rejected.
+|===
 
 [source,groovy]
 ----
 def actor = Actor.reactor { it }
 assert actor.isActive()
+assert !actor.isTerminated()
 
-actor.stop()       // graceful: processes remaining messages then exits
-Thread.sleep(50)
-assert !actor.isActive()
+actor.stop()                                  // flips isActive() to false immediately
+assert !actor.isActive()                       // new sends fail from here (a send racing with stop() may still land)
+
+// The worker may still be draining queued messages. Poll for terminated
+// when you actually need to be sure the actor has finished shutting down.
+while (!actor.isTerminated()) Thread.sleep(10)
+assert actor.isTerminated()
 ----
 
 Actors implement `AutoCloseable`, so they work with
@@ -248,8 +327,8 @@ Actor.reactor { it * 2 }.withCloseable { actor ->
 [[actors-errors]]
 == Error Handling
 
-Exceptions in message handlers are captured and delivered to
-`sendAndGet` callers:
+Exceptions thrown by a handler are delivered to `sendAndGet` callers
+through the awaited reply:
 
 [source,groovy]
 ----
@@ -262,8 +341,197 @@ try {
 risky.stop()
 ----
 
-For fire-and-forget `send` calls, exceptions are silently absorbed
-(the actor continues processing subsequent messages).
+Fire-and-forget `send` calls have no reply to carry the exception.
+To observe handler failures from those messages — for logging,
+metrics, or shutting the actor down — register an `onError` callback:
+
+[source,groovy]
+----
+def actor = Actor.reactor { msg -> process(msg) }
+    .onError { Throwable t, msg ->
+        log.warn("handler failed on {}: {}", msg, t.message)
+    }
+----
+
+The context-aware overload receives an `ActorContext` first, useful
+when the callback needs to react beyond logging — for example,
+stopping the actor:
+
+[source,groovy]
+----
+actor.onError { ctx, t, msg -> ctx.self().stop() }
+----
+
+Exceptions thrown from inside the `onError` callback itself are
+caught and discarded so they cannot destabilise the dispatch loop.
+
+[[actors-fsm]]
+== FSM-style actors
+
+A stateful actor models a single behaviour. For multi-phase protocols
+— where the actor responds differently depending on which "state" it
+is in — three additional capabilities on `ActorContext` cover most of
+what you'd reach for from a dedicated FSM library:
+
+- `ctx.become(newHandler)` — swap the active handler at runtime;
+  state is preserved across the swap.
+- `ctx.stash()` / `ctx.unstashAll()` — defer the current message for
+  later replay (typically because it arrived in the wrong phase).
+- `ctx.scheduleOnce(msg, delay)` /
+  `ctx.scheduleAtFixedRate(msg, initialDelay, interval)` — self-send a
+  message after a delay, with a cancellable handle.
+
+These capabilities are only available via the context-aware factory
+overloads, which give the handler an `ActorContext` parameter.
+
+=== Swapping behaviour with become
+
+[source,groovy]
+----
+import groovy.concurrent.Actor
+import groovy.concurrent.ActorContext
+import groovy.concurrent.StatefulHandler
+
+// Phase A increments by 1; phase B increments by 10.
+StatefulHandler phaseB = { ctx, s, m -> s + 10 } as StatefulHandler
+
+def actor = Actor.stateful(0, { ActorContext ctx, int s, m ->
+    if (m == 'swap') { ctx.become(phaseB); return s }
+    s + 1
+} as StatefulHandler)
+
+assert await(actor.sendAndGet('inc'))  == 1
+assert await(actor.sendAndGet('swap')) == 1    // state preserved
+assert await(actor.sendAndGet('inc'))  == 11   // now phase B
+----
+
+The swap takes effect on the next message: the current handler
+invocation completes normally (including binding any reply). State is
+preserved verbatim; the new handler receives the same state value the
+current one would have returned.
+
+=== Deferring messages with stash
+
+When a message arrives while the actor is in the wrong phase, defer
+it with `ctx.stash()`. When the phase transitions to one that can
+handle it, call `ctx.unstashAll()` to replay all deferred messages in
+FIFO order at the head of the mailbox:
+
+[source,groovy]
+----
+StatefulHandler connected = { ctx, s, m -> "got($m)" } as StatefulHandler
+
+def actor = Actor.stateful('init', { ActorContext ctx, s, m ->
+    if (m == 'ready') {
+        ctx.become(connected)
+        ctx.unstashAll()      // replay anything stashed while not ready
+        return s
+    }
+    ctx.stash()               // any other message is deferred for now
+    s
+} as StatefulHandler)
+
+def r1 = actor.sendAndGet('A')    // stashed
+def r2 = actor.sendAndGet('B')    // stashed
+actor.send('ready')               // → connected, then replays A and B
+assert await(r1) == 'got(A)'
+assert await(r2) == 'got(B)'
+----
+
+The stash is unbounded by default.
+
+WARNING: An actor that stashes messages from a source whose volume you
+do not control (network input, external clients, untrusted callers)
+can grow the stash without limit and exhaust the JVM heap if the phase
+transition that would call `unstashAll()` never arrives. For any such
+actor, set a bound via `withStashBound` at construction time.
+
+[source,groovy]
+----
+def options = ActorOptions.DEFAULTS
+    .withStashBound(64, ActorOptions.StashOverflow.REJECT)
+----
+
+Policies are `FAIL` (throw from `stash()`), `DROP_OLDEST` (evict the
+oldest stashed message, binding its `sendAndGet` reply to error), and
+`REJECT` (bind the current message's reply to error without stashing
+it).
+
+=== Scheduled self-sends
+
+For state timeouts, heartbeats, retries, and periodic work, the
+context exposes one-shot and recurring schedules over the shared
+async scheduler:
+
+[source,groovy]
+----
+import java.time.Duration
+
+def actor = Actor.stateful(0, { ActorContext ctx, s, m ->
+    if (m == 'start') {
+        ctx.scheduleAtFixedRate('tick',
+            Duration.ofSeconds(1), Duration.ofSeconds(5))
+        return s
+    }
+    if (m == 'tick') return s + 1
+    s
+} as StatefulHandler)
+----
+
+`scheduleOnce` returns a `Cancellable` so a phase transition can call
+off a pending timer:
+
+[source,groovy]
+----
+def timer = ctx.scheduleOnce('auth-timeout', Duration.ofSeconds(30))
+// ... later, when AuthResult arrives:
+timer.cancel()
+----
+
+`Actor.stop()` cancels every outstanding timer the actor scheduled —
+no zombies after shutdown.
+
+=== End-to-end: a connection handshake
+
+A common FSM shape — `disconnected → authenticating → connected` —
+combining all three capabilities:
+
+[source,groovy]
+----
+import groovy.concurrent.Actor
+import groovy.concurrent.ActorContext
+import groovy.concurrent.StatefulHandler
+
+StatefulHandler disconnected, authenticating, connected
+
+disconnected = { ctx, s, m ->
+    if (m == 'connect') { ctx.become(authenticating); return s }
+    s
+} as StatefulHandler
+
+authenticating = { ctx, s, m ->
+    if (m == 'auth-ok') {
+        ctx.become(connected)
+        ctx.unstashAll()
+        return s
+    }
+    ctx.stash()                // commands arriving during auth are deferred
+    s
+} as StatefulHandler
+
+connected = { ctx, s, m ->
+    // Real connected handlers use s — here we bump an "ops processed"
+    // counter to demonstrate that state survives every transition.
+    [ops: s.ops + 1]
+} as StatefulHandler
+
+def actor = Actor.stateful([ops: 0], disconnected)
+actor.send('connect')
+def r1 = actor.sendAndGet([cmd: 'read'])    // stashed in authenticating
+actor.send('auth-ok')                       // → connected; r1 now processes
+assert await(r1) == [ops: 1]                // state preserved across phases
+actor.stop()
+----
 
 [[actors-vs-agent]]
 == Choosing Between Agent and Actor
@@ -283,6 +551,10 @@ For fire-and-forget `send` calls, exceptions are silently absorbed
 |Reply
 |`getAsync()` / `sendAndGet(fn)` returns new value
 |`sendAndGet(msg)` returns handler result
+
+|Multi-phase behaviour
+|—
+|`become` / `stash` / scheduled self-sends
 
 |Use case
 |Thread-safe counters, caches, accumulators
