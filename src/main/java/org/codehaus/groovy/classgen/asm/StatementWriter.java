@@ -449,7 +449,9 @@ public class StatementWriter {
         if (statement.getElseBlock().isEmpty()) {
             mv.visitLabel(elsePath);
         } else {
-            mv.visitJumpInsn(GOTO, exitPath);
+            if (maybeFallsThrough(statement.getIfBlock())) {
+                mv.visitJumpInsn(GOTO, exitPath);
+            }
             mv.visitLabel(elsePath);
             statement.getElseBlock().visit(controller.getAcg());
         }
