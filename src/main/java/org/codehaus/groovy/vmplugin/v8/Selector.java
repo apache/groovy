@@ -824,6 +824,11 @@ public abstract class Selector {
                     // Object.class handles both cases at once
                     handle = MethodHandles.dropArguments(handle, 0, Object.class);
                 }
+            } else if (method instanceof GeneratedMetaMethod gMethod) {
+                if (LOG_ENABLED) LOG.info("meta method is generated helper");
+                handle = gMethod.getTargetMethodHandle();
+                isVargs = gMethod.isVargsMethod();
+                catchException = false;
             } else if (method != null) {
                 if (LOG_ENABLED) LOG.info("meta method is dgm helper");
                 // generic meta method invocation path

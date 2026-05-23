@@ -41,11 +41,14 @@ import static java.lang.System.Logger.Level.INFO;
 
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
@@ -55,6 +58,7 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 /**
@@ -117,11 +121,15 @@ public class DgmConverter {
 
             final String methodDescriptor = BytecodeHelper.getMethodDescriptor(returnType, method.getNativeParameterTypes());
 
+            createTargetMethodHandleField(cw, method, className);
+
             createInvokeMethod(method, cw, returnType, methodDescriptor);
 
             createDoMethodInvokeMethod(method, cw, className, returnType, methodDescriptor);
 
             createIsValidMethodMethod(method, cw, className);
+
+            createGetTargetMethodHandleMethod(cw, className);
 
             cw.visitEnd();
 
@@ -271,5 +279,58 @@ public class DgmConverter {
             Class type = parameters[i + 1].getTheClass();
             BytecodeHelper.doCast(mv, type);
         }
+    }
+
+    private static void createTargetMethodHandleField(ClassWriter cw, CachedMethod method, String className) {
+        // private static final java.lang.invoke.MethodHandle TARGET;
+        cw.visitField(ACC_PRIVATE + ACC_STATIC + ACC_FINAL,
+            "TARGET", "Ljava/lang/invoke/MethodHandle;", null, null).visitEnd();
+
+        // static initializer
+        MethodVisitor mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        mv.visitCode();
+
+        // Lookup lookup = java.lang.invoke.MethodHandles.lookup();
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup",
+            "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
+        mv.visitVarInsn(ASTORE, 0);
+
+        // Class ownerClass = <declaring class>.class;
+        String ownerInternal = BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass());
+        mv.visitLdcInsn(org.objectweb.asm.Type.getObjectType(ownerInternal));
+        mv.visitVarInsn(ASTORE, 1);
+
+        // String methodName = "<method name>"
+        mv.visitLdcInsn(method.getName());
+        mv.visitVarInsn(ASTORE, 2);
+
+        // MethodType methodType = MethodType.methodType(<return>, <param1>, <param2>, ...)
+        mv.visitLdcInsn(org.objectweb.asm.Type.getMethodType(method.getDescriptor()));
+        mv.visitVarInsn(ASTORE, 3);
+
+        // TARGET = lookup.findStatic(ownerClass, methodName, methodType);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitVarInsn(ALOAD, 3);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandles$Lookup", "findStatic",
+            "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;", false);
+        mv.visitFieldInsn(PUTSTATIC, className, "TARGET", "Ljava/lang/invoke/MethodHandle;");
+
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(4, 4);
+        mv.visitEnd();
+    }
+
+    private static void createGetTargetMethodHandleMethod(ClassWriter cw, String className) {
+        MethodVisitor mv;
+        // public MethodHandle getTargetMethodHandle() { return TARGET; }
+        mv = cw.visitMethod(ACC_PUBLIC, "getTargetMethodHandle",
+            "()Ljava/lang/invoke/MethodHandle;", null, null);
+        mv.visitCode();
+        mv.visitFieldInsn(GETSTATIC, className, "TARGET", "Ljava/lang/invoke/MethodHandle;");
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
     }
 }

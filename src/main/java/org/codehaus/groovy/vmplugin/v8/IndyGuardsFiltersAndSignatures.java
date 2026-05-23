@@ -90,7 +90,7 @@ public class IndyGuardsFiltersAndSignatures {
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic (GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
             GROOVY_OBJECT_INVOKER                = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "invokeGroovyObjectInvoker", MethodType.methodType(Object.class, MissingMethodException.class, Object.class, String.class, Object[].class));
             GROOVY_OBJECT_GET_PROPERTY           = LOOKUP.findVirtual(GroovyObject.class, "getProperty", MethodType.methodType(Object.class, String.class));
-            META_METHOD_INVOKER                  = LOOKUP.findVirtual(MetaMethod.class, "invoke", MethodType.methodType(Object.class, Object.class, Object[].class));
+            META_METHOD_INVOKER                  = LOOKUP.findVirtual(MetaMethod.class, "doMethodInvoke", MethodType.methodType(Object.class, Object.class, Object[].class));
             META_CLASS_INVOKE_METHOD             = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", MethodType.methodType(Object.class, Class.class, Object.class, String.class, Object[].class, boolean.class, boolean.class));
             META_CLASS_INVOKE_STATIC_METHOD      = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
             BEAN_CONSTRUCTOR_PROPERTY_SETTER     = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
