@@ -101,15 +101,19 @@ public class CacheableCallSite extends MutableCallSite {
                 lruCache.put(className, resultSoftReference);
             }
         }
-        final SoftReference<MethodHandleWrapper> mhwsr = latestHitMethodHandleWrapperSoftReference;
-        final MethodHandleWrapper methodHandleWrapper = null == mhwsr ? null : mhwsr.get();
-
-        if (methodHandleWrapper == result) {
+        final SoftReference<MethodHandleWrapper> latestHitReference = latestHitMethodHandleWrapperSoftReference;
+        if (latestHitReference == resultSoftReference) {
             result.incrementLatestHitCount();
         } else {
-            result.resetLatestHitCount();
-            if (null != methodHandleWrapper) methodHandleWrapper.resetLatestHitCount();
-            latestHitMethodHandleWrapperSoftReference = resultSoftReference;
+            final MethodHandleWrapper latestHitMethodHandleWrapper = null == latestHitReference ? null : latestHitReference.get();
+            if (latestHitMethodHandleWrapper == result) {
+                result.incrementLatestHitCount();
+                latestHitMethodHandleWrapperSoftReference = resultSoftReference;
+            } else {
+                result.resetLatestHitCount();
+                if (null != latestHitMethodHandleWrapper) latestHitMethodHandleWrapper.resetLatestHitCount();
+                latestHitMethodHandleWrapperSoftReference = resultSoftReference;
+            }
         }
 
         return result;

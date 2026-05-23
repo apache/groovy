@@ -30,7 +30,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
-import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -371,33 +370,67 @@ public class IndyInterface {
             mhw = fallbackSupplier.get();
         }
 
-        if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
-            // GROOVY-11935: Set invokedynamic call site target immediately to enable earlier JIT inlining.
-            if (callSite.type().parameterType(0) == Class.class) {
-                var method = mhw.getMethod();
-                if (method != null && Modifier.isStatic(method.getModifiers())) {
-                    callSite.setTarget(mhw.getTargetMethodHandle());
-                }
-            }
+        if (mhw.isCanSetTarget()) {
+            long latestHitCount = mhw.getLatestHitCount();
+            boolean optimizeTarget = latestHitCount > INDY_OPTIMIZE_THRESHOLD;
+            boolean setTargetEarly = shouldSetCallSiteTargetEarly(mhw, receiver, latestHitCount);
 
-            if (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD) {
-                if (callSite.getFallbackRound().get() > INDY_FALLBACK_CUTOFF) {
-                    if (callSite.getTarget() != callSite.getDefaultTarget()) {
-                        // reset the call site target to default forever to avoid JIT deoptimization storm further
-                        callSite.setTarget(callSite.getDefaultTarget());
+            if (setTargetEarly || optimizeTarget) {
+                MethodHandle targetMethodHandle = mhw.getTargetMethodHandle();
+                MethodHandle currentTarget = callSite.getTarget();
+                if (currentTarget != targetMethodHandle) {
+                    if (setTargetEarly) {
+                        callSite.setTarget(targetMethodHandle);
+                        currentTarget = targetMethodHandle;
                     }
-                } else {
-                    if (callSite.getTarget() != mhw.getTargetMethodHandle()) {
-                        callSite.setTarget(mhw.getTargetMethodHandle());
-                        if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
+
+                    if (optimizeTarget) {
+                        if (callSite.getFallbackRound().get() > INDY_FALLBACK_CUTOFF) {
+                            MethodHandle defaultTarget = callSite.getDefaultTarget();
+                            if (currentTarget != defaultTarget) {
+                                // reset the call site target to default forever to avoid JIT deoptimization storm further
+                                callSite.setTarget(defaultTarget);
+                            }
+                        } else {
+                            if (currentTarget != targetMethodHandle) {
+                                callSite.setTarget(targetMethodHandle);
+                                if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
+                            }
+                        }
+
+                        mhw.resetLatestHitCount();
                     }
                 }
-
-                mhw.resetLatestHitCount();
             }
         }
 
         return mhw.getCachedMethodHandle();
+    }
+
+    /**
+     * GROOVY-11935: install direct-looking targets early when the receiver shape is already
+     * specific enough to make earlier JIT inlining worthwhile.
+     *
+     * <p>Three cases trigger early relinking (in priority order):
+     * <ol>
+     *   <li><b>Private method (static or instance)</b> — non-overridable by definition; the
+     *       dispatch target is uniquely determined regardless of the call-site receiver type,
+     *       so relinking is safe on the very first hit.</li>
+     *   <li><b>Static call on a {@code Class} receiver</b> — the dispatch target
+     *       is fully determined by the declared call-site type; relink on first hit.</li>
+     *   <li><b>Final receiver type</b> — the JVM verifier guarantees that any non-null,
+     *       non-{@code Class} object reaching a call site whose static parameter type is a
+     *       {@code final} class is exactly that class (no subclass can exist). The runtime
+     *       type therefore needs no separate equality check; one repeated hit is still
+     *       required to avoid thrashing cold sites.</li>
+     * </ol>
+     */
+    private static boolean shouldSetCallSiteTargetEarly(MethodHandleWrapper mhw, Object receiver, long latestHitCount) {
+        if (mhw.shouldSetCallSiteTargetImmediately()) return true;
+
+        return mhw.shouldSetCallSiteTargetOnRepeatedHit()
+            && latestHitCount > 0
+            && receiver != null;
     }
 
     /**
@@ -452,11 +485,12 @@ public class IndyInterface {
         Selector selector = Selector.getSelector(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments);
         selector.setCallSiteTarget();
 
-        return new MethodHandleWrapper(
+        return MethodHandleWrapper.create(
                 selector.handle.asSpreader(Object[].class, arguments.length).asType(MethodType.methodType(Object.class, Object[].class)),
                 selector.handle,
                 selector.method,
-                selector.cache
+                selector.cache,
+                callSite.type().parameterType(0)
         );
     }
 

@@ -21,6 +21,7 @@ package org.codehaus.groovy.vmplugin.v8;
 import groovy.lang.MetaMethod;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,6 +34,7 @@ class MethodHandleWrapper {
     private final MethodHandle targetMethodHandle;
     private final MetaMethod method;
     private final boolean canSetTarget;
+    private final CallSiteTargetRelinkPolicy callSiteTargetRelinkPolicy;
     private final AtomicLong latestHitCount = new AtomicLong(0);
 
     /**
@@ -44,10 +46,35 @@ class MethodHandleWrapper {
      * @param canSetTarget whether the call site target may be updated to this handle
      */
     public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, boolean canSetTarget) {
+        this(cachedMethodHandle, targetMethodHandle, method, canSetTarget, CallSiteTargetRelinkPolicy.NEVER);
+    }
+
+    private MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, boolean canSetTarget, CallSiteTargetRelinkPolicy callSiteTargetRelinkPolicy) {
         this.cachedMethodHandle = cachedMethodHandle;
         this.targetMethodHandle = targetMethodHandle;
         this.method = method;
         this.canSetTarget = canSetTarget;
+        this.callSiteTargetRelinkPolicy = callSiteTargetRelinkPolicy;
+    }
+
+    /**
+     * Creates a wrapper and precomputes the early call-site relink policy for the supplied receiver type.
+     *
+     * @param cachedMethodHandle the cached invocation handle
+     * @param targetMethodHandle the relink target handle
+     * @param method the associated meta method
+     * @param canSetTarget whether the call site target may be updated to this handle
+     * @param receiverType the declared call-site receiver type
+     * @return the configured wrapper
+     */
+    static MethodHandleWrapper create(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, boolean canSetTarget, Class<?> receiverType) {
+        return new MethodHandleWrapper(
+            cachedMethodHandle,
+            targetMethodHandle,
+            method,
+            canSetTarget,
+            resolveCallSiteTargetRelinkPolicy(method, receiverType)
+        );
     }
 
     /**
@@ -87,6 +114,24 @@ class MethodHandleWrapper {
     }
 
     /**
+     * Indicates whether the call site can be relinked on the first cache hit.
+     *
+     * @return {@code true} when the target can be installed immediately
+     */
+    boolean shouldSetCallSiteTargetImmediately() {
+        return callSiteTargetRelinkPolicy == CallSiteTargetRelinkPolicy.IMMEDIATE;
+    }
+
+    /**
+     * Indicates whether the call site can be relinked after observing a repeated exact-final receiver hit.
+     *
+     * @return {@code true} when a repeated hit may trigger relinking
+     */
+    boolean shouldSetCallSiteTargetOnRepeatedHit() {
+        return callSiteTargetRelinkPolicy == CallSiteTargetRelinkPolicy.AFTER_REPEATED_HIT;
+    }
+
+    /**
      * Increments the hit count for the latest inline-cache hit.
      *
      * @return the updated hit count
@@ -118,6 +163,29 @@ class MethodHandleWrapper {
      */
     public static MethodHandleWrapper getNullMethodHandleWrapper() {
         return NullMethodHandleWrapper.INSTANCE;
+    }
+
+    private static CallSiteTargetRelinkPolicy resolveCallSiteTargetRelinkPolicy(MetaMethod method, Class<?> receiverType) {
+        if (method == null) return CallSiteTargetRelinkPolicy.NEVER;
+
+        int modifiers = method.getModifiers();
+        if (Modifier.isPrivate(modifiers)) return CallSiteTargetRelinkPolicy.IMMEDIATE;
+        if (Modifier.isStatic(modifiers)) {
+            return receiverType == Class.class
+                ? CallSiteTargetRelinkPolicy.IMMEDIATE
+                : CallSiteTargetRelinkPolicy.NEVER;
+        }
+        if (receiverType == Class.class) return CallSiteTargetRelinkPolicy.NEVER;
+
+        return Modifier.isFinal(receiverType.getModifiers())
+            ? CallSiteTargetRelinkPolicy.AFTER_REPEATED_HIT
+            : CallSiteTargetRelinkPolicy.NEVER;
+    }
+
+    private enum CallSiteTargetRelinkPolicy {
+        NEVER,
+        IMMEDIATE,
+        AFTER_REPEATED_HIT
     }
 
     private static class NullMethodHandleWrapper extends MethodHandleWrapper {

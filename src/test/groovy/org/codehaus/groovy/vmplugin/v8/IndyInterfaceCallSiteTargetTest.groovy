@@ -42,6 +42,10 @@ final class IndyInterfaceCallSiteTargetTest {
         return 'foo-result'
     }
 
+    protected String protectedFoo() {
+        return 'protected-foo-result'
+    }
+
     private static String staticFoo() {
         return 'static-foo-result'
     }
@@ -58,14 +62,24 @@ final class IndyInterfaceCallSiteTargetTest {
 
     private static final class ClassA {
         private static String bar() { return 'bar-from-A' }
+        static String baz() { return 'baz-from-A' }
     }
 
     private static final class ClassB {
         private static String bar() { return 'bar-from-B' }
+        static String baz() { return 'baz-from-B' }
     }
 
     private static final class InstanceStaticCallTarget {
         private static String valueOf(String value) { return "instance-static-$value" }
+        static String visibleValueOf(String value) { return "instance-visible-static-$value" }
+    }
+
+    private static class PrivateMethodBase {
+        private String hidden() { return 'hidden-from-base' }
+    }
+
+    private static final class PrivateMethodChild extends PrivateMethodBase {
     }
 
     @Test
@@ -87,6 +101,29 @@ final class IndyInterfaceCallSiteTargetTest {
         )
 
         assertEquals(staticFoo(), result)
+        assertNotSame(callSite.defaultTarget, callSite.target)
+    }
+
+    @Test
+    void testDeprecatedFromCacheRelinksTargetImmediatelyForPrivateMethod() {
+        MethodType type = MethodType.methodType(Object, Object)
+        CacheableCallSite callSite = newCallSite(type)
+        def receiver = new IndyInterfaceCallSiteTargetTest()
+        Object[] args = [receiver] as Object[]
+
+        Object result = IndyInterface.fromCache(
+            callSite,
+            IndyInterfaceCallSiteTargetTest,
+            'foo',
+            IndyInterface.CallType.METHOD.getOrderNumber(),
+            Boolean.FALSE,
+            Boolean.TRUE,
+            Boolean.FALSE,
+            1,
+            args
+        )
+
+        assertEquals(receiver.foo(), result)
         assertNotSame(callSite.defaultTarget, callSite.target)
     }
 
@@ -135,6 +172,95 @@ final class IndyInterfaceCallSiteTargetTest {
         assertSame(wrapper.cachedMethodHandle, methodHandle)
         assertSame(wrapper.targetMethodHandle, callSite.target)
         assertEquals(0L, wrapper.latestHitCount)
+    }
+
+    @Test
+    void testFromCacheHandleRelinksImmediatelyForPrivateMethodEvenWithGenericCallSiteType() {
+        MethodType type = MethodType.methodType(Object, Object)
+        CacheableCallSite callSite = newCallSite(type)
+        def receiver = new IndyInterfaceCallSiteTargetTest()
+        Object[] args = [receiver] as Object[]
+
+        MethodHandle methodHandle = invokeFromCacheHandle(
+            callSite, IndyInterfaceCallSiteTargetTest, 'foo',
+            IndyInterface.CallType.METHOD.getOrderNumber(),
+            Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, 1, args
+        )
+
+        assertEquals(receiver.foo(), methodHandle.invokeWithArguments([args] as Object[]))
+        assertNotSame(callSite.defaultTarget, callSite.target)
+    }
+
+    @Test
+    void testFromCacheHandleRelinksImmediatelyForPrivateMethodOnSubclassReceiver() {
+        MethodType type = MethodType.methodType(Object, Object)
+        CacheableCallSite callSite = newCallSite(type)
+        def receiver = new PrivateMethodChild()
+        Object[] args = [receiver] as Object[]
+
+        MethodHandle methodHandle = invokeFromCacheHandle(
+            callSite, PrivateMethodBase, 'hidden',
+            IndyInterface.CallType.METHOD.getOrderNumber(),
+            Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, 1, args
+        )
+
+        assertEquals('hidden-from-base', methodHandle.invokeWithArguments([args] as Object[]))
+        assertNotSame(callSite.defaultTarget, callSite.target)
+    }
+
+    @Test
+    void testFromCacheHandleRelinksExactFinalReceiverAfterRepeatedHit() {
+        MethodType type = MethodType.methodType(Object, IndyInterfaceCallSiteTargetTest)
+        CacheableCallSite callSite = newCallSite(type)
+        def receiver = new IndyInterfaceCallSiteTargetTest()
+        Object[] args = [receiver] as Object[]
+        MethodHandleWrapper wrapper = newCachedWrapper(
+            type, 'cached-final-result', 'final-target-result',
+            CachedMethod.find(IndyInterfaceCallSiteTargetTest.getDeclaredMethod('protectedFoo')), true
+        )
+
+        cacheWrapper(callSite, receiver, wrapper)
+
+        MethodHandle firstHit = invokeFromCacheHandle(
+            callSite, IndyInterfaceCallSiteTargetTest, 'protectedFoo',
+            IndyInterface.CallType.METHOD.getOrderNumber(),
+            Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
+        )
+        assertSame(wrapper.cachedMethodHandle, firstHit)
+        assertSame(callSite.defaultTarget, callSite.target)
+
+        MethodHandle secondHit = invokeFromCacheHandle(
+            callSite, IndyInterfaceCallSiteTargetTest, 'protectedFoo',
+            IndyInterface.CallType.METHOD.getOrderNumber(),
+            Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
+        )
+        assertSame(wrapper.cachedMethodHandle, secondHit)
+        assertSame(wrapper.targetMethodHandle, callSite.target)
+    }
+
+    @Test
+    void testFromCacheHandleDoesNotRelinkFinalReceiverWhenCallSiteTypeIsNotExact() {
+        MethodType type = MethodType.methodType(Object, Object)
+        CacheableCallSite callSite = newCallSite(type)
+        def receiver = new IndyInterfaceCallSiteTargetTest()
+        Object[] args = [receiver] as Object[]
+        MethodHandleWrapper wrapper = newCachedWrapper(
+            type, 'cached-object-result', 'ignored-object-target',
+            CachedMethod.find(IndyInterfaceCallSiteTargetTest.getDeclaredMethod('protectedFoo')), true
+        )
+
+        cacheWrapper(callSite, receiver, wrapper)
+
+        2.times {
+            MethodHandle methodHandle = invokeFromCacheHandle(
+                callSite, IndyInterfaceCallSiteTargetTest, 'protectedFoo',
+                IndyInterface.CallType.METHOD.getOrderNumber(),
+                Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
+            )
+            assertSame(wrapper.cachedMethodHandle, methodHandle)
+        }
+
+        assertSame(callSite.defaultTarget, callSite.target)
     }
 
     @Test
@@ -230,19 +356,19 @@ final class IndyInterfaceCallSiteTargetTest {
     }
 
     @Test
-    void testFromCacheHandleDoesNotRelinkWhenCallSiteParamIsObjectEvenIfReceiverIsClass() {
+    void testFromCacheHandleDoesNotRelinkWhenCallSiteParamIsObjectEvenIfReceiverIsClassForNonPrivateStaticMethod() {
         MethodType type = MethodType.methodType(Object, Object)
         CacheableCallSite callSite = newCallSite(type)
         Object[] args = [ClassA] as Object[]
         MethodHandleWrapper wrapper = newCachedWrapper(
             type, 'class-a-result', 'class-a-target',
-            CachedMethod.find(ClassA.getDeclaredMethod('bar')), true
+            CachedMethod.find(ClassA.getDeclaredMethod('baz')), true
         )
 
         cacheWrapper(callSite, ClassA, wrapper)
 
         MethodHandle methodHandle = invokeFromCacheHandle(
-            callSite, ClassA, 'bar',
+            callSite, ClassA, 'baz',
             IndyInterface.CallType.METHOD.getOrderNumber(),
             Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
         )
@@ -315,7 +441,7 @@ final class IndyInterfaceCallSiteTargetTest {
     }
 
     @Test
-    void testFromCacheHandleDoesNotRelinkStaticMethodInvokedThroughInstanceReceiver() {
+    void testFromCacheHandleRelinksImmediatelyForPrivateStaticMethodInvokedThroughInstanceReceiver() {
         MethodType type = MethodType.methodType(Object, InstanceStaticCallTarget, String)
         CacheableCallSite callSite = newCallSite(type)
         def receiver = new InstanceStaticCallTarget()
@@ -340,6 +466,35 @@ final class IndyInterfaceCallSiteTargetTest {
 
         assertSame(cachedWrapper.cachedMethodHandle, cachedHandle)
         assertEquals(InstanceStaticCallTarget.valueOf('abc'), cachedHandle.invokeWithArguments([args] as Object[]))
+        assertNotSame(callSite.defaultTarget, callSite.target)
+    }
+
+    @Test
+    void testFromCacheHandleDoesNotRelinkNonPrivateStaticMethodInvokedThroughInstanceReceiver() {
+        MethodType type = MethodType.methodType(Object, InstanceStaticCallTarget, String)
+        CacheableCallSite callSite = newCallSite(type)
+        def receiver = new InstanceStaticCallTarget()
+        Object[] args = [receiver, 'abc'] as Object[]
+
+        MethodHandle selectedHandle = invokeSelectMethodHandle(
+            callSite, InstanceStaticCallTarget, 'visibleValueOf',
+            IndyInterface.CallType.METHOD.getOrderNumber(),
+            Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
+        )
+
+        assertEquals(InstanceStaticCallTarget.visibleValueOf('abc'), selectedHandle.invokeWithArguments([args] as Object[]))
+        MethodHandleWrapper cachedWrapper = requireCachedWrapper(callSite, receiver)
+        assertTrue(Modifier.isStatic(cachedWrapper.method.modifiers))
+        assertSame(callSite.defaultTarget, callSite.target)
+
+        MethodHandle cachedHandle = invokeFromCacheHandle(
+            callSite, InstanceStaticCallTarget, 'visibleValueOf',
+            IndyInterface.CallType.METHOD.getOrderNumber(),
+            Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, 1, args
+        )
+
+        assertSame(cachedWrapper.cachedMethodHandle, cachedHandle)
+        assertEquals(InstanceStaticCallTarget.visibleValueOf('abc'), cachedHandle.invokeWithArguments([args] as Object[]))
         assertSame(callSite.defaultTarget, callSite.target)
     }
 
@@ -399,7 +554,7 @@ final class IndyInterfaceCallSiteTargetTest {
     }
 
     private static MethodHandleWrapper newCachedWrapper(MethodType type, Object cachedValue, Object targetValue, MetaMethod method, boolean canSetTarget) {
-        new MethodHandleWrapper(cachedHandle(cachedValue), targetHandle(type, targetValue), method, canSetTarget)
+        MethodHandleWrapper.create(cachedHandle(cachedValue), targetHandle(type, targetValue), method, canSetTarget, type.parameterType(0))
     }
 
     private static MethodHandle cachedHandle(Object value) {
