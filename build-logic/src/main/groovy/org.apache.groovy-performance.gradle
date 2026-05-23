@@ -60,6 +60,9 @@ jmh {
     if (project.hasProperty('jmhResultFormat')) {
         resultFormat = project.jmhResultFormat
     }
+    if (project.hasProperty('jmhProfilers')) {
+        profilers = project.jmhProfilers.split(',') as List
+    }
 }
 
 jmhJar {

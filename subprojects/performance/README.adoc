@@ -54,3 +54,26 @@ To run a single benchmark or a matched set of benchmarks, use the
 The `benchInclude` property will perform a partial match against package
 names or class names. It is equivalent to `.\*${benchInclude}.*`.
 
+To attach JMH profilers (e.g. the `gc` profiler, which reports
+`gc.alloc.rate.norm` in bytes/op), use the `jmhProfilers` property
+(comma-separated):
+
+    ./gradlew -PbenchInclude=FatFreeLambda -PjmhProfilers=gc :perf:jmh
+
+== Ad-hoc benchmarks
+
+Benchmarks under the `org.apache.groovy.adhoc` package are exploratory,
+idiom-vs-idiom comparisons (for example, the `FatFreeLambda` set comparing
+closure / `rcurry` idioms against the "fat-free" `java.util.function`
+overloads and `curryWith` helpers). Their headline metric is *allocation*,
+not throughput-over-time.
+
+They are deliberately excluded from the `jmh`, `jmh-classic` and `jmh-daily`
+CI suites (whose `benchInclude` patterns only match `.bench.` and `.perf.`).
+Instead, the `jmh-adhoc` workflow runs them weekly (and on demand) with the
+`gc` profiler, publishing throughput and allocation to their own dashboard
+area under `dev/bench/jmh-adhoc/` so the core regression buckets stay
+untouched. Run them locally with:
+
+    ./gradlew -PbenchInclude='\.adhoc\.' -PjmhProfilers=gc :perf:jmh
+
