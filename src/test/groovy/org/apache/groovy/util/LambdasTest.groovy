@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.util
 
-import groovy.lang.Closure
 import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
@@ -77,8 +76,8 @@ class LambdasTest {
         BiPredicate<Integer, Integer> greaterThan = (n, threshold) -> n > threshold
 
         List<Integer> result = Stream.of(1, 2, 3, 4, 5)
-                .filter(curryWith(greaterThan, 2))
-                .toList()
+            .filter(curryWith(greaterThan, 2))
+            .toList()
 
         assert result == [3, 4, 5]
     }
@@ -105,7 +104,7 @@ class LambdasTest {
         BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
         // findAll(Iterable, BiPredicate, param) bakes in the right-curry
         assert [1, 2, 3, 4, 5, 6].findAll(divisibleBy, 2) ==
-                [1, 2, 3, 4, 5, 6].findAll(curryWith(divisibleBy, 2))
+            [1, 2, 3, 4, 5, 6].findAll(curryWith(divisibleBy, 2))
 
         // findAll(Set, BiPredicate, param) preserves the Set type
         def evens = ([1, 2, 3, 4, 5, 6] as Set).findAll(divisibleBy, 2)
@@ -114,12 +113,12 @@ class LambdasTest {
 
         // find(Iterable, BiPredicate, param) returns the first match
         assert [1, 2, 3, 4, 5, 6].find(divisibleBy, 3) ==
-                [1, 2, 3, 4, 5, 6].find(curryWith(divisibleBy, 3))
+            [1, 2, 3, 4, 5, 6].find(curryWith(divisibleBy, 3))
 
         BiFunction<String, Integer, String> repeat = (s, n) -> s * n
         // collect(Iterable, BiFunction, param) bakes in the right-curry
         assert ['a', 'b', 'c'].collect(repeat, 3) ==
-                ['a', 'b', 'c'].collect(curryWith(repeat, 3))
+            ['a', 'b', 'c'].collect(curryWith(repeat, 3))
     }
 
     @Test
@@ -137,11 +136,11 @@ class LambdasTest {
     void fatFreeLazyVariantsMatchClosureVariants() {
         Function<Integer, Integer> next = n -> n + 1
         assert [1, 2, 3].iterator().collecting(next).toList() ==
-                [1, 2, 3].iterator().collecting { it + 1 }.toList()
+            [1, 2, 3].iterator().collecting { it + 1 }.toList()
 
         Predicate<Integer> isEven = n -> n % 2 == 0
         assert [1, 2, 3, 4, 5, 6].iterator().findingAll(isEven).toList() ==
-                [1, 2, 3, 4, 5, 6].iterator().findingAll { it % 2 == 0 }.toList()
+            [1, 2, 3, 4, 5, 6].iterator().findingAll { it % 2 == 0 }.toList()
     }
 
     @Test
@@ -152,13 +151,13 @@ class LambdasTest {
         assert [1, 2, 3].any(divisibleBy, 2)
         assert ![1, 3, 5].any(divisibleBy, 2)
         assert [1, 2, 3].any(divisibleBy, 2) ==
-                [1, 2, 3].any(curryWith(divisibleBy, 2))
+            [1, 2, 3].any(curryWith(divisibleBy, 2))
 
         // every(Iterable, BiPredicate, param) bakes in the right-curry
         assert [2, 4, 6].every(divisibleBy, 2)
         assert ![2, 3, 4].every(divisibleBy, 2)
         assert [2, 4, 6].every(divisibleBy, 2) ==
-                [2, 4, 6].every(curryWith(divisibleBy, 2))
+            [2, 4, 6].every(curryWith(divisibleBy, 2))
     }
 
     @Test
@@ -170,7 +169,7 @@ class LambdasTest {
         BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
         // count(Iterable, BiPredicate, param) bakes in the right-curry
         assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(divisibleBy, 2) ==
-                [2, 4, 2, 1, 3, 5, 2, 4, 3].count(curryWith(divisibleBy, 2))
+            [2, 4, 2, 1, 3, 5, 2, 4, 3].count(curryWith(divisibleBy, 2))
     }
 
     @Test
@@ -183,7 +182,7 @@ class LambdasTest {
         assert [2, 4, 2, 1, 3, 5, 2, 4, 3].iterator().count(isEven) == 5
         // Iterable count(Predicate) delegates to the Iterator variant
         assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(isEven) ==
-                [2, 4, 2, 1, 3, 5, 2, 4, 3].iterator().count(isEven)
+            [2, 4, 2, 1, 3, 5, 2, 4, 3].iterator().count(isEven)
     }
 
     @Test
@@ -207,13 +206,13 @@ class LambdasTest {
         BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
         // no find(Iterator, Predicate) exists, so compare against Iterable find(Predicate)
         assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 3) ==
-                [1, 2, 3, 4, 5, 6].find(curryWith(divisibleBy, 3))
+            [1, 2, 3, 4, 5, 6].find(curryWith(divisibleBy, 3))
         assert [1, 2, 3, 4, 5, 6].iterator().findingAll(divisibleBy, 2).toList() ==
-                [1, 2, 3, 4, 5, 6].iterator().findingAll(curryWith(divisibleBy, 2)).toList()
+            [1, 2, 3, 4, 5, 6].iterator().findingAll(curryWith(divisibleBy, 2)).toList()
 
         BiFunction<Integer, Integer, Integer> add = (n, d) -> n + d
         assert [1, 2, 3].iterator().collecting(add, 10).toList() ==
-                [1, 2, 3].iterator().collecting(curryWith(add, 10)).toList()
+            [1, 2, 3].iterator().collecting(curryWith(add, 10)).toList()
     }
 
     @Test
