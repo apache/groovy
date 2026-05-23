@@ -783,7 +783,7 @@ public abstract class Selector {
             boolean isCategoryTypeMethod = (metaMethod instanceof NewInstanceMetaMethod);
             if (LOG_ENABLED) LOG.info("meta method is category type method: " + isCategoryTypeMethod);
             boolean isStaticCategoryTypeMethod = (metaMethod instanceof NewStaticMetaMethod);
-            if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isCategoryTypeMethod);
+            if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isStaticCategoryTypeMethod);
 
             if (metaMethod instanceof ReflectionMetaMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is reflective method");
@@ -792,6 +792,7 @@ public abstract class Selector {
 
             if (metaMethod instanceof CachedMethod cm) {
                 isVargs = metaMethod.isVargsMethod();
+                catchException = false;
                 VMPlugin vmplugin = VMPluginFactory.getPlugin();
                 cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
                 try {
@@ -810,11 +811,11 @@ public abstract class Selector {
                         handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
                     } else {
                         handle = unreflect(cm.getCachedMethod());
+                        catchException = !isCategoryTypeMethod && !isStaticCategoryTypeMethod;
                     }
                 } catch (ReflectiveOperationException e) {
                     throw new GroovyBugError(e);
                 }
-                catchException = false;
                 if (isStaticCategoryTypeMethod) {
                     handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
                     handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
@@ -834,7 +835,6 @@ public abstract class Selector {
                 // generic meta method invocation path
                 handle = META_METHOD_INVOKER;
                 handle = handle.bindTo(method);
-                catchException = false;
                 if (spread) {
                     args = originalArguments;
                     skipSpreadCollector = true;
