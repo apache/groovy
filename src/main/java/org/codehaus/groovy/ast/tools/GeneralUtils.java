@@ -126,20 +126,61 @@ import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimit
  * @see GenericsUtils for generic type utilities
  */
 public class GeneralUtils {
-
+    /**
+     * AST assignment operator token ("=").
+     */
     public  static final Token ASSIGN        = Token.newSymbol(Types.ASSIGN                    , -1, -1);
+    /**
+     * AST compare-to operator token ("<=>").
+     */
     public  static final Token CMP           = Token.newSymbol(Types.COMPARE_TO                , -1, -1);
+    /**
+     * AST equality operator token ("==").
+     */
     public  static final Token EQ            = Token.newSymbol(Types.COMPARE_EQUAL             , -1, -1);
+    /**
+     * AST inequality operator token ("!=").
+     */
     public  static final Token NE            = Token.newSymbol(Types.COMPARE_NOT_EQUAL         , -1, -1);
+    /**
+     * AST non-identity operator token ("!==").
+     */
     public  static final Token NOT_IDENTICAL = Token.newSymbol(Types.COMPARE_NOT_IDENTICAL     , -1, -1);
+    /**
+     * AST greater-than-or-equal operator token (">=").
+     */
     public  static final Token GE            = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
+    /**
+     * AST greater-than operator token (">").
+     */
     public  static final Token GT            = Token.newSymbol(Types.COMPARE_GREATER_THAN      , -1, -1);
+    /**
+     * AST less-than-or-equal operator token ("<=").
+     */
     public  static final Token LE            = Token.newSymbol(Types.COMPARE_LESS_THAN_EQUAL   , -1, -1);
+    /**
+     * AST less-than operator token ("<").
+     */
     public  static final Token LT            = Token.newSymbol(Types.COMPARE_LESS_THAN         , -1, -1);
+    /**
+     * AST logical AND operator token ("&&").
+     */
     public  static final Token AND           = Token.newSymbol(Types.LOGICAL_AND               , -1, -1);
+    /**
+     * AST logical OR operator token ("||").
+     */
     public  static final Token OR            = Token.newSymbol(Types.LOGICAL_OR                , -1, -1);
+    /**
+     * AST instanceof keyword token.
+     */
     public  static final Token INSTANCEOF    = Token.newSymbol(Types.KEYWORD_INSTANCEOF        , -1, -1);
+    /**
+     * AST subtraction operator token ("-").
+     */
     public  static final Token MINUS         = Token.newSymbol(Types.MINUS                     , -1, -1);
+    /**
+     * AST addition operator token ("+").
+     */
     public  static final Token PLUS          = Token.newSymbol(Types.PLUS                      , -1, -1);
 
     /**
@@ -240,11 +281,23 @@ public class GeneralUtils {
     public static Statement assignNullS(final Expression target) {
         return assignS(target, ConstantExpression.EMPTY_EXPRESSION);
     }
-
+    /**
+     * Creates an assignment statement for the supplied target and value.
+     *
+     * @param target the assignment target expression
+     * @param value the value expression
+     * @return the resulting Statement
+     */
     public static Statement assignS(final Expression target, final Expression value) {
         return stmt(assignX(target, value));
     }
-
+    /**
+     * Creates an assignment expression using {@link #ASSIGN}.
+     *
+     * @param target the assignment target expression
+     * @param value the value expression
+     * @return the resulting Expression
+     */
     public static Expression assignX(final Expression target, final Expression value) {
         return binX(target, ASSIGN, value);
     }
@@ -255,20 +308,45 @@ public class GeneralUtils {
     public static AttributeExpression attrX(final Expression owner, final String attribute) {
         return new AttributeExpression(owner, constX(attribute));
     }
-
+    /**
+     * Creates an attribute access expression.
+     *
+     * @param owner the owner expression
+     * @param attribute the attribute expression
+     * @return the resulting AttributeExpression
+     */
     public static AttributeExpression attrX(final Expression owner, final Expression attribute) {
         return new AttributeExpression(owner, attribute);
     }
-
+    /**
+     * Deprecated compatibility bridge for {@link #attrX(Expression, Expression)}.
+     *
+     * @param owner the owner expression
+     * @param attribute the attribute expression
+     * @return the resulting Expression
+     */
     @Deprecated
     public static Expression  attrX$$bridge(final Expression owner, final Expression attribute) {
         return new AttributeExpression(owner, attribute);
     }
-
+    /**
+     * Creates a binary expression from operands and an operator token.
+     *
+     * @param left the left-hand operand
+     * @param token the operator token
+     * @param right the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression binX(final Expression left, final Token token, final Expression right) {
         return new BinaryExpression(left, token, right);
     }
-
+    /**
+     * Creates a block statement from statements and optional scope.
+     *
+     * @param scope the variable scope for the block
+     * @param stmts the statements to include in the block
+     * @return the resulting BlockStatement
+     */
     public static BlockStatement block(final VariableScope scope, final Statement... stmts) {
         BlockStatement block = new BlockStatement();
         block.setVariableScope(scope);
@@ -277,7 +355,13 @@ public class GeneralUtils {
         }
         return block;
     }
-
+    /**
+     * Creates a block statement from statements and optional scope.
+     *
+     * @param scope the variable scope for the block
+     * @param stmts the statements to include in the block
+     * @return the resulting BlockStatement
+     */
     public static BlockStatement block(final VariableScope scope, final List<Statement> stmts) {
         BlockStatement block = new BlockStatement();
         block.setVariableScope(scope);
@@ -286,7 +370,12 @@ public class GeneralUtils {
         }
         return block;
     }
-
+    /**
+     * Creates a block statement from statements and optional scope.
+     *
+     * @param stmts the statements to include in the block
+     * @return the resulting BlockStatement
+     */
     public static BlockStatement block(final Statement... stmts) {
         BlockStatement block = new BlockStatement();
         for (Statement stmt : stmts) {
@@ -294,11 +383,21 @@ public class GeneralUtils {
         }
         return block;
     }
-
+    /**
+     * Wraps an expression in a {@link BooleanExpression}.
+     *
+     * @param expr the expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression boolX(final Expression expr) {
         return new BooleanExpression(expr);
     }
-
+    /**
+     * Creates a custom {@link BytecodeExpression}.
+     *
+     * @param writer the bytecode writer callback
+     * @return the resulting BytecodeExpression
+     */
     public static BytecodeExpression bytecodeX(final Consumer<MethodVisitor> writer) {
         return new BytecodeExpression() {
             @Override
@@ -307,77 +406,184 @@ public class GeneralUtils {
             }
         };
     }
-
+    /**
+     * Creates a custom {@link BytecodeExpression}.
+     *
+     * @param type the target type
+     * @param writer the bytecode writer callback
+     * @return the resulting BytecodeExpression
+     */
     public static BytecodeExpression bytecodeX(final ClassNode type, final Consumer<MethodVisitor> writer) {
         BytecodeExpression expression = bytecodeX(writer);
         expression.setType(type);
         return expression;
     }
-
+    /**
+     * Creates a method call expression on {@code super}.
+     *
+     * @param methodName the method name
+     * @return the resulting MethodCallExpression
+     */
     public static MethodCallExpression callSuperX(final String methodName) {
         return callSuperX(methodName, MethodCallExpression.NO_ARGUMENTS);
     }
-
+    /**
+     * Creates a method call expression on {@code super}.
+     *
+     * @param methodName the method name
+     * @param args the argument expression(s)
+     * @return the resulting MethodCallExpression
+     */
     public static MethodCallExpression callSuperX(final String methodName, final Expression args) {
         return callX(varX("super"), methodName, args);
     }
-
+    /**
+     * Creates a method call expression on {@code this}.
+     *
+     * @param methodName the method name
+     * @return the resulting MethodCallExpression
+     */
     public static MethodCallExpression callThisX(final String methodName) {
         return callThisX(methodName, MethodCallExpression.NO_ARGUMENTS);
     }
-
+    /**
+     * Creates a method call expression on {@code this}.
+     *
+     * @param methodName the method name
+     * @param args the argument expression(s)
+     * @return the resulting MethodCallExpression
+     */
     public static MethodCallExpression callThisX(final String methodName, final Expression args) {
         return callX(varX("this"), methodName, args);
     }
-
+    /**
+     * Creates a method call expression.
+     *
+     * @param receiver the call receiver
+     * @param methodName the method name
+     * @return the resulting MethodCallExpression
+     */
     public static MethodCallExpression callX(final Expression receiver, final String methodName) {
         return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
     }
-
+    /**
+     * Creates a method call expression.
+     *
+     * @param receiver the call receiver
+     * @param methodName the method name
+     * @param args the argument expression(s)
+     * @return the resulting MethodCallExpression
+     */
     public static MethodCallExpression callX(final Expression receiver, final String methodName, final Expression args) {
         return new MethodCallExpression(receiver, methodName, args);
     }
-
+    /**
+     * Creates a method call expression.
+     *
+     * @param receiver the call receiver
+     * @param method the method expression
+     * @param args the argument expression(s)
+     * @return the resulting MethodCallExpression
+     */
     public static MethodCallExpression callX(final Expression receiver, final Expression method, final Expression args) {
         return new MethodCallExpression(receiver, method, args);
     }
-
+    /**
+     * Creates a method call expression.
+     *
+     * @param receiver the call receiver
+     * @param methodName the method name
+     * @return the resulting StaticMethodCallExpression
+     */
     public static StaticMethodCallExpression callX(final ClassNode receiver, final String methodName) {
         return callX(receiver, methodName, MethodCallExpression.NO_ARGUMENTS);
     }
-
+    /**
+     * Creates a method call expression.
+     *
+     * @param receiver the call receiver
+     * @param methodName the method name
+     * @param args the argument expression(s)
+     * @return the resulting StaticMethodCallExpression
+     */
     public static StaticMethodCallExpression callX(final ClassNode receiver, final String methodName, final Expression args) {
         return new StaticMethodCallExpression(receiver, methodName, args);
     }
-
+    /**
+     * Creates a switch-case statement.
+     *
+     * @param expression the expression
+     * @param code the statement body
+     * @return the resulting CaseStatement
+     */
     public static CaseStatement caseS(final Expression expression, Statement code) {
         return new CaseStatement(expression, code);
     }
-
+    /**
+     * Creates a cast expression.
+     *
+     * @param type the target type
+     * @param expression the expression
+     * @return the resulting CastExpression
+     */
     public static CastExpression castX(final ClassNode type, final Expression expression) {
         return new CastExpression(type, expression);
     }
-
+    /**
+     * Creates a cast expression.
+     *
+     * @param type the target type
+     * @param expression the expression
+     * @param ignoreAutoboxing whether autoboxing should be ignored
+     * @return the resulting CastExpression
+     */
     public static CastExpression castX(final ClassNode type, final Expression expression, final boolean ignoreAutoboxing) {
         return new CastExpression(type, expression, ignoreAutoboxing);
     }
-
+    /**
+     * Creates a catch statement.
+     *
+     * @param variable the loop or catch parameter
+     * @param code the statement body
+     * @return the resulting CatchStatement
+     */
     public static CatchStatement catchS(final Parameter variable, final Statement code) {
         return new CatchStatement(variable, code);
     }
-
+    /**
+     * Creates a class literal expression.
+     *
+     * @param clazz the class reference
+     * @return the resulting ClassExpression
+     */
     public static ClassExpression classX(final ClassNode clazz) {
         return new ClassExpression(clazz);
     }
-
+    /**
+     * Creates a class literal expression.
+     *
+     * @param clazz the class reference
+     * @return the resulting ClassExpression
+     */
     public static ClassExpression classX(final Class<?> clazz) {
         return classX(ClassHelper.make(clazz).getPlainNodeReference());
     }
-
+    /**
+     * Creates a closure expression.
+     *
+     * @param params the parameter array
+     * @param code the statement body
+     * @return the resulting ClosureExpression
+     */
     public static ClosureExpression closureX(final Parameter[] params, final Statement code) {
         return new ClosureExpression(params, code);
     }
-
+    /**
+     * Creates a closure expression.
+     *
+     * @param code the statement body
+     * @return the resulting ClosureExpression
+     */
     public static ClosureExpression closureX(final Statement code) {
         return closureX(Parameter.EMPTY_ARRAY, code);
     }
@@ -413,59 +619,125 @@ public class GeneralUtils {
     public static BinaryExpression cmpX(final Expression lhv, final Expression rhv) {
         return binX(lhv, CMP, rhv);
     }
-
+    /**
+     * Creates a constant expression.
+     *
+     * @param val the val
+     * @return the resulting ConstantExpression
+     */
     public static ConstantExpression constX(final Object val) {
         return new ConstantExpression(val);
     }
-
+    /**
+     * Creates a constant expression.
+     *
+     * @param val the val
+     * @param keepPrimitive whether primitive-wrapper constants should be preserved
+     * @return the resulting ConstantExpression
+     */
     public static ConstantExpression constX(final Object val, final boolean keepPrimitive) {
         return new ConstantExpression(val, keepPrimitive);
     }
-
+    /**
+     * Creates a constructor call expression.
+     *
+     * @param type the target type
+     * @param args the argument expression(s)
+     * @return the resulting ConstructorCallExpression
+     */
     public static ConstructorCallExpression ctorX(final ClassNode type, final Expression args) {
         return new ConstructorCallExpression(type, args);
     }
-
+    /**
+     * Creates a constructor call expression.
+     *
+     * @param type the target type
+     * @return the resulting ConstructorCallExpression
+     */
     public static ConstructorCallExpression ctorX(final ClassNode type) {
         return ctorX(type, ArgumentListExpression.EMPTY_ARGUMENTS);
     }
-
+    /**
+     * Creates a {@code super(...)} constructor call statement.
+     *
+     * @param args the argument expression(s)
+     * @return the resulting Statement
+     */
     public static Statement ctorSuperS(final Expression args) {
         return stmt(ctorSuperX(args));
     }
-
+    /**
+     * Creates a {@code super(...)} constructor call expression.
+     *
+     * @param args the argument expression(s)
+     * @return the resulting ConstructorCallExpression
+     */
     public static ConstructorCallExpression ctorSuperX(Expression args) {
         return ctorX(ClassNode.SUPER, args);
     }
-
+    /**
+     * Creates a {@code this(...)} constructor call statement.
+     *
+     * @param args the argument expression(s)
+     * @return the resulting Statement
+     */
     public static Statement ctorThisS(final Expression args) {
         return stmt(ctorThisX(args));
     }
-
+    /**
+     * Creates a {@code this(...)} constructor call expression.
+     *
+     * @param args the argument expression(s)
+     * @return the resulting ConstructorCallExpression
+     */
     public static ConstructorCallExpression ctorThisX(Expression args) {
         return ctorX(ClassNode.THIS, args);
     }
-
+    /**
+     * Creates a {@code super(...)} constructor call statement.
+     * @return the resulting Statement
+     */
     public static Statement ctorSuperS() {
         return stmt(ctorSuperX());
     }
-
+    /**
+     * Creates a {@code super(...)} constructor call expression.
+     * @return the resulting ConstructorCallExpression
+     */
     public static ConstructorCallExpression ctorSuperX() {
         return ctorX(ClassNode.SUPER);
     }
-
+    /**
+     * Creates a {@code this(...)} constructor call statement.
+     * @return the resulting Statement
+     */
     public static Statement ctorThisS() {
         return stmt(ctorThisX());
     }
-
+    /**
+     * Creates a {@code this(...)} constructor call expression.
+     * @return the resulting ConstructorCallExpression
+     */
     public static ConstructorCallExpression ctorThisX() {
         return ctorX(ClassNode.THIS);
     }
-
+    /**
+     * Creates a variable declaration statement.
+     *
+     * @param target the assignment target expression
+     * @param init the initializer expression
+     * @return the resulting Statement
+     */
     public static Statement declS(final Expression target, final Expression init) {
         return stmt(declX(target, init));
     }
-
+    /**
+     * Creates a variable declaration expression.
+     *
+     * @param target the assignment target expression
+     * @param init the initializer expression
+     * @return the resulting DeclarationExpression
+     */
     public static DeclarationExpression declX(final Expression target, final Expression init) {
         return new DeclarationExpression(target, ASSIGN, init);
     }
@@ -479,39 +751,90 @@ public class GeneralUtils {
     public static ConstantExpression defaultValueX(final ClassNode type) {
         return Optional.ofNullable((ConstantExpression) getDefaultValueForPrimitive(type)).orElse(nullX());
     }
-
+    /**
+     * Creates an Elvis operator expression.
+     *
+     * @param base the base expression
+     * @param otherwise the fallback expression
+     * @return the resulting ElvisOperatorExpression
+     */
     public static ElvisOperatorExpression elvisX(final Expression base, final Expression otherwise) {
         return new ElvisOperatorExpression(base, otherwise);
     }
-
+    /**
+     * Creates a map entry expression.
+     *
+     * @param key the key expression
+     * @param value the value expression
+     * @return the resulting MapEntryExpression
+     */
     public static MapEntryExpression entryX(final Expression key, final Expression value) {
         return new MapEntryExpression(key, value);
     }
-
+    /**
+     * Creates an equality comparison expression.
+     *
+     * @param left the left-hand operand
+     * @param right the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression eqX(final Expression left, final Expression right) {
         return binX(left, EQ, right);
     }
-
+    /**
+     * Creates a null-equality test expression.
+     *
+     * @param expr the expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression equalsNullX(final Expression expr) {
         return boolX(eqX(nullX(), expr));
     }
-
+    /**
+     * Creates a field expression.
+     *
+     * @param fieldNode the fieldNode
+     * @return the resulting FieldExpression
+     */
     public static FieldExpression fieldX(final FieldNode fieldNode) {
         return new FieldExpression(fieldNode);
     }
-
+    /**
+     * Creates a field expression.
+     *
+     * @param owner the owner expression
+     * @param fieldName the field name
+     * @return the resulting FieldExpression
+     */
     public static FieldExpression fieldX(final ClassNode owner, final String fieldName) {
         return new FieldExpression(owner.getField(fieldName));
     }
-
+    /**
+     * Creates an expression that resolves an entry from script args.
+     *
+     * @param argName the argument name
+     * @return the resulting Expression
+     */
     public static Expression findArg(final String argName) {
         return propX(varX("args"), argName);
     }
-
+    /**
+     * Creates a for-loop statement.
+     *
+     * @param variable the loop or catch parameter
+     * @param collectionExpression the collection expression
+     * @param loopS the loop body statement
+     * @return the resulting ForStatement
+     */
     public static ForStatement forS(Parameter variable, Expression collectionExpression, Statement loopS) {
         return new ForStatement(variable, collectionExpression, loopS);
     }
-
+    /**
+     * Collects methods declared on a class and its super classes.
+     *
+     * @param type the target type
+     * @return the resulting List<MethodNode>
+     */
     public static List<MethodNode> getAllMethods(final ClassNode type) {
         ClassNode node = type;
         List<MethodNode> result = new ArrayList<>();
@@ -521,7 +844,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects properties according to the supplied inclusion flags.
+     *
+     * @param type the target type
+     * @return the resulting List<PropertyNode>
+     */
     public static List<PropertyNode> getAllProperties(final ClassNode type) {
         ClassNode node = type;
         List<PropertyNode> result = new ArrayList<>();
@@ -531,7 +859,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects instance fields that are not exposed as properties.
+     *
+     * @param cNode the class node
+     * @return the resulting List<FieldNode>
+     */
     public static List<FieldNode> getInstanceNonPropertyFields(final ClassNode cNode) {
         List<FieldNode> result = new ArrayList<>();
         for (FieldNode fNode : cNode.getFields()) {
@@ -541,7 +874,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects names of instance fields that are not exposed as properties.
+     *
+     * @param cNode the class node
+     * @return the resulting List<String>
+     */
     public static List<String> getInstanceNonPropertyFieldNames(final ClassNode cNode) {
         List<FieldNode> fList = getInstanceNonPropertyFields(cNode);
         List<String> result = new ArrayList<>(fList.size());
@@ -550,7 +888,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects instance (non-static) properties.
+     *
+     * @param cNode the class node
+     * @return the resulting List<PropertyNode>
+     */
     public static List<PropertyNode> getInstanceProperties(final ClassNode cNode) {
         List<PropertyNode> result = new ArrayList<>();
         for (PropertyNode pNode : cNode.getProperties()) {
@@ -560,7 +903,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects names of instance properties.
+     *
+     * @param cNode the class node
+     * @return the resulting List<String>
+     */
     public static List<String> getInstancePropertyNames(final ClassNode cNode) {
         List<PropertyNode> pList = BeanUtils.getAllProperties(cNode, false, false, true);
         List<String> result = new ArrayList<>(pList.size());
@@ -569,7 +917,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects backing fields for instance properties.
+     *
+     * @param cNode the class node
+     * @return the resulting List<FieldNode>
+     */
     public static List<FieldNode> getInstancePropertyFields(final ClassNode cNode) {
         List<FieldNode> result = new ArrayList<>();
         for (PropertyNode pNode : cNode.getProperties()) {
@@ -604,14 +957,24 @@ public class GeneralUtils {
             addAllInterfaces(result, sourceTypeArgs.apply(sc));
         }
     }
-
+    /**
+     * Collects interfaces implemented directly or transitively.
+     *
+     * @param cNode the class node
+     * @return the resulting Set<ClassNode>
+     */
     public static Set<ClassNode> getInterfacesAndSuperInterfaces(final ClassNode cNode) {
         Set<ClassNode> result = new LinkedHashSet<>();
         if (cNode.isInterface()) result.add(cNode);
         addAllInterfaces(result, cNode);
         return result;
     }
-
+    /**
+     * Collects inherited instance fields that are not properties.
+     *
+     * @param cNode the class node
+     * @return the resulting List<FieldNode>
+     */
     public static List<FieldNode> getSuperNonPropertyFields(final ClassNode cNode) {
         List<FieldNode> result;
         if (ClassHelper.isObjectType(cNode)) {
@@ -626,7 +989,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects inherited property backing fields.
+     *
+     * @param cNode the class node
+     * @return the resulting List<FieldNode>
+     */
     public static List<FieldNode> getSuperPropertyFields(final ClassNode cNode) {
         List<FieldNode> result;
         if (ClassHelper.isObjectType(cNode)) {
@@ -641,15 +1009,56 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Collects properties according to the supplied inclusion flags.
+     *
+     * @param names the set tracking already-added property names
+     * @param cNode the class node
+     * @param includeProperties whether declared properties are included
+     * @param includeFields whether fields are exposed as properties
+     * @param includePseudoGetters whether pseudo-getter properties are included
+     * @param includePseudoSetters whether pseudo-setter properties are included
+     * @param traverseSuperClasses whether super classes are traversed
+     * @param skipReadonly whether read-only initialized fields are excluded
+     * @return the resulting List<PropertyNode>
+     */
     public static List<PropertyNode> getAllProperties(final Set<String> names, final ClassNode cNode, final boolean includeProperties, final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters, final boolean traverseSuperClasses, final boolean skipReadonly) {
         return getAllProperties(names, cNode, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly);
     }
-
+    /**
+     * Collects properties according to the supplied inclusion flags.
+     *
+     * @param names the set tracking already-added property names
+     * @param origType the original class node used for pseudo-property resolution
+     * @param cNode the class node
+     * @param includeProperties whether declared properties are included
+     * @param includeFields whether fields are exposed as properties
+     * @param includePseudoGetters whether pseudo-getter properties are included
+     * @param includePseudoSetters whether pseudo-setter properties are included
+     * @param traverseSuperClasses whether super classes are traversed
+     * @param skipReadonly whether read-only initialized fields are excluded
+     * @return the resulting List<PropertyNode>
+     */
     public static List<PropertyNode> getAllProperties(final Set<String> names, final ClassNode origType, final ClassNode cNode, final boolean includeProperties, final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters, final boolean traverseSuperClasses, final boolean skipReadonly) {
         return getAllProperties(names, origType, cNode, includeProperties, includeFields, includePseudoGetters, includePseudoSetters, traverseSuperClasses, skipReadonly, false, false, false);
     }
-
+    /**
+     * Collects properties according to the supplied inclusion flags.
+     *
+     * @param names the set tracking already-added property names
+     * @param origType the original class node used for pseudo-property resolution
+     * @param cNode the class node
+     * @param includeProperties whether declared properties are included
+     * @param includeFields whether fields are exposed as properties
+     * @param includePseudoGetters whether pseudo-getter properties are included
+     * @param includePseudoSetters whether pseudo-setter properties are included
+     * @param traverseSuperClasses whether super classes are traversed
+     * @param skipReadonly whether read-only initialized fields are excluded
+     * @param reverse whether superclass traversal order is reversed
+     * @param allNames whether special/internal field names are included
+     * @param includeStatic whether static members are included
+     * @return the resulting List<PropertyNode>
+     */
     public static List<PropertyNode> getAllProperties(final Set<String> names, final ClassNode origType, final ClassNode cNode, final boolean includeProperties,
                                                       final boolean includeFields, final boolean includePseudoGetters, final boolean includePseudoSetters,
                                                       final boolean traverseSuperClasses, final boolean skipReadonly, final boolean reverse, final boolean allNames, final boolean includeStatic) {
@@ -728,47 +1137,110 @@ public class GeneralUtils {
         }
         return propX(receiver, pNode.getName());
     }
-
+    /**
+     * Creates a greater-than-or-equal comparison expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression geX(final Expression lhv, final Expression rhv) {
         return binX(lhv, GE, rhv);
     }
-
+    /**
+     * Creates a greater-than comparison expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression gtX(final Expression lhv, final Expression rhv) {
         return binX(lhv, GT, rhv);
     }
-
+    /**
+     * Creates an expression testing whether {@code instance.getClass()} equals the supplied class.
+     *
+     * @param instance the instance expression
+     * @param cNode the class node
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression hasClassX(final Expression instance, final ClassNode cNode) {
         return eqX(classX(cNode), callX(instance, "getClass"));
     }
-
+    /**
+     * Creates an equality comparison against another object's field value.
+     *
+     * @param fNode the field node
+     * @param other the other object/value expression
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression hasEqualFieldX(final FieldNode fNode, final Expression other) {
         return eqX(varX(fNode), propX(other, fNode.getName()));
     }
-
+    /**
+     * Creates an equality comparison against another object's property value.
+     *
+     * @param cNode the class node
+     * @param pNode the property node
+     * @param other the other object/value expression
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression hasEqualPropertyX(final ClassNode cNode, final PropertyNode pNode, final VariableExpression other) {
         return eqX(getterThisX(cNode, pNode), getterX(other.getOriginType(), other, pNode));
     }
-
+    /**
+     * Creates an equality comparison against another object's property value.
+     *
+     * @param pNode the property node
+     * @param other the other object/value expression
+     * @return the resulting BinaryExpression
+     */
     @Deprecated
     public static BinaryExpression hasEqualPropertyX(final PropertyNode pNode, final Expression other) {
         String getterName = pNode.getGetterNameOrDefault();
         return eqX(callThisX(getterName), callX(other, getterName));
     }
-
+    /**
+     * Creates an identity comparison against another object's field value.
+     *
+     * @param fNode the field node
+     * @param other the other object/value expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression hasSameFieldX(final FieldNode fNode, final Expression other) {
         return sameX(varX(fNode), propX(other, fNode.getName()));
     }
-
+    /**
+     * Creates an identity comparison against another object's property value.
+     *
+     * @param pNode the property node
+     * @param other the other object/value expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression hasSamePropertyX(final PropertyNode pNode, final Expression other) {
         ClassNode cNode = pNode.getDeclaringClass();
         return sameX(getterThisX(cNode, pNode), getterX(cNode, other, pNode));
     }
-
+    /**
+     * Deprecated compatibility bridge for {@link #ifElseS(Expression, Statement, Statement)}.
+     *
+     * @param cond the condition expression
+     * @param thenStmt the true-branch statement
+     * @param elseStmt the false-branch statement
+     * @return the resulting Statement
+     */
     @Deprecated
     public static Statement ifElseS$$bridge(final Expression cond, final Statement thenStmt, final Statement elseStmt) {
         return ifElseS(cond, thenStmt, elseStmt);
     }
-
+    /**
+     * Creates an if/else statement.
+     *
+     * @param cond the condition expression
+     * @param thenStmt the true-branch statement
+     * @param elseStmt the false-branch statement
+     * @return the resulting IfStatement
+     */
     public static IfStatement ifElseS(final Expression cond, final Statement thenStmt, final Statement elseStmt) {
         return new IfStatement(
                 cond instanceof BooleanExpression ? (BooleanExpression) cond : boolX(cond),
@@ -776,29 +1248,65 @@ public class GeneralUtils {
                 elseStmt
         );
     }
-
+    /**
+     * Deprecated compatibility bridge for the {@code ifS} overloads.
+     *
+     * @param cond the condition expression
+     * @param trueExpr the true-branch expression
+     * @return the resulting Statement
+     */
     @Deprecated
     public static Statement ifS$$bridge(final Expression cond, final Expression trueExpr) {
         return ifS(cond, trueExpr);
     }
-
+    /**
+     * Creates an if statement with an empty else branch.
+     *
+     * @param cond the condition expression
+     * @param trueExpr the true-branch expression
+     * @return the resulting IfStatement
+     */
     public static IfStatement ifS(final Expression cond, final Expression trueExpr) {
         return ifElseS(cond, stmt(trueExpr), EmptyStatement.INSTANCE);
     }
-
+    /**
+     * Deprecated compatibility bridge for the {@code ifS} overloads.
+     *
+     * @param cond the condition expression
+     * @param trueStmt the true-branch statement
+     * @return the resulting Statement
+     */
     @Deprecated
     public static Statement ifS$$bridge(final Expression cond, final Statement trueStmt) {
         return ifS(cond, trueStmt);
     }
-
+    /**
+     * Creates an if statement with an empty else branch.
+     *
+     * @param cond the condition expression
+     * @param trueStmt the true-branch statement
+     * @return the resulting IfStatement
+     */
     public static IfStatement ifS(final Expression cond, final Statement trueStmt) {
         return ifElseS(cond, trueStmt, EmptyStatement.INSTANCE);
     }
-
+    /**
+     * Creates an index access expression.
+     *
+     * @param target the assignment target expression
+     * @param value the value expression
+     * @return the resulting Expression
+     */
     public static Expression indexX(final Expression target, final Expression value) {
         return binX(target, Token.newSymbol(Types.LEFT_SQUARE_BRACKET, -1, -1), value);
     }
-
+    /**
+     * Creates an {@code instanceof} test expression.
+     *
+     * @param expr the expression
+     * @param type the target type
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression isInstanceOfX(final Expression expr, final ClassNode type) {
         return boolX(binX(expr, INSTANCEOF, classX(type)));
     }
@@ -816,23 +1324,48 @@ public class GeneralUtils {
     public static BooleanExpression isNullX(final Expression expr) {
         return equalsNullX(expr);
     }
-
+    /**
+     * Creates an equality test against numeric one.
+     *
+     * @param expr the expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression isOneX(final Expression expr) {
         return boolX(binX(expr, EQ, constX(1)));
     }
-
+    /**
+     * Creates an equality test against {@link Boolean#TRUE}.
+     *
+     * @param argExpr the argument expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression isTrueX(final Expression argExpr) {
         return boolX(binX(argExpr, EQ, constX(Boolean.TRUE)));
     }
-
+    /**
+     * Creates an equality test against numeric zero.
+     *
+     * @param expr the expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression isZeroX(final Expression expr) {
         return boolX(binX(expr, EQ, constX(0)));
     }
-
+    /**
+     * Creates a list expression.
+     *
+     * @param args the argument expression(s)
+     * @return the resulting ListExpression
+     */
     public static ListExpression listX(final List<Expression> args) {
         return new ListExpression(args);
     }
-
+    /**
+     * Converts values into a constant-based list expression.
+     *
+     * @param args the argument expression(s)
+     * @return the resulting ListExpression
+     */
     public static ListExpression list2args(final List<?> args) {
         ListExpression result = new ListExpression();
         for (Object o : args) {
@@ -840,7 +1373,12 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Converts class-name strings into class-literal expressions.
+     *
+     * @param args the argument expression(s)
+     * @return the resulting ListExpression
+     */
     public static ListExpression classList2args(final List<String> args) {
         ListExpression result = new ListExpression();
         for (Object o : args) {
@@ -848,75 +1386,168 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Creates a local variable expression and marks it as the accessed variable.
+     *
+     * @param name the property name
+     * @return the resulting VariableExpression
+     */
     public static VariableExpression localVarX(final String name) {
         VariableExpression result = varX(name);
         result.setAccessedVariable(result);
         return result;
     }
-
+    /**
+     * Creates a local variable expression and marks it as the accessed variable.
+     *
+     * @param name the property name
+     * @param type the target type
+     * @return the resulting VariableExpression
+     */
     public static VariableExpression localVarX(final String name, final ClassNode type) {
         VariableExpression result = varX(name, type);
         result.setAccessedVariable(result);
         return result;
     }
-
+    /**
+     * Creates a less-than-or-equal comparison expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression leX(final Expression lhv, final Expression rhv) {
         return binX(lhv, LE, rhv);
     }
-
+    /**
+     * Creates a less-than comparison expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression ltX(final Expression lhv, final Expression rhv) {
         return binX(lhv, LT, rhv);
     }
-
+    /**
+     * Creates a map entry expression.
+     *
+     * @param keyExpr the map-entry key expression
+     * @param valueExpr the map-entry value expression
+     * @return the resulting MapEntryExpression
+     */
     public static MapEntryExpression mapEntryX(final Expression keyExpr, final Expression valueExpr) {
         return new MapEntryExpression(keyExpr, valueExpr);
     }
-
+    /**
+     * Creates a map entry expression.
+     *
+     * @param key the key expression
+     * @param valueExpr the map-entry value expression
+     * @return the resulting MapEntryExpression
+     */
     public static MapEntryExpression mapEntryX(final String key, final Expression valueExpr) {
         return new MapEntryExpression(constX(key), valueExpr);
     }
-
+    /**
+     * Creates a map expression.
+     * @return the resulting MapExpression
+     */
     public static MapExpression mapX() {
         return new MapExpression();
     }
-
+    /**
+     * Creates a map expression.
+     *
+     * @param expressions the map-entry expressions
+     * @return the resulting MapExpression
+     */
     public static MapExpression mapX(final List<MapEntryExpression> expressions) {
         return new MapExpression(expressions);
     }
-
+    /**
+     * Creates a subtraction expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression minusX(final Expression lhv, final Expression rhv) {
         return binX(lhv, MINUS, rhv);
     }
-
+    /**
+     * Creates an inequality comparison expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression neX(final Expression lhv, final Expression rhv) {
         return binX(lhv, NE, rhv);
     }
-
+    /**
+     * Creates a non-identity comparison expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression notIdenticalX(final Expression lhv, final Expression rhv) {
         return binX(lhv, NOT_IDENTICAL, rhv);
     }
-
+    /**
+     * Creates a non-null test expression.
+     *
+     * @param expr the expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression notNullX(final Expression expr) {
         return boolX(binX(nullX(), NE, expr));
     }
-
+    /**
+     * Creates a logical NOT expression.
+     *
+     * @param expr the expression
+     * @return the resulting NotExpression
+     */
     public static NotExpression notX(final Expression expr) {
         return new NotExpression(expr instanceof BooleanExpression ? expr : boolX(expr));
     }
-
+    /**
+     * Creates a {@code null} constant expression.
+     * @return the resulting ConstantExpression
+     */
     public static ConstantExpression nullX() {
         return constX(null);
     }
-
+    /**
+     * Creates a logical OR expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression orX(final Expression lhv, final Expression rhv) {
         return binX(lhv, OR, rhv);
     }
-
+    /**
+     * Creates a parameter node.
+     *
+     * @param type the target type
+     * @param name the property name
+     * @return the resulting Parameter
+     */
     public static Parameter param(final ClassNode type, final String name) {
         return param(type, name, null);
     }
-
+    /**
+     * Creates a parameter node.
+     *
+     * @param type the target type
+     * @param name the property name
+     * @param initialExpression the initial expression for the parameter
+     * @return the resulting Parameter
+     */
     public static Parameter param(final ClassNode type, final String name, final Expression initialExpression) {
         Parameter param = new Parameter(type, name);
         if (initialExpression != null) {
@@ -924,94 +1555,217 @@ public class GeneralUtils {
         }
         return param;
     }
-
+    /**
+     * Returns the input parameters or {@link Parameter#EMPTY_ARRAY} when input is {@code null}.
+     *
+     * @param params the parameter array
+     * @return the resulting Parameter[]
+     */
     public static Parameter[] params(final Parameter... params) {
         return (params != null ? params : Parameter.EMPTY_ARRAY);
     }
-
+    /**
+     * Creates an addition expression.
+     *
+     * @param lhv the left-hand operand
+     * @param rhv the right-hand operand
+     * @return the resulting BinaryExpression
+     */
     public static BinaryExpression plusX(final Expression lhv, final Expression rhv) {
         return binX(lhv, PLUS, rhv);
     }
-
+    /**
+     * Creates a property access expression.
+     *
+     * @param owner the owner expression
+     * @param property the property name/expression
+     * @return the resulting PropertyExpression
+     */
     public static PropertyExpression propX(final Expression owner, final String property) {
         return new PropertyExpression(owner, property);
     }
-
+    /**
+     * Deprecated compatibility bridge for the {@code propX} overloads.
+     *
+     * @param owner the owner expression
+     * @param property the property name/expression
+     * @return the resulting Expression
+     */
     @Deprecated
     public static Expression propX$$bridge(final Expression owner, final String property) {
         return propX(owner, property);
     }
-
+    /**
+     * Creates a property access expression.
+     *
+     * @param owner the owner expression
+     * @param property the property name/expression
+     * @return the resulting PropertyExpression
+     */
     public static PropertyExpression propX(final Expression owner, final Expression property) {
         return new PropertyExpression(owner, property);
     }
-
+    /**
+     * Deprecated compatibility bridge for the {@code propX} overloads.
+     *
+     * @param owner the owner expression
+     * @param property the property name/expression
+     * @return the resulting Expression
+     */
     @Deprecated
     public static Expression propX$$bridge(final Expression owner, final Expression property) {
         return propX(owner, property);
     }
-
+    /**
+     * Creates a property access expression.
+     *
+     * @param owner the owner expression
+     * @param property the property name/expression
+     * @param safe whether safe-navigation is enabled
+     * @return the resulting PropertyExpression
+     */
     public static PropertyExpression propX(final Expression owner, final Expression property, final boolean safe) {
         return new PropertyExpression(owner, property, safe);
     }
-
+    /**
+     * Creates a return statement.
+     *
+     * @param expr the expression
+     * @return the resulting Statement
+     */
     public static Statement returnS(final Expression expr) {
         return new ReturnStatement(expr);
     }
-
+    /**
+     * Creates a null-guarded statement sequence.
+     *
+     * @param fieldExpr the field expression used in the guard
+     * @param expression the expression
+     * @return the resulting Statement
+     */
     public static Statement safeExpression(final Expression fieldExpr, final Expression expression) {
         return new IfStatement(isNullX(fieldExpr), stmt(fieldExpr), stmt(expression));
     }
-
+    /**
+     * Creates an identity test expression using Groovy's {@code is} method.
+     *
+     * @param self the left-hand expression
+     * @param other the other object/value expression
+     * @return the resulting BooleanExpression
+     */
     public static BooleanExpression sameX(final Expression self, final Expression other) {
         return boolX(callX(self, "is", args(other)));
     }
-
+    /**
+     * Wraps an expression in an {@link ExpressionStatement}.
+     *
+     * @param expr the expression
+     * @return the resulting Statement
+     */
     public static Statement stmt(final Expression expr) {
         return new ExpressionStatement(expr);
     }
-
+    /**
+     * Creates a spread expression.
+     *
+     * @param expr the expression
+     * @return the resulting SpreadExpression
+     */
     public static SpreadExpression spreadX(final Expression expr) {
         return new SpreadExpression(expr);
     }
-
+    /**
+     * Creates a switch statement.
+     *
+     * @param expr the expression
+     * @return the resulting SwitchStatement
+     */
     public static SwitchStatement switchS(final Expression expr) {
         return new SwitchStatement(expr);
     }
-
+    /**
+     * Creates a switch statement.
+     *
+     * @param expr the expression
+     * @param defaultStatement the default branch statement
+     * @return the resulting SwitchStatement
+     */
     public static SwitchStatement switchS(final Expression expr, final Statement defaultStatement) {
         return new SwitchStatement(expr, defaultStatement);
     }
-
+    /**
+     * Creates a switch statement.
+     *
+     * @param expr the expression
+     * @param caseStatements the case statements
+     * @param defaultStatement the default branch statement
+     * @return the resulting SwitchStatement
+     */
     public static SwitchStatement switchS(final Expression expr, final List<CaseStatement> caseStatements, final Statement defaultStatement) {
         return new SwitchStatement(expr, caseStatements, defaultStatement);
     }
-
+    /**
+     * Creates a ternary expression.
+     *
+     * @param cond the condition expression
+     * @param trueExpr the true-branch expression
+     * @param elseExpr the false-branch expression
+     * @return the resulting TernaryExpression
+     */
     public static TernaryExpression ternaryX(final Expression cond, final Expression trueExpr, final Expression elseExpr) {
         return new TernaryExpression(
                 cond instanceof BooleanExpression ? (BooleanExpression) cond : boolX(cond),
                 trueExpr,
                 elseExpr);
     }
-
+    /**
+     * Creates a property expression on {@code this} with configurable implicit-this behavior.
+     *
+     * @param implicit whether the receiver is implicit this
+     * @param property the property name/expression
+     * @return the resulting PropertyExpression
+     */
     public static PropertyExpression thisPropX(final boolean implicit, final String property) {
         PropertyExpression pexp = propX(varX("this"), property);
         pexp.setImplicitThis(implicit);
         return pexp;
     }
-
+    /**
+     * Creates a throw statement.
+     *
+     * @param expr the expression
+     * @return the resulting ThrowStatement
+     */
     public static ThrowStatement throwS(final Expression expr) {
         return new ThrowStatement(expr);
     }
-
+    /**
+     * Creates a try/catch/finally statement.
+     *
+     * @param tryStatement the try-block statement
+     * @return the resulting TryCatchStatement
+     */
     public static TryCatchStatement tryCatchS(final Statement tryStatement) {
         return tryCatchS(tryStatement, EmptyStatement.INSTANCE);
     }
-
+    /**
+     * Creates a try/catch/finally statement.
+     *
+     * @param tryStatement the try-block statement
+     * @param finallyStatement the finally-block statement
+     * @return the resulting TryCatchStatement
+     */
     public static TryCatchStatement tryCatchS(final Statement tryStatement, final Statement finallyStatement) {
         return new TryCatchStatement(tryStatement, finallyStatement);
     }
-
+    /**
+     * Creates a try/catch/finally statement.
+     *
+     * @param tryStatement the try-block statement
+     * @param finallyStatement the finally-block statement
+     * @param catchStatements the catch statements
+     * @return the resulting TryCatchStatement
+     */
     public static TryCatchStatement tryCatchS(final Statement tryStatement, final Statement finallyStatement, final CatchStatement... catchStatements) {
         TryCatchStatement result = new TryCatchStatement(tryStatement, finallyStatement);
         for (CatchStatement catchStatement : catchStatements) {
@@ -1019,21 +1773,42 @@ public class GeneralUtils {
         }
         return result;
     }
-
+    /**
+     * Creates a variable expression.
+     *
+     * @param name the property name
+     * @return the resulting VariableExpression
+     */
     public static VariableExpression varX(final String name) {
         return new VariableExpression(name);
     }
-
+    /**
+     * Creates a variable expression.
+     *
+     * @param variable the loop or catch parameter
+     * @return the resulting VariableExpression
+     */
     public static VariableExpression varX(final Variable variable) {
         return new VariableExpression(variable);
     }
-
+    /**
+     * Creates a variable expression.
+     *
+     * @param name the property name
+     * @param type the target type
+     * @return the resulting VariableExpression
+     */
     public static VariableExpression varX(final String name, final ClassNode type) {
         return new VariableExpression(name, type);
     }
 
     //--------------------------------------------------------------------------
-
+    /**
+     * Clones parameter metadata as new {@link Parameter} instances with original type and name.
+     *
+     * @param parameters the parameters to clone
+     * @return the resulting Parameter[]
+     */
     public static Parameter[] cloneParams(final Parameter[] parameters) {
         if (parameters == null || parameters.length == 0) return parameters;
         return Arrays.stream(parameters).map(p -> param(p.getOriginType(), p.getName())).toArray(Parameter[]::new);
@@ -1089,7 +1864,12 @@ public class GeneralUtils {
             }
         }
     }
-
+    /**
+     * Builds default constructor-assignment logic for a field and matching argument.
+     *
+     * @param fNode the field node
+     * @return the resulting Statement
+     */
     public static Statement createConstructorStatementDefault(final FieldNode fNode) {
         final String name = fNode.getName();
         final ClassNode fType = fNode.getType();
@@ -1133,7 +1913,12 @@ public class GeneralUtils {
     public static String getGetterName(final String name) {
         return MetaProperty.getGetterName(name, Object.class);
     }
-
+    /**
+     * Computes the JavaBean setter name for a property.
+     *
+     * @param name the property name
+     * @return the resulting String
+     */
     public static String getSetterName(final String name) {
         return MetaProperty.getSetterName(name);
     }
@@ -1173,7 +1958,13 @@ public class GeneralUtils {
 
         return source;
     }
-
+    /**
+     * Copies closure statements into a block and rewrites a leading {@code super(...)} call when present.
+     *
+     * @param pre the closure containing statements to copy
+     * @param body the destination block
+     * @return true if a leading super call was rewritten; false otherwise
+     */
     public static boolean copyStatementsWithSuperAdjustment(final ClosureExpression pre, final BlockStatement body) {
         Statement preCode = pre.getCode();
         boolean changed = false;
@@ -1210,7 +2001,14 @@ public class GeneralUtils {
         }
         return false;
     }
-
+    /**
+     * Checks whether a class declares a method with the specified name and arity.
+     *
+     * @param cNode the class node
+     * @param name the property name
+     * @param argsCount the expected argument count
+     * @return true if a matching declared method exists; false otherwise
+     */
     public static boolean hasDeclaredMethod(final ClassNode cNode, final String name, final int argsCount) {
         List<MethodNode> methods = cNode.getDeclaredMethods(name);
         for (MethodNode method : methods) {
@@ -1221,7 +2019,14 @@ public class GeneralUtils {
         }
         return false;
     }
-
+    /**
+     * Finds the first declared method with the specified name and arity.
+     *
+     * @param cNode the class node
+     * @param name the property name
+     * @param argsCount the expected argument count
+     * @return the matching method node, or {@code null} if not found
+     */
     public static MethodNode findDeclaredMethod(final ClassNode cNode, final String name, final int argsCount) {
         // TODO ignore bridge methods?
         List<MethodNode> methods = cNode.getDeclaredMethods(name);
@@ -1233,21 +2038,44 @@ public class GeneralUtils {
         }
         return null;
     }
-
+    /**
+     * Checks whether two classes belong to the same package.
+     *
+     * @param first the first class/type
+     * @param second the second class/type
+     * @return true if both classes are in the same package; false otherwise
+     */
     public static boolean inSamePackage(final ClassNode first, final ClassNode second) {
         return Objects.equals(first.getPackageName(), second.getPackageName());
     }
-
+    /**
+     * Checks whether two classes belong to the same package.
+     *
+     * @param first the first class/type
+     * @param second the second class/type
+     * @return true if both classes are in the same package; false otherwise
+     */
     public static boolean inSamePackage(final Class<?>  first, final Class<?>  second) {
         Package firstPackage = first.getPackage(), secondPackage = second.getPackage();
         return (firstPackage == secondPackage || (firstPackage != null && secondPackage != null
                                                   && firstPackage.getName().equals(secondPackage.getName())));
     }
-
+    /**
+     * Checks whether modifier bits indicate package-private visibility.
+     *
+     * @param modifiers the modifier bit mask
+     * @return true if no public/protected/private visibility flag is set; false otherwise
+     */
     public static boolean isDefaultVisibility(final int modifiers) {
         return (modifiers & (Modifier.PRIVATE | Modifier.PUBLIC | Modifier.PROTECTED)) == 0;
     }
-
+    /**
+     * Checks whether a type equals or implements an interface type.
+     *
+     * @param type the target type
+     * @param interfaceType the interface to test against
+     * @return true if the type equals or implements the interface type; false otherwise
+     */
     public static boolean isOrImplements(final ClassNode type, final ClassNode interfaceType) {
         return type.equals(interfaceType) || type.implementsInterface(interfaceType);
     }
@@ -1264,7 +2092,12 @@ public class GeneralUtils {
         }
         return sb.toString();
     }
-
+    /**
+     * Determines whether execution may continue past the supplied statement.
+     *
+     * @param statement the statement to analyze
+     * @return true if execution may continue after the statement; false otherwise
+     */
     public static boolean maybeFallsThrough(final Statement statement) {
         if (statement.isEmpty()) return true;
 
