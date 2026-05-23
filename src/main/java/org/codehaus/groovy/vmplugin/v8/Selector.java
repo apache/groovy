@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
@@ -811,7 +812,9 @@ public abstract class Selector {
                     } else {
                         handle = unreflect(cm.getCachedMethod());
                         catchException = !isCategoryTypeMethod && !isStaticCategoryTypeMethod;
-                        if (!catchException) catchException = metaMethod.getDeclaringClass().isAssignableFrom(GroovyObject.class);
+                        if (catchException && metaMethod.getDeclaringClass().isAssignableFrom(GroovyObject.class)) {
+                            catchException = invokesMOPMethod(name, handle, metaMethod.getDeclaringClass());
+                        }
                     }
                 } catch (ReflectiveOperationException e) {
                     throw new GroovyBugError(e);
@@ -845,6 +848,30 @@ public abstract class Selector {
                 currentType = removeWrapper(targetType);
                 if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
             }
+        }
+
+        private boolean invokesMOPMethod(String name, MethodHandle handle, CachedClass declaringClass) {
+            // here we already know the target class is an instance of GroovyObject
+            // MOP methods can use exceptions to control the MOP; thus we have to catch the exception in those cases
+            if (name.equals("invokeMethod")) {
+                if (handle.type().parameterCount() != 3) return false;
+                if (handle.type().parameterType(1) != String.class) return false;
+                return handle.type().parameterType(2) == Object.class;
+            }
+            if (name.equals("getProperty")) {
+                if (handle.type().parameterCount() != 2) return false;
+                return handle.type().parameterType(1) == String.class;
+                /*if (handle.type().parameterType(1) != String.class) {
+                    throw new GroovyRuntimeException("getProperty method had parameter type " + handle.type() + " on " + declaringClass.getTheClass() + " is a GroovyObject " + declaringClass.isAssignableFrom(GroovyObject.class));
+                }
+                //return true;*/
+            }
+            if (name.equals("setProperty")) {
+                if (handle.type().parameterCount() != 3) return false;
+                if (handle.type().parameterType(1) != String.class) return false;
+                return handle.type().parameterType(2) == Object.class;
+            }
+            return false;
         }
 
         /**
