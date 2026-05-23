@@ -31,6 +31,16 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
 import groovy.transform.Internal;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -54,17 +64,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
@@ -812,6 +811,7 @@ public abstract class Selector {
                     } else {
                         handle = unreflect(cm.getCachedMethod());
                         catchException = !isCategoryTypeMethod && !isStaticCategoryTypeMethod;
+                        if (!catchException) catchException = metaMethod.getDeclaringClass().isAssignableFrom(GroovyObject.class);
                     }
                 } catch (ReflectiveOperationException e) {
                     throw new GroovyBugError(e);
