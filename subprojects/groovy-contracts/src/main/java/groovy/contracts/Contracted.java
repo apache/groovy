@@ -35,6 +35,8 @@ import java.lang.annotation.Target;
  *
  * import groovy.contracts.*
  * </pre>
+ *
+ * @since 4.0.0
  */
 @Documented
 @Target({ElementType.PACKAGE, ElementType.TYPE})

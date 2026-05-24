@@ -21,10 +21,25 @@
  * Design-by-contract (DbC) support with compile-time assertion generation.
  *
  * <p>
- * {@link groovy.contracts.Requires @Requires} (precondition),
- * {@link groovy.contracts.Ensures @Ensures} (postcondition),
- * {@link groovy.contracts.Invariant @Invariant} (class invariant).
- * Postconditions can access {@code result} and {@code old()} values.
+ * Stable annotations:
  * </p>
+ * <ul>
+ *   <li>{@link groovy.contracts.Requires @Requires} &ndash; method precondition</li>
+ *   <li>{@link groovy.contracts.Ensures @Ensures} &ndash; method postcondition; closures
+ *       may reference {@code result} and {@code old}</li>
+ *   <li>{@link groovy.contracts.Invariant @Invariant} &ndash; class invariant, also usable
+ *       as a loop invariant on {@code for} / {@code while} / {@code do-while} loops</li>
+ *   <li>{@link groovy.contracts.Contracted @Contracted} &ndash; package- or class-level
+ *       opt-in marker that enables contract processing</li>
+ * </ul>
+ * <p>
+ * Incubating in 6.0.0 (semantics may evolve in a subsequent 6.x release):
+ * </p>
+ * <ul>
+ *   <li>{@link groovy.contracts.Modifies @Modifies} &ndash; frame condition declaring
+ *       which fields and parameters a method may modify</li>
+ *   <li>{@link groovy.contracts.Decreases @Decreases} &ndash; loop termination measure
+ *       (a strictly-decreasing, non-negative variant)</li>
+ * </ul>
  */
 package groovy.contracts;

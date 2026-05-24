@@ -156,6 +156,56 @@ class ContractsTest extends GroovyTestCase {
         '''
     }
 
+    void testDecreasesWhile() {
+        assertScript '''
+        // tag::decreases_while_example[]
+        import groovy.contracts.Decreases
+
+        int n = 10
+        @Decreases({ n })
+        while (n > 0) {
+            n--
+        }
+        assert n == 0
+        // end::decreases_while_example[]
+        '''
+    }
+
+    void testDecreasesFor() {
+        assertScript '''
+        // tag::decreases_for_example[]
+        import groovy.contracts.Decreases
+
+        int remaining = 5
+        @Decreases({ remaining })
+        for (int i = 0; i < 5; i++) {
+            remaining--
+        }
+        assert remaining == 0
+        // end::decreases_for_example[]
+        '''
+    }
+
+    void testDecreasesLexicographic() {
+        assertScript '''
+        // tag::decreases_lexicographic_example[]
+        import groovy.contracts.Decreases
+
+        int outer = 2, inner = 3
+        @Decreases({ [outer, inner] })
+        while (outer > 0) {
+            if (inner > 0) {
+                inner--
+            } else {
+                outer--
+                inner = 3
+            }
+        }
+        assert outer == 0
+        // end::decreases_lexicographic_example[]
+        '''
+    }
+
     void testJep445Script() {
         runScript '''
         // tag::jep445_example[]
