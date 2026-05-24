@@ -106,7 +106,7 @@ abstract class SystemTestSupport extends ConsoleTestSupport {
         terminal = TerminalBuilder.builder()
                 .type('dumb')
                 .graphemeCluster(false)
-                .size(new Size(120, 60))
+                .size(new Size(120, 200))
                 .streams(new ByteArrayInputStream(new byte[0]), terminalBytes)
                 .encoding(StandardCharsets.UTF_8)
                 .name('groovysh-test')
