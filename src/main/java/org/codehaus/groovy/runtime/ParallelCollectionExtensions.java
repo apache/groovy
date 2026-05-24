@@ -31,6 +31,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -52,6 +53,20 @@ import java.util.stream.IntStream;
  */
 public class ParallelCollectionExtensions {
 
+    // Cached Collector: stateless config object; the per-call mutable ArrayList
+    // is produced fresh by the Supplier inside collect(), so sharing this
+    // instance across threads is safe and saves a per-call allocation.
+    // toCollection(ArrayList::new) is used (rather than toList()) because the
+    // JDK contract on Collectors.toList() doesn't guarantee a mutable result or
+    // a concrete ArrayList type, while these GDK methods promise both.
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static final Collector TO_LIST = Collectors.toCollection(ArrayList::new);
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static <T> Collector<T, ?, List<T>> toListCollector() {
+        return (Collector) TO_LIST;
+    }
+
     // ---- Iteration ------------------------------------------------------
 
     /**
@@ -71,7 +86,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T, R> List<R> collectParallel(Collection<T> self, Function<T, R> transform) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().map(transform).collect(Collectors.toList())).join()
+                fjp.submit(() -> self.parallelStream().map(transform).collect(toListCollector())).join()
         );
     }
 
@@ -82,7 +97,7 @@ public class ParallelCollectionExtensions {
      */
     public static <T> List<T> findAllParallel(Collection<T> self, Predicate<T> filter) {
         return withCurrentFJP(fjp ->
-                fjp.submit(() -> self.parallelStream().filter(filter).collect(Collectors.toList())).join()
+                fjp.submit(() -> self.parallelStream().filter(filter).collect(toListCollector())).join()
         );
     }
 
@@ -203,7 +218,7 @@ public class ParallelCollectionExtensions {
         return withCurrentFJP(fjp ->
                 fjp.submit(() -> self.parallelStream()
                         .flatMap(e -> transform.apply(e).stream())
-                        .collect(Collectors.toList())).join()
+                        .collect(toListCollector())).join()
         );
     }
 
@@ -249,7 +264,7 @@ public class ParallelCollectionExtensions {
         return withCurrentFJP(fjp ->
                 fjp.submit(() -> self.parallelStream()
                         .filter(e -> InvokerHelper.invokeMethod(filter, "isCase", e) != Boolean.FALSE)
-                        .collect(Collectors.toList())).join()
+                        .collect(toListCollector())).join()
         );
     }
 

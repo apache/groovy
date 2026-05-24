@@ -9962,6 +9962,138 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // toImmutableList
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self a boolean array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Boolean> toImmutableList(boolean[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self a byte array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Byte> toImmutableList(byte[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self a char array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Character> toImmutableList(char[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self a short array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Short> toImmutableList(short[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self an int array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Integer> toImmutableList(int[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self a long array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Long> toImmutableList(long[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self a float array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Float> toImmutableList(float[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list.
+     *
+     * @param self a double array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static List<Double> toImmutableList(double[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(toList(self));
+    }
+
+    /**
+     * Converts this array to an immutable List of the same size, with each
+     * element added to the list. Null elements are preserved (unlike
+     * {@link List#of(Object[])}, which rejects nulls). The returned list is
+     * unmodifiable; mutation attempts throw {@link UnsupportedOperationException}.
+     * Returns the canonical empty list ({@link Collections#emptyList()}) when
+     * the array is empty.
+     * <pre class="language-groovy groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     * String[] arr = ['a', null, 'b']
+     * def list = arr.toImmutableList()
+     * assert list == ['a', null, 'b']
+     * shouldFail(UnsupportedOperationException) { list &lt;&lt; 'c' }
+     * assert (new String[0]).toImmutableList() === Collections.emptyList()
+     * </pre>
+     *
+     * @param self an object array
+     * @return An immutable list containing the contents of this array.
+     * @since 6.0.0
+     */
+    public static <T> List<T> toImmutableList(T[] self) {
+        if (self.length == 0) return Collections.emptyList();
+        return Collections.unmodifiableList(new ArrayList<>(Arrays.asList(self)));
+    }
+
+    //--------------------------------------------------------------------------
     // toSet
 
     /**
@@ -10109,6 +10241,169 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Set<T> toSet(T[] self) {
         return DefaultGroovyMethods.toSet(Arrays.asList(self));
+    }
+
+    //--------------------------------------------------------------------------
+    // toImmutableSet
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * boolean[] array = [true, false, true]
+     * Set expected = [true, false]
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self a boolean array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Boolean> toImmutableSet(boolean[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * byte[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self a byte array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Byte> toImmutableSet(byte[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * char[] array = 'xyzzy'.chars
+     * Set expected = ['x', 'y', 'z']
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self a char array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Character> toImmutableSet(char[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * short[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self a short array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Short> toImmutableSet(short[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * int[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self an int array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Integer> toImmutableSet(int[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * long[] array = [1, 2, 3, 2, 1]
+     * Set expected = [1, 2, 3]
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self a long array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Long> toImmutableSet(long[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * float[] array = [1.0f, 2.0f, 3.0f, 2.0f, 1.0f]
+     * Set expected = [1.0f, 2.0f, 3.0f]
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self a float array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Float> toImmutableSet(float[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added to the set.
+     * <pre class="language-groovy groovyTestCase">
+     * double[] array = [1.0d, 2.0d, 3.0d, 2.0d, 1.0d]
+     * Set expected = [1.0d, 2.0d, 3.0d]
+     * assert array.toImmutableSet() == expected
+     * </pre>
+     *
+     * @param self a double array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static Set<Double> toImmutableSet(double[] self) {
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
+    }
+
+    /**
+     * Converts this array to an immutable Set, with each unique element added
+     * to the set. Null elements are preserved (unlike {@link Set#copyOf(java.util.Collection)},
+     * which rejects nulls). The returned set is unmodifiable; mutation attempts
+     * throw {@link UnsupportedOperationException}. Returns the canonical empty
+     * set ({@link Collections#emptySet()}) when the array is empty.
+     * <pre class="language-groovy groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     * String[] arr = ['a', null, 'b', 'a']
+     * def set = arr.toImmutableSet()
+     * assert set == ['a', null, 'b'] as Set
+     * shouldFail(UnsupportedOperationException) { set &lt;&lt; 'c' }
+     * assert (new String[0]).toImmutableSet() === Collections.emptySet()
+     * </pre>
+     *
+     * @param self an object array
+     * @return An immutable set containing the unique contents of this array.
+     * @since 6.0.0
+     */
+    public static <T> Set<T> toImmutableSet(T[] self) {
+        Set<T> answer = toSet(self);
+        return answer.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(answer);
     }
 
     //--------------------------------------------------------------------------
