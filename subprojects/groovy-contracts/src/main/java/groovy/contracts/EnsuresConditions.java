@@ -18,8 +18,6 @@
  */
 package groovy.contracts;
 
-import org.apache.groovy.lang.annotation.Incubating;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,12 +25,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Represents multiple postconditions.
+ * Container annotation for multiple {@link Ensures} postconditions on the same target.
+ * Synthesized by the compiler from stacked {@code @Ensures} annotations via
+ * {@link java.lang.annotation.Repeatable}; not normally written by hand.
+ *
+ * @since 5.0.0
+ * @see Ensures
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
-@Incubating
 public @interface EnsuresConditions {
     /**
      * Returns the repeated postcondition annotations declared on the target element.

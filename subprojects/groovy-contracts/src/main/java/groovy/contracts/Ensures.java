@@ -21,7 +21,6 @@ package groovy.contracts;
 import org.apache.groovy.contracts.annotations.meta.AnnotationProcessorImplementation;
 import org.apache.groovy.contracts.annotations.meta.Postcondition;
 import org.apache.groovy.contracts.common.impl.EnsuresAnnotationProcessor;
-import org.apache.groovy.lang.annotation.Incubating;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -77,11 +76,12 @@ import java.lang.annotation.Target;
  *   }
  * </pre>
  * </p>
+ *
+ * @since 4.0.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
-@Incubating
 @Postcondition
 @Repeatable(EnsuresConditions.class)
 @AnnotationProcessorImplementation(EnsuresAnnotationProcessor.class)

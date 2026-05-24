@@ -23,7 +23,6 @@ import groovy.lang.annotation.ExtendedTarget;
 import org.apache.groovy.contracts.annotations.meta.AnnotationProcessorImplementation;
 import org.apache.groovy.contracts.annotations.meta.ClassInvariant;
 import org.apache.groovy.contracts.common.impl.ClassInvariantAnnotationProcessor;
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
@@ -61,11 +60,12 @@ import java.lang.annotation.Target;
  * Whenever a class has a parent which itself specifies a class-invariant, that class-invariant expression is combined
  * with the actual class's invariant (by using a logical AND).
  * </p>
+ *
+ * @since 4.0.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Incubating
 @ClassInvariant
 @Repeatable(Invariants.class)
 @ExtendedTarget({ExtendedElementType.LOOP, ExtendedElementType.IMPORT})

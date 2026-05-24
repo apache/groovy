@@ -38,6 +38,37 @@ package.
 include::../test/ContractsTest.groovy[tags=basic_example,indent=0]
 ----
 
+== Enabling contracts with @Contracted
+
+Contract processing is opt-in. By default, classes that simply mention the contract annotations
+will have them processed; the `@Contracted` marker is used when you want to make the opt-in
+explicit at the package level, or when you want to apply contract processing to a type that
+doesn't itself carry any contract annotations (for example, an empty class whose contract
+comes entirely from inherited interfaces).
+
+`@Contracted` may be placed on a package declaration (in a `package-info.groovy` /
+`package-info.java`) to enable contract processing across every type in that package:
+
+[source,groovy]
+----
+@Contracted
+package com.acme.banking
+
+import groovy.contracts.*
+----
+
+or on an individual type:
+
+[source,groovy]
+----
+@Contracted
+class Account { /* ... */ }
+----
+
+Once enabled, runtime assertion checking still honours the JVM's `-ea` / `-da` flags;
+`@Contracted` controls whether the AST transforms generate assertion code at compile time,
+not whether the resulting assertions execute at run time.
+
 == More Features
 
 Groovy contracts supports the following feature set:
@@ -45,12 +76,13 @@ Groovy contracts supports the following feature set:
 * definition of class invariants, pre- and post-conditions via @Invariant, @Requires and @Ensures
 * definition of loop invariants on `for`, `while`, and `do-while` loops via @Invariant
 * declaration of frame conditions (which fields a method may modify) via @Modifies
+* declaration of loop termination measures via @Decreases
 * inheritance of class invariants, pre- and post-conditions of concrete predecessor classes
 * inheritance of class invariants, pre- and post-conditions in implemented interfaces
 * usage of old and result variable in post-condition assertions
 * assertion injection in Plain Old Groovy Objects (POGOs)
 * human-readable assertion messages, based on Groovy power asserts
-* enabling contracts at package- or class-level with @AssertionsEnabled
+* enabling contracts at package- or class-level with @Contracted
 * enable or disable contract checking with Java's -ea and -da VM parameters
 * annotation contracts: a way to reuse reappearing contract elements in a project domain model
 * detection of circular assertion method calls
@@ -140,6 +172,69 @@ include::../test/ContractsTest.groovy[tags=loop_invariant_multiple_example,inden
   including the loop variable.
 * Assignment operators and state-changing postfix/prefix operators are
   not supported inside the closure.
+
+== Loop Termination with @Decreases
+
+Where `@Invariant` on a loop asserts a condition that must hold _during_ iteration,
+`@Decreases` asserts a condition that guarantees the loop will _terminate_: a
+_loop variant_, also known as a termination measure. The closure must yield a value
+whose successive iteration values form a strictly decreasing, well-founded sequence.
+Two value shapes are supported:
+
+* A single `Comparable` value &mdash; usually numeric &mdash; that strictly decreases
+  on every iteration. If the value is also a `Number`, it must additionally remain
+  non-negative.
+* A `List` of `Comparable` elements, compared lexicographically: the first position
+  at which consecutive values differ must show a strict decrease, and earlier
+  positions must be equal. This is the natural way to express termination for
+  nested loops (e.g.&nbsp;`[i, j]`).
+
+If the variant fails to decrease (or a numeric scalar variant becomes negative),
+a `LoopVariantViolation` (a subclass of `AssertionError`) is thrown.
+
+This is inspired by similar constructs in design-by-contract languages such as
+Dafny and Eiffel.
+
+NOTE: `@Decreases` is incubating in Groovy 6.0.0. The contract&nbsp;&mdash; in particular
+the scalar non-negativity rule and the lexicographic shape for `List` variants&nbsp;&mdash;
+may be relaxed or extended in a future release based on usage feedback.
+
+=== While loop
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=decreases_while_example,indent=0]
+----
+
+=== For loop
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=decreases_for_example,indent=0]
+----
+
+=== Lexicographic (tuple) variants
+
+For nested loops where no single counter strictly decreases on every iteration,
+return a `List` whose elements form a tuple compared lexicographically. In the
+example below the outer counter stays equal while the inner one decreases, then
+the outer one decreases and the inner one is allowed to reset:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=decreases_lexicographic_example,indent=0]
+----
+
+=== Rules for @Decreases closures
+
+* The closure must return a `Comparable` value or a `List` of `Comparable` elements.
+* The value is evaluated at the start and end of each iteration; the end-of-iteration
+  value must be strictly less than the start-of-iteration value (lexicographically,
+  for `List` variants).
+* For numeric scalar variants, the value must also remain `>= 0`.
+  This non-negativity rule does _not_ apply to non-`Number` `Comparable` values
+  (e.g.&nbsp;`String`) or to `List` variants.
+* The closure may reference any variables visible in the enclosing scope.
 
 == Frame Conditions with @Modifies
 

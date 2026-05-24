@@ -18,8 +18,6 @@
  */
 package groovy.contracts;
 
-import org.apache.groovy.lang.annotation.Incubating;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,12 +25,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Represents multiple invariants
+ * Container annotation for multiple {@link Invariant} declarations on the same type.
+ * Synthesized by the compiler from stacked {@code @Invariant} annotations via
+ * {@link java.lang.annotation.Repeatable}; not normally written by hand.
+ *
+ * @since 5.0.0
+ * @see Invariant
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Incubating
 public @interface Invariants {
     /**
      * Returns the repeated invariant annotations declared on the annotated type.
