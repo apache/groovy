@@ -22,7 +22,12 @@ import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.jline.terminal.Size
 import org.jline.terminal.Terminal
 import org.jline.terminal.TerminalBuilder
+import org.jline.terminal.impl.SixelGraphics
+import org.jline.terminal.impl.TerminalGraphics
+import org.jline.terminal.impl.TerminalGraphicsManager
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 
 import java.nio.charset.StandardCharsets
@@ -60,6 +65,31 @@ abstract class SystemTestSupport extends ConsoleTestSupport {
     protected GroovySystemRegistry system
     protected Terminal terminal
     private ByteArrayOutputStream terminalBytes
+
+    // Force JLine's graphics-protocol detection off for the test lifetime.
+    // {@link TerminalGraphicsManager#isGraphicsSupported} would otherwise read
+    // host env vars (TERM_PROGRAM, KITTY_WINDOW_ID, ITERM_SESSION_ID,
+    // GHOSTTY_RESOURCES_DIR) and probe the underlying PTY, returning true when
+    // Gradle is launched from a graphics-capable terminal (WezTerm/Kitty/iTerm2/
+    // Ghostty). When true, /img bypasses its summary-line fallback and writes
+    // graphics bytes to the terminal directly, which our dumb-terminal capture
+    // can't surface — breaking ImgTest assertions.
+    //
+    // The combo {@code forceProtocol(SIXEL)} + {@code setSixelSupportOverride(false)}
+    // narrows {@code getBestProtocol(...)} to only consider Sixel, then forces
+    // Sixel to report unsupported — so {@code isGraphicsSupported} returns false
+    // regardless of any env-var-driven Kitty/iTerm2 detection.
+    @BeforeAll
+    static void disableGraphicsProtocolDetection() {
+        TerminalGraphicsManager.forceProtocol(TerminalGraphics.Protocol.SIXEL)
+        SixelGraphics.setSixelSupportOverride(Boolean.FALSE)
+    }
+
+    @AfterAll
+    static void restoreGraphicsProtocolDetection() {
+        TerminalGraphicsManager.forceProtocol(null)
+        SixelGraphics.setSixelSupportOverride(null)
+    }
 
     @BeforeEach
     @Override
