@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779521990160,
+  "lastUpdate": 1779609144917,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -598,6 +598,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 462.8733333333333,
             "range": "±21.21",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "121c8605f7994fcefb4f13f21b5a4a46b95ee84a",
+          "message": "GROOVY-12030: Graduate PropertyHandler from incubating to stable",
+          "timestamp": "2026-05-22T23:45:44Z",
+          "url": "https://github.com/apache/groovy/commit/121c8605f7994fcefb4f13f21b5a4a46b95ee84a"
+        },
+        "date": 1779609143468,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 552.7633333333333,
+            "range": "±22.18",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 640.54,
+            "range": "±208.68",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 561.3366666666667,
+            "range": "±138.06",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 482.91,
+            "range": "±24.49",
             "unit": "ms",
             "extra": "5.0.6"
           }
