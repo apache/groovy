@@ -15690,6 +15690,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convert an iterator to an immutable List. The iterator will become
+     * exhausted of elements after making this conversion. Returns the
+     * canonical empty list ({@link Collections#emptyList()}) when the iterator
+     * is empty.
+     * <p>
+     * Null elements are preserved (unlike {@link List#copyOf(java.util.Collection)},
+     * which rejects nulls). The returned list is unmodifiable; mutation
+     * attempts throw {@link UnsupportedOperationException}.
+     * <p>
+     * <pre class="language-groovy groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     * def list = [1, 2, null, 3].iterator().toImmutableList()
+     * assert list == [1, 2, null, 3]
+     * shouldFail(UnsupportedOperationException) { list &lt;&lt; 4 }
+     * assert [].iterator().toImmutableList() === Collections.emptyList()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return an immutable List of the elements from the iterator
+     * @since 6.0.0
+     */
+    public static <T> List<T> toImmutableList(Iterator<T> self) {
+        if (!self.hasNext()) return Collections.emptyList();
+        List<T> answer = new ArrayList<>();
+        while (self.hasNext()) {
+            answer.add(self.next());
+        }
+        return Collections.unmodifiableList(answer);
+    }
+
+    /**
      * Convert an Iterable to a List. The Iterable's iterator will
      * become exhausted of elements after making this conversion.
      * <p>
@@ -15704,6 +15735,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> toList(Iterable<T> self) {
         return toList(self.iterator());
+    }
+
+    /**
+     * Convert an Iterable to an immutable List. The Iterable's iterator will
+     * become exhausted of elements after making this conversion.
+     *
+     * @param self an Iterable
+     * @return an immutable List of the elements from the Iterable
+     * @since 6.0.0
+     */
+    public static <T> List<T> toImmutableList(Iterable<T> self) {
+        return toImmutableList(self.iterator());
     }
 
     /**
@@ -15855,6 +15898,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convert an Iterable to an immutable Set. The Iterable's iterator will
+     * become exhausted of elements after making this conversion.
+     *
+     * @param self an Iterable
+     * @return an immutable Set of the elements from the Iterable
+     * @since 6.0.0
+     */
+    public static <T> Set<T> toImmutableSet(Iterable<T> self) {
+        return toImmutableSet(self.iterator());
+    }
+
+    /**
      * Convert an iterator to a Set. The iterator will become
      * exhausted of elements after making this conversion.
      *
@@ -15868,6 +15923,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.add(self.next());
         }
         return answer;
+    }
+
+    /**
+     * Convert an iterator to an immutable Set. The iterator will become
+     * exhausted of elements after making this conversion. Returns the
+     * canonical empty set ({@link Collections#emptySet()}) when the iterator
+     * is empty.
+     * <p>
+     * Null elements are preserved (unlike {@link Set#copyOf(java.util.Collection)},
+     * which rejects nulls). The returned set is unmodifiable; mutation
+     * attempts throw {@link UnsupportedOperationException}.
+     * <p>
+     * <pre class="language-groovy groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     * def set = [1, 2, null, 3].iterator().toImmutableSet()
+     * assert set == [1, 2, null, 3] as Set
+     * shouldFail(UnsupportedOperationException) { set &lt;&lt; 4 }
+     * assert [].iterator().toImmutableSet() === Collections.emptySet()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return an immutable Set of the elements from the iterator
+     * @since 6.0.0
+     */
+    public static <T> Set<T> toImmutableSet(Iterator<T> self) {
+        if (!self.hasNext()) return Collections.emptySet();
+        Set<T> answer = new HashSet<>();
+        while (self.hasNext()) {
+            answer.add(self.next());
+        }
+        return Collections.unmodifiableSet(answer);
     }
 
     /**
