@@ -76,7 +76,7 @@ abstract class SystemTestSupport extends ConsoleTestSupport {
         terminal = TerminalBuilder.builder()
                 .type('dumb')
                 .graphemeCluster(false)
-                .size(new Size(80, 24))
+                .size(new Size(120, 60))
                 .streams(new ByteArrayInputStream(new byte[0]), terminalBytes)
                 .encoding(StandardCharsets.UTF_8)
                 .name('groovysh-test')
@@ -104,6 +104,7 @@ abstract class SystemTestSupport extends ConsoleTestSupport {
      */
     protected String terminalOutput() {
         terminal?.writer()?.flush()
+        terminal?.flush()
         new String(terminalBytes.toByteArray(), StandardCharsets.UTF_8)
     }
 
