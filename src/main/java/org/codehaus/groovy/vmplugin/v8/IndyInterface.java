@@ -388,7 +388,7 @@ public class IndyInterface {
         Object receiverKey = receiverCacheKey(receiver);
 
         MethodHandleWrapper mhw = callSite.get(receiverKey);
-        if (mhw != null) {
+        if (mhw != null && mhw.getSwitchPoint() == switchPoint) {
             mhw.incrementLatestHitCount();
             if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD && callSite.picInsertIfMissing(receiverKey)) {
                 optimizeCallSite(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments, receiverKey, mhw);
@@ -403,9 +403,10 @@ public class IndyInterface {
             return NULL_METHOD_HANDLE_WRAPPER;
         }, sender);
 
-        if (mhw == NULL_METHOD_HANDLE_WRAPPER) {
+        if (mhw == NULL_METHOD_HANDLE_WRAPPER || mhw.getSwitchPoint() != switchPoint) {
             // The PIC stores a sentinel to remember "do not relink this receiver shape";
             // execution still needs a real handle for the current invocation.
+            // OR the cached handle is stale.
             mhw = fallbackSupplier.get();
         }
 
@@ -498,6 +499,7 @@ public class IndyInterface {
                 selector.handle.asSpreader(Object[].class, arguments.length).asType(MethodType.methodType(Object.class, Object[].class)),
                 selector.handle,
                 selector.method,
+                switchPoint,
                 selector.cache
         );
     }

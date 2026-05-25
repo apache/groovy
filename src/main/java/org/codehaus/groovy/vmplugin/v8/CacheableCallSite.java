@@ -90,6 +90,7 @@ public class CacheableCallSite extends MutableCallSite {
      */
     @SuppressWarnings("java:S3077")
     private volatile MethodHandle picChain;
+    private volatile java.lang.invoke.SwitchPoint picSwitchPoint;
 
     /**
      * Keys corresponding to the handles in the {@link #picChain}.
@@ -142,7 +143,11 @@ public class CacheableCallSite extends MutableCallSite {
     MethodHandleWrapper get(Object key) {
         MRUEntry entry = mruEntry;
         if (entry != null && entry.key == key) {
-            return entry.wrapper;
+            MethodHandleWrapper mhw = entry.wrapper;
+            if (mhw.getSwitchPoint() == IndyInterface.switchPoint) {
+                return mhw;
+            }
+            mruEntry = null;
         }
         return null;
     }
@@ -166,8 +171,9 @@ public class CacheableCallSite extends MutableCallSite {
             SoftReference<MethodHandleWrapper> resultSoftReference = lruCache.get(key);
             if (null != resultSoftReference) {
                 result = resultSoftReference.get();
-                if (null == result) {
+                if (null == result || result.getSwitchPoint() != IndyInterface.switchPoint) {
                     lruCache.remove(key);
+                    result = null;
                 }
             }
         }
@@ -181,11 +187,11 @@ public class CacheableCallSite extends MutableCallSite {
                 SoftReference<MethodHandleWrapper> existingRef = lruCache.get(key);
                 if (existingRef != null) {
                     MethodHandleWrapper existing = existingRef.get();
-                    if (existing != null) {
+                    if (existing != null && existing.getSwitchPoint() == IndyInterface.switchPoint) {
                         // Another thread already computed and stored; use theirs
                         result = existing;
                     } else {
-                        // Reference was cleared; replace it
+                        // Reference was cleared or stale; replace it
                         lruCache.put(key, new SoftReferenceWithKey(key, result, REFERENCE_QUEUE, lruCache));
                     }
                 } else {
@@ -254,8 +260,13 @@ public class CacheableCallSite extends MutableCallSite {
      * @param key the receiver cache key
      * @param updater the callback used to build the new PIC link
      */
-    public void maybeUpdatePic(Object key, UnaryOperator<MethodHandle> updater) {
+    public void maybeUpdatePic(Object key, java.util.function.UnaryOperator<MethodHandle> updater) {
         synchronized (this) {
+            var currentSwitchPoint = IndyInterface.switchPoint;
+            if (picSwitchPoint != currentSwitchPoint) {
+                clearPic();
+                picSwitchPoint = currentSwitchPoint;
+            }
             for (int i = 0; i < picCount; i++) {
                 if (picKeys[i] == key) return;
             }
@@ -280,6 +291,9 @@ public class CacheableCallSite extends MutableCallSite {
      * @return {@code true} if the key is in the PIC
      */
     public boolean picInsertIfMissing(Object key) {
+        if (picSwitchPoint != IndyInterface.switchPoint) {
+            return true;
+        }
         int count = picCount;
         for (int i = 0; i < count; i++) {
             if (picKeys[i] == key) return false;
@@ -289,6 +303,17 @@ public class CacheableCallSite extends MutableCallSite {
 
     public MethodHandle getPicChain() {
         return picChain;
+    }
+
+    public void clearPic() {
+        synchronized (this) {
+            picChain = null;
+            picSwitchPoint = null;
+            picCount = 0;
+            for (int i = 0; i < picKeys.length; i++) {
+                picKeys[i] = null;
+            }
+        }
     }
 
     public int getPicCount() {
@@ -426,6 +451,10 @@ public class CacheableCallSite extends MutableCallSite {
      */
     public MethodHandles.Lookup getLookup() {
         return lookup;
+    }
+
+    @Override public void setTarget(MethodHandle newTarget) {
+        super.setTarget(newTarget);
     }
 
     private static final ReferenceQueue<MethodHandleWrapper> REFERENCE_QUEUE = new ReferenceQueue<>();

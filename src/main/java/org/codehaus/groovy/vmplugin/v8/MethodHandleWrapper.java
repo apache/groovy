@@ -19,8 +19,8 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaMethod;
-
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.SwitchPoint;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -32,6 +32,7 @@ class MethodHandleWrapper {
     private final MethodHandle cachedMethodHandle;
     private final MethodHandle targetMethodHandle;
     private final MetaMethod method;
+    private final SwitchPoint switchPoint;
     private final boolean canSetTarget;
     private final LongAdder latestHitCount = new LongAdder();
 
@@ -41,12 +42,14 @@ class MethodHandleWrapper {
      * @param cachedMethodHandle the cached invocation handle
      * @param targetMethodHandle the relink target handle
      * @param method the associated meta method
+     * @param switchPoint the switch point associated with this handle
      * @param canSetTarget whether the call site target may be updated to this handle
      */
-    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, boolean canSetTarget) {
+    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, SwitchPoint switchPoint, boolean canSetTarget) {
         this.cachedMethodHandle = cachedMethodHandle;
         this.targetMethodHandle = targetMethodHandle;
         this.method = method;
+        this.switchPoint = switchPoint;
         this.canSetTarget = canSetTarget;
     }
 
@@ -119,6 +122,15 @@ class MethodHandleWrapper {
     }
 
     /**
+     * Returns the switch point associated with this wrapper.
+     *
+     * @return the associated switch point
+     */
+    public SwitchPoint getSwitchPoint() {
+        return switchPoint;
+    }
+
+    /**
      * Returns the sentinel wrapper used when no cacheable handle is available.
      *
      * @return the null sentinel wrapper
@@ -134,7 +146,7 @@ class MethodHandleWrapper {
         public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper();
 
         private NullMethodHandleWrapper() {
-            super(null, null, null, false);
+            super(null, null, null, null, false);
         }
     }
 }

@@ -51,6 +51,7 @@ import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
+import org.codehaus.groovy.runtime.HandleMetaClass;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -827,16 +828,16 @@ public abstract class Selector {
                     // Object.class handles both cases at once
                     handle = MethodHandles.dropArguments(handle, 0, Object.class);
                 }
-            } else if (method instanceof GeneratedMetaMethod gMethod) {
+            } else if (metaMethod instanceof GeneratedMetaMethod gMethod) {
                 if (LOG_ENABLED) LOG.info("meta method is generated helper");
                 handle = gMethod.getTargetMethodHandle();
                 isVargs = gMethod.isVargsMethod();
                 catchException = false;
-            } else if (method != null) {
+            } else if (metaMethod != null) {
                 if (LOG_ENABLED) LOG.info("meta method is dgm helper");
                 // generic meta method invocation path
                 handle = META_METHOD_INVOKER;
-                handle = handle.bindTo(method);
+                handle = handle.bindTo(metaMethod);
                 if (spread) {
                     args = originalArguments;
                     skipSpreadCollector = true;
@@ -1242,7 +1243,10 @@ public abstract class Selector {
     /**
      * @return {@code mc} if {@code ClosureMetaClass}, {@code ExpandoMetaClass} or not {@code ProxyMetaClass}; otherwise null
      */
-    private static MetaClassImpl getMetaClassImpl(final MetaClass mc, final boolean includeEMC) {
+    private static MetaClassImpl getMetaClassImpl(MetaClass mc, final boolean includeEMC) {
+        if (mc instanceof HandleMetaClass hmc) {
+            mc = hmc.getMetaClass();
+        }
         boolean valid = (mc.getClass() == ClosureMetaClass.class)
                 || (includeEMC && mc instanceof ExpandoMetaClass)
                 || (mc instanceof MetaClassImpl && !(mc instanceof ExpandoMetaClass || mc instanceof ProxyMetaClass)); // GROOVY-11813
