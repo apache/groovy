@@ -156,6 +156,24 @@ checking error reporting that some operation cannot be found on `Object`
 `Object`). Adding `extensions = 'groovy.typecheckers.MonadicChecker'` to
 the `@CompileStatic`/`@TypeChecked` annotation resolves it.
 
+=== Lint for hand-written chains: MonadicShapeChecker
+
+If you write `flatMap` / `map` chains by hand (without `DO`) over the same
+participating carriers, the sister `MonadicShapeChecker` extension provides
+a compile-time lint:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.MonadicShapeChecker')
+----
+
+It catches the two classic shape mistakes &mdash; a `bind` (i.e.&nbsp;`flatMap`)
+closure that returns a non-carrier value, and a `map` closure that returns
+the same carrier where `flatMap` was meant. A `strict` option tightens
+what is flagged; the default lenient mode reports only high-confidence
+violations. Both checkers are documented from the type-checker side in the
+<<built-in-auxiliary-type-checkers,Built-in auxiliary type checkers>> chapter.
+
 [[monadic-when]]
 == When to use `DO`
 

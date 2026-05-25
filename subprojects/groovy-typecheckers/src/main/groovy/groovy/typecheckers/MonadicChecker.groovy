@@ -18,12 +18,13 @@
  */
 package groovy.typecheckers
 
+import org.apache.groovy.lang.annotation.Incubating
+import org.apache.groovy.runtime.MonadicCarrierRegistry
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
-import org.apache.groovy.runtime.MonadicCarrierRegistry
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
 
@@ -60,7 +61,10 @@ import static org.objectweb.asm.Opcodes.ACC_BRIDGE
  * not being a SAM type.
  *
  * Activate with {@code @CompileStatic(extensions='groovy.typecheckers.MonadicChecker')}.
+ *
+ * @since 6.0.0
  */
+@Incubating
 class MonadicChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static final String DISPATCHER = 'org.apache.groovy.runtime.Comprehensions'
