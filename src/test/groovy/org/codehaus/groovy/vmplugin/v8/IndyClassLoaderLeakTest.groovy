@@ -73,6 +73,7 @@ final class IndyClassLoaderLeakTest {
             java.lang.invoke.MethodHandles.constant(Object, "test"),
             java.lang.invoke.MethodHandles.constant(Object, "test"),
             new org.codehaus.groovy.reflection.CachedMethod(targetClass.getDeclaredMethods().length > 0 ? targetClass.getDeclaredMethods()[0] : Object.class.getMethod("toString")),
+            IndyInterface.switchPoint,
             true
         )
         callSite.updateMRU(key, wrapper, sender)

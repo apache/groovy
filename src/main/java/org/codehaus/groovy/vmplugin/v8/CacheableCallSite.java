@@ -144,7 +144,7 @@ public class CacheableCallSite extends MutableCallSite {
         MRUEntry entry = mruEntry;
         if (entry != null && entry.key == key) {
             MethodHandleWrapper mhw = entry.wrapper;
-            if (mhw.getSwitchPoint() == IndyInterface.switchPoint) {
+            if (mhw == MethodHandleWrapper.getNullMethodHandleWrapper() || mhw.getSwitchPoint() == IndyInterface.switchPoint) {
                 return mhw;
             }
             mruEntry = null;
@@ -171,7 +171,7 @@ public class CacheableCallSite extends MutableCallSite {
             SoftReference<MethodHandleWrapper> resultSoftReference = lruCache.get(key);
             if (null != resultSoftReference) {
                 result = resultSoftReference.get();
-                if (null == result || result.getSwitchPoint() != IndyInterface.switchPoint) {
+                if (null == result || (result != MethodHandleWrapper.getNullMethodHandleWrapper() && result.getSwitchPoint() != IndyInterface.switchPoint)) {
                     lruCache.remove(key);
                     result = null;
                 }

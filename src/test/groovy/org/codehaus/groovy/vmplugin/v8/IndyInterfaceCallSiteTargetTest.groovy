@@ -407,7 +407,7 @@ final class IndyInterfaceCallSiteTargetTest {
     }
 
     private static MethodHandleWrapper newCachedWrapper(MethodType type, Object cachedValue, Object targetValue, MetaMethod method, boolean canSetTarget) {
-        new MethodHandleWrapper(cachedHandle(cachedValue), targetHandle(type, targetValue), method, canSetTarget)
+        new MethodHandleWrapper(cachedHandle(cachedValue), targetHandle(type, targetValue), method, IndyInterface.switchPoint, canSetTarget)
     }
 
     private static MethodHandle cachedHandle(Object value) {

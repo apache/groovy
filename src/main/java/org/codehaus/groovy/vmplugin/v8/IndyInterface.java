@@ -388,7 +388,7 @@ public class IndyInterface {
         Object receiverKey = receiverCacheKey(receiver);
 
         MethodHandleWrapper mhw = callSite.get(receiverKey);
-        if (mhw != null && mhw.getSwitchPoint() == switchPoint) {
+        if (mhw != null && (mhw == NULL_METHOD_HANDLE_WRAPPER || mhw.getSwitchPoint() == switchPoint)) {
             mhw.incrementLatestHitCount();
             if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD && callSite.picInsertIfMissing(receiverKey)) {
                 optimizeCallSite(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, arguments, receiverKey, mhw);
