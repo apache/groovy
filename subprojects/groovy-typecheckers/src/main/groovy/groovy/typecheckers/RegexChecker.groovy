@@ -18,7 +18,6 @@
  */
 package groovy.typecheckers
 
-import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -99,8 +98,9 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkC
  * https://checkerframework.org/manual/#regex-checker
  * https://homes.cs.washington.edu/~mernst/pubs/regex-types-ftfjp2012.pdf
  * https://github.com/typetools/checker-framework/tree/master/checker/src/main/java/org/checkerframework/checker/regex
+ *
+ * @since 4.0.0
  */
-@Incubating
 class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static final ClassNode MATCHER_TYPE = ClassHelper.make(Matcher)

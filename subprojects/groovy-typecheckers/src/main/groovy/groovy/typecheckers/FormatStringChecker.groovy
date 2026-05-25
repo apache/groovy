@@ -18,7 +18,6 @@
  */
 package groovy.typecheckers
 
-import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassNode
@@ -65,8 +64,9 @@ import static org.codehaus.groovy.ast.ClassHelper.makeCached
  * https://checkerframework.org/manual/#formatter-checker
  * https://homes.cs.washington.edu/~mernst/pubs/format-string-issta2014-abstract.html
  * https://github.com/typetools/checker-framework/tree/master/checker/src/main/java/org/checkerframework/checker/formatter
+ *
+ * @since 5.0.0
  */
-@Incubating
 class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static final ClassNode LOCALE_TYPE = makeCached(Locale)

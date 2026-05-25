@@ -23,6 +23,7 @@ ifndef::reldir_typecheckers[]
 endif::[]
 :icons: font
 
+[[built-in-auxiliary-type-checkers]]
 = Built-in auxiliary type checkers
 
 == Introduction
@@ -31,7 +32,10 @@ Groovy's static nature includes an extensible type-checking mechanism.
 This mechanism allows users to selectively strengthen or weaken type checking
 as needed to cater for scenarios where the standard type checking isn't sufficient.
 
-In addition to allowing you to write your own custom checkers,
+This chapter catalogues the type-checking extensions that ship with Groovy.
+For the API used to write your own, see the
+<<type-checking-extensions,Type checking extensions>> chapter.
+
 Groovy offers a suite of built-in type checkers that provide additional
 compile-time verification for specific concerns:
 
@@ -96,11 +100,37 @@ a| Verifies a combiner passed to a parallel reduction carries the associativity 
 list.injectParallel(0, Maths.&add)        [.green]#// icon:check[] @Associative method#
 list.injectParallel(0) { a, b -> a - b }  [.red]#// icon:times[] non-associative: undefined result#
 ----
+
+| <<Checking the DO Macro (Incubating),MonadicChecker>>
+a| Teaches `@CompileStatic`/`@TypeChecked` about the `DO` macro's desugared output so monadic comprehensions over `Optional`, `Stream`, `Awaitable`, and `@Monadic` types type-check correctly
+
+[listing,subs="+quotes,macros"]
+----
+@CompileStatic(extensions = 'groovy.typecheckers.MonadicChecker')
+def m = DO { x <- Optional.of(1); yield x + 1 }
+----
+
+| <<Checking Hand-written Monadic Chains (Incubating),MonadicShapeChecker>>
+a| Lint for hand-written `flatMap`/`map` chains over the standard carriers -- catches `bind` returning a non-carrier or `map` returning the same carrier
+
+[listing,subs="+quotes,macros"]
+----
+Optional.of(1).flatMap { x -> x + 1 }       [.red]#// icon:times[] bind returned Integer, not Optional#
+Optional.of(1).map { x -> Optional.of(x) }  [.red]#// icon:times[] map returned Optional, use flatMap#
+----
 |===
 
 These checkers work with annotations from multiple libraries (JSpecify, JetBrains,
 Checker Framework, and others) -- matching by simple name so you can use whichever
 annotation library your project already depends on.
+
+[NOTE]
+====
+`RegexChecker` (since Groovy 4.0.0) and `FormatStringChecker` (since Groovy 5.0.0)
+are stable. The remaining checkers are new in Groovy 6.0.0 and remain incubating;
+their options and semantics may evolve in a subsequent 6.x release based on
+usage feedback.
+====
 
 === Why these checkers matter
 
@@ -182,6 +212,8 @@ such checkers, e.g. make it apply globally using a compiler configuration script
 as just one example.
 
 == Checking Regular Expressions
+
+_Stable since Groovy 4.0.0._
 
 A regular expression (regex) defines a search pattern for text. The pattern can be as simple as a single character, a fixed string, or a complex expression containing special characters describing a pattern.
 The JDK has special regex classes and Groovy adds some special syntactic sugar and functionality
@@ -340,6 +372,8 @@ Over-and-above these examples, detected errors include:
 * Unmatched closing ')'
 
 == Checking Format Strings
+
+_Stable since Groovy 5.0.0._
 
 The `format` methods in `java.util.Formatter`, and other similar methods,
 support formatted printing in the style of C's `printf` method with a
@@ -1391,3 +1425,51 @@ This is a safety net, not a guarantee:
 A parallel combiner should normally also be side-effect-free; pairing this
 checker with `<<Checking @Pure Purity (Incubating),PurityChecker>>` (which
 already treats `@Memoized` methods as purity-obligated) gives both guarantees.
+
+== Checking the DO Macro (Incubating)
+
+_New in Groovy 6.0.0._
+
+The `MonadicChecker` type-checking extension supports the `DO` macro for
+monadic comprehensions, teaching `@CompileStatic` / `@TypeChecked` how to
+look through the macro's desugared output (a runtime-dispatched
+`Comprehensions.bind` / `Comprehensions.map` chain). Without it, generator
+bound names erase to `Object` and the body fails to type-check.
+
+[source,groovy]
+----
+@CompileStatic(extensions = 'groovy.typecheckers.MonadicChecker')
+def addOne = DO { x <- Optional.of(1); yield x + 1 }
+----
+
+The checker also rejects a non-participating carrier with a compile error
+naming the missing shape (the carrier must be in the registry allow-list,
+expose structural `flatMap` / `map`, or be annotated with `@Monadic`).
+
+The macro itself, its desugaring strategy, the participating-carrier rules,
+and the `@Monadic` annotation are documented in the
+<<monadic-comprehensions,Monadic Comprehensions>> chapter. This section
+covers only the type-checking surface.
+
+== Checking Hand-written Monadic Chains (Incubating)
+
+_New in Groovy 6.0.0._
+
+The `MonadicShapeChecker` is a lint for monadic chains you write by hand
+(without the `DO` macro) over the standard carriers (`Optional`, `Stream`,
+`Awaitable`). It catches the two classic shape mistakes:
+
+* `bind` (a.k.a. `flatMap`) closure returning a non-carrier value
+* `map` closure returning the same carrier, where `flatMap` was meant
+
+Activate via:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.MonadicShapeChecker')
+----
+
+The checker has a `strict` option that tightens what it flags; in lenient
+(default) mode only high-confidence violations are reported. The sister
+`MonadicChecker` (above) covers the `DO`-macro path; this checker covers
+the hand-written path.
