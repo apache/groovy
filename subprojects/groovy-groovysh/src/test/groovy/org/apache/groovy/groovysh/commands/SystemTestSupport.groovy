@@ -21,7 +21,7 @@ package org.apache.groovy.groovysh.commands
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.jline.terminal.Size
 import org.jline.terminal.Terminal
-import org.jline.terminal.TerminalBuilder
+import org.jline.terminal.impl.DumbTerminal
 import org.jline.terminal.impl.SixelGraphics
 import org.jline.terminal.impl.TerminalGraphics
 import org.jline.terminal.impl.TerminalGraphicsManager
@@ -91,26 +91,51 @@ abstract class SystemTestSupport extends ConsoleTestSupport {
         SixelGraphics.setSixelSupportOverride(null)
     }
 
+    /**
+     * Terminal width reported to JLine. Override in a subclass to vary the
+     * per-line padding that {@code printCommandInfo} applies via
+     * {@code setLength(terminal().getWidth())}, or to keep the help renderer
+     * out of its {@code width == 0} truncation path. Default 80 — any
+     * non-zero value avoids the {@code setLength(0)} empty-line bug; the
+     * smaller value keeps total bytes per {@code /help} modest, which
+     * shrinks the pump-drain race window on graphics-capable host PTYs.
+     */
+    protected int terminalWidth() { 80 }
+
+    /**
+     * Terminal height reported to JLine. Override in a subclass to flip
+     * {@code helpTopic}'s {@code withInfo = commands.size() < getHeight()}
+     * switch (verbose info-per-line vs compact multi-column). Default 40 —
+     * comfortably above the test setup's registered command count, so the
+     * verbose format triggers consistently. Drop below the command count to
+     * force the compact format (see {@code HelpCompactCommandTest}).
+     */
+    protected int terminalHeight() { 40 }
+
     @BeforeEach
     @Override
     void setUp() {
         super.setUp()
         Supplier workDir = { configPath.getUserConfig('.') }
         terminalBytes = new ByteArrayOutputStream()
-        // type('dumb') is the canonical dumb terminal selector — dumb(true) is silently
-        // ignored when custom streams are set, which would otherwise leave us with a
-        // PosixPtyTerminal typed xterm-256color and an active grapheme-cluster probe
-        // writing capability-probe escapes to terminalBytes. graphemeCluster(false) is
-        // belt-and-braces, and an explicit Size avoids the 0x0 path in JLine's help
-        // renderer which truncates via setLength(width).
-        terminal = TerminalBuilder.builder()
-                .type('dumb')
-                .graphemeCluster(false)
-                .size(new Size(120, 200))
-                .streams(new ByteArrayInputStream(new byte[0]), terminalBytes)
-                .encoding(StandardCharsets.UTF_8)
-                .name('groovysh-test')
-                .build()
+        // Instantiate DumbTerminal directly rather than going through TerminalBuilder.
+        // TerminalBuilder's type('dumb') hint is advisory: when JLine's native
+        // bindings (jline-terminal-jni on JDK 17/18, jline-terminal-ffm on JDK 22+)
+        // can attach to the inherited TTY, the builder may still create a
+        // PosixPtyTerminal — even with explicit streams — and route writes through
+        // an asynchronous output-pump thread. That pump's drain timing races with
+        // terminalOutput() on certain CI runners (consistently reproduces on
+        // Linux + JDK 17/18) and produces mid-line-truncated captures. DumbTerminal
+        // is final, has no native code, no pump, and writes synchronously straight
+        // through PrintWriter → ByteArrayOutputStream — eliminating the race.
+        // An explicit Size avoids JLine's 0x0 path which truncates via setLength(0).
+        terminal = new DumbTerminal(
+                'groovysh-test',
+                'dumb',
+                new ByteArrayInputStream(new byte[0]),
+                terminalBytes,
+                StandardCharsets.UTF_8)
+        terminal.setSize(new Size(terminalWidth(), terminalHeight()))
         system = new GroovySystemRegistry(reader.parser, terminal, workDir, configPath).tap {
             setCommandRegistries(console, groovy)
             // Match production wiring: SystemRegistryImpl's built-in commands

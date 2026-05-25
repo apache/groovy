@@ -44,36 +44,4 @@ class HelpCommandTest extends SystemTestSupport {
         assert out.contains('show')
         assert out.contains('exit')
     }
-
-    /**
-     * TEMP DIAGNOSTIC — investigating the JDK-specific flake on helpListsKnownCommands.
-     * <p>
-     * Peeks at {@code SystemRegistryImpl.exception} after running {@code /help}.
-     * JLine's {@code helpTopic} silently stores any per-command exception there via
-     * {@code catch (Exception e) { exception = e; }}. If iteration aborts mid-list
-     * (one of the registered commands' {@code commandInfo}/description throws),
-     * we'd see the exception here.
-     * <p>
-     * Expected outcomes:
-     * <ul>
-     *   <li>{@code exception == null} → iteration ran to completion; the truncation
-     *       seen in the flake is pump-drain / native-terminal-binding timing.</li>
-     *   <li>{@code exception != null} → iteration aborted; the stack trace points
-     *       at the offending command.</li>
-     * </ul>
-     * Remove this test once the flake is understood.
-     */
-    @Test
-    void diagSilentExceptionAfterHelp() {
-        system.execute('/help')
-        def field = org.jline.console.impl.SystemRegistryImpl.class.getDeclaredField('exception')
-        field.setAccessible(true)
-        Exception ex = (Exception) field.get(system)
-        if (ex) {
-            ex.printStackTrace()
-            throw new AssertionError(
-                "SystemRegistryImpl.exception is non-null after /help: ${ex.class.name}: ${ex.message}",
-                ex)
-        }
-    }
 }
