@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779609144917,
+  "lastUpdate": 1779697308219,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -648,6 +648,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 482.91,
             "range": "±24.49",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "42ce7e09611dd02d85d6d1e80e3c079a90100460",
+          "message": "GROOVY-12038: Graduate groovy-contracts from incubating to stable",
+          "timestamp": "2026-05-24T10:28:42Z",
+          "url": "https://github.com/apache/groovy/commit/42ce7e09611dd02d85d6d1e80e3c079a90100460"
+        },
+        "date": 1779697307512,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 529.9633333333334,
+            "range": "±24.96",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 640.1366666666667,
+            "range": "±215.83",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 567.4766666666667,
+            "range": "±145.39",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 473.4166666666667,
+            "range": "±22.01",
             "unit": "ms",
             "extra": "5.0.6"
           }
