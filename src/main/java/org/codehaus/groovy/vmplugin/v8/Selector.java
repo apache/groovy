@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ClassInfo;
@@ -812,8 +811,8 @@ public abstract class Selector {
                     } else {
                         handle = unreflect(cm.getCachedMethod());
                         catchException = !isCategoryTypeMethod && !isStaticCategoryTypeMethod;
-                        if (catchException && metaMethod.getDeclaringClass().isAssignableFrom(GroovyObject.class)) {
-                            catchException = invokesMOPMethod(name, handle, metaMethod.getDeclaringClass());
+                        if (catchException && GroovyObject.class.isAssignableFrom(declaringClass)) {
+                            catchException = invokesMOPMethod(name, handle);
                         }
                     }
                 } catch (ReflectiveOperationException e) {
@@ -850,7 +849,7 @@ public abstract class Selector {
             }
         }
 
-        private boolean invokesMOPMethod(String name, MethodHandle handle, CachedClass declaringClass) {
+        private boolean invokesMOPMethod(String name, MethodHandle handle) {
             // here we already know the target class is an instance of GroovyObject
             // MOP methods can use exceptions to control the MOP; thus we have to catch the exception in those cases
             if (name.equals("invokeMethod")) {
