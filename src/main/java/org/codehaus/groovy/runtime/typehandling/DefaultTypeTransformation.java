@@ -96,6 +96,9 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to a number
      */
     public static byte byteUnbox(final Object value) {
+        if (value instanceof Byte b) {
+            return b;
+        }
         Number n = castToNumber(value, byte.class);
         return n.byteValue();
     }
@@ -111,9 +114,11 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to char
      */
     public static char charUnbox(final Object value) {
+        if (value instanceof Character c) {
+            return c;
+        }
         if (value == null) return '\u0000'; // GROOVY-11371
-        var ch = ShortTypeHandling.castToChar(value);
-        return ch;
+        return ShortTypeHandling.castToChar(value);
     }
 
     /**
@@ -126,6 +131,9 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to a number
      */
     public static short shortUnbox(final Object value) {
+        if (value instanceof Short s) {
+            return s;
+        }
         Number n = castToNumber(value, short.class);
         return n.shortValue();
     }
@@ -140,6 +148,9 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to a number
      */
     public static int intUnbox(final Object value) {
+        if (value instanceof Integer i) {
+            return i;
+        }
         Number n = castToNumber(value, int.class);
         return n.intValue();
     }
@@ -153,6 +164,9 @@ public class DefaultTypeTransformation {
      * @return the boolean value
      */
     public static boolean booleanUnbox(final Object value) {
+        if (value instanceof Boolean b) {
+            return b;
+        }
         return castToBoolean(value);
     }
 
@@ -166,6 +180,9 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to a number
      */
     public static long longUnbox(final Object value) {
+        if (value instanceof Long l) {
+            return l;
+        }
         Number n = castToNumber(value, long.class);
         return n.longValue();
     }
@@ -181,6 +198,9 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to a number
      */
     public static float floatUnbox(final Object value) {
+        if (value instanceof Float f) {
+            return f;
+        }
         if (value == null) return Float.NaN; // GROOVY-11371
         Number n = castToNumber(value, float.class);
         return n.floatValue();
@@ -197,6 +217,9 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to a number
      */
     public static double doubleUnbox(final Object value) {
+        if (value instanceof Double d) {
+            return d;
+        }
         if (value == null) return Double.NaN; // GROOVY-11371
         Number n = castToNumber(value, double.class);
         return n.doubleValue();
@@ -333,11 +356,15 @@ public class DefaultTypeTransformation {
      * @throws GroovyCastException if the object cannot be converted to a number
      */
     public static Number castToNumber(Object object, Class type) {
-        if (object instanceof Number) {
-            return (Number) object;
+        if (object instanceof Number number) {
+            return number;
         }
-        if (object instanceof Character) {
-            char c = (Character) object;
+        return castToNumberFallback(object, type);
+    }
+
+    private static Number castToNumberFallback(Object object, Class type) {
+        if (object instanceof Character cObj) {
+            char c = cObj;
             return (int) c;
         }
         if (object instanceof GString) {
@@ -370,6 +397,10 @@ public class DefaultTypeTransformation {
             return (Boolean) object;
         }
 
+        return castToBooleanFallback(object);
+    }
+
+    private static boolean castToBooleanFallback(Object object) {
         // if the object isn't null and no Boolean, try to call an asBoolean() method on the object
         return (Boolean) InvokerHelper.invokeMethod(object, "asBoolean", InvokerHelper.EMPTY_ARGS);
     }
