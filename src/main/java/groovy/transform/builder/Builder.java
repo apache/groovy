@@ -66,7 +66,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.BuilderStra
  * @see groovy.transform.builder.InitializerStrategy
  */
 @Documented
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.BuilderASTTransformation")
 public @interface Builder {

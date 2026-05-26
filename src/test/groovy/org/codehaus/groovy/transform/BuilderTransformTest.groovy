@@ -840,4 +840,19 @@ final class BuilderTransformTest {
         assert new Captain(Captain.createInitializer().first('Kathryn').last('Janeway')).toString() == 'Kathryn Janeway'
         '''
     }
+
+    @Test // GROOVY-12040
+    void testBuilderAnnotationVisibleAtRuntime() {
+        assertScript shell, '''
+            @Builder(builderStrategy=SimpleStrategy, prefix='')
+            class ConnectionSettings {
+                String host = 'localhost'
+            }
+
+            Builder ann = ConnectionSettings.getAnnotation(Builder)
+            assert ann != null
+            assert ann.builderStrategy() == SimpleStrategy
+            assert ann.prefix() == ''
+        '''
+    }
 }
