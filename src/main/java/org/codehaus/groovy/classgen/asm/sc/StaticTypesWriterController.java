@@ -42,8 +42,6 @@ import org.codehaus.groovy.classgen.asm.StatementWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.WriterController;
-import org.codehaus.groovy.classgen.asm.indy.sc.IndyStaticTypesMultiTypeDispatcher;
-import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassVisitor;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
@@ -91,11 +89,7 @@ public class StaticTypesWriterController extends DelegatingController {
         this.lambdaWriter = new StaticTypesLambdaWriter(this);
         this.methodReferenceExpressionWriter = new StaticTypesMethodReferenceExpressionWriter(this);
         this.unaryExpressionHelper = new StaticTypesUnaryExpressionHelper(this);
-
-        CompilerConfiguration config = cn.getCompileUnit().getConfig();
-        this.binaryExpressionHelper = config.isIndyEnabled()
-                ? new IndyStaticTypesMultiTypeDispatcher(this)
-                : new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
+        this.binaryExpressionHelper = new StaticTypesBinaryExpressionMultiTypeDispatcher(this);
     }
 
     /** {@inheritDoc} */

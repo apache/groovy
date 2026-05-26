@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
@@ -32,41 +33,59 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue
 final class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCase {
 
     @ParameterizedTest
-    @ValueSource(strings=['byte','short','int','long','float','double','boolean','char'])
-    void testArrayRead(String type) {
+    @CsvSource([
+        'byte, bArray, B',
+        'short, sArray, S',
+        'int, intArray, I',
+        'long, lArray, J',
+        'float, fArray, F',
+        'double, dArray, D',
+        'boolean, zArray, Z',
+        'char, cArray, C',
+        'Object, objectArray, Ljava/lang/Object;'])
+    void testArrayRead(String typeSource, String namePart, String typeByteCode) {
         assumeTrue config.indyEnabled
 
         def bytecode = compile method:'test', """
             @groovy.transform.CompileStatic
             void test() {
-                ${type}[] array = new ${type}[10]
-                ${type} x = array[0]
+                ${typeSource}[] array = new ${typeSource}[10]
+                ${typeSource} x = array[0]
             }
         """
         int offset = bytecode.indexOf('--BEGIN--') + 4
-        assert bytecode.indexOf('INVOKEDYNAMIC', offset) > offset
-        assert bytecode.indexOf('INVOKEDYNAMIC', offset) < bytecode.indexOf('--END--')
+        assert bytecode.indexOf(createGetter(typeByteCode, namePart), offset) > offset
+        assert bytecode.indexOf(createGetter(typeByteCode, namePart), offset) < bytecode.indexOf('--END--')
     }
 
     @ParameterizedTest
-    @ValueSource(strings=['byte','short','int','long','float','double','boolean','char'])
-    void testArrayWrite(String type) {
+    @CsvSource([
+        'byte, bArray, B',
+        'short, sArray, S',
+        'int, intArray, I',
+        'long, lArray, J',
+        'float, fArray, F',
+        'double, dArray, D',
+        'boolean, zArray, Z',
+        'char, cArray, C',
+        'Object, objectArray, Ljava/lang/Object;'])
+    void testArrayWrite(String typeSource, String namePart, String typeByteCode) {
         assumeTrue config.indyEnabled
 
         def bytecode = compile method:'test', """
             @groovy.transform.CompileStatic
             void test() {
-                ${type}[] array = new ${type}[10]
+                ${typeSource}[] array = new ${typeSource}[10]
                 array[0] = 1
             }
         """
         int offset = bytecode.indexOf('--BEGIN--') + 4
-        assert bytecode.indexOf('INVOKEDYNAMIC', offset) > offset
-        assert bytecode.indexOf('INVOKEDYNAMIC', offset) < bytecode.indexOf('--END--')
+        assert bytecode.indexOf(createSetter(typeByteCode, namePart), offset) > offset
+        assert bytecode.indexOf(createSetter(typeByteCode, namePart), offset) < bytecode.indexOf('--END--')
     }
 
     @ParameterizedTest
-    @ValueSource(strings=['byte','short','int','long','float','double','char'])
+    @ValueSource(strings=['byte','short','int','long','float','double','char','Object'])
     void testNegativeIndex(String type) {
         assertScript """
             @groovy.transform.CompileStatic
@@ -148,5 +167,16 @@ final class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCas
         assert bytecode.indexOf('INVOKEDYNAMIC', offset) < 0
         assert bytecode.indexOf('INVOKESTATIC ', offset) > offset
         assert bytecode.indexOf('INVOKESTATIC ', offset) < bytecode.indexOf('RETURN', offset)
+    }
+
+    private String createSetter(String typeByteCode, String namePart) {
+        return "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8." +
+                namePart + "Set ([" + typeByteCode + "I" + typeByteCode + ")V"
+    }
+
+    private String createGetter(String typeByteCode, String namePart) {
+        return "INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8." +
+                namePart + "Get ([" + typeByteCode + "I)" + typeByteCode
+
     }
 }
