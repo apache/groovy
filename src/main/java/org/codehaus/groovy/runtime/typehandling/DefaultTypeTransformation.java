@@ -362,7 +362,7 @@ public class DefaultTypeTransformation {
         return castToNumberFallback(object, type);
     }
 
-    private static Number castToNumberFallback(Object object, Class type) {
+    private static Number castToNumberFallback(Object object, Class<?> type) {
         if (object instanceof Character cObj) {
             char c = cObj;
             return (int) c;

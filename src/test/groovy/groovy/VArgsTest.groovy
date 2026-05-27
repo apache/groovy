@@ -34,6 +34,7 @@ final class VArgsTest {
         assert intMethod(1,1) == 2
         assert intMethod(1,1,1) == 13
         assert intMethod([1,2,2,2] as int[]) == 14
+        assert intMethod(*[1,2]) == 2
     }
 
     def doubleMethod(double[] doubles) {20+doubles.length}
@@ -46,6 +47,7 @@ final class VArgsTest {
         assert doubleMethod(1.0G,1.0G) == 22
         assert doubleMethod(1.0G,1.0G,1.0G) == 23
         assert doubleMethod([1,2,2,2] as BigDecimal[]) == 24
+        assert doubleMethod(*[1.0G, 2.0G]) == 22
 
         // with double
         assert doubleMethod() == 20
@@ -53,6 +55,7 @@ final class VArgsTest {
         assert doubleMethod(1.0d,1.0d) == 22
         assert doubleMethod(1.0d,1.0d,1.0d) == 23
         assert doubleMethod([1,2,2,2] as double[]) == 24
+        assert doubleMethod(*[1.0d, 2.0d]) == 22
     }
 
     // test vargs with one fixed argument for primitives
@@ -65,12 +68,18 @@ final class VArgsTest {
         assert doubleMethod2(1.0G,1.0G) == 32
         assert doubleMethod2(1.0G,1.0G,1.0G) == 33
         assert doubleMethod2(1.0G, [1,2,2,2] as BigDecimal[]) == 35
+        assert doubleMethod2(1.0G, *[1.0G]) == 32
+        assert doubleMethod2(*[1.0G, 1.0G]) == 32
+        assert doubleMethod2(*[1.0G]) == 31
 
         // with double
         assert doubleMethod2(1.0d) == 31
         assert doubleMethod2(1.0d,1.0d) == 32
         assert doubleMethod2(1.0d,1.0d,1.0d) == 33
         assert doubleMethod2(1.0d,[1,2,2,2] as double[]) == 35
+        assert doubleMethod2(1.0d,*[1.0d]) == 32
+        assert doubleMethod2(*[1.0d, 1.0d]) == 32
+        assert doubleMethod2(*[1.0d]) == 31
     }
 
     def objectMethod() {0}
@@ -85,6 +94,7 @@ final class VArgsTest {
         assert objectMethod(1,1) == 2
         assert objectMethod(1,1,1) == 13
         assert objectMethod([1,2,2,2] as Object[]) == 14
+        assert objectMethod(*[1,2,2,2]) == 14
     }
 
     @Test
@@ -103,6 +113,7 @@ final class VArgsTest {
         assert gstringMethod(gstring) == 1
         assert gstringMethod(gstring,gstring,gstring) == 3
         assert gstringMethod([gstring] as GString[]) == 1
+        assert gstringMethod(*[gstring]) == 1
     }
 
     def stringMethod(String[] strings) {strings.length}
@@ -115,6 +126,7 @@ final class VArgsTest {
         assert stringMethod(gstring) == 1
         assert stringMethod(gstring,gstring,gstring) == 3
         assert stringMethod([gstring] as GString[]) == 1
+        assert stringMethod(*[gstring]) == 1
         assert stringMethod() == 0
         assert stringMethod("a") == 1
         assert stringMethod("a","a","a") == 3
@@ -129,6 +141,9 @@ final class VArgsTest {
     @Test
     void testOverloadedMethod1() {
         assert overloadedMethod1() == 2
+        assert overloadedMethod1(*[]) == 2
+        assert overloadedMethod1("s") == 1
+        assert overloadedMethod1(*["s"]) == 1
     }
 
     def overloadedMethod2(x,y) {1}
@@ -137,7 +152,10 @@ final class VArgsTest {
     @Test
     void testOverloadedMethod2() {
         assert overloadedMethod2(null) == 2
+        assert overloadedMethod2(*[1]) == 2
         assert overloadedMethod2("foo") == 2
+        assert overloadedMethod2(1,2) == 1
+        assert overloadedMethod2(*[1,2]) == 1
     }
 
     def normalVargsMethod(Object[] a) {a.length}

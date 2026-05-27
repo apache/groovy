@@ -18,8 +18,12 @@
  */
 package org.codehaus.groovy.vmplugin.v8
 
+import org.codehaus.groovy.reflection.CachedMethod
 import org.junit.jupiter.api.Test
+
+import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
+
 import static org.junit.jupiter.api.Assertions.*
 
 final class IndyClassLoaderLeakTest {
@@ -27,7 +31,7 @@ final class IndyClassLoaderLeakTest {
     @Test
     void testMruLeakAwareness() {
         MethodType type = MethodType.methodType(Object, Object)
-        CacheableCallSite callSite = new CacheableCallSite(type, java.lang.invoke.MethodHandles.lookup())
+        CacheableCallSite callSite = new CacheableCallSite(type, MethodHandles.lookup(), IndyInterface.CallType.METHOD, false, false, false)
 
         // 1. Same ClassLoader (Safe)
         def sameLoaderObj = new Object()
@@ -70,9 +74,9 @@ final class IndyClassLoaderLeakTest {
     private static void updateMRU(CacheableCallSite callSite, Object key, Class targetClass, Class sender) {
         // We use a dummy wrapper for testing
         def wrapper = new MethodHandleWrapper(
-            java.lang.invoke.MethodHandles.constant(Object, "test"),
-            java.lang.invoke.MethodHandles.constant(Object, "test"),
-            new org.codehaus.groovy.reflection.CachedMethod(targetClass.getDeclaredMethods().length > 0 ? targetClass.getDeclaredMethods()[0] : Object.class.getMethod("toString")),
+            MethodHandles.constant(Object, "test"),
+            MethodHandles.constant(Object, "test"),
+            new CachedMethod(targetClass.getDeclaredMethods().length > 0 ? targetClass.getDeclaredMethods()[0] : Object.class.getMethod("toString")),
             IndyInterface.switchPoint,
             true
         )

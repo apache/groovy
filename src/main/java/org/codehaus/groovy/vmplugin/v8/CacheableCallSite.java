@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.groovy.util.SystemUtil;
@@ -71,6 +70,13 @@ public class CacheableCallSite extends MutableCallSite {
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
     private final MethodHandles.Lookup lookup;
+    final IndyInterface.CallType callType;
+    final boolean safe;
+    /**
+     * Indicates whether the invocation is a {@code this} call.
+     */
+    final boolean thisCall;
+    final boolean spreadCall;
     /**
      * Stores the most recently accessed entry.
      * <p>
@@ -90,6 +96,7 @@ public class CacheableCallSite extends MutableCallSite {
      */
     @SuppressWarnings("java:S3077")
     private volatile MethodHandle picChain;
+    @SuppressWarnings("java:S3077")
     private volatile java.lang.invoke.SwitchPoint picSwitchPoint;
 
     /**
@@ -125,11 +132,19 @@ public class CacheableCallSite extends MutableCallSite {
     /**
      * Creates a cacheable call site for the supplied type and lookup context.
      *
-     * @param type the call-site type
-     * @param lookup the lookup used to un-reflect targets
+     * @param type       the call-site type
+     * @param lookup     the lookup used to un-reflect targets
+     * @param callType
+     * @param safe
+     * @param thisCall
+     * @param spreadCall
      */
-    public CacheableCallSite(MethodType type, MethodHandles.Lookup lookup) {
+    CacheableCallSite(MethodType type, MethodHandles.Lookup lookup, IndyInterface.CallType callType, boolean safe, boolean thisCall, boolean spreadCall) {
         super(type);
+        this.callType = callType;
+        this.safe = safe;
+        this.thisCall = thisCall;
+        this.spreadCall = spreadCall;
         this.picKeys = new Object[IndyInterface.INDY_PIC_SIZE];
         this.lookup = lookup;
     }
@@ -451,10 +466,6 @@ public class CacheableCallSite extends MutableCallSite {
      */
     public MethodHandles.Lookup getLookup() {
         return lookup;
-    }
-
-    @Override public void setTarget(MethodHandle newTarget) {
-        super.setTarget(newTarget);
     }
 
     private static final ReferenceQueue<MethodHandleWrapper> REFERENCE_QUEUE = new ReferenceQueue<>();
