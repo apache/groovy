@@ -60,33 +60,54 @@ jobs:
           mv subprojects/performance/build/results/jmh/results.json \
              subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.json
 
-      # Temporarily disabled pending ASF approval of the benchmark-action/github-action-benchmark third-party action.
-      # Re-enable by uncommenting the two steps below once the action is on the approved list.
-      # - name: Fetch historical baseline
-      #   run: |
-      #     URL="https://apache.github.io/groovy/dev/bench/jmh/${{ matrix.suite }}/classic/data.js"
-      #     if curl -fsSL "$URL" -o data.js; then
-      #       sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' data.js > prev.json
-      #     else
-      #       echo '{}' > prev.json
-      #     fi
-      #
-      # - name: Compare against history
-      #   uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
-      #   with:
-      #     tool: 'jmh'
-      #     output-file-path: subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.json
-      #     external-data-json-path: ./prev.json
-      #     save-data-file: false
-      #     summary-always: true
-      #     comment-on-alert: true
-      #     alert-threshold: '150%'
-      #     fail-on-alert: false
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch historical baseline
+        run: |
+          URL="https://apache.github.io/groovy/dev/bench/jmh/${{ matrix.suite }}/classic/data.js"
+          if curl -fsSL "$URL" -o data.js; then
+            sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' data.js > prev.json
+          else
+            echo '{}' > prev.json
+          fi
+
+      - name: Compare against history
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          tool: 'jmh'
+          output-file-path: subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.json
+          external-data-json-path: ./prev.json
+          save-data-file: false
+          summary-always: true
+          comment-on-alert: true
+          alert-threshold: '150%'
+          fail-on-alert: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload reports-jmh-classic-${{ matrix.suite }}
         uses: actions/upload-artifact@v7
         with:
           name: reports-jmh-classic-${{ matrix.suite }}
           path: subprojects/performance/build/results/jmh/
+
+  summary:
+    needs: test
+    if: >-
+      always() &&
+      (contains(github.event.head_commit.message || '', 'GROOVY-') ||
+       contains(github.event.pull_request.title || '', 'GROOVY-'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
+        with:
+          path: artifacts
+          pattern: reports-jmh-classic-*
+          merge-multiple: true
+      - name: Per-commit JMH group summary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 subprojects/performance/dashboard/jmh-summary.py \
+            --mode classic \
+            --results-dir artifacts \
+            --pr-number "${{ github.event.pull_request.number }}"
 
