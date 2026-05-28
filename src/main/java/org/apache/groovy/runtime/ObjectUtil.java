@@ -73,9 +73,16 @@ public class ObjectUtil {
         }
 
         final Method cloneMethod = clazz.getMethod("clone");
-        final MethodHandle cloneMethodHandle = LOOKUP.in(clazz).unreflect(cloneMethod);
-
-        return (T) cloneMethodHandle.invokeWithArguments(object);
+        try {
+            final MethodHandle cloneMethodHandle = LOOKUP.in(clazz).unreflect(cloneMethod);
+            return (T) cloneMethodHandle.invokeWithArguments(object);
+        } catch (IllegalAccessException e) {
+            // GROOVY-12020: under JPMS the Lookup teleported into clazz can lack access
+            // when clazz is a package-private subclass in a sealed module (e.g.
+            // java.util.RegularEnumSet inside java.base). The public clone() method
+            // is still reachable via reflective invocation, so fall back to that.
+            return (T) cloneMethod.invoke(object);
+        }
     }
 
     /**
