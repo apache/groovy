@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 
 import static org.apache.groovy.json.internal.CharScanner.isInteger;
@@ -97,7 +98,7 @@ public class CharSequenceValue implements Value, CharSequence {
         try {
             return (T) Enum.valueOf(cls, value);
         } catch (Exception ex) {
-            return (T) Enum.valueOf(cls, value.toUpperCase().replace('-', '_'));
+            return (T) Enum.valueOf(cls, value.toUpperCase(Locale.ROOT).replace('-', '_'));
         }
     }
 
