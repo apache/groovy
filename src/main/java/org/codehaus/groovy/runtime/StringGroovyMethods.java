@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -4339,6 +4340,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if (searchString == null || searchString.length() == 0 || self.length() < searchString.length())
             return false;
 
-        return self.toString().toLowerCase().contains(searchString.toString().toLowerCase());
+        return self.toString().toLowerCase(Locale.ROOT).contains(searchString.toString().toLowerCase(Locale.ROOT));
     }
 }
