@@ -108,6 +108,28 @@ public final class CurriedClosure<V> extends Closure<V> {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Fast path for the dominant rcurry/curry shape — one curried argument and a
+     * single incoming argument against a binary owner. Skips the wrapping
+     * {@code Object[1]} that {@link Closure#call(Object)} would otherwise allocate
+     * before dispatch, leaving just the one combined {@code Object[2]} that the
+     * underlying call already requires.
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public V call(final Object argument) {
+        if (varargType == null
+                && curriedArguments.length == 1
+                && maximumNumberOfParameters == 1
+                && (index == 0 || index == 1)) {
+            Object[] combined = index == 0
+                    ? new Object[]{curriedArguments[0], argument}
+                    : new Object[]{argument, curriedArguments[0]};
+            return (V) getOwner().call(combined);
+        }
+        return super.call(argument);
+    }
+
     public Object[] getUncurriedArguments(final Object... arguments) {
         if (isVararg()) {
             int normalizedIndex = index < 0 ? index + arguments.length + curriedArguments.length : index;
