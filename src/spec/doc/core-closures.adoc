@@ -520,6 +520,61 @@ include::../test/ClosuresSpecTest.groovy[tags=ncurry,indent=0]
 <4> it is also possible to set multiple parameters, starting from the specified index
 <5> the resulting function accepts as many parameters as the initial one minus the number of parameters set by `ncurry`
 
+==== Currying functional interfaces
+
+When working with `java.util.function` types — for example `BiPredicate`,
+`BiFunction` or `BiConsumer` — `Closure.rcurry` is not applicable. Two
+sibling utility classes provide right-partial helpers, differing only in
+the type returned:
+
+* `org.apache.groovy.util.Lambdas#curryWith` returns a bare
+  `Predicate`/`Function`/`Consumer`. Use when the result will flow into
+  JDK APIs (e.g. `Stream.filter`, `Optional.map`) or into DGM methods
+  that already accept SAM types (e.g. `partitionPoint`, `takeIf`,
+  `groupConsecutive`).
+* `org.apache.groovy.util.Closures#curryWith` returns a hybrid value
+  that is both the SAM type *and* a `Closure`. Use when the result
+  should also be usable with DGM methods that accept a `Closure`
+  (e.g. `findAll`, `collect`, `each`, `find`, `any`, `every`).
+
+[source,groovy]
+----
+import static org.apache.groovy.util.Lambdas.curryWith as curryWithSam
+import static org.apache.groovy.util.Closures.curryWith as curryWithClosure
+import java.util.function.BiPredicate
+
+BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
+
+// Lambdas.curryWith: flows into JDK streams / SAM-accepting DGM
+assert [1, 2, 3, 4, 5, 6].stream().filter(curryWithSam(divisibleBy, 2)).toList() == [2, 4, 6]
+
+// Closures.curryWith: flows into Closure-accepting DGM as well
+assert [1, 2, 3, 4, 5, 6].findAll(curryWithClosure(divisibleBy, 2)) == [2, 4, 6]
+----
+
+In both forms a single allocation is paid per `curryWith` call rather
+than per element of the traversal.
+
+`Closures.from(Predicate)` (and the `Function`/`Consumer` overloads)
+lifts an existing single-argument SAM into the same hybrid form, useful
+when an external API hands you a `Predicate` you want to feed into a
+`Closure`-accepting DGM method:
+
+[source,groovy]
+----
+import static org.apache.groovy.util.Closures.from
+import java.util.function.Predicate
+
+Predicate<Integer> isEven = n -> n % 2 == 0
+assert [1, 2, 3, 4].findAll(from(isEven)) == [2, 4]
+----
+
+Three overloads are provided:
+
+* `curryWith(BiPredicate<T,P>, P) -> Predicate<T>`
+* `curryWith(BiFunction<T,P,R>, P) -> Function<T,R>`
+* `curryWith(BiConsumer<T,P>, P) -> Consumer<T>`
+
 === Memoization
 
 Memoization allows the result of the call of a closure to be cached. It is interesting if the computation done by a
