@@ -58,6 +58,11 @@ import org.codehaus.groovy.runtime.memoize.MemoizeCache;
  *   </li>
  * </ol>
  * <p>
+ * When the call site experiences excessive SwitchPoint invalidations (metaclass churn), it enters
+ * <b>degraded mode</b>. In this mode, the call site target is set to a class-guarded handle that
+ * dispatches through an MOP invoke path directly, bypassing the SwitchPoint entirely.
+ * This eliminates the global invalidation cost at the expense of a slightly higher per-invocation overhead.
+ * <p>
  * <b>Leak-Awareness:</b> To prevent permanent ClassLoader leaks, Level 2 (MRU) uses strong references only when
  * the target class belongs to a safe ClassLoader (same or parent). Level 3 (LRU) always uses {@link SoftReference}s
  * to allow the JVM to reclaim Metaspace under memory pressure.
@@ -113,6 +118,14 @@ public class CacheableCallSite extends MutableCallSite {
      * protected by {@code synchronized} blocks to ensure atomicity.
      */
     private volatile int picCount;
+
+    /**
+     * Indicates whether this call site is in degraded mode.
+     * In degraded mode, the target is a class-guarded MOP dispatch handle
+     * that avoids the global SwitchPoint invalidation cost.
+     */
+    volatile boolean degraded;
+
     private final Map<Object, SoftReference<MethodHandleWrapper>> lruCache =
             new LinkedHashMap<>(INITIAL_CAPACITY, LOAD_FACTOR, true) {
                 @Serial private static final long serialVersionUID = 7785958879964294463L;
@@ -148,6 +161,9 @@ public class CacheableCallSite extends MutableCallSite {
         this.picKeys = new Object[IndyInterface.INDY_PIC_SIZE];
         this.lookup = lookup;
     }
+
+    //--------------------------------------------------------------------------
+    // Cache lookup (MRU + LRU)
 
     /**
      * Returns the cached method-handle wrapper for the receiver key if it is the most recently used.
@@ -265,6 +281,9 @@ public class CacheableCallSite extends MutableCallSite {
         }
     }
 
+    //--------------------------------------------------------------------------
+    // PIC management
+
     /**
      * Promotes a new receiver shape to the PIC if it is not already present and space is available.
      * <p>
@@ -364,6 +383,9 @@ public class CacheableCallSite extends MutableCallSite {
         }
     }
 
+    //--------------------------------------------------------------------------
+    // Fallback management
+
     /**
      * Atomically resets the call site to the default target when the fallback count
      * exceeds the given threshold. This provides a concurrency-safe, double-checked
@@ -372,6 +394,8 @@ public class CacheableCallSite extends MutableCallSite {
      * <b>Concurrency:</b> Synchronizes on {@code this} to atomically reset
      * the target and associated PIC metadata, preventing redundant resets
      * when multiple threads detect a high fallback count simultaneously.
+     * <p>
+     * If the call site is in degraded mode, the reset is skipped.
      *
      * @param defaultTarget     the default target handle to restore
      * @param threshold         the fallback count threshold that triggers a reset
@@ -379,6 +403,7 @@ public class CacheableCallSite extends MutableCallSite {
      * @return {@code true} if the target was reset to the default
      */
     public boolean tryResetToDefaultTarget(MethodHandle defaultTarget, long threshold, long fallbackCount) {
+        if (degraded) return false; // degraded sites never reset to default
         if (fallbackCount > threshold && getTarget() != defaultTarget) {
             synchronized (this) {
                 if (getTarget() != defaultTarget) {

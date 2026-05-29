@@ -37,6 +37,8 @@ import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASS;
+
 /**
  * Bytecode level interface for bootstrap methods used by invokedynamic.
  * <p>
@@ -51,6 +53,8 @@ import org.codehaus.groovy.runtime.GeneratedClosure;
  *   <li><b>Execution & Selection:</b> On first execution, {@code fromCacheHandle} uses a {@link Selector} to find the target method and create a guarded {@link java.lang.invoke.MethodHandle}.</li>
  *   <li><b>Promotion & PIC:</b> After reaching {@link #INDY_OPTIMIZE_THRESHOLD} hits for a stable shape, {@link #optimizeCallSite} promotes the handle into a
  *       Polymorphic Inline Cache (PIC) chain directly in the call site target for maximum JIT optimization.</li>
+ *   <li><b>Degradation:</b> After excessive SwitchPoint invalidations, the call site enters <b>degraded mode</b>
+ *       where class-guarded MOP dispatch handles are used, avoiding global invalidation costs.</li>
  * </ol>
  * <p>
  * Logging can be enabled using the system property {@code groovy.indy.logging=true}.
@@ -59,6 +63,7 @@ public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 1_000L);
     private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 1_000L);
     private static final long INDY_FALLBACK_CUTOFF = SystemUtil.getLongSafe("groovy.indy.fallback.cutoff", 100L);
+    private static final long INDY_DEGRADE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.degrade.threshold", 10L);
     static final int INDY_PIC_SIZE = SystemUtil.getIntegerSafe("groovy.indy.pic.size", 4);
 
     /**
@@ -302,6 +307,135 @@ public class IndyInterface {
         return bootHandle;
     }
 
+    //--------------------------------------------------------------------------
+    // Degraded mode — class-guarded handle via direct helper method
+    //--------------------------------------------------------------------------
+
+    /**
+     * Degraded-mode dispatch entry point.
+     * Called by the degraded method handle at invocation time. Dynamically looks up
+     * the metaclass for the receiver and invokes the method through it.
+     * This is always correct under metaclass churn because it never caches a stale
+     * method handle.
+     *
+     * @param receiver the receiver object
+     * @param name     the method name
+     * @param args     the invocation arguments
+     * @return the method invocation result
+     */
+    public static Object invokeDegraded(Object receiver, String name, Object[] args) {
+        return org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(receiver)
+                .invokeMethod(receiver, name, args);
+    }
+
+    /**
+     * Degraded-mode property-get dispatch entry point.
+     * Called by the degraded handle for property get operations.
+     *
+     * @param receiver the receiver object
+     * @param name     the property name
+     * @return the property value
+     */
+    public static Object getPropertyDegraded(Object receiver, String name) {
+        return org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(receiver)
+                .getProperty(receiver, name);
+    }
+
+    /**
+     * The method handle for {@link #invokeDegraded}.
+     */
+    private static final MethodHandle DEGRADED_INVOKE_HANDLE;
+
+    /**
+     * The method handle for {@link #getPropertyDegraded}.
+     */
+    private static final MethodHandle DEGRADED_GET_PROPERTY_HANDLE;
+
+    static {
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            DEGRADED_INVOKE_HANDLE = lookup.findStatic(IndyInterface.class, "invokeDegraded",
+                    MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
+            DEGRADED_GET_PROPERTY_HANDLE = lookup.findStatic(IndyInterface.class, "getPropertyDegraded",
+                    MethodType.methodType(Object.class, Object.class, String.class));
+        } catch (Exception e) {
+            throw new GroovyBugError(e);
+        }
+    }
+
+    /**
+     * Builds a degraded-mode method handle for the given call site and receiver class.
+     * <p>
+     * The handle guards on receiver class only (no SwitchPoint), and dispatches
+     * through a static helper method that dynamically looks up the metaclass at
+     * invocation time. This avoids the global invalidation cost at the expense of
+     * going through the metaclass's invokeMethod on each invocation.
+     *
+     * @param callSite      the call site
+     * @param name          the method name
+     * @param receiverClass the expected receiver class
+     * @return a class-guarded, SwitchPoint-free method handle, or {@code null} if
+     *         degraded mode is not applicable for this call type
+     */
+    private static MethodHandle buildDegradedHandle(CacheableCallSite callSite, String name, Class<?> receiverClass) {
+        MethodType callSiteType = callSite.type();
+        int paramCount = callSiteType.parameterCount();
+
+        // Build the base dispatch handle through the static helper method.
+        // DEGRADED_INVOKE_HANDLE: (Object receiver, String name, Object[] args) -> Object
+        // DEGRADED_GET_PROPERTY_HANDLE: (Object receiver, String name) -> Object
+
+        MethodHandle invokeHandle;
+        if (callSite.callType == CallType.GET) {
+            // Property get: getPropertyDegraded(receiver, name)
+            invokeHandle = MethodHandles.insertArguments(DEGRADED_GET_PROPERTY_HANDLE, 1, name);
+            // invokeHandle: (Object receiver) -> Object
+        } else if (callSite.callType == CallType.METHOD) {
+            // Method invoke: invokeDegraded(receiver, name, args)
+            invokeHandle = MethodHandles.insertArguments(DEGRADED_INVOKE_HANDLE, 1, name);
+            // invokeHandle: (Object receiver, Object[] args) -> Object
+        } else {
+            return null;
+        }
+
+        // Adapt from (Object receiver, Object[] args) -> Object to (Object receiver, arg1, arg2, ...) -> Object
+        // using asCollector for METHOD, no adaptation needed for GET
+        if (callSite.callType == CallType.METHOD) {
+            int argCount = paramCount - 1;
+            invokeHandle = invokeHandle.asCollector(Object[].class, argCount);
+        }
+
+        // Now invokeHandle has signature (Object receiver, arg1, ...) -> Object
+        // Adapt to the call site type (e.g., (DomainObject, String) -> Object) using explicitCastArguments
+        invokeHandle = MethodHandles.explicitCastArguments(invokeHandle, callSiteType);
+
+        // Add class guard: if receiver.getClass() != receiverClass, fall through to re-selection
+        MethodHandle classGuard = SAME_CLASS.bindTo(receiverClass);
+        classGuard = classGuard.asType(MethodType.methodType(boolean.class, Object.class));
+
+        // Drop the remaining arguments for the guard to match call site arity
+        if (paramCount > 1) {
+            Class<?>[] dropTypes = callSiteType.dropParameterTypes(1, paramCount).parameterArray();
+            classGuard = MethodHandles.dropArguments(classGuard, 1, dropTypes);
+        }
+
+        // Adapt the guard to match the call site type (e.g. (Class)boolean for static calls).
+        // asType handles widening from receiverType → Object.
+        classGuard = classGuard.asType(callSiteType.changeReturnType(boolean.class));
+
+        // Build the guarded handle: if class matches -> invoke through helper; else -> re-select
+        MethodHandle fallback = callSite.getFallbackTarget();
+        MethodHandle target = MethodHandles.guardWithTest(classGuard, invokeHandle, fallback);
+
+        if (LOG_ENABLED) LOG.info("built degraded handle for " + receiverClass.getName() + "." + name);
+
+        return target;
+    }
+
+    //--------------------------------------------------------------------------
+    // Normal fast path and fallback
+    //--------------------------------------------------------------------------
+
     private static class FallbackSupplier {
         private final CacheableCallSite callSite;
         private final Class<?> sender;
@@ -360,6 +494,19 @@ public class IndyInterface {
      * Get the cached methodHandle. if the related methodHandle is not found in the inline cache, cache and return it.
      */
     private static MethodHandle fromCacheHandle(CacheableCallSite callSite, Class<?> sender, String methodName, Object[] arguments) throws Throwable {
+        if (callSite.degraded) {
+            // In degraded mode, build the class-guarded MOP handle directly
+            // without running the full selector. The handle is stateless and
+            // always reflects the current metaclass at invocation time.
+            MethodHandle degradedHandle = buildDegradedHandle(callSite, methodName, arguments[0].getClass());
+            if (degradedHandle != null) {
+                // Wrap for the invoker: (Object, Object[]) -> Object
+                return degradedHandle.asSpreader(Object[].class, arguments.length)
+                        .asType(MethodType.methodType(Object.class, Object[].class));
+            }
+            // Fall through to full selection for unsupported call types (INIT, CAST, etc.)
+        }
+
         Object receiver = arguments[0];
         Object receiverKey = receiverCacheKey(receiver);
 
@@ -404,6 +551,10 @@ public class IndyInterface {
     }
 
     private static void optimizeCallSite(CacheableCallSite callSite, Class<?> sender, String methodName, Object[] arguments, Object receiverKey, MethodHandleWrapper mhw) {
+        // NOTE: degrade call sites never reach this method because fromCacheHandle
+        // returns early at line ~466. The handles for degraded sites also have
+        // canSetTarget=false, so the callers check for isCanSetTarget() and skip us.
+
         if (callSite.getFallbackRound().get() > INDY_FALLBACK_CUTOFF) {
             if (callSite.getTarget() != callSite.getDefaultTarget()) {
                 callSite.setTarget(callSite.getDefaultTarget());
@@ -438,10 +589,31 @@ public class IndyInterface {
      * Core method for indy method selection using runtime types.
      */
     private static MethodHandle selectMethodHandle(CacheableCallSite callSite, Class<?> sender, String methodName, Object[] arguments) throws Throwable {
-        MethodHandleWrapper mhw = fallback(callSite, sender, methodName, arguments);
+        // Check for degradation: if fallback rounds exceed the threshold, enter degraded mode
+        if (!callSite.degraded && callSite.getFallbackRound().get() >= INDY_DEGRADE_THRESHOLD) {
+            callSite.degraded = true;
+            if (LOG_ENABLED) LOG.info("call site entered degraded mode due to excessive metaclass churn");
+        }
 
-        MethodHandle defaultTarget = callSite.getDefaultTarget();
+        if (callSite.degraded) {
+            // In degraded mode, produce a SwitchPoint-free, class-guarded MOP handle.
+            // This handle dynamically looks up the metaclass at runtime via
+            // InvokerHelper.getMetaClass(), then dispatches through mc.invokeMethod.
+            // No selector cost on subsequent calls (they go through fromCacheHandle).
+            MethodHandle degradedHandle = buildDegradedHandle(callSite, methodName, arguments[0].getClass());
+            if (degradedHandle != null) {
+                callSite.setTarget(degradedHandle);
+                MethodHandle cachedHandle = degradedHandle.asSpreader(Object[].class, arguments.length)
+                    .asType(MethodType.methodType(Object.class, Object[].class));
+                return cachedHandle;
+            }
+            // Fall through to normal path if degraded handle is not applicable
+        }
+
         long fallbackCount = callSite.incrementFallbackCount();
+        MethodHandleWrapper mhw = fallback(callSite, sender, methodName, arguments);
+        MethodHandle defaultTarget = callSite.getDefaultTarget();
+
         if (callSite.tryResetToDefaultTarget(defaultTarget, INDY_FALLBACK_THRESHOLD, fallbackCount)) {
             if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
         }

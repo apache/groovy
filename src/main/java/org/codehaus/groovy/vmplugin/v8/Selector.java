@@ -260,7 +260,6 @@ public abstract class Selector {
         private void castAndSetGuards() {
             handle = MethodHandles.explicitCastArguments(handle, targetType);
             setGuards(args[0]);
-            doCallSiteTargetSet();
         }
 
         private void handleNullWithoutBoolean() {
@@ -1134,13 +1133,6 @@ public abstract class Selector {
         }
 
         /**
-         * do the actual call site target set, if the call is supposed to be cached
-         */
-        public void doCallSiteTargetSet() {
-            if (LOG_ENABLED) LOG.info("call site stays uncached");
-        }
-
-        /**
          * Chooses the class passed to {@link MetaClassImpl#getMethodWithCaching}.
          *
          * @see #chooseMeta(MetaClassImpl)
@@ -1195,7 +1187,6 @@ public abstract class Selector {
                 addExceptionHandler();
             }
             setGuards(args[0]);
-            doCallSiteTargetSet();
         }
     }
 
