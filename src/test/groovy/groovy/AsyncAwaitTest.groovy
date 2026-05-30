@@ -3272,6 +3272,29 @@ final class AsyncAwaitTest {
     }
 
     @Test
+    void testWrapAsyncUsesConfiguredExecutor() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            import org.apache.groovy.runtime.async.AsyncSupport
+            import java.util.concurrent.Executors
+
+            def exec = Executors.newSingleThreadExecutor { r ->
+                def t = new Thread(r, 'wrap-async-pool')
+                t.daemon = true
+                t
+            }
+            try {
+                def wrapped = AsyncClosureUtils.wrapAsync { Thread.currentThread().name }
+                AsyncSupport.setExecutor(exec)
+                assert await(wrapped()) == 'wrap-async-pool'
+            } finally {
+                AsyncSupport.resetExecutor()
+                exec.shutdown()
+            }
+        '''
+    }
+
+    @Test
     void testWrapAsyncWithException() {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncClosureUtils
@@ -3304,6 +3327,19 @@ final class AsyncAwaitTest {
                 items << item
             }
             assert items == [10, 20, 30]
+        '''
+    }
+
+    @Test
+    void testWrapAsyncGeneratorWithArgs() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncClosureUtils
+            import org.apache.groovy.runtime.async.GeneratorBridge
+
+            def wrapped = AsyncClosureUtils.wrapAsyncGenerator({ GeneratorBridge bridge, String prefix, List values ->
+                values.each { bridge.yield(prefix + it) }
+            })
+            assert wrapped('item-', [1, 2, 3]).toList() == ['item-1', 'item-2', 'item-3']
         '''
     }
 

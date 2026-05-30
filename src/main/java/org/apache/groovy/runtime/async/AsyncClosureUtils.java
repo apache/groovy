@@ -22,7 +22,6 @@ import groovy.concurrent.Awaitable;
 import groovy.lang.Closure;
 
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Closure-specific async utilities that have no pure-Java equivalent.
@@ -58,13 +57,7 @@ public final class AsyncClosureUtils {
         return new Closure<Awaitable<T>>(closure.getOwner(), closure.getThisObject()) {
             @SuppressWarnings("unused")
             public Awaitable<T> doCall(Object... args) {
-                return GroovyPromise.of(CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return closure.call(args);
-                    } catch (Throwable t) {
-                        throw AsyncSupport.wrapForFuture(t);
-                    }
-                }, AsyncSupport.getExecutor()));
+                return AsyncSupport.async(() -> closure.call(args));
             }
         };
     }
@@ -84,21 +77,15 @@ public final class AsyncClosureUtils {
         return new Closure<Iterable<T>>(closure.getOwner(), closure.getThisObject()) {
             @SuppressWarnings("unused")
             public Iterable<T> doCall(Object... args) {
-                GeneratorBridge<T> bridge = new GeneratorBridge<>();
-                Object[] allArgs = new Object[args.length + 1];
-                allArgs[0] = bridge;
-                System.arraycopy(args, 0, allArgs, 1, args.length);
-                AsyncSupport.getExecutor().execute(() -> {
-                    try {
-                        closure.call(allArgs);
-                        bridge.complete();
-                    } catch (GeneratorBridge.GeneratorClosedException ignored) {
-                    } catch (Throwable t) {
-                        bridge.completeExceptionally(t);
-                    }
-                });
-                return () -> bridge;
+                return AsyncSupport.asyncGenerator(bridge -> closure.call(prependArgument(bridge, args)));
             }
         };
+    }
+
+    private static Object[] prependArgument(Object argument, Object[] args) {
+        Object[] allArgs = new Object[args.length + 1];
+        allArgs[0] = argument;
+        System.arraycopy(args, 0, allArgs, 1, args.length);
+        return allArgs;
     }
 }
