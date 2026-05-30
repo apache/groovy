@@ -28,7 +28,7 @@ This chapter is the SDK reference for *writing* a type checking extension.
 For the extensions Groovy already ships with (regex checking, format-string
 checking, null safety, frame conditions, purity, parallel-reduction
 associativity, and monadic comprehensions), see the
-<<built-in-auxiliary-type-checkers,Built-in auxiliary type checkers>> chapter.
+link:typecheckers.html#built-in-auxiliary-type-checkers[Built-in auxiliary type checkers] chapter.
 ====
 
 == Writing a type checking extension
@@ -126,7 +126,7 @@ use those type checking extension scripts.
 
 Extensions can accept named parameters using Groovy's named-argument style within the extension string.
 The example below uses `NullChecker`, one of the
-<<built-in-auxiliary-type-checkers,bundled checkers>>; the same syntax applies
+link:typecheckers.html#built-in-auxiliary-type-checkers[bundled checkers]; the same syntax applies
 to any extension that reads the `options` map.
 
 [source,groovy]

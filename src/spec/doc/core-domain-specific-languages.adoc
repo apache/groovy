@@ -1057,7 +1057,7 @@ metaprogramming] section of this manual.
 It may be interesting, in some circumstances, to provide feedback about wrong code to the user as soon as possible,
 that is to say when the DSL script is compiled, rather than having to wait for the execution of the script. However,
 this is not often possible with dynamic code. Groovy actually provides a practical answer to this known as
-link:type-checking-extensions.html[type checking extensions].
+link:core-semantics.html#type-checking-extensions[type checking extensions].
 
 == Builders
 

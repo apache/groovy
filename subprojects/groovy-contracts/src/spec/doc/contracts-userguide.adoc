@@ -181,7 +181,7 @@ _loop variant_, also known as a termination measure. The closure must yield a va
 whose successive iteration values form a strictly decreasing, well-founded sequence.
 Two value shapes are supported:
 
-* A single `Comparable` value &mdash; usually numeric &mdash; that strictly decreases
+* A single `Comparable` value &#8212; usually numeric &#8212; that strictly decreases
   on every iteration. If the value is also a `Number`, it must additionally remain
   non-negative.
 * A `List` of `Comparable` elements, compared lexicographically: the first position
@@ -195,8 +195,8 @@ a `LoopVariantViolation` (a subclass of `AssertionError`) is thrown.
 This is inspired by similar constructs in design-by-contract languages such as
 Dafny and Eiffel.
 
-NOTE: `@Decreases` is incubating in Groovy 6.0.0. The contract&nbsp;&mdash; in particular
-the scalar non-negativity rule and the lexicographic shape for `List` variants&nbsp;&mdash;
+NOTE: `@Decreases` is incubating in Groovy 6.0.0. The contract&nbsp;&#8212; in particular
+the scalar non-negativity rule and the lexicographic shape for `List` variants&nbsp;&#8212;
 may be relaxed or extended in a future release based on usage feedback.
 
 === While loop

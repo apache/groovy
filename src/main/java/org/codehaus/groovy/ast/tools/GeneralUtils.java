@@ -131,7 +131,7 @@ public class GeneralUtils {
      */
     public  static final Token ASSIGN        = Token.newSymbol(Types.ASSIGN                    , -1, -1);
     /**
-     * AST compare-to operator token ("<=>").
+     * AST compare-to operator token ("&lt;=&gt;").
      */
     public  static final Token CMP           = Token.newSymbol(Types.COMPARE_TO                , -1, -1);
     /**
@@ -155,15 +155,15 @@ public class GeneralUtils {
      */
     public  static final Token GT            = Token.newSymbol(Types.COMPARE_GREATER_THAN      , -1, -1);
     /**
-     * AST less-than-or-equal operator token ("<=").
+     * AST less-than-or-equal operator token ("&lt;=").
      */
     public  static final Token LE            = Token.newSymbol(Types.COMPARE_LESS_THAN_EQUAL   , -1, -1);
     /**
-     * AST less-than operator token ("<").
+     * AST less-than operator token ("&lt;").
      */
     public  static final Token LT            = Token.newSymbol(Types.COMPARE_LESS_THAN         , -1, -1);
     /**
-     * AST logical AND operator token ("&&").
+     * AST logical AND operator token ("&amp;&amp;").
      */
     public  static final Token AND           = Token.newSymbol(Types.LOGICAL_AND               , -1, -1);
     /**

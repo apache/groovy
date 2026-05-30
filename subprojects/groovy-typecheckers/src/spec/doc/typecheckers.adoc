@@ -34,7 +34,7 @@ as needed to cater for scenarios where the standard type checking isn't sufficie
 
 This chapter catalogues the type-checking extensions that ship with Groovy.
 For the API used to write your own, see the
-<<type-checking-extensions,Type checking extensions>> chapter.
+link:core-semantics.html#type-checking-extensions[Type checking extensions] chapter.
 
 Groovy offers a suite of built-in type checkers that provide additional
 compile-time verification for specific concerns:
@@ -1448,7 +1448,7 @@ expose structural `flatMap` / `map`, or be annotated with `@Monadic`).
 
 The macro itself, its desugaring strategy, the participating-carrier rules,
 and the `@Monadic` annotation are documented in the
-<<monadic-comprehensions,Monadic Comprehensions>> chapter. This section
+link:core-async-await.html#monadic-comprehensions[Monadic Comprehensions] chapter. This section
 covers only the type-checking surface.
 
 == Checking Hand-written Monadic Chains (Incubating)

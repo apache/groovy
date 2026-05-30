@@ -66,7 +66,7 @@ IMPORTANT: For all but the most trivial uses, `DO` under `@CompileStatic` or
 runtime dispatcher signature `Comprehensions.bind(Object, Closure):Object`
 erases the carrier's element type and the comprehension's result type, so
 without the extension each generator's bound name and the whole `DO`
-expression both fall through to `Object` &mdash; which the static type
+expression both fall through to `Object` &#8212; which the static type
 checker will reject as soon as the body or downstream code does anything
 type-specific with either. See <<monadic-static>>.
 
@@ -99,9 +99,9 @@ A type participates as a carrier when, in order, the first match winning:
 . it is annotated `@groovy.transform.Monadic`, optionally declaring
   non-conventional method names.
 
-The allow-list also recognises common Functional Java carriers by name &mdash;
+The allow-list also recognises common Functional Java carriers by name &#8212;
 `fj.data.Option`, `fj.data.List`, `fj.data.Stream`, `fj.data.Validation` and
-`fj.P1` &mdash; using that library's `bind`/`map` convention. Groovy takes no
+`fj.P1` &#8212; using that library's `bind`/`map` convention. Groovy takes no
 dependency on Functional Java; the names are matched reflectively, and the
 generator closure is coerced to `fj.F` automatically. `fj.data.Either` is not
 directly monadic in Functional Java (bind lives on its `.right()`/`.left()`
@@ -151,7 +151,7 @@ include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_static,indent=0]
 
 TIP: The typical symptom of forgetting the extension is a static type
 checking error reporting that some operation cannot be found on `Object`
-&mdash; either inside the body (a generator's bound name has erased to
+&#8212; either inside the body (a generator's bound name has erased to
 `Object`) or on the `DO` expression itself (the result has erased to
 `Object`). Adding `extensions = 'groovy.typecheckers.MonadicChecker'` to
 the `@CompileStatic`/`@TypeChecked` annotation resolves it.
@@ -167,12 +167,12 @@ a compile-time lint:
 @TypeChecked(extensions = 'groovy.typecheckers.MonadicShapeChecker')
 ----
 
-It catches the two classic shape mistakes &mdash; a `bind` (i.e.&nbsp;`flatMap`)
+It catches the two classic shape mistakes &#8212; a `bind` (i.e.&nbsp;`flatMap`)
 closure that returns a non-carrier value, and a `map` closure that returns
 the same carrier where `flatMap` was meant. A `strict` option tightens
 what is flagged; the default lenient mode reports only high-confidence
 violations. Both checkers are documented from the type-checker side in the
-<<built-in-auxiliary-type-checkers,Built-in auxiliary type checkers>> chapter.
+link:typecheckers.html#built-in-auxiliary-type-checkers[Built-in auxiliary type checkers] chapter.
 
 [[monadic-when]]
 == When to use `DO`
