@@ -77,7 +77,8 @@ jobs:
           external-data-json-path: ./prev.json
           save-data-file: false
           summary-always: true
-          comment-on-alert: true
+          # fork PRs get a read-only token; commenting there would 403 and fail the step
+          comment-on-alert: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
           alert-threshold: '150%'
           fail-on-alert: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
