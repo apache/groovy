@@ -2143,6 +2143,58 @@ final class AsyncAwaitTest {
     }
 
     @Test
+    void testAsyncSupportFirstReturnsFirstSuccess() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncSupport
+
+            def fail = async { throw new RuntimeException('fail') }
+            def success = async { 'ok' }
+
+            assert AsyncSupport.first(fail, success) == 'ok'
+        '''
+    }
+
+    @Test
+    void testAsyncSupportAllReturnsOrderedResults() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncSupport
+
+            def slow = async { Thread.sleep(100); 'slow' }
+            def fast = async { 'fast' }
+
+            assert AsyncSupport.all(slow, fast) == ['slow', 'fast']
+        '''
+    }
+
+    @Test
+    void testAsyncSupportAnyReturnsFirstCompletion() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncSupport
+
+            def slow = async { Thread.sleep(100); 'slow' }
+            def fast = async { 'fast' }
+
+            assert AsyncSupport.any(slow, fast) == 'fast'
+        '''
+    }
+
+    @Test
+    void testAsyncSupportAllSettledReturnsMixedOutcomes() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncSupport
+
+            def results = AsyncSupport.allSettled(
+                async { 42 },
+                async { throw new RuntimeException('boom') }
+            )
+
+            assert results*.success == [true, false]
+            assert results[0].value == 42
+            assert results[1].error.message == 'boom'
+        '''
+    }
+
+    @Test
     void testAwaitableFromAwaitableReturnsSame() {
         assertScript '''
             import groovy.concurrent.Awaitable
@@ -2324,6 +2376,32 @@ final class AsyncAwaitTest {
             def result = await Awaitable.first(async { 'only' })
             assert result == 'only'
         '''
+    }
+
+    @Test
+    void testAsyncSupportFirstRejectsEmptySources() {
+        def message = shouldFail(IllegalArgumentException) {
+            assertScript '''
+                import org.apache.groovy.runtime.async.AsyncSupport
+
+                AsyncSupport.first()
+            '''
+        }
+
+        assert message.message == 'sources must not be empty'
+    }
+
+    @Test
+    void testAsyncSupportFirstAsyncRejectsNullSource() {
+        def message = shouldFail(IllegalArgumentException) {
+            assertScript '''
+                import org.apache.groovy.runtime.async.AsyncSupport
+
+                AsyncSupport.firstAsync(async { 'ok' }, null)
+            '''
+        }
+
+        assert message.message == 'sources must not contain null elements'
     }
 
     @Test
