@@ -80,7 +80,7 @@ class ListenerListASTStubber extends AbstractASTTransformation {
         ClassNode listener = types[0].type
 
         String name = annotation.getMember('name')?.value ?: listener.nameWithoutPackage
-        String capName = name[0].toUpperCase() + name.substring(1)
+        String capName = name[0].toUpperCase(Locale.ROOT) + name.substring(1)
         boolean synchronize = annotation.getMember('synchronize')?.value ?: false
         int modifiers = synchronize ? Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED : Opcodes.ACC_PUBLIC
 
@@ -110,7 +110,7 @@ class ListenerListASTStubber extends AbstractASTTransformation {
         listener.methods.findAll { MethodNode m ->
             m.isPublic() && !m.isSynthetic() && !m.isStatic()
         }.each { MethodNode m ->
-            String fireName = "fire${m.name[0].toUpperCase() + m.name.substring(1)}"
+            String fireName = "fire${m.name[0].toUpperCase(Locale.ROOT) + m.name.substring(1)}"
             // Mirror the full transform's parameter copying (wrapper types,
             // plain refs) so stub signatures match what the full transform
             // will emit.

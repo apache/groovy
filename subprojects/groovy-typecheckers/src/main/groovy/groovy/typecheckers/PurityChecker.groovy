@@ -191,7 +191,7 @@ class PurityChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static Set<String> parseAllows(String allowsStr) {
         if (!allowsStr) return Collections.emptySet()
-        allowsStr.split('\\|')*.trim()*.toUpperCase() as Set<String>
+        allowsStr.split('\\|')*.trim()*.toUpperCase(Locale.ROOT) as Set<String>
     }
 
     private static boolean hasPureAnno(MethodNode method) {

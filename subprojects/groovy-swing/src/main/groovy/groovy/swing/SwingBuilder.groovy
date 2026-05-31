@@ -658,7 +658,7 @@ class SwingBuilder extends FactoryBuilderSupport {
         def condition = attributes.remove("condition") ?: JComponent.WHEN_FOCUSED
         if (condition instanceof GString) condition = condition as String
         if( condition instanceof String ) {
-            condition = condition.toUpperCase().replace(" ", "_")
+            condition = condition.toUpperCase(Locale.ROOT).replace(" ", "_")
             if( !condition.startsWith("WHEN_") ) condition = "WHEN_"+condition
         }
         switch(condition) {

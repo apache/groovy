@@ -793,7 +793,7 @@ class GrapeMaven implements GrapeEngine {
     }
 
     private static String detectOsName() {
-        String osName = System.getProperty('os.name').toLowerCase()
+        String osName = System.getProperty('os.name').toLowerCase(Locale.ROOT)
         if (osName.contains('win')) {
             return 'windows'
         } else if (osName.contains('mac')) {
@@ -810,7 +810,7 @@ class GrapeMaven implements GrapeEngine {
     }
 
     private static String detectOsArch() {
-        String osArch = System.getProperty('os.arch').toLowerCase()
+        String osArch = System.getProperty('os.arch').toLowerCase(Locale.ROOT)
         if (osArch.matches('.*64.*')) {
             if (osArch.contains('aarch64') || osArch.contains('arm64')) {
                 return 'aarch_64'

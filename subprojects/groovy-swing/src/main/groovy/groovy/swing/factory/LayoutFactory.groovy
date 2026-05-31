@@ -86,7 +86,7 @@ class LayoutFactory extends groovy.swing.factory.BeanFactory {
             contextProps = [:]
             layoutClass.fields.each {
                 def name = it.name
-                if (name.toUpperCase() == name) {
+                if (name.toUpperCase(Locale.ROOT) == name) {
                     contextProps.put(name, layoutClass."$name")
                 }
             }

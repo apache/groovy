@@ -55,6 +55,7 @@ import java.awt.print.PrinterJob;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Serial;
+import java.util.Locale;
 import java.util.prefs.Preferences;
 
 import static java.lang.System.Logger.Level.WARNING;
@@ -278,7 +279,7 @@ public class ConsoleTextEditor extends JScrollPane {
         am.put(StructuredSyntaxResources.PRINT, printAction);
 
         // on macOS, remap Home/End to line start/end (Cmd+Home/End for document start/end)
-        if (System.getProperty("os.name", "").toLowerCase().contains("mac")) {
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac")) {
             InputMap editorIm = textEditor.getInputMap(JComponent.WHEN_FOCUSED);
             int meta = InputEvent.META_DOWN_MASK;
             editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0), DefaultEditorKit.beginLineAction);

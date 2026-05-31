@@ -661,7 +661,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                 encoding = Charset.forName(arg)
             }
             if (option in ['-f', '--format'] && arg) {
-                format = arg.toUpperCase()
+                format = arg.toUpperCase(Locale.ROOT)
             }
             optionIndex = optionIdx(args, index)
         }

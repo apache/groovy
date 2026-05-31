@@ -2376,7 +2376,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     private static String getOsName() {
-        return System.getProperty("os.name").toLowerCase()
+        return System.getProperty("os.name").toLowerCase(Locale.ROOT)
     }
 }
 
@@ -2405,7 +2405,7 @@ class GroovyFileFilter extends FileFilter {
         def s = f.getName()
         def i = s.lastIndexOf('.')
         if (i > 0 && i < s.length() - 1) {
-            ext = s.substring(i).toLowerCase()
+            ext = s.substring(i).toLowerCase(Locale.ROOT)
         }
         "*$ext"
     }

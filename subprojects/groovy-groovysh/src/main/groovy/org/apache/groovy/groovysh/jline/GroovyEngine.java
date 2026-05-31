@@ -71,6 +71,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -379,7 +380,7 @@ public class GroovyEngine implements ScriptEngine {
     @Override
     public Object deserialize(String value, String formatStr) {
         Object out = value;
-        Format format = formatStr != null && !formatStr.isEmpty() ? Format.valueOf(formatStr.toUpperCase()) : null;
+        Format format = formatStr != null && !formatStr.isEmpty() ? Format.valueOf(formatStr.toUpperCase(Locale.ROOT)) : null;
         if (format == Format.NONE) {
             // do nothing
         } else if (format == Format.JSON) {
@@ -442,7 +443,7 @@ public class GroovyEngine implements ScriptEngine {
      */
     @Override
     public void persist(Path file, Object object, String format) {
-        Utils.persist(file, object, Format.valueOf(format.toUpperCase()));
+        Utils.persist(file, object, Format.valueOf(format.toUpperCase(Locale.ROOT)));
     }
 
     /**

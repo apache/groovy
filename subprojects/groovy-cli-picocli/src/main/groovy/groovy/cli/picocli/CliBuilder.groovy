@@ -691,7 +691,7 @@ class CliBuilder {
         if (optionAccessor) {
             optionAccessor.parseResult.commandSpec().options().each { option ->
                 if (!optionAccessor.parseResult.hasMatchedOption(option)) {
-                    boolean isFlag = option.arity().max == 0 && option.type().simpleName.toLowerCase() == 'boolean'
+                    boolean isFlag = option.arity().max == 0 && option.type().simpleName.toLowerCase(Locale.ROOT) == 'boolean'
                     if (isFlag) { option.value = false } // else default has already been applied
                 }
             }
@@ -778,7 +778,7 @@ class CliBuilder {
                 return m.invoke(target)
             }
             if (cls.primitive) {
-                if (cls.simpleName.toLowerCase() == 'boolean') {
+                if (cls.simpleName.toLowerCase(Locale.ROOT) == 'boolean') {
                     return false
                 }
                 return 0
@@ -823,7 +823,7 @@ class CliBuilder {
         builder.getter(attr.getter)
         builder.setter(attr.setter)
         builder.hasInitialValue(attr.hasInitialValue)
-        if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
+        if (arity.max == 0 && attr.type.simpleName.toLowerCase(Locale.ROOT) == 'boolean' && !attr.initialValue) {
             attr.initialValue = false
         }
         try {
@@ -855,7 +855,7 @@ class CliBuilder {
         builder.getter(attr.getter)
         builder.setter(attr.setter)
         builder.hasInitialValue(attr.hasInitialValue)
-        if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
+        if (arity.max == 0 && attr.type.simpleName.toLowerCase(Locale.ROOT) == 'boolean' && !attr.initialValue) {
             attr.initialValue = false
         }
         try {
@@ -878,8 +878,8 @@ class CliBuilder {
         if (numberOfArguments != 1 && numberOfArgumentsString) {
             throw new CliBuilderException("You can't specify both 'numberOfArguments' and 'numberOfArgumentsString' on flag '${names.long ?: names.short}'")
         }
-        def isFlag = type.simpleName.toLowerCase() == 'boolean' ||
-                     (type.simpleName.toLowerCase() == 'object' && (numberOfArguments == 0 || numberOfArgumentsString == "0"))
+        def isFlag = type.simpleName.toLowerCase(Locale.ROOT) == 'boolean' ||
+                     (type.simpleName.toLowerCase(Locale.ROOT) == 'object' && (numberOfArguments == 0 || numberOfArgumentsString == "0"))
         String arity = "0"
         if (numberOfArgumentsString) {
             String max = numberOfArgumentsString.replace('+', '*')

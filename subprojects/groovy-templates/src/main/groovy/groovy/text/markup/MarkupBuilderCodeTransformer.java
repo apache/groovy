@@ -46,6 +46,7 @@ import org.codehaus.groovy.syntax.Types;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -257,7 +258,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
                     MapEntryExpression mapEntry = entries.get(0);
                     Expression keyExpression = mapEntry.getKeyExpression();
                     try {
-                        IncludeType includeType = IncludeType.valueOf(keyExpression.getText().toLowerCase());
+                        IncludeType includeType = IncludeType.valueOf(keyExpression.getText().toLowerCase(Locale.ROOT));
                         MethodCallExpression call = new MethodCallExpression(
                                 exp.getObjectExpression(),
                                 includeType.getMethodName(),

@@ -166,7 +166,7 @@ class OptionAccessor {
         if (Closure.isAssignableFrom(type) && convert) {
             return (T) convert(optionValue)
         }
-        if (type?.simpleName?.toLowerCase() == 'boolean') {
+        if (type?.simpleName?.toLowerCase(Locale.ROOT) == 'boolean') {
             return (T) Boolean.parseBoolean(optionValue)
         }
         StringGroovyMethods.asType(optionValue, (Class<T>) type)

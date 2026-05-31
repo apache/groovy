@@ -65,7 +65,7 @@ class GrapeUtil {
      */
     static void processExtensionMethods(ClassLoader loader, File file) {
         // register extension methods if jar
-        if (file.getName().toLowerCase().endsWith('.jar')) {
+        if (file.getName().toLowerCase(Locale.ROOT).endsWith('.jar')) {
             def mcRegistry = GroovySystem.metaClassRegistry
             if (mcRegistry instanceof MetaClassRegistryImpl) {
                 try (JarFile jar = new JarFile(file)) {

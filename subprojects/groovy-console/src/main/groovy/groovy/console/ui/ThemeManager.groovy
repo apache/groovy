@@ -78,7 +78,7 @@ class ThemeManager {
     /** Returns the configured theme mode, defaulting to {@link ThemeMode#SYSTEM}. */
     static ThemeMode getCurrentMode() {
         try {
-            ThemeMode.valueOf(prefs.get('theme', 'SYSTEM').toUpperCase())
+            ThemeMode.valueOf(prefs.get('theme', 'SYSTEM').toUpperCase(Locale.ROOT))
         } catch (IllegalArgumentException ignored) {
             ThemeMode.SYSTEM
         }
@@ -122,7 +122,7 @@ class ThemeManager {
      * appearance instead of the app theme to stay legible.
      */
     static boolean isMenuDrawnByOS() {
-        String os = System.getProperty('os.name', '').toLowerCase()
+        String os = System.getProperty('os.name', '').toLowerCase(Locale.ROOT)
         os.contains('mac') && Boolean.parseBoolean(System.getProperty('apple.laf.useScreenMenuBar', 'false'))
     }
 
@@ -182,7 +182,7 @@ class ThemeManager {
      */
     static Map getStyleAttrs(String key) {
         if (!key) return [:]
-        activeTheme.styles[key.toLowerCase()] ?: [:]
+        activeTheme.styles[key.toLowerCase(Locale.ROOT)] ?: [:]
     }
 
     // --- theme loading + parsing ---
@@ -259,7 +259,7 @@ class ThemeManager {
         def result = [inputBackground: null, outputBackground: null, styles: [:]]
         props.stringPropertyNames().each { key ->
             def value = props.getProperty(key)?.trim() ?: ''
-            switch (key.trim().toLowerCase()) {
+            switch (key.trim().toLowerCase(Locale.ROOT)) {
                 case 'input.background':
                     result.inputBackground = parseHexColor(value)
                     break
@@ -267,7 +267,7 @@ class ThemeManager {
                     result.outputBackground = parseHexColor(value)
                     break
                 default:
-                    result.styles[key.trim().toLowerCase()] = parseStyleValue(value)
+                    result.styles[key.trim().toLowerCase(Locale.ROOT)] = parseStyleValue(value)
             }
         }
         result
@@ -277,7 +277,7 @@ class ThemeManager {
         def attrs = [:]
         if (!raw) return attrs
         // split off "<fg> on <bg>"
-        int onIdx = raw.toLowerCase().indexOf(' on ')
+        int onIdx = raw.toLowerCase(Locale.ROOT).indexOf(' on ')
         String bg = null
         if (onIdx >= 0) {
             bg = raw.substring(onIdx + 4).trim()
@@ -289,7 +289,7 @@ class ThemeManager {
             if (part.startsWith('#')) {
                 attrs.foreground = parseHexColor(part)
             } else {
-                switch (part.toLowerCase()) {
+                switch (part.toLowerCase(Locale.ROOT)) {
                     case 'bold':      attrs.bold = true;       break
                     case 'italic':    attrs.italic = true;     break
                     case 'underline': attrs.underline = true;  break
@@ -353,7 +353,7 @@ class ThemeManager {
     }
 
     private static boolean probeSystemDarkMode() {
-        String os = System.getProperty('os.name', '').toLowerCase()
+        String os = System.getProperty('os.name', '').toLowerCase(Locale.ROOT)
         if (os.contains('mac')) {
             try {
                 Process p = ['defaults', 'read', '-g', 'AppleInterfaceStyle'].execute()
