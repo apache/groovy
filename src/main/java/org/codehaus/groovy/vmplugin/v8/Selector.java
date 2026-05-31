@@ -1057,12 +1057,14 @@ public abstract class Selector {
             MethodHandle fallback = this.fallback != null ? this.fallback : callSite.getFallbackTarget();
 
             // special guards for receiver
+            boolean hasMetaClassGuard = false;
             if (receiver instanceof GroovyObject go) {
                 MetaClass mc = go.getMetaClass();
                 MethodHandle test = SAME_MC.bindTo(mc);
                 // drop dummy receiver
                 test = test.asType(MethodType.methodType(boolean.class, targetType.parameterType(0)));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
+                hasMetaClassGuard = true;
                 if (LOG_ENABLED) LOG.info("added meta class equality check");
             } else if (receiver instanceof Class) {
                 MethodHandle test = EQUALS.bindTo(receiver);
@@ -1089,7 +1091,11 @@ public abstract class Selector {
             }
 
             // handle constant metaclass and category changes
-            if (!skipSwitchPoint) {
+            // For GroovyObject receivers the SAME_MC guard handles this already:
+            //   - In-place ExpandoMetaClass modifications keep the same instance -> guard passes
+            //   - Metaclass replacement creates a new instance -> guard fails -> re-selection
+            // For POJO receivers we need the SwitchPoint to detect metaclass changes.
+            if (!skipSwitchPoint && !hasMetaClassGuard) {
                 handle = switchPoint.guardWithTest(handle, fallback);
                 if (LOG_ENABLED) LOG.info("added switch point guard");
             }
