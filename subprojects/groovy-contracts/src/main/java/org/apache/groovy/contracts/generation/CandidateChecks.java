@@ -131,7 +131,6 @@ public class CandidateChecks {
      */
     public static boolean isPostconditionCandidate(final ClassNode type, final MethodNode method) {
         if (!isPreconditionCandidate(type, method)) return false;
-        if (method.isStatic()) return false;
 
         return true;
     }

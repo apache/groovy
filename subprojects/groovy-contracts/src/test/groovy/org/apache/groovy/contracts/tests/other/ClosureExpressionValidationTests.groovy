@@ -199,4 +199,24 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
 
         assertTrue msg.contains("State changing postfix & prefix operators are not supported.")
     }
+
+    // GROOVY-12052
+    void testOldNotSupportedInStaticPostcondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                    import groovy.contracts.*
+
+                    class A {
+
+                        @Ensures({ old.value == result })
+                        static int op(int value) { value }
+                    }
+
+                    A.op(1)
+                """
+        }
+
+        assertTrue msg.contains("'old' is not supported in postconditions of static methods")
+    }
 }

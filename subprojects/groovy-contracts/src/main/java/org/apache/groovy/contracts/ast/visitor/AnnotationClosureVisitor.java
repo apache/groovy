@@ -484,6 +484,13 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         @Override
         public void visitVariableExpression(VariableExpression expression) {
 
+            // GROOVY-12052: 'old' snapshots instance state, which a static method has none of
+            if (!secondPass && methodNode != null && methodNode.isStatic()
+                    && "old".equals(expression.getName())
+                    && AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), POSTCONDITION_TYPE_NAME)) {
+                addError("[groovy-contracts] 'old' is not supported in postconditions of static methods.", expression);
+            }
+
             // in case of a FieldNode, checks whether the FieldNode can be replaced with a Parameter
             Variable accessedVariable = getParameterCandidate(expression.getAccessedVariable());
             if (accessedVariable instanceof FieldNode fieldNode) {

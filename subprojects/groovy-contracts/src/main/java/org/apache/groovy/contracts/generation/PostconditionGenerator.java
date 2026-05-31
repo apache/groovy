@@ -45,6 +45,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
@@ -140,21 +141,27 @@ public class PostconditionGenerator extends BaseGenerator {
                     localPostconditionBlockStatement.getStatements().add(0, declS(result, returnStatement.getExpression()));
                     AssertStatementCreationUtility.injectResultVariableReturnStatementAndAssertionCallStatement(block, method.getReturnType().redirect(), returnStatement, localPostconditionBlockStatement);
                 }
-                setOldVariablesIfEnabled(block, contractsEnabled);
+                setOldVariablesIfEnabled(block, contractsEnabled, method.isStatic());
 
             } else if (method instanceof ConstructorNode) {
                 block.addStatements(postconditionBlockStatement.getStatements());
             } else {
-                setOldVariablesIfEnabled(block, contractsEnabled);
+                setOldVariablesIfEnabled(block, contractsEnabled, method.isStatic());
                 block.addStatements(postconditionBlockStatement.getStatements());
             }
             method.putNodeMetaData(METHOD_PROCESSED, true);
         }
     }
 
-    private void setOldVariablesIfEnabled(BlockStatement block, Expression contractsEnabled) {
-        // Assign the return statement expression to a local variable: Map old
+    private void setOldVariablesIfEnabled(BlockStatement block, Expression contractsEnabled, boolean isStatic) {
         final Expression oldVariableExpression = localVarX("old", new ClassNode(Map.class));
+        if (isStatic) {
+            // static methods have no instance state to snapshot; the synthetic old-variables method is an
+            // instance method, so 'old' is simply an empty map (references to it are rejected at compile time)
+            block.getStatements().add(0, declS(oldVariableExpression, mapX()));
+            return;
+        }
+        // Assign the return statement expression to a local variable: Map old
         Statement oldVariableStatement = assignS(oldVariableExpression, callThisX(OldVariableGenerationUtility.OLD_VARIABLES_METHOD));
         block.getStatements().add(0, declS(oldVariableExpression, ConstantExpression.NULL));
         block.getStatements().add(1, ifS(boolX(contractsEnabled), block(oldVariableStatement)));
