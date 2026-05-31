@@ -77,7 +77,7 @@ import java.util.function.Function;
 public final class Agent<T> {
 
     /** Default per-subscriber buffer size for {@link #changes()}. */
-    public static final int DEFAULT_CHANGES_BUFFER = 256;
+    private static final int DEFAULT_CHANGES_BUFFER = 256;
 
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final ExecutorService updateExecutor;
