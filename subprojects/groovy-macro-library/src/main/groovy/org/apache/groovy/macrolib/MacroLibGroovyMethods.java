@@ -224,10 +224,9 @@ public final class MacroLibGroovyMethods {
                 "DO requires at least one 'name in expression' generator and a trailing closure body");
         }
         Expression last = exps[exps.length - 1];
-        if (!(last instanceof ClosureExpression)) {
+        if (!(last instanceof ClosureExpression body)) {
             return error(ctx, last, "DO requires a trailing closure body, e.g. DO(x in m1) { ... }");
         }
-        ClosureExpression body = (ClosureExpression) last;
         if (body.getParameters() != null && body.getParameters().length > 0) {
             return error(ctx, body,
                 "DO body closure must not declare parameters; generator names are already in scope");
@@ -238,11 +237,10 @@ public final class MacroLibGroovyMethods {
         List<Expression> sources = new ArrayList<Expression>(genCount);
         for (int i = 0; i < genCount; i++) {
             Expression g = exps[i];
-            if (!(g instanceof BinaryExpression)
+            if (!(g instanceof BinaryExpression bin)
                     || ((BinaryExpression) g).getOperation().getType() != Types.KEYWORD_IN) {
                 return error(ctx, g, "DO generator must have the form 'name in expression'");
             }
-            BinaryExpression bin = (BinaryExpression) g;
             if (!(bin.getLeftExpression() instanceof VariableExpression)) {
                 return error(ctx, bin.getLeftExpression(),
                     "DO generator binding must be a simple name, e.g. x in m1");

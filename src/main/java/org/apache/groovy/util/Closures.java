@@ -53,9 +53,7 @@ public class Closures {
      * @since 6.0.0
      */
     public static <T> PredicateClosure<T> from(Predicate<T> p) {
-        if (p instanceof PredicateClosure) {
-            @SuppressWarnings("unchecked")
-            PredicateClosure<T> pc = (PredicateClosure<T>) p;
+        if (p instanceof @SuppressWarnings("unchecked") PredicateClosure<T> pc) {
             return pc;
         }
         return new PredicateClosure<>(p);
@@ -69,9 +67,7 @@ public class Closures {
      * @since 6.0.0
      */
     public static <T, R> FunctionClosure<T, R> from(Function<T, R> f) {
-        if (f instanceof FunctionClosure) {
-            @SuppressWarnings("unchecked")
-            FunctionClosure<T, R> fc = (FunctionClosure<T, R>) f;
+        if (f instanceof @SuppressWarnings("unchecked") FunctionClosure<T, R> fc) {
             return fc;
         }
         return new FunctionClosure<>(f);
@@ -85,9 +81,7 @@ public class Closures {
      * @since 6.0.0
      */
     public static <T> ConsumerClosure<T> from(Consumer<T> c) {
-        if (c instanceof ConsumerClosure) {
-            @SuppressWarnings("unchecked")
-            ConsumerClosure<T> cc = (ConsumerClosure<T>) c;
+        if (c instanceof @SuppressWarnings("unchecked") ConsumerClosure<T> cc) {
             return cc;
         }
         return new ConsumerClosure<>(c);
