@@ -335,7 +335,7 @@ class CliBuilder {
                     throw new CliBuilderException("'type' must be a Class")
                 }
                 if ((convert || type) && !args[0].containsKey('args') &&
-                        type?.simpleName?.toLowerCase() != 'boolean') {
+                        type?.simpleName?.toLowerCase(Locale.ROOT) != 'boolean') {
                     args[0].args = 1
                 }
                 def option = option(name, args[0], args[1])
@@ -453,7 +453,7 @@ class CliBuilder {
         if (optionalArg && (!type || !type.isArray())) {
             throw new CliBuilderException("Attempted to set optional argument for non array type")
         }
-        def isFlag = type.simpleName.toLowerCase() == 'boolean'
+        def isFlag = type.simpleName.toLowerCase(Locale.ROOT) == 'boolean'
         if (numberOfArgumentsString) {
             details.args = numberOfArgumentsString
             details = adjustDetails(details)
@@ -555,14 +555,14 @@ class CliBuilder {
         boolean hasArg = savedTypeOptions[name]?.cliOption?.args == 1
         boolean noArg = savedTypeOptions[name]?.cliOption?.args == 0
         if (namesAreSetters) {
-            def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
+            def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase(Locale.ROOT) == 'boolean'
             boolean isFlag = (isBoolArg && !hasArg) || noArg
             if (cli.hasOption(name) || isFlag || cli.defaultValue(name)) {
                 m.invoke(t, [isFlag ? cli.hasOption(name) :
                                      cli.hasOption(name) ? optionValue(cli, name) : cli.defaultValue(name)] as Object[])
             }
         } else {
-            def isBoolRetType = m.returnType.simpleName.toLowerCase() == 'boolean'
+            def isBoolRetType = m.returnType.simpleName.toLowerCase(Locale.ROOT) == 'boolean'
             boolean isFlag = (isBoolRetType && !hasArg) || noArg
             t.put(m.getName(), cli.hasOption(name) ?
                     { -> isFlag ? true : optionValue(cli, name) } :

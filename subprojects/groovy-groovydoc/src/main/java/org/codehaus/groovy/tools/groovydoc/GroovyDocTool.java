@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -91,7 +92,7 @@ public class GroovyDocTool {
     private ParserConfiguration.LanguageLevel calculateLanguageLevel(String javaVersion) {
         String version = Optional.ofNullable(javaVersion)
             .map(String::trim)
-            .map(s -> s.toUpperCase())
+            .map(s -> s.toUpperCase(Locale.ROOT))
             .filter(s -> !s.isEmpty())
             .orElse(null);
 

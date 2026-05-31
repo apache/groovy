@@ -49,10 +49,10 @@ class GroovyBuiltins extends Builtins {
             if (name in ['nano', 'less']) {
                 methods = new CommandMethods((Function)this::"$name", methods.compileCompleter())
             }
-            [Command."${name.toUpperCase()}", methods]
+            [Command."${name.toUpperCase(Locale.ROOT)}", methods]
         }
         def commandName = commandNames().collectEntries{ name ->
-            [Command."${name.toUpperCase()}", '/' + name]
+            [Command."${name.toUpperCase(Locale.ROOT)}", '/' + name]
         }
         setLineReader(reader)
         registerCommands(commandName, commandExecute)

@@ -389,7 +389,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             joinName = equalExpressionList ? JoinExpression.INNER_HASH_JOIN : JoinExpression.INNER_JOIN
         }
 
-        if (joinName.toLowerCase().contains('hash')) {
+        if (joinName.toLowerCase(Locale.ROOT).contains('hash')) {
             List<Expression> leftExpressionList = []
             List<Expression> rightExpressionList = []
 

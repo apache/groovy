@@ -35,7 +35,7 @@ class MockInterceptor implements PropertyAccessInterceptor {
 
     def beforeGet(Object object, String property) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
-        String name = "get${property[0].toUpperCase()}${property[1..-1]}"
+        String name = "get${property[0].toUpperCase(Locale.ROOT)}${property[1..-1]}"
         def result = expectation.match(name)
         if (result == MockProxyMetaClass.FALL_THROUGH_MARKER) return result
         return result()
@@ -43,7 +43,7 @@ class MockInterceptor implements PropertyAccessInterceptor {
 
     void beforeSet(Object object, String property, Object newValue) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
-        String name = "set${property[0].toUpperCase()}${property[1..-1]}"
+        String name = "set${property[0].toUpperCase(Locale.ROOT)}${property[1..-1]}"
         def result = expectation.match(name)
         if (result != MockProxyMetaClass.FALL_THROUGH_MARKER) {
             result(newValue)

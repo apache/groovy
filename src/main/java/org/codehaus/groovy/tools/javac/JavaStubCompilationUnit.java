@@ -31,6 +31,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -109,7 +110,7 @@ public class JavaStubCompilationUnit extends CompilationUnit {
     }
 
     private boolean hasAcceptedFileExtension(String name) {
-        String lowerCasedName = name.toLowerCase();
+        String lowerCasedName = name.toLowerCase(Locale.ROOT);
         String extension = lowerCasedName.substring(lowerCasedName.lastIndexOf('.') + 1);
         return configuration.getScriptExtensions().contains(extension);
     }

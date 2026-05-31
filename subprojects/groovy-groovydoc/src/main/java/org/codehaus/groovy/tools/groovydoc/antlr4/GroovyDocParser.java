@@ -37,6 +37,7 @@ import org.codehaus.groovy.tools.groovydoc.SimpleGroovyMethodDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -89,7 +90,7 @@ public class GroovyDocParser implements GroovyDocParserI {
             try {
                 phase = Integer.parseInt(raw);
             } catch(NumberFormatException ignore) {
-                raw = raw.toUpperCase();
+                raw = raw.toUpperCase(Locale.ROOT);
                 switch(raw) {
                     // some dup here but kept simple since we may swap Phases to an enum
                     case "CONVERSION": phase = 3; break;
