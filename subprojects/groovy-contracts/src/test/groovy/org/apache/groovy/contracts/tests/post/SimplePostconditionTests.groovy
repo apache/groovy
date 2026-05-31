@@ -166,8 +166,9 @@ class Account {
         }
     }
 
+    // GROOVY-12052
     @Test
-    void no_postcondition_on_static_methods() {
+    void postcondition_on_static_void_method() {
 
         def source = """
         import groovy.contracts.*
@@ -175,14 +176,40 @@ class Account {
 class Account {
 
    @Ensures({ amount != null })
-   static def withdraw(def amount)  {
+   static void withdraw(def amount)  {
+     println amount
+   }
+}
+    """
+
+        def clazz = add_class_to_classpath(source)
+        clazz.withdraw(10)
+        shouldFail(PostconditionViolation) {
+            clazz.withdraw(null)
+        }
+    }
+
+    // GROOVY-12052
+    @Test
+    void postcondition_with_result_on_static_method() {
+
+        def source = """
+        import groovy.contracts.*
+
+class Account {
+
+   @Ensures({ result >= 0 })
+   static int balanceAfter(int amount)  {
      return amount
    }
 }
     """
 
         def clazz = add_class_to_classpath(source)
-        assert clazz.withdraw(null) == null
+        assert clazz.balanceAfter(10) == 10
+        shouldFail(PostconditionViolation) {
+            clazz.balanceAfter(-5)
+        }
     }
 
     @Test
