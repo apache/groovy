@@ -98,6 +98,11 @@ public class LoopInvariantASTTransformation implements ASTTransformation {
         wrapped.setSourcePosition(annotation);
 
         injectAtLoopBodyStart(loopStatement, wrapped);
+
+        // The invariant closure lived inside an annotation, so its variable references were never
+        // resolved; re-run scope analysis now that they are real loop-body statements so that
+        // @TypeChecked/@CompileStatic can see their declared types.
+        LoopContractSupport.resolveVariableScopes(source);
     }
 
     private static void injectAtLoopBodyStart(LoopingStatement loopStatement, Statement check) {
