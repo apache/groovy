@@ -63,9 +63,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.BooleanClosureForMapPredicate;
-import org.codehaus.groovy.runtime.BooleanClosurePredicate;
-import org.codehaus.groovy.runtime.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -225,10 +222,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             */
     };
 
-    private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
-    private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
-    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(  Long.MAX_VALUE);
-    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(  Long.MIN_VALUE);
+    private static final BigInteger BI_INT_MAX  = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static final BigInteger BI_INT_MIN  = BigInteger.valueOf(Integer.MIN_VALUE);
+    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(   Long.MAX_VALUE);
+    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(   Long.MIN_VALUE);
 
     private static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
         private final Comparator<V> delegate = new NumberAwareComparator<>();
@@ -7399,7 +7396,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for Collection.
+     * Support the subscript operator for a Collection.
      * <pre class="language-groovy groovyTestCase">
      * assert [String, Long, Integer] == ["a",5L,2]["class"]
      * </pre>
@@ -12948,7 +12945,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A helper method to allow maps to work with subscript operators
+     * A helper method to allow maps to work with subscript operators.
      *
      * @param self  a Map
      * @param key   an Object as a key for the map
