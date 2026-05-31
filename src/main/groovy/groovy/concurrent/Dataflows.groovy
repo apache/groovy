@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap
 @CompileStatic
 class Dataflows {
 
-    private final ConcurrentHashMap<String, DataflowVariable> variables = new ConcurrentHashMap<>()
+    private final Map<String, DataflowVariable> variables = new ConcurrentHashMap<>()
 
     /**
      * Reading a property awaits the corresponding DataflowVariable's value.
