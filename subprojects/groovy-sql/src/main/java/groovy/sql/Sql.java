@@ -4688,7 +4688,7 @@ public class Sql implements AutoCloseable {
      * @return the index of the found keyword or -1 if not found
      */
     protected int findWhereKeyword(String sql) {
-        char[] chars = sql.toLowerCase().toCharArray();
+        char[] chars = sql.toCharArray();
         char[] whereChars = "where".toCharArray();
         int i = 0;
         boolean inString = false; //TODO: Cater for comments?
@@ -4699,7 +4699,7 @@ public class Sql implements AutoCloseable {
                     inString = !inString;
                     break;
                 default:
-                    if (!inString && chars[i] == whereChars[inWhere]) {
+                    if (!inString && Character.toLowerCase(chars[i]) == whereChars[inWhere]) {
                         inWhere++;
                         if (inWhere == whereChars.length) {
                             return i;

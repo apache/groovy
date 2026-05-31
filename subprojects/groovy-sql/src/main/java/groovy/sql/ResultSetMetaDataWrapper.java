@@ -24,6 +24,7 @@ import groovy.lang.ReadOnlyPropertyException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.sql.ResultSetMetaData;
+import java.util.Locale;
 
 /**
  * This class defines a wrapper for accessing a specific column in <code>ResultSetMetaData</code>.
@@ -83,7 +84,7 @@ public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
         if (prop == null || prop.isEmpty()) {
             throw new MissingPropertyException(prop, target.getClass());
         }
-        return "get" + prop.substring(0, 1).toUpperCase() + prop.substring(1);
+        return "get" + prop.substring(0, 1).toUpperCase(Locale.ROOT) + prop.substring(1);
     }
 
     /**
