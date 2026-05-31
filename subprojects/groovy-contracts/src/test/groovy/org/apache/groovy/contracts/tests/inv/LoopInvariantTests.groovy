@@ -272,5 +272,62 @@ class LoopInvariantTests extends BaseTestClass {
             }
         '''
     }
+
+    @Test
+    void invariantUnderTypeChecked() {
+        assertScript '''
+            import groovy.contracts.Invariant
+            import groovy.transform.TypeChecked
+
+            @TypeChecked
+            def method() {
+                int sum = 0
+                @Invariant({ sum >= 0 })
+                @Invariant({ sum <= 100 })
+                for (int i in 1..5) {
+                    sum += i
+                }
+                assert sum == 15
+            }
+            method()
+        '''
+    }
+
+    @Test
+    void invariantUnderCompileStatic() {
+        assertScript '''
+            import groovy.contracts.Invariant
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            def method() {
+                int sum = 0
+                @Invariant({ sum >= 0 })
+                for (int i in 1..5) {
+                    sum += i
+                }
+                assert sum == 15
+            }
+            method()
+        '''
+    }
+
+    @Test
+    void invariantViolationUnderCompileStaticThrows() {
+        shouldFail AssertionError, '''
+            import groovy.contracts.Invariant
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            def method() {
+                int n = 5
+                @Invariant({ n > 0 })
+                while (n >= 0) {
+                    n--
+                }
+            }
+            method()
+        '''
+    }
 }
 

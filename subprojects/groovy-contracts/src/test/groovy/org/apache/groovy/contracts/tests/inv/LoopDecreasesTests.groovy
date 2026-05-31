@@ -168,4 +168,42 @@ class LoopDecreasesTests extends BaseTestClass {
             assert n == 0
         '''
     }
+
+    @Test
+    void decreasesUnderTypeChecked() {
+        assertScript '''
+            import groovy.contracts.Decreases
+            import groovy.transform.TypeChecked
+
+            @TypeChecked
+            def method() {
+                int n = 10
+                @Decreases({ n })
+                while (n > 0) {
+                    n--
+                }
+                assert n == 0
+            }
+            method()
+        '''
+    }
+
+    @Test
+    void decreasesUnderCompileStatic() {
+        assertScript '''
+            import groovy.contracts.Decreases
+            import groovy.transform.CompileStatic
+
+            @CompileStatic
+            def method() {
+                int lo = 0, hi = 10
+                @Decreases({ hi - lo })
+                while (lo < hi) {
+                    lo++
+                }
+                assert lo == 10
+            }
+            method()
+        '''
+    }
 }

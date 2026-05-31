@@ -129,6 +129,11 @@ public class LoopVariantASTTransformation implements ASTTransformation {
 
         // Inject: save at start, check at end
         injectAtLoopBodyStartAndEnd(loopStatement, savePrev, block(saveCurr, decreaseCheck));
+
+        // The variant closure lived inside an annotation, so its variable references were never
+        // resolved; re-run scope analysis now that they are real loop-body statements so that
+        // @TypeChecked/@CompileStatic can see their declared types.
+        LoopContractSupport.resolveVariableScopes(source);
     }
 
     /**
