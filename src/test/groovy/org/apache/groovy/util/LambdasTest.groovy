@@ -92,6 +92,37 @@ class LambdasTest {
     }
 
     @Test
+    void curryWithFeedsFatFreeFindAllAndCollect() {
+        BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
+        assert [1, 2, 3, 4, 5, 6].findAll(curryWith(divisibleBy, 2)) == [2, 4, 6]
+
+        BiFunction<String, Integer, String> repeat = (s, n) -> s * n
+        assert ['a', 'b', 'c'].collect(curryWith(repeat, 3)) == ['aaa', 'bbb', 'ccc']
+    }
+
+    @Test
+    void fatFreeWithOverloadsMatchCurryWith() {
+        BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
+        // findAll(Iterable, BiPredicate, param) bakes in the right-curry
+        assert [1, 2, 3, 4, 5, 6].findAll(divisibleBy, 2) ==
+                [1, 2, 3, 4, 5, 6].findAll(curryWith(divisibleBy, 2))
+
+        // findAll(Set, BiPredicate, param) preserves the Set type
+        def evens = ([1, 2, 3, 4, 5, 6] as Set).findAll(divisibleBy, 2)
+        assert evens == ([2, 4, 6] as Set)
+        assert evens instanceof Set
+
+        // find(Iterable, BiPredicate, param) returns the first match
+        assert [1, 2, 3, 4, 5, 6].find(divisibleBy, 3) ==
+                [1, 2, 3, 4, 5, 6].find(curryWith(divisibleBy, 3))
+
+        BiFunction<String, Integer, String> repeat = (s, n) -> s * n
+        // collect(Iterable, BiFunction, param) bakes in the right-curry
+        assert ['a', 'b', 'c'].collect(repeat, 3) ==
+                ['a', 'b', 'c'].collect(curryWith(repeat, 3))
+    }
+
+    @Test
     void curryWithReturnsFreshFunctionsThatShareNoState() {
         BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
         Predicate<Integer> isEven = curryWith(divisibleBy, 2)

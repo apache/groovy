@@ -56,6 +56,7 @@ import groovy.util.OrderBy;
 import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.util.ReversedList;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.Verifier;
@@ -158,7 +159,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
@@ -639,6 +643,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> boolean any(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure predicate) {
         return any(self.iterator(), predicate);
+    }
+
+    /**
+     * Iterates over the contents of an iterable, and checks whether a
+     * predicate is valid for at least one element. A "fat-free" variant of
+     * {@link #any(Iterable, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [1, 2, 3].any(isEven)
+     * assert ![1, 3, 5].any(isEven)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @return true if any element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    public static <T> boolean any(Iterable<T> self, Predicate<? super T> predicate) {
+        for (T item : self) {
+            if (predicate.test(item)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -2415,6 +2444,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this Iterator transforming each item into a new value using the
+     * <code>transform</code> function, returning a list of transformed values.
+     * A "fat-free" variant of {@link #collect(Iterator, Closure)} accepting a {@link Function}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [1, 2, 3].iterator().collect(n -&gt; n * 2) == [2, 4, 6]</pre>
+     *
+     * @param self      an Iterator
+     * @param transform the function used to transform each item
+     * @return a List of the transformed values
+     * @since 6.0.0
+     */
+    public static <E, T> List<T> collect(Iterator<E> self, Function<? super E, ? extends T> transform) {
+        List<T> answer = new ArrayList<>();
+        while (self.hasNext()) {
+            answer.add(transform.apply(self.next()));
+        }
+        return answer;
+    }
+
+    /**
      * Returns an iterator of transformed values from the source iterator using the
      * <code>transform</code> closure.
      *
@@ -2525,6 +2574,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this Iterable transforming each item into a new value using the
+     * <code>transform</code> function, returning a list of transformed values.
+     * A "fat-free" variant of {@link #collect(Iterable, Closure)} accepting a {@link Function}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [1, 2, 3].collect(n -&gt; n * 2) == [2, 4, 6]</pre>
+     *
+     * @param self      an Iterable
+     * @param transform the function used to transform each item of the Iterable
+     * @return a List of the transformed values
+     * @since 6.0.0
+     */
+    public static <E, T> List<T> collect(Iterable<E> self, Function<? super E, ? extends T> transform) {
+        return collect(self.iterator(), transform);
+    }
+
+    /**
      * Iterates through this collection transforming each value into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
@@ -2544,6 +2609,56 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return collector;
+    }
+
+    /**
+     * Iterates through this Iterable transforming each value into a new value using the
+     * <code>transform</code> function and adding it to the supplied <code>collector</code>.
+     * A "fat-free" variant of {@link #collect(Iterable, Collection, Closure)} accepting a {@link Function}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [2, 4, 5, 6].collect(new HashSet(), n -&gt; (int)(n / 2)) == [1, 2, 3] as Set</pre>
+     *
+     * @param self      an Iterable
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the function used to transform each item
+     * @return the collector with all transformed values added to it
+     * @since 6.0.0
+     */
+    public static <E, T, C extends Collection<T>> C collect(Iterable<E> self, C collector, Function<? super E, ? extends T> transform) {
+        for (E element : self) {
+            collector.add(transform.apply(element));
+        }
+        return collector;
+    }
+
+    /**
+     * Iterates through this Iterable transforming each value into a new value using the
+     * two-argument <code>transform</code> function, with the supplied <code>param</code>
+     * fixed as the second argument, returning a list of transformed values. This is a
+     * "fat-free" variant combining {@link #collect(Iterable, Closure)} with the
+     * right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiFunction, Object)}, so that
+     * {@code list.collect(transform, param)} is equivalent to
+     * {@code list.collect(curryWith(transform, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;String, Integer, String&gt; repeat = (s, n) -&gt; s * n
+     * assert ['a', 'b', 'c'].collect(repeat, 3) == ['aaa', 'bbb', 'ccc']
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param transform a two-argument function used to transform each item
+     * @param param     the value to fix as the function's second argument
+     * @return a List of the transformed values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <E, P, R> List<R> collect(Iterable<E> self, BiFunction<? super E, ? super P, ? extends R> transform, P param) {
+        List<R> answer = new ArrayList<>();
+        for (E element : self) {
+            answer.add(transform.apply(element, param));
+        }
+        return answer;
     }
 
     /**
@@ -2584,6 +2699,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, K, V> List<T> collect(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> transform) {
         return collect(self, new ArrayList<>(self.size()), transform);
+    }
+
+    /**
+     * Iterates through this Map transforming each map entry into a new value using the
+     * <code>transform</code> function (which is passed the key and value of each entry),
+     * returning a list of transformed values.
+     * A "fat-free" variant of {@link #collect(Map, Closure)} accepting a {@link BiFunction}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [a: 1, b: 2].collect((key, value) -&gt; key * value) == ['a', 'bb']</pre>
+     *
+     * @param self      a Map
+     * @param transform the function used to transform each entry, taking the key and value as arguments
+     * @return the resultant list of transformed values
+     * @since 6.0.0
+     */
+    public static <T, K, V> List<T> collect(Map<K, V> self, BiFunction<? super K, ? super V, ? extends T> transform) {
+        List<T> answer = new ArrayList<>(self.size());
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            answer.add(transform.apply(entry.getKey(), entry.getValue()));
+        }
+        return answer;
     }
 
     //--------------------------------------------------------------------------
@@ -2858,6 +2994,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
         return collectEntries(self.iterator(), new LinkedHashMap<>(), keyTransform, valueTransform);
+    }
+
+    /**
+     * A "fat-free" variant of {@link #collectEntries(Iterable, Closure)} which transforms
+     * each element of the Iterable into a {@link Map.Entry} using the supplied function,
+     * returning a Map of the transformed entries.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * assert languages.collectEntries(s -&gt; Map.entry(s.toLowerCase(), s.size())) ==
+     *     [groovy: 6, java: 4, kotlin: 6, scala: 5]
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param transform a function for transforming Iterable elements into a Map.Entry
+     * @return a Map of the transformed entries
+     * @since 6.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Function<? super E, ? extends Map.Entry<K, V>> transform) {
+        Map<K, V> answer = new LinkedHashMap<>();
+        for (E element : self) {
+            addEntry(answer, transform.apply(element));
+        }
+        return answer;
     }
 
     /**
@@ -4752,6 +4912,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through an Iterable, passing each item to the given consumer.
+     * A "fat-free" variant of {@link #each(Iterable, Closure)} accepting a {@link Consumer}.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = []
+     * assert [1, 2, 3].each(result::add) == [1, 2, 3]
+     * assert result == [1, 2, 3]
+     * </pre>
+     *
+     * @param self     the Iterable over which we iterate
+     * @param consumer the consumer applied on each element found
+     * @return the self Iterable
+     * @since 6.0.0
+     */
+    public static <T> Iterable<T> each(Iterable<T> self, Consumer<? super T> consumer) {
+        for (T item : self) {
+            consumer.accept(item);
+        }
+        return self;
+    }
+
+    /**
      * Iterates through an Iterator, passing each item to the given closure.
      *
      * @param self    the Iterator over which we iterate
@@ -4928,6 +5109,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Iterable<T> eachWithIndex(Iterable<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         eachWithIndex(self.iterator(), closure);
+        return self;
+    }
+
+    /**
+     * Iterates through an Iterable, passing each item and the item's index
+     * (a counter starting at zero) to the given consumer.
+     * A "fat-free" variant of {@link #eachWithIndex(Iterable, Closure)} accepting an {@link ObjIntConsumer}.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = [:]
+     * ['a', 'b', 'c'].eachWithIndex((item, index) -&gt; result[item] = index)
+     * assert result == [a: 0, b: 1, c: 2]
+     * </pre>
+     *
+     * @param self     the Iterable over which we iterate
+     * @param consumer a consumer which accepts each item and its index
+     * @return the self Iterable
+     * @since 6.0.0
+     */
+    public static <T> Iterable<T> eachWithIndex(Iterable<T> self, ObjIntConsumer<? super T> consumer) {
+        int counter = 0;
+        for (T item : self) {
+            consumer.accept(item, counter++);
+        }
         return self;
     }
 
@@ -5319,6 +5523,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Used to determine if the given predicate is valid (i.e.&#160;returns
+     * <code>true</code> for all items in this iterable). A "fat-free" variant of
+     * {@link #every(Iterable, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; greaterThanTwo = n -&gt; n &gt; 2
+     * assert [3, 4, 5].every(greaterThanTwo)
+     * assert ![1, 4, 5].every(greaterThanTwo)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @return true if every element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    public static <T> boolean every(Iterable<T> self, Predicate<? super T> predicate) {
+        for (T item : self) {
+            if (!predicate.test(item)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for all entries. If the
      * closure takes one parameter then it will be passed the Map.Entry
@@ -5434,6 +5663,61 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the first value matching the given predicate.
+     * A "fat-free" variant of {@link #find(Collection, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; greaterThanOne = n -&gt; n &gt; 1
+     * assert [1, 2, 3].find(greaterThanOne) == 2
+     * assert [1, 2, 3].find(n -&gt; n &gt; 3) == null
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition the predicate condition
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    public static <T> T find(Iterable<T> self, Predicate<? super T> condition) {
+        for (T value : self) {
+            if (condition.test(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first value matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. This is the single-result
+     * counterpart of {@link #findAll(Iterable, BiPredicate, Object)}, combining
+     * {@link #find(Iterable, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code list.find(condition, param)} is equivalent to
+     * {@code list.find(curryWith(condition, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].find(divisibleBy, 3) == 3
+     * assert [1, 2, 3, 4, 5, 6].find(divisibleBy, 7) == null
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> T find(Iterable<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        for (T value : self) {
+            if (condition.test(value, param)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Finds the first item matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
@@ -5510,6 +5794,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all entries matching the given predicate (which is passed the key and value
+     * of each entry). A "fat-free" variant of {@link #findAll(Map, Closure)} accepting a
+     * {@link BiPredicate}. If the <code>self</code> map is one of TreeMap, LinkedHashMap,
+     * Hashtable or Properties, the returned Map will preserve that type, otherwise a
+     * HashMap will be returned.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = [a: 1, b: 2, c: 4, d: 5].findAll((k, v) -&gt; v % 2 == 0)
+     * assert result*.key == ['b', 'c']
+     * assert result*.value == [2, 4]
+     * </pre>
+     *
+     * @param self      a Map
+     * @param condition the predicate condition applied on the key and value of each entry
+     * @return a new subMap
+     * @since 6.0.0
+     */
+    public static <K, V> Map<K, V> findAll(Map<K, V> self, BiPredicate<? super K, ? super V> condition) {
+        Map<K, V> answer = createSimilarMap(self);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (condition.test(entry.getKey(), entry.getValue())) {
+                answer.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return answer;
+    }
+
+    /**
      * Finds all values matching the closure condition.
      * <pre class="language-groovy groovyTestCase">assert ([2,4] as Set) == ([1,2,3,4] as Set).findAll { it % 2 == 0 }</pre>
      *
@@ -5520,6 +5831,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Set<T> findAll(Set<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (Set<T>) findAll((Collection<T>) self, closure);
+    }
+
+    /**
+     * Finds all values matching the given predicate, preserving the Set type.
+     * A "fat-free" variant of {@link #findAll(Set, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">assert ([2, 4] as Set) == ([1, 2, 3, 4] as Set).findAll(n -&gt; n % 2 == 0)</pre>
+     *
+     * @param self      a Set
+     * @param condition the predicate condition
+     * @return a Set of matching values
+     * @since 6.0.0
+     */
+    public static <T> Set<T> findAll(Set<T> self, Predicate<? super T> condition) {
+        return findMany(createSimilarSet(self), self.iterator(), condition);
+    }
+
+    /**
+     * Finds all values matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument, preserving the Set type. This is
+     * the Set-preserving counterpart of {@link #findAll(Iterable, BiPredicate, Object)},
+     * combining {@link #findAll(Set, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code set.findAll(condition, param)} is equivalent to
+     * {@code set.findAll(curryWith(condition, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert ([1, 2, 3, 4, 5, 6] as Set).findAll(divisibleBy, 2) == ([2, 4, 6] as Set)
+     * </pre>
+     *
+     * @param self      a Set
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return a Set of matching values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> Set<T> findAll(Set<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        Set<T> answer = createSimilarSet(self);
+        for (T item : self) {
+            if (condition.test(item, param)) {
+                answer.add(item);
+            }
+        }
+        return answer;
     }
 
     /**
@@ -5546,6 +5902,66 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> findAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return findMany(createSimilarCollection(self), self.iterator(), closure);
+    }
+
+    /**
+     * Finds all values matching the given predicate.
+     * A "fat-free" variant of {@link #findAll(Collection, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">assert [2, 4] == [1, 2, 3, 4].findAll(n -&gt; n % 2 == 0)</pre>
+     *
+     * @param self      an Iterable
+     * @param condition the predicate condition
+     * @return a List of matching values
+     * @since 6.0.0
+     */
+    public static <T> List<T> findAll(Iterable<T> self, Predicate<? super T> condition) {
+        return findMany(new ArrayList<>(), self.iterator(), condition);
+    }
+
+    /**
+     * Finds all values matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. This is a "fat-free" variant
+     * combining {@link #findAll(Iterable, Predicate)} with the right-currying performed
+     * by {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code list.findAll(condition, param)} is equivalent to
+     * {@code list.findAll(curryWith(condition, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].findAll(divisibleBy, 2) == [2, 4, 6]
+     * assert [1, 2, 3, 4, 5, 6].findAll(divisibleBy, 3) == [3, 6]
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return a List of matching values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> List<T> findAll(Iterable<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        List<T> answer = new ArrayList<>();
+        for (T item : self) {
+            if (condition.test(item, param)) {
+                answer.add(item);
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Finds all values matching the given predicate. The iterator will become
+     * exhausted of elements after this operation. An Iterator variant of
+     * {@link #findAll(Iterable, Predicate)} provided for consistency.
+     * <pre class="language-groovy groovyTestCase">assert [2, 4] == [1, 2, 3, 4].iterator().findAll(n -&gt; n % 2 == 0)</pre>
+     *
+     * @param self      an Iterator
+     * @param condition the predicate condition
+     * @return a List of matching values
+     * @since 6.0.0
+     */
+    public static <T> List<T> findAll(Iterator<T> self, Predicate<? super T> condition) {
+        return findMany(new ArrayList<>(), self, condition);
     }
 
     /**
@@ -5638,6 +6054,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         while (iter.hasNext()) {
             T value = iter.next();
             if (test.call(value)) {
+                collector.add(value);
+            }
+        }
+        return collector;
+    }
+
+    static <T, C extends Collection<T>> C findMany(C collector, Iterator<? extends T> iter, Predicate<? super T> condition) {
+        while (iter.hasNext()) {
+            T value = iter.next();
+            if (condition.test(value)) {
                 collector.add(value);
             }
         }
@@ -7907,6 +8333,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all Iterable members into groups determined by the supplied mapping
+     * function. A "fat-free" variant of {@link #groupBy(Iterable, Closure)} accepting
+     * a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [0: [2, 4, 6], 1: [1, 3, 5]] == [1, 2, 3, 4, 5, 6].groupBy(n -&gt; n % 2)
+     * </pre>
+     *
+     * @param self     a collection to group
+     * @param function a function mapping entries on keys
+     * @return a new Map grouped by keys
+     * @since 6.0.0
+     */
+    public static <K, T> Map<K, List<T>> groupBy(Iterable<T> self, Function<? super T, ? extends K> function) {
+        Map<K, List<T>> answer = new LinkedHashMap<>();
+        for (T element : self) {
+            K value = function.apply(element);
+            groupAnswer(answer, element, value);
+        }
+        return answer;
+    }
+
+    /**
      * Sorts all Iterable members into (sub)groups determined by the supplied
      * mapping closures. Each closure should return the key that this item
      * should be grouped by. The returned LinkedHashMap will have an entry for each
@@ -8769,6 +9217,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return inject(iter, iter.next(), closure);
     }
 
+    /**
+     * Iterates through the given iterable, passing the first two elements to the
+     * operator. The result is passed back (injected) to the operator along with
+     * the third element and so on until all elements have been consumed.
+     * A "fat-free" variant of {@link #inject(Iterable, Closure)} accepting a {@link BinaryOperator}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BinaryOperator
+     * BinaryOperator&lt;Integer&gt; mult = (acc, val) -&gt; acc * val
+     * assert [1, 2, 3, 4].inject(mult) == 1 * 2 * 3 * 4
+     * </pre>
+     *
+     * @param self     an iterable
+     * @param operator a binary operator combining the running result with each element
+     * @return the result of the last operator call
+     * @throws NoSuchElementException if the iterable is empty
+     * @since 6.0.0
+     */
+    public static <T> T inject(Iterable<T> self, BinaryOperator<T> operator) {
+        Iterator<T> iter = self.iterator();
+        if (!iter.hasNext()) {
+            throw new NoSuchElementException("Cannot call inject() on an empty iterable without passing an initial value.");
+        }
+        T value = iter.next();
+        while (iter.hasNext()) {
+            value = operator.apply(value, iter.next());
+        }
+        return value;
+    }
+
     //
 
     /**
@@ -8836,6 +9314,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E, T, U extends T, V extends T> T inject(Iterable<E> self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         return inject(self.iterator(), initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given iterable, passing in the initial value to the
+     * function along with the first item. The result is passed back (injected) into
+     * the function along with the second item and so on until all elements have
+     * been consumed.
+     * <p>
+     * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     * A "fat-free" variant of {@link #inject(Iterable, Object, Closure)} accepting a {@link BiFunction}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;Integer, Integer, Integer&gt; add = (acc, val) -&gt; acc + val
+     * assert [1, 2, 3, 4].inject(0, add) == 0 + 1 + 2 + 3 + 4
+     * assert ['quick', 'brown', 'fox'].inject('The', (acc, val) -&gt; acc + ' ' + val) == 'The quick brown fox'
+     * </pre>
+     *
+     * @param self         an iterable
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each element
+     * @return the result of the last function call
+     * @since 6.0.0
+     */
+    public static <E, U> U inject(Iterable<E> self, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+        U value = initialValue;
+        for (E element : self) {
+            value = function.apply(value, element);
+        }
+        return value;
     }
 
     /**
