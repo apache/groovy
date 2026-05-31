@@ -21,12 +21,10 @@ package groovy.concurrent;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -83,7 +81,7 @@ public class DataflowVariable<T> implements Awaitable<T> {
             String current;
             try {
                 current = String.valueOf(future.getNow(null));
-            } catch (java.util.concurrent.CompletionException e) {
+            } catch (CompletionException e) {
                 current = "error: " + e.getCause();
             }
             throw new IllegalStateException(

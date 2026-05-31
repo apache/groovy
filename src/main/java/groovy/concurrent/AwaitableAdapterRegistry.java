@@ -29,6 +29,7 @@ import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
@@ -183,7 +184,7 @@ public final class AwaitableAdapterRegistry {
                 CompletableFuture.runAsync(() -> {
                     try {
                         cf.complete(future.get());
-                    } catch (java.util.concurrent.ExecutionException e) {
+                    } catch (ExecutionException e) {
                         cf.completeExceptionally(e.getCause());
                     } catch (Throwable e) {
                         cf.completeExceptionally(e);

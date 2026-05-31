@@ -21,14 +21,23 @@ package groovy.concurrent;
 import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
@@ -311,8 +320,8 @@ public final class Agent<T> {
      */
     private static final class SerialExecutor implements ExecutorService {
         private final Executor delegate;
-        private final java.util.Queue<Runnable> queue = new java.util.concurrent.ConcurrentLinkedQueue<>();
-        private final java.util.concurrent.atomic.AtomicBoolean active = new java.util.concurrent.atomic.AtomicBoolean();
+        private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
+        private final AtomicBoolean active = new AtomicBoolean();
         private volatile boolean shutdown;
 
         /**
@@ -331,7 +340,7 @@ public final class Agent<T> {
          */
         @Override
         public void execute(Runnable command) {
-            if (shutdown) throw new java.util.concurrent.RejectedExecutionException("shutdown");
+            if (shutdown) throw new RejectedExecutionException("shutdown");
             queue.add(command);
             scheduleNext();
         }
@@ -368,9 +377,9 @@ public final class Agent<T> {
          * @return an empty task list
          */
         @Override
-        public java.util.List<Runnable> shutdownNow() {
+        public List<Runnable> shutdownNow() {
             shutdown = true;
-            return java.util.List.of();
+            return List.of();
         }
 
         /**
@@ -394,7 +403,7 @@ public final class Agent<T> {
          * @return {@code true} if this executor is terminated
          */
         @Override
-        public boolean awaitTermination(long timeout, java.util.concurrent.TimeUnit unit) {
+        public boolean awaitTermination(long timeout, TimeUnit unit) {
             return isTerminated();
         }
 
@@ -406,8 +415,8 @@ public final class Agent<T> {
          * @return a future for the submitted task
          */
         @Override
-        public <T> java.util.concurrent.Future<T> submit(java.util.concurrent.Callable<T> task) {
-            java.util.concurrent.FutureTask<T> ft = new java.util.concurrent.FutureTask<>(task);
+        public <T> Future<T> submit(Callable<T> task) {
+            FutureTask<T> ft = new FutureTask<>(task);
             execute(ft);
             return ft;
         }
@@ -421,8 +430,8 @@ public final class Agent<T> {
          * @return a future for the submitted task
          */
         @Override
-        public <T> java.util.concurrent.Future<T> submit(Runnable task, T result) {
-            java.util.concurrent.FutureTask<T> ft = new java.util.concurrent.FutureTask<>(task, result);
+        public <T> Future<T> submit(Runnable task, T result) {
+            FutureTask<T> ft = new FutureTask<>(task, result);
             execute(ft);
             return ft;
         }
@@ -434,8 +443,8 @@ public final class Agent<T> {
          * @return a future for the submitted task
          */
         @Override
-        public java.util.concurrent.Future<?> submit(Runnable task) {
-            java.util.concurrent.FutureTask<Void> ft = new java.util.concurrent.FutureTask<>(task, null);
+        public Future<?> submit(Runnable task) {
+            FutureTask<Void> ft = new FutureTask<>(task, null);
             execute(ft);
             return ft;
         }
@@ -449,7 +458,7 @@ public final class Agent<T> {
          * @throws UnsupportedOperationException always
          */
         @Override
-        public <T> java.util.List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) {
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) {
             throw new UnsupportedOperationException();
         }
 
@@ -464,7 +473,7 @@ public final class Agent<T> {
          * @throws UnsupportedOperationException always
          */
         @Override
-        public <T> java.util.List<java.util.concurrent.Future<T>> invokeAll(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) {
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
             throw new UnsupportedOperationException();
         }
 
@@ -477,7 +486,7 @@ public final class Agent<T> {
          * @throws UnsupportedOperationException always
          */
         @Override
-        public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks) {
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks) {
             throw new UnsupportedOperationException();
         }
 
@@ -492,7 +501,7 @@ public final class Agent<T> {
          * @throws UnsupportedOperationException always
          */
         @Override
-        public <T> T invokeAny(java.util.Collection<? extends java.util.concurrent.Callable<T>> tasks, long timeout, java.util.concurrent.TimeUnit unit) {
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
             throw new UnsupportedOperationException();
         }
     }

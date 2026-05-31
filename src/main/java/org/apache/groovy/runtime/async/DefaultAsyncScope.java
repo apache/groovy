@@ -32,6 +32,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -265,7 +266,7 @@ public final class DefaultAsyncScope implements AsyncScope {
                                           Function<AsyncScope, T> body) throws TimeoutException {
         Objects.requireNonNull(timeout, "timeout must not be null");
         Objects.requireNonNull(body, "body must not be null");
-        var timedOut = new java.util.concurrent.atomic.AtomicBoolean(false);
+        var timedOut = new AtomicBoolean(false);
         Thread bodyThread = Thread.currentThread();
         try (DefaultAsyncScope scope = new DefaultAsyncScope(executor)) {
             ScheduledFuture<?> timer = AsyncSupport.getScheduler().schedule(() -> {

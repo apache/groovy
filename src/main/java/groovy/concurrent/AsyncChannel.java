@@ -22,6 +22,7 @@ import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.DefaultAsyncChannel;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -185,7 +186,7 @@ public interface AsyncChannel<T> extends Iterable<T> {
      */
     default AsyncChannel<T> merge(AsyncChannel<? extends T> other) {
         AsyncChannel<T> out = create(getCapacity());
-        var remaining = new java.util.concurrent.atomic.AtomicInteger(2);
+        var remaining = new AtomicInteger(2);
         Runnable closer = () -> {
             if (remaining.decrementAndGet() == 0) out.close();
         };
