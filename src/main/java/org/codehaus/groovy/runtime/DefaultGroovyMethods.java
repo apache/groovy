@@ -7352,6 +7352,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Support the subscript operator for a Map.
+     * <pre class="language-groovy groovyTestCase">def map = [foo:'bar', class:'baz', empty:'nope']
+     * assert map['foo'] == 'bar'
+     * assert map['class'] == 'baz'
+     * assert map['empty'] == 'nope'
+     * assert map['properties'] == null // GROOVY-12024
+     * </pre>
+     *
+     * @param self a Map
+     * @param key  a String as a key for the map
+     * @return the value corresponding to the given key
+     * @since 6.0.0
+     */
+    public static <V> V getAt(Map<? super String,V> self, String key) {
+        return self.get(key);
+    }
+
+    /**
      * Support the subscript operator for a Bitset
      *
      * @param self  a BitSet
@@ -12950,10 +12968,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  a Map
      * @param key   an Object as a key for the map
      * @param value the value to put into the map
-     * @return the value corresponding to the given key
+     * @return the value
      * @since 1.0
      */
     public static <K,V> V putAt(Map<K,V> self, K key, V value) {
+        self.put(key, value);
+        return value;
+    }
+
+    /**
+     * A helper method to allow maps to work with subscript operators.
+     * <pre class="language-groovy groovyTestCase">def map = [:]
+     * assert map['properties'] == null
+     * map['properties'] = new Object() // GROOVY-12024
+     * assert map['properties'] != null
+     * </pre>
+     *
+     * @param self  a Map
+     * @param key   an Object as a key for the map
+     * @param value the value to put into the map
+     * @return the value
+     * @since 6.0.0
+     */
+    public static <V> V putAt(Map<? super String,V> self, String key, V value) {
         self.put(key, value);
         return value;
     }

@@ -2575,7 +2575,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = new HashMap<String, Integer>()
             map['x'] = new Object()
         ''',
-            'Cannot assign value of type java.lang.Object to variable of type java.lang.Integer'
+        'Cannot call','putAt','with arguments [java.util.HashMap<java.lang.String, java.lang.Integer>, java.lang.String, java.lang.Object]'
     }
 
     // GROOVY-9069
@@ -2591,8 +2591,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-            'Cannot call java.util.Map#put(java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>) with arguments [java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]',
-            'Cannot assign java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>> to: java.util.Map<java.lang.String, java.util.List<java.lang.String>>'
+        'Cannot call java.util.Map#put(java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>) with arguments [java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]',
+        'Cannot call <V> org.codehaus.groovy.runtime.DefaultGroovyMethods#putAt(java.util.Map<? super java.lang.String, V>, java.lang.String, V) with arguments [java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>>, java.lang.String, java.util.LinkedHashMap<java.lang.String, java.util.List<ConfigAttribute>>]'
 
         assertScript '''
             void test(Map<String, Map<String, List<String>>> maps) {
