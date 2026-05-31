@@ -393,7 +393,7 @@ class GrapeIvy implements GrapeEngine {
         dep.each { k, v ->
             if (v instanceof CharSequence) {
                 if (k.toString().contains('v')) { // revision, version, rev
-                    if (!(v ==~ '[^\\/:"<>|]*')) {
+                    if (!(v ==~ '[^\\\\/:"<>|]*')) {
                         throw new RuntimeException("Grab: invalid value of '$v' for $k: should not contain any of / \\ : \" < > |")
                     }
                 } else {
