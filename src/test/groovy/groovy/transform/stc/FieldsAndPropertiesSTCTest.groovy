@@ -765,7 +765,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot set read-only property: properties'
     }
 
-    // GROOVY-8074
+    // GROOVY-8074, GROOVY-12024
     @Test
     void testMapPropertyAccess6() {
         assertScript '''
@@ -775,23 +775,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             def map = new C()
             map.put('foo', 11)
             assert map.foo == 1
-            assert map['foo'] == 1
+            assert map['foo'] == 11
+            assert map.get('foo') == 11
         '''
         assertScript """
             def map = new ${MapType.name}()
             map.put('foo', 11)
             assert map.foo == 1
-            assert map['foo'] == 1
+            assert map['foo'] == 11
+            assert map.get('foo') == 11
             map.put('bar', 22)
             assert map.bar == 22
             assert map['bar'] == 22
+            assert map.get('bar') == 22
             map.put('baz', 33)
             assert map.baz == 33
             assert map['baz'] == 33
+            assert map.get('baz') == 33
         """
     }
 
-    // GROOVY-5001, GROOVY-5491, GROOVY-6144
+    // GROOVY-5001, GROOVY-5491, GROOVY-6144, GROOVY-12024
     @Test
     void testMapPropertyAccess7() {
         String types = '''
@@ -804,23 +808,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         assertScript types + '''
             def map = new C()
             map.put('a', new A())
+            assert map.a != null
+            assert map.b != null
+            assert map['a'] != null
+            assert map['b'] == null
             assert map.get('a') != null
             assert map.get('b') == null
-            A a = map.a
-            B b = map.b
-            a = map['a']
-            b = map['b']
-            assert a instanceof A
-            assert b instanceof B
         '''
         assertScript types + '''
             def test(C map) {
-                A a = map.a
-                B b = map.b
-                a = map['a']
-                b = map['b']
-                assert a instanceof A
-                assert b instanceof B
+                assert map.a != null
+                assert map.b != null
+                assert map['a'] != null
+                assert map['b'] == null
+                assert map.get('a') != null
+                assert map.get('b') == null
             }
             test(new C().tap{ put('a', new A()) })
         '''
