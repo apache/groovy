@@ -427,6 +427,33 @@ final class GrapeIvyTest {
     }
 
     @Test
+    void testInvalidVersionDotDot() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: 'org.ejml', module: 'ejml-simple', version: '..')
+        '''
+        assert ex.message.contains('for version')
+        assert ex.message.contains("should not contain '..'")
+    }
+
+    @Test
+    void testInvalidGroupDotDot() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: '..', module: 'ejml-simple', version: '0.41')
+        '''
+        assert ex.message.contains('for group')
+        assert ex.message.contains("should not contain '..'")
+    }
+
+    @Test
+    void testInvalidModuleDotDot() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: 'org.ejml', module: '..', version: '0.41')
+        '''
+        assert ex.message.contains('for module')
+        assert ex.message.contains("should not contain '..'")
+    }
+
+    @Test
     void testInvalidMutuallyExclusiveArgs() {
         def ex = shouldFail '''
             groovy.grape.Grape.grab(group: 'org.ejml', groupId: 'org.ejml', module: 'ejml-simple', version: '0.41')

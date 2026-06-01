@@ -401,6 +401,9 @@ class GrapeIvy implements GrapeEngine {
                         throw new RuntimeException("Grab: invalid value of '$v' for $k: should only contain - . _ a-z A-Z 0-9")
                     }
                 }
+                if (v.toString().contains('..')) {
+                    throw new RuntimeException("Grab: invalid value of '$v' for $k: should not contain '..'")
+                }
             }
         }
 
