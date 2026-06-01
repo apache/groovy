@@ -223,8 +223,7 @@ class JmxBuilderTools {
      */
     static String capitalize(String value) {
         if (!value) return null
-        if (value.length() == 1) return value.toUpperCase()
-        return (value.length() > 1) ? value[0].toUpperCase() + value[1..-1] : value.toUpperCase()
+        value.capitalize()
     }
 
     /**
@@ -234,8 +233,7 @@ class JmxBuilderTools {
      */
     static String uncapitalize(String value) {
         if (!value) return null
-        if (value.length() == 1) return value.toLowerCase()
-        return (value.length() > 1) ? value[0].toLowerCase() + value[1..-1] : value.toLowerCase()
+        value.uncapitalize()
     }
 
     /**
