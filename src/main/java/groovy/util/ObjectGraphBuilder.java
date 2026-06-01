@@ -33,9 +33,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import static org.codehaus.groovy.runtime.StringGroovyMethods.capitalize;
+import static org.codehaus.groovy.runtime.StringGroovyMethods.uncapitalize;
 
 /**
  * A builder for creating object graphs.<br>
@@ -393,11 +395,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         /** {@inheritDoc} */
         @Override
         public String resolveClassname(String classname) {
-            if (classname.length() == 1) {
-                return classname.toUpperCase(Locale.ROOT);
-            }
-            return classname.substring(0, 1)
-                    .toUpperCase(Locale.ROOT) + classname.substring(1);
+            return capitalize(classname);
         }
     }
 
@@ -626,7 +624,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     private static String makeClassName(String root, String name) {
-        return root + "." + name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1);
+        return root + "." + capitalize(name);
     }
 
     private static class ObjectFactory extends AbstractFactory {
@@ -775,12 +773,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 bean = value;
             }
 
-            String nodename = klass.getSimpleName();
-            if(nodename.length() > 1) {
-                nodename = nodename.substring(0, 1).toLowerCase(Locale.ROOT) + nodename.substring(1);
-            } else {
-                nodename = nodename.toLowerCase(Locale.ROOT);
-            }
+            String nodename = uncapitalize(klass.getSimpleName());
             context.put(ObjectGraphBuilder.NODE_NAME, nodename);
             context.put(ObjectGraphBuilder.NODE_CLASS, klass);
             return bean;
