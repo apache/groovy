@@ -418,6 +418,15 @@ final class GrapeIvyTest {
     }
 
     @Test
+    void testInvalidVersionBackslash() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: 'org.ejml', module: 'ejml-simple', version: '..\\\\..\\\\x')
+        '''
+        assert ex.message.contains('for version')
+        assert ex.message.contains('should not contain any of')
+    }
+
+    @Test
     void testInvalidMutuallyExclusiveArgs() {
         def ex = shouldFail '''
             groovy.grape.Grape.grab(group: 'org.ejml', groupId: 'org.ejml', module: 'ejml-simple', version: '0.41')
