@@ -40,7 +40,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -338,7 +337,8 @@ public class ClassNodeUtils {
     public static String getPropNameForAccessor(final String accessorName) {
         if (!isValidAccessorName(accessorName)) return accessorName;
         int prefixLength = accessorName.startsWith("is") ? 2 : 3;
-        return String.valueOf(accessorName.charAt(prefixLength)).toLowerCase(Locale.ROOT) + accessorName.substring(prefixLength + 1);
+        // use JavaBean decapitalization so acronyms match the runtime rule, e.g. getURL -> URL (not uRL)
+        return BeanUtils.decapitalize(accessorName.substring(prefixLength));
     }
 
     /**
