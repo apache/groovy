@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.util.jar.JarOutputStream
 
+import static groovy.test.GroovyAssert.shouldFail
+
 final class GrapeMavenTest {
     private static File writeEmptyJar(File jarFile) {
         jarFile.parentFile.mkdirs()
@@ -146,5 +148,32 @@ ${depsXml}
         assert uris.any { it.toString().contains('root-artifact-1.0.0.jar') }
         assert uris.any { it.toString().contains('dep-required-1.0.0.jar') }
         assert !uris.any { it.toString().contains('dep-optional-1.0.0.jar') }
+    }
+
+    @Test
+    void testInvalidVersionDotDot() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: 'org.ejml', module: 'ejml-simple', version: '..')
+        '''
+        assert ex.message.contains('for version')
+        assert ex.message.contains("should not contain '..'")
+    }
+
+    @Test
+    void testInvalidGroupDotDot() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: '..', module: 'ejml-simple', version: '0.41')
+        '''
+        assert ex.message.contains('for group')
+        assert ex.message.contains("should not contain '..'")
+    }
+
+    @Test
+    void testInvalidModuleDotDot() {
+        def ex = shouldFail '''
+            groovy.grape.Grape.grab(group: 'org.ejml', module: '..', version: '0.41')
+        '''
+        assert ex.message.contains('for module')
+        assert ex.message.contains("should not contain '..'")
     }
 }

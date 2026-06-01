@@ -29,6 +29,7 @@ dependencies {
     // NoClassDefFoundError: javax/inject/Provider. The supplier's POM doesn't declare this
     // transitively as of 2.0.17, so we provide it explicitly.
     implementation "javax.inject:javax.inject:${versions.javaxInject}"
+    testImplementation projects.groovyTest
 }
 
 tasks.withType(Javadoc).configureEach {
