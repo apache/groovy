@@ -61,6 +61,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.codehaus.groovy.runtime.StringGroovyMethods.uncapitalize;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
@@ -282,7 +283,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             if (methodDoc.name().equals(expectedMethodName)) {
 
                 //extract the field name
-                String fieldName = propName.substring(0, 1).toLowerCase() + propName.substring(1);
+                String fieldName = uncapitalize(propName);
                 SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, classDoc);
 
                 //find the type of the field; if it's a setter, need to get the type of the params
