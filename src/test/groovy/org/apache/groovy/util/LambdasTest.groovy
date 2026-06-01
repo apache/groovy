@@ -123,6 +123,100 @@ class LambdasTest {
     }
 
     @Test
+    void fatFreeLazyCollectingAndFindingAllOnInfiniteIterators() {
+        Function<Integer, Integer> next = n -> n + 1
+        // collecting(Iterator, Function) is lazy, so it terminates on an infinite source via take
+        assert [1, 2, 3].repeat().collecting(next).take(6).toList() == [2, 3, 4, 2, 3, 4]
+
+        Predicate<Integer> isEven = n -> n % 2 == 0
+        // findingAll(Iterator, Predicate) is lazy too
+        assert [1, 2, 3].repeat().findingAll(isEven).take(4).toList() == [2, 2, 2, 2]
+    }
+
+    @Test
+    void fatFreeLazyVariantsMatchClosureVariants() {
+        Function<Integer, Integer> next = n -> n + 1
+        assert [1, 2, 3].iterator().collecting(next).toList() ==
+                [1, 2, 3].iterator().collecting { it + 1 }.toList()
+
+        Predicate<Integer> isEven = n -> n % 2 == 0
+        assert [1, 2, 3, 4, 5, 6].iterator().findingAll(isEven).toList() ==
+                [1, 2, 3, 4, 5, 6].iterator().findingAll { it % 2 == 0 }.toList()
+    }
+
+    @Test
+    void fatFreeWithOverloadsForAnyAndEvery() {
+        BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
+
+        // any(Iterable, BiPredicate, param) bakes in the right-curry
+        assert [1, 2, 3].any(divisibleBy, 2)
+        assert ![1, 3, 5].any(divisibleBy, 2)
+        assert [1, 2, 3].any(divisibleBy, 2) ==
+                [1, 2, 3].any(curryWith(divisibleBy, 2))
+
+        // every(Iterable, BiPredicate, param) bakes in the right-curry
+        assert [2, 4, 6].every(divisibleBy, 2)
+        assert ![2, 3, 4].every(divisibleBy, 2)
+        assert [2, 4, 6].every(divisibleBy, 2) ==
+                [2, 4, 6].every(curryWith(divisibleBy, 2))
+    }
+
+    @Test
+    void fatFreeCountOnIterableDirectAndWith() {
+        Predicate<Integer> isEven = n -> n % 2 == 0
+        // direct fat-free count(Iterable, Predicate)
+        assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(isEven) == 5
+
+        BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
+        // count(Iterable, BiPredicate, param) bakes in the right-curry
+        assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(divisibleBy, 2) ==
+                [2, 4, 2, 1, 3, 5, 2, 4, 3].count(curryWith(divisibleBy, 2))
+    }
+
+    @Test
+    void fatFreeDirectFindAndCountOnIterator() {
+        Predicate<Integer> greaterThanOne = n -> n > 1
+        assert [1, 2, 3].iterator().find(greaterThanOne) == 2
+        assert [1, 2, 3].iterator().find(n -> (n as int) > 3) == null
+
+        Predicate<Integer> isEven = n -> n % 2 == 0
+        assert [2, 4, 2, 1, 3, 5, 2, 4, 3].iterator().count(isEven) == 5
+        // Iterable count(Predicate) delegates to the Iterator variant
+        assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(isEven) ==
+                [2, 4, 2, 1, 3, 5, 2, 4, 3].iterator().count(isEven)
+    }
+
+    @Test
+    void fatFreeWithVariantsForFindAndLazyIterators() {
+        BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
+
+        // find(Iterator, BiPredicate, param) returns the first match
+        assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 3) == 3
+        assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 7) == null
+
+        // findingAll(Iterator, BiPredicate, param) is lazy over an infinite source
+        assert [1, 2, 3, 4, 5, 6].repeat().findingAll(divisibleBy, 3).take(4).toList() == [3, 6, 3, 6]
+
+        // collecting(Iterator, BiFunction, param) is lazy over an infinite source
+        BiFunction<Integer, Integer, Integer> add = (n, d) -> n + d
+        assert [1, 2, 3].repeat().collecting(add, 10).take(6).toList() == [11, 12, 13, 11, 12, 13]
+    }
+
+    @Test
+    void fatFreeWithVariantsMatchCurryWith() {
+        BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
+        // no find(Iterator, Predicate) exists, so compare against Iterable find(Predicate)
+        assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 3) ==
+                [1, 2, 3, 4, 5, 6].find(curryWith(divisibleBy, 3))
+        assert [1, 2, 3, 4, 5, 6].iterator().findingAll(divisibleBy, 2).toList() ==
+                [1, 2, 3, 4, 5, 6].iterator().findingAll(curryWith(divisibleBy, 2)).toList()
+
+        BiFunction<Integer, Integer, Integer> add = (n, d) -> n + d
+        assert [1, 2, 3].iterator().collecting(add, 10).toList() ==
+                [1, 2, 3].iterator().collecting(curryWith(add, 10)).toList()
+    }
+
+    @Test
     void curryWithReturnsFreshFunctionsThatShareNoState() {
         BiPredicate<Integer, Integer> divisibleBy = (n, d) -> n % d == 0
         Predicate<Integer> isEven = curryWith(divisibleBy, 2)

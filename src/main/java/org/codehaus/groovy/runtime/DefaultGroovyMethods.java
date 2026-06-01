@@ -668,6 +668,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates over the contents of an iterable, and checks whether the given
+     * predicate is valid for at least one element when called with that element
+     * and the supplied <code>param</code>. A "fat-free" variant of
+     * {@link #any(Iterable, Closure)} accepting a {@link BiPredicate} together with an
+     * additional argument, mirroring {@link #find(Iterable, BiPredicate, Object)}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3].any(divisibleBy, 2)
+     * assert ![1, 3, 5].any(divisibleBy, 2)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @param param     the additional argument passed to the predicate
+     * @return true if any element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> boolean any(Iterable<T> self, BiPredicate<? super T, ? super P> predicate, P param) {
+        for (T item : self) {
+            if (predicate.test(item, param)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for at least one entry. If the
      * closure takes one parameter then it will be passed the Map.Entry
@@ -2481,6 +2510,53 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new CollectIterator<>(self, transform);
     }
 
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> function. A "fat-free" variant of
+     * {@link #collecting(Iterator, Closure)} accepting a {@link Function}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Function
+     * Function&lt;Integer, Integer&gt; next = n -&gt; n + 1
+     * assert [1, 2, 3].repeat().collecting(next).take(6).toList() == [2, 3, 4, 2, 3, 4]
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param transform the function used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 6.0.0
+     */
+    public static <E, T> Iterator<T> collecting(Iterator<E> self, Function<? super E, ? extends T> transform) {
+        return new CollectingFunctionIterator<>(self, transform);
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the given
+     * two-argument <code>transform</code>, with the supplied <code>param</code> fixed as the
+     * second argument. Combines {@link #collecting(Iterator, Function)} with the right-currying
+     * performed by {@link org.apache.groovy.util.Lambdas#curryWith(BiFunction, Object)}, so that
+     * {@code iter.collecting(transform, param)} is equivalent to
+     * {@code iter.collecting(curryWith(transform, param))}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;Integer, Integer, Integer&gt; add = (n, d) -&gt; n + d
+     * assert [1, 2, 3].repeat().collecting(add, 10).take(6).toList() == [11, 12, 13, 11, 12, 13]
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param transform the two-argument function used to transform each element
+     * @param param     the value to fix as the function's second argument
+     * @return an Iterator for the transformed values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <E, P, T> Iterator<T> collecting(Iterator<E> self, BiFunction<? super E, ? super P, ? extends T> transform, P param) {
+        return collecting(self, item -> transform.apply(item, param));
+    }
+
     private static final class CollectIterator<E, T> implements Iterator<T> {
         private final Iterator<E> source;
         private final Closure<T> transform;
@@ -2498,6 +2574,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         @Override
         public T next() {
             return transform.call(source.next());
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class CollectingFunctionIterator<E, T> implements Iterator<T> {
+        private final Iterator<E> source;
+        private final Function<? super E, ? extends T> transform;
+
+        private CollectingFunctionIterator(Iterator<E> source, Function<? super E, ? extends T> transform) {
+            this.source = source;
+            this.transform = transform;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return source.hasNext();
+        }
+
+        @Override
+        public T next() {
+            return transform.apply(source.next());
         }
 
         @Override
@@ -3780,6 +3881,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of occurrences which satisfy the given predicate from the
+     * items within this Iterator.
+     * A "fat-free" variant of {@link #count(Iterator, Closure)} accepting a {@link Predicate}.
+     * The iterator will become exhausted of elements after determining the count value.
+     * <p>
+     * Example usage:
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [2, 4, 2, 1, 3, 5, 2, 4, 3].iterator().count(isEven) == 5
+     * </pre>
+     *
+     * @param self      the Iterator from which we count the number of matching occurrences
+     * @param predicate a predicate condition
+     * @return the number of occurrences
+     * @since 6.0.0
+     */
+    public static <T> Number count(Iterator<T> self, Predicate<? super T> predicate) {
+        long answer = 0;
+        while (self.hasNext()) {
+            if (predicate.test(self.next())) {
+                answer++;
+            }
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
+        return answer;
+    }
+
+    /**
      * Counts the number of occurrences of the given value inside this Iterable.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
@@ -3813,6 +3944,52 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Number count(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return count(self.iterator(), closure);
+    }
+
+    /**
+     * Counts the number of occurrences which satisfy the given predicate from inside this Iterable.
+     * A "fat-free" variant of {@link #count(Iterable, Closure)} accepting a {@link Predicate}.
+     * <p>
+     * Example usage:
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(isEven) == 5
+     * </pre>
+     *
+     * @param self      the Iterable within which we count the number of occurrences
+     * @param predicate a predicate condition
+     * @return the number of occurrences
+     * @since 6.0.0
+     */
+    public static <T> Number count(Iterable<T> self, Predicate<? super T> predicate) {
+        return count(self.iterator(), predicate);
+    }
+
+    /**
+     * Counts the number of occurrences which satisfy the given two-argument condition, with the
+     * supplied <code>param</code> fixed as the second argument. Combines
+     * {@link #count(Iterable, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code list.count(condition, param)} is equivalent to
+     * {@code list.count(curryWith(condition, param))}.
+     * <p>
+     * Example usage:
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(divisibleBy, 2) == 5
+     * </pre>
+     *
+     * @param self      the Iterable within which we count the number of occurrences
+     * @param predicate a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return the number of occurrences
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> Number count(Iterable<T> self, BiPredicate<? super T, ? super P> predicate, P param) {
+        return count(self, item -> predicate.test(item, param));
     }
 
     /**
@@ -5545,6 +5722,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Used to determine if the given predicate is valid (i.e.&#160;returns
+     * <code>true</code> for all items in this iterable) when called with each
+     * element and the supplied <code>param</code>. A "fat-free" variant of
+     * {@link #every(Iterable, Closure)} accepting a {@link BiPredicate} together with an
+     * additional argument, mirroring {@link #findAll(Iterable, BiPredicate, Object)}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [2, 4, 6].every(divisibleBy, 2)
+     * assert ![2, 3, 4].every(divisibleBy, 2)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @param param     the additional argument passed to the predicate
+     * @return true if every element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> boolean every(Iterable<T> self, BiPredicate<? super T, ? super P> predicate, P param) {
+        for (T item : self) {
+            if (!predicate.test(item, param)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for all entries. If the
      * closure takes one parameter then it will be passed the Map.Entry
@@ -5712,6 +5918,58 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return null;
+    }
+
+    /**
+     * Finds the first value matching the given predicate.
+     * A "fat-free" variant of {@link #find(Collection, Closure)} accepting a {@link Predicate},
+     * operating on an Iterator. The iterator is consumed up to and including the first
+     * matching element.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; greaterThanOne = n -&gt; n &gt; 1
+     * assert [1, 2, 3].iterator().find(greaterThanOne) == 2
+     * assert [1, 2, 3].iterator().find(n -&gt; n &gt; 3) == null
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param condition the predicate condition
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    public static <T> T find(Iterator<T> self, Predicate<? super T> condition) {
+        while (self.hasNext()) {
+            T value = self.next();
+            if (condition.test(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first value matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. This is the Iterator counterpart of
+     * {@link #find(Iterable, BiPredicate, Object)}, so that
+     * {@code iter.find(condition, param)} is equivalent to
+     * {@code iter.find(curryWith(condition, param))}. The iterator is consumed up to and
+     * including the first matching element.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 3) == 3
+     * assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 7) == null
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> T find(Iterator<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        return find(self, item -> condition.test(item, param));
     }
 
     /**
@@ -6087,6 +6345,52 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new FindAllIterator<>(self, transform);
     }
 
+    /**
+     * Lazily finds all items matching the predicate condition. A "fat-free" variant of
+     * {@link #findingAll(Iterator, Closure)} accepting a {@link Predicate}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [1, 2, 3].repeat().findingAll(isEven).take(4).toList() == [2, 2, 2, 2]
+     * </pre>
+     *
+     * @param self      a source Iterator
+     * @param condition the predicate used to select elements
+     * @return an Iterator returning the selected elements
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> findingAll(Iterator<T> self, Predicate<? super T> condition) {
+        return new FindingAllPredicateIterator<>(self, condition);
+    }
+
+    /**
+     * Lazily finds all items matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. Combines
+     * {@link #findingAll(Iterator, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code iter.findingAll(condition, param)} is equivalent to
+     * {@code iter.findingAll(curryWith(condition, param))}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].repeat().findingAll(divisibleBy, 3).take(4).toList() == [3, 6, 3, 6]
+     * </pre>
+     *
+     * @param self      a source Iterator
+     * @param condition a two-argument predicate used to select elements
+     * @param param     the value to fix as the predicate's second argument
+     * @return an Iterator returning the selected elements
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> Iterator<T> findingAll(Iterator<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        return findingAll(self, item -> condition.test(item, param));
+    }
+
     private static final class FindAllIterator<T> implements Iterator<T> {
         private final Iterator<T> source;
         private T current;
@@ -6119,6 +6423,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public T next() {
             if (!hasNext()) {
                 throw new NoSuchElementException("FindAllIterator has been exhausted and contains no more elements");
+            }
+            T result = current;
+            found = false;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class FindingAllPredicateIterator<T> implements Iterator<T> {
+        private final Iterator<T> source;
+        private final Predicate<? super T> condition;
+        private T current;
+        private boolean found;
+
+        private FindingAllPredicateIterator(Iterator<T> source, Predicate<? super T> condition) {
+            this.source = source;
+            this.condition = condition;
+            this.found = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return found;
+        }
+
+        private void advance() {
+            while (!found && source.hasNext()) {
+                current = source.next();
+                if (condition.test(current)) {
+                    found = true;
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("FindingAllPredicateIterator has been exhausted and contains no more elements");
             }
             T result = current;
             found = false;
