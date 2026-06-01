@@ -32,6 +32,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -104,7 +105,7 @@ public class DataSet extends Sql {
         if (idx > 0) {
             table = table.substring(idx + 1);
         }
-        this.table = table.toLowerCase();
+        this.table = table.toLowerCase(Locale.ROOT);
     }
 
     /**
