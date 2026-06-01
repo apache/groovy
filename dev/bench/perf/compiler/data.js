@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780214677296,
+  "lastUpdate": 1780303074162,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -998,6 +998,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 475.8500000000001,
             "range": "±26.31",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "netliomax25-code",
+            "username": "netliomax25-code",
+            "email": "netliomax25@gmail.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "1776f97521c3521723e181d466db72e007085a5c",
+          "message": "use Locale.ROOT in DataSet table name folding",
+          "timestamp": "2026-06-01T06:31:38Z",
+          "url": "https://github.com/apache/groovy/commit/1776f97521c3521723e181d466db72e007085a5c"
+        },
+        "date": 1780303073157,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 589.4100000000001,
+            "range": "±26.76",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 644.3833333333333,
+            "range": "±206.52",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 575.56,
+            "range": "±144.22",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 497.04999999999995,
+            "range": "±29.76",
             "unit": "ms",
             "extra": "5.0.6"
           }
