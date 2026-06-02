@@ -54,8 +54,11 @@
   run only (these compare idioms <em>against each other</em>, not Groovy over
   time). <strong>Throughput</strong> is ops/&micro;s (higher is better);
   <strong>allocation</strong> is <code>gc.alloc.rate.norm</code> bytes/op
-  (lower is better, log scale &mdash; bars at the <code>0</code> floor mean
-  effectively zero allocation). Bars are grouped by workload size. Use the
+  (lower is better). Both use a <strong>log</strong> y-axis &mdash; per family the
+  workload sizes span roughly two decades, so a linear axis would flatten the
+  larger sizes into indistinguishable slivers; for allocation, bars at the
+  <code>0</code> floor mean effectively zero allocation. Bars are grouped by
+  workload size. Use the
   toggle to switch between <code>indy</code> and <code>classic</code> call
   sites. Per-run history (with regression alerting) lives under the
   per-bucket dashboards linked below.
@@ -187,9 +190,11 @@
         maintainAspectRatio: false,
         scales: {
           x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 45, font: { size: 10 } } },
-          y: isAlloc
-            ? { type: 'logarithmic', title: { display: true, text: 'bytes/op (log)' } }
-            : { beginAtZero: true, title: { display: true, text: 'ops/µs' } },
+          // Both axes are log: per family the workload sizes span ~2 decades of
+          // throughput (and allocation), so a linear axis flattens the larger
+          // sizes into indistinguishable slivers. Throughput values are always
+          // positive, so unlike alloc it needs no zero floor.
+          y: { type: 'logarithmic', title: { display: true, text: isAlloc ? 'bytes/op (log)' : 'ops/µs (log)' } },
         },
         plugins: {
           legend: { position: 'top' },
