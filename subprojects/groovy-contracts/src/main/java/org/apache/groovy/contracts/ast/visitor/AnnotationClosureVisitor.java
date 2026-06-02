@@ -61,6 +61,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.syntax.Token;
@@ -164,6 +165,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
 
                 ClassNode closureClassNode = contractClosureWriter.createClosureClass(classNode, null, rewrittenClosureExpression, false, false, Opcodes.ACC_PUBLIC);
                 classNode.getModule().addClass(closureClassNode);
+                recomputeVariableScopes(closureClassNode);
 
                 BlockStatement block = TryCatchBlockGenerator.generateTryCatchBlockForInlineMode(
                         ClassHelper.makeWithoutCaching(ClassInvariantViolation.class),
@@ -255,6 +257,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
 
         ClassNode closureClassNode = contractClosureWriter.createClosureClass(classNode, methodNode, rewrittenClosureExpression, isPostcondition && !isConstructor, isPostcondition && !isConstructor, Opcodes.ACC_PUBLIC);
         classNode.getModule().addClass(closureClassNode);
+        recomputeVariableScopes(closureClassNode);
 
         BlockStatement block = TryCatchBlockGenerator.generateTryCatchBlockForInlineMode(
                 isPostcondition ? ClassHelper.makeWithoutCaching(PostconditionViolation.class) : ClassHelper.makeWithoutCaching(PreconditionViolation.class),
@@ -268,6 +271,20 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         value.setSourcePosition(annotationNode);
         replaceCondition(annotationNode, value);
         markClosureReplaced(methodNode);
+    }
+
+    /**
+     * Recomputes the variable scopes of a freshly generated contract closure class so that any
+     * nested closures capture the enclosing {@code doCall} parameters (the contract subject's
+     * method parameters / {@code result} / {@code old}). {@link ContractClosureWriter} rebinds the
+     * accessed variable of a nested reference but does not establish the closure-shared capture
+     * chain, which would otherwise leave such references resolving to a property lookup at runtime
+     * (e.g. {@code @Requires(&#123; ns.indices.every &#123; ns[it] > 0 &#125; &#125;)}).
+     *
+     * @param closureClassNode the generated closure class to rescope
+     */
+    private void recomputeVariableScopes(ClassNode closureClassNode) {
+        new VariableScopeVisitor(sourceUnit, true).visitClass(closureClassNode);
     }
 
     private VariableScope correctVariableScope(VariableScope variableScope, MethodNode methodNode) {
@@ -422,6 +439,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
 
         private boolean secondPass = false;
         private boolean methodCalls = false;
+        private int closureDepth = 0;
 
         /**
          * Creates a validator for one contract closure.
@@ -446,34 +464,42 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
          */
         @Override
         public void visitClosureExpression(ClosureExpression expression) {
-            secondPass = false;
+            // GROOVY-12059: structural validation only applies to the outermost contract closure,
+            // not to nested closures (e.g. @Requires({ list.every { n -> n > 0 } })) whose
+            // parameters legitimately belong to library methods such as each/every/collect.
+            if (closureDepth == 0) {
+                secondPass = false;
 
-            if (expression.getCode() == null || expression.getCode() instanceof EmptyStatement) {
-                addError("[groovy-contracts] Annotation does not contain any expressions (e.g. use '@Requires({ argument1 })').", expression);
-            }
+                if (expression.getCode() == null || expression.getCode() instanceof EmptyStatement) {
+                    addError("[groovy-contracts] Annotation does not contain any expressions (e.g. use '@Requires({ argument1 })').", expression);
+                }
 
-            if (expression.getCode() instanceof BlockStatement &&
-                    ((BlockStatement) expression.getCode()).getStatements().isEmpty()) {
-                addError("[groovy-contracts] Annotation does not contain any expressions (e.g. use '@Requires({ argument1 })').", expression);
-            }
+                if (expression.getCode() instanceof BlockStatement &&
+                        ((BlockStatement) expression.getCode()).getStatements().isEmpty()) {
+                    addError("[groovy-contracts] Annotation does not contain any expressions (e.g. use '@Requires({ argument1 })').", expression);
+                }
 
-            if (expression.isParameterSpecified() && !AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), POSTCONDITION_TYPE_NAME)) {
-                addError("[groovy-contracts] Annotation does not support parameters (the only exception are postconditions).", expression);
-            }
+                if (expression.isParameterSpecified() && !AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), POSTCONDITION_TYPE_NAME)) {
+                    addError("[groovy-contracts] Annotation does not support parameters (the only exception are postconditions).", expression);
+                } else if (expression.isParameterSpecified()) {
+                    for (Parameter param : expression.getParameters()) {
+                        if (!("result".equals(param.getName()) || "old".equals(param.getName()))) {
+                            addError("[groovy-contracts] Postconditions only allow 'old' and 'result' closure parameters.", expression);
+                        }
 
-            if (expression.isParameterSpecified()) {
-                for (Parameter param : expression.getParameters()) {
-                    if (!("result".equals(param.getName()) || "old".equals(param.getName()))) {
-                        addError("[groovy-contracts] Postconditions only allow 'old' and 'result' closure parameters.", expression);
-                    }
-
-                    if (!param.isDynamicTyped()) {
-                        addError("[groovy-contracts] Postconditions do not support explicit types.", expression);
+                        if (!param.isDynamicTyped()) {
+                            addError("[groovy-contracts] Postconditions do not support explicit types.", expression);
+                        }
                     }
                 }
             }
 
-            super.visitClosureExpression(expression);
+            closureDepth++;
+            try {
+                super.visitClosureExpression(expression);
+            } finally {
+                closureDepth--;
+            }
         }
 
         /**
@@ -503,7 +529,10 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             }
 
             if (accessedVariable instanceof Parameter parameter) {
-                if ("it".equals(parameter.getName())) {
+                // GROOVY-12059: only reject 'it' when it is the implicit parameter of the contract
+                // closure itself (depth 1). An 'it' at a deeper level belongs to a nested closure and
+                // is supported, e.g. @Requires({ ns.indices.every { ns[it] > 0 } }).
+                if ("it".equals(parameter.getName()) && closureDepth <= 1) {
                     addError("[groovy-contracts] Access to 'it' is not supported.", expression);
                 }
             }
@@ -639,7 +668,15 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
          */
         public void secondPass(ClosureExpression closureExpression) {
             secondPass = true;
-            super.visitClosureExpression(closureExpression);
+            // Enter the outermost contract closure directly (bypassing the override's structural
+            // checks) while still accounting for its depth so nested closures are recognised as
+            // non-outermost and 'it'/parameter handling stays consistent with the first pass.
+            closureDepth++;
+            try {
+                super.visitClosureExpression(closureExpression);
+            } finally {
+                closureDepth--;
+            }
         }
 
         /**
