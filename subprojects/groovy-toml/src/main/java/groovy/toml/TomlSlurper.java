@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -78,7 +79,7 @@ public class TomlSlurper {
      * @return the root node of the parsed tree of Nodes
      */
     public Object parse(InputStream stream) {
-        return parse(new InputStreamReader(stream));
+        return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     /**
@@ -99,7 +100,7 @@ public class TomlSlurper {
      */
     public Object parse(Path path) throws IOException {
         try (InputStream stream = Files.newInputStream(path)) {
-            return parse(new InputStreamReader(stream));
+            return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
         }
     }
 
@@ -156,7 +157,7 @@ public class TomlSlurper {
      * @since 6.0.0
      */
     public <T> T parseAs(Class<T> type, InputStream stream) {
-        return parseAs(type, new InputStreamReader(stream));
+        return parseAs(type, new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     /**
@@ -183,7 +184,7 @@ public class TomlSlurper {
      */
     public <T> T parseAs(Class<T> type, Path path) throws IOException {
         try (InputStream stream = Files.newInputStream(path)) {
-            return parseAs(type, new InputStreamReader(stream));
+            return parseAs(type, new InputStreamReader(stream, StandardCharsets.UTF_8));
         }
     }
 }

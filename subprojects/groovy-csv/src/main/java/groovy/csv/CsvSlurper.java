@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -155,7 +156,7 @@ public class CsvSlurper {
      * @return a list of maps (one per row)
      */
     public List<Map<String, String>> parse(InputStream stream) {
-        return parse(new InputStreamReader(stream));
+        return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     /**
@@ -176,7 +177,7 @@ public class CsvSlurper {
      */
     public List<Map<String, String>> parse(Path path) throws IOException {
         try (InputStream stream = Files.newInputStream(path)) {
-            return parse(new InputStreamReader(stream));
+            return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
         }
     }
 
@@ -246,7 +247,7 @@ public class CsvSlurper {
      */
     public <T> List<T> parseAs(Class<T> type, Path path) throws IOException {
         try (InputStream stream = Files.newInputStream(path)) {
-            return parseAs(type, new InputStreamReader(stream));
+            return parseAs(type, new InputStreamReader(stream, StandardCharsets.UTF_8));
         }
     }
 
