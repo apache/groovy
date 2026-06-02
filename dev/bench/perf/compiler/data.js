@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780303074162,
+  "lastUpdate": 1780389079904,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -1048,6 +1048,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 497.04999999999995,
             "range": "±29.76",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "653195f4057c7f77032b10b766562502db2705b4",
+          "message": "Use log y-axis for JMH adhoc throughput charts\n\nLarger workload sizes span ~2 decades of throughput, so a linear axis\nflattened the size=10000 group into indistinguishable slivers despite a\nreal ~12x best-vs-worst spread within each size. Matches the allocation\ncharts, which were already log.\n\nCo-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-06-02T06:58:05Z",
+          "url": "https://github.com/apache/groovy/commit/653195f4057c7f77032b10b766562502db2705b4"
+        },
+        "date": 1780389079026,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 545.4100000000001,
+            "range": "±20.07",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 652.41,
+            "range": "±219.15",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 569.7166666666667,
+            "range": "±145.9",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 472.0433333333333,
+            "range": "±26.82",
             "unit": "ms",
             "extra": "5.0.6"
           }
