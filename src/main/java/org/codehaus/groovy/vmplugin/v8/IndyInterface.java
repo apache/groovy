@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -324,8 +325,12 @@ public class IndyInterface {
      * @return the method invocation result
      */
     public static Object invokeDegraded(Object receiver, String name, Object[] args) {
-        return org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(receiver)
-                .invokeMethod(receiver, name, args);
+        try {
+            return org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(receiver)
+                    .invokeMethod(receiver, name, args);
+        } catch (GroovyRuntimeException e) {
+            return e; // same as MethodHandles.catchException + UNWRAP_EXCEPTION in normal path
+        }
     }
 
     /**
@@ -337,8 +342,12 @@ public class IndyInterface {
      * @return the property value
      */
     public static Object getPropertyDegraded(Object receiver, String name) {
-        return org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(receiver)
-                .getProperty(receiver, name);
+        try {
+            return org.codehaus.groovy.runtime.InvokerHelper.getMetaClass(receiver)
+                    .getProperty(receiver, name);
+        } catch (GroovyRuntimeException e) {
+            return e; // same as MethodHandles.catchException + UNWRAP_EXCEPTION in normal path
+        }
     }
 
     /**
