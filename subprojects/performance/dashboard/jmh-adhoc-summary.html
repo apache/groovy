@@ -134,10 +134,18 @@
 
   // "findAllG_lambdasCurryWith (size=10000)" -> {family, variant, size}
   // NB: findAll must precede find in the alternation so it wins the match.
+  // Two name shapes reach us, depending on which github-action-benchmark tool
+  // produced the series:
+  //   alloc (customSmallerIsBetter): "findAllG_lambdasCurryWith (size=10000)"
+  //   throughput (jmh tool):         'org.apache.groovy.adhoc.FatFreeLambdaBench.findAllG_lambdasCurryWith ( {"size":"10000"} )'
+  // Pull the method token (findAll/find/count + variant) and the size wherever
+  // they appear, instead of anchoring on one exact layout. NB: findAll must
+  // precede find in the alternation so it wins the match.
   function parseName(name) {
-    const m = name.match(/^(findAll|find|count)([^ ]+?)\s*\(size=(\d+)\)\s*$/);
-    if (!m) return null;
-    return { family: m[1], variant: m[2].replace(/^_/, ''), size: m[3] };
+    const fam = name.match(/(findAll|find|count)([A-Za-z0-9_]+)/);
+    const sz = name.match(/size["'\s:=]*?(\d+)/);
+    if (!fam || !sz) return null;
+    return { family: fam[1], variant: fam[2].replace(/^_/, ''), size: sz[1] };
   }
 
   // Shape a bench list into { variants:[...], bySize:{size:{variant:value}} } for one family.

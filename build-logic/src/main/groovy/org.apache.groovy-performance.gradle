@@ -42,7 +42,12 @@ repositories {
 }
 
 dependencies {
-    jmh project(':')
+    // Use jmhImplementation (not the bare `jmh` bucket): the jmh compile/runtime
+    // classpaths carry the full attribute set, so Gradle selects the shaded
+    // (jarjar) Groovy variant. The bare `jmh` configuration under-specifies
+    // attributes and falls back to the un-shaded *raw* variant, which put a second
+    // Groovy jar (plus duplicate asm/antlr) on the jmh classpath.
+    jmhImplementation project(':')
     testImplementation project(':')
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit6}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit6}"
@@ -102,6 +107,17 @@ tasks.named('test') {
 tasks.named('jmh') {
     inputs.property('benchInclude', project.findProperty('benchInclude') ?: '')
     dependsOn tasks.named('jmhClasses')
+    // me.champeau.jmh builds a self-contained uber jar (the jmhJar artifact) and
+    // then runs benchmarks with a classpath of: the `jmh` configuration + that
+    // uber jar + the test runtime classpath. That puts Groovy core on the run
+    // classpath three times — the `jmh` config even resolves the un-shaded *raw*
+    // Groovy variant (dragging duplicate asm/antlr) — which trips
+    // MetaClassRegistryImpl's "duplicate concurrent module" warning. The uber jar
+    // already contains everything needed to run, so clear the two loose
+    // collections and let it be the single source: every class (Groovy included)
+    // then appears exactly once.
+    jmhClasspath.setFrom()
+    testRuntimeClasspath.setFrom()
 }
 
 tasks.named('jmhJar') {
