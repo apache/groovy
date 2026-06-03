@@ -345,9 +345,9 @@ A few build-side conventions:
 - **Dependency changes require regenerating
   `gradle/verification-metadata.xml`.** The build runs Gradle
   dependency verification; an unverified artifact fails the
-  build. Regenerate with
-  `./gradlew --write-verification-metadata sha256,pgp help` and
-  inspect the diff before committing.
+  build. See the *Dependency verification* section of
+  [`CONTRIBUTING.md`](CONTRIBUTING.md) for the regeneration
+  recipe, and inspect the diff before committing.
 - **ASM, ANTLR runtime, and picocli are jarjar-relocated** into
   `groovyjarjar*` packages, configured via
   `groovyLibrary { repackagedDependencies = ... }`. A wrong

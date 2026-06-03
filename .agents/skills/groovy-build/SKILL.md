@@ -114,7 +114,7 @@ changes:
 2. **Adding a dependency without regenerating
    `verification-metadata.xml`.** This breaks the build. AI
    tooling often forgets the regeneration step. Run
-   `./gradlew --write-verification-metadata sha256,pgp help`
+   `./gradlew --write-verification-metadata sha512,pgp help`
    after any dependency change and inspect the diff before
    committing.
 
@@ -213,7 +213,7 @@ changes:
 4. **For dependency changes, regenerate verification metadata:**
 
    ```
-   ./gradlew --write-verification-metadata sha256,pgp help
+   ./gradlew --write-verification-metadata sha512,pgp help
    ```
 
    Inspect the diff; commit only the entries your change

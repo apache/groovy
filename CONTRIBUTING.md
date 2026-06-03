@@ -110,6 +110,69 @@ independent:
   in `~/.gradle/gradle.properties` if you always test on the
   same alternate JDK.
 
+### Dependency verification
+
+The build runs Gradle [dependency
+verification](https://docs.gradle.org/current/userguide/dependency_verification.html):
+every resolved artifact is checked against
+`gradle/verification-metadata.xml` (PGP signatures, with SHA-512
+checksums for unsigned artifacts). Adding, bumping, or removing a
+dependency — including a transitive one — changes the resolved
+graph, so the metadata no longer matches and the build fails until
+you regenerate it.
+
+There are two ways to regenerate, and they end at the same place: a
+small, reviewed diff to `verification-metadata.xml`. **Prefer the
+dry-run approach** — it never edits the real file for you, so the
+change stays intentional.
+
+**Preferred — dry run, then hand-merge:**
+
+```
+./gradlew --write-verification-metadata pgp,sha512 --dry-run
+```
+
+This writes a throwaway `gradle/verification-metadata.dryrun.xml`
+instead of touching the real file. Compare it against
+`verification-metadata.xml`, review the additions, and merge **only**
+the missing entries for your new dependency into the real file.
+Because nothing is changed automatically, it is hard to accidentally
+pull in unrelated churn.
+
+**Alternative — regenerate in place:**
+
+```
+./gradlew --write-verification-metadata sha512,pgp help
+```
+
+This rewrites `verification-metadata.xml` directly. Inspect the diff
+carefully and remove any unrelated or stale entries (e.g. for
+dependencies you didn't actually touch) before committing.
+
+Either way, **inspect the diff before committing** and keep it
+minimal. Changes to `verification-metadata.xml` should be small and
+deliberate — if verification fails, never disable it; follow the
+[troubleshooting
+guide](https://docs.gradle.org/current/userguide/dependency_verification.html#sec:troubleshooting-verification)
+instead.
+
+The trusted public keys themselves live in
+`gradle/verification-keyring.keys` (ASCII-armored). Add `--export-keys`
+to a regeneration command to have Gradle write any newly fetched keys
+into that file:
+
+```
+./gradlew --write-verification-metadata sha512,pgp --export-keys help
+```
+
+If a signing key cannot be downloaded from the configured key servers,
+fetch it manually and regenerate the keyring file:
+
+```
+gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys <KEY_ID>
+gpg --export --armor > gradle/verification-keyring.keys
+```
+
 ## Tests
 
 For an overall map of the test layout, see
