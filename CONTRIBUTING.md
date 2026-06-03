@@ -115,39 +115,46 @@ independent:
 The build runs Gradle [dependency
 verification](https://docs.gradle.org/current/userguide/dependency_verification.html):
 every resolved artifact is checked against
-`gradle/verification-metadata.xml` (PGP signatures, with SHA-512
-checksums for unsigned artifacts). Adding, bumping, or removing a
-dependency — including a transitive one — changes the resolved
-graph, so the metadata no longer matches and the build fails until
-you regenerate it.
+`gradle/verification-metadata.xml` (PGP signatures where available,
+SHA-512 checksums for unsigned artifacts), and the trusted public
+keys live in `gradle/verification-keyring.keys`.
 
-There are two ways to regenerate, and they end at the same place: a
-small, reviewed diff to `verification-metadata.xml`. **Prefer the
-dry-run approach** — it never edits the real file for you, so the
-change stays intentional.
+**Key-server lookups are disabled** (`<key-servers enabled="false"/>`
+in the metadata), so that keyring is the *only* source of trusted
+keys — the build never contacts a key server. This keeps resolution
+fast, reproducible, and offline; the trade-off is that a genuinely
+new signing key has to be added deliberately (see *Adding a new
+signing key* below).
 
-**Preferred — dry run, then hand-merge:**
+Adding, bumping, or removing a dependency — including a transitive
+one — changes the resolved graph, so verification fails until you
+update the metadata. What you do depends on what actually changed.
+
+#### Updating checksums and signatures
+
+This covers a new unsigned artifact, or a signed artifact whose
+signer is already trusted. There are two ways to regenerate, and they
+end at the same place: a small, reviewed diff to
+`verification-metadata.xml`. **Prefer the dry-run approach** — it
+never edits the real file, so the change stays intentional.
 
 ```
-./gradlew --write-verification-metadata pgp,sha512 --dry-run
+./gradlew --write-verification-metadata pgp,sha512 --dry-run <tasks>
 ```
 
-This writes a throwaway `gradle/verification-metadata.dryrun.xml`
-instead of touching the real file. Compare it against
+`<tasks>` must be tasks that actually resolve the dependency you
+changed (e.g. `build`, or a specific subproject task) — **not**
+`help`, which resolves nothing and would record no entries. This
+writes a throwaway `gradle/verification-metadata.dryrun.xml` instead
+of touching the real file. Compare it against
 `verification-metadata.xml`, review the additions, and merge **only**
-the missing entries for your new dependency into the real file.
-Because nothing is changed automatically, it is hard to accidentally
-pull in unrelated churn.
+the missing entries for your dependency into the real file.
 
-**Alternative — regenerate in place:**
-
-```
-./gradlew --write-verification-metadata sha512,pgp help
-```
-
-This rewrites `verification-metadata.xml` directly. Inspect the diff
-carefully and remove any unrelated or stale entries (e.g. for
-dependencies you didn't actually touch) before committing.
+To regenerate in place instead, run the same command with the same
+`<tasks>` but without `--dry-run`. It rewrites
+`verification-metadata.xml` directly, so inspect the diff carefully
+and remove any unrelated or stale entries before committing amd keep.
+any comments and other information we already have in that file.
 
 Either way, **inspect the diff before committing** and keep it
 minimal. Changes to `verification-metadata.xml` should be small and
@@ -156,22 +163,47 @@ deliberate — if verification fails, never disable it; follow the
 guide](https://docs.gradle.org/current/userguide/dependency_verification.html#sec:troubleshooting-verification)
 instead.
 
-The trusted public keys themselves live in
-`gradle/verification-keyring.keys` (ASCII-armored). Add `--export-keys`
-to a regeneration command to have Gradle write any newly fetched keys
-into that file:
+#### Adding a new signing key
 
-```
-./gradlew --write-verification-metadata sha512,pgp --export-keys help
-```
+A signed dependency only needs its signing key in the keyring, and a
+trusted key covers all versions — so bumping a signed dependency
+usually needs **no change at all**. You only touch the keyring when a
+dependency introduces a *new* signer.
 
-If a signing key cannot be downloaded from the configured key servers,
-fetch it manually and regenerate the keyring file:
+Because key-server lookups are disabled, Gradle won't fetch the new
+key on its own. The standard way to add one is to let Gradle fetch it
+with key servers turned on just for the regeneration:
 
-```
-gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys <KEY_ID>
-gpg --export --armor > gradle/verification-keyring.keys
-```
+1. In `gradle/verification-metadata.xml`, temporarily set
+   `<key-servers enabled="false"/>` to `enabled="true"` (or comment
+   the element out).
+2. Run an export against tasks that resolve the new dependency:
+
+   ```
+   ./gradlew --write-verification-metadata pgp,sha512 --export-keys <tasks>
+   ```
+
+   Gradle fetches the key, verifies the signature, and re-exports the
+   whole keyring. The export **merges**, so nothing already present is
+   lost, and each key is written with a readable `pub`/`uid` owner
+   header. (`help` is fine as `<tasks>` if you only need to refresh
+   keys already declared, rather than add a new dependency's entries.)
+3. Set `enabled` back to `false`.
+4. Review the keyring diff — it should be just the new key.
+
+> **Don't hand-edit the keyring with gpg.** Gradle exports *minimized*
+> keys (user-ID packets stripped), which modern gpg refuses to import
+> ("no valid user IDs") — so `gpg --export` can't round-trip the file,
+> and `gpg --export --armor > …keyring` would clobber the
+> Gradle-managed keyring with whatever is in your personal gpg store.
+> If you must pull a single key out-of-band, **append** it rather than
+> overwrite, then let the next `--export-keys` run re-normalise the
+> format:
+>
+> ```
+> gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys <KEY_ID>
+> gpg --export --armor <KEY_ID> >> gradle/verification-keyring.keys
+> ```
 
 ## Tests
 
