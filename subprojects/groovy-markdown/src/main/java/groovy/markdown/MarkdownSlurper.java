@@ -47,6 +47,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -135,7 +136,7 @@ public class MarkdownSlurper {
      * @return the parsed document
      */
     public MarkdownDocument parse(InputStream stream) {
-        return parse(new InputStreamReader(stream));
+        return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     /**
@@ -158,7 +159,7 @@ public class MarkdownSlurper {
      */
     public MarkdownDocument parse(Path path) throws IOException {
         try (InputStream stream = Files.newInputStream(path)) {
-            return parse(new InputStreamReader(stream));
+            return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
         }
     }
 
