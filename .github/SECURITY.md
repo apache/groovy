@@ -43,10 +43,29 @@ but we are currently still doing critical security fixes if needed.
 (**) While in early stages of pre-release, security fixes are
 done on a best-effort basis.
 
+`@Incubating` APIs carry reduced-priority status for security fixes.
+We caution users about relying on such features for production systems.
+Genuine vulnerabilities are still fixed and disclosed; only their priority is
+reduced while the API remains incubating.
+
 ## List of Security Vulnerability Fixes
 
 The Groovy website has a list of [Security fixes](https://groovy-lang.org/security.html)
 applicable to Groovy 2.4.4 and above (versions released since moving to Apache).
+
+## Threat Model
+
+Before reporting, please consult the project [Threat Model](../THREAT_MODEL.md).
+Because Groovy is a general-purpose programming and scripting language,
+running the code it is given — including filesystem, network, and process
+access — is by design, not a vulnerability. The threat model states what
+Groovy treats as a security issue and what it does not (e.g. executing
+untrusted scripts/templates or deserializing untrusted data are out of
+model), so genuine issues can be told apart from expected language
+behaviour. It also guides triage of automated code-scanning results, which
+may arrive as a single report bundling many candidate findings: each is
+assigned one disposition from the threat model, and only confirmed issues
+enter the private reporting flow below.
 
 ## Reporting a Vulnerability
 

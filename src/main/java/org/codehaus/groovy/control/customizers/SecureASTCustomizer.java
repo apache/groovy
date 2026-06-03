@@ -184,6 +184,9 @@ import java.util.Map;
  *  to be the complete solution of all security issues when running scripts on the JVM. You might also want to
  *  consider setting the {@code groovy.grape.enable} System property to false, augmenting use of the customizer
  *  with additional techniques, and following standard security principles for JVM applications.
+ *  Accordingly, the Apache Groovy <a href="https://github.com/apache/groovy/blob/master/THREAT_MODEL.md">threat model</a>
+ *  treats this customizer as a hardening aid rather than a security boundary (see its "security properties the
+ *  project does NOT provide" section): a report that merely demonstrates a bypass is by design, not a vulnerability.
  *  <p>
  *  For more information, please read:
  *  <li><a href="https://melix.github.io/blog/2015/03/sandboxing.html">Improved sandboxing of Groovy scripts</a></li>
