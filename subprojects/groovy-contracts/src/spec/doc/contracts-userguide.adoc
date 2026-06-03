@@ -76,7 +76,7 @@ Groovy contracts supports the following feature set:
 * definition of class invariants, pre- and post-conditions via @Invariant, @Requires and @Ensures
 * definition of loop invariants on `for`, `while`, and `do-while` loops via @Invariant
 * declaration of frame conditions (which fields a method may modify) via @Modifies
-* declaration of loop termination measures via @Decreases
+* declaration of loop and recursion termination measures via @Decreases
 * inheritance of class invariants, pre- and post-conditions of concrete predecessor classes
 * inheritance of class invariants, pre- and post-conditions in implemented interfaces
 * usage of old and result variable in post-condition assertions
@@ -173,13 +173,18 @@ include::../test/ContractsTest.groovy[tags=loop_invariant_multiple_example,inden
 * Assignment operators and state-changing postfix/prefix operators are
   not supported inside the closure.
 
-== Loop Termination with @Decreases
+== Termination with @Decreases
 
-Where `@Invariant` on a loop asserts a condition that must hold _during_ iteration,
-`@Decreases` asserts a condition that guarantees the loop will _terminate_: a
-_loop variant_, also known as a termination measure. The closure must yield a value
-whose successive iteration values form a strictly decreasing, well-founded sequence.
-Two value shapes are supported:
+`@Decreases` declares a _termination measure_ (a _variant_): a value that must
+strictly decrease through a well-founded sequence, guaranteeing progress towards
+termination. It applies in two places:
+
+* on a *loop* (`for`/`while`/`do-while`) &#8212; the measure must decrease on every
+  iteration; and
+* on a *method* &#8212; the measure must decrease on every _recursive_ re-entry.
+
+In both cases the closure must yield a value whose successive values form a strictly
+decreasing, well-founded sequence. Two value shapes are supported:
 
 * A single `Comparable` value &#8212; usually numeric &#8212; that strictly decreases
   on every iteration. If the value is also a `Number`, it must additionally remain
@@ -190,7 +195,8 @@ Two value shapes are supported:
   nested loops (e.g.&nbsp;`[i, j]`).
 
 If the variant fails to decrease (or a numeric scalar variant becomes negative),
-a `LoopVariantViolation` (a subclass of `AssertionError`) is thrown.
+a `LoopVariantViolation` is thrown for a loop and a `RecursionVariantViolation`
+for a method (both subclasses of `AssertionError`).
 
 This is inspired by similar constructs in design-by-contract languages such as
 Dafny and Eiffel.
@@ -225,16 +231,44 @@ the outer one decreases and the inner one is allowed to reset:
 include::../test/ContractsTest.groovy[tags=decreases_lexicographic_example,indent=0]
 ----
 
+=== Recursive methods
+
+On a method, the measure is a function of the method's *parameters* and must strictly
+decrease on every _recursive_ re-entry &#8212; the recursion analogue of a loop variant.
+At runtime the value is captured on entry and compared against the nearest enclosing
+invocation of the same method (per thread); a non-decreasing or negative measure throws
+a `RecursionVariantViolation`, turning a non-terminating recursion into an immediate,
+localised error rather than a `StackOverflowError`:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=decreases_recursion_example,indent=0]
+----
+
+The bookkeeping is per method and per thread, so it also handles _mutual_ recursion
+(each participant must decrease its own measure on its own re-entry) and recursion
+through callbacks. Like `@Requires`/`@Ensures`, a method `@Decreases` is *inherited*:
+an override that does not redeclare it inherits its parent's measure (with the parent's
+parameter names re-mapped to the override's); an override may declare its own
+`@Decreases` to refine it.
+
 === Rules for @Decreases closures
 
 * The closure must return a `Comparable` value or a `List` of `Comparable` elements.
-* The value is evaluated at the start and end of each iteration; the end-of-iteration
-  value must be strictly less than the start-of-iteration value (lexicographically,
-  for `List` variants).
+* For a loop, the value is evaluated at the start and end of each iteration; for a
+  method, on each entry. The new value must be strictly less than the previous one
+  (lexicographically, for `List` variants).
 * For numeric scalar variants, the value must also remain `>= 0`.
   This non-negativity rule does _not_ apply to non-`Number` `Comparable` values
   (e.g.&nbsp;`String`) or to `List` variants.
-* The closure may reference any variables visible in the enclosing scope.
+* A loop measure may reference any variable visible in the enclosing scope; a method
+  measure is over the method's parameters (it is evaluated on entry, so it cannot
+  reference the method's `result`).
+* Checks honour the JVM's `-ea`/`-da` assertion configuration for the enclosing class,
+  as preconditions and postconditions do.
+* Recursion measure inheritance currently requires the parent to be compiled in the
+  same unit; an override of a method from a precompiled (binary) supertype is not yet
+  instrumented.
 
 == Frame Conditions with @Modifies
 

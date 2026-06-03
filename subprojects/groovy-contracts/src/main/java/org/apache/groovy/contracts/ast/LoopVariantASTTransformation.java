@@ -19,7 +19,7 @@
 package org.apache.groovy.contracts.ast;
 
 import groovy.contracts.Decreases;
-import org.apache.groovy.contracts.LoopVariantViolation;
+import org.apache.groovy.contracts.VariantSupport;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -78,7 +78,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  *
  * @since 6.0.0
  * @see Decreases
- * @see LoopVariantViolation
+ * @see org.apache.groovy.contracts.VariantSupport
+ * @see org.apache.groovy.contracts.LoopVariantViolation
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class LoopVariantASTTransformation implements ASTTransformation {
@@ -117,12 +118,14 @@ public class LoopVariantASTTransformation implements ASTTransformation {
         Statement saveCurr = declS(localVarX(currVarName, ClassHelper.dynamicType()), variantCopy);
         saveCurr.setSourcePosition(annotation);
 
-        // Assert: currVar < prevVar (must strictly decrease)
+        // Assert (if enabled): currVar < prevVar and non-negative — delegated to the
+        // shared VariantSupport, gated by the enclosing class's -ea/-da configuration.
+        String className = LoopContractSupport.enclosingClassName(source, (ASTNode) loopStatement);
         Statement decreaseCheck = stmt(
                 callX(
-                        ClassHelper.makeWithoutCaching(LoopVariantASTTransformation.class),
-                        "checkDecreased",
-                        args(varX(prevVarName), varX(currVarName))
+                        ClassHelper.make(VariantSupport.class),
+                        "checkLoopVariant",
+                        args(varX(prevVarName), varX(currVarName), constX(className))
                 )
         );
         decreaseCheck.setSourcePosition(annotation);
@@ -134,67 +137,6 @@ public class LoopVariantASTTransformation implements ASTTransformation {
         // resolved; re-run scope analysis now that they are real loop-body statements so that
         // @TypeChecked/@CompileStatic can see their declared types.
         LoopContractSupport.resolveVariableScopes(source);
-    }
-
-    /**
-     * Runtime check called from generated code. Throws {@link LoopVariantViolation}
-     * if the variant did not strictly decrease or became negative.
-     * <p>
-     * If both values are {@link List}s, they are compared lexicographically:
-     * the first position where values differ must show a strict decrease;
-     * all earlier positions must be equal. If all positions are equal, the
-     * variant has not decreased and a violation is thrown.
-     */
-    public static void checkDecreased(Object prev, Object curr) {
-        if (prev instanceof List<?> prevList && curr instanceof List<?> currList) {
-            checkDecreasedLexicographic(prevList, currList);
-        } else if (prev instanceof Comparable && curr instanceof Comparable) {
-            checkDecreasedScalar(prev, curr);
-        } else {
-            throw new LoopVariantViolation(
-                    "<groovy.contracts.Decreases> loop variant is not Comparable: prev=" + prev + ", curr=" + curr);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void checkDecreasedScalar(Object prev, Object curr) {
-        Comparable<Object> prevComp = (Comparable<Object>) prev;
-        if (prevComp.compareTo(curr) <= 0) {
-            throw new LoopVariantViolation(
-                    "<groovy.contracts.Decreases> loop variant did not decrease: was " + prev + ", now " + curr);
-        }
-        if (curr instanceof Number && ((Number) curr).doubleValue() < 0) {
-            throw new LoopVariantViolation(
-                    "<groovy.contracts.Decreases> loop variant became negative: " + curr);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void checkDecreasedLexicographic(List<?> prev, List<?> curr) {
-        int size = Math.min(prev.size(), curr.size());
-        for (int i = 0; i < size; i++) {
-            Object p = prev.get(i);
-            Object c = curr.get(i);
-            if (!(p instanceof Comparable) || !(c instanceof Comparable)) {
-                throw new LoopVariantViolation(
-                        "<groovy.contracts.Decreases> loop variant element at position " + i
-                                + " is not Comparable: prev=" + p + ", curr=" + c);
-            }
-            int cmp = ((Comparable<Object>) p).compareTo(c);
-            if (cmp > 0) {
-                // This element decreased — lexicographic comparison satisfied
-                return;
-            }
-            if (cmp < 0) {
-                throw new LoopVariantViolation(
-                        "<groovy.contracts.Decreases> loop variant increased at position " + i
-                                + ": was " + prev + ", now " + curr);
-            }
-            // cmp == 0: equal at this position, check next
-        }
-        // All compared positions are equal — no progress
-        throw new LoopVariantViolation(
-                "<groovy.contracts.Decreases> loop variant did not decrease: was " + prev + ", now " + curr);
     }
 
     private static Expression extractExpression(ClosureExpression closureExpression) {
