@@ -206,4 +206,56 @@ class LoopDecreasesTests extends BaseTestClass {
             method()
         '''
     }
+
+    // ----- global assertion toggle: -da suppresses the check, -ea (default) runs it -----
+
+    @Test
+    void disabledByDaJvmArg() {
+        // A bounded loop whose measure increases: it is a LoopVariantViolation under -ea,
+        // yet the loop itself terminates (via the break), so under -da (check suppressed)
+        // it simply runs to completion. This mirrors the method-variant -da regression and
+        // exercises the shared VariantSupport gating on the loop side.
+        String script = '''
+            import groovy.contracts.Decreases
+            int n = 5
+            @Decreases({ n })
+            while (n > 0) {
+                // oops, not decreasing
+                n++
+                if (n > 10) break
+            }
+            assert n == 11
+        '''
+        File tmp = File.createTempFile('gc_loop_decreases_da', '.groovy')
+        tmp.deleteOnExit()
+        tmp.text = script
+        try {
+            def da = runForked(tmp, '-da')
+            assert da.code == 0: "expected clean run under -da, exit=${da.code}:\n${da.output}"
+
+            def ea = runForked(tmp, '-ea')
+            assert ea.code != 0: "expected a violation under -ea, but ran clean:\n${ea.output}"
+            assert ea.output.contains('loop variant'): "expected LoopVariantViolation, got:\n${ea.output}"
+        } finally {
+            tmp.delete()
+        }
+    }
+
+    private static Map runForked(File scriptFile, String assertionFlag) {
+        String javaBin = "${System.getProperty('java.home')}${File.separator}bin${File.separator}java"
+        // Drop Spock from the child classpath: its global AST transform on the test
+        // classpath is incompatible with this Groovy and would abort compilation of
+        // any script. We only need Groovy + groovy-contracts to compile the snippet.
+        String cp = System.getProperty('java.class.path')
+                .split(File.pathSeparator)
+                .findAll { !it.toLowerCase().contains('spock') }
+                .join(File.pathSeparator)
+        Process proc = new ProcessBuilder(javaBin, assertionFlag, '-cp', cp,
+                'groovy.ui.GroovyMain', scriptFile.absolutePath)
+                .redirectErrorStream(true)
+                .start()
+        String output = proc.inputStream.text
+        proc.waitFor()
+        [code: proc.exitValue(), output: output]
+    }
 }
