@@ -206,6 +206,20 @@ class ContractsTest extends GroovyTestCase {
         '''
     }
 
+    void testDecreasesRecursion() {
+        assertScript '''
+        // tag::decreases_recursion_example[]
+        import groovy.contracts.Decreases
+
+        @Decreases({ n })                       // strictly decreases on every recursive call
+        int factorial(int n) {
+            n <= 1 ? 1 : n * factorial(n - 1)
+        }
+        assert factorial(5) == 120
+        // end::decreases_recursion_example[]
+        '''
+    }
+
     void testJep445Script() {
         runScript '''
         // tag::jep445_example[]

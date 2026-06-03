@@ -38,8 +38,9 @@
  * <ul>
  *   <li>{@link groovy.contracts.Modifies @Modifies} &ndash; frame condition declaring
  *       which fields and parameters a method may modify</li>
- *   <li>{@link groovy.contracts.Decreases @Decreases} &ndash; loop termination measure
- *       (a strictly-decreasing, non-negative variant)</li>
+ *   <li>{@link groovy.contracts.Decreases @Decreases} &ndash; a termination measure (a
+ *       strictly-decreasing, well-founded variant) for a loop (per iteration) or a
+ *       recursive method (per recursive re-entry)</li>
  * </ul>
  */
 package groovy.contracts;

@@ -18,7 +18,12 @@
  */
 package org.apache.groovy.contracts.ast;
 
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -53,6 +58,57 @@ final class LoopContractSupport {
         if (source == null || source.getAST() == null) return;
         for (ClassNode classNode : source.getAST().getClasses()) {
             new VariableScopeVisitor(source).visitClass(classNode);
+        }
+    }
+
+    /**
+     * Find the name of the class enclosing a loop statement, so its variant check can be gated by
+     * the {@code -ea}/{@code -da} configuration for that class. Returns {@code null} (the global
+     * default) if the enclosing class cannot be determined.
+     *
+     * @param source the current source unit
+     * @param target the loop statement to locate
+     * @return the enclosing class name, or {@code null}
+     */
+    static String enclosingClassName(final SourceUnit source, final ASTNode target) {
+        if (source == null || source.getAST() == null || target == null) return null;
+        for (ClassNode classNode : source.getAST().getClasses()) {
+            EnclosingFinder finder = new EnclosingFinder(target);
+            finder.visitClass(classNode);
+            if (finder.found) return classNode.getName();
+        }
+        return null;
+    }
+
+    private static final class EnclosingFinder extends ClassCodeVisitorSupport {
+        private final ASTNode target;
+        private boolean found;
+
+        EnclosingFinder(final ASTNode target) {
+            this.target = target;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return null;
+        }
+
+        @Override
+        public void visitWhileLoop(final WhileStatement loop) {
+            if (loop == target) found = true;
+            super.visitWhileLoop(loop);
+        }
+
+        @Override
+        public void visitForLoop(final ForStatement loop) {
+            if (loop == target) found = true;
+            super.visitForLoop(loop);
+        }
+
+        @Override
+        public void visitDoWhileLoop(final DoWhileStatement loop) {
+            if (loop == target) found = true;
+            super.visitDoWhileLoop(loop);
         }
     }
 }
