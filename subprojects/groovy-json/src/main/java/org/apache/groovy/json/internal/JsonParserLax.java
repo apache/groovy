@@ -85,6 +85,8 @@ public class JsonParserLax extends JsonParserCharArray {
 
     @SuppressWarnings("unchecked")
     private Value decodeJsonObjectLax() {
+        enterNesting();
+        try {
         if (__currentChar == '{')
             this.nextChar();
 
@@ -201,6 +203,9 @@ public class JsonParserLax extends JsonParserCharArray {
         }
 
         return value;
+        } finally {
+            exitNesting();
+        }
     }
 
     private Value extractLaxString(int startIndexOfKey, int end, boolean encoded, boolean checkDate) {
@@ -627,6 +632,8 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     private Value decodeJsonArrayLax() {
+        enterNesting();
+        try {
         if (__currentChar == '[') {
             __index++;
         }
@@ -693,6 +700,9 @@ public class JsonParserLax extends JsonParserCharArray {
         } while (this.hasMore());
 
         return value;
+        } finally {
+            exitNesting();
+        }
     }
 
     /**

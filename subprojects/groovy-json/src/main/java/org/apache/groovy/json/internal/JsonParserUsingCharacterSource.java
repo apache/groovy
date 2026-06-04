@@ -50,6 +50,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
      * @return parsed object as a {@link LazyMap}
      */
     protected final Object decodeJsonObject() {
+        enterNesting();
         LazyMap map = new LazyMap();
 
         try {
@@ -107,6 +108,8 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
             }
         } catch (Exception ex) {
             throw new JsonException(exceptionDetails("Unable to parse JSON object"), ex);
+        } finally {
+            exitNesting();
         }
 
         return map;
@@ -236,6 +239,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
      * @return parsed array contents
      */
     protected final List decodeJsonArray() {
+        enterNesting();
         ArrayList<Object> list = null;
 
         boolean foundEnd = false;
@@ -287,6 +291,8 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
             } while (characterSource.hasChar());
         } catch (Exception ex) {
             throw new JsonException(exceptionDetails("Unexpected issue"), ex);
+        } finally {
+            exitNesting();
         }
 
         if (!foundEnd) {
@@ -304,6 +310,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
     @Override
     public Object parse(Reader reader) {
         characterSource = new ReaderCharacterSource(reader);
+        resetNesting();
         return this.decodeValue();
     }
 

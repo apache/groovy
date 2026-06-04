@@ -24,6 +24,7 @@ dependencies {
     api rootProject // JsonBuilder extends GroovyObjectSupport...
 
     testImplementation projects.groovyTest
+    testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation projects.groovyDateutil
     testImplementation 'net.javacrumbs.json-unit:json-unit:2.38.0' // 3.0.0 requires JDK17
 

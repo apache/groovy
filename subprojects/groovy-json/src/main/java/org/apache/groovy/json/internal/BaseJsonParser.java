@@ -132,6 +132,30 @@ public abstract class BaseJsonParser implements JsonParser {
     protected static final int ESCAPE = '\\';
 
     /**
+     * Default maximum nesting depth for arrays/objects. A small, crafted but deeply-nested
+     * document would otherwise drive the recursive-descent parsers into a
+     * {@link StackOverflowError}; this Groovy-level bound turns that into a clean
+     * {@link JsonException} instead. Chosen to match Jackson's
+     * {@code StreamReadConstraints} default so JSON is bounded consistently with the
+     * Jackson-backed YAML/TOML/CSV slurpers, while sitting far above any realistic document.
+     */
+    public static final int DEFAULT_MAX_NESTING_DEPTH = 1000;
+
+    /**
+     * Maximum nesting depth permitted for this parser. A value of {@code 0} or less disables
+     * the check (restoring the previous, unbounded behaviour). Defaults to
+     * {@link #DEFAULT_MAX_NESTING_DEPTH}, overridable globally via the
+     * {@code groovy.json.maxNestingDepth} system property.
+     */
+    protected int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth", DEFAULT_MAX_NESTING_DEPTH);
+
+    /**
+     * Current nesting depth while decoding; incremented on entry to an array/object and
+     * decremented on exit.
+     */
+    private int nestingDepth;
+
+    /**
      * Whether parsed object keys should be interned.
      */
     protected static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.internKeys", "false"));
@@ -193,6 +217,53 @@ public abstract class BaseJsonParser implements JsonParser {
      */
     public void setCharset(String charset) {
         this.charset = charset;
+    }
+
+    /**
+     * Returns the maximum nesting depth permitted while parsing.
+     *
+     * @return the maximum nesting depth, or a value {@code <= 0} when the check is disabled
+     */
+    public int getMaxNestingDepth() {
+        return maxNestingDepth;
+    }
+
+    /**
+     * Sets the maximum nesting depth permitted while parsing. A value of {@code 0} or less
+     * disables the check.
+     *
+     * @param maxNestingDepth maximum number of nested arrays/objects to allow
+     */
+    public void setMaxNestingDepth(int maxNestingDepth) {
+        this.maxNestingDepth = maxNestingDepth;
+    }
+
+    /**
+     * Records entry into a nested array or object, enforcing {@link #maxNestingDepth}.
+     *
+     * @throws JsonException if the configured maximum nesting depth would be exceeded
+     */
+    protected final void enterNesting() {
+        if (maxNestingDepth > 0 && ++nestingDepth > maxNestingDepth) {
+            throw new JsonException("Maximum JSON nesting depth of " + maxNestingDepth + " exceeded");
+        }
+    }
+
+    /**
+     * Records exit from a nested array or object.
+     */
+    protected final void exitNesting() {
+        if (nestingDepth > 0) {
+            nestingDepth--;
+        }
+    }
+
+    /**
+     * Resets the nesting-depth counter; called at the start of a top-level parse so a reused
+     * parser instance starts cleanly.
+     */
+    protected final void resetNesting() {
+        nestingDepth = 0;
     }
 
     /**

@@ -91,6 +91,8 @@ public class JsonFastParser extends JsonParserCharArray {
      */
     @SuppressWarnings("unchecked")
     protected final Value decodeJsonObjectLazyFinalParse() {
+        enterNesting();
+        try {
         char[] array = charArray;
 
         if (__currentChar == '{')
@@ -138,6 +140,9 @@ public class JsonFastParser extends JsonParserCharArray {
             }
         }
         return value;
+        } finally {
+            exitNesting();
+        }
     }
 
     /**
@@ -266,6 +271,8 @@ public class JsonFastParser extends JsonParserCharArray {
     }
 
     private Value decodeJsonArrayOverlay() {
+        enterNesting();
+        try {
         char[] array = charArray;
         if (__currentChar == '[') {
             __index++;
@@ -336,6 +343,9 @@ public class JsonFastParser extends JsonParserCharArray {
             complain("Did not find end of Json Array");
         }
         return value;
+        } finally {
+            exitNesting();
+        }
     }
 
     /**
