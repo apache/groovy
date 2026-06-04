@@ -19,6 +19,7 @@
 package groovy.json;
 
 import groovy.transform.NamedParam;
+import org.apache.groovy.json.internal.BaseJsonParser;
 import org.apache.groovy.json.internal.JsonFastParser;
 import org.apache.groovy.json.internal.JsonParserCharArray;
 import org.apache.groovy.json.internal.JsonParserLax;
@@ -94,6 +95,7 @@ public class JsonSlurper {
     private boolean chop = false;
     private boolean lazyChop = true;
     private boolean checkDates = true;
+    private int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth", BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
 
     private JsonParserType type = JsonParserType.CHAR_BUFFER;
 
@@ -189,6 +191,34 @@ public class JsonSlurper {
      */
     public JsonSlurper setCheckDates(boolean checkDates) {
         this.checkDates = checkDates;
+        return this;
+    }
+
+    /**
+     * The maximum nesting depth of arrays/objects the parser will accept before throwing a
+     * {@link JsonException}. This guards the recursive-descent parsers against a small but
+     * deeply-nested document driving a {@link StackOverflowError}. A value of {@code 0} or less
+     * disables the check (restoring the previous, unbounded behaviour). Defaults to
+     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}, and can
+     * be overridden globally with the {@code groovy.json.maxNestingDepth} system property.
+     *
+     * @return the maximum nesting depth
+     * @since 6.0.0
+     */
+    public int getMaxNestingDepth() {
+        return maxNestingDepth;
+    }
+
+    /**
+     * Sets the maximum nesting depth of arrays/objects the parser will accept before throwing a
+     * {@link JsonException}. A value of {@code 0} or less disables the check.
+     *
+     * @param maxNestingDepth maximum number of nested arrays/objects to allow
+     * @return this {@code JsonSlurper}
+     * @since 6.0.0
+     */
+    public JsonSlurper setMaxNestingDepth(int maxNestingDepth) {
+        this.maxNestingDepth = maxNestingDepth;
         return this;
     }
 
@@ -318,13 +348,15 @@ public class JsonSlurper {
     }
 
     private JsonParser createParser() {
-        return switch (type) {
+        BaseJsonParser parser = switch (type) {
             case LAX -> new JsonParserLax(false, chop, lazyChop, checkDates);
             case CHAR_BUFFER -> new JsonParserCharArray();
             case CHARACTER_SOURCE -> new JsonParserUsingCharacterSource();
             case INDEX_OVERLAY -> new JsonFastParser(false, chop, lazyChop, checkDates);
             default -> new JsonParserCharArray();
         };
+        parser.setMaxNestingDepth(maxNestingDepth);
+        return parser;
     }
 
     /**
@@ -375,7 +407,9 @@ public class JsonSlurper {
         if (file.length() < maxSizeForInMemory) {
             return createParser().parse(file, charset);
         } else {
-            return new JsonParserUsingCharacterSource().parse(file, charset);
+            JsonParserUsingCharacterSource parser = new JsonParserUsingCharacterSource();
+            parser.setMaxNestingDepth(maxNestingDepth);
+            return parser.parse(file, charset);
         }
     }
 

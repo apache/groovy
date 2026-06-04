@@ -63,6 +63,37 @@ import static groovy.json.JsonTokenType.STRING;
 public class JsonSlurperClassic {
 
     /**
+     * Maximum nesting depth of arrays/objects accepted before a {@link JsonException} is thrown,
+     * guarding the recursive parser against a small but deeply-nested document driving a
+     * {@link StackOverflowError}. A value of {@code 0} or less disables the check. Defaults to
+     * {@link org.apache.groovy.json.internal.BaseJsonParser#DEFAULT_MAX_NESTING_DEPTH}, and can be
+     * overridden globally with the {@code groovy.json.maxNestingDepth} system property.
+     */
+    private int maxNestingDepth = Integer.getInteger("groovy.json.maxNestingDepth",
+            org.apache.groovy.json.internal.BaseJsonParser.DEFAULT_MAX_NESTING_DEPTH);
+
+    /**
+     * Returns the maximum nesting depth of arrays/objects the parser will accept.
+     *
+     * @return the maximum nesting depth, or a value {@code <= 0} when the check is disabled
+     * @since 6.0.0
+     */
+    public int getMaxNestingDepth() {
+        return maxNestingDepth;
+    }
+
+    /**
+     * Sets the maximum nesting depth of arrays/objects the parser will accept before throwing a
+     * {@link JsonException}. A value of {@code 0} or less disables the check.
+     *
+     * @param maxNestingDepth maximum number of nested arrays/objects to allow
+     * @since 6.0.0
+     */
+    public void setMaxNestingDepth(int maxNestingDepth) {
+        this.maxNestingDepth = maxNestingDepth;
+    }
+
+    /**
      * Parse a text representation of a JSON data structure
      *
      * @param text JSON text to parse
@@ -89,9 +120,9 @@ public class JsonSlurperClassic {
 
         JsonToken token = lexer.nextToken();
         if (token.getType() == OPEN_CURLY) {
-            content = parseObject(lexer);
+            content = parseObject(lexer, 1);
         } else if (token.getType() == OPEN_BRACKET) {
-            content = parseArray(lexer);
+            content = parseArray(lexer, 1);
         } else {
             throw new JsonException(
                     "A JSON payload should start with " + OPEN_CURLY.getLabel() +
@@ -262,12 +293,31 @@ public class JsonSlurperClassic {
     }
 
     /**
+     * Enforces the configured {@link #maxNestingDepth}, throwing a {@link JsonException} rather
+     * than allowing the recursion to drive a {@link StackOverflowError}.
+     *
+     * @param depth the nesting depth about to be entered
+     * @param lexer the lexer, used for positional detail in the error
+     */
+    private void checkMaxNestingDepth(int depth, JsonLexer lexer) {
+        if (maxNestingDepth > 0 && depth > maxNestingDepth) {
+            throw new JsonException(
+                    "Maximum JSON nesting depth of " + maxNestingDepth + " exceeded " +
+                            "on line: " + lexer.getReader().getLine() + ", " +
+                            "column: " + lexer.getReader().getColumn() + "."
+            );
+        }
+    }
+
+    /**
      * Parse an array from the lexer
      *
      * @param lexer the lexer
+     * @param depth the current nesting depth (top-level container is depth 1)
      * @return a list of JSON values
      */
-    private List<Object> parseArray(JsonLexer lexer) {
+    private List<Object> parseArray(JsonLexer lexer, int depth) {
+        checkMaxNestingDepth(depth, lexer);
         List<Object> content = new ArrayList<>();
 
         JsonToken currentToken;
@@ -284,9 +334,9 @@ public class JsonSlurperClassic {
             }
 
             if (currentToken.getType() == OPEN_CURLY) {
-                content.add(parseObject(lexer));
+                content.add(parseObject(lexer, depth + 1));
             } else if (currentToken.getType() == OPEN_BRACKET) {
-                content.add(parseArray(lexer));
+                content.add(parseArray(lexer, depth + 1));
             } else if (currentToken.getType().ordinal() >= NULL.ordinal()) {
                 content.add(currentToken.getValue());
             } else if (currentToken.getType() == CLOSE_BRACKET) {
@@ -333,9 +383,11 @@ public class JsonSlurperClassic {
      * Parses an object from the lexer
      *
      * @param lexer the lexer
+     * @param depth the current nesting depth (top-level container is depth 1)
      * @return a Map representing a JSON object
      */
-    private Map<String, Object> parseObject(JsonLexer lexer) {
+    private Map<String, Object> parseObject(JsonLexer lexer, int depth) {
+        checkMaxNestingDepth(depth, lexer);
         Map<String, Object> content = new HashMap<>();
 
         JsonToken previousToken = null;
@@ -403,9 +455,9 @@ public class JsonSlurperClassic {
             // value can be an object, an array, a number, string, boolean or null values
 
             if (currentToken.getType() == OPEN_CURLY) {
-                content.put(mapKey, parseObject(lexer));
+                content.put(mapKey, parseObject(lexer, depth + 1));
             } else if (currentToken.getType() == OPEN_BRACKET) {
-                content.put(mapKey, parseArray(lexer));
+                content.put(mapKey, parseArray(lexer, depth + 1));
             } else if (currentToken.getType().ordinal() >= NULL.ordinal()) {
                 content.put(mapKey, currentToken.getValue());
             } else {

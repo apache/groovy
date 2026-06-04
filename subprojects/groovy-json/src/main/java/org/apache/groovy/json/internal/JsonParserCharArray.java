@@ -57,6 +57,7 @@ public class JsonParserCharArray extends BaseJsonParser {
         charArray = cs;
         lastIndex = cs.length - 1;
         openLeftCurlyBraces = 0;
+        resetNesting();
         Object result = decodeValue();
         if (openLeftCurlyBraces != 0) {
             complain("Curly braces do not match");
@@ -144,6 +145,8 @@ public class JsonParserCharArray extends BaseJsonParser {
      * @return parsed object as a {@link LazyMap}
      */
     protected final Object decodeJsonObject() {
+        enterNesting();
+        try {
         if (__currentChar == '{') {
             if (hasCurrent()) {
                 openLeftCurlyBraces++;
@@ -199,6 +202,9 @@ public class JsonParserCharArray extends BaseJsonParser {
         }
 
         return map;
+        } finally {
+            exitNesting();
+        }
     }
 
     /**
@@ -363,6 +369,7 @@ public class JsonParserCharArray extends BaseJsonParser {
      * @return parsed array contents
      */
     protected final List decodeJsonArray() {
+        enterNesting();
         ArrayList<Object> list = null;
 
         boolean foundEnd = false;
@@ -428,6 +435,8 @@ public class JsonParserCharArray extends BaseJsonParser {
                 throw (JsonException) ex;
             }
             throw new JsonException(exceptionDetails("issue parsing JSON array"), ex);
+        } finally {
+            exitNesting();
         }
         if (!foundEnd) {
             complain("Did not find end of Json Array");
