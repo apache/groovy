@@ -557,13 +557,9 @@ public class StatementWriter {
 
         recorder.excludedStatement = () -> {
             if (isEmptyStatement(finallyStatement)) return;
-
-            final VariableScope originalScope = compileStack.getScope();
-            compileStack.pop();
-            compileStack.pushBlockRecorderVisit(recorder);
-            finallyStatement.visit(controller.getAcg());
-            compileStack.popBlockRecorderVisit(recorder);
-            compileStack.pushVariableScope(originalScope);
+            // GROOVY-4721, GROOVY-12062: emit the finally with the try-block locals
+            // hidden, then restore the try scope (and its variables) afterwards.
+            compileStack.visitExcludedFinally(recorder, () -> finallyStatement.visit(controller.getAcg()));
         };
 
         compileStack.pushBlockRecorder(recorder);
