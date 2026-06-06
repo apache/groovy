@@ -87,7 +87,12 @@ final class BinaryOperationsTest extends AbstractBytecodeTestCase {
                     "ICONST_$it",
             ])
         }
-        [-1, 6,Byte.MIN_VALUE,Byte.MAX_VALUE].each {
+        assert compile("""\
+            int a = -1
+        """).hasStrictSequence([
+                "ICONST_M1",
+        ])
+        [6,Byte.MIN_VALUE,Byte.MAX_VALUE].each {
             assert compile("""\
                     int a = $it
                 """).hasStrictSequence([
@@ -108,6 +113,26 @@ final class BinaryOperationsTest extends AbstractBytecodeTestCase {
                     "LDC",
             ])
         }
+    }
+
+    @Test
+    void testPrimitiveZeroConstants() {
+        assumeFalse(config.indyEnabled)
+        assert compile("""\
+            long a = 0L
+        """).hasStrictSequence([
+                'LCONST_0',
+        ])
+        assert compile("""\
+            float a = 0f
+        """).hasStrictSequence([
+                'FCONST_0',
+        ])
+        assert compile("""\
+            double a = 0d
+        """).hasStrictSequence([
+                'DCONST_0',
+        ])
     }
 
     @Test

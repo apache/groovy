@@ -78,7 +78,8 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
                 null == x
             }
         ''')
-        assert bytecode.hasStrictSequence(['ICONST_0', 'POP'])
+        assert !bytecode.hasSequence(['ICONST_0', 'POP'])
+        assert bytecode.hasSequence(['RETURN'])
     }
 
     @Test
@@ -89,7 +90,8 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
                 x == null
             }
         ''')
-        assert bytecode.hasStrictSequence(['ICONST_0', 'POP'])
+        assert !bytecode.hasSequence(['ICONST_0', 'POP'])
+        assert bytecode.hasSequence(['RETURN'])
     }
 
     @Test

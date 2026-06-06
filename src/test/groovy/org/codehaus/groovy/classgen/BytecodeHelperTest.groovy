@@ -23,12 +23,20 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.stmt.EmptyStatement
+import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.classgen.asm.BytecodeHelper
 import org.junit.jupiter.api.Test
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.util.Printer
 
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+import static org.objectweb.asm.Opcodes.ACC_STATIC
+import static org.objectweb.asm.Opcodes.RETURN
+import static org.objectweb.asm.Opcodes.V17
 import static org.junit.jupiter.api.Assertions.assertEquals
 
-class BytecodeHelperTest {
+class BytecodeHelperTest extends AbstractBytecodeTestCase {
 
     @Test
     void testTypeName() {
@@ -71,5 +79,50 @@ class BytecodeHelperTest {
                 BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.short_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
         assertEquals("()Z",
                 BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.boolean_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))
+    }
+
+    @Test
+    void testPushConstantUsesCompactIntegerInstructions() {
+        def bytecode = emitBytecode {
+            BytecodeHelper.pushConstant(it, -1)
+            BytecodeHelper.pushConstant(it, 6)
+            BytecodeHelper.pushConstant(it, 200)
+            BytecodeHelper.pushConstant(it, 70_000)
+            it.visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ICONST_M1',
+                'BIPUSH 6',
+                'SIPUSH 200',
+                'LDC 70000',
+                'RETURN',
+        ]
+    }
+
+    private emitBytecode(@DelegatesTo(MethodVisitor) Closure emitter) {
+        def writer = new ClassWriter(ClassWriter.COMPUTE_MAXS)
+        writer.visit(V17, ACC_PUBLIC, 'BytecodeHelperTestSupport', null, 'java/lang/Object', null)
+
+        MethodVisitor mv = writer.visitMethod(ACC_PUBLIC | ACC_STATIC, 'sample', '()V', null, null)
+        mv.visitCode()
+        emitter.delegate = mv
+        emitter.resolveStrategy = Closure.DELEGATE_FIRST
+        if (emitter.maximumNumberOfParameters == 0) {
+            emitter.call()
+        } else {
+            emitter.call(mv)
+        }
+        mv.visitMaxs(0, 0)
+        mv.visitEnd()
+
+        writer.visitEnd()
+        extractSequence(writer.toByteArray(), [method: 'sample'])
+    }
+
+    private static List<String> opcodeLines(bytecode) {
+        bytecode.instructions.findAll { line ->
+            Printer.OPCODES.any { opcode -> opcode != null && line.startsWith(opcode) }
+        }
     }
 }
