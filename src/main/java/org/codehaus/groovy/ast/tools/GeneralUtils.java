@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.tools;
 
 import groovy.lang.MetaProperty;
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -1207,5 +1208,25 @@ public class GeneralUtils {
         }
 
         return true;
+    }
+
+    /**
+     * Returns {@code true} if the given statement is effectively empty — i.e. it is {@code null},
+     * an {@link EmptyStatement}, or a {@link BlockStatement} whose every nested statement is itself
+     * empty (recursively).  This is subtly different from {@link Statement#isEmpty()}, which only
+     * checks whether a {@link BlockStatement} has zero entries, not whether those entries are all
+     * empty.
+     */
+    @Internal
+    public static boolean isEmptyStatement(final Statement statement) {
+        if (statement == null || statement.isEmpty()) return true;
+        if (statement instanceof BlockStatement) {
+            BlockStatement blockStatement = (BlockStatement) statement;
+            for (Statement subStatement : blockStatement.getStatements()) {
+                if (!isEmptyStatement(subStatement)) return false;
+            }
+            return true;
+        }
+        return false;
     }
 }

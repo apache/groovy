@@ -838,6 +838,38 @@ public class CompileStack {
         visitedBlocks.remove(finallyBlock);
     }
 
+    /**
+     * Inlines an excluded finally block via {@code visit} while hiding the
+     * variables of the current (try) scope, then fully restores that scope —
+     * including its variables.
+     * <p>
+     * Popping the current scope keeps try-block locals out of scope in the
+     * finally body (GROOVY-4721); restoring the saved variables afterwards
+     * ensures any subsequent re-emission of the same statement (e.g. the
+     * {@link OptimizingStatementWriter} fast/slow fork) still resolves those
+     * locals rather than falling back to property access (GROOVY-12062).
+     *
+     * @param recorder the block recorder being visited
+     * @param visit    emits the finally body
+     */
+    public void visitExcludedFinally(final BlockRecorder recorder, final Runnable visit) {
+        VariableScope originalScope = scope;
+        Map<String, BytecodeVariable> savedVariables = stackVariables;
+        pop();
+        pushBlockRecorderVisit(recorder);
+        visit.run();
+        popBlockRecorderVisit(recorder);
+        pushVariableScope(originalScope);
+        stackVariables = savedVariables;
+    }
+
+    /**
+     * Writes the exception-table entries for all label ranges recorded in {@code block}.
+     *
+     * @param block the block recorder containing the try-range labels
+     * @param goal  the handler label
+     * @param sig   the internal name of the caught type, or {@code null} for catch-all
+     */
     public void writeExceptionTable(final BlockRecorder block, final Label goal, final String sig) {
         if (block.isEmpty) return;
         MethodVisitor mv = controller.getMethodVisitor();

@@ -48,6 +48,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
 import org.objectweb.asm.Label;
@@ -433,14 +434,10 @@ public class StatementWriter {
         final CompileStack compileStack = controller.getCompileStack();
 
         recorder.excludedStatement = () -> {
-            if (finallyStatement == null || finallyStatement instanceof EmptyStatement) return;
-
-            final VariableScope originalScope = compileStack.getScope();
-            compileStack.pop();
-            compileStack.pushBlockRecorderVisit(recorder);
-            finallyStatement.visit(controller.getAcg());
-            compileStack.popBlockRecorderVisit(recorder);
-            compileStack.pushVariableScope(originalScope);
+            if (GeneralUtils.isEmptyStatement(finallyStatement)) return;
+            // GROOVY-4721, GROOVY-12062: emit the finally with the try-block locals
+            // hidden, then restore the try scope (and its variables) afterwards.
+            compileStack.visitExcludedFinally(recorder, () -> finallyStatement.visit(controller.getAcg()));
         };
 
         compileStack.pushBlockRecorder(recorder);
