@@ -69,6 +69,7 @@ import static org.objectweb.asm.Opcodes.ICONST_2;
 import static org.objectweb.asm.Opcodes.ICONST_3;
 import static org.objectweb.asm.Opcodes.ICONST_4;
 import static org.objectweb.asm.Opcodes.ICONST_5;
+import static org.objectweb.asm.Opcodes.ICONST_M1;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.ILOAD;
@@ -249,6 +250,9 @@ public class BytecodeHelper {
      */
     public static void pushConstant(MethodVisitor mv, int value) {
         switch (value) {
+          case -1:
+            mv.visitInsn(ICONST_M1);
+            break;
           case 0:
             mv.visitInsn(ICONST_0);
             break;

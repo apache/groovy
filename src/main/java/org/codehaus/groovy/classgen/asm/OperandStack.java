@@ -49,13 +49,10 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveShort;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.D2F;
 import static org.objectweb.asm.Opcodes.D2I;
 import static org.objectweb.asm.Opcodes.D2L;
-import static org.objectweb.asm.Opcodes.DCONST_0;
-import static org.objectweb.asm.Opcodes.DCONST_1;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP2;
 import static org.objectweb.asm.Opcodes.DUP2_X1;
@@ -64,9 +61,6 @@ import static org.objectweb.asm.Opcodes.DUP_X2;
 import static org.objectweb.asm.Opcodes.F2D;
 import static org.objectweb.asm.Opcodes.F2I;
 import static org.objectweb.asm.Opcodes.F2L;
-import static org.objectweb.asm.Opcodes.FCONST_0;
-import static org.objectweb.asm.Opcodes.FCONST_1;
-import static org.objectweb.asm.Opcodes.FCONST_2;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.I2B;
 import static org.objectweb.asm.Opcodes.I2C;
@@ -74,15 +68,11 @@ import static org.objectweb.asm.Opcodes.I2D;
 import static org.objectweb.asm.Opcodes.I2F;
 import static org.objectweb.asm.Opcodes.I2L;
 import static org.objectweb.asm.Opcodes.I2S;
-import static org.objectweb.asm.Opcodes.ICONST_0;
-import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.L2D;
 import static org.objectweb.asm.Opcodes.L2F;
 import static org.objectweb.asm.Opcodes.L2I;
-import static org.objectweb.asm.Opcodes.LCONST_0;
-import static org.objectweb.asm.Opcodes.LCONST_1;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.POP2;
@@ -165,11 +155,7 @@ public class OperandStack {
         MethodVisitor mv = controller.getMethodVisitor();
         if (mark == size) {
             // no element, so use emptyDefault
-            if (emptyDefault) {
-                mv.visitIntInsn(BIPUSH, 1);
-            } else {
-                mv.visitIntInsn(BIPUSH, 0);
-            }
+            mv.visitLdcInsn(emptyDefault ? 1 : 0);
             stack.add(null);
         } else if (mark == size - 1) {
             ClassNode last = stack.get(size - 1);
@@ -585,42 +571,11 @@ public class OperandStack {
         boolean isChar = isPrimitiveChar(type);
         if (isInt || isShort || isByte || isChar) {
             int val = isInt ? (Integer) value : isShort ? (Short) value : isChar ? (Character) value : (Byte) value;
-            BytecodeHelper.pushConstant(mv, val);
-        } else if (isPrimitiveLong(type)) {
-            if ((Long) value == 0L) {
-                mv.visitInsn(LCONST_0);
-            } else if ((Long) value == 1L) {
-                mv.visitInsn(LCONST_1);
-            } else {
-                mv.visitLdcInsn(value);
-            }
-        } else if (isPrimitiveFloat(type)) {
-            // GROOVY-9797: Use Float.equals to differentiate between positive and negative zero
-            if (value.equals(0f)) {
-                mv.visitInsn(FCONST_0);
-            } else if ((Float) value == 1f) {
-                mv.visitInsn(FCONST_1);
-            } else if ((Float) value == 2f) {
-                mv.visitInsn(FCONST_2);
-            } else {
-                mv.visitLdcInsn(value);
-            }
-        } else if (isPrimitiveDouble(type)) {
-            // GROOVY-9797: Use Double.equals to differentiate between positive and negative zero
-            if (value.equals(0d)) {
-                mv.visitInsn(DCONST_0);
-            } else if ((Double) value == 1d) {
-                mv.visitInsn(DCONST_1);
-            } else {
-                mv.visitLdcInsn(value);
-            }
+            mv.visitLdcInsn(val);
+        } else if (isPrimitiveLong(type) || isPrimitiveFloat(type) || isPrimitiveDouble(type)) {
+            mv.visitLdcInsn(value);
         } else if (isPrimitiveBoolean(type)) {
-            boolean b = (Boolean) value;
-            if (b) {
-                mv.visitInsn(ICONST_1);
-            } else {
-                mv.visitInsn(ICONST_0);
-            }
+            mv.visitLdcInsn((Boolean) value ? 1 : 0);
         } else {
             mv.visitLdcInsn(value);
         }
@@ -729,7 +684,7 @@ public class OperandStack {
      */
     public void pushBool(final boolean value) {
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitInsn(value ? ICONST_1 : ICONST_0);
+        mv.visitLdcInsn(value ? 1 : 0);
         push(ClassHelper.boolean_TYPE);
     }
 
