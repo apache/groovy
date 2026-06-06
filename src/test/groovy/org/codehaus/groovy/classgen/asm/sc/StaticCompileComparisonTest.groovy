@@ -71,7 +71,7 @@ final class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
             }
         ''')
         assert bytecode.hasStrictSequence(
-                ['ALOAD','ARRAYLENGTH', 'ICONST_0','IF_ICMPLE']
+                ['ALOAD','ARRAYLENGTH', 'IFLE']
         )
     }
 
@@ -88,7 +88,7 @@ final class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
             }
         ''')
         assert bytecode.hasStrictSequence(
-                ['ALOAD','ARRAYLENGTH', 'ICONST_0','IF_ICMPLE']
+                ['ALOAD','ARRAYLENGTH', 'IFLE']
         )
     }
 
