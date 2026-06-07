@@ -44,7 +44,7 @@ jobs:
       NO_COLOR: ${{ matrix.env-no-color }}
     steps:
       - name: "📥 Checkout repository"
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
       - name: "☕️ Setup JDK"
         uses: actions/setup-java@v5
         with:
@@ -135,7 +135,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Checkout repository"
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
       - name: "☕️ Setup JDK"
         uses: actions/setup-java@v5
         with:
