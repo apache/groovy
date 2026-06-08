@@ -482,6 +482,43 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-12045
+    @Test
+    void testStaticInnerClass4() {
+        shouldFail MissingMethodException, '''
+            class A {
+                static class B {
+                }
+                def f() {
+                }
+                def g() {
+                    new B().f()
+                }
+            }
+
+            new A().g()
+        '''
+    }
+
+    // GROOVY-12045
+    @Test
+    void testStaticInnerClass5() {
+        assertScript '''
+            class A {
+                static class B {
+                }
+                def f() {
+                    this.class.simpleName
+                }
+                def g() {
+                    new B().with { f() }
+                }
+            }
+
+            assert new A().g() == 'A'
+        '''
+    }
+
     @Test
     void testNonStaticInnerClass() {
         assertScript '''

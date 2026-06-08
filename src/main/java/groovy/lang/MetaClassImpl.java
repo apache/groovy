@@ -998,19 +998,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
+        if (original != null) throw original;
 
-        // GROOVY-12046: MissingMethodException reports the metaclass theClass (a supertype)
-        //                 instead of the receiver's runtime class, breaking the GroovyObject.invokeMethod MOP fallback.
+        // GROOVY-12046: MissingMethodException reports theClass (a supertype)
+        // instead of the receiver's runtime class, breaking the GroovyObject.invokeMethod fallback.
         //
         // The MOP fallback guard in IndyGuardsFiltersAndSignatures.invokeGroovyObjectInvoker checks
         // `receiver.getClass() == e.getType()` before delegating to GroovyObject.invokeMethod.
         // A per-instance metaclass may have theClass set to a supertype of the actual receiver (a
         // common pattern in mocking frameworks), so we must use the receiver's runtime class as the
         // exception type in that case; otherwise the guard fails and the fallback is silently skipped.
-        if (original != null) throw original;
         Class<?> type = theClass;
         Class<?> instanceClass = instance.getClass();
-        if (!(instance instanceof Class) && type != instanceClass && type.isAssignableFrom(instanceClass)
+        if (type != instanceClass
+                && !(instance instanceof Class)
+                && type.isAssignableFrom(instanceClass)
                 && lookupObjectMetaClass(instance) == this) {
             type = instanceClass;
         }
@@ -1323,7 +1325,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        if (method != null) {
+        if (method != null && (method.isStatic() || theClass == Class.class || !(object instanceof Class))) { // GROOVY-12045
             if (arguments.length == 0 && "clone".equals(methodName) && method.getDeclaringClass() == ReflectionCache.OBJECT_CLASS) {
                 throw method.processDoMethodInvokeException(new CloneNotSupportedException(), object, arguments);
             }
