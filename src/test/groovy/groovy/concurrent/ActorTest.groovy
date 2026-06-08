@@ -1422,6 +1422,15 @@ final class ActorTest {
             actor.send('arm')
             Thread.sleep(150)
             actor.stop()
+            // Let the worker finish draining any tick that was already in-flight
+            // at stop() time (a periodic tick crosses scheduler -> executor ->
+            // worker threads, so one can be queued just before active flips).
+            // After termination no further message can be dispatched, so a
+            // cancelled timer means ticks can never move again — making the
+            // snapshot below stable instead of racing the drain.
+            def deadline = System.currentTimeMillis() + 2000
+            while (!actor.terminated && System.currentTimeMillis() < deadline) Thread.sleep(5)
+            assert actor.terminated, 'actor did not drain after stop()'
             def before = ticks.get()
             Thread.sleep(300)              // would be many more ticks if not cancelled
             assert ticks.get() == before, "ticks fired after stop (${ticks.get() - before} extra)"
