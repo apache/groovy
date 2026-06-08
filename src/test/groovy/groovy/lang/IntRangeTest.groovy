@@ -312,4 +312,31 @@ final class IntRangeTest {
         IntRange ir = 1<..<5
         assert ir == [2, 3, 4]
     }
+
+    @Test
+    void testContainsWithinBounds() {
+        def range = 2..4
+
+        // a non-integer value within the continuous bounds qualifies,
+        // even though it is not a discrete member of the range
+        assert range.containsWithinBounds(2.5)
+        assert !range.contains(2.5)
+
+        // integer members and boundaries still behave as before
+        assert range.containsWithinBounds(2)
+        assert range.containsWithinBounds(3)
+        assert range.containsWithinBounds(4)
+
+        // values outside the bounds are excluded
+        assert !range.containsWithinBounds(1.9)
+        assert !range.containsWithinBounds(4.1)
+        assert !range.containsWithinBounds(1)
+        assert !range.containsWithinBounds(5)
+
+        // exclusive bounds narrow the interval that is checked
+        def exclusive = 1<..<5 // == [2, 3, 4]
+        assert exclusive.containsWithinBounds(2.5)
+        assert !exclusive.containsWithinBounds(1.5)
+        assert !exclusive.containsWithinBounds(4.5)
+    }
 }
