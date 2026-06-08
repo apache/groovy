@@ -276,6 +276,31 @@ class Rocket {
         }
     }
 
+    // GROOVY-12066
+    @Test
+    void class_invariant_on_static_nested_class_without_explicit_constructor() {
+
+        def c = add_class_to_classpath """
+            import groovy.contracts.*
+
+            class Outer {
+                @Invariant({ value >= 0 })
+                static class Inner {
+                    int value = 1
+                    def decrease() { value -= 2 }
+                }
+            }
+        """
+
+        def inner = c.getDeclaredClasses().find { it.simpleName == 'Inner' }
+        def instance = inner.newInstance()
+
+        // and the invariant is actually enforced on the nested class
+        shouldFail ClassInvariantViolation, {
+            instance.decrease()
+        }
+    }
+
     @Test
     void private_field_access_in_descendant_class() {
 

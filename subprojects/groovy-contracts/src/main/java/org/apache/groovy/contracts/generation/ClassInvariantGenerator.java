@@ -118,7 +118,11 @@ public class ClassInvariantGenerator extends BaseGenerator {
         } else if (statement instanceof BlockStatement blockStatement) {
             blockStatement.addStatement(invariantMethodCall);
         } else {
-            final BlockStatement assertionBlock = block(statement, invariantMethodCall);
+            // statement may be null, e.g. the synthetic default constructor of a
+            // static nested class still has a null body at this phase (GROOVY-12066)
+            final BlockStatement assertionBlock = statement == null
+                    ? block(invariantMethodCall)
+                    : block(statement, invariantMethodCall);
             method.setCode(assertionBlock);
         }
     }
