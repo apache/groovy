@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780395592123,
+  "lastUpdate": 1780910613771,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Benchmark": [
@@ -1342,6 +1342,460 @@ window.BENCHMARK_DATA = {
           {
             "name": "findG_lambdasCurryWith (size=10000)",
             "value": 1.5,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findH_closuresCurryWith (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findH_closuresCurryWith (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findH_closuresCurryWith (size=10000)",
+            "value": 57,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "9f8ebfc8972504541da1c5ec85f80159d1489f8a",
+          "message": "GROOVY-12067: IntRange.containsWithinBounds delegates to contains, breaking the continuous-bounds contract",
+          "timestamp": "2026-06-08T04:07:38Z",
+          "url": "https://github.com/apache/groovy/commit/9f8ebfc8972504541da1c5ec85f80159d1489f8a"
+        },
+        "date": 1780910612709,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "countA_captureClosure (size=100)",
+            "value": 7280,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countA_captureClosure (size=1000)",
+            "value": 72112.1,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countA_captureClosure (size=10000)",
+            "value": 720113.5,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countB_rcurryClosure (size=100)",
+            "value": 9820,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countB_rcurryClosure (size=1000)",
+            "value": 96220.3,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countB_rcurryClosure (size=10000)",
+            "value": 960210.6,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countC_biPredicateParam (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countC_biPredicateParam (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countC_biPredicateParam (size=10000)",
+            "value": 0.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countD_methodRefParam (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countD_methodRefParam (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countD_methodRefParam (size=10000)",
+            "value": 0.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countE_baseline (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countE_baseline (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countE_baseline (size=10000)",
+            "value": 32.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countF_sharedRcurry (size=100)",
+            "value": 9764,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countF_sharedRcurry (size=1000)",
+            "value": 96201.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countF_sharedRcurry (size=10000)",
+            "value": 960166.6,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countG_lambdasCurryWith (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countG_lambdasCurryWith (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countG_lambdasCurryWith (size=10000)",
+            "value": 0.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countH_closuresCurryWith (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countH_closuresCurryWith (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "countH_closuresCurryWith (size=10000)",
+            "value": 104.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findA_captureClosure (size=100)",
+            "value": 7280,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findA_captureClosure (size=1000)",
+            "value": 72080.1,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findA_captureClosure (size=10000)",
+            "value": 720081.4,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllA_captureClosure (size=100)",
+            "value": 7720,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllA_captureClosure (size=1000)",
+            "value": 76120.1,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllA_captureClosure (size=10000)",
+            "value": 760121.5,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllB_rcurryClosure (size=100)",
+            "value": 10248,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllB_rcurryClosure (size=1000)",
+            "value": 100248.3,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllB_rcurryClosure (size=10000)",
+            "value": 1000262.7,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllC_biPredicateParam (size=100)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllC_biPredicateParam (size=1000)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllC_biPredicateParam (size=10000)",
+            "value": 24.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllD_methodRefParam (size=100)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllD_methodRefParam (size=1000)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllD_methodRefParam (size=10000)",
+            "value": 24.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllE_baseline (size=100)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllE_baseline (size=1000)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllE_baseline (size=10000)",
+            "value": 56.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllF_sharedRcurry (size=100)",
+            "value": 10204,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllF_sharedRcurry (size=1000)",
+            "value": 100229.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllF_sharedRcurry (size=10000)",
+            "value": 1000194.7,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllG_lambdasCurryWith (size=100)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllG_lambdasCurryWith (size=1000)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllG_lambdasCurryWith (size=10000)",
+            "value": 24.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllH_closuresCurryWith (size=100)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllH_closuresCurryWith (size=1000)",
+            "value": 24,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findAllH_closuresCurryWith (size=10000)",
+            "value": 130.1,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findB_rcurryClosure (size=100)",
+            "value": 9820,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findB_rcurryClosure (size=1000)",
+            "value": 96220.3,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findB_rcurryClosure (size=10000)",
+            "value": 960210.7,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findC_biPredicateParam (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findC_biPredicateParam (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findC_biPredicateParam (size=10000)",
+            "value": 0.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findD_methodRefParam (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findD_methodRefParam (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findD_methodRefParam (size=10000)",
+            "value": 0.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findE_baseline (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findE_baseline (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findE_baseline (size=10000)",
+            "value": 32.2,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findF_sharedRcurry (size=100)",
+            "value": 9764,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findF_sharedRcurry (size=1000)",
+            "value": 96195.3,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findF_sharedRcurry (size=10000)",
+            "value": 960154.7,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findG_lambdasCurryWith (size=100)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findG_lambdasCurryWith (size=1000)",
+            "value": 0,
+            "unit": "B/op",
+            "extra": "B/op (gc.alloc.rate.norm)"
+          },
+          {
+            "name": "findG_lambdasCurryWith (size=10000)",
+            "value": 0.7,
             "unit": "B/op",
             "extra": "B/op (gc.alloc.rate.norm)"
           },
