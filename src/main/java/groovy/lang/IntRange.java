@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.RangeInfo;
 
@@ -405,6 +406,13 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
      */
     @Override
     public boolean containsWithinBounds(Object o) {
+        // unlike contains(), this checks the continuous interval between the
+        // boundary values, so a non-integer value within [from, to] qualifies
+        if (o instanceof Number) {
+            Comparable value = (Comparable) o;
+            return DefaultGroovyMethods.numberAwareCompareTo(value, getFrom()) >= 0
+                    && DefaultGroovyMethods.numberAwareCompareTo(value, getTo()) <= 0;
+        }
         return contains(o);
     }
 
