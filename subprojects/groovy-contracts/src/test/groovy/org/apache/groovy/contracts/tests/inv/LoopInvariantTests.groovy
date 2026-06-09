@@ -329,5 +329,71 @@ class LoopInvariantTests extends BaseTestClass {
             method()
         '''
     }
+
+    // GROOVY-12072: a statement-level @Invariant sits on a node the compiler's static-import
+    // pass never visits, so unqualified statically imported members in the closure must be
+    // resolved by the loop transform itself (they are resolved fine in class invariants and
+    // preconditions, whose annotations live on AnnotatedNodes).
+    @Test
+    void invariantWithStaticImportedMethod() {
+        assertScript '''
+            import groovy.contracts.*
+            import static java.lang.Math.max
+
+            @Invariant({ max(3, 4) == 4 })
+            class C {
+                @Requires({ max(3, 4) == 4 })
+                static int iter(int n) {
+                    int a = 0
+                    @Invariant({ max(3, 4) == 4 })
+                    while (a < n) { a++ }
+                    return a
+                }
+            }
+
+            assert C.iter(4) == 4
+        '''
+    }
+
+    @Test
+    void invariantWithStaticStarImportedMethodUnderCompileStatic() {
+        assertScript '''
+            import groovy.contracts.Invariant
+            import groovy.transform.CompileStatic
+            import static java.lang.Math.*
+
+            @CompileStatic
+            static int loop(int n) {
+                int a = 0
+                @Invariant({ max(0, a) <= n && min(1, 2) == 1 })
+                while (a < n) { a++ }
+                return a
+            }
+
+            assert loop(5) == 5
+        '''
+    }
+
+    // A clashing instance method must still win over the static import in an instance-method
+    // context, confirming the re-resolution honours the enclosing method's static-ness.
+    @Test
+    void invariantInstanceMethodShadowsStaticImport() {
+        assertScript '''
+            import groovy.contracts.Invariant
+            import static java.lang.Math.max
+
+            class F {
+                int max(int x, int y) { 999 }
+                int loop(int n) {
+                    int a = 0
+                    @Invariant({ max(1, 2) == 999 })
+                    while (a < n) { a++ }
+                    return a
+                }
+            }
+
+            assert new F().loop(2) == 2
+        '''
+    }
 }
 

@@ -43,6 +43,24 @@ class LoopDecreasesTests extends BaseTestClass {
         '''
     }
 
+    // GROOVY-12072: a statement-level @Decreases is never reached by the compiler's static-import
+    // pass, so unqualified statically imported members in the variant closure must be resolved by
+    // the loop transform itself.
+    @Test
+    void decreasesWithStaticImportedMethod() {
+        assertScript '''
+            import groovy.contracts.Decreases
+            import static java.lang.Math.max
+
+            int n = 10
+            @Decreases({ max(0, n) })
+            while (n > 0) {
+                n--
+            }
+            assert n == 0
+        '''
+    }
+
     @Test
     void decreasesOnClassicForLoop() {
         assertScript '''
