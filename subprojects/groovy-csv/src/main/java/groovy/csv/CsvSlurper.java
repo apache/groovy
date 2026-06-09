@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -150,17 +151,29 @@ public class CsvSlurper {
     }
 
     /**
-     * Parse CSV from an input stream. The caller is responsible for closing the stream.
+     * Parse CSV from a UTF-8 encoded input stream. The caller is responsible for closing the stream.
      *
      * @param stream the input stream of CSV
      * @return a list of maps (one per row)
      */
     public List<Map<String, String>> parse(InputStream stream) {
-        return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
+        return parse(stream, StandardCharsets.UTF_8);
     }
 
     /**
-     * Parse CSV from a file.
+     * Parse CSV from an input stream decoded with the given charset.
+     * The caller is responsible for closing the stream.
+     *
+     * @param stream the input stream of CSV
+     * @param charset the charset used to decode the stream
+     * @return a list of maps (one per row)
+     */
+    public List<Map<String, String>> parse(InputStream stream, Charset charset) {
+        return parse(new InputStreamReader(stream, charset));
+    }
+
+    /**
+     * Parse CSV from a UTF-8 encoded file.
      *
      * @param file the CSV file
      * @return a list of maps (one per row), keyed by column headers
@@ -170,14 +183,36 @@ public class CsvSlurper {
     }
 
     /**
-     * Parse CSV from a path.
+     * Parse CSV from a file decoded with the given charset.
+     *
+     * @param file the CSV file
+     * @param charset the charset used to decode the file
+     * @return a list of maps (one per row), keyed by column headers
+     */
+    public List<Map<String, String>> parse(File file, Charset charset) throws IOException {
+        return parse(file.toPath(), charset);
+    }
+
+    /**
+     * Parse CSV from a UTF-8 encoded path.
      *
      * @param path the path to the CSV file
      * @return a list of maps (one per row), keyed by column headers
      */
     public List<Map<String, String>> parse(Path path) throws IOException {
+        return parse(path, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Parse CSV from a path decoded with the given charset.
+     *
+     * @param path the path to the CSV file
+     * @param charset the charset used to decode the file
+     * @return a list of maps (one per row), keyed by column headers
+     */
+    public List<Map<String, String>> parse(Path path, Charset charset) throws IOException {
         try (InputStream stream = Files.newInputStream(path)) {
-            return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            return parse(stream, charset);
         }
     }
 
@@ -226,7 +261,7 @@ public class CsvSlurper {
     }
 
     /**
-     * Parse CSV from a file into typed objects.
+     * Parse CSV from a UTF-8 encoded file into typed objects.
      *
      * @param type the target type
      * @param file the CSV file
@@ -238,7 +273,20 @@ public class CsvSlurper {
     }
 
     /**
-     * Parse CSV from a path into typed objects.
+     * Parse CSV from a file decoded with the given charset into typed objects.
+     *
+     * @param type the target type
+     * @param file the CSV file
+     * @param charset the charset used to decode the file
+     * @param <T> the target type
+     * @return a list of typed objects
+     */
+    public <T> List<T> parseAs(Class<T> type, File file, Charset charset) throws IOException {
+        return parseAs(type, file.toPath(), charset);
+    }
+
+    /**
+     * Parse CSV from a UTF-8 encoded path into typed objects.
      *
      * @param type the target type
      * @param path the path to the CSV file
@@ -246,8 +294,21 @@ public class CsvSlurper {
      * @return a list of typed objects
      */
     public <T> List<T> parseAs(Class<T> type, Path path) throws IOException {
+        return parseAs(type, path, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Parse CSV from a path decoded with the given charset into typed objects.
+     *
+     * @param type the target type
+     * @param path the path to the CSV file
+     * @param charset the charset used to decode the file
+     * @param <T> the target type
+     * @return a list of typed objects
+     */
+    public <T> List<T> parseAs(Class<T> type, Path path, Charset charset) throws IOException {
         try (InputStream stream = Files.newInputStream(path)) {
-            return parseAs(type, new InputStreamReader(stream, StandardCharsets.UTF_8));
+            return parseAs(type, new InputStreamReader(stream, charset));
         }
     }
 

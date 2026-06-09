@@ -20,6 +20,9 @@ package groovy.csv
 
 import org.junit.jupiter.api.Test
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+
 class CsvSlurperTest {
 
     @Test
@@ -87,6 +90,46 @@ class CsvSlurperTest {
         def reader = new StringReader('name,age\nAlice,30')
         def csv = new CsvSlurper().parse(reader)
         assert csv[0].name == 'Alice'
+    }
+
+    @Test
+    void testParseStreamDefaultsToUtf8() {
+        def bytes = 'name,city\nAlice,café'.getBytes(StandardCharsets.UTF_8)
+        def csv = new CsvSlurper().parse(new ByteArrayInputStream(bytes))
+        assert csv[0].city == 'café'
+    }
+
+    @Test
+    void testParseStreamWithCharset() {
+        // bytes encoded as ISO-8859-1 (é is a single 0xE9 byte there, not valid UTF-8)
+        def bytes = 'name,city\nAlice,café'.getBytes(StandardCharsets.ISO_8859_1)
+        def csv = new CsvSlurper().parse(new ByteArrayInputStream(bytes), StandardCharsets.ISO_8859_1)
+        assert csv[0].city == 'café'
+    }
+
+    @Test
+    void testParsePathWithCharset() {
+        def tmp = Files.createTempFile('csvslurper', '.csv')
+        try {
+            Files.write(tmp, 'name,city\nAlice,café'.getBytes(StandardCharsets.ISO_8859_1))
+            def csv = new CsvSlurper().parse(tmp, StandardCharsets.ISO_8859_1)
+            assert csv[0].city == 'café'
+        } finally {
+            Files.deleteIfExists(tmp)
+        }
+    }
+
+    @Test
+    void testParseAsPathWithCharset() {
+        def tmp = Files.createTempFile('csvslurper', '.csv')
+        try {
+            Files.write(tmp, 'customer,amount\nCafé,9.99'.getBytes(StandardCharsets.ISO_8859_1))
+            def sales = new CsvSlurper().parseAs(Sale, tmp.toFile(), StandardCharsets.ISO_8859_1)
+            assert sales[0].customer == 'Café'
+            assert sales[0].amount == 9.99
+        } finally {
+            Files.deleteIfExists(tmp)
+        }
     }
 
     // tag::typed_parsing[]
