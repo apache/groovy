@@ -5261,6 +5261,50 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // isSorted
 
     /**
+     * Determines if the array is sorted in natural (ascending) order.
+     * This is efficient — it checks adjacent pairs in a single pass and
+     * short-circuits on the first out-of-order pair.
+     * <pre class="language-groovy groovyTestCase">
+     * int[] nums = [1, 2, 3]
+     * assert nums.isSorted()
+     * int[] unsorted = [3, 1, 2]
+     * assert !unsorted.isSorted()
+     * </pre>
+     *
+     * @param self the int array to check
+     * @return true if the array elements are sorted in non-descending order
+     * @since 6.0.0
+     */
+    public static boolean isSorted(int[] self) {
+        for (int i = 1; i < self.length; i++) {
+            if (self[i - 1] > self[i]) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Determines if the array is sorted in natural (ascending) order.
+     * This is efficient — it checks adjacent pairs in a single pass and
+     * short-circuits on the first out-of-order pair.
+     * <pre class="language-groovy groovyTestCase">
+     * long[] nums = [1L, 2L, 3L]
+     * assert nums.isSorted()
+     * long[] unsorted = [3L, 1L, 2L]
+     * assert !unsorted.isSorted()
+     * </pre>
+     *
+     * @param self the long array to check
+     * @return true if the array elements are sorted in non-descending order
+     * @since 6.0.0
+     */
+    public static boolean isSorted(long[] self) {
+        for (int i = 1; i < self.length; i++) {
+            if (self[i - 1] > self[i]) return false;
+        }
+        return true;
+    }
+
+    /**
      * Determines if the array is sorted in natural order using a {@link NumberAwareComparator}.
      * <pre class="language-groovy groovyTestCase">
      * Integer[] nums = [1, 2, 3]
