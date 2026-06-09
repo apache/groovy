@@ -60,6 +60,7 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Type.getMethodType;
 
 /**
  * Generates {@code GeneratedMetaMethod} adapter classes and metadata for the
@@ -299,32 +300,20 @@ public class DgmConverter {
         // Lookup lookup = java.lang.invoke.MethodHandles.lookup()
         mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup",
             "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
-        mv.visitVarInsn(ASTORE, 0);
-
         // Class ownerClass = <declaring class>.class
         String ownerInternal = BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass());
         mv.visitLdcInsn(org.objectweb.asm.Type.getObjectType(ownerInternal));
-        mv.visitVarInsn(ASTORE, 1);
-
         // String methodName = "<method name>"
         mv.visitLdcInsn(method.getName());
-        mv.visitVarInsn(ASTORE, 2);
-
         // MethodType methodType = MethodType.methodType(<return>, <param1>, <param2>, ...)
-        mv.visitLdcInsn(org.objectweb.asm.Type.getMethodType(method.getDescriptor()));
-        mv.visitVarInsn(ASTORE, 3);
-
+        mv.visitLdcInsn(getMethodType(method.getDescriptor()));
         // TARGET = lookup.findStatic(ownerClass, methodName, methodType)
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
-        mv.visitVarInsn(ALOAD, 3);
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandles$Lookup", "findStatic",
             "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;", false);
         mv.visitFieldInsn(PUTSTATIC, className, TARGET, METHOD_HANDLE_CLASS_NAME);
 
         mv.visitInsn(RETURN);
-        mv.visitMaxs(4, 4);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
 
