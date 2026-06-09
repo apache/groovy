@@ -97,7 +97,7 @@ class PerformanceTestsExtension {
                 'com.baulsupp.kolja:jcurses:0.9.5.3',
                 'org.mnode.mstor:mstor:1.0.3',
                 'commons-lang:commons-lang:2.6',
-                'dnsjava:dnsjava:3.6.4',
+                'dnsjava:dnsjava:3.6.5',
                 'net.sourceforge.expectj:expectj:2.0.7',
                 'jline:jline:2.14.6',
                 'prevayler:prevayler:2.02.005',
