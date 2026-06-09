@@ -18,6 +18,7 @@
  */
 package gdk
 
+import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -518,6 +519,104 @@ final class WorkingWithCollectionsTest {
         assert map.get(null) == 'x'
         // end::map_property_gotcha[]
     }
+
+    // ------------------------------------------------------------------------
+    // "Live" doc tables: each tagged literal below is the SAME value rendered
+    // in the property-vs-subscript tables in _working-with-collections.adoc.
+    // Every access mode (m.k dynamic, m.k @CompileStatic, m['k'], m.get('k'))
+    // is asserted here, so the rendered tables cannot drift from the runtime.
+    // ------------------------------------------------------------------------
+
+    @Test
+    void testMapAccessTablePlain() {
+        def ordinary = [foo: 'bar']
+        def present  = [class: 'C']
+        def absent   = [:]
+
+        // dynamic: property (m.k), subscript (m['k']) and get all agree on a plain map
+        assert ordinary.foo == ordinary['foo'] && ordinary['foo'] == ordinary.get('foo')
+        assert ordinary.foo ==
+                // tag::t1_ordinary[]
+                'bar'
+                // end::t1_ordinary[]
+        assert present.class == present['class'] && present['class'] == present.get('class')
+        assert present.class ==
+                // tag::t1_present[]
+                'C'
+                // end::t1_present[]
+        assert absent.class == absent['class'] && absent['class'] == absent.get('class')
+        assert absent.class ==
+                // tag::t1_absent[]
+                null
+                // end::t1_absent[]
+
+        checkPlainStatic()
+    }
+
+    @CompileStatic
+    private static void checkPlainStatic() {
+        Map<String, String> ordinary = [foo: 'bar']
+        Map<String, String> present  = [class: 'C']
+        Map<String, String> absent   = [:]
+        // @CompileStatic column: identical to the dynamic column for a plain map
+        assert ordinary.foo == 'bar' && ordinary['foo'] == 'bar' && ordinary.get('foo') == 'bar'
+        assert present.class == 'C' && present['class'] == 'C' && present.get('class') == 'C'
+        assert absent.class == null && absent['class'] == null && absent.get('class') == null
+    }
+
+    @Test
+    void testMapAccessTableSubclass() {
+        def m = new MapWithProps()
+        m.put('foo', 11)
+        m.put('baz', 33)
+
+        // m.k (dynamic) reads the declared PROPERTY (falling back to the entry when there is none)
+        assert m.foo ==
+                // tag::t2_foo_prop[]
+                1
+                // end::t2_foo_prop[]
+        assert m.bar ==
+                // tag::t2_bar_prop[]
+                2
+                // end::t2_bar_prop[]
+        // m['k'] and m.get('k') read the ENTRY
+        assert m['foo'] == m.get('foo')
+        assert m['foo'] ==
+                // tag::t2_foo_entry[]
+                11
+                // end::t2_foo_entry[]
+        assert m['bar'] == m.get('bar')
+        assert m['bar'] ==
+                // tag::t2_bar_entry[]
+                null
+                // end::t2_bar_entry[]
+        // baz has no declared property, so every form returns the entry
+        assert m.baz == m['baz'] && m['baz'] == m.get('baz')
+        assert m.baz ==
+                // tag::t2_baz[]
+                33
+                // end::t2_baz[]
+
+        checkSubclassStatic()
+    }
+
+    @CompileStatic
+    private static void checkSubclassStatic() {
+        MapWithProps m = new MapWithProps()
+        m.put('foo', 11)
+        m.put('baz', 33)
+        // @CompileStatic column matches the dynamic column in every row
+        assert m.foo == 1 && m.bar == 2 && m.baz == 33                  // property (m.k)
+        assert m['foo'] == 11 && m['bar'] == null && m['baz'] == 33     // entry (m['k'])
+        assert m.get('foo') == 11 && m.get('bar') == null && m.get('baz') == 33
+    }
+
+    // tag::t2_class[]
+    static class MapWithProps extends HashMap<String, Object> {
+        def foo = 1
+        def bar = 2
+    }
+    // end::t2_class[]
 
     @Test
     void testMapIteration() {
