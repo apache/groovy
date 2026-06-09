@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.DynamicVariable;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -89,7 +90,7 @@ public class ContractClosureWriter {
         // contains all params of the original method
         List<Parameter> closureParameters = new ArrayList<>();
         for (Parameter param : parametersTemp) {
-            closureParameters.add(new Parameter(param.getType().getPlainNodeReference(), param.getName()));
+            closureParameters.add(new Parameter(plainNodeReferenceWithGenerics(param.getType()), param.getName()));
         }
 
         ClassNode answer = new ClassNode(name, mods | ACC_FINAL, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
@@ -147,6 +148,57 @@ public class ContractClosureWriter {
 
     private void removeParameter(String name, List<Parameter> parameters) {
         parameters.removeIf(parameter -> parameter.getName().equals(name));
+    }
+
+    /**
+     * Returns a plain node reference for the supplied closure-parameter type but, unlike
+     * {@link ClassNode#getPlainNodeReference()} on its own, carries over any concrete generics
+     * information (GROOVY-12071). This lets static type checking of a contract closure see, for
+     * example, that a {@code result} parameter typed {@code Map<String, Integer>} yields
+     * {@code Integer} values, removing the need for explicit casts in {@code @Ensures} conditions.
+     * <p>
+     * Generics that mention a type-parameter placeholder (e.g. the {@code T} of a {@code <T> T m(...)}
+     * method, or the {@code Class<T>} of one of its parameters) are dropped: the generated closure
+     * class does not declare those type parameters, so carrying the placeholder through would leave
+     * an unresolved type variable that breaks downstream generic-signature handling (e.g. JavaBeans
+     * introspection of the closure class).
+     */
+    private static ClassNode plainNodeReferenceWithGenerics(ClassNode type) {
+        ClassNode ref = type.getPlainNodeReference();
+        GenericsType[] genericsTypes = type.getGenericsTypes();
+        if (genericsTypes != null && genericsTypes.length > 0 && !usesPlaceholder(type)) {
+            ref.setGenericsTypes(genericsTypes);
+            ref.setUsingGenerics(true);
+        }
+        return ref;
+    }
+
+    /**
+     * Reports whether {@code type} mentions a generics placeholder (an unresolved type-parameter
+     * reference such as {@code T}) at any nesting depth of its generics or array component.
+     */
+    private static boolean usesPlaceholder(ClassNode type) {
+        if (type == null) return false;
+        if (type.isArray()) return usesPlaceholder(type.getComponentType());
+        if (type.isGenericsPlaceHolder()) return true;
+        GenericsType[] genericsTypes = type.getGenericsTypes();
+        if (genericsTypes != null) {
+            for (GenericsType gt : genericsTypes) {
+                if (gt.isPlaceholder()) return true;
+                if (gt.isWildcard()) {
+                    if (usesPlaceholder(gt.getLowerBound())) return true;
+                    ClassNode[] upperBounds = gt.getUpperBounds();
+                    if (upperBounds != null) {
+                        for (ClassNode upperBound : upperBounds) {
+                            if (usesPlaceholder(upperBound)) return true;
+                        }
+                    }
+                } else if (usesPlaceholder(gt.getType())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private ClassNode getOutermostClass(ClassNode outermostClass) {
