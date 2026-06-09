@@ -19,6 +19,7 @@
 package org.apache.groovy.contracts.ast;
 
 import groovy.contracts.Decreases;
+import groovy.transform.CompilationUnitAware;
 import org.apache.groovy.contracts.VariantSupport;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -30,6 +31,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.LoopingStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformation;
@@ -82,9 +84,16 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * @see org.apache.groovy.contracts.LoopVariantViolation
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class LoopVariantASTTransformation implements ASTTransformation {
+public class LoopVariantASTTransformation implements ASTTransformation, CompilationUnitAware {
 
     private static final AtomicLong COUNTER = new AtomicLong();
+
+    private CompilationUnit compilationUnit;
+
+    @Override
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
 
     /**
      * Rewrites a loop-level {@link Decreases} annotation into variant bookkeeping and runtime checks.
@@ -133,15 +142,10 @@ public class LoopVariantASTTransformation implements ASTTransformation {
         // Inject: save at start, check at end
         injectAtLoopBodyStartAndEnd(loopStatement, savePrev, block(saveCurr, decreaseCheck));
 
-        // The variant closure lived inside a statement annotation, so the compiler's static-import
-        // pass never reached it; resolve unqualified statically imported members (e.g. max(3, 4))
-        // now that the expressions are real loop-body statements.
-        LoopContractSupport.resolveStaticImports(source, (ASTNode) loopStatement);
-
-        // The variant closure lived inside an annotation, so its variable references were never
-        // resolved; re-run scope analysis now that they are real loop-body statements so that
-        // @TypeChecked/@CompileStatic can see their declared types.
-        LoopContractSupport.resolveVariableScopes(source);
+        // The variant closure lived inside a statement annotation, so the compiler's resolution
+        // passes never reached it; re-resolve types, static imports and variable scopes now that the
+        // expressions are real loop-body statements.
+        LoopContractSupport.resolveInlinedContractCode(source, (ASTNode) loopStatement, compilationUnit);
     }
 
     private static Expression extractExpression(ClosureExpression closureExpression) {

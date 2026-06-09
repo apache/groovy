@@ -374,6 +374,43 @@ class LoopInvariantTests extends BaseTestClass {
         '''
     }
 
+    // GROOVY-12072: a qualified type reference (Math) in the closure is likewise never resolved by
+    // the compiler's ResolveVisitor, so the loop transform must resolve it too — otherwise it is
+    // reported as an "apparent variable ... in a static scope", especially under @CompileStatic.
+    @Test
+    void invariantWithQualifiedTypeReferenceUnderCompileStatic() {
+        assertScript '''
+            import groovy.contracts.*
+            import java.lang.Math
+
+            @groovy.transform.CompileStatic
+            @Invariant({ Math.max(3, 4) == 4 })
+            class C {
+                @Requires({ Math.max(3, 4) == 4 })
+                static int iter(int n) {
+                    int a = 0
+                    @Invariant({ Math.max(3, 4) == 4 })
+                    while (a < n) { a++ }
+                    return a
+                }
+            }
+
+            assert C.iter(4) == 4
+        '''
+    }
+
+    @Test
+    void invariantWithFullyQualifiedTypeReference() {
+        assertScript '''
+            import groovy.contracts.Invariant
+
+            int s = 0
+            @Invariant({ java.lang.Math.max(1, 2) == 2 })
+            for (int i = 0; i < 3; i++) { s += i }
+            assert s == 3
+        '''
+    }
+
     // A clashing instance method must still win over the static import in an instance-method
     // context, confirming the re-resolution honours the enclosing method's static-ness.
     @Test

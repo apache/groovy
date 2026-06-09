@@ -61,6 +61,26 @@ class LoopDecreasesTests extends BaseTestClass {
         '''
     }
 
+    // GROOVY-12072: a qualified type reference in a statement-level @Decreases must be resolved by
+    // the loop transform, as the compiler's ResolveVisitor never reaches the closure.
+    @Test
+    void decreasesWithQualifiedTypeReferenceUnderCompileStatic() {
+        assertScript '''
+            import groovy.contracts.Decreases
+            import java.lang.Math
+
+            @groovy.transform.CompileStatic
+            static int go(int n) {
+                int a = 0
+                @Decreases({ Math.max(0, n - a) })
+                while (a < n) { a++ }
+                return a
+            }
+
+            assert go(5) == 5
+        '''
+    }
+
     @Test
     void decreasesOnClassicForLoop() {
         assertScript '''

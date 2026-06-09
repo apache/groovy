@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.StaticImportVisitor;
 
@@ -50,8 +52,61 @@ final class LoopContractSupport {
     }
 
     /**
+     * Re-runs the compiler's semantic-analysis resolution passes over the code inlined out of a
+     * loop-contract annotation closure (GROOVY-12072).
+     * <p>
+     * Class invariants and preconditions sit on {@link org.codehaus.groovy.ast.AnnotatedNode}s
+     * (classes, methods, fields), so the compiler's {@link ResolveVisitor}, {@link StaticImportVisitor}
+     * and {@link VariableScopeVisitor} descend into their annotation members and fully resolve the
+     * closure before the contracts framework extracts it. A loop-contract annotation, however, sits on
+     * a plain statement none of those visitors reach, and this transform runs <em>after</em> they have
+     * completed. The expressions it lifts into the loop body therefore arrive completely unresolved:
+     * type references such as {@code Math} are bare {@link org.codehaus.groovy.ast.expr.VariableExpression}s,
+     * unqualified statically imported members such as {@code max(3, 4)} are unresolved method calls, and
+     * local-variable references are unbound.
+     * <p>
+     * Re-running the three passes — in the same order the compiler uses — resolves the freshly inlined
+     * statements. Re-processing the rest of the (already-resolved) class is a no-op. Type resolution
+     * needs the {@link CompilationUnit}; when it is unavailable the type pass is skipped (qualified type
+     * references then remain unresolved, but static imports and variable scopes are still handled).
+     *
+     * @param source the current source unit
+     * @param target the loop statement whose enclosing class should be re-resolved
+     * @param unit the active compilation unit, or {@code null} if it could not be obtained
+     */
+    static void resolveInlinedContractCode(final SourceUnit source, final ASTNode target, final CompilationUnit unit) {
+        if (source == null || source.getAST() == null) return;
+        ClassNode enclosing = enclosingClassNode(source, target);
+
+        // 1. resolve type references (e.g. Math -> ClassExpression)
+        if (unit != null) {
+            ResolveVisitor resolveVisitor = new ResolveVisitor(unit);
+            if (enclosing != null) {
+                resolveVisitor.startResolving(enclosing, source);
+            } else {
+                for (ClassNode classNode : source.getAST().getClasses()) {
+                    resolveVisitor.startResolving(classNode, source);
+                }
+            }
+        }
+
+        // 2. resolve unqualified statically imported members (e.g. max(3, 4) -> Math.max(3, 4))
+        if (enclosing != null) {
+            new StaticImportVisitor(enclosing, source).visitClass(enclosing);
+        } else {
+            for (ClassNode classNode : source.getAST().getClasses()) {
+                new StaticImportVisitor(classNode, source).visitClass(classNode);
+            }
+        }
+
+        // 3. bind variable references to their enclosing declarations so @TypeChecked/@CompileStatic
+        // can see their declared types.
+        resolveVariableScopes(source);
+    }
+
+    /**
      * Re-resolves variable scopes for the classes of the given source so that variable references
-     * inlined out of a loop-contract annotation closure are bound to their enclosing declarations.
+     * inlined out of a contract annotation closure are bound to their enclosing declarations.
      *
      * @param source the current source unit
      */
@@ -59,33 +114,6 @@ final class LoopContractSupport {
         if (source == null || source.getAST() == null) return;
         for (ClassNode classNode : source.getAST().getClasses()) {
             new VariableScopeVisitor(source).visitClass(classNode);
-        }
-    }
-
-    /**
-     * Re-runs static-import resolution for the class enclosing the given loop statement (GROOVY-12072).
-     * <p>
-     * The compiler's own {@link StaticImportVisitor} pass rewrites unqualified references to
-     * statically imported members (e.g. {@code max(3, 4)} for {@code import static java.lang.Math.max})
-     * by descending into the annotation members of {@link org.codehaus.groovy.ast.AnnotatedNode}s
-     * (classes, methods, fields). A loop-contract annotation, however, sits on a plain statement that
-     * the visitor never reaches, and this transform runs <em>after</em> that pass — so the expressions
-     * lifted out of the closure keep their unresolved {@code max(...)} call and fail at runtime with a
-     * {@code MissingMethodException}. Re-running the visitor over the enclosing class resolves the
-     * freshly inlined statements; re-processing already-resolved code is a no-op.
-     *
-     * @param source the current source unit
-     * @param target the loop statement whose enclosing class should be re-resolved
-     */
-    static void resolveStaticImports(final SourceUnit source, final ASTNode target) {
-        if (source == null || source.getAST() == null) return;
-        ClassNode enclosing = enclosingClassNode(source, target);
-        if (enclosing != null) {
-            new StaticImportVisitor(enclosing, source).visitClass(enclosing);
-        } else {
-            for (ClassNode classNode : source.getAST().getClasses()) {
-                new StaticImportVisitor(classNode, source).visitClass(classNode);
-            }
         }
     }
 
