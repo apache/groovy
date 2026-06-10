@@ -22,14 +22,19 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
@@ -124,6 +129,7 @@ public final class AssertStatementCreationUtility {
      * @param assertionCallStatement the assertion block to insert
      */
     public static void injectResultVariableReturnStatementAndAssertionCallStatement(BlockStatement statement, ClassNode returnType, ReturnStatement returnStatement, BlockStatement assertionCallStatement) {
+        ensureReturnStatementInBlock(statement, returnStatement);
         final AddResultReturnStatementVisitor addResultReturnStatementVisitor = new AddResultReturnStatementVisitor(returnStatement, returnType, assertionCallStatement);
         addResultReturnStatementVisitor.visitBlockStatement(statement);
     }
@@ -137,8 +143,69 @@ public final class AssertStatementCreationUtility {
      * @param assertionCallStatement the assertion statement to insert
      */
     public static void addAssertionCallStatementToReturnStatement(BlockStatement statement, ReturnStatement returnStatement, Statement assertionCallStatement) {
+        ensureReturnStatementInBlock(statement, returnStatement);
         final AddAssertionCallStatementToReturnStatementVisitor addAssertionCallStatementToReturnStatementVisitor = new AddAssertionCallStatementToReturnStatementVisitor(returnStatement, assertionCallStatement);
         addAssertionCallStatementToReturnStatementVisitor.visitBlockStatement(statement);
+    }
+
+    /**
+     * Ensures the target {@code returnStatement} is a direct child of a {@link BlockStatement} so the
+     * rewriting visitors below can find and replace it.
+     * <p>
+     * A single-statement {@code if}/{@code else} or loop branch (e.g. {@code if (n <= 1) return acc})
+     * holds the {@link ReturnStatement} directly rather than inside a block. The rewriters only match
+     * returns that are members of a {@link BlockStatement}, so without this normalization the
+     * postcondition (and class-invariant) assertion is silently skipped for such returns. The gap is
+     * usually masked in recursive methods by a sibling {@code return <recursiveCall>} that is a block
+     * member, but {@code @TailRecursive} converts that call into a {@code continue}, leaving only the
+     * braceless branch return (GROOVY-12079).
+     *
+     * @param root            the method body to scan
+     * @param returnStatement the return statement that must end up inside a block
+     */
+    private static void ensureReturnStatementInBlock(BlockStatement root, final ReturnStatement returnStatement) {
+        final VariableScope scope = root.getVariableScope();
+        ClassCodeVisitorSupport normalizer = new ClassCodeVisitorSupport() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+
+            private Statement wrapIfTarget(Statement branch) {
+                return branch == returnStatement ? block(new VariableScope(scope), returnStatement) : branch;
+            }
+
+            @Override
+            public void visitIfElse(IfStatement ifElse) {
+                ifElse.setIfBlock(wrapIfTarget(ifElse.getIfBlock()));
+                ifElse.setElseBlock(wrapIfTarget(ifElse.getElseBlock()));
+                super.visitIfElse(ifElse);
+            }
+
+            @Override
+            public void visitWhileLoop(WhileStatement loop) {
+                loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
+                super.visitWhileLoop(loop);
+            }
+
+            @Override
+            public void visitForLoop(ForStatement loop) {
+                loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
+                super.visitForLoop(loop);
+            }
+
+            @Override
+            public void visitDoWhileLoop(DoWhileStatement loop) {
+                loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
+                super.visitDoWhileLoop(loop);
+            }
+
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+                // returns inside closures belong to the closure, not the surrounding method
+            }
+        };
+        normalizer.visitBlockStatement(root);
     }
 
     /**
