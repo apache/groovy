@@ -149,8 +149,8 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     if (call.objectExpression instanceof ClassExpression) {
                         checkPatternMethod(call, call.objectExpression.type)
                     } else if (isPattern(call.receiver) && call.methodAsString == 'matcher') {
-                        def var = findTargetVariable(call.receiver)
-                        def groupCount = var?.getNodeMetaData(REGEX_GROUP_COUNT)
+                        def source = call.receiver instanceof VariableExpression ? findTargetVariable(call.receiver) : call.receiver
+                        def groupCount = source?.getNodeMetaData(REGEX_GROUP_COUNT)
                         if (groupCount != null) {
                             call.putNodeMetaData(REGEX_GROUP_COUNT, groupCount)
                         }
@@ -233,8 +233,8 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 @Override
                 void visitMethodCallExpression(MethodCallExpression call) {
                     if (isPattern(call.receiver) && call.methodAsString == 'matcher') {
-                        def var = findTargetVariable(call.receiver)
-                        def groupCount = var?.getNodeMetaData(REGEX_GROUP_COUNT)
+                        def source = call.receiver instanceof VariableExpression ? findTargetVariable(call.receiver) : call.receiver
+                        def groupCount = source?.getNodeMetaData(REGEX_GROUP_COUNT)
                         if (groupCount != null) {
                             call.putNodeMetaData(REGEX_GROUP_COUNT, groupCount)
                         }

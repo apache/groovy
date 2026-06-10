@@ -272,6 +272,29 @@ final class RegexCheckerTest {
     }
 
     @Test
+    void testInlinePatternAsMatcherReceiver() {
+        // GROOVY-12080: pattern operator result used directly as a matcher() receiver
+        // used to crash the compiler ("No signature of method: findTargetVariable")
+        assertScript shell, '''
+            Matcher m = (~/(...)(...)/).matcher('foobar')
+            assert m.find()
+            assert m.group(1) == 'foo'
+            assert m.group(2) == 'bar'
+        '''
+    }
+
+    @Test
+    void testBadRegexGroupCountForInlinePattern() {
+        // GROOVY-12080: group count is now inferred for inline patterns too
+        def err = shouldFail shell, '''
+            Matcher m = (~/(...)(...)/).matcher('foobar')
+            assert m.find()
+            assert m.group(3)
+        '''
+        assert err.message =~ /Invalid group count 3 for regex with 2 groups/
+    }
+
+    @Test
     void testGoodRegexGroupCount() {
         assertScript shell, '''
             def m = 'foobaz' =~ /(...)(...)/
