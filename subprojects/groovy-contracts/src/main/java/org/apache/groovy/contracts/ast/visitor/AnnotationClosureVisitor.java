@@ -510,13 +510,6 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         @Override
         public void visitVariableExpression(VariableExpression expression) {
 
-            // GROOVY-12052: 'old' snapshots instance state, which a static method has none of
-            if (!secondPass && methodNode != null && methodNode.isStatic()
-                    && "old".equals(expression.getName())
-                    && AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), POSTCONDITION_TYPE_NAME)) {
-                addError("[groovy-contracts] 'old' is not supported in postconditions of static methods.", expression);
-            }
-
             // in case of a FieldNode, checks whether the FieldNode can be replaced with a Parameter
             Variable accessedVariable = getParameterCandidate(expression.getAccessedVariable());
             if (accessedVariable instanceof FieldNode fieldNode) {
@@ -540,6 +533,26 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             expression.setAccessedVariable(accessedVariable);
 
             super.visitVariableExpression(expression);
+        }
+
+        /**
+         * Validates {@code old.<name>} access. GROOVY-12052/GROOVY-12078: a static method has no instance
+         * state, so {@code old} there may only snapshot a method parameter's entry value; an
+         * {@code old.<field>} (or any other non-parameter) reference is rejected.
+         *
+         * @param expression the property expression being visited
+         */
+        @Override
+        public void visitPropertyExpression(PropertyExpression expression) {
+            if (!secondPass && methodNode != null && methodNode.isStatic()
+                    && expression.getObjectExpression() instanceof VariableExpression objectVar
+                    && "old".equals(objectVar.getName())
+                    && AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), POSTCONDITION_TYPE_NAME)
+                    && getParameterByName(expression.getPropertyAsString()) == null) {
+                addError("[groovy-contracts] 'old' in a postcondition of a static method may only reference a method parameter.", expression);
+            }
+
+            super.visitPropertyExpression(expression);
         }
 
         /**
@@ -661,6 +674,14 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             return variable;
         }
 
+        private Parameter getParameterByName(String name) {
+            if (name == null || methodNode == null) return null;
+            for (Parameter param : methodNode.getParameters()) {
+                if (name.equals(param.getName())) return param;
+            }
+            return null;
+        }
+
         /**
          * Executes the second validation pass that applies the deferred expression rewrites.
          *
@@ -756,6 +777,16 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                             methodNode.putNodeMetaData(OLD_REFERENCES_KEY, oldRefs);
                         }
                         oldRefs.add(propName);
+                        // GROOVY-12078: a snapshotted parameter is typed by its declared type; a
+                        // parameter shadows a same-named field, matching the runtime precedence where
+                        // the parameter snapshot overrides the field snapshot
+                        Parameter parameter = getParameter(propName);
+                        if (parameter != null) {
+                            CastExpression adjusted = new CastExpression(parameter.getType(), expr);
+                            adjusted.setSourcePosition(expr);
+                            expr.setNodeMetaData(PROCESSED, Boolean.TRUE);
+                            return adjusted;
+                        }
                         ClassNode declaringClass = methodNode.getDeclaringClass();
                         if (declaringClass != null && declaringClass.getField(propName) != null) {
                             CastExpression adjusted = new CastExpression(declaringClass.getField(propName).getType(), expr);
@@ -767,6 +798,20 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                 }
             }
             return expr.transformExpression(this);
+        }
+
+        /**
+         * Returns the {@code methodNode} parameter named {@code name}, or {@code null} if there is none.
+         * Used to type an {@code old.<name>} access as the parameter's declared type.
+         *
+         * @param name the property name accessed via {@code old}
+         * @return the matching parameter, or {@code null}
+         */
+        private Parameter getParameter(String name) {
+            for (Parameter parameter : methodNode.getParameters()) {
+                if (parameter.getName().equals(name)) return parameter;
+            }
+            return null;
         }
     }
 }

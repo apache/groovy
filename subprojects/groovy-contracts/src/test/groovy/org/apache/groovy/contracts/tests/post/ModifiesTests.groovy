@@ -123,6 +123,27 @@ class ModifiesTests extends BaseTestClass {
     }
 
     @Test
+    void modifies_with_ensures_old_parameter_reference_is_exempt() {
+        // GROOVY-12078: @Modifies is a frame condition over fields, so old.<parameter> must not be
+        // required to appear in the @Modifies declaration
+        def instance = create_instance_of('''
+            import groovy.contracts.*
+
+            class A {
+                int count = 0
+
+                @Modifies({ this.count })
+                @Ensures({ count == old.count + amount && old.amount == amount })
+                void add(int amount) {
+                    count += amount
+                }
+            }
+        ''')
+        instance.add(5)
+        assert instance.count == 5
+    }
+
+    @Test
     void modifies_with_ensures_invalid_old_reference_causes_compile_error() {
         shouldFail MultipleCompilationErrorsException, {
             add_class_to_classpath('''

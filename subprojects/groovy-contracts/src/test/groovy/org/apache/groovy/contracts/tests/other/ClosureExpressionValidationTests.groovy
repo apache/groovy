@@ -264,8 +264,8 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
         assertTrue msg.contains("State changing postfix & prefix operators are not supported.")
     }
 
-    // GROOVY-12052
-    void testOldNotSupportedInStaticPostcondition() {
+    // GROOVY-12052, GROOVY-12078: a static method has no instance state, so old may only reference a parameter
+    void testOldFieldNotSupportedInStaticPostcondition() {
 
         def msg = shouldFail CompilationFailedException, {
             evaluate """
@@ -273,7 +273,9 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
 
                     class A {
 
-                        @Ensures({ old.value == result })
+                        private static int field = 1
+
+                        @Ensures({ old.field == result })
                         static int op(int value) { value }
                     }
 
@@ -281,6 +283,6 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
                 """
         }
 
-        assertTrue msg.contains("'old' is not supported in postconditions of static methods")
+        assertTrue msg.contains("'old' in a postcondition of a static method may only reference a method parameter")
     }
 }

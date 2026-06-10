@@ -22,6 +22,7 @@ import org.apache.groovy.contracts.ast.visitor.AnnotationClosureVisitor;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -68,11 +69,21 @@ public class ModifiesEnsuresValidationTransformation implements ASTTransformatio
         if (oldRefs == null || oldRefs.isEmpty()) return;
 
         for (String ref : oldRefs) {
+            // GROOVY-12078: @Modifies is a frame condition over fields; a parameter snapshot is not
+            // class state, so old.<parameter> is exempt from the @Modifies declaration
+            if (isParameter(methodNode, ref)) continue;
             if (!modifiesSet.contains(ref)) {
                 source.addError(new SyntaxException(
                         "@Ensures references old." + ref + " but @Modifies does not declare '" + ref + "' as modifiable",
                         annotation.getLineNumber(), annotation.getColumnNumber()));
             }
         }
+    }
+
+    private static boolean isParameter(final MethodNode methodNode, final String name) {
+        for (Parameter parameter : methodNode.getParameters()) {
+            if (parameter.getName().equals(name)) return true;
+        }
+        return false;
     }
 }
