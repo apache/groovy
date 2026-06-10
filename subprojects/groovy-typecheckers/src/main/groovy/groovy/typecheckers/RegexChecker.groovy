@@ -148,6 +148,9 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     super.visitMethodCallExpression(call)
                     if (call.objectExpression instanceof ClassExpression) {
                         checkPatternMethod(call, call.objectExpression.type)
+                    } else if (isString(call.receiver) && call.methodAsString == 'matches' && call.arguments.expressions) {
+                        def exp = findConstExp(call.arguments.getExpression(0), String)
+                        checkRegex(exp, call)
                     } else if (isPattern(call.receiver) && call.methodAsString == 'matcher') {
                         def var = findTargetVariable(call.receiver)
                         def groupCount = var?.getNodeMetaData(REGEX_GROUP_COUNT)
@@ -275,6 +278,12 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         exp.type == MATCHER_TYPE
             || exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == MATCHER_TYPE
             || exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == MATCHER_TYPE
+    }
+
+    private boolean isString(Expression exp) {
+        exp.type == STRING_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == STRING_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == STRING_TYPE
     }
 
     private boolean isPattern(Expression exp) {
