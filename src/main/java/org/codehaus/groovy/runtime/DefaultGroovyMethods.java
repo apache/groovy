@@ -18922,6 +18922,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the object
      * @param mc the method closure
      * @return the result of calling the method closure
+     * @since 5.0.0
      */
     public static Object withMethodClosure(Object self, MethodClosure mc) {
         return mc.call(self);

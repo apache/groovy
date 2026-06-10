@@ -10722,6 +10722,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an array
      * @param closure a Closure used to determine unique items
      * @return the unique items from the array
+     * @since 2.4.0
      */
     public static <T> T[] toUnique(T[] self, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
         Comparator<T> comparator = closure.getMaximumNumberOfParameters() == 1
