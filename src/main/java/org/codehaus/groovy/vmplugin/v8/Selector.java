@@ -742,19 +742,13 @@ public abstract class Selector {
 
         /**
          * Creates a MethodHandle using a before selected MetaMethod.
-         * If the MetaMethod has reflective information available, then
-         * we will use that information to create the target MethodHandle.
-         * If that is not the case we will produce a handle, which will use the
-         * MetaMethod itself for invocation.
+         * NumberNumberMetaMethod and GeneratedMetaMethod can be handled in a simplified way,
+         * ReflectionMetaMethod will be unwrapped and unreflected for a handle. If
+         * all that does not apply, we will fall back to using the MetaMethod itself.
          */
         public void setHandleForMetaMethod() {
-            if (setHandleForSimpleCases()) return;
-
-            boolean isCategoryTypeMethod = (method instanceof NewInstanceMetaMethod);
-            if (LOG_ENABLED) LOG.info("meta method is category type method: " + isCategoryTypeMethod);
-            boolean isStaticCategoryTypeMethod = (method instanceof NewStaticMetaMethod);
-            if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isStaticCategoryTypeMethod);
             isCategoryMethod = (method instanceof GroovyCategorySupport.CategoryMethod);
+            if (setHandleForSimpleCases()) return;
 
             MetaMethod metaMethod = method;
             if (metaMethod instanceof ReflectionMetaMethod rmm) {
@@ -763,33 +757,46 @@ public abstract class Selector {
             }
 
             if (metaMethod instanceof CachedMethod cm) {
-                isVargs = metaMethod.isVargsMethod();
-                VMPlugin vmplugin = VMPluginFactory.getPlugin();
-                cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
-                setBaseHandleForCachedMethod(cm);
-                if (isStaticCategoryTypeMethod) {
-                    handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
-                    handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
-                } else if (!isCategoryTypeMethod && cm.isStatic()) {
-                    // drop the receiver, which might be a Class (invocation on Class)
-                    // or it might be an object (static method invocation on instance)
-                    // Object.class handles both cases at once
-                    handle = MethodHandles.dropArguments(handle, 0, Object.class);
-                }
+                setHandleForGeneralCachedMethod(cm, metaMethod);
             } else if (method != null) {
-                if (LOG_ENABLED) LOG.info("meta method is generic meta method");
-                // generic meta method invocation path
-                handle = META_METHOD_INVOKER;
-                handle = handle.bindTo(method);
-                if (spread) {
-                    args = originalArguments;
-                    skipSpreadCollector = true;
-                } else {
-                    // wrap arguments from call site in Object[]
-                    handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
-                }
-                currentType = removeWrapper(targetType);
-                if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
+                setHandleForGenericMetaMethod();
+            }
+        }
+
+        private void setHandleForGenericMetaMethod() {
+            if (LOG_ENABLED) LOG.info("meta method is generic meta method");
+            // generic meta method invocation path
+            handle = META_METHOD_INVOKER;
+            handle = handle.bindTo(method);
+            if (spread) {
+                args = originalArguments;
+                skipSpreadCollector = true;
+            } else {
+                // wrap arguments from call site in Object[]
+                handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
+            }
+            currentType = removeWrapper(targetType);
+            if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
+        }
+
+        private void setHandleForGeneralCachedMethod(CachedMethod cm, MetaMethod metaMethod) {
+            boolean isCategoryTypeMethod = (method instanceof NewInstanceMetaMethod);
+            if (LOG_ENABLED) LOG.info("meta method is category type method: " + isCategoryTypeMethod);
+            boolean isStaticCategoryTypeMethod = (method instanceof NewStaticMetaMethod);
+            if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isStaticCategoryTypeMethod);
+
+            isVargs = metaMethod.isVargsMethod();
+            VMPlugin vmplugin = VMPluginFactory.getPlugin();
+            cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
+            setBaseHandleForCachedMethod(cm);
+            if (isStaticCategoryTypeMethod) {
+                handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
+                handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
+            } else if (!isCategoryTypeMethod && cm.isStatic()) {
+                // drop the receiver, which might be a Class (invocation on Class)
+                // or it might be an object (static method invocation on instance)
+                // Object.class handles both cases at once
+                handle = MethodHandles.dropArguments(handle, 0, Object.class);
             }
         }
 
