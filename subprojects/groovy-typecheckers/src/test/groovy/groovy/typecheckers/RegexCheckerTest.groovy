@@ -242,6 +242,42 @@ final class RegexCheckerTest {
     }
 
     @Test
+    void testBadRegexJavaStringMatches() {
+        // GROOVY-12081: the regex argument of String#matches is now checked
+        def err = shouldFail shell, '''
+            assert 'JOHN'.matches('[A-Z+') // unclosed character class
+        '''
+        assert err.message ==~ /(?s).*Bad regex.*: Unclosed character class.*/
+
+        // String-typed receiver via parameter
+        err = shouldFail shell, '''
+            boolean isUpper(String s) { s.matches('[A-Z+') }
+        '''
+        assert err.message ==~ /(?s).*Bad regex.*: Unclosed character class.*/
+
+        // regex supplied via a local constant variable
+        err = shouldFail shell, '''
+            def re = '[A-Z+'
+            assert 'JOHN'.matches(re)
+        '''
+        assert err.message ==~ /(?s).*Bad regex.*: Unclosed character class.*/
+    }
+
+    @Test
+    void testGoodRegexJavaStringMatches() {
+        assertScript shell, '''
+            boolean isUpper(String s) { s.matches('[A-Z]+') }
+            assert isUpper('JOHN')
+            assert !isUpper('John')
+        '''
+        // a matches(String) on a non-String receiver must not be treated as a regex
+        assertScript shell, '''
+            class Foo { boolean matches(String s) { true } }
+            assert new Foo().matches('[A-Z+')
+        '''
+    }
+
+    @Test
     void testBadRegexGroupCount() {
         def shouldFailWithGroupCountError = { String script ->
             def err = shouldFail(shell, script)
