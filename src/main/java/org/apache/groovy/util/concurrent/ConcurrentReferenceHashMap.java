@@ -1664,8 +1664,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         return segmentFor(hash).put(key, hash, value, null, true);
     }
 
-    /***
-     * @implSpec The default implementation is equivalent to the following steps for this
+    /**
+     * <b>Implementation Requirements:</b> The default implementation is equivalent to the following steps for this
      * {@code map}, then returning the current value or {@code null} if now
      * absent:
      * <p>
