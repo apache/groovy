@@ -324,6 +324,99 @@ class Account {
         }
     }
 
+    // GROOVY-12082: postconditions were silently dropped for methods with an empty body
+    @Test
+    void postcondition_on_void_method_with_empty_body() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ amount != null })
+            void withdraw(def amount) {}
+        }
+        """
+
+        def a = create_instance_of(source)
+        a.withdraw(10)
+        shouldFail(PostconditionViolation) {
+            a.withdraw(null)
+        }
+    }
+
+    // GROOVY-12082
+    @Test
+    void postcondition_on_static_void_method_with_empty_body() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class Account {
+            @Ensures({ amount != null })
+            static void withdraw(def amount) {}
+        }
+        """
+
+        def clazz = add_class_to_classpath(source)
+        clazz.withdraw(10)
+        shouldFail(PostconditionViolation) {
+            clazz.withdraw(null)
+        }
+    }
+
+    // GROOVY-12082: an empty body implicitly returns null, so result is available
+    @Test
+    void postcondition_with_result_on_method_with_empty_body() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result == null })
+            def m() {}
+        }
+        """
+
+        def a = create_instance_of(source)
+        a.m()
+    }
+
+    // GROOVY-12082
+    @Test
+    void failing_postcondition_with_result_on_method_with_empty_body() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result != null })
+            def m() {}
+        }
+        """
+
+        def a = create_instance_of(source)
+        shouldFail(PostconditionViolation) {
+            a.m()
+        }
+    }
+
+    // GROOVY-12082: a primitive return type falls off the end with its default value (0), not null
+    @Test
+    void postcondition_with_result_on_primitive_method_with_empty_body() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result == 0 })
+            int m() {}
+        }
+        """
+
+        def a = create_instance_of(source)
+        assert a.m() == 0
+    }
+
     // GROOVY-12083: with multiple @Ensures only the first was wired in; the rest were silently dropped
     @Test
     void multiple_postconditions_second_is_violated() {
