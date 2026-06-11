@@ -323,4 +323,97 @@ class Account {
             a.m(null)
         }
     }
+
+    // GROOVY-12083: with multiple @Ensures only the first was wired in; the rest were silently dropped
+    @Test
+    void multiple_postconditions_second_is_violated() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result > 0 })
+            @Ensures({ result < 10 })
+            int m(int n) { n }
+        }
+        """
+
+        def a = create_instance_of(source)
+        assert a.m(5) == 5
+        shouldFail(PostconditionViolation) {
+            a.m(42)
+        }
+    }
+
+    // GROOVY-12083
+    @Test
+    void multiple_postconditions_first_is_violated() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result < 10 })
+            @Ensures({ result > 0 })
+            int m(int n) { n }
+        }
+        """
+
+        def a = create_instance_of(source)
+        assert a.m(5) == 5
+        // 42 satisfies the second postcondition (result > 0) but violates the first (result < 10),
+        // so this exercises a violation of the first-listed @Ensures (the other test covers the second)
+        shouldFail(PostconditionViolation) {
+            a.m(42)
+        }
+    }
+
+    // GROOVY-12083: every postcondition must be evaluated (AND-combined), including the last one
+    @Test
+    void multiple_postconditions_all_evaluated() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            @Ensures({ result != null })
+            @Ensures({ result.size() == 2 })
+            @Ensures({ result.contains(s) })
+            List<String> pair(String s, String filler) { [filler, filler] }
+        }
+        """
+
+        def a = create_instance_of(source)
+        // happy path: all three hold
+        assert a.pair('x', 'x') == ['x', 'x']
+        // ['y', 'y'] is non-null and of size 2, so only the third postcondition (result.contains(s))
+        // can catch this - it fails iff the last @Ensures is actually wired in
+        shouldFail(PostconditionViolation) {
+            a.pair('x', 'y')
+        }
+    }
+
+    // GROOVY-12083: multiple @Ensures on a constructor
+    @Test
+    void multiple_postconditions_on_constructor() {
+
+        def source = """
+        import groovy.contracts.*
+
+        class A {
+            String a
+            String b
+            @Ensures({ this.a == a })
+            @Ensures({ this.b == b })
+            A(String a, String b) {
+                this.a = a
+                this.b = 'wrong'
+            }
+        }
+        """
+
+        shouldFail(PostconditionViolation) {
+            create_instance_of(source, ['x', 'y'])
+        }
+    }
 }
