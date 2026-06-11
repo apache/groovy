@@ -134,31 +134,58 @@ public class PostconditionGenerator extends BaseGenerator {
         if (Boolean.TRUE.equals(method.getNodeMetaData(METHOD_PROCESSED))) return;
         final BlockStatement block = (BlockStatement) method.getCode();
 
-        final List<Statement> statements = block.getStatements();
-        if (!statements.isEmpty()) {
-            Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
+        Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
 
-            if (!isPrimitiveVoid(method.getReturnType())) {
-                // if return type is not void, then a "result" variable is provided in the postcondition expression
-                List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
+        if (!isPrimitiveVoid(method.getReturnType())) {
+            // if return type is not void, then a "result" variable is provided in the postcondition expression
+            List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
 
-                for (ReturnStatement returnStatement : returnStatements) {
-                    BlockStatement localPostconditionBlockStatement = block(new VariableScope(), postconditionBlockStatement.getStatements());
-
-                    Expression result = localVarX("result", method.getReturnType());
-                    localPostconditionBlockStatement.getStatements().add(0, declS(result, returnStatement.getExpression()));
-                    AssertStatementCreationUtility.injectResultVariableReturnStatementAndAssertionCallStatement(block, method.getReturnType().redirect(), returnStatement, localPostconditionBlockStatement);
-                }
-                setOldVariablesIfEnabled(block, contractsEnabled, method);
-
-            } else if (method instanceof ConstructorNode) {
-                block.addStatements(postconditionBlockStatement.getStatements());
-            } else {
-                setOldVariablesIfEnabled(block, contractsEnabled, method);
-                block.addStatements(postconditionBlockStatement.getStatements());
+            // GROOVY-12082: a method that falls off the end (e.g. an empty body) implicitly returns the
+            // default for its return type; synthesize that return so the result-based postcondition is
+            // still evaluated (reference types yield null, primitives yield 0/false to match Groovy)
+            if (returnStatements.isEmpty()) {
+                ReturnStatement implicitReturn = new ReturnStatement(defaultReturnValueExpression(method.getReturnType()));
+                block.addStatement(implicitReturn);
+                returnStatements = List.of(implicitReturn);
             }
-            method.putNodeMetaData(METHOD_PROCESSED, true);
+
+            for (ReturnStatement returnStatement : returnStatements) {
+                BlockStatement localPostconditionBlockStatement = block(new VariableScope(), postconditionBlockStatement.getStatements());
+
+                Expression result = localVarX("result", method.getReturnType());
+                localPostconditionBlockStatement.getStatements().add(0, declS(result, returnStatement.getExpression()));
+                AssertStatementCreationUtility.injectResultVariableReturnStatementAndAssertionCallStatement(block, method.getReturnType().redirect(), returnStatement, localPostconditionBlockStatement);
+            }
+            setOldVariablesIfEnabled(block, contractsEnabled, method);
+
+        } else if (method instanceof ConstructorNode) {
+            block.addStatements(postconditionBlockStatement.getStatements());
+        } else {
+            // GROOVY-12082: void (non-constructor) methods get their postcondition appended even when
+            // the body is empty, mirroring how preconditions and class invariants are always woven
+            setOldVariablesIfEnabled(block, contractsEnabled, method);
+            block.addStatements(postconditionBlockStatement.getStatements());
         }
+        method.putNodeMetaData(METHOD_PROCESSED, true);
+    }
+
+    /**
+     * Returns the constant a method implicitly yields when it falls off the end of its body, matching
+     * Groovy's runtime semantics: the default value of the (primitive) return type, or {@code null} for
+     * reference types. Used by {@link #addPostcondition} (GROOVY-12082) to bind {@code result} for an
+     * empty-bodied (or returnless) non-void method so its postcondition can still be evaluated.
+     *
+     * @param returnType the method's declared return type
+     * @return the implicit default-return expression for that type
+     */
+    private static Expression defaultReturnValueExpression(final ClassNode returnType) {
+        if (!ClassHelper.isPrimitiveType(returnType)) return constX(null);
+        if (returnType.equals(ClassHelper.boolean_TYPE)) return constX(Boolean.FALSE);
+        if (returnType.equals(ClassHelper.long_TYPE)) return constX(0L);
+        if (returnType.equals(ClassHelper.float_TYPE)) return constX(0.0f);
+        if (returnType.equals(ClassHelper.double_TYPE)) return constX(0.0d);
+        // byte, short, int and char all default to a zero integer constant
+        return constX(0);
     }
 
     private void setOldVariablesIfEnabled(BlockStatement block, Expression contractsEnabled, MethodNode method) {
