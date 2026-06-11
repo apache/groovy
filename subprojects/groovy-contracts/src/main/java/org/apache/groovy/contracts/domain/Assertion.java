@@ -99,6 +99,10 @@ public abstract class Assertion<T extends Assertion> {
         BooleanExpression newBooleanExpression = boolX(andX(booleanExpression(), other.booleanExpression()));
         newBooleanExpression.setSourcePosition(booleanExpression());
         renew(newBooleanExpression);
+        // GROOVY-12083: the single original block (used for inline-mode assertion generation) only
+        // reflects the first condition; once combined it can no longer represent the whole expression,
+        // so drop it to force the tracker path that evaluates the combined booleanExpression
+        this.originalBlockStatement = null;
     }
 
     /**
@@ -111,5 +115,8 @@ public abstract class Assertion<T extends Assertion> {
         BooleanExpression newBooleanExpression = boolX(orX(booleanExpression(), other.booleanExpression()));
         newBooleanExpression.setSourcePosition(booleanExpression());
         renew(newBooleanExpression);
+        // GROOVY-12083: see and(); a combined expression can no longer be represented by the single
+        // original block, so drop it to force the combined-expression tracker path
+        this.originalBlockStatement = null;
     }
 }

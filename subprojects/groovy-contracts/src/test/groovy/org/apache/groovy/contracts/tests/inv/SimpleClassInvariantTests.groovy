@@ -327,4 +327,49 @@ class Rocket {
             betterRocket.increase()
         }
     }
+
+    // GROOVY-12083: multiple @Invariant annotations are AND-combined; every one must be evaluated
+    // (unlike postconditions, invariants never used inline mode, so they were not affected, but lock it in)
+    @Test
+    void multiple_class_invariants_second_is_violated() {
+
+        def source = '''
+        import groovy.contracts.*
+
+        @Invariant({ a >= 0 })
+        @Invariant({ a < 10 })
+        class C {
+            int a = 0
+            void set(int v) { a = v }
+        }
+        '''
+
+        def c = create_instance_of(source)
+        c.set(5)
+        shouldFail(ClassInvariantViolation) {
+            c.set(42)
+        }
+    }
+
+    // GROOVY-12083
+    @Test
+    void multiple_class_invariants_first_is_violated() {
+
+        def source = '''
+        import groovy.contracts.*
+
+        @Invariant({ a < 10 })
+        @Invariant({ a >= 0 })
+        class C {
+            int a = 0
+            void set(int v) { a = v }
+        }
+        '''
+
+        def c = create_instance_of(source)
+        c.set(5)
+        shouldFail(ClassInvariantViolation) {
+            c.set(-3)
+        }
+    }
 }
