@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes an annotation reference attached to a documented element.
+ */
 public interface GroovyAnnotationRef {
     /**
      * The annotation being referenced.

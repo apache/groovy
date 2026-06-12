@@ -38,22 +38,37 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class GrailsWorkloadBench {
+    /** Number of iterations per benchmark. */
     static final int ITERATIONS = 10_000
 
-    // Domain-like entities from the demo app
+    /**
+     * Employee entity from the demo app.
+     */
     static class Employee {
+        /** Employee ID. */
         Long id
+        /** First name. */
         String firstName
+        /** Last name. */
         String lastName
+        /** Email address. */
         String email
+        /** Job title. */
         String jobTitle
+        /** Department name. */
         String department
+        /** Salary amount. */
         BigDecimal salary
+        /** Active status. */
         boolean isActive
+        /** Performance rating. */
         int performanceRating
+        /** List of skills. */
         List<String> skills = []
 
+        /** Returns full name. */
         String getFullName() { "$firstName $lastName" }
+        /** Converts employee to map. */
         Map toMap() {
             [id: id, name: getFullName(), email: email, title: jobTitle,
              dept: department, salary: salary, active: isActive,
@@ -61,50 +76,87 @@ class GrailsWorkloadBench {
         }
     }
 
+    /**
+     * Project entity from the demo app.
+     */
     static class Project {
+        /** Project ID. */
         Long id
+        /** Project name. */
         String name
+        /** Project status. */
         String status
+        /** Project budget. */
         BigDecimal budget
+        /** Owning department. */
         String department
+        /** Priority level. */
         int priority
+        /** List of tasks. */
         List<Task> tasks = []
+        /** List of milestones. */
         List<Milestone> milestones = []
 
+        /** Converts project to map. */
         Map toMap() {
             [id: id, name: name, status: status, budget: budget,
              taskCount: tasks.size(), milestoneCount: milestones.size()]
         }
     }
 
+    /**
+     * Task entity from the demo app.
+     */
     static class Task {
+        /** Task ID. */
         Long id
+        /** Task name. */
         String name
+        /** Task status. */
         String status
+        /** Priority level. */
         int priority
+        /** Estimated hours. */
         int estimatedHours
+        /** Assigned person. */
         String assignee
 
+        /** Converts task to map. */
         Map toMap() { [id: id, name: name, status: status, priority: priority] }
     }
 
+    /**
+     * Milestone entity from the demo app.
+     */
     static class Milestone {
+        /** Milestone ID. */
         Long id
+        /** Milestone name. */
         String name
+        /** Completion status. */
         boolean isCompleted
+        /** Converts milestone to map. */
         Map toMap() { [id: id, name: name, completed: isCompleted] }
     }
 
-    // Unrelated type for cross-type invalidation
+    /**
+     * Unrelated type for cross-type invalidation.
+     */
     static class PluginConfig {
+        /** Configuration setting. */
         String setting = "default"
     }
 
+    /** List of employee test data. */
     List<Employee> employees
+    /** List of project test data. */
     List<Project> projects
+    /** List of task test data. */
     List<Task> tasks
+    /** Counter for varying invalidation patterns. */
     int invalidationCounter
 
+    /** Sets up test data before each iteration. */
     @Setup(Level.Iteration)
     void setup() {
         GroovySystem.metaClassRegistry.removeMetaClass(Employee)
@@ -220,17 +272,24 @@ class GrailsWorkloadBench {
         }
     }
 
+    /**
+     * GORM-like criteria builder for queries.
+     */
     static class CriteriaBuilder {
+        /** Accumulated criteria. */
         Map result = [:]
 
+        /** Adds equality criterion. */
         void eq(String field, Object value) {
             result[field] = value
         }
 
+        /** Adds greater-than criterion. */
         void gt(String field, Object value) {
             result["${field}_gt"] = value
         }
 
+        /** Adds nested criteria block. */
         void nested(String name, @DelegatesTo(CriteriaBuilder) Closure cl) {
             def inner = new CriteriaBuilder()
             cl.delegate = inner
@@ -239,6 +298,7 @@ class GrailsWorkloadBench {
             result[name] = inner.result
         }
 
+        /** Builds the criteria map. */
         Map build() { result }
     }
 

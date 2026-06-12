@@ -294,6 +294,12 @@ public class ServletBinding extends Binding {
         return params;
     }
 
+    /**
+     * Binds a servlet variable while protecting the reserved lazy helper names.
+     *
+     * @param name the variable name to bind
+     * @param value the value to expose through the binding
+     */
     @Override
     public void setVariable(String name, Object value) {
         lazyInit();
@@ -308,6 +314,11 @@ public class ServletBinding extends Binding {
         super.setVariable(name, value);
     }
 
+    /**
+     * Returns the current binding variables after initializing the lazy servlet helpers.
+     *
+     * @return the binding variables map
+     */
     @Override
     public Map getVariables() {
         lazyInit();
@@ -379,6 +390,13 @@ public class ServletBinding extends Binding {
         }
     }
 
+    /**
+     * Forwards the current request to another resource using the same request and response.
+     *
+     * @param path the dispatcher path to forward to
+     * @throws ServletException if the target resource fails
+     * @throws IOException if request dispatching fails
+     */
     public void forward(String path) throws ServletException, IOException {
         HttpServletRequest request = (HttpServletRequest) super.getVariable("request");
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
@@ -386,6 +404,13 @@ public class ServletBinding extends Binding {
         dispatcher.forward(request, response);
     }
 
+    /**
+     * Includes another resource in the current response.
+     *
+     * @param path the dispatcher path to include
+     * @throws ServletException if the target resource fails
+     * @throws IOException if request dispatching fails
+     */
     public void include(String path) throws ServletException, IOException {
         HttpServletRequest request = (HttpServletRequest) super.getVariable("request");
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
@@ -393,6 +418,12 @@ public class ServletBinding extends Binding {
         dispatcher.include(request, response);
     }
 
+    /**
+     * Sends a redirect response to the supplied location.
+     *
+     * @param location the redirect target
+     * @throws IOException if the redirect cannot be sent
+     */
     public void redirect(String location) throws IOException {
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
         response.sendRedirect(location);

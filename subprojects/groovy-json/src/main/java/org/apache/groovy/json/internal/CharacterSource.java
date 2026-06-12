@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.json.internal;
 
+/**
+ * Character cursor abstraction used by the streaming JSON parsers.
+ */
 public interface CharacterSource {
 
     /**
@@ -67,6 +70,11 @@ public interface CharacterSource {
      */
     char[] findNextChar(int ch, int esc);
 
+    /**
+     * Reports whether the last string scan encountered an escape sequence.
+     *
+     * @return {@code true} when an escape was seen
+     */
     boolean hadEscape();
 
     /**
@@ -74,5 +82,11 @@ public interface CharacterSource {
      */
     char[] readNumber();
 
+    /**
+     * Builds an error message using the current source position.
+     *
+     * @param message parser-specific message
+     * @return formatted error details
+     */
     String errorDetails(String message);
 }

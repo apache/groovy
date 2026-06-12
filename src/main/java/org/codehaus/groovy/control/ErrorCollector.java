@@ -28,6 +28,7 @@ import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +40,7 @@ import java.util.List;
  */
 public class ErrorCollector implements Serializable {
 
-    private static final long serialVersionUID = 2844774170905056755L;
+    @Serial private static final long serialVersionUID = 2844774170905056755L;
 
     /**
      * ErrorMessages collected during processing
@@ -63,6 +64,11 @@ public class ErrorCollector implements Serializable {
         this.configuration = configuration;
     }
 
+    /**
+     * Merges the recorded warnings and errors from another collector into this one.
+     *
+     * @param that the collector whose contents should be appended
+     */
     public void addCollectorContents(final ErrorCollector that) {
         if (that.errors != null) {
             if (this.errors == null) {
@@ -80,10 +86,23 @@ public class ErrorCollector implements Serializable {
         }
     }
 
+    /**
+     * Adds a syntax error for the supplied AST node without failing immediately.
+     *
+     * @param error the error message
+     * @param node the offending AST node
+     * @param source the source unit containing the node
+     */
     public void addErrorAndContinue(final String error, final ASTNode node, final SourceUnit source) {
         addErrorAndContinue(Message.create(new SyntaxException(error, node), source));
     }
 
+    /**
+     * Adds a syntax error without failing immediately.
+     *
+     * @param error the syntax error
+     * @param source the source unit containing the error
+     */
     public void addErrorAndContinue(final SyntaxException error, final SourceUnit source) {
         addErrorAndContinue(Message.create(error, source));
     }
@@ -127,14 +146,36 @@ public class ErrorCollector implements Serializable {
         }
     }
 
+    /**
+     * Adds a syntax error and fails if it is marked fatal or exceeds tolerance.
+     *
+     * @param error the syntax error
+     * @param source the source unit containing the error
+     * @throws CompilationFailedException if compilation must stop
+     */
     public void addError(final SyntaxException error, final SourceUnit source) throws CompilationFailedException {
         addError(Message.create(error, source), error.isFatal());
     }
 
+    /**
+     * Adds a source-located error message.
+     *
+     * @param error the error text
+     * @param context the CST node describing the source location
+     * @param source the source unit containing the error
+     * @throws CompilationFailedException if compilation must stop
+     */
     public void addError(final String error, final CSTNode context, final SourceUnit source) throws CompilationFailedException {
         addError(new LocatedMessage(error, context, source));
     }
 
+    /**
+     * Adds an exception-based error for the supplied source unit and then fails.
+     *
+     * @param exception the exception to report
+     * @param source the source unit being processed
+     * @throws CompilationFailedException if compilation must stop
+     */
     public void addException(final Exception exception, final SourceUnit source) throws CompilationFailedException {
         addError(new ExceptionMessage(exception, configuration.getDebug(), source));
         failIfErrors();

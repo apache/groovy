@@ -20,6 +20,11 @@ package groovy.sql
 
 import org.junit.jupiter.api.Test
 
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_DS_KEY
+import static groovy.sql.SqlTestConstants.DB_PASSWORD
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.DB_USER
 import static groovy.test.GroovyAssert.shouldFail
 
 
@@ -233,6 +238,36 @@ and 3 = (12 / 4)
         assert !ExtractIndexAndSql.hasNamedParameters("select * from TABLE where TEXTFIELD::integer = 3")
     }
 
+    // GROOVY-9295
+    @Test
+    void testCastingWithoutSpacesNotConfusedWithNamedParameters() {
+        assert !ExtractIndexAndSql.hasNamedParameters("select 1,2,3::text")
+        String query = "select 1,2,3::text"
+        assert query == ExtractIndexAndSql.from(query).newSql
+        assert ExtractIndexAndSql.from(query).indexPropList.isEmpty()
+    }
+
+    // GROOVY-9295: end-to-end check via the Map-params path exercised by
+    // sql.eachRow(String, Map, Closure) — Map is wrapped in a singleton list
+    // and passed to checkForNamedParams, which must leave a cast-only query alone.
+    @Test
+    void testCheckForNamedParamsLeavesCastOnlyQueryAlone() {
+        def ds = DB_DATASOURCE.newInstance(
+                (DB_DS_KEY): DB_URL_PREFIX + 'testCheckForNamedParamsLeavesCastOnlyQueryAlone',
+                user: DB_USER,
+                password: DB_PASSWORD)
+        def sql = new Sql(ds.connection)
+        try {
+            String query = "select 1,2,3::text"
+            def params = [[a: 'b']]
+            def result = sql.checkForNamedParams(query, params)
+            assert result.sql == query
+            assert result.params == params
+        } finally {
+            sql.close()
+        }
+    }
+
     @Test
     void testGROOVY6625() {
         String query = """SELECT
@@ -269,5 +304,69 @@ ORDER BY
         String query = "select '''' from dual"
 
         assert query == ExtractIndexAndSql.from(query).newSql
+    }
+
+    // GROOVY-9701: double-quoted SQL identifier containing a single quote
+    @Test
+    void testDoubleQuotedIdentifierContainingSingleQuote() {
+        String query = '''select "it's" from t where id=:id'''
+        String expected = '''select "it's" from t where id=?'''
+
+        assert expected == ExtractIndexAndSql.from(query).newSql
+    }
+
+    // GROOVY-9701: double-quoted identifier with embedded named-param-like colon is opaque
+    @Test
+    void testDoubleQuotedIdentifierWithColonIsOpaque() {
+        String query = '''select "foo:bar" from t where id=:id'''
+        String expected = '''select "foo:bar" from t where id=?'''
+
+        assert expected == ExtractIndexAndSql.from(query).newSql
+    }
+
+    // GROOVY-9701: SQL-standard doubled-quote escape inside a delimited identifier
+    @Test
+    void testDoubleQuotedIdentifierWithEscapedQuote() {
+        String query = '''select "a""b" from t where id=:id'''
+        String expected = '''select "a""b" from t where id=?'''
+
+        assert expected == ExtractIndexAndSql.from(query).newSql
+    }
+
+    // GROOVY-9701: unterminated double-quoted identifier surfaces as parse error
+    @Test
+    void testUnterminatedDoubleQuotedIdentifier() {
+        String query = 'select "oops from t where id=:id'
+
+        shouldFail(IllegalStateException) {
+            ExtractIndexAndSql.from(query)
+        }
+    }
+
+    // GROOVY-9701: reporter's case — mixes '-string containing " and "-identifier containing '.
+    // Five single quotes total; only parses cleanly once "-identifiers are recognized.
+    @Test
+    void testReporterCaseMixedQuotes() {
+        String query = '''select 'NAME' = str_replace(str_replace(name, '"', null), "'", null) from Address'''
+
+        assert query == ExtractIndexAndSql.from(query).newSql
+    }
+
+    // GROOVY-9701: line-comment marker inside a double-quoted identifier must not start a comment
+    @Test
+    void testDoubleQuotedIdentifierWithDashDashIsOpaque() {
+        String query = 'select "a--b" from t where id=:id'
+        String expected = 'select "a--b" from t where id=?'
+
+        assert expected == ExtractIndexAndSql.from(query).newSql
+    }
+
+    // GROOVY-9701: block-comment start inside a double-quoted identifier must not start a comment
+    @Test
+    void testDoubleQuotedIdentifierWithSlashStarIsOpaque() {
+        String query = 'select "a/*b*/c" from t where id=:id'
+        String expected = 'select "a/*b*/c" from t where id=?'
+
+        assert expected == ExtractIndexAndSql.from(query).newSql
     }
 }

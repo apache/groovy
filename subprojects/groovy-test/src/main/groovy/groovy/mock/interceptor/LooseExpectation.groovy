@@ -29,9 +29,20 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods
  *  @see StrictExpectation
  */
 class LooseExpectation {
+    /**
+     * Demand definition being matched.
+     */
     Demand fDemand  = null
+    /**
+     * Per-demand invocation counters used during verification.
+     */
     List fCalls      = []
 
+    /**
+     * Creates a loose expectation backed by the supplied demand definition.
+     *
+     * @param demand the recorded demand specification
+     */
     LooseExpectation(Demand demand) {
         fDemand = demand
     }
@@ -55,6 +66,13 @@ class LooseExpectation {
         return fDemand.recorded[callIndex].behavior
     }
 
+    /**
+     * Determines whether the recorded demand at the supplied index can satisfy the current call.
+     *
+     * @param name the requested method name
+     * @param i the index of the candidate demand
+     * @return {@code true} when the demand matches and remains within its allowed range
+     */
     boolean isEligible(String name, int i) {
         def calls = fDemand.recorded
         if (i >= calls.size())  {

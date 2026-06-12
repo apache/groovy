@@ -27,7 +27,8 @@ import junit.textui.TestRunner;
 import org.apache.groovy.test.ScriptTestAdapter;
 
 import java.io.File;
-import java.security.PrivilegedAction;
+
+import static java.lang.System.Logger.Level.INFO;
 
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
@@ -47,14 +48,23 @@ import java.security.PrivilegedAction;
  */
 public class GroovyTestSuite extends TestSuite {
 
+    private static final System.Logger LOGGER = System.getLogger(GroovyTestSuite.class.getName());
+
+    /**
+     * Optional script path supplied from the command line when running as an application.
+     */
     protected static String file = null;
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    protected final GroovyClassLoader loader =
-            java.security.AccessController.doPrivileged(
-                    (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(GroovyTestSuite.class.getClassLoader())
-            );
+    /**
+     * Class loader used to compile and load Groovy test sources.
+     */
+    protected final GroovyClassLoader loader = new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
 
+    /**
+     * Runs the suite as a standalone application.
+     *
+     * @param args optional command-line arguments, where the first argument is the test script path
+     */
     public static void main(String[] args) {
         if (args.length > 0) {
             file = args[0];
@@ -62,6 +72,11 @@ public class GroovyTestSuite extends TestSuite {
         TestRunner.run(suite());
     }
 
+    /**
+     * Creates a suite for the configured Groovy test script.
+     *
+     * @return a suite containing the compiled test or script adapter
+     */
     public static Test suite() {
         GroovyTestSuite suite = new GroovyTestSuite();
         try {
@@ -72,12 +87,17 @@ public class GroovyTestSuite extends TestSuite {
         return suite;
     }
 
+    /**
+     * Loads the configured Groovy test source and adds the resulting test to this suite.
+     *
+     * @throws Exception if the test source cannot be compiled or adapted
+     */
     public void loadTestSuite() throws Exception {
         String fileName = System.getProperty("test", file);
         if (fileName == null) {
             throw new RuntimeException("No filename given in the 'test' system property so cannot run a Groovy unit test");
         }
-        System.out.println("Compiling: " + fileName);
+        LOGGER.log(INFO, "Compiling: {0}", fileName);
         Class<?> type = compile(fileName);
         String[] args = {};
         if (TestCase.class.isAssignableFrom(type)) {
@@ -93,6 +113,13 @@ public class GroovyTestSuite extends TestSuite {
         addTestSuite((Class<? extends TestCase>) type);
     }
 
+    /**
+     * Compiles the supplied Groovy source file into a class.
+     *
+     * @param fileName the Groovy source file to compile
+     * @return the compiled class
+     * @throws Exception if compilation fails
+     */
     public Class<?> compile(String fileName) throws Exception {
         return loader.parseClass(new File(fileName));
     }

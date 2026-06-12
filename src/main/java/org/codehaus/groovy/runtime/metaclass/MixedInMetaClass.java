@@ -25,9 +25,25 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.lang.ref.WeakReference;
 
+/**
+ * A delegating MetaClass that allows mixing in a mixin object.
+ * This class delegates method invocation to an owner object's MetaClass
+ * while maintaining a weak reference to the owner to prevent memory leaks.
+ * <p>
+ * This implementation is for internal use by the Groovy runtime's mixin feature.
+ */
 public class MixedInMetaClass extends OwnedMetaClass {
+    /**
+     * A weak reference to the owner object
+     */
     private final WeakReference owner;
 
+    /**
+     * Constructs a new MixedInMetaClass.
+     *
+     * @param instance the instance that will have the mixin applied
+     * @param owner the owner object that provides the mixin functionality
+     */
     public MixedInMetaClass(Object instance, Object owner) {
         super(GroovySystem.getMetaClassRegistry().getMetaClass(instance.getClass()));
         this.owner = new WeakReference(owner);

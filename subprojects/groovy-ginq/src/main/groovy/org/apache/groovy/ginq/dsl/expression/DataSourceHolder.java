@@ -24,6 +24,16 @@ package org.apache.groovy.ginq.dsl.expression;
  * @since 4.0.0
  */
 public interface DataSourceHolder {
+    /**
+     * Returns the current data-source expression.
+     *
+     * @return the current data source
+     */
     DataSourceExpression getDataSourceExpression();
+    /**
+     * Updates the current data-source expression.
+     *
+     * @param dataSourceExpression the new data source
+     */
     void setDataSourceExpression(DataSourceExpression dataSourceExpression);
 }

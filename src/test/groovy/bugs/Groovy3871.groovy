@@ -52,10 +52,10 @@ final class Groovy3871 {
         def otherChildInstance = new G3871Child()
         assert otherChildInstance.otherProp == 'porPrehto'
     }
+
+    /** a dummy base class */
+    static class G3871Base { }
+
+    /** a dummy child class */
+    static class G3871Child extends G3871Base { }
 }
-
-/** a dummy base class */
-class G3871Base { }
-
-/** a dummy child class */
-class G3871Child extends G3871Base { }

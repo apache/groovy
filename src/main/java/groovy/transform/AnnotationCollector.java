@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * arguments and error will be given. Is this not wished or if you want a
  * different mapping a custom processor has to be used. There are two ways of
  * using the alias. The first way is by providing the annotations as list/array:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  *     import groovy.transform.*
  *     &#64;AnnotationCollector([EqualsAndHashCode, ToString, Immutable])
  *     &#64;interface Alias { }
@@ -51,7 +51,7 @@ import java.lang.annotation.Target;
  * excludes which will be mapped to EqualsAndHashCode and ToString. Immutable
  * doesn't have excludes, thus nothing will be done there.<br>
  * The other way is to add annotations to the alias:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  *     import groovy.transform.*
  *     &#64;ToString(excludes=["a"])
  *     &#64;EqualsAndHashCode
@@ -75,7 +75,7 @@ import java.lang.annotation.Target;
  * If both ways are combined, then the list overwrites annotation usage.
  * NOTE: The aliasing does not support aliasing of aliased annotations.
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  *     import groovy.transform.*
  *     &#64;AnnotationCollector([EqualsAndHashCode, ToString])
  *     &#64;interface Simple { }
@@ -102,7 +102,7 @@ import java.lang.annotation.Target;
  *     assert address.toString() == 'Address(Springfield)'
  * </pre>
  *
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  *     // Use a custom processor to handle attributes.
  *     import org.codehaus.groovy.transform.*
  *     import org.codehaus.groovy.ast.*
@@ -144,7 +144,7 @@ import java.lang.annotation.Target;
  *     '''
  * </pre>
  *
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  *     // Use AnnotationCollector last to group the previous annotations.
  *     import groovy.transform.*
  *     &#64;EqualsAndHashCode

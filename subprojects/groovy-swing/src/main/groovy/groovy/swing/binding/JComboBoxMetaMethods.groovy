@@ -21,8 +21,16 @@ package groovy.swing.binding
 import javax.swing.ComboBoxModel
 import javax.swing.JComboBox
 
+/**
+ * Adds synthetic convenience properties used by Swing binding code for {@link JComboBox}.
+ */
 class JComboBoxMetaMethods {
 
+    /**
+     * Enhances the combo box with synthetic element and selected-element accessors.
+     *
+     * @param comboBox the combo box to enhance
+     */
     static void enhanceMetaClass(JComboBox comboBox) {
         AbstractSyntheticMetaMethods.enhance(comboBox, [
 

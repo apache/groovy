@@ -28,6 +28,12 @@ package groovy.xml
  * normal constructor and change the package to {@code groovy.xml} prior to reaching Groovy 4.
  */
 class XmlSlurperFactory {
+    /**
+     * Creates a new {@link XmlSlurper} for XML parsing and lazy GPath-style traversal.
+     *
+     * @param args constructor arguments forwarded to {@link XmlSlurper}
+     * @return a new slurper instance
+     */
     static newSlurper(... args) {
         new XmlSlurper(*args)
     }

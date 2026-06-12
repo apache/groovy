@@ -12,6 +12,20 @@ github:
     - static-typing
     - compiler
     - apache
+  ghp_branch: gh-pages
+  ghp_path: /
+
+  rulesets:
+    - name: "Default branch protection"
+      type: branch
+      branches:
+        includes:
+          - "~DEFAULT_BRANCH"
+          - "GROOVY_*_X"
+          - "REL_BRANCH_*"
+          - "REL-BRANCH-*"
+      restrict_deletion: true
+      restrict_force_push: true
 
 notifications:
   jira_options: link label comment

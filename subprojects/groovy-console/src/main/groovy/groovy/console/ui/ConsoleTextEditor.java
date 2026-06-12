@@ -29,6 +29,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
+import javax.swing.text.DefaultEditorKit;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -53,21 +54,36 @@ import java.awt.event.KeyEvent;
 import java.awt.print.PrinterJob;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Serial;
+import java.util.Locale;
 import java.util.prefs.Preferences;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Component which provides a styled editor for the console.
  */
 public class ConsoleTextEditor extends JScrollPane {
-    private static final long serialVersionUID = -3582625263676326887L;
+    private static final System.Logger LOGGER = System.getLogger(ConsoleTextEditor.class.getName());
+    @Serial private static final long serialVersionUID = -3582625263676326887L;
     private static final Preferences PREFERENCES = Preferences.userNodeForPackage(Console.class);
     private static final String PREFERENCE_FONT_SIZE = "fontSize";
     private static final int DEFAULT_FONT_SIZE = 12;
 
+    /**
+     * Returns the preferred monospaced font family for the editor.
+     *
+     * @return the default font family name
+     */
     public String getDefaultFamily() {
         return defaultFamily;
     }
 
+    /**
+     * Sets the preferred monospaced font family for the editor.
+     *
+     * @param defaultFamily the font family name to use
+     */
     public void setDefaultFamily(String defaultFamily) {
         this.defaultFamily = defaultFamily;
     }
@@ -104,7 +120,7 @@ public class ConsoleTextEditor extends JScrollPane {
             try {
                 startingY = textEditor.modelToView(start).y + fontHeight - fontDesc;
             } catch (BadLocationException e1) {
-                System.err.println(e1.getMessage());
+                LOGGER.log(WARNING, e1.getMessage());
             }
             g.setFont(f);
             for (int line = startline, y = startingY; line <= endline; y += fontHeight, line++) {
@@ -147,7 +163,43 @@ public class ConsoleTextEditor extends JScrollPane {
     private int fontSize;
 
     /**
-     * Creates a new instance of ConsoleTextEditor
+     * Returns the undo manager backing this editor.
+     *
+     * @return the editor undo manager
+     * @since 6.0.0
+     */
+    public TextUndoManager getUndoManager() {
+        return undoManager;
+    }
+
+    /**
+     * Re-run the syntax highlighter on the full document so character
+     * attributes match the current theme. Undo recording is suppressed so
+     * this doesn't pollute the undo/redo stack. Used after undo/redo
+     * because UndoableEdits restore attributes captured at edit time,
+     * which may no longer match the active theme.
+     *
+     * @since 6.0.0
+     */
+    public void reapplyHighlighting() {
+        Document doc = textEditor.getDocument();
+        if (!(doc instanceof DefaultStyledDocument)) {
+            return;
+        }
+        DocumentFilter filter = ((DefaultStyledDocument) doc).getDocumentFilter();
+        if (filter instanceof SmartDocumentFilter) {
+            undoManager.setRecording(false);
+            try {
+                ((SmartDocumentFilter) filter).reparseDocument();
+            } finally {
+                undoManager.setRecording(true);
+            }
+        }
+    }
+
+    /**
+     * Creates a styled text editor with line numbers, undo/redo support,
+     * printing support, and syntax highlighting.
      */
     public ConsoleTextEditor() {
         fontSize = PREFERENCES.getInt(PREFERENCE_FONT_SIZE, DEFAULT_FONT_SIZE);
@@ -225,8 +277,27 @@ public class ConsoleTextEditor extends JScrollPane {
         ks = KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK, false);
         im.put(ks, StructuredSyntaxResources.PRINT);
         am.put(StructuredSyntaxResources.PRINT, printAction);
+
+        // on macOS, remap Home/End to line start/end (Cmd+Home/End for document start/end)
+        if (System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("mac")) {
+            InputMap editorIm = textEditor.getInputMap(JComponent.WHEN_FOCUSED);
+            int meta = InputEvent.META_DOWN_MASK;
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0), DefaultEditorKit.beginLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0), DefaultEditorKit.endLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionBeginLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionEndLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, meta), DefaultEditorKit.beginAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, meta), DefaultEditorKit.endAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, meta | InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionBeginAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, meta | InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionEndAction);
+        }
     }
 
+    /**
+     * Shows or hides the line-number gutter.
+     *
+     * @param showLineNumbers {@code true} to show line numbers
+     */
     public void setShowLineNumbers(boolean showLineNumbers) {
         if (showLineNumbers) {
             JPanel view = new JPanel(new BorderLayout());
@@ -238,19 +309,37 @@ public class ConsoleTextEditor extends JScrollPane {
         }
     }
 
+    /**
+     * Updates whether the text editor accepts user edits.
+     *
+     * @param editable {@code true} if the editor should be editable
+     */
     public void setEditable(boolean editable) {
         textEditor.setEditable(editable);
     }
 
+    /**
+     * Reports whether plain-text clipboard content is currently available.
+     *
+     * @return {@code true} if the clipboard contains a string
+     */
     public boolean clipBoardAvailable() {
         Transferable t = StructuredSyntaxResources.SYSTEM_CLIPBOARD.getContents(this);
         return t.isDataFlavorSupported(DataFlavor.stringFlavor);
     }
 
+    /**
+     * Returns the wrapped text editor component.
+     *
+     * @return the embedded text editor
+     */
     public TextEditor getTextEditor() {
         return textEditor;
     }
 
+    /**
+     * Installs actions exposed by this editor on its action map.
+     */
     protected void initActions() {
         ActionMap map = getActionMap();
         map.put(StructuredSyntaxResources.PRINT, new PrintAction());
@@ -288,6 +377,7 @@ public class ConsoleTextEditor extends JScrollPane {
             undoManager.redo();
             setEnabled(undoManager.canRedo());
             undoAction.setEnabled(undoManager.canUndo());
+            reapplyHighlighting();
             super.actionPerformed(ae);
         }
 
@@ -332,6 +422,7 @@ public class ConsoleTextEditor extends JScrollPane {
             undoManager.undo();
             setEnabled(undoManager.canUndo());
             redoAction.setEnabled(undoManager.canRedo());
+            reapplyHighlighting();
             super.actionPerformed(ae);
         }
 
@@ -341,18 +432,38 @@ public class ConsoleTextEditor extends JScrollPane {
         }
     }
 
+    /**
+     * Returns the action that undoes the most recent edit.
+     *
+     * @return the undo action
+     */
     public Action getUndoAction() {
         return undoAction;
     }
 
+    /**
+     * Returns the action that redoes the most recently undone edit.
+     *
+     * @return the redo action
+     */
     public Action getRedoAction() {
         return redoAction;
     }
 
+    /**
+     * Returns the action that prints the editor content.
+     *
+     * @return the print action
+     */
     public Action getPrintAction() {
         return printAction;
     }
 
+    /**
+     * Replaces the current syntax highlighter document filter.
+     *
+     * @param clazz the filter type to instantiate for the current document
+     */
     public void enableHighLighter(Class<? extends DocumentFilter> clazz) {
         DefaultStyledDocument doc = (DefaultStyledDocument) textEditor.getDocument();
 

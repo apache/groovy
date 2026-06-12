@@ -17,9 +17,9 @@
  *  under the License.
  */
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SaxBuilderTest extends GroovyTestCase {
+class SaxBuilderTest {
 
     // tag::sax_builder_handler[]
     class LogHandler extends org.xml.sax.helpers.DefaultHandler {
@@ -36,6 +36,7 @@ class SaxBuilderTest extends GroovyTestCase {
     }
     // end::sax_builder_handler[]
 
+    @Test
     void testSaxBuilder() {
         // tag::sax_builder[]
         def handler = new LogHandler()

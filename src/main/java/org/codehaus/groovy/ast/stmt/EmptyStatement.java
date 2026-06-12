@@ -23,10 +23,25 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 import java.util.Map;
 
+/**
+ * Represents an empty statement that performs no operation.
+ * An empty statement is a valid statement that can appear wherever a statement is expected
+ * but has no executable code. Empty statements are often used as default cases or as placeholders
+ * in control flow structures.
+ *
+ * <p>An immutable singleton {@link #INSTANCE} is provided for use when source position or
+ * other occurrence-specific metadata is not needed. Using the singleton reduces memory overhead.</p>
+ *
+ * @see {@link Statement}
+ * @see {@link SwitchStatement}
+ */
 public class EmptyStatement extends Statement {
 
     /**
-     * @see EmptyStatement#INSTANCE
+     * Constructs a new empty statement instance.
+     * For most use cases, consider using {@link #INSTANCE} instead to avoid unnecessary object allocation.
+     *
+     * @see #INSTANCE
      */
     public EmptyStatement() {
         super();
@@ -46,7 +61,10 @@ public class EmptyStatement extends Statement {
 
     /**
      * Immutable singleton that is recommended for use when source range or any
-     * other occurrence-specific metadata is not needed.
+     * other occurrence-specific metadata is not needed. Using this singleton
+     * conserves memory by avoiding unnecessary object allocations.
+     *
+     * @see EmptyStatement#EmptyStatement()
      */
     public static final EmptyStatement INSTANCE = new EmptyStatement() {
 

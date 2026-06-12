@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -81,14 +82,29 @@ import static org.codehaus.groovy.runtime.typehandling.NumberMath.toBigDecimal;
 @Internal
 class QueryableCollection<T> implements Queryable<T>, Serializable {
 
+    /**
+     * Creates a queryable collection backed by an iterable.
+     *
+     * @param sourceIterable the source elements
+     */
     QueryableCollection(Iterable<T> sourceIterable) {
         this.sourceIterable = sourceIterable;
     }
 
+    /**
+     * Creates a queryable collection backed by a stream.
+     *
+     * @param sourceStream the source stream
+     */
     QueryableCollection(Stream<T> sourceStream) {
         this.sourceStream = sourceStream;
     }
 
+    /**
+     * Returns an iterator over the current source.
+     *
+     * @return an iterator over the elements
+     */
     public Iterator<T> iterator() {
         readLock.lock();
         try {
@@ -135,7 +151,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private static final class Bucket<E> extends ArrayList<E> {
-        private static final long serialVersionUID = 2813676753531316403L;
+        @Serial private static final long serialVersionUID = 2813676753531316403L;
         Bucket(int initialCapacity) {
             super(initialCapacity);
         }
@@ -222,6 +238,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return lj.union(rj);
     }
 
+    /**
+     * Produces the Cartesian product with another queryable source.
+     *
+     * @param queryable the other source
+     * @param <U> the element type of the other source
+     * @return the joined result
+     */
     @Override
     public <U> Queryable<Tuple2<T, U>> crossJoin(Queryable<? extends U> queryable) {
         Stream<Tuple2<T, U>> stream =
@@ -262,7 +285,26 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     @Override
-    public <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {
+    public <K> Queryable<GroupResult<K, T>> groupByInto(Function<? super T, ? extends K> classifier, Predicate<? super GroupResult<K, T>> having) {
+        Collector<T, ?, ? extends Map<K, List<T>>> groupingBy =
+                isParallel() ? Collectors.groupingByConcurrent(classifier, Collectors.toList())
+                             : Collectors.groupingBy(classifier, Collectors.toList());
+
+        // Materialize group elements as lists so they can be iterated multiple times
+        // (e.g., having g.count() > 1 followed by select g.count())
+        Stream<GroupResult<K, T>> stream =
+                this.stream()
+                        .collect(groupingBy)
+                        .entrySet().stream()
+                        .map(m -> GroupResult.<K, T>of(m.getKey(), from(m.getValue())))
+                        .filter(gr -> null == having || having.test(gr));
+
+        return from(stream);
+    }
+
+    @SafeVarargs
+    @Override
+    public final <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {
         Comparator<T> comparator = makeComparator(orders);
         if (null == comparator) {
             return this;
@@ -271,10 +313,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(this.stream().sorted(comparator));
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(List<? extends Order<? super T, ? extends U>> orders) {
         return makeComparator(orders.toArray(Order.EMPTY_ARRAY));
     }
 
+    @SafeVarargs
     protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(Order<? super T, ? extends U>... orders) {
         if (null == orders || 0 == orders.length) {
             return null;
@@ -292,6 +336,13 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return comparator;
     }
 
+    /**
+     * Applies offset and size limits to the current stream.
+     *
+     * @param offset the number of rows to skip
+     * @param size the maximum number of rows to keep
+     * @return the limited queryable
+     */
     @Override
     public Queryable<T> limit(long offset, long size) {
         Stream<T> stream = this.stream().skip(offset).limit(size);
@@ -299,6 +350,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
         final String originalParallel = QueryableHelper.getVar(PARALLEL);
@@ -324,7 +376,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 stream = stream.collect(Collectors.toList()).parallelStream().map((U u) -> {
                     boolean interrupted = false;
                     try {
-                        return (U) ((CompletableFuture) u).get();
+                        @SuppressWarnings("unchecked")
+                        U result = (U) ((CompletableFuture) u).get();
+                        return result;
                     } catch (InterruptedException | ExecutionException ex) {
                         if (ex instanceof InterruptedException) interrupted = true;
                         throw new GroovyRuntimeException(ex);
@@ -340,6 +394,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
     }
 
+    /**
+     * Removes duplicate elements.
+     *
+     * @return the distinct queryable
+     */
     @Override
     public Queryable<T> distinct() {
         Stream<T> stream = this.stream().distinct();
@@ -347,6 +406,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Appends all elements from another queryable.
+     *
+     * @param queryable the other queryable
+     * @return the combined queryable
+     */
     @Override
     public Queryable<T> unionAll(Queryable<? extends T> queryable) {
         Stream<T> stream = Stream.concat(this.stream(), queryable.stream());
@@ -354,6 +419,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Keeps only elements that also occur in the other queryable.
+     *
+     * @param queryable the other queryable
+     * @return the intersection
+     */
     @Override
     public Queryable<T> intersect(Queryable<? extends T> queryable) {
         Stream<T> stream = this.stream().filter(a -> {
@@ -367,6 +438,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    /**
+     * Removes elements that also occur in the other queryable.
+     *
+     * @param queryable the other queryable
+     * @return the difference
+     */
     @Override
     public Queryable<T> minus(Queryable<? extends T> queryable) {
         Stream<T> stream = this.stream().filter(a -> {
@@ -381,6 +458,11 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     // ------------------------------ BEGIN AGGREGATE FUNCTIONS --------------------------------
+    /**
+     * Counts all elements.
+     *
+     * @return the number of elements
+     */
     @Override
     public Long count() {
         return agg(q -> q.stream().count());
@@ -569,12 +651,17 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                      .map(c -> tuple(p, c.original));
     }
 
+    /**
+     * Materializes this queryable as a list.
+     *
+     * @return the materialized list
+     */
     @Override
     public List<T> toList() {
         writeLock.lock();
         try {
-            if (sourceIterable instanceof List) {
-                return (List<T>) sourceIterable;
+            if (sourceIterable instanceof @SuppressWarnings("unchecked")List<T> list) {
+                return list;
             }
 
             final List<T> result = stream().collect(Collectors.toList());
@@ -586,11 +673,21 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
     }
 
+    /**
+     * Counts the current elements.
+     *
+     * @return the number of elements
+     */
     @Override
     public long size() {
         return stream().count();
     }
 
+    /**
+     * Returns a reusable stream over the current elements.
+     *
+     * @return the element stream
+     */
     @Override
     public Stream<T> stream() {
         writeLock.lock();
@@ -609,8 +706,17 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
     }
 
+    /**
+     * Opens a window for the supplied current record.
+     *
+     * @param currentRecord the current record with its index
+     * @param windowDefinition the window definition
+     * @param <U> the order value type
+     * @return the window for the current record
+     */
     @Override
     public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
+        @SuppressWarnings("unchecked")
         final Tuple3<String, String, String> idTuple = (Tuple3<String, String, String>) windowDefinition.getId(); // (partitionId, orderId, windowDefinitionId)
         final String partitionId = idTuple.getV1();
 
@@ -680,6 +786,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             this.orderId = orderId;
         }
 
+        @SuppressWarnings("rawtypes")
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -723,6 +830,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
     }
 
+    /**
+     * Coerces this queryable to a supported target type.
+     *
+     * @param clazz the requested target type
+     * @return the coerced value
+     */
     public Object asType(Class<?> clazz) {
         if (Queryable.class == clazz || QueryableCollection.class == clazz) {
             return this;
@@ -772,6 +885,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return DefaultGroovyMethods.asType(this, clazz);
     }
 
+    /**
+     * Compares this collection with another queryable collection.
+     *
+     * @param o the other object
+     * @return {@code true} if both contain the same elements
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -779,11 +898,21 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return toList().equals(that.toList());
     }
 
+    /**
+     * Returns the hash code of the materialized contents.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return Objects.hash(toList());
     }
 
+    /**
+     * Returns the ASCII-table representation of this queryable.
+     *
+     * @return the string representation
+     */
     @Override
     public String toString() {
         return AsciiTableMaker.makeAsciiTable(this);
@@ -802,5 +931,5 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static final String PARALLEL = "parallel";
     private static final String TRUE_STR = "true";
     private static final String FALSE_STR = "false";
-    private static final long serialVersionUID = -5067092453136522893L;
+    @Serial private static final long serialVersionUID = -5067092453136522893L;
 }

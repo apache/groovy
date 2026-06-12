@@ -89,6 +89,14 @@ public class ConstructorNodeUtils {
         return null;
     }
 
+    /**
+     * Creates a statement that validates named-argument keys against the supplied properties.
+     *
+     * @param namedArgs the map-style constructor arguments to validate
+     * @param pojo whether the generated constructor targets a POJO-style immutable type
+     * @param props the properties accepted by the constructor
+     * @return a statement that performs the validation
+     */
     public static Statement checkPropNamesS(final VariableExpression namedArgs, final boolean pojo, final List<PropertyNode> props) {
         if (!pojo) {
             return stmt(callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs)));

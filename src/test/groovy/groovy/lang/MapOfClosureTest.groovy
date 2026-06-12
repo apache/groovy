@@ -19,13 +19,17 @@
 package groovy.lang
 
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Tests maps of closures coerced to classes by asType()
  */
 class MapOfClosureTest {
 
+    @Test
     void testInterfaceProxy() {
         def outer = 1
         def x = [run: { outer++ }] as Runnable
@@ -35,6 +39,7 @@ class MapOfClosureTest {
         assert outer == 2
     }
 
+    @Test
     void testInterfaceProxyWithoutAllMethods() {
         def proxy = [methodOne: { 'some string' }] as MultiMethodInterface
 
@@ -47,6 +52,7 @@ class MapOfClosureTest {
         }
     }
 
+    @Test
     void testObject() {
         def m = [bar: { "foo" }]
         def x = m as Object
@@ -55,6 +61,7 @@ class MapOfClosureTest {
         assert "foo" == x.bar()
     }
 
+    @Test
     void testAbstractClassSubclassing() {
         def outer = 1
         def x = [run: { outer++ }] as TimerTask
@@ -66,6 +73,7 @@ class MapOfClosureTest {
     /**
      * Checks public and protected methods from parents can also be overridden by the Map coercion to classes.
      */
+    @Test
     void testOverrideProtectedMethods() {
         def b = [pub: { "map pub" }, prot: { "map prot" }, child: { "map child" }] as B
 
@@ -78,6 +86,7 @@ class MapOfClosureTest {
     /**
      * Checks that abstract methods can also be overridden.
      */
+    @Test
     void testAbstractMethodIsOverrided() {
         def a = [abstractMethod: { "map abstract" }] as A
 
@@ -87,6 +96,7 @@ class MapOfClosureTest {
     /**
      * Verify that complex method signatures, even with primitive types and arrays, can be overridden.
      */
+    @Test
     void testComplexMethodSignature() {
         def c = [foo: { int a, List b, Double[] c -> ["map foo"] as String[] }] as C
 

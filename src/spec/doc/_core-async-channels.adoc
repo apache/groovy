@@ -1,0 +1,204 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+[[async-channels]]
+== Channels
+
+Channels provide Go-style inter-task communication. A producer sends values
+into a channel; a consumer receives them as they arrive. The channel handles
+synchronization and optional buffering — no shared mutable state needed:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=channel,indent=0]
+----
+
+Channels support unbuffered (rendezvous, `create()`) and buffered (`create(n)`)
+modes. Sending blocks when the buffer is full; receiving blocks when empty.
+With virtual threads, this blocking is essentially free.
+
+Since channels implement `Iterable`, they also work with regular `for` loops
+and Groovy collection methods.
+
+[[async-channel-composition]]
+== Channel Composition
+
+`AsyncChannel` supports composable pipeline operations. Each
+composition method returns a new channel connected to the source
+by a background task.
+
+=== filter
+
+[source,groovy]
+----
+def source = AsyncChannel.create(10)
+def evens = source.filter { it % 2 == 0 }
+
+async {
+    (1..10).each { source.send(it) }
+    source.close()
+}
+
+for await (val in evens) { println val }  // 2, 4, 6, 8, 10
+----
+
+=== map
+
+[source,groovy]
+----
+def doubled = source.map { it * 2 }
+----
+
+=== Chaining
+
+Operations compose naturally:
+
+[source,groovy]
+----
+def pipeline = source
+    .filter { it > 50 }
+    .map { it * 2 }
+
+for await (val in pipeline) { process(val) }
+----
+
+=== merge
+
+Combines two channels into one, interleaving values as they arrive:
+
+[source,groovy]
+----
+def merged = channelA.merge(channelB)
+for await (event in merged) { handle(event) }
+----
+
+=== split
+
+Partitions a channel into two based on a predicate:
+
+[source,groovy]
+----
+def (highPriority, normal) = orders.split { it.priority > 5 }
+----
+
+=== tap
+
+Sends a copy of each value to a monitoring channel while passing
+through unchanged:
+
+[source,groovy]
+----
+def monitor = AsyncChannel.create(100)
+def output = source.tap(monitor)
+// output gets all values; monitor gets copies for logging
+----
+
+[[async-channel-select]]
+== Channel Select
+
+`ChannelSelect` waits for the first available value from multiple
+channels — like Go's `select` statement:
+
+[source,groovy]
+----
+import groovy.concurrent.ChannelSelect
+
+def prices = AsyncChannel.create(10)
+def alerts = AsyncChannel.create(10)
+
+def sel = ChannelSelect.from(prices, alerts)
+def result = await sel.select()
+println "Channel ${result.index}: ${result.value}"
+----
+
+[[async-broadcast-channel]]
+== BroadcastChannel
+
+A `BroadcastChannel` delivers every value to all subscribers
+(one-to-many), unlike `AsyncChannel` which is point-to-point:
+
+[source,groovy]
+----
+import groovy.concurrent.BroadcastChannel
+
+def broadcast = BroadcastChannel.create()
+def sub1 = broadcast.subscribe()
+def sub2 = broadcast.subscribe()
+
+async {
+    broadcast.send('hello')
+    broadcast.send('world')
+    broadcast.close()
+}
+
+// Both subscribers receive both messages
+for await (msg in sub1) { println "Sub1: $msg" }
+for await (msg in sub2) { println "Sub2: $msg" }
+----
+
+Late subscribers only receive messages sent after they subscribe.
+
+=== Flow.Publisher interop
+
+A `BroadcastChannel` can also be exposed as a `java.util.concurrent.Flow.Publisher`
+via `asPublisher()`. Each call to `subscribe(Flow.Subscriber)` on the returned
+publisher creates a new per-subscriber `AsyncChannel` under the hood and respects
+standard Reactive Streams demand (`request(n)`):
+
+[source,groovy]
+----
+def broadcast = BroadcastChannel.create()
+def publisher = broadcast.asPublisher()
+
+// Compose with any Reactive Streams operator, or consume with `for await`:
+for await (msg in publisher) {
+    println "Got: $msg"
+}
+----
+
+[WARNING]
+====
+*Backpressure policy.* The publisher bridge uses _lossless, sender-gated_
+backpressure: `send()` awaits delivery to every live subscriber, and each
+per-subscriber channel has a bounded buffer (default 16). A subscriber that
+never calls `request(n)` — or requests slowly — will fill its buffer, after
+which `broadcast.send(...)` stalls for *all* subscribers until that
+subscriber catches up. In other words, the slowest subscriber controls
+producer throughput.
+
+This matches the point-to-point semantics of `subscribe()` (values are
+neither dropped nor reordered). If you need decoupled per-subscriber
+policies (drop-newest, drop-oldest, latest-only, or unbounded buffering),
+wrap the publisher with a Reactive Streams operator of your choice, or use
+a subscriber that drains promptly with `request(Long.MAX_VALUE)`.
+====
+
+[NOTE]
+====
+*Terminal signals.* Per Reactive Streams §1.7, terminal completion is
+not gated by demand: once the underlying `BroadcastChannel` is closed
+and the per-subscriber buffer is drained, the subscriber receives
+`onComplete` even if it has no outstanding `request(n)`. Likewise,
+`onError` for a spec-violating `request(n <= 0)` (§3.9) is signalled
+through the same single-threaded delivery path as `onNext` /
+`onComplete`, preserving §1.3 signal serialization; subscribers do
+not see those signals racing on the caller's thread.
+====

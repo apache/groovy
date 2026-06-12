@@ -22,8 +22,21 @@ import groovy.swing.binding.JComboBoxMetaMethods
 
 import javax.swing.*
 
+/**
+ * Factory for creating {@link JComboBox} nodes.
+ */
 public class ComboBoxFactory extends AbstractFactory {
 
+    @SuppressWarnings("unchecked")
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsType(value, name, JComboBox)
         //TODO expand to allow the value arg to be items

@@ -69,7 +69,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * static method or constructor levels.
  *
  * You use it as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.builder.*
  *
  * {@code @Builder}
@@ -85,7 +85,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * </pre>
  * The {@code prefix} annotation attribute can be used to create setters with a different naming convention. The default is the
  * empty string but you could change that to "set" as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.builder.Builder}(prefix='set')
  * class Person {
  *     String firstName
@@ -101,7 +101,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  *
  * You can also use the {@code @Builder} annotation in combination with this strategy on one or more constructor or
  * static method instead of or in addition to using it at the class level. An example with a constructor follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.ToString
  * import groovy.transform.builder.Builder
  *
@@ -129,7 +129,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * have unique names. E.g.&nbsp;we can modify the previous example to have three builders. At least two of the builders
  * in our case will need to set the 'builderClassName' and 'builderMethodName' annotation attributes to ensure
  * we have unique names. This is shown in the following example:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.builder.*
  * import groovy.transform.*
  *
@@ -167,6 +167,9 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
     private static final Expression DEFAULT_INITIAL_VALUE = null;
     private static final int PUBLIC_STATIC = ACC_PUBLIC | ACC_STATIC;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
         if (unsupportedAttribute(transform, anno, "forClass")) return;
@@ -178,6 +181,13 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         }
     }
 
+    /**
+     * Builds a helper builder class for an annotated factory method.
+     *
+     * @param transform the active transform
+     * @param mNode the annotated method
+     * @param anno the {@code @Builder} annotation
+     */
     public void buildMethod(BuilderASTTransformation transform, MethodNode mNode, AnnotationNode anno) {
         if (transform.getMemberValue(anno, "includes") != null || transform.getMemberValue(anno, "excludes") != null) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME +
@@ -193,6 +203,13 @@ public class DefaultStrategy extends BuilderASTTransformation.AbstractBuilderStr
         addGeneratedMethod(builder, createBuildMethodForMethod(anno, buildee, mNode, mNode.getParameters()));
     }
 
+    /**
+     * Builds a helper builder class for an annotated type.
+     *
+     * @param transform the active transform
+     * @param buildee the annotated type
+     * @param anno the {@code @Builder} annotation
+     */
     public void buildClass(BuilderASTTransformation transform, ClassNode buildee, AnnotationNode anno) {
         List<String> excludes = new ArrayList<String>();
         List<String> includes = new ArrayList<String>();

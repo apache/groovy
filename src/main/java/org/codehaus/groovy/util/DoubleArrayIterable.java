@@ -28,10 +28,16 @@ import java.util.Iterator;
 public class DoubleArrayIterable implements Iterable<Double> {
     private final double[] array;
 
+    /**
+     * Creates an iterable view that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public DoubleArrayIterable(final double[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator<Double> iterator() {
         return new DoubleArrayIterator(array);

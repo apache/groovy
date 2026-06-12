@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.groovysh.util
 
+/**
+ * Lazily resolves documentation URLs for Groovy, JDK, and Groovy JDK types.
+ */
 class DocFinder extends HashMap<String, Object> {
     private static boolean exists(String url) {
         try {
@@ -32,6 +35,12 @@ class DocFinder extends HashMap<String, Object> {
         }
     }
 
+    /**
+     * Resolves documentation links for the supplied type expression.
+     *
+     * @param key expression that evaluates to a {@link Class}
+     * @return a documentation URL, multiple URLs, or {@code null} when no match is available
+     */
     @Override
     Object get(Object key) {
         if (containsKey(key)) {

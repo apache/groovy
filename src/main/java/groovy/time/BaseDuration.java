@@ -32,14 +32,46 @@ import java.util.List;
  * @see Duration
  */
 public abstract class BaseDuration implements Comparable<BaseDuration> {
+    /**
+     * Year component.
+     */
     protected final int years;
+    /**
+     * Month component.
+     */
     protected final int months;
+    /**
+     * Day component.
+     */
     protected final int days;
+    /**
+     * Hour component.
+     */
     protected final int hours;
+    /**
+     * Minute component.
+     */
     protected final int minutes;
+    /**
+     * Second component.
+     */
     protected final int seconds;
+    /**
+     * Millisecond component.
+     */
     protected final int millis;
 
+    /**
+     * Creates a duration with date and time components.
+     *
+     * @param years the year component
+     * @param months the month component
+     * @param days the day component
+     * @param hours the hour component
+     * @param minutes the minute component
+     * @param seconds the second component
+     * @param millis the millisecond component
+     */
     protected BaseDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {
         this.years = years;
         this.months = months;
@@ -50,38 +82,88 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         this.millis = millis;
     }
 
+    /**
+     * Creates a duration without year or month components.
+     *
+     * @param days the day component
+     * @param hours the hour component
+     * @param minutes the minute component
+     * @param seconds the second component
+     * @param millis the millisecond component
+     */
     protected BaseDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
         this(0, 0, days, hours, minutes, seconds, millis);
     }
 
+    /**
+     * Returns the year component.
+     *
+     * @return the year component
+     */
     public int getYears() {
         return this.years;
     }
 
+    /**
+     * Returns the month component.
+     *
+     * @return the month component
+     */
     public int getMonths() {
         return this.months;
     }
 
+    /**
+     * Returns the day component.
+     *
+     * @return the day component
+     */
     public int getDays() {
         return this.days;
     }
 
+    /**
+     * Returns the hour component.
+     *
+     * @return the hour component
+     */
     public int getHours() {
         return this.hours;
     }
 
+    /**
+     * Returns the minute component.
+     *
+     * @return the minute component
+     */
     public int getMinutes() {
         return this.minutes;
     }
 
+    /**
+     * Returns the second component.
+     *
+     * @return the second component
+     */
     public int getSeconds() {
         return this.seconds;
     }
 
+    /**
+     * Returns the millisecond component.
+     *
+     * @return the millisecond component
+     */
     public int getMillis() {
         return this.millis;
     }
 
+    /**
+     * Adds this duration to the supplied date.
+     *
+     * @param date the date to adjust
+     * @return the adjusted date
+     */
     public Date plus(final Date date) {
         final Calendar cal = Calendar.getInstance();
 
@@ -97,6 +179,11 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         return cal.getTime();
     }
 
+    /**
+     * Returns a human-readable representation of this duration.
+     *
+     * @return the duration text
+     */
     @Override
     public String toString() {
         List buffer = new ArrayList();
@@ -121,20 +208,54 @@ public abstract class BaseDuration implements Comparable<BaseDuration> {
         }
     }
 
+    /**
+     * Converts this duration to milliseconds.
+     *
+     * @return the duration in milliseconds
+     */
     public abstract long toMilliseconds();
 
+    /**
+     * Returns the date represented by this duration ago.
+     *
+     * @return the computed date
+     */
     public abstract Date getAgo();
 
+    /**
+     * Returns a helper for computing dates relative to now.
+     *
+     * @return the relative-date helper
+     */
     public abstract From getFrom();
 
+    /**
+     * Compares this duration with another by their millisecond values.
+     *
+     * @param otherDuration the duration to compare against
+     * @return a negative, zero, or positive value as this duration is less than, equal to, or greater than the other
+     */
     @Override
     public int compareTo(BaseDuration otherDuration) {
         return Long.signum(toMilliseconds() - otherDuration.toMilliseconds());
     }
 
+    /**
+     * Helper for computing dates relative to the current time.
+     */
     public abstract static class From {
+        /**
+         * Returns the computed date relative to now.
+         *
+         * @return the computed date
+         */
         public abstract Date getNow();
 
+        /**
+         * Returns the computed date relative to today.
+         *
+         * @return the computed date
+         */
         public Date getToday() {
             return getNow();
         }

@@ -24,8 +24,16 @@ package org.codehaus.groovy.macro.runtime;
  * @since 2.5.0
  */
 public enum MacroStub {
+    /** Shared macro stub instance. */
     INSTANCE;
 
+    /**
+     * Returns the transformed macro value at runtime.
+     *
+     * @param obj the macro result
+     * @param <T> the macro result type
+     * @return {@code obj}
+     */
     public <T> T macroMethod(T obj) {
         return obj;
     }

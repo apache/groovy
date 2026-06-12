@@ -43,18 +43,42 @@ public final class ListWithDefault<T> implements List<T> {
         this.initClosure = initClosure;
     }
 
+    /**
+     * Returns a copy of the wrapped list.
+     *
+     * @return a copy of the delegate list
+     */
     public List<T> getDelegate() {
         return delegate != null ? new ArrayList<T>(delegate) : null;
     }
 
+    /**
+     * Indicates whether missing values are initialized lazily.
+     *
+     * @return {@code true} if defaults are created lazily
+     */
     public boolean isLazyDefaultValues() {
         return lazyDefaultValues;
     }
 
+    /**
+     * Returns a clone of the initialization closure.
+     *
+     * @return the initialization closure
+     */
     public Closure getInitClosure() {
         return initClosure != null ? (Closure) initClosure.clone() : null;
     }
 
+    /**
+     * Creates a new list wrapper with the supplied defaulting behavior.
+     *
+     * @param items the source items
+     * @param lazyDefaultValues whether default values are created lazily
+     * @param initClosure the closure used to create default values
+     * @param <T> the element type
+     * @return the new wrapper
+     */
     public static <T> ListWithDefault<T> newInstance(List<T> items, boolean lazyDefaultValues, Closure initClosure) {
         if (items == null)
             throw new IllegalArgumentException("Parameter \"items\" must not be null");
@@ -64,71 +88,113 @@ public final class ListWithDefault<T> implements List<T> {
         return new ListWithDefault<T>(new ArrayList<T>(items), lazyDefaultValues, (Closure) initClosure.clone());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         return delegate.size();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean contains(Object o) {
         return delegate.contains(o);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Iterator<T> iterator() {
         return delegate.iterator();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object[] toArray() {
         return delegate.toArray();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <U> U[] toArray(U[] ts) {
         return delegate.toArray(ts);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean add(T t) {
         return delegate.add(t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean remove(Object o) {
         return delegate.remove(o);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean containsAll(Collection<?> objects) {
         return delegate.containsAll(objects);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean addAll(Collection<? extends T> ts) {
         return delegate.addAll(ts);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean addAll(int i, Collection<? extends T> ts) {
         return delegate.addAll(i, ts);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean removeAll(Collection<?> objects) {
         return delegate.removeAll(objects);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean retainAll(Collection<?> objects) {
         return delegate.retainAll(objects);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void clear() {
         delegate.clear();
@@ -219,46 +285,73 @@ public final class ListWithDefault<T> implements List<T> {
         return index;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public T set(int i, T t) {
         return delegate.set(i, t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void add(int i, T t) {
         delegate.add(i, t);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public T remove(int i) {
         return delegate.remove(i);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int indexOf(Object o) {
         return delegate.indexOf(o);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int lastIndexOf(Object o) {
         return delegate.lastIndexOf(o);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ListIterator<T> listIterator() {
         return delegate.listIterator();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ListIterator<T> listIterator(int i) {
         return delegate.listIterator(i);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object obj) {
         return delegate.equals(obj);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return delegate.hashCode();

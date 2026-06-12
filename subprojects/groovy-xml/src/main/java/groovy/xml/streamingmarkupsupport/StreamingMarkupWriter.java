@@ -32,13 +32,37 @@ import java.nio.charset.CharsetEncoder;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Writer used by streaming markup support to escape XML lazily while honoring output encoding limits.
+ */
 public class StreamingMarkupWriter extends Writer {
+    /**
+     * Underlying destination writer.
+     */
     protected final Writer writer;
+    /**
+     * Normalized target encoding name.
+     */
     protected final String encoding;
+    /**
+     * Whether the target encoding was explicitly supplied or discovered from the wrapped writer.
+     */
     protected boolean encodingKnown;
+    /**
+     * Encoder used to decide when numeric character references are required.
+     */
     protected final CharsetEncoder encoder;
+    /**
+     * Whether output is currently inside an attribute value.
+     */
     protected boolean writingAttribute = false;
+    /**
+     * Whether a high surrogate is buffered awaiting its matching low surrogate.
+     */
     protected boolean haveHighSurrogate = false;
+    /**
+     * Temporary buffer for surrogate pair handling.
+     */
     protected StringBuilder surrogatePair = new StringBuilder(2);
     private final Function<Character, Optional<String>> stdFilter = new StandardXmlFilter();
     private final Function<Character, Optional<String>> attrFilter = new StandardXmlAttributeFilter();
@@ -96,10 +120,23 @@ public class StreamingMarkupWriter extends Writer {
         }
     };
 
+    /**
+     * Creates a streaming writer using the supplied encoding name and single-quote attribute escaping.
+     *
+     * @param writer destination writer
+     * @param encoding target encoding, or {@code null} to infer it
+     */
     public StreamingMarkupWriter(final Writer writer, final String encoding) {
         this(writer, encoding, false);
     }
 
+    /**
+     * Creates a streaming writer.
+     *
+     * @param writer destination writer
+     * @param encoding target encoding, or {@code null} to infer it
+     * @param useDoubleQuotes whether attribute escaping should target double quotes instead of single quotes
+     */
     public StreamingMarkupWriter(final Writer writer, final String encoding, boolean useDoubleQuotes) {
         this.quoteFilter = useDoubleQuotes ? new DoubleQuoteFilter() : new SingleQuoteFilter();
         this.writer = writer;
@@ -125,29 +162,28 @@ public class StreamingMarkupWriter extends Writer {
         return Charset.forName(unnormalized).name();
     }
 
+    /**
+     * Creates a streaming writer that infers its encoding from the wrapped writer when possible.
+     *
+     * @param writer destination writer
+     */
     public StreamingMarkupWriter(final Writer writer) {
         this(writer, null);
     }
 
-    /* (non-Javadoc)
-    * @see java.io.Writer#close()
-    */
+    /** {@inheritDoc} */
     @Override
     public void close() throws IOException {
         this.writer.close();
     }
 
-    /* (non-Javadoc)
-    * @see java.io.Writer#flush()
-    */
+    /** {@inheritDoc} */
     @Override
     public void flush() throws IOException {
         this.writer.flush();
     }
 
-    /* (non-Javadoc)
-    * @see java.io.Writer#write(int)
-    */
+    /** {@inheritDoc} */
     @Override
     public void write(final int c) throws IOException {
         if (c >= 0XDC00 && c <= 0XDFFF) {
@@ -199,9 +235,7 @@ public class StreamingMarkupWriter extends Writer {
         }
     }
 
-    /* (non-Javadoc)
-    * @see java.io.Writer#write(char[], int, int)
-    */
+    /** {@inheritDoc} */
     @Override
     public void write(final char[] cbuf, int off, int len) throws IOException {
         while (len-- > 0) {
@@ -209,22 +243,47 @@ public class StreamingMarkupWriter extends Writer {
         }
     }
 
+    /**
+     * Switches escaping rules between element text and attribute value output.
+     *
+     * @param writingAttribute {@code true} when writing an attribute value
+     */
     public void setWritingAttribute(final boolean writingAttribute) {
         this.writingAttribute = writingAttribute;
     }
 
+    /**
+     * Returns a writer view that applies XML escaping before delegating here.
+     *
+     * @return escaped writer view
+     */
     public Writer escaped() {
         return this.escapedWriter;
     }
 
+    /**
+     * Returns a writer view that bypasses the additional escaping layer.
+     *
+     * @return unescaped writer view
+     */
     public Writer unescaped() {
         return this;
     }
 
+    /**
+     * Returns the normalized target encoding used for numeric escape decisions.
+     *
+     * @return target encoding name
+     */
     public String getEncoding() {
         return this.encoding;
     }
 
+    /**
+     * Returns whether the encoding came from an explicit or discoverable source.
+     *
+     * @return {@code true} if the encoding is known precisely
+     */
     public boolean getEncodingKnown() {
         return this.encodingKnown;
     }

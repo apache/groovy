@@ -32,10 +32,20 @@ import org.codehaus.groovy.control.CompilePhase;
 public abstract class CompilationCustomizer implements CompilationUnit.IPrimaryClassNodeOperation {
     private final CompilePhase phase;
 
+    /**
+     * Creates a customizer bound to the supplied compile phase.
+     *
+     * @param phase the phase in which this customizer should run
+     */
     public CompilationCustomizer(final CompilePhase phase) {
         this.phase = phase;
     }
 
+    /**
+     * Returns the compile phase in which this customizer runs.
+     *
+     * @return the configured compile phase
+     */
     public CompilePhase getPhase() {
         return phase;
     }

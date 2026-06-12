@@ -39,6 +39,9 @@ import java.util.logging.Logger;
 public class StackTraceUtils {
     private StackTraceUtils() {}
 
+    /**
+     * The logger name for sanitized stack traces.
+     */
     public static final String STACK_LOG_NAME = "StackTrace";
     private static final Logger STACK_LOG;
     // set log to consume traces by default, end user can override later
@@ -124,6 +127,13 @@ public class StackTraceUtils {
         return t;
     }
 
+    /**
+     * Prints the sanitized stack trace of the exception to the given writer.
+     * Removes apparently groovy-internal trace entries.
+     *
+     * @param t the Throwable whose stack trace to print
+     * @param p the PrintWriter to print to
+     */
     public static void printSanitizedStackTrace(Throwable t, PrintWriter p) {
         t = StackTraceUtils.sanitize(t);
 
@@ -135,10 +145,23 @@ public class StackTraceUtils {
         }
     }
 
+    /**
+     * Prints the sanitized stack trace of the exception to standard error.
+     * Removes apparently groovy-internal trace entries.
+     *
+     * @param t the Throwable whose stack trace to print
+     */
     public static void printSanitizedStackTrace(Throwable t) {
         printSanitizedStackTrace(t, new PrintWriter(System.err));
     }
 
+    /**
+     * Determines whether the given class name is an application class (not a Groovy runtime class).
+     * First checks any registered test closures, then checks against known Groovy packages.
+     *
+     * @param className the fully qualified class name to check
+     * @return {@code true} if the class is an application class, {@code false} if it's a Groovy runtime class
+     */
     public static boolean isApplicationClass(String className) {
         for (Closure test : tests) {
             Object result = test.call(className);

@@ -18,6 +18,7 @@
  */
 package groovy.security;
 
+import java.io.Serial;
 import java.security.BasicPermission;
 
 /**
@@ -28,12 +29,23 @@ import java.security.BasicPermission;
  */
 public final class GroovyCodeSourcePermission extends BasicPermission {
 
-    private static final long serialVersionUID = 8014290770546281019L;
+    @Serial private static final long serialVersionUID = 8014290770546281019L;
 
+    /**
+     * Creates a permission with the supplied name.
+     *
+     * @param name the permission name
+     */
     public GroovyCodeSourcePermission(String name) {
         super(name);
     }
 
+    /**
+     * Creates a permission with the supplied name and actions.
+     *
+     * @param name the permission name
+     * @param actions the associated actions
+     */
     public GroovyCodeSourcePermission(String name, String actions) {
         super(name, actions);
     }

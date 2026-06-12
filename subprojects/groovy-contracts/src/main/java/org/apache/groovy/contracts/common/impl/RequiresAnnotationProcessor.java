@@ -32,6 +32,16 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
  */
 public class RequiresAnnotationProcessor extends AnnotationProcessor {
 
+    /**
+     * Adds the supplied precondition to the contract model for the given method or constructor.
+     *
+     * @param processingContextInformation the current processing context
+     * @param contract the mutable contract model
+     * @param classNode the declaring class
+     * @param methodNode the annotated method or constructor
+     * @param blockStatement the original precondition block
+     * @param booleanExpression the normalized precondition expression
+     */
     @Override
     public void process(ProcessingContextInformation processingContextInformation, Contract contract, ClassNode classNode, MethodNode methodNode, BlockStatement blockStatement, BooleanExpression booleanExpression) {
         if (!processingContextInformation.isPreconditionsEnabled()) return;

@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import groovy.junit6.plugin.ForkedJvm
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CompileUnit
@@ -207,21 +208,19 @@ final class GroovyClassLoaderTest {
     }
 
     @Test
+    @ForkedJvm(systemProperties = ['file.encoding=US-ASCII'])
     void testSourceEncoding() {
-        String oldEncoding = System.getProperty('file.encoding')
-        System.setProperty('file.encoding', 'US-ASCII')
-        try {
-            def gcl = new GroovyClassLoader(this.class.classLoader, new CompilerConfiguration().tap{sourceEncoding = 'UTF-8'})
-            def clazz = gcl.parseClass('return "\u20AC"') // EURO currency symbol
-            def result = clazz.getDeclaredConstructor().newInstance().run()
-            int i = result[0]
-            // 0xFFFD is used if the original character was not found,
-            // it is the famous ? that can often be seen. So if this here
-            // fails, then the String conversion failed at one point
-            assert i != 0xFFFD
-        } finally {
-            System.setProperty('file.encoding', oldEncoding)
-        }
+        // file.encoding is JVM-global (and consulted by JDK internals at
+        // class-load time on some platforms), so we set it via the forked
+        // command line rather than mutating the running JVM.
+        def gcl = new GroovyClassLoader(this.class.classLoader, new CompilerConfiguration().tap{sourceEncoding = 'UTF-8'})
+        def clazz = gcl.parseClass('return "\u20AC"') // EURO currency symbol
+        def result = clazz.getDeclaredConstructor().newInstance().run()
+        int i = result[0]
+        // 0xFFFD is used if the original character was not found,
+        // it is the famous ? that can often be seen. So if this here
+        // fails, then the String conversion failed at one point
+        assert i != 0xFFFD
     }
 
     // GROOVY-3537

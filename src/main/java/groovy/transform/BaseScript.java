@@ -19,6 +19,8 @@
 package groovy.transform;
 
 import groovy.lang.Script;
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
@@ -86,7 +88,7 @@ import java.lang.annotation.Target;
  * the AST is currently implemented they are not accessible in the script body code.
  * </p>
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * // Simple Car class to save state and distance.
  * class Car {
  *     String state
@@ -144,8 +146,15 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.LOCAL_VARIABLE, ElementType.PACKAGE, ElementType.TYPE /*, ElementType.IMPORT*/})
+@Target({ElementType.LOCAL_VARIABLE, ElementType.PACKAGE, ElementType.TYPE})
+@ExtendedTarget(ExtendedElementType.IMPORT)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.BaseScriptASTTransformation")
 public @interface BaseScript {
+    /**
+     * Returns the base script class to use for the annotated script.
+     * Defaults to {@link Script}.
+     *
+     * @return the base script class
+     */
     Class value() default Script.class;
 }

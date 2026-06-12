@@ -42,6 +42,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
  */
 public class PreconditionGenerator extends BaseGenerator {
 
+    /**
+     * Creates a generator for precondition support code.
+     *
+     * @param source the reader source backing the current source unit
+     */
     public PreconditionGenerator(final ReaderSource source) {
         super(source);
     }
@@ -109,7 +114,9 @@ public class PreconditionGenerator extends BaseGenerator {
                     modifiedMethodCode.getStatements().add(statement);
                 }
             }
-        } else {
+        } else if (method.getCode() != null) {
+            // guard against a null method body (e.g. a synthetic default
+            // constructor whose code is not yet populated) - GROOVY-12066
             modifiedMethodCode.addStatement(method.getCode());
         }
 

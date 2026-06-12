@@ -18,6 +18,16 @@
  */
 package org.codehaus.groovy.macro.matcher;
 
+/**
+ * Callback invoked when a {@link TreeContext} is popped.
+ *
+ * @since 2.5.0
+ */
 public interface TreeContextAction {
+    /**
+     * Invokes the action for the supplied context.
+     *
+     * @param context the context being popped
+     */
     void call(TreeContext context);
 }

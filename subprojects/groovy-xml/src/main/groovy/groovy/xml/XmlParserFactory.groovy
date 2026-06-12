@@ -28,6 +28,12 @@ package groovy.xml
  * normal constructor and change the package to {@code groovy.xml} prior to reaching Groovy 4.
  */
 class XmlParserFactory {
+    /**
+     * Creates a new {@link XmlParser} for XML parsing and GPath-style traversal.
+     *
+     * @param args constructor arguments forwarded to {@link XmlParser}
+     * @return a new parser instance
+     */
     static newParser(... args) {
         new XmlParser(*args)
     }

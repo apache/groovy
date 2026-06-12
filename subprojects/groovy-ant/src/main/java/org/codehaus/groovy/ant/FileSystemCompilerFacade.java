@@ -31,6 +31,11 @@ import java.util.List;
 public class FileSystemCompilerFacade {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
+    /**
+     * Entrypoint used by the forked {@code groovyc} Ant task.
+     *
+     * @param args the compiler arguments, optionally including {@code --forceLookupUnnamedFiles}
+     */
     public static void main(String[] args) {
         List<String> argList = new ArrayList<>(Arrays.asList(args));
         boolean forceLookupUnnamedFiles = argList.contains("--forceLookupUnnamedFiles");

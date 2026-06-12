@@ -25,8 +25,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
+import static java.lang.System.Logger.Level.WARNING;
+
+/**
+ * Writes generated documentation and copied resources to the file system.
+ */
 public class FileOutputTool implements OutputTool {
+
+    private static final System.Logger LOGGER = System.getLogger(FileOutputTool.class.getName());
+    /** {@inheritDoc} */
     @Override
     public void makeOutputArea(String filename) {
         Path path = Paths.get(filename);
@@ -36,10 +45,11 @@ public class FileOutputTool implements OutputTool {
         try {
             Files.createDirectories(path);
         } catch (IOException e) {
-            System.err.println("Unable to create directory '" + filename + "' due to '" + e.getMessage() + "'; attempting to continue...");
+            LOGGER.log(WARNING, "Unable to create directory ''{0}'' due to ''{1}''; attempting to continue...", filename, e.getMessage());
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeToOutput(String fileName, String text, String charset) throws Exception {
         File file = new File(fileName);
@@ -48,9 +58,20 @@ public class FileOutputTool implements OutputTool {
             try {
                 Files.createDirectories(path);
             } catch (IOException e) {
-                System.err.println("Unable to create parent directory '" + path + "' due to '" + e.getMessage() + "'; attempting to continue...");
+                LOGGER.log(WARNING, "Unable to create parent directory ''{0}'' due to ''{1}''; attempting to continue...", path, e.getMessage());
             }
         }
         ResourceGroovyMethods.write(file, text, charset, true);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void copyResource(String srcPath, String dstPath) throws IOException {
+        Path dst = Paths.get(dstPath);
+        Path parent = dst.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Files.copy(Paths.get(srcPath), dst, StandardCopyOption.REPLACE_EXISTING);
     }
 }

@@ -37,17 +37,35 @@ class SourceRecord<T> implements Serializable {
     private final List<String> aliasList
     private Map<String, Object> sourceRecordCache
 
+    /**
+     * Creates a source record wrapper for alias-based access.
+     *
+     * @param sourceRecord the underlying source record
+     * @param aliasList the aliases available for lookup
+     */
     SourceRecord(T sourceRecord, List<String> aliasList) {
         this.sourceRecord = sourceRecord
         this.aliasList = aliasList
     }
 
+    /**
+     * Returns the value associated with the supplied alias.
+     *
+     * @param name the alias name
+     * @return the resolved value
+     */
     def getAt(String name) {
         if (null == sourceRecordCache) sourceRecordCache = new HashMap<>(4)
 
         return sourceRecordCache.computeIfAbsent(name, n -> findSourceRecordByName(n))
     }
 
+    /**
+     * Returns the value associated with the supplied alias.
+     *
+     * @param name the alias name
+     * @return the resolved value
+     */
     def get(String name) {
         return getAt(name)
     }

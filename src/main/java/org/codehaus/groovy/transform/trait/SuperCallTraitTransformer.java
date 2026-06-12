@@ -55,15 +55,31 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
 
     private final SourceUnit unit;
 
+    /**
+     * Creates a transformer for {@code TraitName.super} property and method access.
+     *
+     * @param unit the source unit that receives transformation errors
+     */
     SuperCallTraitTransformer(final SourceUnit unit) {
         this.unit = unit;
     }
 
+    /**
+     * Returns the source unit used for diagnostics.
+     *
+     * @return the current source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return unit;
     }
 
+    /**
+     * Rewrites super-trait property and method access into helper calls.
+     *
+     * @param exp the expression to transform
+     * @return the transformed expression
+     */
     @Override
     public Expression transform(final Expression exp) {
         if (exp instanceof BinaryExpression) {

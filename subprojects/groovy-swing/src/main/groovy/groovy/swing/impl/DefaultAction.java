@@ -24,12 +24,17 @@ import javax.swing.*;
 import java.awt.event.ActionEvent;
 
 /**
- * A default action implementation
+ * An {@link Action} implementation that delegates execution to a Groovy closure.
  */
 public class DefaultAction extends AbstractAction {
 
     private Closure closure;
 
+    /**
+     * Invokes the configured closure in response to the action event.
+     *
+     * @param event the Swing action event
+     */
     @Override
     public void actionPerformed(ActionEvent event) {
         if (closure == null) {
@@ -38,10 +43,20 @@ public class DefaultAction extends AbstractAction {
         closure.call(event);
     }
 
+    /**
+     * Returns the closure invoked when the action fires.
+     *
+     * @return the action closure, or {@code null}
+     */
     public Closure getClosure() {
         return closure;
     }
 
+    /**
+     * Sets the closure invoked when the action fires.
+     *
+     * @param closure the action closure
+     */
     public void setClosure(Closure closure) {
         this.closure = closure;
     }

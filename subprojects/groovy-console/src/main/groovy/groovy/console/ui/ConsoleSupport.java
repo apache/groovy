@@ -28,16 +28,25 @@ import javax.swing.text.StyledDocument;
 import java.awt.Color;
 
 /**
- * Base class for console
+ * Base support class for consoles that evaluate Groovy scripts and render styled output.
  */
 public abstract class ConsoleSupport {
 
+    /** Style used for prompts. */
     Style promptStyle;
+    /** Style used for entered commands. */
     Style commandStyle;
+    /** Style used for evaluated output. */
     Style outputStyle;
     private GroovyShell shell;
+    /** Counter used to create unique script names. */
     int counter;
 
+    /**
+     * Initializes the styles used by the output document.
+     *
+     * @param outputArea text pane whose styled document should be configured
+     */
     protected void addStylesToDocument(JTextPane outputArea) {
         StyledDocument doc = outputArea.getStyledDocument();
 
@@ -56,18 +65,38 @@ public abstract class ConsoleSupport {
         StyleConstants.setBold(outputStyle, true);
     }
 
+    /**
+     * Returns the style used for entered commands.
+     *
+     * @return the command style
+     */
     public Style getCommandStyle() {
         return commandStyle;
     }
 
+    /**
+     * Returns the style used for evaluated output.
+     *
+     * @return the output style
+     */
     public Style getOutputStyle() {
         return outputStyle;
     }
 
+    /**
+     * Returns the style used for prompts.
+     *
+     * @return the prompt style
+     */
     public Style getPromptStyle() {
         return promptStyle;
     }
 
+    /**
+     * Returns the shell used for script evaluation.
+     *
+     * @return the lazily created shell
+     */
     public GroovyShell getShell() {
         if (shell == null) {
             shell = new GroovyShell();
@@ -75,6 +104,12 @@ public abstract class ConsoleSupport {
         return shell;
     }
 
+    /**
+     * Evaluates the supplied text and delegates failures to {@link #handleException(String, Exception)}.
+     *
+     * @param text script text to evaluate
+     * @return the evaluation result, or {@code null} when evaluation fails
+     */
     protected Object evaluate(String text) {
         String name = "Script" + counter++;
         try {
@@ -85,5 +120,11 @@ public abstract class ConsoleSupport {
         }
     }
 
+    /**
+     * Handles an exception raised while evaluating the supplied script text.
+     *
+     * @param text script text being evaluated
+     * @param e exception raised during evaluation
+     */
     protected abstract void handleException(String text, Exception e);
 }

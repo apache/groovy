@@ -23,41 +23,59 @@ import groovy.namespace.QName;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Attribute map that resolves namespace-prefixed keys into QName-style names on demand.
+ */
 public class NamespaceAwareHashMap extends HashMap<String, String> {
+    /**
+     * Sets the prefix-to-namespace hints used to normalize prefixed keys.
+     *
+     * @param namespaceTagHints known namespace prefix mappings
+     */
     public void setNamespaceTagHints(Map namespaceTagHints) {
         this.namespaceTagHints = namespaceTagHints;
     }
 
     private Map namespaceTagHints = null;
 
+    /**
+     * Returns the prefix hints used for key normalization.
+     *
+     * @return namespace prefix hints
+     */
     public Map getNamespaceTagHints() {
         return namespaceTagHints;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String get(Object key) {
         key = adjustForNamespaceIfNeeded(key);
         return super.get(key);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String remove(Object key) {
         key = adjustForNamespaceIfNeeded(key).toString();
         return super.remove(key);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean containsKey(Object key) {
         key = adjustForNamespaceIfNeeded(key).toString();
         return super.containsKey(key);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String put(String key, String value) {
         key = adjustForNamespaceIfNeeded(key).toString();
         return super.put(key, value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void putAll(Map<? extends String, ? extends String> m) {
         for (Object o : m.entrySet())

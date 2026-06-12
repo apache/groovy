@@ -22,16 +22,39 @@ import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.math.BigInteger;
 
+/**
+ * Provides optimized reflection caching for {@link java.math.BigInteger}.
+ * Coerces integral and big numeric types to {@link BigInteger} for type-safe method invocation.
+ */
 public class BigIntegerCachedClass extends NumberCachedClass {
+    /**
+     * Constructs a cached class representation for {@link BigInteger}.
+     *
+     * @param klazz the {@link BigInteger} class to cache
+     * @param classInfo the class information associated with this cached class
+     */
     public BigIntegerCachedClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);
     }
 
+    /**
+     * Checks if the given argument is directly assignable to {@link BigInteger}.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is an instance of {@link BigInteger}, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return argument instanceof BigInteger;
     }
 
+    /**
+     * Determines if the given class can be transformed to {@link BigInteger}.
+     * Accepts integral types, boxed integral types, and other big numeric types.
+     *
+     * @param classToTransformFrom the source class to check
+     * @return {@code true} if the class can be transformed to {@link BigInteger}, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return classToTransformFrom == null

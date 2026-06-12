@@ -24,6 +24,7 @@ import groovy.transform.Pure;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -37,7 +38,7 @@ import java.util.stream.Stream;
  * @see groovy.lang.GString
  */
 public class GStringImpl extends GString {
-    private static final long serialVersionUID = 3581289038662723858L;
+    @Serial private static final long serialVersionUID = 3581289038662723858L;
     private final String[] strings;
     private final boolean frozen;
     private boolean cacheable;
@@ -169,14 +170,14 @@ public class GStringImpl extends GString {
      * <p>
      * The stream returned by this method contains the lines from
      * this string in the order in which they occur.
-     *
-     * @apiNote This definition of <i>line</i> implies that an empty
-     *          string has zero lines and that there is no empty line
-     *          following a line terminator at the end of a string.
-     *
-     * @implNote This method provides better performance than
-     *           split("\R") by supplying elements lazily and
-     *           by faster search of new line terminators.
+     * <p>
+     * <b>API Note:</b> This definition of <i>line</i> implies that an empty
+     * string has zero lines and that there is no empty line
+     * following a line terminator at the end of a string.
+     * <p>
+     * <b>Implementation Note:</b> This method provides better performance than
+     * {@code split("\R")} by supplying elements lazily and
+     * by faster search of new line terminators.
      *
      * @return  the stream of lines extracted from this string
      *

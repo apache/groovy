@@ -24,6 +24,9 @@ import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+/**
+ * Discovers classes and package entries from file systems, jars, and Groovy class loaders.
+ */
 public class PackageHelper {
     private enum ClassesToScan {
         ALL,

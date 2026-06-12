@@ -298,7 +298,7 @@ public final class DateTimeExtensions {
      * Supports the getAt operator for an iterable; equivalent to collecting the
      * {@link java.time.temporal.TemporalAccessor#getLong(java.time.temporal.TemporalField)} method
      * for each field in the supplied iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import static java.time.temporal.ChronoField.*
      * import java.time.LocalTime
      *

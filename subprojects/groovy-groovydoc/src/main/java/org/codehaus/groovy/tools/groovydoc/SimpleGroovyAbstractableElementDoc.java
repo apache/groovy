@@ -18,17 +18,35 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+/**
+ * Base implementation for documented elements that can carry the {@code abstract} modifier.
+ */
 public class SimpleGroovyAbstractableElementDoc extends SimpleGroovyProgramElementDoc {
     private boolean abstractElement;
 
+    /**
+     * Creates a documented element with the supplied name.
+     *
+     * @param name the element name
+     */
     public SimpleGroovyAbstractableElementDoc(String name) {
         super(name);
     }
 
+    /**
+     * Sets whether this element is abstract.
+     *
+     * @param b {@code true} if the element is abstract
+     */
     public void setAbstract(boolean b) {
         abstractElement = b;
     }
 
+    /**
+     * Indicates whether this element is abstract.
+     *
+     * @return {@code true} if the element is abstract
+     */
     public boolean isAbstract() {
         return abstractElement;
     }

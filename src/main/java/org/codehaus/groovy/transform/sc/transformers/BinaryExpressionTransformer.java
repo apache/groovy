@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform.sc.transformers;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -66,6 +67,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
+/**
+ * Rewrites binary expressions into forms that generate better static-compilation bytecode.
+ */
 public class BinaryExpressionTransformer {
     private static final MethodNode COMPARE_TO_METHOD = ClassHelper.COMPARABLE_TYPE.getMethods("compareTo").get(0);
     private static final ConstantExpression CONSTANT_MINUS_ONE = constX(-1, true);
@@ -76,10 +80,21 @@ public class BinaryExpressionTransformer {
 
     private final StaticCompilationTransformer staticCompilationTransformer;
 
+    /**
+     * Creates a binary-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param staticCompilationTransformer the shared transformer context
+     */
     public BinaryExpressionTransformer(final StaticCompilationTransformer staticCompilationTransformer) {
         this.staticCompilationTransformer = staticCompilationTransformer;
     }
 
+    /**
+     * Transforms a binary expression when a static-compilation-specific optimization applies.
+     *
+     * @param bin the binary expression to transform
+     * @return the optimized expression, or the regular transformed expression when no optimization applies
+     */
     public Expression transformBinaryExpression(final BinaryExpression bin) {
         Expression leftExpression = bin.getLeftExpression();
         Expression rightExpression = bin.getRightExpression();
@@ -111,7 +126,12 @@ public class BinaryExpressionTransformer {
             if (expr != null) return expr;
             if (leftExpression instanceof TupleExpression
                     && rightExpression instanceof ListExpression) {
-                return transformMultipleAssignment(bin);
+                // GEP-20: rest and map-style binders can't be flattened into per-position
+                // single assignments — leave them for the regular codegen path
+                // (BinaryExpressionHelper.evaluateEqual) which knows how to slice / lookup.
+                if (!hasGep20Binder((TupleExpression) leftExpression)) {
+                    return transformMultipleAssignment(bin);
+                }
             }
             break;
           case Types.KEYWORD_IN:
@@ -341,6 +361,15 @@ public class BinaryExpressionTransformer {
         }
 
         return null;
+    }
+
+    /** GEP-20: detect a rest binder ({@code *t}) or map-style binder ({@code key: x}) on the LHS. */
+    private static boolean hasGep20Binder(final TupleExpression tuple) {
+        for (Expression e : tuple.getExpressions()) {
+            if (Boolean.TRUE.equals(e.getNodeMetaData(MultipleAssignmentMetadata.REST_BINDING))) return true;
+            if (e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY) != null) return true;
+        }
+        return false;
     }
 
     private Expression transformMultipleAssignment(final BinaryExpression bin) {

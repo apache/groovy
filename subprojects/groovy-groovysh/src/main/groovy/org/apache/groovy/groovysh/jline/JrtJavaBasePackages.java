@@ -30,6 +30,12 @@ import static java.nio.file.FileVisitResult.CONTINUE;
  * Helper class to resolve java.base module classes
  */
 public class JrtJavaBasePackages {
+    /**
+     * Resolves classes and nested packages from the {@code java.base} module for the supplied package pattern.
+     *
+     * @param pckgname package name or wildcard expression to inspect
+     * @return matching classes or package fragments
+     */
     public static List<Object> getClassesForPackage(String pckgname) {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         List<String> dirs = new ArrayList<>();
@@ -61,23 +67,39 @@ public class JrtJavaBasePackages {
         return fv.getClasses();
     }
 
+    /**
+     * Collects classes while traversing the JRT file system.
+     */
     private static class FileVisitor extends SimpleFileVisitor<Path> {
         private final List<Object> classes = new ArrayList<>();
         private final boolean nestedClasses;
         private final String packageName;
 
+        /**
+         * Creates a visitor for a package scan.
+         *
+         * @param packageName package prefix being resolved
+         * @param nestedClasses whether nested classes should be included
+         */
         public FileVisitor(String packageName, boolean nestedClasses) {
             super();
             this.packageName = packageName;
             this.nestedClasses = nestedClasses;
         }
 
+        /**
+         * Visits a file during the package scan, collecting matching classes.
+         *
+         * @param file the file being visited
+         * @param attr the file's basic attributes
+         * @return {@link FileVisitResult#CONTINUE} to continue traversal
+         */
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
             try {
                 String name = file.toString().substring(18);
                 if (name.endsWith(".class") && (nestedClasses || !name.contains("$"))) {
-                    String className = name.substring(0, name.length() - 6).replaceAll("/", ".");
+                    String className = name.substring(0, name.length() - 6).replace('/', '.');
                     if (Character.isUpperCase(className.charAt(packageName.length() + 1))) {
                         classes.add(Class.forName(className));
                     } else {

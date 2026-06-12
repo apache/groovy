@@ -67,6 +67,11 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
         resultSet = set;
     }
 
+    /**
+     * Returns a string representation of the current row.
+     *
+     * @return a string containing column names and current-row values
+     */
     @Override
     public String toString() {
         try {
@@ -94,6 +99,13 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Delegates the method call to the underlying {@link ResultSet}.
+     *
+     * @param name the method name
+     * @param args the method arguments
+     * @return the delegated result
+     */
     @Override
     public Object invokeMethod(String name, Object args) {
         try {

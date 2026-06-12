@@ -27,20 +27,43 @@ import org.jline.reader.LineReader
 import java.nio.file.Path
 import java.util.function.Supplier
 
+/**
+ * Adapts the generic JLine console engine to groovysh command naming and printing behavior.
+ */
 class GroovyConsoleEngine extends ConsoleEngineImpl {
     private final Printer printer
 
+    /**
+     * Creates the console-engine adapter used by groovysh.
+     *
+     * @param engine script engine that evaluates Groovy input
+     * @param printer printer used for formatted output
+     * @param workDir supplier for the current working directory
+     * @param configPath configuration lookup path
+     * @param reader line reader bound to the interactive shell
+     */
     GroovyConsoleEngine(ScriptEngine engine, Printer printer, Supplier<Path> workDir, ConfigurationPath configPath, LineReader reader) {
         super(Command.values().toSet() - Command.SLURP - Command.DOC, engine, printer, workDir, configPath)
         this.printer = printer
         setLineReader(reader)
-        commandNames().each{ name -> rename(Command."${name.toUpperCase()}", "/$name") }
+        commandNames().each{ name -> rename(Command."${name.toUpperCase(Locale.ROOT)}", "/$name") }
     }
 
+    /**
+     * Prints a value using the configured shell printer and option set.
+     *
+     * @param options print options to apply
+     * @param object value to render
+     */
     void println(Map<String, Object> options, Object object) {
         printer.println(options, object)
     }
 
+    /**
+     * Returns the help-group name used for these commands.
+     *
+     * @return the console command group name
+     */
     @Override
     String name() {
         'Console Commands'

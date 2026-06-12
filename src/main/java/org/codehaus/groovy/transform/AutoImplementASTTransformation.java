@@ -98,6 +98,15 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
     }
 
     private void createMethods(final ClassNode cNode, final ClassNode exception, final String message, final ClosureExpression code) {
+        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so the
+        // walk below sees the true abstracts and we add fresh real methods
+        // without tripping duplicate-method detection. Use removeMethod() rather
+        // than removeIf() since ClassNode keeps a parallel name->methods map.
+        List<MethodNode> stubs = new ArrayList<>();
+        for (MethodNode m : cNode.getMethods()) {
+            if (StubberSupport.isStub(m)) stubs.add(m);
+        }
+        stubs.forEach(cNode::removeMethod);
         for (MethodNode candidate : getAllCorrectedMethodsMap(cNode).values()) {
             if (candidate.isAbstract()) {
                 MethodNode mNode = addGeneratedMethod(cNode,
@@ -145,7 +154,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
      * Returns all methods including abstract super/interface methods but only
      * if not overridden by a concrete declared/inherited method.
      */
-    private static Map<String, MethodNode> getAllCorrectedMethodsMap(final ClassNode cNode) {
+    static Map<String, MethodNode> getAllCorrectedMethodsMap(final ClassNode cNode) {
         Map<String, MethodNode> result = new HashMap<>();
         for (MethodNode mn : getMethodsWithGenerated(cNode)) {
             result.put(methodDescriptorWithoutReturnType(mn), mn);

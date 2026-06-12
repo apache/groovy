@@ -40,7 +40,7 @@ class XmlUtilTest {
 
     // GROOVY-5158
     @Test
-    void testSerializeOfGPathResultShouldRoundTrip() {
+    void serializeOfGPathResultShouldRoundTrip() {
         def source = new InputSource(new StringReader(xml))
         source.encoding = "UTF-8"
         assertXmlEquals(xml, XmlUtil.serialize(new XmlSlurper().parse(source)))
@@ -50,7 +50,7 @@ class XmlUtilTest {
 
     // GROOVY-10132
     @Test
-    void testSerializeOfSurrogate() {
+    void serializeOfSurrogate() {
         def source = new InputSource(new StringReader(xml2))
         source.encoding = "UTF-8"
         assertXmlEquals(xml2, XmlUtil.serialize(new XmlSlurper().parse(source)))
@@ -58,7 +58,7 @@ class XmlUtilTest {
 
     // GROOVY-5361
     @Test
-    void testSchemaValidationUtilityMethod() {
+    void schemaValidationUtilityMethod() {
         Locale dl = Locale.getDefault()
         Locale.setDefault(Locale.ENGLISH)
 
@@ -106,7 +106,7 @@ class XmlUtilTest {
 
     // GROOVY-5775
     @Test
-    void testEscaping() {
+    void escaping() {
       def ans = escapeControlCharacters(escapeXml('"bread" & "butter"\r\n\u0000\u001f'))
       assert ans == '&quot;bread&quot; &amp; &quot;butter&quot;&#13;&#10;&#0;&#31;'
     }

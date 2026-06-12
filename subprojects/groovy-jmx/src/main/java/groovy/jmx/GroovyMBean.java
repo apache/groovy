@@ -51,18 +51,52 @@ public class GroovyMBean extends GroovyObjectSupport {
     private final boolean ignoreErrors;
     private final Map<String, String[]> operations = new HashMap<String, String[]>();
 
+    /**
+     * Creates a facade for the named MBean.
+     *
+     * @param server the server connection to use
+     * @param objectName the name of the target MBean
+     * @throws JMException if the MBean name is invalid or metadata cannot be read
+     * @throws IOException if the server connection fails
+     */
     public GroovyMBean(MBeanServerConnection server, String objectName) throws JMException, IOException {
         this(server, objectName, false);
     }
 
+    /**
+     * Creates a facade for the named MBean.
+     *
+     * @param server the server connection to use
+     * @param objectName the name of the target MBean
+     * @param ignoreErrors whether access errors should be ignored
+     * @throws JMException if the MBean name is invalid or metadata cannot be read
+     * @throws IOException if the server connection fails
+     */
     public GroovyMBean(MBeanServerConnection server, String objectName, boolean ignoreErrors) throws JMException, IOException {
         this(server, new ObjectName(objectName), ignoreErrors);
     }
 
+    /**
+     * Creates a facade for the named MBean.
+     *
+     * @param server the server connection to use
+     * @param name the object name of the target MBean
+     * @throws JMException if metadata cannot be read
+     * @throws IOException if the server connection fails
+     */
     public GroovyMBean(MBeanServerConnection server, ObjectName name) throws JMException, IOException {
         this(server, name, false);
     }
 
+    /**
+     * Creates a facade for the named MBean.
+     *
+     * @param server the server connection to use
+     * @param name the object name of the target MBean
+     * @param ignoreErrors whether access errors should be ignored
+     * @throws JMException if metadata cannot be read
+     * @throws IOException if the server connection fails
+     */
     public GroovyMBean(MBeanServerConnection server, ObjectName name, boolean ignoreErrors) throws JMException, IOException {
         this.server = server;
         this.name = name;
@@ -78,18 +112,39 @@ public class GroovyMBean extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Returns the backing server connection.
+     *
+     * @return the server connection
+     */
     public MBeanServerConnection server() {
         return server;
     }
 
+    /**
+     * Returns the object name of the wrapped MBean.
+     *
+     * @return the MBean name
+     */
     public ObjectName name() {
         return name;
     }
 
+    /**
+     * Returns cached metadata for the wrapped MBean.
+     *
+     * @return the MBean metadata
+     */
     public MBeanInfo info() {
         return beanInfo;
     }
 
+    /**
+     * Reads an attribute from the wrapped MBean.
+     *
+     * @param property the attribute name
+     * @return the attribute value
+     */
     @Override
     public Object getProperty(String property) {
         try {
@@ -105,6 +160,12 @@ public class GroovyMBean extends GroovyObjectSupport {
         return null;
     }
 
+    /**
+     * Writes an attribute on the wrapped MBean.
+     *
+     * @param property the attribute name
+     * @param value the new attribute value
+     */
     @Override
     public void setProperty(String property, Object value) {
         try {
@@ -118,6 +179,13 @@ public class GroovyMBean extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Invokes an operation on the wrapped MBean.
+     *
+     * @param method the operation name
+     * @param arguments the operation arguments
+     * @return the invocation result
+     */
     @Override
     public Object invokeMethod(String method, Object arguments) {
         Object[] argArray;
@@ -146,6 +214,12 @@ public class GroovyMBean extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Builds the signature array for an operation.
+     *
+     * @param info the operation metadata
+     * @return the operation signature
+     */
     protected String[] createSignature(MBeanOperationInfo info) {
         MBeanParameterInfo[] params = info.getSignature();
         String[] answer = new String[params.length];

@@ -25,9 +25,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Base support for streaming markup builders that dispatch tags through namespace-specific closures.
+ */
 public abstract class Builder extends GroovyObjectSupport {
+    /**
+     * Normalized namespace metadata used to resolve tag handlers during binding.
+     */
     protected final Map namespaceMethodMap = new HashMap();
 
+    /**
+     * Creates a builder from the precomputed namespace method metadata.
+     *
+     * @param namespaceMethodMap namespace-specific tag handler metadata
+     */
     public Builder(final Map namespaceMethodMap) {
         for (Object e : namespaceMethodMap.entrySet()) {
             Map.Entry entry = (Map.Entry) e;
@@ -56,12 +67,33 @@ public abstract class Builder extends GroovyObjectSupport {
         return newMethodMap;
     }
 
+    /**
+     * Binds a root markup closure into a lazily executable document object.
+     *
+     * @param root root markup closure
+     * @return bound document representation
+     */
     public abstract Object bind(Closure root);
 
+    /**
+     * Base class for bound markup documents produced by {@link #bind(Closure)}.
+     */
     protected abstract static class Built extends GroovyObjectSupport {
-    protected final Closure root;
-    protected final Map namespaceSpecificTags = new HashMap();
+        /**
+         * Root markup closure cloned for this bound document.
+         */
+        protected final Closure root;
+        /**
+         * Namespace URI to tag handler metadata for this bound document.
+         */
+        protected final Map namespaceSpecificTags = new HashMap();
 
+        /**
+         * Creates a bound document with namespace-specific tag metadata.
+         *
+         * @param root root markup closure
+         * @param namespaceTagMap namespace URI to tag handler metadata
+         */
         public Built(final Closure root, final Map namespaceTagMap) {
             this.namespaceSpecificTags.putAll(namespaceTagMap);
 

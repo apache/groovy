@@ -23,20 +23,49 @@ import java.awt.*
 
 import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
+/**
+ * Factory that accepts pre-existing widget instances of a restricted type.
+ */
 public class WidgetFactory extends AbstractFactory {
 
+    /**
+     * Accepted runtime type for node values.
+     */
     final Class restrictedType;
+    /**
+     * Whether created nodes are treated as leaves.
+     */
     protected final boolean leaf
 
+    /**
+     * Creates a new factory that accepts pre-existing widget instances of a restricted type.
+     *
+     * @param restrictedType the accepted widget type
+     * @param leaf whether created nodes are leaf nodes
+     */
     public WidgetFactory(Class restrictedType, boolean leaf) {
         this.restrictedType = restrictedType
         this.leaf = leaf
     }
 
+    /**
+     * Indicates whether nodes created by this factory accept children.
+     *
+     * @return true if child nodes are not expected
+     */
     boolean isLeaf() {
         return leaf
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             value = attributes.remove(name);
@@ -48,6 +77,13 @@ public class WidgetFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;

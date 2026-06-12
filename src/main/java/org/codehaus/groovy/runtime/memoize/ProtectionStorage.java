@@ -23,5 +23,12 @@ package org.codehaus.groovy.runtime.memoize;
  * The touch method can be used to renew an element and move it to the from the LRU queue.
  */
 interface ProtectionStorage<K, V> {
+    /**
+     * Marks an entry as recently used and updates the protected value stored
+     * for the supplied key.
+     *
+     * @param key the key to refresh
+     * @param value the value to protect
+     */
     void touch(K key, V value);
 }

@@ -24,13 +24,15 @@ import groovy.cli.picocli.CliBuilder
 import groovy.transform.TypeChecked
 import org.junit.jupiter.api.Test
 
+// tag::mapOptionImports[]
+
 import java.util.concurrent.TimeUnit
 
 import static java.util.concurrent.TimeUnit.DAYS
 import static java.util.concurrent.TimeUnit.HOURS
-import static org.junit.jupiter.api.Assertions.assertEquals
 
 // end::mapOptionImports[]
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 // Core functionality we expect to remain the same for all implementations is tested in the base test case
 // here we also add any functionality specific to this implementation that we value highly
@@ -129,9 +131,8 @@ Options heading:
 
 Footer heading:
 Footer 1
-Footer 2
-'''
-        assertEquals(expected.normalize(), baos.toString().normalize())
+Footer 2'''
+        assertEquals(expected, baos.toString().normalize().trim())
     }
 
     @Test
@@ -174,9 +175,8 @@ Options:
       -lib=<path>,<path>,<path>
                          comma-separated list of 3 paths to search for jars and
                            classes
-      -logfile=<file>    use given file for log
-'''
-        assertEquals(expected.normalize(), sw.toString().normalize())
+      -logfile=<file>    use given file for log'''
+        assertEquals(expected, sw.toString().normalize().trim())
     }
 
     @Test
@@ -202,8 +202,7 @@ Usage: curl [-Gq] [--basic] [-d=<data>] [--url=<URL>]
   -d, --data=<data>   HTTP POST data
   -G, --get           Send the -d data with a HTTP GET
   -q                  If used as the first parameter disables .curlrc
-      --url=<URL>     Set URL to work with
-'''
-        assertEquals(expected.normalize(), baos.toString().normalize())
+      --url=<URL>     Set URL to work with'''
+        assertEquals(expected, baos.toString().normalize().trim())
     }
 }

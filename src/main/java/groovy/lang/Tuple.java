@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Arrays;
@@ -31,29 +32,48 @@ import java.util.RandomAccess;
  * Represents a list of Objects.
  */
 public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable, Comparable<Tuple<E>>, RandomAccess {
-    private static final long serialVersionUID = -6707770506387821031L;
+    @Serial private static final long serialVersionUID = -6707770506387821031L;
     private final E[] contents;
 
+    /**
+     * Creates a tuple containing the supplied elements.
+     *
+     * @param contents the tuple elements
+     */
     @SafeVarargs
     public Tuple(E... contents) {
         if (contents == null) throw new NullPointerException();
         this.contents = contents;
     }
 
+    /**
+     * Creates a tuple from the supplied tuple.
+     *
+     * @param tuple the source tuple
+     */
     public Tuple(Tuple<E> tuple) {
         this.contents = tuple.contents;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public E get(int index) {
         return contents[index];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int size() {
         return contents.length;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public E[] toArray() {
@@ -63,6 +83,9 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
         return copy;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public <T> T[] toArray(T[] a) {
@@ -75,6 +98,9 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
         return a;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
@@ -84,14 +110,24 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
         return new Tuple<>(newContent);
     }
 
+    /**
+     * Returns a tuple containing the specified range of elements.
+     *
+     * @param fromIndex the start index, inclusive
+     * @param toIndex the end index, exclusive
+     * @return the requested subtuple
+     */
     public Tuple<E> subTuple(int fromIndex, int toIndex) {
         return (Tuple<E>) subList(fromIndex, toIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Tuple that)) return false;
+        if (!(o instanceof List<?> that)) return false;
 
         int size = size();
         if (size != that.size()) return false;
@@ -103,11 +139,17 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return Objects.hash(contents);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(Tuple<E> other) {
         int thisSize = this.size();
@@ -257,6 +299,9 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
         return new Tuple16<>(v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Tuple<E> clone() {
         return new Tuple<>(this);

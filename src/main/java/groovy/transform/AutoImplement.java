@@ -107,7 +107,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.AutoImplementASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.AutoImplementASTStubber",
+        "org.codehaus.groovy.transform.AutoImplementASTTransformation"
+})
 public @interface AutoImplement {
     /**
      * If defined, all unimplemented methods will throw this exception.

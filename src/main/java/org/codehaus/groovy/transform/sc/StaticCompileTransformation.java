@@ -48,6 +48,12 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
 
     private final StaticTypesWriterControllerFactoryImpl factory = new StaticTypesWriterControllerFactoryImpl();
 
+    /**
+     * Applies static type checking and rewrites the annotated class or method for static compilation.
+     *
+     * @param nodes the annotation node and the annotated target node
+     * @param source the source unit being transformed
+     */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         AnnotatedNode target = (AnnotatedNode) nodes[1];
@@ -91,6 +97,13 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         }
     }
 
+    /**
+     * Creates the type checking visitor used by this transformation.
+     *
+     * @param unit the source unit being processed
+     * @param node the class node that anchors the visit
+     * @return the static compilation visitor for the class
+     */
     @Override
     protected StaticTypeCheckingVisitor newVisitor(final SourceUnit unit, final ClassNode node) {
         return new StaticCompilationVisitor(unit, node);

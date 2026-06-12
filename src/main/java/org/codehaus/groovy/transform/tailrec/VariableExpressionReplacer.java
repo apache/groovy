@@ -52,23 +52,32 @@ import java.lang.reflect.Method;
  * - to swap the access of iteration variables with the access of temp vars
  */
 public class VariableExpressionReplacer extends CodeVisitorSupport {
+    /**
+     * Creates a replacer with the supplied predicate and replacement strategy.
+     *
+     * @param when decides whether a variable expression should be replaced
+     * @param replaceWith creates the replacement variable expression
+     */
     public VariableExpressionReplacer(Closure<Boolean> when, Closure<VariableExpression> replaceWith) {
         this.when = when;
         this.replaceWith = replaceWith;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitReturnStatement(final ReturnStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement);
         super.visitReturnStatement(statement);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitIfElse(final IfStatement ifElse) {
         replaceExpressionPropertyWhenNecessary(ifElse, "booleanExpression", BooleanExpression.class);
         super.visitIfElse(ifElse);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitForLoop(final ForStatement forLoop) {
         replaceExpressionPropertyWhenNecessary(forLoop, "collectionExpression");
@@ -87,42 +96,49 @@ public class VariableExpressionReplacer extends CodeVisitorSupport {
         super.visitBinaryExpression(expression);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitWhileLoop(final WhileStatement loop) {
         replaceExpressionPropertyWhenNecessary(loop, "booleanExpression", BooleanExpression.class);
         super.visitWhileLoop(loop);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitDoWhileLoop(final DoWhileStatement loop) {
         replaceExpressionPropertyWhenNecessary(loop, "booleanExpression", BooleanExpression.class);
         super.visitDoWhileLoop(loop);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitSwitch(final SwitchStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement);
         super.visitSwitch(statement);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement);
         super.visitCaseStatement(statement);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitExpressionStatement(final ExpressionStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement);
         super.visitExpressionStatement(statement);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitThrowStatement(final ThrowStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement);
         super.visitThrowStatement(statement);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitAssertStatement(final AssertStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement, "booleanExpression", BooleanExpression.class);
@@ -130,12 +146,18 @@ public class VariableExpressionReplacer extends CodeVisitorSupport {
         super.visitAssertStatement(statement);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitSynchronizedStatement(final SynchronizedStatement statement) {
         replaceExpressionPropertyWhenNecessary(statement);
         super.visitSynchronizedStatement(statement);
     }
 
+    /**
+     * Replaces matching variable expressions within the supplied AST subtree.
+     *
+     * @param root the AST subtree to mutate
+     */
     public synchronized void replaceIn(final ASTNode root) {
         transformer = new VariableExpressionTransformer(when, replaceWith);
         root.visit(this);
@@ -188,18 +210,38 @@ public class VariableExpressionReplacer extends CodeVisitorSupport {
         }
     }
 
+    /**
+     * Returns the predicate that decides whether a variable expression should be replaced.
+     *
+     * @return the replacement predicate
+     */
     public Closure<Boolean> getWhen() {
         return when;
     }
 
+    /**
+     * Sets the predicate that decides whether a variable expression should be replaced.
+     *
+     * @param when the replacement predicate
+     */
     public void setWhen(Closure<Boolean> when) {
         this.when = when;
     }
 
+    /**
+     * Returns the closure that creates replacement variable expressions.
+     *
+     * @return the replacement closure
+     */
     public Closure<VariableExpression> getReplaceWith() {
         return replaceWith;
     }
 
+    /**
+     * Sets the closure that creates replacement variable expressions.
+     *
+     * @param replaceWith the replacement closure
+     */
     public void setReplaceWith(Closure<VariableExpression> replaceWith) {
         this.replaceWith = replaceWith;
     }

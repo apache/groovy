@@ -49,28 +49,60 @@ import java.util.Map;
  */
 public class XmlNodePrinter {
 
+    /**
+     * Printer receiving serialized XML output.
+     */
     protected final IndentPrinter out;
     private String quote;
     private boolean namespaceAware = true;
     private boolean preserveWhitespace = false;
     private boolean expandEmptyElements = false;
 
+    /**
+     * Creates a printer that writes to the supplied writer using two-space indentation and double quotes.
+     *
+     * @param out the writer receiving the serialized XML
+     */
     public XmlNodePrinter(PrintWriter out) {
         this(out, "  ");
     }
 
+    /**
+     * Creates a printer that writes to the supplied writer using the supplied indentation string.
+     *
+     * @param out the writer receiving the serialized XML
+     * @param indent the indentation unit to use
+     */
     public XmlNodePrinter(PrintWriter out, String indent) {
         this(out, indent, "\"");
     }
 
+    /**
+     * Creates a printer that writes to the supplied writer using the supplied indentation and attribute quote.
+     *
+     * @param out the writer receiving the serialized XML
+     * @param indent the indentation unit to use
+     * @param quote the quote string to use around attribute values
+     */
     public XmlNodePrinter(PrintWriter out, String indent, String quote) {
         this(new IndentPrinter(out, indent), quote);
     }
 
+    /**
+     * Creates a printer that writes to the supplied indent printer using double quotes for attributes.
+     *
+     * @param out the indent printer receiving the serialized XML
+     */
     public XmlNodePrinter(IndentPrinter out) {
         this(out, "\"");
     }
 
+    /**
+     * Creates a printer that writes to the supplied indent printer using the supplied attribute quote.
+     *
+     * @param out the indent printer receiving the serialized XML
+     * @param quote the quote string to use around attribute values
+     */
     public XmlNodePrinter(IndentPrinter out, String quote) {
         if (out == null) {
             throw new IllegalArgumentException("Argument 'IndentPrinter out' must not be null!");
@@ -79,10 +111,18 @@ public class XmlNodePrinter {
         this.quote = quote;
     }
 
+    /**
+     * Creates a printer that writes to standard output using default formatting.
+     */
     public XmlNodePrinter() {
         this(new PrintWriter(new OutputStreamWriter(System.out)));
     }
 
+    /**
+     * Prints the supplied node and its descendants.
+     *
+     * @param node the root node to serialize
+     */
     public void print(Node node) {
         print(node, new NamespaceContext());
     }
@@ -165,6 +205,13 @@ public class XmlNodePrinter {
         this.expandEmptyElements = expandEmptyElements;
     }
 
+    /**
+     * Prints a node using the supplied namespace context.
+     * Subclasses may override to customize node serialization while reusing the helper methods in this class.
+     *
+     * @param node the node to serialize
+     * @param ctx the namespace context active for this node
+     */
     protected void print(Node node, NamespaceContext ctx) {
         /*
          * Handle empty elements like '<br/>', '<img/> or '<hr noshade="noshade"/>.
@@ -223,14 +270,25 @@ public class XmlNodePrinter {
         return preserveWhitespace;
     }
 
+    /**
+     * Prints any indentation required before the current line.
+     */
     protected void printLineBegin() {
         out.printIndent();
     }
 
+    /**
+     * Terminates the current line without a trailing comment.
+     */
     protected void printLineEnd() {
         printLineEnd(null);
     }
 
+    /**
+     * Terminates the current line and optionally appends an XML comment.
+     *
+     * @param comment the comment text to append, or {@code null} for none
+     */
     protected void printLineEnd(String comment) {
         if (comment != null) {
             out.print(" <!-- ");
@@ -241,6 +299,12 @@ public class XmlNodePrinter {
         out.flush();
     }
 
+    /**
+     * Prints the contents of a node value list.
+     *
+     * @param list the node contents to print
+     * @param ctx the namespace context to propagate to child nodes
+     */
     protected void printList(List list, NamespaceContext ctx) {
         out.incrementIndent();
         for (Object value : list) {
@@ -256,12 +320,25 @@ public class XmlNodePrinter {
         out.decrementIndent();
     }
 
+    /**
+     * Prints a simple non-node value, escaping it as element content.
+     *
+     * @param value the value to print
+     */
     protected void printSimpleItem(Object value) {
         if (!preserveWhitespace) printLineBegin();
         printEscaped(FormatHelper.toString(value), false);
         if (!preserveWhitespace) printLineEnd();
     }
 
+    /**
+     * Prints an opening or closing tag for the supplied node.
+     *
+     * @param node the node whose name and attributes should be printed
+     * @param ctx the namespace context active for this node
+     * @param begin {@code true} to print the opening tag, {@code false} for the closing tag
+     * @param preserve whether surrounding whitespace should be preserved
+     */
     protected void printName(Node node, NamespaceContext ctx, boolean begin, boolean preserve) {
         if (node == null) {
             throw new NullPointerException("Node must not be null.");
@@ -286,10 +363,22 @@ public class XmlNodePrinter {
         if (!preserve || !begin) printLineEnd();
     }
 
+    /**
+     * Hook for subclasses to intercept node printing.
+     *
+     * @param node the node about to be printed
+     * @return {@code true} if the node was handled completely and normal printing should stop
+     */
     protected boolean printSpecialNode(Node node) {
         return false;
     }
 
+    /**
+     * Prints any namespace declaration required by the supplied node or qualified name.
+     *
+     * @param object the node or qualified name whose namespace should be declared
+     * @param ctx the namespace context tracking declarations already emitted
+     */
     protected void printNamespace(Object object, NamespaceContext ctx) {
         if (namespaceAware) {
             if (object instanceof Node) {
@@ -315,6 +404,12 @@ public class XmlNodePrinter {
         }
     }
 
+    /**
+     * Prints the attributes for the current element.
+     *
+     * @param attributes the attributes to print
+     * @param ctx the namespace context used for namespace-aware attribute names
+     */
     protected void printNameAttributes(Map attributes, NamespaceContext ctx) {
         if (attributes == null || attributes.isEmpty()) {
             return;
@@ -346,6 +441,13 @@ public class XmlNodePrinter {
         return node.text().isEmpty();
     }
 
+    /**
+     * Resolves the printable name for a node, qualified name or plain string.
+     * Subclasses may override to customize name rendering.
+     *
+     * @param object the object representing a node name
+     * @return the printable name
+     */
     protected String getName(Object object) {
         if (object instanceof String) {
             return (String) object;
@@ -412,28 +514,58 @@ public class XmlNodePrinter {
         }
     }
 
+    /**
+     * Tracks namespace declarations already emitted while printing a subtree.
+     */
     protected static class NamespaceContext {
         private final Map<String, String> namespaceMap;
 
+        /**
+         * Creates an empty namespace context.
+         */
         public NamespaceContext() {
             namespaceMap = new HashMap<String, String>();
         }
 
+        /**
+         * Creates a namespace context initialized from an existing context.
+         *
+         * @param context the context to copy
+         */
         public NamespaceContext(NamespaceContext context) {
             this();
             namespaceMap.putAll(context.namespaceMap);
         }
 
+        /**
+         * Checks whether a prefix is already registered for the supplied namespace URI.
+         *
+         * @param prefix the namespace prefix to look up
+         * @param uri the namespace URI to compare against
+         * @return {@code true} if the prefix is already registered for that URI
+         */
         public boolean isPrefixRegistered(String prefix, String uri) {
             return namespaceMap.containsKey(prefix) && namespaceMap.get(prefix).equals(uri);
         }
 
+        /**
+         * Records a namespace prefix mapping if it has not already been registered.
+         *
+         * @param prefix the namespace prefix to register
+         * @param uri the namespace URI to associate with {@code prefix}
+         */
         public void registerNamespacePrefix(String prefix, String uri) {
             if (!isPrefixRegistered(prefix, uri)) {
                 namespaceMap.put(prefix, uri);
             }
         }
 
+        /**
+         * Returns the namespace URI currently registered for the supplied prefix.
+         *
+         * @param prefix the namespace prefix to resolve
+         * @return the registered namespace URI, or {@code null} if none is registered
+         */
         public String getNamespace(String prefix) {
             Object uri = namespaceMap.get(prefix);
             return (uri == null) ? null : uri.toString();

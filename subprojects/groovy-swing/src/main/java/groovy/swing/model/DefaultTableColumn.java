@@ -21,26 +21,49 @@ package groovy.swing.model;
 import javax.swing.table.TableColumn;
 
 /**
- * Represents a column using a ValueModel to extract the value.
+ * A {@link TableColumn} backed by a {@link ValueModel} for reading and writing cell values.
  */
 public class DefaultTableColumn extends TableColumn {
 
     private ValueModel valueModel;
 
+    /**
+     * Creates a column backed by the supplied value model.
+     *
+     * @param valueModel the value model used to access cell values
+     */
     public DefaultTableColumn(ValueModel valueModel) {
         this.valueModel = valueModel;
     }
 
+    /**
+     * Creates a column with a header value and backing value model.
+     *
+     * @param header the column header value
+     * @param valueModel the value model used to access cell values
+     */
     public DefaultTableColumn(Object header, ValueModel valueModel) {
         this(valueModel);
         setHeaderValue(header);
     }
 
+    /**
+     * Creates a column with header and identifier values.
+     *
+     * @param headerValue the column header value
+     * @param identifier the logical identifier for the column
+     * @param columnValueModel the value model used to access cell values
+     */
     public DefaultTableColumn(Object headerValue, Object identifier, ValueModel columnValueModel) {
         this(headerValue, columnValueModel);
         setIdentifier(identifier);
     }
 
+    /**
+     * Returns a debug-friendly description of this column and its backing value model.
+     *
+     * @return the column description
+     */
     @Override
     public String toString() {
         return super.toString() + "[header:" + getHeaderValue() + " valueModel:" + valueModel + "]";
@@ -61,6 +84,14 @@ public class DefaultTableColumn extends TableColumn {
         return valueModel.getValue();
     }
 
+    /**
+     * Writes a cell value through the backing value model.
+     *
+     * @param row the row object that owns the value
+     * @param value the new cell value
+     * @param rowIndex the source row index
+     * @param columnIndex the source column index
+     */
     public void setValue(Object row, Object value, int rowIndex, int columnIndex) {
         if (valueModel instanceof NestedValueModel nestedModel) {
             nestedModel.getSourceModel().setValue(row);
@@ -75,6 +106,11 @@ public class DefaultTableColumn extends TableColumn {
         return valueModel.getType();
     }
 
+    /**
+     * Returns the value model used by this column.
+     *
+     * @return the backing value model
+     */
     public ValueModel getValueModel() {
         return valueModel;
     }

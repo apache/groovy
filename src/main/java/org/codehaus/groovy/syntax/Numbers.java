@@ -22,7 +22,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 /**
- * Helper class for processing Groovy numeric literals.
+ * Utility class for processing and parsing Groovy numeric literals.
+ * Provides methods for character classification (digits, hex digits, etc.)
+ * and conversion of numeric literal strings to appropriate {@link Number} objects,
+ * handling various bases (decimal, octal, hexadecimal, binary) and type suffixes.
  */
 public class Numbers {
 
@@ -30,29 +33,43 @@ public class Numbers {
     // LEXING SUPPORT
 
     /**
-     * Returns true if the specified character is a base-10 digit.
+     * Returns {@code true} if the specified character is a decimal digit (0-9).
+     *
+     * @param c the character to check
+     * @return {@code true} if the character is a decimal digit
      */
     public static boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
 
     /**
-     * Returns true if the specific character is a base-8 digit.
+     * Returns {@code true} if the specified character is an octal digit (0-7).
+     *
+     * @param c the character to check
+     * @return {@code true} if the character is an octal digit
      */
     public static boolean isOctalDigit(char c) {
         return c >= '0' && c <= '7';
     }
 
     /**
-     * Returns true if the specified character is a base-16 digit.
+     * Returns {@code true} if the specified character is a hexadecimal digit (0-9, A-F, a-f).
+     *
+     * @param c the character to check
+     * @return {@code true} if the character is a hexadecimal digit
      */
     public static boolean isHexDigit(char c) {
         return isDigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
     }
 
     /**
-     * Returns true if the specified character is a valid type specifier
-     * for a numeric value.
+     * Returns {@code true} if the specified character is a valid type suffix for a numeric literal.
+     * For decimal literals: G/g (BigDecimal), D/d (double), F/f (float).
+     * For integer literals: G/g (BigInteger), I/i (int), L/l (long).
+     *
+     * @param c the character to check
+     * @param isDecimal {@code true} if checking a decimal literal suffix, {@code false} for integer
+     * @return {@code true} if the character is a valid numeric type specifier
      */
     public static boolean isNumericTypeSpecifier(char c, boolean isDecimal) {
         if (isDecimal) {

@@ -26,6 +26,9 @@ import org.codehaus.groovy.groovydoc.GroovyProgramElementDoc;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Base implementation for documented program elements with modifiers, package ownership, and annotations.
+ */
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
     private static final GroovyAnnotationRef[] EMPTY_GROOVYANNOTATIONREF_ARRAY = new GroovyAnnotationRef[0];
     private GroovyPackageDoc packageDoc;
@@ -37,92 +40,149 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
     private boolean privateScope;
     private final List<GroovyAnnotationRef> annotationRefs;
 
+    /**
+     * Creates a documented program element with the supplied name.
+     *
+     * @param name the element name
+     */
     public SimpleGroovyProgramElementDoc(String name) {
         super(name);
         annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyPackageDoc containingPackage() {
         return packageDoc;
     }
 
+    /**
+     * Associates this element with its containing package.
+     *
+     * @param packageDoc the containing package
+     */
     public void setContainingPackage(GroovyPackageDoc packageDoc) {
         this.packageDoc = packageDoc;
     }
 
+    /**
+     * Sets whether this element is static.
+     *
+     * @param b {@code true} if the element is static
+     */
     public void setStatic(boolean b) {
         staticElement = b;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isStatic() {
         return staticElement;
     }
 
+    /**
+     * Sets whether this element is final.
+     *
+     * @param b {@code true} if the element is final
+     */
     public void setFinal(boolean b) {
         this.finalElement = b;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isFinal() {
         return finalElement;
     }
 
+    /**
+     * Sets whether this element is public.
+     *
+     * @param b {@code true} if the element is public
+     */
     public void setPublic(boolean b) {
         publicScope = b;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isPublic() {
         return publicScope;
     }
 
+    /**
+     * Sets whether this element is protected.
+     *
+     * @param b {@code true} if the element is protected
+     */
     public void setProtected(boolean b) {
         protectedScope = b;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isProtected() {
         return protectedScope;
     }
 
+    /**
+     * Sets whether this element has package-private visibility.
+     *
+     * @param b {@code true} if the element is package-private
+     */
     public void setPackagePrivate(boolean b) {
         packagePrivateScope = b;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isPackagePrivate() {
         return packagePrivateScope;
     }
 
+    /**
+     * Sets whether this element is private.
+     *
+     * @param b {@code true} if the element is private
+     */
     public void setPrivate(boolean b) {
         privateScope = b;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isPrivate() {
         return privateScope;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyAnnotationRef[] annotations() {
         return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
 
+    /**
+     * Adds an annotation declared on this element.
+     *
+     * @param ref the annotation reference to add
+     */
     public void addAnnotationRef(GroovyAnnotationRef ref) {
         annotationRefs.add(ref);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc containingClass() {/*todo*/return null;}
 
+    /** {@inheritDoc} */
     @Override
     public String modifiers() {/*todo*/return null;}
 
+    /** {@inheritDoc} */
     @Override
     public int modifierSpecifier() {/*todo*/return 0;}
 
+    /** {@inheritDoc} */
     @Override
     public String qualifiedName() {/*todo*/return null;}
 }

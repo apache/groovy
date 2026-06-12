@@ -21,7 +21,9 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Variable;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -35,6 +37,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -43,6 +46,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
+import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Label;
@@ -53,10 +57,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
@@ -124,6 +130,9 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.SWAP;
 
+/**
+ * Emits bytecode for dynamic binary expressions.
+ */
 public class BinaryExpressionHelper {
     // compare
     private static final MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
@@ -142,22 +151,41 @@ public class BinaryExpressionHelper {
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
     private static final MethodCaller isNotCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isNotCase");
 
+    /**
+     * Coordinates the active bytecode-generation state.
+     */
     protected final WriterController controller;
     private final UnaryExpressionHelper unaryExpressionHelper;
 
+    /**
+     * Creates a binary expression helper for the supplied controller.
+     *
+     * @param wc the active writer controller
+     */
     public BinaryExpressionHelper(final WriterController wc) {
         this.controller = wc;
         this.unaryExpressionHelper = new UnaryExpressionHelper(wc);
     }
 
+    /**
+     * @return the active writer controller
+     */
     public WriterController getController() {
         return controller;
     }
 
+    /**
+     * @return the helper used for {@code isCase} dispatch
+     */
     public MethodCaller getIsCaseMethod() {
         return isCaseMethod;
     }
 
+    /**
+     * Evaluates the supplied binary expression.
+     *
+     * @param expression the expression to compile
+     */
     public void eval(final BinaryExpression expression) {
         switch (expression.getOperation().getType()) {
         case EQUAL: // = (aka assignment)
@@ -205,7 +233,7 @@ public class BinaryExpressionHelper {
             break;
 
         case BITWISE_AND_EQUAL:
-            evaluateBinaryExpressionWithAssignment("and", expression);
+            evaluateCompoundAssign("andAssign", "and", expression);
             break;
 
         case BITWISE_OR:
@@ -213,7 +241,7 @@ public class BinaryExpressionHelper {
             break;
 
         case BITWISE_OR_EQUAL:
-            evaluateBinaryExpressionWithAssignment("or", expression);
+            evaluateCompoundAssign("orAssign", "or", expression);
             break;
 
         case BITWISE_XOR:
@@ -225,7 +253,7 @@ public class BinaryExpressionHelper {
             break;
 
         case BITWISE_XOR_EQUAL:
-            evaluateBinaryExpressionWithAssignment("xor", expression);
+            evaluateCompoundAssign("xorAssign", "xor", expression);
             break;
 
         case PLUS:
@@ -233,7 +261,7 @@ public class BinaryExpressionHelper {
             break;
 
         case PLUS_EQUAL:
-            evaluateBinaryExpressionWithAssignment("plus", expression);
+            evaluateCompoundAssign("plusAssign", "plus", expression);
             break;
 
         case MINUS:
@@ -241,7 +269,7 @@ public class BinaryExpressionHelper {
             break;
 
         case MINUS_EQUAL:
-            evaluateBinaryExpressionWithAssignment("minus", expression);
+            evaluateCompoundAssign("minusAssign", "minus", expression);
             break;
 
         case MULTIPLY:
@@ -249,7 +277,7 @@ public class BinaryExpressionHelper {
             break;
 
         case MULTIPLY_EQUAL:
-            evaluateBinaryExpressionWithAssignment("multiply", expression);
+            evaluateCompoundAssign("multiplyAssign", "multiply", expression);
             break;
 
         case DIVIDE:
@@ -259,7 +287,7 @@ public class BinaryExpressionHelper {
         case DIVIDE_EQUAL:
             //SPG don't use divide since BigInteger implements directly
             //and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
-            evaluateBinaryExpressionWithAssignment("div", expression);
+            evaluateCompoundAssign("divAssign", "div", expression);
             break;
 
         case INTDIV:
@@ -267,6 +295,7 @@ public class BinaryExpressionHelper {
             break;
 
         case INTDIV_EQUAL:
+            // GEP-15 explicitly excludes \= (no intdivAssign convention)
             evaluateBinaryExpressionWithAssignment("intdiv", expression);
             break;
 
@@ -275,7 +304,9 @@ public class BinaryExpressionHelper {
             break;
 
         case MOD_EQUAL:
-            evaluateBinaryExpressionWithAssignment("mod", expression);
+            // GEP-15 maps both MOD_EQUAL and REMAINDER_EQUAL to remainderAssign for consistency
+            // with getOperationName collapse, even though current parser only emits REMAINDER_EQUAL.
+            evaluateCompoundAssign("remainderAssign", "mod", expression);
             break;
 
         case REMAINDER:
@@ -283,7 +314,7 @@ public class BinaryExpressionHelper {
             break;
 
         case REMAINDER_EQUAL:
-            evaluateBinaryExpressionWithAssignment("remainder", expression);
+            evaluateCompoundAssign("remainderAssign", "remainder", expression);
             break;
 
         case POWER:
@@ -291,7 +322,7 @@ public class BinaryExpressionHelper {
             break;
 
         case POWER_EQUAL:
-            evaluateBinaryExpressionWithAssignment("power", expression);
+            evaluateCompoundAssign("powerAssign", "power", expression);
             break;
 
         case ELVIS_EQUAL:
@@ -303,7 +334,7 @@ public class BinaryExpressionHelper {
             break;
 
         case LEFT_SHIFT_EQUAL:
-            evaluateBinaryExpressionWithAssignment("leftShift", expression);
+            evaluateCompoundAssign("leftShiftAssign", "leftShift", expression);
             break;
 
         case RIGHT_SHIFT:
@@ -311,7 +342,7 @@ public class BinaryExpressionHelper {
             break;
 
         case RIGHT_SHIFT_EQUAL:
-            evaluateBinaryExpressionWithAssignment("rightShift", expression);
+            evaluateCompoundAssign("rightShiftAssign", "rightShift", expression);
             break;
 
         case RIGHT_SHIFT_UNSIGNED:
@@ -319,7 +350,7 @@ public class BinaryExpressionHelper {
             break;
 
         case RIGHT_SHIFT_UNSIGNED_EQUAL:
-            evaluateBinaryExpressionWithAssignment("rightShiftUnsigned", expression);
+            evaluateCompoundAssign("rightShiftUnsignedAssign", "rightShiftUnsigned", expression);
             break;
 
         case KEYWORD_INSTANCEOF:
@@ -367,6 +398,15 @@ public class BinaryExpressionHelper {
         }
     }
 
+    /**
+     * Emits an array-style assignment using the dynamic {@code putAt} protocol.
+     *
+     * @param parent the original assignment expression
+     * @param receiver the array or indexable receiver
+     * @param index the subscript expression
+     * @param rhsValueLoader an expression that reloads the right-hand value
+     * @param safe whether the receiver access is null-safe
+     */
     protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
         // let's replace this assignment to a subscript operator with a method call
         // e.g. x[5] = 10 --> ScriptBytecodeAdapter.invokeMethod(senderClass, x, "putAt", [5, 10])
@@ -377,6 +417,11 @@ public class BinaryExpressionHelper {
             rhsValueLoader.visit(controller.getAcg()); // assignment expression value
     }
 
+    /**
+     * Rewrites and evaluates the Elvis-assignment form.
+     *
+     * @param expression the Elvis-assignment expression
+     */
     public void evaluateElvisEqual(final BinaryExpression expression) {
         Expression lhs = expression.getLeftExpression();
         Expression rhs = elvisX(lhs, expression.getRightExpression());
@@ -389,6 +434,12 @@ public class BinaryExpressionHelper {
         evaluateEqual(assignment, false);
     }
 
+    /**
+     * Evaluates an assignment expression.
+     *
+     * @param expression the assignment expression
+     * @param defineVariable whether the left-hand side declares a new variable
+     */
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
         AsmClassGenerator acg = controller.getAcg();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -477,6 +528,13 @@ public class BinaryExpressionHelper {
             return;
         }
 
+        // GROOVY-11959: box primitive RHS so the temp slot holds an object reference
+        // (the multi-assignment path ALOADs it for IF_ACMPEQ and dispatches iterator/getAt on it)
+        if (!singleAssignment && ClassHelper.isPrimitiveType(rhsType)) {
+            operandStack.box();
+            rhsType = operandStack.getTopOperand();
+        }
+
         int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
         // TODO: if RHS is already a VariableSlotLoader, then skip creating a new one
         Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
@@ -498,6 +556,101 @@ public class BinaryExpressionHelper {
             leftExpression.visit(acg);
             operandStack.remove(operandStack.getStackLength() - mark);
         } else { // multiple declaration or assignment
+            TupleExpression tuple = (TupleExpression) leftExpression;
+            java.util.List<Expression> elements = tuple.getExpressions();
+            int tupleSize = elements.size();
+            int restIndex = -1;
+            for (int idx = 0; idx < tupleSize; idx++) {
+                if (Boolean.TRUE.equals(elements.get(idx).getNodeMetaData(MultipleAssignmentMetadata.REST_BINDING))) {
+                    restIndex = idx;
+                    break;
+                }
+            }
+            boolean hasRest = (restIndex >= 0);
+            boolean tailRest = hasRest && restIndex == tupleSize - 1;
+            boolean isMapStyle = !elements.isEmpty()
+                    && elements.get(0).getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY) != null;
+
+            // GEP-20 map-style destructuring: def (name: n, age: a) = person
+            // Each binder is emitted as a property access on the RHS, dispatched via the MOP
+            // (Map → key lookup, bean → getter, GroovyObject → getProperty).
+            if (isMapStyle) {
+                for (Expression e : elements) {
+                    String key = e.getNodeMetaData(MultipleAssignmentMetadata.MAP_KEY);
+                    // Property access is a read here; the surrounding pushLHS(true) above would
+                    // otherwise mark it as a store target.
+                    compileStack.popLHS();
+                    propX(rhsValueLoader, key).visit(acg);
+                    compileStack.pushLHS(true);
+                    assignOneMultiAssignSlot(e, defineVariable, operandStack, compileStack, acg);
+                }
+                compileStack.popLHS();
+                if (returnRightValue) rhsValueLoader.visit(acg);
+                compileStack.removeVar(rhsValueId);
+                return;
+            }
+
+            // GEP-20 degenerate case: `def (*t) = rhs` — single rest binder; equivalent to `def t = rhs`.
+            if (tailRest && tupleSize == 1) {
+                rhsValueLoader.visit(acg);
+                if (defineVariable) {
+                    Variable v = (Variable) elements.get(0);
+                    operandStack.doGroovyCast(v);
+                    compileStack.defineVariable(v, true);
+                    operandStack.remove(1);
+                } else {
+                    elements.get(0).visit(acg);
+                }
+                compileStack.popLHS();
+                if (returnRightValue) rhsValueLoader.visit(acg);
+                compileStack.removeVar(rhsValueId);
+                return;
+            }
+
+            // GEP-20 head/middle rest: def (*f, last) = list, def (l, *m, r) = list, etc.
+            // Requires a sized, indexable RHS (Path B only — no iterator fallback).
+            // Load-bearing ordering (GEP lines 177-186): the IntRange call for the rest slot
+            // must be emitted BEFORE any negative-index call, so that an iterator/stream RHS
+            // fails fast with MissingMethodException instead of hanging via materialisation.
+            if (hasRest && !tailRest) {
+                // 1. Emit the IntRange call for the rest slot first, via the helper that
+                //    returns an empty slice for inverted ranges (short RHS) and fails fast
+                //    for non-indexable RHS (iterator/stream/set), per GEP lines 177-186.
+                // Number of fixed slots after the rest = tupleSize - restIndex - 1; their negative
+                // indices span [-k, -1]; the rest slice therefore ends at -(k+1) = -(tupleSize - restIndex).
+                // e.g. def (*f,last): -2; def (l,*m,r): -2; def (a,b,*m,y,z): -3
+                int toIdx = -(tupleSize - restIndex);
+                MethodCallExpression sliceCall = callX(
+                        classX(MultipleAssignmentSupport.class),
+                        "nonTailRestSlice",
+                        args(rhsValueLoader, constX(restIndex, true), constX(toIdx, true)));
+                sliceCall.setImplicitThis(false);
+                sliceCall.visit(acg);
+                assignOneMultiAssignSlot(elements.get(restIndex), defineVariable, operandStack, compileStack, acg);
+
+                // 2. Positive-index fixed slots (before rest), left-to-right.
+                for (int idx = 0; idx < restIndex; idx++) {
+                    MethodCallExpression call = callX(rhsValueLoader, "getAt", constX(idx, true));
+                    call.setImplicitThis(false);
+                    call.visit(acg);
+                    assignOneMultiAssignSlot(elements.get(idx), defineVariable, operandStack, compileStack, acg);
+                }
+
+                // 3. Negative-index fixed slots (after rest), left-to-right.
+                for (int idx = restIndex + 1; idx < tupleSize; idx++) {
+                    int negIdx = -(tupleSize - idx);
+                    MethodCallExpression call = callX(rhsValueLoader, "getAt", constX(negIdx, true));
+                    call.setImplicitThis(false);
+                    call.visit(acg);
+                    assignOneMultiAssignSlot(elements.get(idx), defineVariable, operandStack, compileStack, acg);
+                }
+
+                compileStack.popLHS();
+                if (returnRightValue) rhsValueLoader.visit(acg);
+                compileStack.removeVar(rhsValueId);
+                return;
+            }
+
             MethodCallExpression iterator = callX(rhsValueLoader, "iterator");
             iterator.setImplicitThis(false);
             iterator.visit(acg);
@@ -522,9 +675,17 @@ public class BinaryExpressionHelper {
             mv.visitJumpInsn(IF_ACMPEQ, useGetAt);
 
             boolean first = true;
-            for (Expression e : (TupleExpression) leftExpression) {
-                if (first) {
-                    first = false;
+            for (int idx = 0; idx < tupleSize; idx++) {
+                Expression e = elements.get(idx);
+                if (idx == restIndex) { // tail rest: dispatch Path B (slice) vs Path C (iterator) at runtime
+                    MethodCallExpression restCall = callX(
+                            classX(MultipleAssignmentSupport.class),
+                            "tailRest",
+                            args(rhsValueLoader, constX(idx, true), seq));
+                    restCall.setImplicitThis(false);
+                    restCall.visit(acg);
+                } else if (first) {
+                    first = false; // value already on stack from next() above
                 } else {
                     ternaryX(hasNext, next, nullX()).visit(acg);
                 }
@@ -546,11 +707,19 @@ public class BinaryExpressionHelper {
 
             mv.visitLabel(useGetAt_noPop);
 
-            int i = 0;
-            for (Expression e : (TupleExpression) leftExpression) {
-                MethodCallExpression getAt = callX(rhsValueLoader, "getAt", constX(i++, true));
-                getAt.setImplicitThis(false);
-                getAt.visit(acg);
+            for (int idx = 0; idx < tupleSize; idx++) {
+                Expression e = elements.get(idx);
+                MethodCallExpression call;
+                if (idx == restIndex) { // tail rest: dispatch via helper so empty RHS / non-indexable cases are handled uniformly
+                    call = callX(
+                            classX(MultipleAssignmentSupport.class),
+                            "tailRest",
+                            args(rhsValueLoader, constX(idx, true), seq));
+                } else {
+                    call = callX(rhsValueLoader, "getAt", constX(idx, true));
+                }
+                call.setImplicitThis(false);
+                call.visit(acg);
 
                 if (defineVariable) {
                     Variable v = (Variable) e;
@@ -578,6 +747,26 @@ public class BinaryExpressionHelper {
         compileStack.removeVar(rhsValueId);
     }
 
+    /** GEP-20: assign the single value currently on the operand stack to the given declarator slot. */
+    private void assignOneMultiAssignSlot(final Expression e, final boolean defineVariable,
+                                          final OperandStack operandStack, final CompileStack compileStack,
+                                          final AsmClassGenerator acg) {
+        if (defineVariable) {
+            Variable v = (Variable) e;
+            operandStack.doGroovyCast(v);
+            compileStack.defineVariable(v, true);
+            operandStack.remove(1);
+        } else {
+            e.visit(acg);
+        }
+    }
+
+    /**
+     * Evaluates a comparison expression, using primitive helpers when possible.
+     *
+     * @param compareMethod the dynamic comparison helper
+     * @param expression the comparison expression
+     */
     protected void evaluateCompareExpression(final MethodCaller compareMethod, final BinaryExpression expression) {
         Expression leftExp = expression.getLeftExpression();
         Expression rightExp = expression.getRightExpression();
@@ -695,6 +884,12 @@ public class BinaryExpressionHelper {
         mv.visitLabel(end);
     }
 
+    /**
+     * Evaluates a dynamic binary operator by invoking the named helper method.
+     *
+     * @param message the operator method name
+     * @param expression the expression to compile
+     */
     protected void evaluateBinaryExpression(final String message, final BinaryExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
         // ensure VariableArguments are read, not stored
@@ -708,6 +903,13 @@ public class BinaryExpressionHelper {
         compileStack.popLHS();
     }
 
+    /**
+     * Evaluates a compound assignment whose left-hand side is a subscript expression.
+     *
+     * @param method the operator method name
+     * @param expression the compound assignment expression
+     * @param leftBinExpr the indexed left-hand side
+     */
     protected void evaluateArrayAssignmentWithOperator(final String method, final BinaryExpression expression, final BinaryExpression leftBinExpr) {
         // e.g. x[a] += b
         // to avoid loading x and a twice we transform the expression to use
@@ -737,6 +939,12 @@ public class BinaryExpressionHelper {
         compileStack.removeVar(receiver.getIndex());
     }
 
+    /**
+     * Evaluates an operator-assignment expression such as {@code +=}.
+     *
+     * @param method the operator method name
+     * @param expression the assignment expression
+     */
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression bexp) {
@@ -749,6 +957,44 @@ public class BinaryExpressionHelper {
         evaluateBinaryExpression(method, expression);
 
         // br to leave a copy of rvalue on the stack; see also isPopRequired()
+        controller.getOperandStack().dup();
+        controller.getCompileStack().pushLHS(true);
+        leftExpression.visit(controller.getAcg());
+        controller.getCompileStack().popLHS();
+    }
+
+    /**
+     * GEP-15: dynamic-mode compound-assign codegen. Routes through
+     * {@link ScriptBytecodeAdapter#compoundAssign(Object, Object, String, String)}
+     * which dispatches to {@code assignName} when the receiver responds to it,
+     * and falls back to {@code baseName} otherwise. The caller stores the helper's
+     * return value into the LHS — for the in-place branch this is a no-op store
+     * of the receiver back to itself; for the fallback branch it is the usual
+     * "x = x.op(y)" assignment.
+     */
+    protected void evaluateCompoundAssign(final String assignName, final String baseName, final BinaryExpression expression) {
+        Expression leftExpression = expression.getLeftExpression();
+        if (leftExpression instanceof BinaryExpression bexp
+                && bexp.getOperation().getType() == LEFT_SQUARE_BRACKET) {
+            // Subscript LHS (e.g. a[i] += b) is intentionally out of scope for GEP-15;
+            // keep the legacy getAt/putAt-based path.
+            evaluateArrayAssignmentWithOperator(baseName, expression, bexp);
+            return;
+        }
+
+        StaticMethodCallExpression helperCall = new StaticMethodCallExpression(
+                ClassHelper.make(ScriptBytecodeAdapter.class),
+                "compoundAssign",
+                new ArgumentListExpression(new Expression[]{
+                        leftExpression,
+                        expression.getRightExpression(),
+                        new ConstantExpression(assignName),
+                        new ConstantExpression(baseName)
+                })
+        );
+        helperCall.setSourcePosition(expression);
+        helperCall.visit(controller.getAcg());
+
         controller.getOperandStack().dup();
         controller.getCompileStack().pushLHS(true);
         leftExpression.visit(controller.getAcg());
@@ -837,6 +1083,11 @@ public class BinaryExpressionHelper {
         if (usesSubscript != null) compileStack.removeVar(usesSubscript.getIndex());
     }
 
+    /**
+     * Evaluates a postfix increment or decrement expression.
+     *
+     * @param expression the postfix expression
+     */
     public void evaluatePostfixMethod(final PostfixExpression expression) {
         int op = expression.getOperation().getType();
         switch (op) {
@@ -849,6 +1100,11 @@ public class BinaryExpressionHelper {
         }
     }
 
+    /**
+     * Evaluates a prefix increment or decrement expression.
+     *
+     * @param expression the prefix expression
+     */
     public void evaluatePrefixMethod(final PrefixExpression expression) {
         int type = expression.getOperation().getType();
         switch (type) {
@@ -928,11 +1184,22 @@ public class BinaryExpressionHelper {
         // other cases don't need storing, so nothing to be done for them
     }
 
+    /**
+     * Emits the method call used to implement a prefix or postfix operation.
+     *
+     * @param op the token type
+     * @param method the helper method name
+     * @param expression the receiver expression
+     * @param orig the original prefix/postfix expression
+     */
     protected void writePostOrPrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
         // at this point the receiver will be already on the stack
         // in a[1]++ the method will be "++" aka "next" and the receiver a[1]
         ClassNode exprType = controller.getTypeChooser().resolveType(expression, controller.getClassNode());
         Expression callSiteReceiverSwap = new BytecodeExpression(exprType) {
+            /**
+             * Reorders the receiver and call-site objects for the synthetic increment call.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 OperandStack operandStack = controller.getOperandStack();
@@ -966,6 +1233,11 @@ public class BinaryExpressionHelper {
         // would be a.getAt(1).next() for the rhs, "lhs" code is a.putAt(1, rhs)
     }
 
+    /**
+     * Evaluates a ternary or Elvis expression.
+     *
+     * @param expression the expression to compile
+     */
     public void evaluateTernary(final TernaryExpression expression) {
         if (expression instanceof ElvisOperatorExpression) {
             evaluateElvisExpression(expression);

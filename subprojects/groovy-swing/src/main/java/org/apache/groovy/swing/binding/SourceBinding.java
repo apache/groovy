@@ -19,10 +19,17 @@
 package org.apache.groovy.swing.binding;
 
 /**
+ * Supplies values from the source side of a binding.
+ *
  * @since Groovy 1.1
  */
 public interface SourceBinding {
 
+    /**
+     * Reads the current source value.
+     *
+     * @return the current source value
+     */
     Object getSourceValue();
 
 }

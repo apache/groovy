@@ -18,6 +18,10 @@
  */
 package groovy.lang;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
+
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -48,6 +52,7 @@ import java.lang.annotation.Target;
  * how to customise artifact resolution etc., can be found on the Grape documentation page:
  * <a href="http://groovy-lang.org/grape.html">http://groovy-lang.org/grape.html</a>.
  */
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({
         ElementType.CONSTRUCTOR,
@@ -56,6 +61,7 @@ import java.lang.annotation.Target;
         ElementType.METHOD,
         ElementType.PARAMETER,
         ElementType.TYPE})
+@ExtendedTarget(ExtendedElementType.IMPORT)
 public @interface Grab {
     /**
      * The organisation or group, e.g.: "org.apache.ant". A non-empty value is required unless value() is used.

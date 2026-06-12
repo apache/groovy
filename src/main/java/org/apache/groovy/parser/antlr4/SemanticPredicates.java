@@ -21,27 +21,28 @@ package org.apache.groovy.parser.antlr4;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModifierNode;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.apache.groovy.parser.antlr4.GroovyParser.ASSIGN;
+import static org.apache.groovy.parser.antlr4.GroovyParser.AT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.BuiltInPrimitiveType;
 import static org.apache.groovy.parser.antlr4.GroovyParser.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyParser.DO;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DOT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.ExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.FOR;
 import static org.apache.groovy.parser.antlr4.GroovyParser.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LBRACK;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LT;
-import static org.apache.groovy.parser.antlr4.GroovyParser.PathExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExprAltContext;
-import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.RPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyParser.WHILE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.YIELD;
 import static org.apache.groovy.parser.antlr4.util.StringUtils.matches;
 
@@ -54,7 +55,12 @@ public class SemanticPredicates {
     private static final Pattern NONSURROGATE_PATTERN = Pattern.compile("[^\u0000-\u007F\uD800-\uDBFF]");
     private static final Pattern SURROGATE_PAIR1_PATTERN = Pattern.compile("[\uD800-\uDBFF]");
     private static final Pattern SURROGATE_PAIR2_PATTERN = Pattern.compile("[\uDC00-\uDFFF]");
+    private static final int PATH_EXPRESSION_ARGUMENTS = 2;
+    private static final int PATH_EXPRESSION_CLOSURE_OR_LAMBDA = 3;
 
+    /**
+     * Check whether the next characters are only white spaces until the end of line or end of file.
+     */
     public static boolean isFollowedByWhiteSpaces(CharStream cs) {
         for (int index = 1, c = cs.LA(index); !('\r' == c || '\n' == c || CharStream.EOF == c); index++, c = cs.LA(index)) {
             if (matches(String.valueOf((char) c), NONSPACES_PATTERN)) {
@@ -65,6 +71,9 @@ public class SemanticPredicates {
         return true;
     }
 
+    /**
+     * Check whether the next character is one of the specified characters.
+     */
     public static boolean isFollowedBy(CharStream cs, char... chars) {
         int c1 = cs.LA(1);
 
@@ -77,6 +86,9 @@ public class SemanticPredicates {
         return false;
     }
 
+    /**
+     * Check whether the next character is a valid Java identifier part or a left curly brace (for GString expressions).
+     */
     public static boolean isFollowedByJavaLetterInGString(CharStream cs) {
         int c1 = cs.LA(1);
 
@@ -115,25 +127,14 @@ public class SemanticPredicates {
      * @param context the preceding expression
      */
     public static boolean isFollowingArgumentsOrClosure(ExpressionContext context) {
-        if (context instanceof PostfixExprAltContext) {
-            List<ParseTree> peacChildren = ((PostfixExprAltContext) context).children;
+        if (!(context instanceof PostfixExprAltContext ctx)) return false;
 
-            try {
-                ParseTree peacChild = peacChildren.get(0);
-                List<ParseTree>  pecChildren = ((PostfixExpressionContext) peacChild).children;
-
-                ParseTree pecChild = pecChildren.get(0);
-                PathExpressionContext pec = (PathExpressionContext) pecChild;
-
-                int t = pec.t;
-
-                return (2 == t || 3 == t);
-            } catch (IndexOutOfBoundsException | ClassCastException e) {
-                throw new GroovyBugError("Unexpected structure of expression context: " + context, e);
-            }
+        try {
+            int pathExpressionType = ctx.postfixExpression().pathExpression().t;
+            return PATH_EXPRESSION_ARGUMENTS == pathExpressionType || PATH_EXPRESSION_CLOSURE_OR_LAMBDA == pathExpressionType;
+        } catch (RuntimeException e) {
+            throw new GroovyBugError("Unexpected structure of expression context: " + context, e);
         }
-
-        return false;
     }
 
     /**
@@ -186,8 +187,39 @@ public class SemanticPredicates {
                 !(BuiltInPrimitiveType == tokenType || Arrays.binarySearch(MODIFIER_ARRAY, tokenType) >= 0)
                         && !Character.isUpperCase(nextCodePoint)
                         && nextCodePoint != '@'
-                        && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2));
+                        && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2))
+                || (nextCodePoint == '@' && isAnnotatedLoopStatement(ts));
 
     }
 
+    /**
+     * When the input starts with one or more annotations, scan past them and check whether
+     * the first non-annotation token is a loop keyword ({@code for}, {@code while}, {@code do}).
+     * If so, the construct is an annotated loop statement, NOT a local variable declaration.
+     *
+     * @param ts the token stream positioned at the first annotation {@code @} token
+     * @return {@code true} if annotations are followed by a loop keyword
+     */
+    static boolean isAnnotatedLoopStatement(TokenStream ts) {
+        int idx = 1; // ts.LT(1) is '@'
+        while (ts.LT(idx).getType() == AT) {
+            idx += 2; // skip AT and annotation name
+            // skip qualifier parts of a fully-qualified annotation name, e.g. @java.lang.Deprecated
+            while (ts.LT(idx).getType() == DOT) {
+                idx += 2; // skip DOT and next name element
+            }
+            // skip annotation arguments (parenthesised), handling nesting
+            if (ts.LT(idx).getType() == LPAREN) {
+                idx++;
+                int depth = 1;
+                while (depth > 0 && ts.LT(idx).getType() != org.antlr.v4.runtime.Token.EOF) {
+                    int t = ts.LT(idx++).getType();
+                    if (t == LPAREN) depth++;
+                    else if (t == RPAREN) depth--;
+                }
+            }
+        }
+        int afterAnnotations = ts.LT(idx).getType();
+        return afterAnnotations == FOR || afterAnnotations == WHILE || afterAnnotations == DO;
+    }
 }

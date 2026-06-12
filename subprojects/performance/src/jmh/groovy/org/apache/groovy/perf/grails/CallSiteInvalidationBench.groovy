@@ -37,33 +37,59 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class CallSiteInvalidationBench {
+    /** Number of iterations per benchmark. */
     static final int ITERATIONS = 100_000
 
+    /**
+     * Target class for hot method call sites.
+     */
     static class HotTarget {
+        /** Test value for computations. */
         int value = 42
+        /** Computes double of the value. */
         int compute() { value * 2 }
+        /** Returns a string description of the value. */
         String describe() { "v=$value" }
     }
 
+    /**
+     * Second target class for multi-type call sites.
+     */
     static class HotTargetB {
+        /** Count value for testing. */
         int count = 10
+        /** Returns the count. */
         int getCount() { count }
     }
 
+    /**
+     * Third target class for multi-type call sites.
+     */
     static class HotTargetC {
+        /** List of items for testing. */
         List items = [1, 2, 3]
+        /** Returns the number of items. */
         int itemCount() { items.size() }
     }
 
+    /**
+     * Cold type for cross-type metaclass invalidation.
+     */
     static class ColdType {
+        /** Label for cold type. */
         String label = "cold"
     }
 
+    /** Instance of HotTarget for benchmarking. */
     HotTarget hotTarget
+    /** Instance of HotTargetB for benchmarking. */
     HotTargetB hotTargetB
+    /** Instance of HotTargetC for benchmarking. */
     HotTargetC hotTargetC
+    /** Sample list for size() benchmarks. */
     List<Integer> sampleList
 
+    /** Sets up fresh instances before each iteration. */
     @Setup(Level.Iteration)
     void setup() {
         GroovySystem.metaClassRegistry.removeMetaClass(HotTarget)

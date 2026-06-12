@@ -79,7 +79,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.security.PrivilegedAction;
 
 /**
  * JSR-223 Engine implementation.
@@ -107,36 +106,63 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         counter = 0;
     }
 
+    /**
+     * Creates an engine backed by a default {@link GroovyClassLoader}.
+     */
     public GroovyScriptEngineImpl() {
         this(createClassLoader());
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private static GroovyClassLoader createClassLoader() {
-        return java.security.AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
-            @Override
-            public GroovyClassLoader run() {
-                return new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT));
-            }
-        });
+        return new GroovyClassLoader(getParentLoader(), new CompilerConfiguration(CompilerConfiguration.DEFAULT));
     }
 
+    /**
+     * Creates an engine backed by the supplied class loader.
+     *
+     * @param classLoader the class loader used to parse and load generated script classes
+     * @throws IllegalArgumentException if {@code classLoader} is {@code null}
+     */
     public GroovyScriptEngineImpl(GroovyClassLoader classLoader) {
         if (classLoader == null) throw new IllegalArgumentException("GroovyClassLoader is null");
         this.loader = classLoader;
     }
 
+    /**
+     * Creates an engine associated with the supplied factory.
+     *
+     * @param factory the factory that should be returned from {@link #getFactory()}
+     */
     GroovyScriptEngineImpl(GroovyScriptEngineFactory factory) {
         this();
         this.factory = factory;
     }
 
+    /**
+     * Reads the supplied script source and evaluates it against the given context.
+     *
+     * @param reader the reader providing script source
+     * @param ctx the execution context to use
+     * @return the script result, or the script class when the source defines a class instead of a script
+     * @throws ScriptException if the reader cannot be consumed or script evaluation fails
+     */
     @Override
     public Object eval(Reader reader, ScriptContext ctx)
             throws ScriptException {
         return eval(readFully(reader), ctx);
     }
 
+    /**
+     * Evaluates Groovy source within the supplied script context.
+     *
+     * <p>If {@code #jsr223.groovy.engine.keep.globals} is present in engine scope, its value controls
+     * the reference strength used for cached global closures.</p>
+     *
+     * @param script the script source to execute
+     * @param ctx the execution context to use
+     * @return the script result, or the script class when the source defines a class instead of a script
+     * @throws ScriptException if compilation or execution fails
+     */
     @Override
     public Object eval(String script, ScriptContext ctx)
             throws ScriptException {
@@ -165,11 +191,21 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    /**
+     * Creates a mutable bindings instance suitable for engine-scope variables.
+     *
+     * @return a new {@link SimpleBindings} instance
+     */
     @Override
     public Bindings createBindings() {
         return new SimpleBindings();
     }
 
+    /**
+     * Returns the factory associated with this engine, creating one lazily if necessary.
+     *
+     * @return the script engine factory for this engine
+     */
     @Override
     public ScriptEngineFactory getFactory() {
         if (factory == null) {
@@ -183,6 +219,13 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     // javax.script.Compilable methods
+    /**
+     * Compiles Groovy source into a reusable {@link CompiledScript}.
+     *
+     * @param scriptSource the source to compile
+     * @return a compiled representation of {@code scriptSource}
+     * @throws ScriptException if compilation fails
+     */
     @Override
     public CompiledScript compile(String scriptSource) throws ScriptException {
         try {
@@ -193,18 +236,45 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    /**
+     * Reads and compiles Groovy source from the supplied reader.
+     *
+     * @param reader the reader providing script source
+     * @return a compiled representation of the reader content
+     * @throws ScriptException if the reader cannot be consumed or compilation fails
+     */
     @Override
     public CompiledScript compile(Reader reader) throws ScriptException {
         return compile(readFully(reader));
     }
 
     // javax.script.Invokable methods.
+    /**
+     * Invokes a previously defined global function by name.
+     *
+     * @param name the global function name
+     * @param args the arguments to pass to the function
+     * @return the function result
+     * @throws ScriptException if invocation fails
+     * @throws NoSuchMethodException if no matching function is available
+     */
     @Override
     public Object invokeFunction(String name, Object... args)
             throws ScriptException, NoSuchMethodException {
         return invokeImpl(null, name, args);
     }
 
+    /**
+     * Invokes a method on a script object or other Groovy object.
+     *
+     * @param thiz the target object
+     * @param name the method name
+     * @param args the arguments to pass to the method
+     * @return the method result
+     * @throws ScriptException if invocation fails
+     * @throws NoSuchMethodException if no matching method is available
+     * @throws IllegalArgumentException if {@code thiz} is {@code null}
+     */
     @Override
     public Object invokeMethod(Object thiz, String name, Object... args)
             throws ScriptException, NoSuchMethodException {
@@ -214,11 +284,29 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         return invokeImpl(thiz, name, args);
     }
 
+    /**
+     * Creates a dynamic proxy that dispatches interface method calls to global functions.
+     *
+     * @param clazz the interface to implement
+     * @param <T> the proxy type
+     * @return a proxy backed by this engine's global function namespace
+     * @throws IllegalArgumentException if {@code clazz} is {@code null} or not an interface
+     */
     @Override
     public <T> T getInterface(Class<T> clazz) {
         return makeInterface(null, clazz);
     }
 
+    /**
+     * Creates a dynamic proxy that dispatches interface method calls to the supplied object.
+     *
+     * @param thiz the target object that should receive method calls
+     * @param clazz the interface to implement
+     * @param <T> the proxy type
+     * @return a proxy backed by {@code thiz}
+     * @throws IllegalArgumentException if {@code thiz} is {@code null}, or if {@code clazz} is {@code null}
+     *      or not an interface
+     */
     @Override
     public <T> T getInterface(Object thiz, Class<T> clazz) {
         if (thiz == null) {
@@ -228,12 +316,29 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
     }
 
     // package-privates
+    /**
+     * Evaluates a previously compiled script class within the supplied context.
+     *
+     * <p>Script subclasses execute with a binding that mirrors the JSR-223 context. Non-script classes
+     * are returned directly so callers can inspect or instantiate them themselves.</p>
+     *
+     * @param scriptClass the compiled class to evaluate
+     * @param ctx the execution context to expose through the binding
+     * @return the script result, or {@code scriptClass} when it does not extend {@link Script}
+     * @throws ScriptException if script instantiation or execution fails
+     */
     Object eval(Class<?> scriptClass, final ScriptContext ctx) throws ScriptException {
         /*
          * We use the following Binding instance so that global variable lookup
          * will be done in the current ScriptContext instance.
          */
         Binding binding = new Binding(ctx.getBindings(ScriptContext.ENGINE_SCOPE)) {
+            /**
+             * Resolves a script variable from the current JSR-223 context.
+             *
+             * @param name the variable name to resolve
+             * @return the resolved value
+             */
             @Override
             public Object getVariable(String name) {
                 synchronized (ctx) {
@@ -258,6 +363,12 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
                 throw new MissingPropertyException(name, getClass());
             }
 
+            /**
+             * Stores a script variable back into the current JSR-223 context.
+             *
+             * @param name the variable name to update
+             * @param value the value to store
+             */
             @Override
             public void setVariable(String name, Object value) {
                 synchronized (ctx) {
@@ -289,11 +400,19 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
                 MetaClass oldMetaClass = scriptObject.getMetaClass();
 
                 /*
-                * We override the MetaClass of this script object so that we can
-                * forward calls to global closures (of previous or future "eval" calls)
-                * This gives the illusion of working on the same "global" scope.
-                */
+                 * We override the MetaClass of this script object so that we can
+                 * forward calls to global closures (of previous or future "eval" calls)
+                 * This gives the illusion of working on the same "global" scope.
+                 */
                 scriptObject.setMetaClass(new DelegatingMetaClass(oldMetaClass) {
+                    /**
+                     * Normalizes Groovy call arguments before delegating to the array-based overload.
+                     *
+                     * @param object the invocation receiver
+                     * @param name the method name
+                     * @param args the original Groovy argument payload
+                     * @return the invocation result
+                     */
                     @Override
                     public Object invokeMethod(Object object, String name, Object args) {
                         if (args == null) {
@@ -309,6 +428,14 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
                         }
                     }
 
+                    /**
+                     * Invokes an instance method and falls back to a cached global closure when needed.
+                     *
+                     * @param object the invocation receiver
+                     * @param name the method name
+                     * @param args the invocation arguments
+                     * @return the invocation result
+                     */
                     @Override
                     public Object invokeMethod(Object object, String name, Object[] args) {
                         try {
@@ -318,6 +445,14 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
                         }
                     }
 
+                    /**
+                     * Invokes a static method and falls back to a cached global closure when needed.
+                     *
+                     * @param object the invocation receiver
+                     * @param name the method name
+                     * @param args the invocation arguments
+                     * @return the invocation result
+                     */
                     @Override
                     public Object invokeStaticMethod(Object object, String name, Object[] args) {
                         try {
@@ -335,11 +470,26 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         }
     }
 
+    /**
+     * Returns the compiled class for the supplied script source, using the engine cache when possible.
+     *
+     * @param script the script source to compile
+     * @return the compiled script class
+     * @throws CompilationFailedException if compilation fails
+     */
     Class<?> getScriptClass(String script)
             throws CompilationFailedException {
         return getScriptClass(script, null);
     }
 
+    /**
+     * Returns the compiled class for the supplied script source, using the engine cache when possible.
+     *
+     * @param script the script source to compile
+     * @param context the optional script context used when generating a fallback script name
+     * @return the compiled script class
+     * @throws CompilationFailedException if compilation fails
+     */
     Class<?> getScriptClass(String script, ScriptContext context)
             throws CompilationFailedException {
         Class<?> clazz = classMap.get(script);
@@ -352,10 +502,20 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         return clazz;
     }
 
+    /**
+     * Replaces the class loader used for future script compilation.
+     *
+     * @param classLoader the class loader to use for subsequent compilations
+     */
     public void setClassLoader(GroovyClassLoader classLoader) {
         this.loader = classLoader;
     }
 
+    /**
+     * Returns the class loader currently used for script compilation.
+     *
+     * @return the active Groovy class loader
+     */
     public GroovyClassLoader getClassLoader() {
         return this.loader;
     }

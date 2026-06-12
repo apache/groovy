@@ -69,6 +69,12 @@ import java.util.stream.Collectors
 @CompileStatic
 class GinqAstOptimizer extends GinqAstBaseVisitor {
 
+    /**
+     * Visits a GINQ expression and rewrites join inputs when the optimization rules apply.
+     *
+     * @param ginqExpression the expression to optimize
+     * @return {@code null}
+     */
     @Override
     Void visitGinqExpression(GinqExpression ginqExpression) {
         super.visitGinqExpression(ginqExpression)

@@ -45,7 +45,7 @@ import java.lang.annotation.Target;
  * in any parameter list.
  * <p>
  * <em>Example usage:</em>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.AutoFinal}
  * class Person {
  *     final String first, last

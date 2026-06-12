@@ -85,30 +85,72 @@ class QueryableHelper {
         throw new TooManyValuesException("subquery returns more than one value: $list")
     }
 
+    /**
+     * Executes a supplier asynchronously on the shared thread pool.
+     *
+     * @param supplier the supplier to execute
+     * @return the asynchronous result
+     */
     static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
         return CompletableFuture.supplyAsync(supplier, ThreadPoolHolder.THREAD_POOL)
     }
 
+    /**
+     * Executes a single-argument function asynchronously on the shared thread pool.
+     *
+     * @param function the function to execute
+     * @param param the argument passed to the function
+     * @return the asynchronous result
+     */
     static <T, U> CompletableFuture<U> supplyAsync(Function<? super T, ? extends U> function, T param) {
         return CompletableFuture.supplyAsync(() -> { function.apply(param) }, ThreadPoolHolder.THREAD_POOL)
     }
 
+    /**
+     * Submits work to the shared fork-join pool.
+     *
+     * @param callable the task to submit
+     * @return the submitted task
+     */
     static <T> ForkJoinTask<T> submit(Callable<T> callable) {
         return ThreadPoolHolder.FORKJOIN_POOL.submit(callable)
     }
 
+    /**
+     * Indicates whether the current query is executing in parallel mode.
+     *
+     * @return {@code true} if parallel mode is enabled
+     */
     static boolean isParallel() {
         return TRUE_STR == getVar(PARALLEL)
     }
 
+    /**
+     * Stores a named execution variable in the thread-local context.
+     *
+     * @param name the variable name
+     * @param value the variable value
+     */
     static <T> void setVar(String name, T value) {
         VAR_HOLDER.get().put(name, value)
     }
 
+    /**
+     * Returns a named execution variable from the thread-local context.
+     *
+     * @param name the variable name
+     * @return the stored value
+     */
     static <T> T getVar(String name) {
         (T) VAR_HOLDER.get().get(name)
     }
 
+    /**
+     * Removes a named execution variable from the thread-local context.
+     *
+     * @param name the variable name
+     * @return the removed value
+     */
     static <T> T removeVar(String name) {
         (T) VAR_HOLDER.get().remove(name)
     }

@@ -26,10 +26,9 @@ pluginManagement {
     includeBuild("build-logic")
 }
 
-// check https://gradle.com/enterprise/releases with new versions. GE plugin version should not lag behind Gradle version
 plugins {
-    // Before updating this, please check the compatibility from https://docs.gradle.com/enterprise/compatibility/#develocity_compatibility and https://develocity.apache.org/scans.
-    id "com.gradle.develocity" version "4.3.2"
+    // Before updating this, please check the compatibility from https://docs.gradle.com/develocity/current/miscellaneous/compatibility/ and https://develocity.apache.org/scans.
+    id "com.gradle.develocity" version "4.4.2"
     id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.4.0'
 }
 
@@ -51,31 +50,44 @@ def subprojects = [
         'groovy-bom',
         'groovy-cli-commons',
         'groovy-cli-picocli',
+        'groovy-concurrent-java',
         'groovy-console',
         'groovy-contracts',
+        'groovy-csv',
         'groovy-datetime',
         'groovy-dateutil',
         'groovy-docgenerator',
+        'groovy-grape-ivy',
+        'groovy-grape-maven',
+        'groovy-grape-test',
         'groovy-groovydoc',
         'groovy-groovysh',
         'groovy-jmx',
         'groovy-json',
         'groovy-jsr223',
+        'groovy-logging-test',
         'groovy-ginq',
+        'groovy-http-builder',
+        'groovy-markdown',
         'groovy-macro',
         'groovy-macro-library',
         'groovy-nio',
+        'groovy-osgi-test',
         'groovy-servlet',
         'groovy-sql',
         'groovy-swing',
         'groovy-templates',
         'groovy-test',
         'groovy-test-junit5',
+        'groovy-test-junit6',
         'groovy-testng',
+        'groovy-reactor',
+        'groovy-rxjava',
         'groovy-toml',
         'groovy-typecheckers',
         'groovy-xml',
         'groovy-yaml',
+        'asciidoc-extensions',
         'performance',
         'tests-preview',
         'binary-compatibility',

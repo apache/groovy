@@ -41,16 +41,54 @@ import java.util.Set;
  */
 public interface VMPlugin {
 
+    /**
+     * Returns plugin-specific default Groovy methods.
+     *
+     * @return the default Groovy method classes contributed by this plugin
+     */
     Class[] getPluginDefaultGroovyMethods();
+
+    /**
+     * Returns plugin-specific static Groovy methods.
+     *
+     * @return the static Groovy method classes contributed by this plugin
+     */
     Class[] getPluginStaticGroovyMethods();
 
+    /**
+     * Adds VM-specific metadata to the given class node.
+     *
+     * @param node the class node to enrich
+     */
     void setAdditionalClassInformation(ClassNode node);
+
+    /**
+     * Configures the supplied class node from its runtime type information.
+     *
+     * @param unit the compile unit that owns the class node
+     * @param node the class node to configure
+     */
     void configureClassNode(CompileUnit unit, ClassNode node);
 
+    /**
+     * Copies runtime annotation metadata into the supplied annotation node.
+     *
+     * @param node the annotation node to configure
+     */
     void configureAnnotation(AnnotationNode node);
+
+    /**
+     * Copies values from an annotation definition onto another annotation node.
+     *
+     * @param definition the source annotation definition
+     * @param node the annotation node to update
+     */
     default void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode node) {
     }
 
+    /**
+     * Invalidates cached call sites maintained by the plugin.
+     */
     void invalidateCallSites();
 
     /**
@@ -134,7 +172,7 @@ public interface VMPlugin {
      * @param ao the accessible object
      * @return {@code true} if the {@code accessible} flag is set to {@code true};
      *         {@code false} if access cannot be enabled.
-     * @throws SecurityException if the request is denied by the security manager
+     * @throws SecurityException if the request is denied by the security manager (legacy comment)
      */
     boolean trySetAccessible(AccessibleObject ao);
 
@@ -147,28 +185,6 @@ public interface VMPlugin {
      * @return the transformed meta method
      */
     MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?> caller);
-
-    /**
-     * Performs the specified PrivilegedAction with privileges enabled on platforms
-     * which support that capability, otherwise the action is performed ignoring privileges.
-     *
-     * @param action the action to be performed
-     * @param <T> the type of the value returned by the PrivilegedAction's run method
-     * @return the value returned by the action's run method
-     */
-    @Deprecated
-    <T> T doPrivileged(java.security.PrivilegedAction<T> action);
-
-    /**
-     * Performs the specified PrivilegedExceptionAction with privileges enabled on platforms
-     * which support that capability, otherwise the action is performed ignoring privileges.
-     *
-     * @param action the action to be performed
-     * @param <T> the type of the value returned by the PrivilegedAction's run method
-     * @return the value returned by the action's run method
-     */
-    @Deprecated
-    <T> T doPrivileged(java.security.PrivilegedExceptionAction<T> action) throws java.security.PrivilegedActionException;
 
     /**
      * transform meta method.

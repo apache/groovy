@@ -33,6 +33,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
  */
 public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
 
+    /** {@inheritDoc} */
     @Override
     public ClassNode resolveType(final Expression exp, final ClassNode current) {
         ClassNode inferredType = exp.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE);

@@ -39,20 +39,47 @@ import java.util.Map;
  */
 public class BindingProxy extends GroovyObjectSupport implements BindingUpdatable {
 
+    /**
+     * The current model object exposed through generated bindings.
+     */
     Object model;
+    /**
+     * Indicates whether generated bindings are currently active.
+     */
     boolean bound;
 
+    /**
+     * Cached property bindings keyed by property name.
+     */
     final Map<String, PropertyBinding> propertyBindings = new HashMap<String, PropertyBinding>();
+    /**
+     * All generated full bindings created through this proxy.
+     */
     final List<FullBinding> generatedBindings = new ArrayList<FullBinding>();
 
+    /**
+     * Creates a proxy for the supplied model object.
+     *
+     * @param model the model object to expose
+     */
     public BindingProxy(Object model) {
         this.model = model;
     }
 
+    /**
+     * Returns the current model object.
+     *
+     * @return the current model
+     */
     public synchronized Object getModel() {
         return model;
     }
 
+    /**
+     * Replaces the proxied model and retargets all existing property bindings.
+     *
+     * @param model the new model object
+     */
     public synchronized void setModel(Object model) {
         // should we use a finer grained lock than this?
 
@@ -70,6 +97,12 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    /**
+     * Lazily creates and returns a half binding for the requested model property.
+     *
+     * @param property the property name to bind
+     * @return a generated half binding rooted at the requested property
+     */
     @Override
     public Object getProperty(String property) {
         PropertyBinding pb;
@@ -89,11 +122,20 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         return fb;
     }
 
+    /**
+     * Prevents direct writes to the proxy.
+     *
+     * @param property the property name being written
+     * @param value the attempted value
+     */
     @Override
     public void setProperty(String property, Object value) {
         throw new ReadOnlyPropertyException(property, getModel().getClass());
     }
 
+    /**
+     * Binds every generated full binding managed by this proxy.
+     */
     @Override
     public void bind() {
         synchronized (generatedBindings) {
@@ -107,6 +149,9 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    /**
+     * Unbinds every generated full binding managed by this proxy.
+     */
     @Override
     public void unbind() {
         synchronized (generatedBindings) {
@@ -120,6 +165,9 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    /**
+     * Rebinds every generated full binding while preserving the current bound state.
+     */
     @Override
     public void rebind() {
         synchronized (generatedBindings) {
@@ -132,6 +180,9 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    /**
+     * Pushes updates through every generated full binding.
+     */
     @Override
     public void update() {
         synchronized (generatedBindings) {
@@ -142,6 +193,9 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    /**
+     * Pushes reverse updates through every generated full binding.
+     */
     @Override
     public void reverseUpdate() {
         synchronized (generatedBindings) {
@@ -152,11 +206,27 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
         }
     }
 
+    /**
+     * Tracks generated bindings created for individual model properties.
+     */
     class ModelBindingPropertyBinding extends PropertyBinding {
+        /**
+         * Creates a property binding for the current model and property.
+         *
+         * @param bean the current model object
+         * @param propertyName the property to expose
+         */
         ModelBindingPropertyBinding(Object bean, String propertyName) {
             super(bean, propertyName);
         }
 
+        /**
+         * Creates a full binding and records it for later lifecycle management.
+         *
+         * @param source the binding source
+         * @param target the binding target
+         * @return the created full binding
+         */
         @Override
         public FullBinding createBinding(SourceBinding source, TargetBinding target) {
             FullBinding fb = super.createBinding(source, target);

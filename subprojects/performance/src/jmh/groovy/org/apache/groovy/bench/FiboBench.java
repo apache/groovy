@@ -31,6 +31,9 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Benchmark comparing Java and Groovy implementations of the Fibonacci function.
+ */
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(2)
@@ -42,11 +45,19 @@ public class FiboBench {
     @Param({"30", "31", "32", "33", "34"})
     private int n;
 
+    /**
+     * Baseline Java Fibonacci implementation.
+     * @return the computed Fibonacci value
+     */
     @Benchmark
     public int java() {
         return JavaFibo.fib(n);
     }
 
+    /**
+     * Groovy dynamic Fibonacci implementation.
+     * @return the computed Fibonacci value
+     */
     @Benchmark
     public int groovy() {
         return Fibo.fib(n);

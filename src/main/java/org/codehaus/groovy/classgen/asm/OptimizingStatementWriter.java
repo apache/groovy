@@ -89,6 +89,12 @@ import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 
+/**
+ * A {@link StatementWriter} that emits optimized fast-path bytecode for statements
+ * involving integer (and other primitive) operations. When type guards confirm that
+ * the operands have their original (unboxed) types, the fast path is taken;
+ * otherwise execution falls back to the standard dynamic-dispatch slow path.
+ */
 public class OptimizingStatementWriter extends StatementWriter {
 
     private static final MethodCaller disabledStandardMetaClass = MethodCaller.newStatic(BytecodeInterface8.class, "disabledStandardMetaClass");
@@ -108,6 +114,11 @@ public class OptimizingStatementWriter extends StatementWriter {
 
     private boolean fastPathBlocked;
 
+    /**
+     * Creates an optimizing statement writer backed by the given controller.
+     *
+     * @param controller the writer controller for the current compilation
+     */
     public OptimizingStatementWriter(final WriterController controller) {
         super(controller);
     }
@@ -159,6 +170,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         controller.switchToSlowPath();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeBlockStatement(final BlockStatement statement) {
         StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
@@ -182,6 +194,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeDoWhileLoop(final DoWhileStatement statement) {
         if (controller.isFastPath()) {
@@ -202,6 +215,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void writeIteratorHasNext(final MethodVisitor mv) {
         if (controller.isFastPath()) {
@@ -211,6 +225,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void writeIteratorNext(final MethodVisitor mv) {
         if (controller.isFastPath()) {
@@ -220,6 +235,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void writeForInLoop(final ForStatement statement) {
         if (controller.isFastPath()) {
@@ -240,6 +256,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void writeForLoopWithClosureList(final ForStatement statement) {
         if (controller.isFastPath()) {
@@ -260,6 +277,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeWhileLoop(final WhileStatement statement) {
         if (controller.isFastPath()) {
@@ -280,6 +298,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeIfElse(final IfStatement statement) {
         StatementMeta meta = statement.getNodeMetaData(StatementMeta.class);
@@ -298,6 +317,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeReturn(final ReturnStatement statement) {
         if (controller.isFastPath()) {
@@ -326,6 +346,7 @@ public class OptimizingStatementWriter extends StatementWriter {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeExpressionStatement(final ExpressionStatement statement) {
         if (controller.isFastPath()) {
@@ -414,6 +435,12 @@ public class OptimizingStatementWriter extends StatementWriter {
         return !controller.isFastPath();
     }
 
+    /**
+     * Populates optimization metadata for the supplied class.
+     *
+     * @param chooser the type chooser used during analysis
+     * @param classNode the class to annotate
+     */
     public static void setNodeMeta(final TypeChooser chooser, final ClassNode classNode) {
         if (classNode.getNodeMetaData(ClassNodeSkip.class) != null) return;
         new OptVisitor(chooser).visitClass(classNode);
@@ -433,6 +460,7 @@ public class OptimizingStatementWriter extends StatementWriter {
 
     //--------------------------------------------------------------------------
 
+    /** Marker metadata used to skip optimization analysis for a class node. */
     public static class ClassNodeSkip {
     }
 
@@ -441,13 +469,23 @@ public class OptimizingStatementWriter extends StatementWriter {
         private Label afterPath = new Label();
     }
 
+    /** Stores optimization metadata collected for a statement or expression. */
     public static class StatementMeta {
         private boolean optimize;
+        /** Resolved result type for the annotated node. */
         protected ClassNode type;
+        /** Direct-call target selected for the annotated node. */
         protected MethodNode target;
+        /** Variable declaration extracted from the annotated statement, if any. */
         protected VariableExpression declaredVariableExpression;
+        /** Primitive categories involved in the annotated node. */
         protected boolean[] involvedTypes = new boolean[typeMapKeyNames.length];
 
+        /**
+         * Merges the involved primitive categories from the supplied collector.
+         *
+         * @param opt the collector to merge from
+         */
         public void chainInvolvedTypes(final OptimizeFlagsCollector opt) {
             for (int i = 0, n = typeMapKeyNames.length; i < n; i += 1) {
                 if (opt.current.involvedTypes[i]) {
@@ -456,6 +494,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public String toString() {
             StringBuilder ret = new StringBuilder();
@@ -482,11 +521,19 @@ public class OptimizingStatementWriter extends StatementWriter {
         private OptimizeFlagsEntry current = new OptimizeFlagsEntry();
         private final Deque<OptimizeFlagsEntry> previous = new LinkedList<>();
 
+        /**
+         * Starts collecting optimization flags for a nested analysis scope.
+         */
         public void push() {
             previous.push(current);
             current = new OptimizeFlagsEntry();
         }
 
+        /**
+         * Restores the previous analysis scope and optionally propagates collected flags.
+         *
+         * @param propagateFlags whether collected flags should be merged into the parent scope
+         */
         public void pop(final boolean propagateFlags) {
             OptimizeFlagsEntry old = current;
             current = previous.pop();
@@ -499,6 +546,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public String toString() {
             StringBuilder ret = new StringBuilder();
@@ -546,12 +594,20 @@ public class OptimizingStatementWriter extends StatementWriter {
             current.canOptimize = current.canOptimize || opt;
         }
 
+        /**
+         * Marks the primitive category for the supplied type as involved in the current scope.
+         *
+         * @param type the primitive-related type to record
+         */
         public void chainInvolvedType(final ClassNode type) {
             Integer res = typeMap.get(type);
             if (res == null) return;
             current.involvedTypes[res] = true;
         }
 
+        /**
+         * Clears all collected optimization flags for the current scope.
+         */
         public void reset() {
             current.canOptimize = false;
             current.shouldOptimize = false;
@@ -567,15 +623,22 @@ public class OptimizingStatementWriter extends StatementWriter {
         private VariableScope scope;
         private ClassNode node;
 
+        /**
+         * Creates an optimization visitor using the supplied type chooser.
+         *
+         * @param chooser the type chooser used to resolve expression types
+         */
         OptVisitor(final TypeChooser chooser) {
             this.typeChooser = chooser;
         }
 
+        /** {@inheritDoc} */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitClass(final ClassNode node) {
             this.optimizeMethodCall = !node.implementsInterface(GROOVY_INTERCEPTABLE_TYPE);
@@ -586,6 +649,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             this.node = null;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitConstructor(final ConstructorNode node) {
             scope = node.getVariableScope();
@@ -593,6 +657,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             opt.reset();
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitMethod(final MethodNode node) {
             scope = node.getVariableScope();
@@ -602,6 +667,7 @@ public class OptimizingStatementWriter extends StatementWriter {
 
         // statements:
 
+        /** {@inheritDoc} */
         @Override
         public void visitBlockStatement(final BlockStatement statement) {
             opt.push();
@@ -624,6 +690,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitExpressionStatement(final ExpressionStatement statement) {
             if (statement.getNodeMetaData(StatementMeta.class) != null) return;
@@ -635,6 +702,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             opt.pop(opt.shouldOptimize());
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitForLoop(final ForStatement statement) {
             opt.push();
@@ -645,6 +713,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             opt.pop(opt.shouldOptimize());
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitIfElse(final IfStatement statement) {
             opt.push();
@@ -655,6 +724,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             opt.pop(opt.shouldOptimize());
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitReturnStatement(final ReturnStatement statement) {
             opt.push();
@@ -667,6 +737,7 @@ public class OptimizingStatementWriter extends StatementWriter {
 
         // expressions:
 
+        /** {@inheritDoc} */
         @Override
         public void visitBinaryExpression(final BinaryExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class) != null) return;
@@ -757,6 +828,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
             // TODO: implement int operations for this
@@ -764,10 +836,12 @@ public class OptimizingStatementWriter extends StatementWriter {
             addMeta(expression).type = OBJECT_TYPE;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitClosureExpression(final ClosureExpression expression) {
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class) != null) return;
@@ -776,6 +850,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             //setMethodTarget(call, "<init>", call.getArguments(), false);
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitDeclarationExpression(final DeclarationExpression expression) {
             Expression rightExpression = expression.getRightExpression();
@@ -797,6 +872,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitMethodCallExpression(final MethodCallExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class) != null) return;
@@ -807,18 +883,21 @@ public class OptimizingStatementWriter extends StatementWriter {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitPostfixExpression(final PostfixExpression expression) {
             super.visitPostfixExpression(expression);
             addTypeInformation(expression.getExpression(), expression);
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitPrefixExpression(final PrefixExpression expression) {
             super.visitPrefixExpression(expression);
             addTypeInformation(expression.getExpression(), expression);
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitStaticMethodCallExpression(final StaticMethodCallExpression expression) {
             if (expression.getNodeMetaData(StatementMeta.class) != null) return;
@@ -826,6 +905,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             setMethodTarget(expression, expression.getMethod(), expression.getArguments(), true);
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
             // TODO: implement int operations for this
@@ -833,6 +913,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             addMeta(expression).type = OBJECT_TYPE;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
             // TODO: implement int operations for this

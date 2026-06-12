@@ -42,16 +42,25 @@ public class ListHashMap<K,V> implements Map<K,V> {
     private Map<K,V> innerMap;
     private int size;
 
+    /**
+     * Creates a map that keeps up to three entries in array-backed storage.
+     */
     public ListHashMap() {
         this(3);
     }
 
+    /**
+     * Creates a map that keeps up to {@code listSize} entries in array-backed storage.
+     *
+     * @param listSize the number of entries to keep in arrays before promoting to a backing map
+     */
     @SuppressWarnings("unchecked")
     public ListHashMap(int listSize) {
         keys = (K[]) new Object[listSize];
         values = (V[]) new Object[listSize];
     }
 
+    /** {@inheritDoc} */
     @Override
     public void clear() {
         innerMap = null;
@@ -66,6 +75,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean containsKey(Object key) {
         if (key != null) {
@@ -79,6 +89,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean containsValue(Object value) {
         if (value != null) {
@@ -92,11 +103,13 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Set<Entry<K,V>> entrySet() {
         return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).entrySet();
     }
 
+    /** {@inheritDoc} */
     @Override
     public V get(Object key) {
         if (key != null) {
@@ -110,16 +123,19 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isEmpty() {
         return (size == 0);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Set<K> keySet() {
         return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).keySet();
     }
 
+    /** {@inheritDoc} */
     @Override
     public V put(K key, V value) {
         if (key != null) {
@@ -153,6 +169,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
@@ -160,6 +177,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public V remove(Object key) {
         if (key != null) {
@@ -196,6 +214,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
         return size;
@@ -209,6 +228,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
         return m;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Collection<V> values() {
         return (innerMap != null ? Collections.unmodifiableMap(innerMap) : toMap()).values();

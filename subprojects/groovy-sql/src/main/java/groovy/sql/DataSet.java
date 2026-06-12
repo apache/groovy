@@ -32,6 +32,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,9 +68,10 @@ import java.util.Set;
  * }
  * </pre>
  * Currently, the Groovy source code for any accessed POGO must be on the
- * classpath at runtime. Also, at the moment, the expressions (or nested expressions) can only contain
- * references to fields of the POGO or literals (i.e. constant Strings or numbers). This limitation
- * may be removed in a future version of Groovy.
+ * classpath at runtime. The expressions (or nested expressions) can contain
+ * references to fields of the POGO, literals (i.e. constant Strings or numbers),
+ * and variables captured from the enclosing scope. Method calls, arithmetic,
+ * and other complex expressions are not currently supported.
  */
 public class DataSet extends Sql {
 
@@ -89,6 +91,12 @@ public class DataSet extends Sql {
     private final Sql delegate;
     private boolean withinDataSetBatch = false;
 
+    /**
+     * Creates a {@code DataSet} whose table name is derived from the supplied type.
+     *
+     * @param sql the backing {@link Sql} instance
+     * @param type the type whose simple name identifies the table
+     */
     public DataSet(Sql sql, Class type) {
         super(sql);
         delegate = sql;
@@ -97,9 +105,15 @@ public class DataSet extends Sql {
         if (idx > 0) {
             table = table.substring(idx + 1);
         }
-        this.table = table.toLowerCase();
+        this.table = table.toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Creates a {@code DataSet} for the supplied table.
+     *
+     * @param sql the backing {@link Sql} instance
+     * @param table the table name to query and update
+     */
     public DataSet(Sql sql, String table) {
         super(sql);
         delegate = sql;
@@ -131,36 +145,71 @@ public class DataSet extends Sql {
         this.reversed = true;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Delegates connection creation to the backing {@link Sql} instance.
+     */
     @Override
     protected Connection createConnection() throws SQLException {
         return delegate.createConnection();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Delegates resource cleanup to the backing {@link Sql} instance.
+     */
     @Override
     protected void closeResources(Connection connection, java.sql.Statement statement, ResultSet results) {
         delegate.closeResources(connection, statement, results);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Delegates resource cleanup to the backing {@link Sql} instance.
+     */
     @Override
     protected void closeResources(Connection connection, java.sql.Statement statement) {
         delegate.closeResources(connection, statement);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Delegates connection caching to the backing {@link Sql} instance.
+     */
     @Override
     public void cacheConnection(Closure closure) throws SQLException {
         delegate.cacheConnection(closure);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Delegates transaction handling to the backing {@link Sql} instance.
+     */
     @Override
     public void withTransaction(Closure closure) throws SQLException {
         delegate.withTransaction(closure);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Delegates commit handling to the backing {@link Sql} instance.
+     */
     @Override
     public void commit() throws SQLException {
         delegate.commit();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Delegates rollback handling to the backing {@link Sql} instance.
+     */
     @Override
     public void rollback() throws SQLException {
         delegate.rollback();
@@ -385,6 +434,11 @@ public class DataSet extends Sql {
         return parentClaus + ", " + sortByClaus;
     }
 
+    /**
+     * Returns the lazily assembled SQL query represented by this {@code DataSet}.
+     *
+     * @return the SQL query for the current chained view
+     */
     public String getSql() {
         if (sql == null) {
             sql = "select * from " + table;
@@ -400,6 +454,11 @@ public class DataSet extends Sql {
         return sql;
     }
 
+    /**
+     * Returns the positional parameter values corresponding to {@link #getSql()}.
+     *
+     * @return the parameters for the current chained view
+     */
     public List<Object> getParameters() {
         if (params == null) {
             params = new ArrayList<Object>();
@@ -411,14 +470,25 @@ public class DataSet extends Sql {
         return params;
     }
 
+    /**
+     * Returns the lazily initialized visitor used to derive the SQL {@code WHERE} clause.
+     *
+     * @return the visitor for the current filter closure
+     */
     protected SqlWhereVisitor getSqlWhereVisitor() {
         if (visitor == null) {
             visitor = new SqlWhereVisitor();
+            visitor.setClosure(where);
             visit(where, visitor);
         }
         return visitor;
     }
 
+    /**
+     * Returns the lazily initialized visitor used to derive the SQL {@code ORDER BY} clause.
+     *
+     * @return the visitor for the current sort closure
+     */
     protected SqlOrderByVisitor getSqlOrderByVisitor() {
         if (sortVisitor == null) {
             sortVisitor = new SqlOrderByVisitor();
@@ -448,9 +518,12 @@ public class DataSet extends Sql {
         }
     }
 
-    /*
-    * create a subset of the original dataset
-    */
+    /**
+     * create a subset of the original dataset.
+     *
+     * @param criteria the filter closure describing the subset
+     * @return a new {@code DataSet} view
+     */
     public DataSet createView(Closure criteria) {
         return new DataSet(this, criteria);
     }
@@ -491,6 +564,9 @@ public class DataSet extends Sql {
         return (rows.get(0));
     }
 
+    /**
+     * Closes this {@code DataSet} and its backing {@link Sql} resources.
+     */
     @Override
     public void close() {
         delegate.close();

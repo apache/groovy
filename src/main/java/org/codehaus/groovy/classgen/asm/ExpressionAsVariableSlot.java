@@ -36,16 +36,32 @@ public class ExpressionAsVariableSlot extends BytecodeExpression {
     private final WriterController controller;
     private final String name;
 
+    /**
+     * Creates an expression that stores an expression result in a temporary variable.
+     *
+     * @param controller the writer controller
+     * @param expression the expression to evaluate and store
+     * @param name the name for the temporary variable
+     */
     public ExpressionAsVariableSlot(WriterController controller, Expression expression, String name) {
         this.exp = expression;
         this.controller = controller;
         this.name = name;
     }
 
+    /**
+     * Creates an expression that stores an expression result in a temporary variable.
+     *
+     * @param controller the writer controller
+     * @param expression the expression to evaluate and store
+     */
     public ExpressionAsVariableSlot(WriterController controller, Expression expression) {
         this(controller, expression, "ExpressionAsVariableSlot_TEMP");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visit(MethodVisitor mv) {
         OperandStack os = controller.getOperandStack();
@@ -73,6 +89,9 @@ public class ExpressionAsVariableSlot extends BytecodeExpression {
         return index;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getText() {
         return exp.getText();

@@ -26,28 +26,68 @@ import org.codehaus.groovy.runtime.StringGroovyMethods
 
 import java.lang.reflect.Array
 
+/**
+ * Provides typed and dynamic access to parsed command-line options.
+ */
 class OptionAccessor {
+    /**
+     * The parsed command line.
+     */
     CommandLine commandLine
+
+    /**
+     * Typed option metadata keyed by long name or short name.
+     */
     Map<String, TypedOption> savedTypeOptions
 
+    /**
+     * Creates an accessor for the supplied parsed command line.
+     *
+     * @param commandLine the parsed command line
+     */
     OptionAccessor(CommandLine commandLine) {
         this.commandLine = commandLine
     }
 
+    /**
+     * Checks whether the supplied typed option was specified.
+     *
+     * @param typedOption the option metadata
+     * @return {@code true} if the option is present
+     */
     boolean hasOption(TypedOption typedOption) {
         commandLine.hasOption(typedOption.longOpt ?: typedOption.opt)
     }
 
+    /**
+     * Returns the converted default value for the named option.
+     *
+     * @param name the option name
+     * @return the converted default value, or {@code null} if none is defined
+     */
     public <T> T defaultValue(String name) {
         Class<T> type = savedTypeOptions[name]?.type
         String value = savedTypeOptions[name]?.defaultValue() ? savedTypeOptions[name].defaultValue() : null
         return (T) value ? getTypedValue(type, name, value) : null
     }
 
+    /**
+     * Returns the typed value for the supplied option.
+     *
+     * @param typedOption the option metadata
+     * @return the converted option value, or {@code null} if the option is absent
+     */
     public <T> T getOptionValue(TypedOption<T> typedOption) {
         getOptionValue(typedOption, null)
     }
 
+    /**
+     * Returns the typed value for the supplied option, falling back to the given default.
+     *
+     * @param typedOption the option metadata
+     * @param defaultValue the value to return when the option is absent
+     * @return the converted option value or {@code defaultValue}
+     */
     public <T> T getOptionValue(TypedOption<T> typedOption, T defaultValue) {
         String optionName = (String) typedOption.longOpt ?: typedOption.opt
         if (commandLine.hasOption(optionName)) {
@@ -79,10 +119,24 @@ class OptionAccessor {
         return result
     }
 
+    /**
+     * Returns the typed value for the supplied option using subscript syntax.
+     *
+     * @param typedOption the option metadata
+     * @return the converted option value, or {@code null} if the option is absent
+     */
     public <T> T getAt(TypedOption<T> typedOption) {
         getAt(typedOption, null)
     }
 
+    /**
+     * Returns the typed value for the supplied option using subscript syntax,
+     * falling back to the given default.
+     *
+     * @param typedOption the option metadata
+     * @param defaultValue the value to return when the option is absent
+     * @return the converted option value or {@code defaultValue}
+     */
     public <T> T getAt(TypedOption<T> typedOption, T defaultValue) {
         String optionName = (String) typedOption.longOpt ?: typedOption.opt
         if (savedTypeOptions.containsKey(optionName)) {
@@ -112,16 +166,29 @@ class OptionAccessor {
         if (Closure.isAssignableFrom(type) && convert) {
             return (T) convert(optionValue)
         }
-        if (type?.simpleName?.toLowerCase() == 'boolean') {
+        if (type?.simpleName?.toLowerCase(Locale.ROOT) == 'boolean') {
             return (T) Boolean.parseBoolean(optionValue)
         }
         StringGroovyMethods.asType(optionValue, (Class<T>) type)
     }
 
+    /**
+     * Delegates unknown method calls to the underlying {@link CommandLine}.
+     *
+     * @param name the method name
+     * @param args the method arguments
+     * @return the delegated result
+     */
     def invokeMethod(String name, Object args) {
         return InvokerHelper.getMetaClass(commandLine).invokeMethod(commandLine, name, args)
     }
 
+    /**
+     * Supports property-style access to option values and flags.
+     *
+     * @param name the property name
+     * @return the option value, default value, or flag state
+     */
     def getProperty(String name) {
         if (!savedTypeOptions.containsKey(name)) {
             def alt = savedTypeOptions.find{ it.value.opt == name }
@@ -157,6 +224,11 @@ class OptionAccessor {
         return result
     }
 
+    /**
+     * Returns the remaining non-option arguments.
+     *
+     * @return the remaining arguments
+     */
     List<String> arguments() {
         commandLine.args.toList()
     }

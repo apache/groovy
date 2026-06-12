@@ -32,6 +32,7 @@ import org.apache.groovy.internal.util.UncheckedThrow;
  * The nature of this class allows a per instance caching instead of a per class
  * caching like the normal {@link CallSiteArray} logic.
  */
+@Deprecated(since = "6.0.0", forRemoval = true)
 public class BooleanReturningMethodInvoker {
     private final CallSiteArray csa;
 

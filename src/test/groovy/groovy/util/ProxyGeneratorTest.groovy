@@ -19,12 +19,16 @@
 package groovy.util
 
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 class ProxyGeneratorTest {
 
     ProxyGenerator generator = ProxyGenerator.INSTANCE
 
+    @Test
     void testAggregateFromBaseClass() {
         Map map = [myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
         def testClass = generator.instantiateAggregateFromBaseClass(map, TestClass)
@@ -34,6 +38,7 @@ class ProxyGeneratorTest {
         assert testClass.myMethodX() == "the injected X"
     }
 
+    @Test
     void testAggregateFromAbstractBaseClass() {
         Map map = [myMethodG: {"the concrete G"}, myMethodX: {"the injected X"}]
         def testClass = generator.instantiateAggregateFromBaseClass(map, AbstractClass)
@@ -43,6 +48,7 @@ class ProxyGeneratorTest {
         assert testClass.myMethodX() == "the injected X"
     }
 
+    @Test
     void testAggregateFromInterface() {
         Map map = [myMethodC: {"the injected C"}]
         def testClass = generator.instantiateAggregateFromInterface(map, TestInterface)
@@ -51,6 +57,7 @@ class ProxyGeneratorTest {
         assert testClass.myMethodC() == "the injected C"
     }
 
+    @Test
     void testAggregate() {
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
         def testClass = generator.instantiateAggregate(map, [TestInterface, TestOtherInterface], TestClass)
@@ -63,6 +70,7 @@ class ProxyGeneratorTest {
         assert testClass.myMethodE() == "the injected E"
     }
 
+    @Test
     void testDelegate() {
         def delegate = new TestClass()
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
@@ -75,6 +83,7 @@ class ProxyGeneratorTest {
         assert testClass.myMethodE() == "the injected E"
     }
 
+    @Test
     void testDelegateWithBaseClass() {
         def delegate = new TestClass()
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
@@ -87,6 +96,7 @@ class ProxyGeneratorTest {
         assert testClass.myMethodE() == "the injected E"
     }
 
+    @Test
     void testDelegateForGROOVY_2705() {
         def delegate = [1, 2, 3, 4, 5]
         def testClass = generator.instantiateDelegate([List], delegate)
@@ -101,6 +111,7 @@ class ProxyGeneratorTest {
         assert [1, 99, 5] == testClass
     }
 
+    @Test
     void testUnknownMethodThrowsUnsupportedOperationException() {
         def map = [ myMethodA: { 'some string' } ]
         def proxy = ProxyGenerator.instantiateAggregateFromInterface(map, TestInterface)
@@ -111,6 +122,7 @@ class ProxyGeneratorTest {
         }
     }
 
+    @Test
     void testUnknownMethodWithBlankBody() {
         def map = [ myMethodA: { 'some string' } ]
         def gen = new ProxyGenerator()
@@ -121,6 +133,7 @@ class ProxyGeneratorTest {
         proxy.myMethodC()
     }
 
+    @Test
     void testProxyWithToString() {
         def map = [ toString: {'hello'} ]
         def gen = new ProxyGenerator()
@@ -128,6 +141,7 @@ class ProxyGeneratorTest {
         assert proxy.toString() == 'hello'
     }
 
+    @Test
     void testProxyWithClosureChangedAfterCreation() {
         def map = [ toString: { 'hello'} ]
         def gen = new ProxyGenerator()
@@ -137,6 +151,7 @@ class ProxyGeneratorTest {
         assert proxy.toString() == 'world'
     }
 
+    @Test
     void testProxyMethodUsingLongAsParameter() {
         def map = [ foo: { a,b -> a*b }]
         def gen = new ProxyGenerator()
@@ -144,6 +159,7 @@ class ProxyGeneratorTest {
         assert proxy.foo(3,3) == 9
     }
 
+    @Test
     void testProxyMethodUsingDoubleAsParameter() {
         def map = [ foo: { a,b -> a*b }]
         def gen = new ProxyGenerator()
@@ -151,6 +167,7 @@ class ProxyGeneratorTest {
         assert proxy.foo(3d,3d) == 9d
     }
 
+    @Test
     void testProxyMethodUsingVariousTypesAsParameters() {
         def map = [ foo: { a,b,c,d -> a*b+c-d }]
         def gen = new ProxyGenerator()

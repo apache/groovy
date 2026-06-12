@@ -24,8 +24,18 @@ package groovy.mock.interceptor
  */
 class Ignore {
 
+    /**
+     * Owning {@link MockFor} or {@link StubFor} instance receiving ignore registrations.
+     */
     def parent // point back to original MockFor/StubFor
 
+    /**
+     * Registers an ignored method using the {@code ignore.methodName(...)} shorthand.
+     *
+     * @param methodName the method name to ignore
+     * @param args optional single behavior closure
+     * @return {@code null}
+     */
     Object invokeMethod(String methodName, Object args) {
         if (args && args.size() > 1) {
             throw new IllegalArgumentException("Ranges/repetitions not supported for ignored method '$methodName'.")

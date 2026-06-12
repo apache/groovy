@@ -28,22 +28,32 @@ public class SimpleGroovyTag implements GroovyTag {
     private final String param;
     private final String text;
 
+    /**
+     * Creates a stored tag representation.
+     *
+     * @param name the tag name
+     * @param param the optional tag parameter
+     * @param text the tag body text
+     */
     public SimpleGroovyTag(String name, String param, String text) {
         this.name = name;
         this.param = param;
         this.text = text;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String name() {
         return name;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String param() {
         return param;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String text() {
         return text;

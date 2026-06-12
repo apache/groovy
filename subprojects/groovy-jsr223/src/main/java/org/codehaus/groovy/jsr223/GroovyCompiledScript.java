@@ -62,16 +62,34 @@ public class GroovyCompiledScript extends CompiledScript {
     private final GroovyScriptEngineImpl engine;
     private final Class<?> clasz;
 
+    /**
+     * Creates a compiled-script wrapper for a Groovy class produced by an engine instance.
+     *
+     * @param engine the engine that compiled the script
+     * @param clazz the compiled script class
+     */
     public GroovyCompiledScript(GroovyScriptEngineImpl engine, Class<?> clazz) {
         this.engine = engine;
         this.clasz = clazz;
     }
 
+    /**
+     * Evaluates the compiled script with the supplied script context.
+     *
+     * @param context the execution context to use
+     * @return the script result, or the compiled class when it does not extend {@code Script}
+     * @throws ScriptException if evaluation fails
+     */
     @Override
     public Object eval(ScriptContext context) throws ScriptException {
         return engine.eval(clasz, context);
     }
 
+    /**
+     * Returns the engine that produced this compiled script.
+     *
+     * @return the owning Groovy script engine
+     */
     @Override
     public ScriptEngine getEngine() {
         return engine;

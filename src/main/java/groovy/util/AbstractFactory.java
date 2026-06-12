@@ -22,43 +22,54 @@ import groovy.lang.Closure;
 
 import java.util.Map;
 
+/**
+ * Base {@link Factory} implementation with default no-op lifecycle hooks.
+ */
 public abstract class AbstractFactory implements Factory {
+    /** {@inheritDoc} */
     @Override
     public boolean isLeaf() {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isHandlesNodeChildren() {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onFactoryRegistration(FactoryBuilderSupport builder, String registeredName, String group) {
         // do nothing
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node,
                                           Map attributes ) {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node ) {
         // do nothing
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setParent(FactoryBuilderSupport builder, Object parent, Object child ) {
         // do nothing
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child ) {
         // do nothing

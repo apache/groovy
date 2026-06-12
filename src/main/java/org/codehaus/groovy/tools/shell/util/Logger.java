@@ -30,7 +30,13 @@ import static org.jline.jansi.Ansi.ansi;
  * Provides a very, very basic logging API.
  */
 public final class Logger {
+    /**
+     * Shared shell I/O used to emit log messages.
+     */
     public static volatile IO io;
+    /**
+     * Logger name shown in rendered log messages.
+     */
     public final String name;
 
     private Logger(final String name) {
@@ -89,20 +95,41 @@ public final class Logger {
 
     private static final String DEBUG = "DEBUG";
 
+    /**
+     * Returns whether debug-level logging is currently enabled.
+     *
+     * @return {@code true} if debug messages should be emitted
+     */
     public boolean isDebugEnabled() {
         return Preferences.verbosity == IO.Verbosity.DEBUG;
     }
 
+    /**
+     * Alias for {@link #isDebugEnabled()}.
+     *
+     * @return {@code true} if debug messages should be emitted
+     */
     public boolean isDebug() {
         return isDebugEnabled();
     }
 
+    /**
+     * Logs a debug message when debug output is enabled.
+     *
+     * @param msg the message to log
+     */
     public void debug(final Object msg) {
         if (isDebugEnabled()) {
             log(DEBUG, msg, null);
         }
     }
 
+    /**
+     * Logs a debug message and cause when debug output is enabled.
+     *
+     * @param msg the message to log
+     * @param cause the associated cause
+     */
     public void debug(final Object msg, final Throwable cause) {
         if (isDebugEnabled()) {
             log(DEBUG, msg, cause);
@@ -111,20 +138,42 @@ public final class Logger {
 
     private static final String WARN = "WARN";
 
+    /**
+     * Logs a warning message.
+     *
+     * @param msg the message to log
+     */
     public void warn(final Object msg) {
         log(WARN, msg, null);
     }
 
+    /**
+     * Logs a warning message and cause.
+     *
+     * @param msg the message to log
+     * @param cause the associated cause
+     */
     public void warn(final Object msg, final Throwable cause) {
         log(WARN, msg, cause);
     }
 
     private static final String ERROR = "ERROR";
 
+    /**
+     * Logs an error message.
+     *
+     * @param msg the message to log
+     */
     public void error(final Object msg) {
         log(ERROR, msg, null);
     }
 
+    /**
+     * Logs an error message and cause.
+     *
+     * @param msg the message to log
+     * @param cause the associated cause
+     */
     public void error(final Object msg, final Throwable cause) {
         log(ERROR, msg, cause);
     }
@@ -133,10 +182,23 @@ public final class Logger {
     // Factory access
     //
 
+    /**
+     * Creates a logger named after the supplied type.
+     *
+     * @param type the type whose name should be used
+     * @return a logger for the type
+     */
     public static Logger create(final Class type) {
         return new Logger(type.getName());
     }
 
+    /**
+     * Creates a logger named after the supplied type plus a suffix.
+     *
+     * @param type the base type whose name should be used
+     * @param suffix the suffix to append
+     * @return a logger for the type and suffix
+     */
     public static Logger create(final Class type, final String suffix) {
         return new Logger(type.getName() + "." + suffix);
     }

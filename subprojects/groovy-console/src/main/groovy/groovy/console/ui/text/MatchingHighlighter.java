@@ -71,6 +71,12 @@ public class MatchingHighlighter implements CaretListener {
     );
     private volatile List<Tuple3<Integer, Position, Integer>> highlightedTokenInfoList = Collections.emptyList();
 
+    /**
+     * Creates a highlighter bound to the supplied document filter and editor.
+     *
+     * @param smartDocumentFilter the token source used to find matching delimiters
+     * @param textEditor the text pane whose delimiters are highlighted
+     */
     public MatchingHighlighter(SmartDocumentFilter smartDocumentFilter, JTextPane textEditor) {
         this.smartDocumentFilter = smartDocumentFilter;
         this.textEditor = textEditor;
@@ -79,11 +85,17 @@ public class MatchingHighlighter implements CaretListener {
         initStyles();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void caretUpdate(CaretEvent e) {
         highlight();
     }
 
+    /**
+     * Schedules highlighting for the delimiter nearest the caret.
+     */
     public void highlight() {
         // `SwingUtilities.invokeLater` is used to avoid "java.lang.IllegalStateException: Attempt to mutate in notification"
         SwingUtilities.invokeLater(this::doHighlight);

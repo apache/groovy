@@ -52,20 +52,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FileReader;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * Swing application to graphically display the tokens produced by the lexer.
  */
 public class LexerFrame extends JFrame implements ActionListener {
-    private static final long serialVersionUID = 2715693043143492893L;
+    private static final System.Logger LOGGER = System.getLogger(LexerFrame.class.getName());
+    @Serial private static final long serialVersionUID = 2715693043143492893L;
     private static final Class<GroovyLexer> TOKEN_TYPES_CLASS = GroovyLexer.class;
     private static final Font MONOSPACED_FONT = new Font("Monospaced", Font.PLAIN, 12);
     private final JSplitPane jSplitPane1 = new JSplitPane();
@@ -160,7 +159,7 @@ public class LexerFrame extends JFrame implements ActionListener {
     }
 
     private final Action loadFileAction = new AbstractAction("Open File...") {
-        private static final long serialVersionUID = 4541927184172762704L;
+        @Serial private static final long serialVersionUID = 4541927184172762704L;
 
         @Override
         public void actionPerformed(ActionEvent ae) {
@@ -292,7 +291,7 @@ public class LexerFrame extends JFrame implements ActionListener {
         if (args.length == 0) {
             lexerFrame = new LexerFrame();
         } else if (args.length > 1) {
-            System.err.println("usage: java LexerFrame [filename.ext]");
+            LOGGER.log(System.Logger.Level.ERROR, "usage: java LexerFrame [filename.ext]");
             System.exit(1);
         } else {
             String filename = args[0];
@@ -303,7 +302,7 @@ public class LexerFrame extends JFrame implements ActionListener {
     }
 
     private static class HScrollableTextPane extends JTextPane {
-        private static final long serialVersionUID = -8582328309470654441L;
+        @Serial private static final long serialVersionUID = -8582328309470654441L;
 
         @Override
         public boolean getScrollableTracksViewportWidth() {

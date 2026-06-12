@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the /prnt command.
  */
 class PrntTest extends SystemTestSupport {
+    @Test
     void testPrntVariable() {
         assert !console.hasVariable('foo')
         console.execute('dummyName', "foo = 'bar'")

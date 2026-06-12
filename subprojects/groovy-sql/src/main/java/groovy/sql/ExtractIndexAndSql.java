@@ -36,6 +36,7 @@ class ExtractIndexAndSql {
 
     private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?<!:)(:)(\\w+)|\\?(\\d*)(?:\\.(\\w+))?");
     private static final char QUOTE = '\'';
+    private static final char DOUBLE_QUOTE = '"';
 
     private final String sql;
     private List<Tuple<?>> indexPropList;
@@ -71,10 +72,20 @@ class ExtractIndexAndSql {
         this.sql = sql;
     }
 
+    /**
+     * Returns the indexed property descriptors extracted from the original SQL.
+     *
+     * @return the indexed property descriptors in placeholder order
+     */
     List<Tuple<?>> getIndexPropList() {
         return indexPropList;
     }
 
+    /**
+     * Returns the SQL rewritten to use JDBC positional placeholders.
+     *
+     * @return the rewritten SQL
+     */
     String getNewSql() {
         return newSql;
     }
@@ -89,6 +100,11 @@ class ExtractIndexAndSql {
                     sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
                     currentChunk = new StringBuilder();
                     appendToEndOfString(sb);
+                    break;
+                case DOUBLE_QUOTE:
+                    sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
+                    currentChunk = new StringBuilder();
+                    appendToEndOfIdentifier(sb);
                     break;
                 case '-':
                     if (next() == '-') {
@@ -155,6 +171,27 @@ class ExtractIndexAndSql {
             --pos;
         }
         return (index - 1) - pos;
+    }
+
+    // Skip past a double-quoted identifier (SQL-standard delimited identifier).
+    // Contents are opaque: a doubled "" is an embedded quote; a lone " ends the identifier.
+    private void appendToEndOfIdentifier(StringBuilder buffer) {
+        buffer.append(DOUBLE_QUOTE);
+        ++index;
+        while (index < sql.length()) {
+            char c = sql.charAt(index);
+            buffer.append(c);
+            if (c == DOUBLE_QUOTE) {
+                if (next() == DOUBLE_QUOTE) {
+                    buffer.append(DOUBLE_QUOTE);
+                    ++index;
+                } else {
+                    return;
+                }
+            }
+            ++index;
+        }
+        throw new IllegalStateException("Failed to process query. Unterminated \" character?");
     }
 
     private void appendToEndOfComment(StringBuilder buffer) {

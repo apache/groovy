@@ -26,12 +26,23 @@ import javax.swing.text.AttributeSet
 import javax.swing.text.SimpleAttributeSet
 import java.awt.event.ActionEvent
 
+/**
+ * Inserts a newline that preserves the indentation of the current line.
+ */
 @CompileStatic
 class AutoIndentAction extends AbstractAction {
     private static final long serialVersionUID = -2680684287296849370L
 
+    /**
+     * Attributes used for inserted text.
+     */
     AttributeSet simpleAttributeSet = new SimpleAttributeSet()
 
+    /**
+     * Inserts a newline and copies the leading whitespace of the current line.
+     *
+     * @param evt the action event providing the target text pane
+     */
     void actionPerformed(ActionEvent evt) {
         JTextPane inputArea = (JTextPane) evt.source
         def rootElement = inputArea.document.defaultRootElement

@@ -32,6 +32,11 @@ public class Contract {
     private final AssertionMap<Precondition> preconditions;
     private final AssertionMap<Postcondition> postconditions;
 
+    /**
+     * Creates a contract model for the supplied class.
+     *
+     * @param classNode the class described by this contract
+     */
     public Contract(final ClassNode classNode) {
         Validate.notNull(classNode);
 
@@ -40,27 +45,57 @@ public class Contract {
         this.postconditions = new AssertionMap<>();
     }
 
+    /**
+     * Returns the class represented by this contract.
+     *
+     * @return the contracted class node
+     */
     public ClassNode classNode() {
         return classNode;
     }
 
+    /**
+     * Replaces the class invariant associated with this contract.
+     *
+     * @param classInvariant the invariant to store
+     */
     public void setClassInvariant(final ClassInvariant classInvariant) {
         Validate.notNull(classInvariant);
         this.classInvariant = classInvariant;
     }
 
+    /**
+     * Returns the preconditions indexed by method.
+     *
+     * @return the precondition map
+     */
     public AssertionMap<Precondition> preconditions() {
         return preconditions;
     }
 
+    /**
+     * Returns the postconditions indexed by method.
+     *
+     * @return the postcondition map
+     */
     public AssertionMap<Postcondition> postconditions() {
         return postconditions;
     }
 
+    /**
+     * Indicates whether the contract still uses the shared default class invariant.
+     *
+     * @return {@code true} if no custom class invariant has been set
+     */
     public boolean hasDefaultClassInvariant() {
         return classInvariant == ClassInvariant.DEFAULT;
     }
 
+    /**
+     * Returns the current class invariant.
+     *
+     * @return the configured class invariant
+     */
     public ClassInvariant classInvariant() {
         return classInvariant;
     }

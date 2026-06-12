@@ -29,24 +29,51 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class LimitExpression extends ProcessExpression {
     private final Expression offsetAndSizeExpr;
 
+    /**
+     * Creates a {@code limit} clause.
+     *
+     * @param offsetAndSizeExpr the limit expression
+     */
     public LimitExpression(Expression offsetAndSizeExpr) {
         this.offsetAndSizeExpr = offsetAndSizeExpr;
     }
 
+    /**
+     * Accepts a visitor for this clause.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {
         return visitor.visitLimitExpression(this);
     }
 
+    /**
+     * Returns the offset-and-size expression.
+     *
+     * @return the limit expression
+     */
     public Expression getOffsetAndSizeExpr() {
         return offsetAndSizeExpr;
     }
 
+    /**
+     * Returns the textual GINQ form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String getText() {
         return "limit " + offsetAndSizeExpr.getText();
     }
 
+    /**
+     * Returns the textual form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String toString() {
         return getText();

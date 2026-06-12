@@ -22,8 +22,9 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.NamedParam
 import groovy.transform.NamedVariant
 
-// The annotations that are used here don't really matter,
-// since groovydoc shows all annotations, not just @Documented ones.
+// GROOVY-4634: groovydoc now filters by @Documented (like Javadoc). @Internal
+// (not @Documented) should be filtered out; user-facing transform annotations
+// like @EqualsAndHashCode, @NamedVariant, @NamedParam, @Generated keep showing.
 @EqualsAndHashCode(cache = true)
 class Groovy implements Serializable {
     @groovy.transform.Internal

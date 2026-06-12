@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.util.concurrent;
 
+import java.io.Serial;
 import java.util.EnumSet;
 
 /**
@@ -30,7 +31,7 @@ import java.util.EnumSet;
  * @since 4.0.0
  */
 public class ManagedIdentityConcurrentMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
-    private static final long serialVersionUID = 1046734443288902802L;
+    @Serial private static final long serialVersionUID = 1046734443288902802L;
 
     /**
      * Creates a new, empty map with the key weak reference

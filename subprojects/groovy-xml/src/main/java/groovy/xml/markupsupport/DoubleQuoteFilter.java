@@ -21,7 +21,11 @@ package groovy.xml.markupsupport;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Escapes double quotes for XML attribute output.
+ */
 public class DoubleQuoteFilter implements Function<Character, Optional<String>> {
+    /** {@inheritDoc} */
     @Override
     public Optional<String> apply(Character ch) {
         if (ch == '"') return Optional.of("&quot;");

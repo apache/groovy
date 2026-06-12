@@ -18,8 +18,11 @@
  */
 package org.codehaus.groovy.tools.javac;
 
+import groovy.transform.NonSealed;
 import groovy.transform.PackageScope;
 import groovy.transform.PackageScopeTarget;
+import groovy.transform.Sealed;
+import groovy.transform.SealedOptions;
 import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -56,6 +59,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.VerifierCodeVisitor;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.tools.Utilities;
+import org.codehaus.groovy.transform.RecordTypeASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
@@ -106,12 +110,19 @@ import static org.codehaus.groovy.ast.ClassHelper.isStaticConstantInitializerTyp
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.makeCached;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstanceProperties;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
+import static org.codehaus.groovy.transform.SealedASTTransformation.getEffectivePermittedSubclasses;
+import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotationFromSource;
+import static org.codehaus.groovy.transform.SealedASTTransformation.wouldBeNativeSealed;
 
+/**
+ * Generates Java stub source for Groovy classes during joint compilation.
+ */
 public class JavaStubGenerator {
 
     private final String encoding;
@@ -120,13 +131,32 @@ public class JavaStubGenerator {
     private final List<ConstructorNode> constructors = new ArrayList<>();
     private final Map<String, MethodNode> propertyMethods = new LinkedHashMap<>();
     private final static ClassNode PACKAGE_SCOPE_TYPE = makeCached(PackageScope.class);
+    private final static ClassNode SEALED_TYPE = makeCached(Sealed.class);
+    private final static ClassNode NON_SEALED_TYPE = makeCached(NonSealed.class);
+    private final static ClassNode SEALED_OPTIONS_TYPE = makeCached(SealedOptions.class);
 
     private ModuleNode currentModule;
 
+    /**
+     * Creates a stub generator that writes to the supplied output directory
+     * using the default charset.
+     *
+     * @param outputPath the destination directory, or {@code null} for
+     * in-memory stubs
+     */
     public JavaStubGenerator(final File outputPath) {
         this(outputPath, false, Charset.defaultCharset().name());
     }
 
+    /**
+     * Creates a stub generator with explicit output options.
+     *
+     * @param outputPath the destination directory, or {@code null} for
+     * in-memory stubs
+     * @param requireSuperResolved whether generation should wait until the
+     * superclass is resolved
+     * @param encoding the source encoding to use for generated files
+     */
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final String encoding) {
         this.requireSuperResolved = requireSuperResolved;
         this.outputPath = outputPath;
@@ -143,6 +173,13 @@ public class JavaStubGenerator {
         dir.mkdirs();
     }
 
+    /**
+     * Generates a Java stub for the supplied class when it is eligible for
+     * stub generation.
+     *
+     * @param classNode the class to generate a stub for
+     * @throws FileNotFoundException if a file-based stub cannot be created
+     */
     public void generateClass(final ClassNode classNode) throws FileNotFoundException {
         // only attempt to render if super-class is resolved; else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
@@ -337,6 +374,27 @@ public class JavaStubGenerator {
             boolean isEnum = classNode.isEnum();
             boolean isInterface = !isEnum && isInterfaceOrTrait(classNode);
             boolean isAnnotationDefinition = classNode.isAnnotationDefinition();
+            // GROOVY-11974: render `record Foo(...)` syntax for native records so that
+            // the canonical constructor and component accessors are visible to javac
+            // through stub-side synthesis. Native-only; emulated records still render
+            // as plain classes (the existing behaviour).
+            boolean isRecordStub = !isEnum && !isInterface && !isAnnotationDefinition
+                    && isNativeRecordStub(classNode);
+            // Emit native sealed declarations (sealed keyword + permits clause)
+            // when the class will receive native sealed bytecode. EMULATE mode
+            // is intentionally skipped: GEP-13 specifies emulated sealed types
+            // are invisible to the Java compiler.
+            boolean isSealedStub = !isAnnotationDefinition && !isEnum
+                    && isNativeSealedStub(classNode);
+            // Java requires final / sealed / non-sealed on every permitted
+            // subtype of a sealed type. Groovy allows implicit non-sealed, so
+            // emit the non-sealed keyword in the stub when the parent is
+            // sealed (or a sealed interface is implemented) and this class
+            // is neither final nor sealed.
+            boolean isNonSealedStub = !isAnnotationDefinition && !isEnum && !isInterface && !isRecordStub
+                    && !isSealedStub
+                    && (classNode.getModifiers() & Opcodes.ACC_FINAL) == 0
+                    && hasSealedSupertype(classNode);
             printAnnotations(out, classNode);
 
             int flags = classNode.getModifiers();
@@ -344,7 +402,12 @@ public class JavaStubGenerator {
             if (isEnum || isInterface) flags &= ~Opcodes.ACC_ABSTRACT;
             if (classNode.isSyntheticPublic() && hasPackageScopeXform(classNode,
                         PackageScopeTarget.CLASS)) flags &= ~Opcodes.ACC_PUBLIC;
+            // a record is implicitly final; declaring it final is a javac error
+            if (isRecordStub) flags &= ~Opcodes.ACC_FINAL;
             printModifiers(out, flags);
+
+            if (isSealedStub) out.print("sealed ");
+            else if (isNonSealedStub) out.print("non-sealed ");
 
             if (isInterface) {
                 if (isAnnotationDefinition) {
@@ -353,6 +416,8 @@ public class JavaStubGenerator {
                 out.print("interface ");
             } else if (isEnum) {
                 out.print("enum ");
+            } else if (isRecordStub) {
+                out.print("record ");
             } else {
                 out.print("class ");
             }
@@ -363,9 +428,13 @@ public class JavaStubGenerator {
             out.println(className);
             printTypeParameters(out, classNode.getGenericsTypes());
 
+            if (isRecordStub) {
+                printRecordHeader(out, classNode);
+            }
+
             ClassNode superClass = classNode.getUnresolvedSuperClass(false);
 
-            if (!isInterface && !isEnum) {
+            if (!isInterface && !isEnum && !isRecordStub) {
                 out.print("  extends ");
                 printType(out, superClass);
             }
@@ -385,10 +454,21 @@ public class JavaStubGenerator {
                 out.print("    ");
                 printType(out, interfaces[interfaces.length - 1]);
             }
+            if (isSealedStub) {
+                List<ClassNode> permitted = getEffectivePermittedSubclasses(classNode);
+                if (!permitted.isEmpty()) {
+                    out.println();
+                    out.print("  permits ");
+                    for (int i = 0, n = permitted.size(); i < n; i += 1) {
+                        if (i > 0) out.print(", ");
+                        printType(out, permitted.get(i));
+                    }
+                }
+            }
             out.println(" {");
 
-            printFields(out, classNode, isInterface);
-            printMethods(out, classNode, isEnum);
+            printFields(out, classNode, isInterface, isRecordStub);
+            printMethods(out, classNode, isEnum, isRecordStub);
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
                 // GROOVY-4004: clear the methods from the outer class so that they don't get duplicated in inner ones
@@ -404,7 +484,55 @@ public class JavaStubGenerator {
         }
     }
 
-    private void printFields(PrintWriter out, ClassNode classNode, boolean ifaceOrTrait) {
+    private boolean isNativeRecordStub(final ClassNode classNode) {
+        if (currentModule == null || currentModule.getContext() == null) return false;
+        String targetBytecode = currentModule.getContext().getConfiguration().getTargetBytecode();
+        return RecordTypeASTTransformation.wouldBeNativeRecord(classNode, targetBytecode);
+    }
+
+    private boolean isNativeSealedStub(final ClassNode classNode) {
+        if (currentModule == null || currentModule.getContext() == null) return false;
+        String targetBytecode = currentModule.getContext().getConfiguration().getTargetBytecode();
+        return wouldBeNativeSealed(classNode, targetBytecode);
+    }
+
+    private boolean hasSealedSupertype(final ClassNode classNode) {
+        if (isNativeSupertypeSealed(classNode.getSuperClass())) return true;
+        ClassNode[] ifaces = classNode.getInterfaces();
+        if (ifaces != null) {
+            for (ClassNode iface : ifaces) {
+                if (isNativeSupertypeSealed(iface)) return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isNativeSupertypeSealed(final ClassNode supertype) {
+        if (supertype == null) return false;
+        // Already-compiled (e.g. JDK17+ sealed Java class loaded from bytecode).
+        if (supertype.isSealed() && !supertype.isPrimaryClassNode()) return true;
+        // Same compilation unit, will be emitted as native sealed.
+        return isNativeSealedStub(supertype);
+    }
+
+    private void printRecordHeader(final PrintWriter out, final ClassNode classNode) {
+        List<PropertyNode> components = getInstanceProperties(classNode);
+        out.print('(');
+        for (int i = 0, n = components.size(); i < n; i += 1) {
+            if (i > 0) out.print(", ");
+            PropertyNode pn = components.get(i);
+            // component-level annotations sit on the property at this point
+            for (AnnotationNode an : pn.getAnnotations()) {
+                printAnnotation(out, an);
+            }
+            printType(out, pn.getOriginType());
+            out.print(' ');
+            out.print(pn.getName());
+        }
+        out.print(')');
+    }
+
+    private void printFields(PrintWriter out, ClassNode classNode, boolean ifaceOrTrait, boolean isRecordStub) {
         List<FieldNode> fields = classNode.getFields();
         if (!fields.isEmpty()) {
             List<FieldNode> enumFields = new ArrayList<>();
@@ -418,6 +546,10 @@ public class JavaStubGenerator {
                     field.setDeclaringClass(classNode);
                     field.addAnnotations(annotations);
                 }
+
+                // native records cannot redeclare instance fields; only static fields
+                // such as serialVersionUID are valid in the body.
+                if (isRecordStub && (flags & Opcodes.ACC_STATIC) == 0) continue;
 
                 if ((flags & Opcodes.ACC_ENUM) != 0) {
                     enumFields.add(field);
@@ -498,8 +630,13 @@ public class JavaStubGenerator {
         out.println(';');
     }
 
-    private void printMethods(final PrintWriter out, final ClassNode classNode, final boolean isEnum) {
-        if (!isEnum) printConstructors(out, classNode);
+    private void printMethods(final PrintWriter out, final ClassNode classNode, final boolean isEnum, final boolean isRecordStub) {
+        // For native record stubs, let javac auto-synthesize the canonical
+        // constructor; we cannot reliably emit a placeholder body that
+        // satisfies record component definite-assignment rules. Non-canonical
+        // user-declared constructors are not visible in the stub (known
+        // limitation; stub-subset-of-runtime).
+        if (!isEnum && !isRecordStub) printConstructors(out, classNode);
 
         List<MethodNode> methods = new ArrayList<>(propertyMethods.values());
         methods.addAll(classNode.getMethods());
@@ -719,6 +856,7 @@ public class JavaStubGenerator {
         if (methodNode.isStaticConstructor()) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
         if (methodNode.isSynthetic() && ("$getStaticMetaClass".equals(methodNode.getName()))) return;
+        if (methodNode.isStatic() && Traits.isTrait(classNode)) return; // GROOVY-11899
 
         printAnnotations(out, methodNode);
         if (!isInterfaceOrTrait(classNode)) {
@@ -962,9 +1100,19 @@ public class JavaStubGenerator {
     }
 
     private void printAnnotations(final PrintWriter out, final AnnotatedNode annotated) {
+        // @NonSealed and @SealedOptions have SOURCE retention, so they never appear in
+        // the bytecode surface a Java consumer sees — suppress them from the stub.
+        // @Sealed has RUNTIME retention; suppress it only when the source emits the
+        // sealed keyword and @SealedOptions(alwaysAnnotate=false) (parallels the
+        // bytecode-side filter in AsmClassGenerator).
+        boolean skipSealedAnno = annotated instanceof ClassNode cn
+                && isNativeSealedStub(cn) && sealedSkipAnnotationFromSource(cn);
         for (AnnotationNode annotation : annotated.getAnnotations()) {
-            if (!annotation.getClassNode().equals(PACKAGE_SCOPE_TYPE))
-                printAnnotation(out, annotation);
+            ClassNode type = annotation.getClassNode();
+            if (type.equals(PACKAGE_SCOPE_TYPE)) continue;
+            if (type.equals(NON_SEALED_TYPE) || type.equals(SEALED_OPTIONS_TYPE)) continue;
+            if (skipSealedAnno && type.equals(SEALED_TYPE)) continue;
+            printAnnotation(out, annotation);
         }
     }
 
@@ -1146,10 +1294,18 @@ public class JavaStubGenerator {
 
     private final Set<JavaFileObject> javaStubCompilationUnitSet = new HashSet<>();
 
+    /**
+     * Returns the generated in-memory or file-backed Java file objects.
+     *
+     * @return the current set of generated Java stub compilation units
+     */
     public Set<JavaFileObject> getJavaStubCompilationUnitSet() {
         return javaStubCompilationUnitSet;
     }
 
+    /**
+     * Deletes generated stub files and clears the tracked stub set.
+     */
     public void clean() {
         Stream<JavaFileObject> javaFileObjectStream =
                 javaStubCompilationUnitSet.size() < 2

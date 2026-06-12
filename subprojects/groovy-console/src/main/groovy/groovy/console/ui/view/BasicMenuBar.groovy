@@ -69,6 +69,16 @@ menuBar {
         checkBoxMenuItem(detachedOutputAction, selected: controller.detachedOutput)
         checkBoxMenuItem(autoClearOutputAction, selected: controller.autoClearOutput)
         checkBoxMenuItem(orientationVerticalAction, selected: controller.orientationVertical)
+        separator()
+        menu(text: 'Theme') {
+            buttonGroup(id: 'themeGroup')
+            /** Menu item that selects the light theme. */
+            lightThemeMenuItem = radioButtonMenuItem(lightThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'LIGHT')
+            /** Menu item that selects the dark theme. */
+            darkThemeMenuItem = radioButtonMenuItem(darkThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'DARK')
+            /** Menu item that selects the system theme. */
+            systemThemeMenuItem = radioButtonMenuItem(systemThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'SYSTEM')
+        }
     }
 
     menu(text: 'History', mnemonic: 'I') {
@@ -87,6 +97,8 @@ menuBar {
         menuItem(interruptAction)
         menuItem(compileAction)
         menuItem(compileJavaAction)
+        separator()
+        menuItem(setScriptArgsAction)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)

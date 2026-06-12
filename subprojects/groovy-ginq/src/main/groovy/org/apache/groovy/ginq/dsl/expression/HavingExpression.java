@@ -27,20 +27,42 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @since 4.0.0
  */
 public class HavingExpression extends FilterExpression {
+    /**
+     * Creates a {@code having} clause.
+     *
+     * @param filterExpr the filter condition
+     */
     public HavingExpression(Expression filterExpr) {
         super(filterExpr);
     }
 
+    /**
+     * Accepts a visitor for this clause.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {
         return visitor.visitHavingExpression(this);
     }
 
+    /**
+     * Returns the textual GINQ form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String getText() {
         return "having " + filterExpr.getText();
     }
 
+    /**
+     * Returns the textual form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String toString() {
         return getText();

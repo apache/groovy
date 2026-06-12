@@ -28,7 +28,6 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -197,20 +196,18 @@ public class ReflectionUtils {
         return false;
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     public static Optional<AccessibleObject> makeAccessibleInPrivilegedAction(final AccessibleObject ao) {
-        return java.security.AccessController.doPrivileged((PrivilegedAction<Optional<AccessibleObject>>) () -> makeAccessible(ao));
+        return makeAccessible(ao);
     }
 
     // to be run in PrivilegedAction!
-    @SuppressWarnings("deprecation") // replace isAccessible with canAccess once min JDK version >= 9
     public static Optional<AccessibleObject> makeAccessible(final AccessibleObject ao) {
         try {
-            if (ao.isAccessible() || trySetAccessible(ao)) {
+            if (trySetAccessible(ao)) {
                 return Optional.of(ao);
             }
         } catch (Throwable ignore) {
-            // swallow for strict security managers, module systems, android, etc.
+            // swallow for module systems, android, etc.
         }
         return Optional.empty();
     }

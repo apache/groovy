@@ -96,23 +96,49 @@ public class SimpleTemplateEngine extends TemplateEngine {
     private GroovyShell groovyShell;
     private boolean escapeBackslash;
 
+    /**
+     * Creates an engine that parses template scripts with the default Groovy class loader.
+     */
     public SimpleTemplateEngine() {
         this(GroovyShell.class.getClassLoader());
     }
 
+    /**
+     * Creates an engine with optional debug output enabled.
+     *
+     * @param verbose {@code true} to print generated script source while compiling templates
+     */
     public SimpleTemplateEngine(boolean verbose) {
         this(GroovyShell.class.getClassLoader());
         setVerbose(verbose);
     }
 
+    /**
+     * Creates an engine that uses a {@link GroovyShell} built from the supplied parent loader.
+     *
+     * @param parentLoader class loader used to compile generated template scripts
+     */
     public SimpleTemplateEngine(ClassLoader parentLoader) {
         this(new GroovyShell(parentLoader));
     }
 
+    /**
+     * Creates an engine backed by the supplied {@link GroovyShell}.
+     *
+     * @param groovyShell shell used to compile generated template scripts
+     */
     public SimpleTemplateEngine(GroovyShell groovyShell) {
         this.groovyShell = groovyShell;
     }
 
+    /**
+     * Compiles template source from the supplied reader.
+     *
+     * @param reader template source
+     * @return a compiled template instance
+     * @throws CompilationFailedException if Groovy fails to compile the generated template script
+     * @throws IOException if reading the template source fails
+     */
     @Override
     public Template createTemplate(Reader reader) throws CompilationFailedException, IOException {
         SimpleTemplate template = new SimpleTemplate(escapeBackslash);
@@ -137,12 +163,20 @@ public class SimpleTemplateEngine extends TemplateEngine {
         this.verbose = verbose;
     }
 
+    /**
+     * Indicates whether generated template scripts are printed during compilation.
+     *
+     * @return {@code true} if debug output is enabled
+     */
     public boolean isVerbose() {
         return verbose;
     }
 
     private static class SimpleTemplate implements Template {
 
+        /**
+         * Parsed Groovy script backing this template instance.
+         */
         protected Script script;
         private boolean escapeBackslash;
 
@@ -155,11 +189,22 @@ public class SimpleTemplateEngine extends TemplateEngine {
         }
 
 
+        /**
+         * Creates a writable template view using an empty binding.
+         *
+         * @return a writable template instance
+         */
         @Override
         public Writable make() {
             return make(null);
         }
 
+        /**
+         * Creates a writable template view using the supplied binding.
+         *
+         * @param map binding values made available to the template
+         * @return a writable template instance
+         */
         @Override
         public Writable make(final Map map) {
             return new Writable() {
@@ -363,10 +408,20 @@ public class SimpleTemplateEngine extends TemplateEngine {
         }
     }
 
+    /**
+     * Indicates whether backslashes are escaped while parsing template source.
+     *
+     * @return {@code true} if backslash escaping is enabled
+     */
     public boolean isEscapeBackslash() {
         return escapeBackslash;
     }
 
+    /**
+     * Controls whether backslashes in template source should be preserved using the legacy GROOVY-4585 behavior.
+     *
+     * @param escapeBackslash {@code true} to escape backslashes while parsing the template
+     */
     public void setEscapeBackslash(boolean escapeBackslash) {
         this.escapeBackslash = escapeBackslash;
     }

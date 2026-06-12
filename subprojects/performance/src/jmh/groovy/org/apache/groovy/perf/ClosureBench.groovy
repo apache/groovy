@@ -36,8 +36,10 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class ClosureBench {
+    /** Number of loop iterations used by each benchmark invocation. */
     static final int ITERATIONS = 1_000_000
 
+    /** Instance property for delegation tests. */
     String instanceProperty = "instance"
 
     /**
@@ -210,6 +212,12 @@ class ClosureBench {
         bh.consume(sum)
     }
 
+    /**
+     * Helper method accepting a closure parameter.
+     * @param value the input value
+     * @param operation the closure to apply
+     * @return the result of applying the closure
+     */
     static int applyOperation(int value, Closure<Integer> operation) {
         operation(value)
     }

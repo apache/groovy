@@ -28,16 +28,35 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.SourceUnit
 
+/**
+ * Base visitor support for type-checker extensions that need lightweight constant propagation
+ * and access to the underlying variable represented by a {@link VariableExpression}.
+ */
 @AutoFinal @CompileStatic
 class CheckingVisitor extends ClassCodeVisitorSupport {
 
+    /**
+     * Returns no backing source unit because subclasses report errors through the enclosing
+     * type-checking extension rather than this visitor.
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         null
     }
 
+    /**
+     * Tracks local variables whose values are known constant expressions during the current visit.
+     */
     protected final Map<Expression,Expression> localConstVars = [:]
 
+    /**
+     * Resolves a constant expression of the requested type from an expression, following tracked
+     * locals and field initializers when possible.
+     *
+     * @param exp expression to inspect
+     * @param type required runtime type for the constant value
+     * @return the matching constant expression, or {@code null} when none can be resolved
+     */
     protected Expression findConstExp(Expression exp, Class type) {
         if (exp instanceof ConstantExpression && type.isAssignableFrom(exp.value.getClass())) {
             return exp
@@ -54,6 +73,12 @@ class CheckingVisitor extends ClassCodeVisitorSupport {
         null
     }
 
+    /**
+     * Follows {@link VariableExpression#accessedVariable} links until the original variable or field is found.
+     *
+     * @param ve variable expression to resolve
+     * @return the underlying target variable
+     */
     protected Variable findTargetVariable(VariableExpression ve) {
         def accessedVariable = ve.accessedVariable
         if (accessedVariable != null && accessedVariable != ve) {

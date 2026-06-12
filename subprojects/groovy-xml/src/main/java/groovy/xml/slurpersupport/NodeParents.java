@@ -34,6 +34,7 @@ public class NodeParents extends NodeChildren {
         super(parent, parent.parent.name, namespaceTagHints);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.nodeIterator()) {

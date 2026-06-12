@@ -20,7 +20,19 @@ package org.codehaus.groovy.macro.matcher.internal
 
 import groovy.transform.CompileStatic
 
+/**
+ * Minimal predicate interface used by matching constraints.
+ *
+ * @param <T> the tested type
+ * @since 2.5.0
+ */
 @CompileStatic
 interface ConstraintPredicate<T> {
+    /**
+     * Tests the supplied value.
+     *
+     * @param a the value to test
+     * @return {@code true} if the value matches
+     */
     boolean apply(T a)
 }

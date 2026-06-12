@@ -30,15 +30,22 @@ public class DoubleArrayIterator implements Iterator<Double> {
     private final double[] array;
     private int index;
 
+    /**
+     * Creates an iterator that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public DoubleArrayIterator(final double[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return array.length > index;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Double next() {
         try {
@@ -48,6 +55,7 @@ public class DoubleArrayIterator implements Iterator<Double> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException("Remove not supported for arrays");

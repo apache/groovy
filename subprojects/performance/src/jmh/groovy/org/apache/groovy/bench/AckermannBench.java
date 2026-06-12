@@ -31,22 +31,33 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Benchmark comparing Java and Groovy implementations of the Ackermann function.
+ */
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(2)
+@Fork(value = 2, jvmArgsAppend = "-Xss8m")
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 public class AckermannBench {
 
-    @Param({"5", "6", "7", "8"})
+    @Param({"5", "6", "7"})
     private int n;
 
+    /**
+     * Baseline Java implementation of Ackermann function.
+     * @return the computed value
+     */
     @Benchmark
     public int java() {
         return JavaAckermann.ack(3, n);
     }
 
+    /**
+     * Groovy dynamic implementation of Ackermann function.
+     * @return the computed value
+     */
     @Benchmark
     public int groovy() {
         return Ackermann.ack(3, n);

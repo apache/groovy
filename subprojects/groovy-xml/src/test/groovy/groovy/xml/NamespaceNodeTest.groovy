@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test
 final class NamespaceNodeTest extends TestXmlSupport {
 
     @Test
-    void testNodeBuilderWithNamespace() {
+    void nodeBuilderWithNamespace() {
         def n = new Namespace('http://foo/bar')
         def builder = NamespaceBuilder.newInstance(new NodeBuilder(), n.uri)
         def result = builder.outer(id: "3") {
@@ -39,7 +39,7 @@ final class NamespaceNodeTest extends TestXmlSupport {
     }
 
     @Test
-    void testTree() {
+    void tree() {
         def builder = NodeBuilder.newInstance()
         def xmlns = new NamespaceBuilder(builder)
         def xsd = xmlns.namespace('http://www.w3.org/2001/XMLSchema', 'xsd')
@@ -88,7 +88,7 @@ final class NamespaceNodeTest extends TestXmlSupport {
     }
 
     @Test
-    void testNodeBuilderWithImplicitNamespace() {
+    void nodeBuilderWithImplicitNamespace() {
         def n = new Namespace('http://foo/bar')
         def builder = NamespaceBuilder.newInstance(new NodeBuilder(), n.uri)
 
@@ -112,7 +112,7 @@ final class NamespaceNodeTest extends TestXmlSupport {
     }
 
     @Test
-    void testNamespaceBuilderWithoutNamespace() {
+    void namespaceBuilderWithoutNamespace() {
         def builder = NamespaceBuilder.newInstance(new NodeBuilder())
         def result = builder.outer(id: "3") {
             inner(name: "foo")

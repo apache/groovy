@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 final class MarkupInScriptBug extends TestSupport {
 
     @Test
-    void testBug() throws Exception {
+    void bug() throws Exception {
         assertScriptFile("src/test/groovy/groovy/xml/script/AtomTestScript.groovy");
     }
 }

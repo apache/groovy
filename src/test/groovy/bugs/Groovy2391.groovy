@@ -43,7 +43,8 @@ final class Groovy2391 {
         '''
     }
 
-    @Test // GROOVY-3493
+    // GROOVY-3493
+    @Test
     void testOverrideOverriddenMethod() {
         assertScript '''
             interface I {

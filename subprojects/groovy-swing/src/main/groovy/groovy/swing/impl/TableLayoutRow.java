@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a row in a table layout
+ * Represents a single row in a {@link TableLayout}.
  */
 public class TableLayoutRow {
 
@@ -31,6 +31,11 @@ public class TableLayoutRow {
     private final List<groovy.swing.impl.TableLayoutCell> cells = new ArrayList<groovy.swing.impl.TableLayoutCell>();
     private int rowIndex;
 
+    /**
+     * Creates a row for the supplied table layout.
+     *
+     * @param tableLayoutTag the owning table layout
+     */
     public TableLayoutRow(TableLayout tableLayoutTag) {
         this.parent = tableLayoutTag;
     }
@@ -48,6 +53,9 @@ public class TableLayoutRow {
         cells.add(tag);
     }
 
+    /**
+     * Materializes the row into the parent layout by assigning row coordinates to each cell.
+     */
     public void addComponentsForRow() {
         rowIndex = parent.nextRowIndex();
 

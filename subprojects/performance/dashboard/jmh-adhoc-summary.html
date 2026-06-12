@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Groovy JMH ad-hoc benchmarks</title>
+<style>
+  :root { color-scheme: light; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 2em auto;
+    max-width: 1200px;
+    padding: 0 1em;
+    color: #222;
+    background: #fff;
+  }
+  h1 { font-weight: 500; margin-bottom: 0.25em; }
+  h2 { font-weight: 500; margin: 1.75em 0 0.25em; border-bottom: 1px solid #eee; padding-bottom: 0.2em; }
+  h3 { font-weight: 500; margin: 1.25em 0 0.25em; color: #333; }
+  .intro { color: #444; line-height: 1.45; margin-bottom: 1.25em; max-width: 80ch; }
+  .controls { margin: 0.5em 0 1.5em; font-size: 0.95em; }
+  .controls label { margin-right: 1em; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em; }
+  .chart-wrap { position: relative; height: 320px; }
+  .meta { color: #666; font-size: 0.9em; margin-top: 2em; line-height: 1.5; }
+  .meta a { color: #4A8CC2; text-decoration: none; }
+  .meta a:hover { text-decoration: underline; }
+  code { background: #f5f5f7; padding: 0.05em 0.3em; border-radius: 3px; font-size: 0.92em; }
+  .empty { color: #888; font-style: italic; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>Groovy JMH ad-hoc benchmarks</h1>
+<p class="intro">
+  Exploratory, idiom-vs-idiom micro-benchmarks from the
+  <code>org.apache.groovy.adhoc</code> package &mdash; kept out of the core
+  regression suites on purpose. Each chart shows the <strong>latest</strong>
+  run only (these compare idioms <em>against each other</em>, not Groovy over
+  time). <strong>Throughput</strong> is ops/&micro;s (higher is better);
+  <strong>allocation</strong> is <code>gc.alloc.rate.norm</code> bytes/op
+  (lower is better). Both use a <strong>log</strong> y-axis &mdash; per family the
+  workload sizes span roughly two decades, so a linear axis would flatten the
+  larger sizes into indistinguishable slivers; for allocation, bars at the
+  <code>0</code> floor mean effectively zero allocation. Bars are grouped by
+  workload size. Use the
+  toggle to switch between <code>indy</code> and <code>classic</code> call
+  sites. Per-run history (with regression alerting) lives under the
+  per-bucket dashboards linked below.
+</p>
+
+<div class="controls">
+  <strong>Call site:</strong>
+  <label><input type="radio" name="mode" value="indy" checked> invokedynamic (<code>indy</code>)</label>
+  <label><input type="radio" name="mode" value="classic"> classic</label>
+</div>
+
+<div id="status" class="empty">Loading&hellip;</div>
+
+<h2>find <span style="font-weight:300;color:#888">(short-circuit; full traversal here &mdash; no match)</span></h2>
+<div class="grid">
+  <div><h3>Throughput (ops/&micro;s, higher = better)</h3><div class="chart-wrap"><canvas id="find-thrpt"></canvas></div></div>
+  <div><h3>Allocation (bytes/op, lower = better)</h3><div class="chart-wrap"><canvas id="find-alloc"></canvas></div></div>
+</div>
+
+<h2>findAll <span style="font-weight:300;color:#888">(full traversal; empty result list)</span></h2>
+<div class="grid">
+  <div><h3>Throughput (ops/&micro;s, higher = better)</h3><div class="chart-wrap"><canvas id="findAll-thrpt"></canvas></div></div>
+  <div><h3>Allocation (bytes/op, lower = better)</h3><div class="chart-wrap"><canvas id="findAll-alloc"></canvas></div></div>
+</div>
+
+<h2>count <span style="font-weight:300;color:#888">(full-traversal reducer; builds no collection)</span></h2>
+<div class="grid">
+  <div><h3>Throughput (ops/&micro;s, higher = better)</h3><div class="chart-wrap"><canvas id="count-thrpt"></canvas></div></div>
+  <div><h3>Allocation (bytes/op, lower = better)</h3><div class="chart-wrap"><canvas id="count-alloc"></canvas></div></div>
+</div>
+
+<div class="meta">
+  <div id="lastUpdate"></div>
+  <div style="margin-top:0.5em">
+    Per-bucket history &amp; raw data:
+    <a href="throughput/indy/">throughput/indy</a> &middot;
+    <a href="throughput/classic/">throughput/classic</a> &middot;
+    <a href="alloc/indy/">alloc/indy</a> &middot;
+    <a href="alloc/classic/">alloc/classic</a>
+    (each <code>&lt;bucket&gt;/data.js</code>)
+  </div>
+  <div style="margin-top:0.5em">
+    Generated by <a href="https://github.com/benchmark-action/github-action-benchmark">github-action-benchmark</a> &middot;
+    <a href="../../../">Apache Groovy benchmark home</a>
+  </div>
+</div>
+
+<!-- Vendored locally (see vendor/README) instead of a CDN. -->
+<script src="vendor/chart.umd.min.js"></script>
+<script src="vendor/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(function () {
+  const ALLOC_FLOOR = 0.5;            // log axis can't plot 0; plot zeros here
+  const SIZE_COLORS = { '100': '#9ECAE1', '1000': '#4292C6', '10000': '#08519C' };
+  const charts = {};
+
+  function parseDataJs(text) {
+    const json = text.replace(/^\s*window\.BENCHMARK_DATA\s*=\s*/, '').replace(/;\s*$/, '');
+    return JSON.parse(json);
+  }
+
+  // Latest run's bench list for a bucket, or null if unavailable.
+  async function loadLatest(bucket) {
+    try {
+      const resp = await fetch(bucket + '/data.js', { cache: 'no-cache' });
+      if (!resp.ok) return null;
+      const data = parseDataJs(await resp.text());
+      const runs = (data.entries && data.entries.Benchmark) || [];
+      if (!runs.length) return null;
+      const last = runs[runs.length - 1];
+      return { date: last.date, commit: last.commit, benches: last.benches || [] };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Two name shapes reach us, depending on the series:
+  //   alloc  (our jmh-adhoc-alloc.py):    "findAllG_lambdasCurryWith (size=10000)"
+  //   thrpt  (github-action-benchmark jmh): "org.apache.groovy.adhoc.FatFreeLambdaBench.findAllG_lambdasCurryWith ( {\"size\":\"10000\"} )"
+  // Normalise both to {family, variant, size}. NB: findAll must precede find
+  // in the alternation so it wins the match.
+  function parseName(name) {
+    const sizeM = name.match(/size["=:\s]+"?(\d+)/);   // size=10000  or  "size":"10000"
+    if (!sizeM) return null;
+    const leaf = name.split(/\s*\(/)[0]                // drop the "(…params…)" tail
+                     .split('.').pop().trim();          // drop package/class qualifier
+    const fm = leaf.match(/^(findAll|find|count)(.+)$/);
+    if (!fm) return null;
+    return { family: fm[1], variant: fm[2].replace(/^_/, ''), size: sizeM[1] };
+  }
+
+  // Shape a bench list into { variants:[...], bySize:{size:{variant:value}} } for one family.
+  function shape(benches, family) {
+    const variants = [];
+    const seen = new Set();
+    const bySize = {};
+    for (const b of benches) {
+      const p = parseName(b.name);
+      if (!p || p.family !== family) continue;
+      if (!seen.has(p.variant)) { seen.add(p.variant); variants.push(p.variant); }
+      (bySize[p.size] = bySize[p.size] || {})[p.variant] = b.value;
+    }
+    variants.sort();   // A_… B_… … H_…
+    return { variants, bySize };
+  }
+
+  function datasets(shaped, isAlloc) {
+    const sizes = Object.keys(shaped.bySize).sort((a, b) => (+a) - (+b));
+    return sizes.map(size => ({
+      label: 'size ' + size,
+      backgroundColor: SIZE_COLORS[size] || '#888',
+      data: shaped.variants.map(v => {
+        const raw = shaped.bySize[size][v];
+        if (raw == null) return null;
+        return isAlloc ? Math.max(raw, ALLOC_FLOOR) : raw;
+      }),
+      rawData: shaped.variants.map(v => shaped.bySize[size][v]),
+    }));
+  }
+
+  function render(canvasId, shaped, isAlloc) {
+    const ctx = document.getElementById(canvasId);
+    if (charts[canvasId]) charts[canvasId].destroy();
+    charts[canvasId] = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: shaped.variants, datasets: datasets(shaped, isAlloc) },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { autoSkip: false, maxRotation: 60, minRotation: 45, font: { size: 10 } } },
+          // Both axes are log: per family the workload sizes span ~2 decades of
+          // throughput (and allocation), so a linear axis flattens the larger
+          // sizes into indistinguishable slivers. Throughput values are always
+          // positive, so unlike alloc it needs no zero floor.
+          y: { type: 'logarithmic', title: { display: true, text: isAlloc ? 'bytes/op (log)' : 'ops/µs (log)' } },
+        },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: (item) => {
+                const ds = item.dataset;
+                const raw = ds.rawData ? ds.rawData[item.dataIndex] : item.parsed.y;
+                return ds.label + ': ' + (isAlloc
+                  ? (raw == null ? 'n/a' : raw.toLocaleString() + ' B/op')
+                  : (raw == null ? 'n/a' : raw.toFixed(3) + ' ops/µs'));
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async function draw(mode) {
+    const status = document.getElementById('status');
+    const [thrpt, alloc] = await Promise.all([
+      loadLatest('throughput/' + mode),
+      loadLatest('alloc/' + mode),
+    ]);
+    if (!thrpt && !alloc) {
+      status.textContent = 'No data published yet for "' + mode + '". '
+        + 'The jmh-adhoc workflow populates this on its first run.';
+      return;
+    }
+    status.style.display = 'none';
+    if (thrpt) {
+      render('find-thrpt', shape(thrpt.benches, 'find'), false);
+      render('findAll-thrpt', shape(thrpt.benches, 'findAll'), false);
+      render('count-thrpt', shape(thrpt.benches, 'count'), false);
+    }
+    if (alloc) {
+      render('find-alloc', shape(alloc.benches, 'find'), true);
+      render('findAll-alloc', shape(alloc.benches, 'findAll'), true);
+      render('count-alloc', shape(alloc.benches, 'count'), true);
+    }
+    const ref = thrpt || alloc;
+    if (ref && ref.commit) {
+      const when = ref.date ? new Date(ref.date).toISOString().slice(0, 10) : '';
+      const sha = (ref.commit.id || '').slice(0, 8);
+      const url = ref.commit.url || '#';
+      document.getElementById('lastUpdate').innerHTML =
+        'Latest run: ' + when + ' &middot; commit <a href="' + url + '">' + sha + '</a>';
+    }
+  }
+
+  document.querySelectorAll('input[name="mode"]').forEach(el =>
+    el.addEventListener('change', e => draw(e.target.value)));
+  draw('indy');
+})();
+</script>
+</body>
+</html>

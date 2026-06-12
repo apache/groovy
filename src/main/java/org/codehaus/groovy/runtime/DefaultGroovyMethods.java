@@ -56,6 +56,7 @@ import groovy.util.OrderBy;
 import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.util.ReversedList;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.Verifier;
@@ -63,10 +64,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.callsite.BooleanClosureForMapPredicate;
-import org.codehaus.groovy.runtime.callsite.BooleanClosurePredicate;
-import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -157,7 +154,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
@@ -205,6 +207,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static final Class[] DGM_LIKE_CLASSES = {
             ArrayGroovyMethods.class,
             DefaultGroovyMethods.class,
+            ParallelCollectionExtensions.class,
             EncodingGroovyMethods.class,
             IOGroovyMethods.class,
             ProcessGroovyMethods.class,
@@ -223,10 +226,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             */
     };
 
-    private static final BigInteger BI_INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
-    private static final BigInteger BI_INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
-    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(  Long.MAX_VALUE);
-    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(  Long.MIN_VALUE);
+    private static final BigInteger BI_INT_MAX  = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static final BigInteger BI_INT_MIN  = BigInteger.valueOf(Integer.MIN_VALUE);
+    private static final BigInteger BI_LONG_MAX = BigInteger.valueOf(   Long.MAX_VALUE);
+    private static final BigInteger BI_LONG_MIN = BigInteger.valueOf(   Long.MIN_VALUE);
 
     private static class NumberAwareValueComparator<K, V> implements Comparator<Map.Entry<K, V>> {
         private final Comparator<V> delegate = new NumberAwareComparator<>();
@@ -467,7 +470,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = [1,2,3,4] as Set
      * def b = [3,4,5,6] as Set
      * assert (a &amp; b) == [3,4] as Set
@@ -493,7 +496,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [3,4] as Set == ([1,2,3,4] as Set).and([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *
@@ -515,7 +518,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = [1,2,3,4] as SortedSet
      * def b = [3,4,5,6] as Set
      * assert (a &amp; b) == [3,4] as SortedSet
@@ -541,7 +544,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [3,4] as SortedSet == ([1,2,3,4] as SortedSet).and([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *
@@ -563,7 +566,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over the elements of a collection, and checks whether at least
      * one element is true according to the Groovy Truth.
      * Equivalent to self.any({element {@code ->} element})
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [false, true].any()
      * assert [0, 1].any()
      * assert ![0, 0].any()
@@ -574,9 +577,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static boolean any(Object self) {
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
         for (var iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
-            if (bmi.convertToBoolean(iter.next())) {
+            if (DefaultTypeTransformation.castToBoolean(iter.next())) {
                 return true;
             }
         }
@@ -586,7 +588,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an object or collection, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3].any { it == 2 }
      * assert ![1, 2, 3].any { it {@code >} 3 }
      * </pre>
@@ -603,7 +605,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an iterator, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3].iterator().any { it == 2 }
      * assert ![1, 2, 3].iterator().any { it {@code >} 3 }
      * </pre>
@@ -626,7 +628,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an iterable, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3].any { it == 2 }
      * assert ![1, 2, 3].any { it {@code >} 3 }
      * </pre>
@@ -641,12 +643,66 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates over the contents of an iterable, and checks whether a
+     * predicate is valid for at least one element. A "fat-free" variant of
+     * {@link #any(Iterable, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [1, 2, 3].any(isEven)
+     * assert ![1, 3, 5].any(isEven)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @return true if any element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    public static <T> boolean any(Iterable<T> self, Predicate<? super T> predicate) {
+        for (T item : self) {
+            if (predicate.test(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Iterates over the contents of an iterable, and checks whether the given
+     * predicate is valid for at least one element when called with that element
+     * and the supplied <code>param</code>. A "fat-free" variant of
+     * {@link #any(Iterable, Closure)} accepting a {@link BiPredicate} together with an
+     * additional argument, mirroring {@link #find(Iterable, BiPredicate, Object)}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3].any(divisibleBy, 2)
+     * assert ![1, 3, 5].any(divisibleBy, 2)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @param param     the additional argument passed to the predicate
+     * @return true if any element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> boolean any(Iterable<T> self, BiPredicate<? super T, ? super P> predicate, P param) {
+        for (T item : self) {
+            if (predicate.test(item, param)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for at least one entry. If the
      * closure takes one parameter then it will be passed the Map.Entry
      * otherwise if the closure takes two parameters then it will be
      * passed the key and the value.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2:3, 4:5, 5:10].any { key, value {@code ->} key * 2 == value }
      * assert ![2:3, 4:5, 5:10].any { entry {@code ->} entry.key == entry.value * 2 }
      * </pre>
@@ -683,7 +739,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce a Boolean instance to a boolean value.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * // you can omit ".asBoolean()"
      * assert Boolean.TRUE.asBoolean()
      * assert !Boolean.FALSE.asBoolean()
@@ -697,7 +753,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce an AtomicBoolean instance to a boolean value.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.concurrent.atomic.AtomicBoolean
      *
      * // you can omit ".asBoolean()"
@@ -715,8 +771,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Coerce a collection instance to a boolean value.
      * A collection is coerced to false if it's empty, and to true otherwise.
-     * <pre class="groovyTestCase">assert [1,2].asBoolean() == true</pre>
-     * <pre class="groovyTestCase">assert [].asBoolean() == false</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2].asBoolean() == true</pre>
+     * <pre class="language-groovy groovyTestCase">assert [].asBoolean() == false</pre>
      *
      * @param collection the collection
      * @return the boolean value
@@ -729,7 +785,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Coerce a map instance to a boolean value.
      * A map is coerced to false if it's empty, and to true otherwise.
-     * <pre class="groovyTestCase">assert [:] as Boolean == false
+     * <pre class="language-groovy groovyTestCase">assert [:] as Boolean == false
      * assert [a:2] as Boolean == true</pre>
      *
      * @param map the map
@@ -916,7 +972,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * if it is already a Collection.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert new HashSet().asCollection() instanceof Collection
      * </pre>
      *
@@ -963,7 +1019,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A convenience method for creating an immutable List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def mutable = [1,2,3]
      * def immutable = mutable.asImmutable()
      * try {
@@ -1033,7 +1089,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * if it is already a List.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert new HashSet().asList() instanceof List
      * </pre>
      *
@@ -1054,7 +1110,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a view list with reversed order, and the order of original list will not change.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", 6, true]
      * assert list.asReversed() == [true, 6, "a"]
      * assert list == ["a", 6, true]
@@ -1071,7 +1127,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a reverse order view of the set. The order of original list will not change.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * TreeSet navSet = [2, 4, 1, 3]  // natural order is sorted
      * assert navSet.asReversed() == [4, 3, 2, 1] as Set
      * </pre>
@@ -1524,7 +1580,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates an unmodifiable view of a List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def mutable = [1,2,3]
      * def unmodifiable = mutable.asUnmodifiable()
      * try {
@@ -1605,7 +1661,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Averages the items in an Iterable. This is equivalent to invoking the
      * "plus" method on all items in the Iterable and then dividing by the
      * total count using the "div" method for the resulting sum.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert 3 == [1, 2, 6].average()
      * </pre>
      *
@@ -1625,7 +1681,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The iterator will become exhausted of elements after determining the average value.
      * While most frequently used with aggregates of numbers,
      * {@code average} will work with any class supporting {@code plus} and {@code div}, e.g.:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Stars {
      *     int numStars = 0
      *     String toString() {
@@ -1674,7 +1730,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>iter.collect(closure).average()</code>.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert 20 == [1, 3].average { it * 10 }
      * assert 3 == ['to', 'from'].average { it.size() }
      * </pre>
@@ -1696,7 +1752,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The iterator will become exhausted of elements after determining the average value.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ['to', 'from'].iterator().average{ it.size() } == 3
      * </pre>
      *
@@ -1760,7 +1816,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a <code>BufferedIterator</code> that allows examining the next element without
      * consuming it.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3, 4].iterator().buffered().with { [head(), toList()] } == [1, [1, 2, 3, 4]]
      * </pre>
      *
@@ -1782,7 +1838,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a <code>BufferedIterator</code> that allows examining the next element without
      * consuming it.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert new LinkedHashSet([1,2,3,4]).bufferedIterator().with { [head(), toList()] } == [1, [1,2,3,4]]
      * </pre>
      *
@@ -1797,7 +1853,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a <code>BufferedIterator</code> that allows examining the next element without
      * consuming it.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3, 4].bufferedIterator().with { [head(), toList()] } == [1, [1, 2, 3, 4]]
      * </pre>
      *
@@ -1817,7 +1873,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Using a chop size of -1 will cause that piece to contain all remaining items from the Iterable.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3, 4].chop(1) == [[1]]
      * assert [1, 2, 3, 4].chop(1,-1) == [[1], [2, 3, 4]]
      * assert ('a'..'h').chop(2, 4) == [['a', 'b'], ['c', 'd', 'e', 'f']]
@@ -1842,7 +1898,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Using a chop size of -1 will cause that piece to contain all remaining items from the Iterable.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ['a', 'b', 'c', 'd', 'e'].chop(false, 1, 2, 3, 3, 3) == [['a'], ['b', 'c'], ['d', 'e'], [], []]
      * assert ['a', 'b', 'c', 'd', 'e'].chop(true, 1, 2, 3, 3, 3) == [['a'], ['b', 'c'], ['d', 'e']]
      * </pre>
@@ -1874,7 +1930,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Using a chop size of -1 will cause that piece to contain all remaining items from the iterator.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert (1..6).iterator().chop(1, 2, -1).toList() == [[1], [2, 3], [4, 5, 6]]
      * </pre>
      *
@@ -1893,7 +1949,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Using a chop size of -1 will cause that piece to contain all remaining items from the source iterator.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert (1..6).iterator().chop(1, 2, -1).toList() == [[1], [2, 3], [4, 5, 6]]
      * </pre>
      *
@@ -1913,7 +1969,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Using a chop size of -1 will cause that piece to contain all remaining items from the source iterator.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def stars = ['*']
      *     .repeat()
      *     .chop(Iterators.iterate(1, n {@code ->} n + 2))
@@ -1951,7 +2007,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Using a chop size of -1 will cause that piece to contain all remaining items from the source iterator.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def trunk = [3, 3, 3].iterator()
      * def shape = Iterators.iterate(1, n {@code ->} n + 2).take(10).plus(trunk)
      * def tree = ['*']
@@ -2022,12 +2078,62 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // clamp
+
+    /**
+     * Constrains a Comparable value to lie within the inclusive range
+     * <code>[lower, upper]</code>. Returns <code>lower</code> if <code>self</code>
+     * is less than <code>lower</code>, <code>upper</code> if <code>self</code> is
+     * greater than <code>upper</code>, otherwise <code>self</code>.
+     * <pre class="language-groovy groovyTestCase">
+     * assert 10.clamp(1, 15) == 10
+     * assert 10.clamp(1, 5) == 5
+     * assert 10.clamp(12, 20) == 12
+     * assert 'a'.clamp('b', 'z') == 'b'
+     * </pre>
+     *
+     * @param self  a Comparable value
+     * @param lower the inclusive lower bound
+     * @param upper the inclusive upper bound
+     * @return the clamped value
+     * @throws IllegalArgumentException if <code>lower</code> is greater than <code>upper</code>
+     * @since 6.0.0
+     */
+    public static <T extends Comparable<? super T>> T clamp(T self, T lower, T upper) {
+        if (ScriptBytecodeAdapter.compareGreaterThan(lower, upper)) {
+            throw new IllegalArgumentException("lower bound (" + lower + ") must not be greater than upper bound (" + upper + ")");
+        }
+        if (ScriptBytecodeAdapter.compareLessThan(self, lower)) return lower;
+        if (ScriptBytecodeAdapter.compareGreaterThan(self, upper)) return upper;
+        return self;
+    }
+
+    /**
+     * Constrains a Comparable value to lie within the given Range.
+     * <pre class="language-groovy groovyTestCase">
+     * assert 10.clamp(12..20) == 12
+     * assert 10.clamp(1..5) == 5
+     * </pre>
+     *
+     * @param self  a Comparable value
+     * @param range a Range defining the inclusive bounds
+     * @return the clamped value
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends Comparable<? super T>> T clamp(T self, Range<T> range) {
+        T lower = range.isReverse() ? (T) range.getTo() : (T) range.getFrom();
+        T upper = range.isReverse() ? (T) range.getFrom() : (T) range.getTo();
+        return clamp(self, lower, upper);
+    }
+
+    //--------------------------------------------------------------------------
     // collate
 
     /**
      * Collates this iterable into sub-lists of length <code>size</code>.
      * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * <pre class="language-groovy groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
      * def coll = list.collate( 3 )
      * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7 ] ]</pre>
      *
@@ -2044,7 +2150,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Collates this iterable into sub-lists of length <code>size</code> stepping through the code <code>step</code>
      * elements for each subList.
      * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4 ]
+     * <pre class="language-groovy groovyTestCase">def list = [ 1, 2, 3, 4 ]
      * def coll = list.collate( 3, 1 )
      * assert coll == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]</pre>
      *
@@ -2062,7 +2168,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Collates this iterable into sub-lists of length <code>size</code>. Any remaining elements in
      * the iterable after the subdivision will be dropped if <code>keepRemainder</code> is false.
      * Example:
-     * <pre class="groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
+     * <pre class="language-groovy groovyTestCase">def list = [ 1, 2, 3, 4, 5, 6, 7 ]
      * def coll = list.collate( 3, false )
      * assert coll == [ [ 1, 2, 3 ], [ 4, 5, 6 ] ]</pre>
      *
@@ -2082,7 +2188,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>keepRemainder</code> is false.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [ 1, 2, 3, 4 ]
      * assert list.collate( 2, 2, true  ) == [ [ 1, 2 ], [ 3, 4 ] ]
      * assert list.collate( 3, 1, true  ) == [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4 ], [ 4 ] ]
@@ -2127,7 +2233,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>keepRemainder</code> is false.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var letters = 'A'..'G'
      * assert letters.iterator().collate(2, 2, false).toList() == [['A', 'B'], ['C', 'D'], ['E', 'F']]
      * assert letters.iterator().collate(3, 2, true).toList() == [['A', 'B', 'C'], ['C', 'D', 'E'], ['E', 'F', 'G'], ['G']]
@@ -2150,7 +2256,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements for each sub-list including any remaining elements as the last sub-list.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ('A'..'I').iterator().collate(4, 4).toList() == [['A', 'B', 'C', 'D'], ['E', 'F', 'G', 'H'], ['I']]
      * </pre>
      *
@@ -2170,7 +2276,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>keepRemainder</code> is false.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ('A'..'I').iterator().collate(4, false).toList() == [['A', 'B', 'C', 'D'], ['E', 'F', 'G', 'H']]
      * </pre>
      *
@@ -2189,7 +2295,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * any remaining elements as the last sub-list.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ('A'..'H').iterator().collate(3).toList() == [['A', 'B', 'C'], ['D', 'E', 'F'], ['G', 'H']]
      * </pre>
      *
@@ -2305,7 +2411,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this aggregate Object transforming each item into a new value using Closure.IDENTITY
      * as a transformer, basically returning a list of items copied from the original object.
      *
-     * <pre class="groovyTestCase">def obj = new Object(); assert obj.collect() == [obj]</pre>
+     * <pre class="language-groovy groovyTestCase">def obj = new Object(); assert obj.collect() == [obj]</pre>
      *
      * @param self an aggregate Object with an Iterator returning its items
      * @return a Collection of the transformed values
@@ -2321,7 +2427,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this aggregate Object transforming each item into a new value using the
      * <code>transform</code> closure, returning a list of transformed values.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1, 'a', 1.23, true ]
      * def types = list.collect { it.class }
      * assert types == [Integer, String, BigDecimal, Boolean]
@@ -2364,10 +2470,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this Iterator transforming each item into a new value using the
+     * <code>transform</code> function, returning a list of transformed values.
+     * A "fat-free" variant of {@link #collect(Iterator, Closure)} accepting a {@link Function}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [1, 2, 3].iterator().collect(n -&gt; n * 2) == [2, 4, 6]</pre>
+     *
+     * @param self      an Iterator
+     * @param transform the function used to transform each item
+     * @return a List of the transformed values
+     * @since 6.0.0
+     */
+    public static <E, T> List<T> collect(Iterator<E> self, Function<? super E, ? extends T> transform) {
+        List<T> answer = new ArrayList<>();
+        while (self.hasNext()) {
+            answer.add(transform.apply(self.next()));
+        }
+        return answer;
+    }
+
+    /**
      * Returns an iterator of transformed values from the source iterator using the
      * <code>transform</code> closure.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3].repeat().collecting(Integer::next).take(6).toList() == [2, 3, 4, 2, 3, 4]
      * assert Iterators.iterate('a', String::next).collecting{ (int)it - (int)'a' }.take(26).toList() == 0..25
      * </pre>
@@ -2382,6 +2508,53 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         @DelegatesTo(genericTypeIndex = 0)
         @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
         return new CollectIterator<>(self, transform);
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> function. A "fat-free" variant of
+     * {@link #collecting(Iterator, Closure)} accepting a {@link Function}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Function
+     * Function&lt;Integer, Integer&gt; next = n -&gt; n + 1
+     * assert [1, 2, 3].repeat().collecting(next).take(6).toList() == [2, 3, 4, 2, 3, 4]
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param transform the function used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 6.0.0
+     */
+    public static <E, T> Iterator<T> collecting(Iterator<E> self, Function<? super E, ? extends T> transform) {
+        return new CollectingFunctionIterator<>(self, transform);
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the given
+     * two-argument <code>transform</code>, with the supplied <code>param</code> fixed as the
+     * second argument. Combines {@link #collecting(Iterator, Function)} with the right-currying
+     * performed by {@link org.apache.groovy.util.Lambdas#curryWith(BiFunction, Object)}, so that
+     * {@code iter.collecting(transform, param)} is equivalent to
+     * {@code iter.collecting(curryWith(transform, param))}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;Integer, Integer, Integer&gt; add = (n, d) -&gt; n + d
+     * assert [1, 2, 3].repeat().collecting(add, 10).take(6).toList() == [11, 12, 13, 11, 12, 13]
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param transform the two-argument function used to transform each element
+     * @param param     the value to fix as the function's second argument
+     * @return an Iterator for the transformed values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <E, P, T> Iterator<T> collecting(Iterator<E> self, BiFunction<? super E, ? super P, ? extends T> transform, P param) {
+        return collecting(self, item -> transform.apply(item, param));
     }
 
     private static final class CollectIterator<E, T> implements Iterator<T> {
@@ -2409,11 +2582,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    private static final class CollectingFunctionIterator<E, T> implements Iterator<T> {
+        private final Iterator<E> source;
+        private final Function<? super E, ? extends T> transform;
+
+        private CollectingFunctionIterator(Iterator<E> source, Function<? super E, ? extends T> transform) {
+            this.source = source;
+            this.transform = transform;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return source.hasNext();
+        }
+
+        @Override
+        public T next() {
+            return transform.apply(source.next());
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     /**
      * Iterates through this Iterator transforming each item into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
-     * <pre class="groovyTestCase">assert [1,2,3].iterator().collect([]){ it * 2 } == [2,4,6]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3].iterator().collect([]){ it * 2 } == [2,4,6]</pre>
      *
      * @param self      an Iterator
      * @param collector the Collection to which the transformed values are added
@@ -2446,7 +2644,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this collection transforming each entry into a new value using Closure.IDENTITY
      * as a transformer, basically returning a list of items copied from the original collection.
      *
-     * <pre class="groovyTestCase">assert [1,2,3].collect() == [1,2,3]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3].collect() == [1,2,3]</pre>
      *
      * @param self an Iterable
      * @return a List of the transformed values
@@ -2462,7 +2660,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Iterable transforming each entry into a new value using the <code>transform</code> closure
      * returning a list of transformed values.
      *
-     * <pre class="groovyTestCase">assert [1,2,3].collect { it * 2 } == [2,4,6]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3].collect { it * 2 } == [2,4,6]</pre>
      *
      * @param self      an Iterable
      * @param transform the closure used to transform each item of the collection
@@ -2474,10 +2672,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this Iterable transforming each item into a new value using the
+     * <code>transform</code> function, returning a list of transformed values.
+     * A "fat-free" variant of {@link #collect(Iterable, Closure)} accepting a {@link Function}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [1, 2, 3].collect(n -&gt; n * 2) == [2, 4, 6]</pre>
+     *
+     * @param self      an Iterable
+     * @param transform the function used to transform each item of the Iterable
+     * @return a List of the transformed values
+     * @since 6.0.0
+     */
+    public static <E, T> List<T> collect(Iterable<E> self, Function<? super E, ? extends T> transform) {
+        return collect(self.iterator(), transform);
+    }
+
+    /**
      * Iterates through this collection transforming each value into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
-     * <pre class="groovyTestCase">assert [2,4,5,6].collect(new HashSet()) { (int)(it / 2) } == [1,2,3] as Set</pre>
+     * <pre class="language-groovy groovyTestCase">assert [2,4,5,6].collect(new HashSet()) { (int)(it / 2) } == [1,2,3] as Set</pre>
      *
      * @param self      an Iterable
      * @param collector the Collection to which the transformed values are added
@@ -2496,10 +2710,60 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this Iterable transforming each value into a new value using the
+     * <code>transform</code> function and adding it to the supplied <code>collector</code>.
+     * A "fat-free" variant of {@link #collect(Iterable, Collection, Closure)} accepting a {@link Function}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [2, 4, 5, 6].collect(new HashSet(), n -&gt; (int)(n / 2)) == [1, 2, 3] as Set</pre>
+     *
+     * @param self      an Iterable
+     * @param collector the Collection to which the transformed values are added
+     * @param transform the function used to transform each item
+     * @return the collector with all transformed values added to it
+     * @since 6.0.0
+     */
+    public static <E, T, C extends Collection<T>> C collect(Iterable<E> self, C collector, Function<? super E, ? extends T> transform) {
+        for (E element : self) {
+            collector.add(transform.apply(element));
+        }
+        return collector;
+    }
+
+    /**
+     * Iterates through this Iterable transforming each value into a new value using the
+     * two-argument <code>transform</code> function, with the supplied <code>param</code>
+     * fixed as the second argument, returning a list of transformed values. This is a
+     * "fat-free" variant combining {@link #collect(Iterable, Closure)} with the
+     * right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiFunction, Object)}, so that
+     * {@code list.collect(transform, param)} is equivalent to
+     * {@code list.collect(curryWith(transform, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;String, Integer, String&gt; repeat = (s, n) -&gt; s * n
+     * assert ['a', 'b', 'c'].collect(repeat, 3) == ['aaa', 'bbb', 'ccc']
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param transform a two-argument function used to transform each item
+     * @param param     the value to fix as the function's second argument
+     * @return a List of the transformed values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <E, P, R> List<R> collect(Iterable<E> self, BiFunction<? super E, ? super P, ? extends R> transform, P param) {
+        List<R> answer = new ArrayList<>();
+        for (E element : self) {
+            answer.add(transform.apply(element, param));
+        }
+        return answer;
+    }
+
+    /**
      * Iterates through this Map transforming each map entry into a new value using the <code>transform</code> closure
      * returning the <code>collector</code> with all transformed values added to it.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:1, b:2].collect(new HashSet()) { key, value -&gt; key * value } == ["a", "bb"] as Set
      * assert [3:20, 2:30].collect(new HashSet()) { entry -&gt; entry.key * entry.value } == [60] as Set
      * </pre>
@@ -2521,7 +2785,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Map transforming each map entry into a new value using the <code>transform</code> closure
      * returning a list of transformed values.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:1, b:2].collect { key, value -&gt; key * value } == ["a", "bb"]
      * assert [3:20, 2:30].collect { entry -&gt; entry.key * entry.value } == [60, 60]
      * </pre>
@@ -2535,6 +2799,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return collect(self, new ArrayList<>(self.size()), transform);
     }
 
+    /**
+     * Iterates through this Map transforming each map entry into a new value using the
+     * <code>transform</code> function (which is passed the key and value of each entry),
+     * returning a list of transformed values.
+     * A "fat-free" variant of {@link #collect(Map, Closure)} accepting a {@link BiFunction}.
+     *
+     * <pre class="language-groovy groovyTestCase">assert [a: 1, b: 2].collect((key, value) -&gt; key * value) == ['a', 'bb']</pre>
+     *
+     * @param self      a Map
+     * @param transform the function used to transform each entry, taking the key and value as arguments
+     * @return the resultant list of transformed values
+     * @since 6.0.0
+     */
+    public static <T, K, V> List<T> collect(Map<K, V> self, BiFunction<? super K, ? super V, ? extends T> transform) {
+        List<T> answer = new ArrayList<>(self.size());
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            answer.add(transform.apply(entry.getKey(), entry.getValue()));
+        }
+        return answer;
+    }
+
     //--------------------------------------------------------------------------
     // collectEntries
 
@@ -2542,7 +2827,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Map transforming each map entry using the <code>transform</code> closure
      * returning a map of the transformed entries.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:1, b:2].collectEntries([:]) { k, v -&gt; Map.entry(v, k) } == [1:'a', 2:'b']
      * assert [a:1, b:2].collectEntries([30:'C']) { key, value -&gt; [(value*10): key.toUpperCase()] } == [10:'A', 20:'B', 30:'C']
      * </pre>
@@ -2571,7 +2856,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Map transforming each entry using the <code>transform</code> closure
      * and returning a map of the transformed entries.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:1, b:2].collectEntries { key, value -&gt; [value, key] } == [1:'a', 2:'b']
      * assert [a:1, b:2].collectEntries { key, value -&gt; [(value*10): key.toUpperCase()] } == [10:'A', 20:'B']
      * </pre>
@@ -2595,7 +2880,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A variant of collectEntries for Iterators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Iterators.iterate(0, Integer::next).take(4).collectEntries { n ->
      *     ['a'.next(n), n]
      * } == [a:0, b:1, c:2, d:3]
@@ -2615,7 +2900,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns an iterator of transformed values from the source iterator using the
      * <code>transform</code> closure.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Iterators.iterate(0, Integer::next).take(40).collectingEntries { n -&gt;
      *     var c = 'a'
      *     n.times{ c = c.next() }
@@ -2665,7 +2950,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Iterable transforming each item using the <code>transform</code> closure
      * and returning a map of the resulting transformed entries.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = "abc"
      * // collect letters with index using list style
      * assert (0..2).collectEntries { index -&gt; [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
@@ -2704,7 +2989,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * A variant of collectEntries for Iterable objects using the identity closure as the transform.
      * The source Iterable should contain a list of <code>[key, value]</code> tuples or <code>Map.Entry</code> objects.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [1, 10, 100, 1000]
      * def tuples = nums.collect{ [it, it.toString().size()] }
      * assert tuples == [[1, 1], [10, 2], [100, 3], [1000, 4]]
@@ -2775,7 +3060,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * A variant of collectEntries for Iterables with separate functions for transforming the keys and values.
      * The supplied collector map is used as the destination for transformed entries.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
      * assert languages.collectEntries([clojure:7], String::toLowerCase, String::size) == [clojure:7, groovy:6, java:4, kotlin:6, scala:5]
      * </pre>
@@ -2793,7 +3078,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A variant of collectEntries for Iterables with separate functions for transforming the keys and values.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
      * assert languages.collectEntries(String::toLowerCase, String::size) ==
      *     [groovy:6, java:4, kotlin:6, scala:5]
@@ -2807,6 +3092,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Function<? super E, K> keyTransform, Function<? super E, V> valueTransform) {
         return collectEntries(self.iterator(), new LinkedHashMap<>(), keyTransform, valueTransform);
+    }
+
+    /**
+     * A "fat-free" variant of {@link #collectEntries(Iterable, Closure)} which transforms
+     * each element of the Iterable into a {@link Map.Entry} using the supplied function,
+     * returning a Map of the transformed entries.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
+     * assert languages.collectEntries(s -&gt; Map.entry(s.toLowerCase(), s.size())) ==
+     *     [groovy: 6, java: 4, kotlin: 6, scala: 5]
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param transform a function for transforming Iterable elements into a Map.Entry
+     * @return a Map of the transformed entries
+     * @since 6.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Function<? super E, ? extends Map.Entry<K, V>> transform) {
+        Map<K, V> answer = new LinkedHashMap<>();
+        for (E element : self) {
+            addEntry(answer, transform.apply(element));
+        }
+        return answer;
     }
 
     /**
@@ -2844,7 +3153,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Iterable transforming each item using the closure
      * as a transformer into a map entry, returning the supplied map with all the transformed entries added to it.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = "abc"
      * // collect letters with index
      * assert (0..2).collectEntries( [:] ) { index -&gt; [index, letters[index]] } == [0:'a', 1:'b', 2:'c']
@@ -2936,7 +3245,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Maps' keys leaving the values unchanged.
      * Similar to {@link #withCollectedKeys(Iterable, Map, Function)} but for Maps.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
      * def firstLetter = (s) -&gt; s[0]
      * assert lengths.collectKeys([C:7], firstLetter) == [C:7, G:6, J:4, K:6, S:5]
@@ -2959,7 +3268,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Maps' keys leaving the values unchanged.
      * Similar to {@link #withCollectedKeys(Iterable, Function)} but for Maps.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
      * def firstLetter = (s) -&gt; s[0]
      * assert lengths.collectKeys(firstLetter) == [G:6, J:4, K:6, S:5]
@@ -2980,7 +3289,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Projects each item from a source Iterable to a collection and concatenates (flattens) the resulting collections into a single list.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = 1..10
      * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216, 64, 512, 100, 1000]
@@ -3020,7 +3329,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Projects each item from a source collection to a result collection and concatenates (flattens) the resulting
      * collections adding them into the <code>collector</code>.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def animals = ['CAT', 'DOG', 'ELEPHANT']
      * def smallAnimals = animals.collectMany(['ant', 'bee']){ it.size() > 3 ? [] : [it.toLowerCase()] }
      * assert smallAnimals == ['ant', 'bee', 'cat', 'dog']
@@ -3050,7 +3359,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Projects each item from a source map to a result collection and concatenates (flattens) the resulting
      * collections adding them into the <code>collector</code>.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [bread:3, milk:5, butter:2]
      * def result = map.collectMany(['x']){ k, v {@code ->} if (k.startsWith('b')) k.toList() }
      * assert result == ['x', 'b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
@@ -3074,7 +3383,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Projects each item from a source map to a result collection and concatenates (flattens) the resulting
      * collections adding them into a collection.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [bread:3, milk:5, butter:2]
      * def result = map.collectMany{ k, v {@code ->} k.startsWith('b') ? k.toList() : [] }
      * assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
@@ -3092,13 +3401,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single list.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
      * def squaresAndCubesOfEvens = numsIter.collectMany{ if (it % 2 == 0) [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
      * </pre>
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var letters = 'a'..'z'
      * var pairs = letters.collectMany{ a {@code ->}
      *     letters.collectMany{ b {@code ->}
@@ -3127,13 +3436,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through the elements produced by projecting and flattening the elements from a source iterator.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
      * def squaresAndCubesOfEvens = numsIter.collectingMany{ if (it % 2 == 0) [it**2, it**3] }.collect()
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
      * </pre>
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      *     var letters = 'a'..'z'
      * var pairs = letters.iterator().collectingMany{ a ->
      *     letters.iterator().collectingMany{ b ->
@@ -3202,7 +3511,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single list.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
      * def squaresAndCubesOfEvens = numsIter.collectMany{ it % 2 ? [] : [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
@@ -3221,7 +3530,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flattens an iterator of collections into a single list.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2].zip([10, 20]).collectMany() == [1, 10, 2, 20]
      * </pre>
      *
@@ -3241,7 +3550,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * list of transformed values.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2,[4,6],[8],[]] == [1,[2,3],[4],[]].collectNested { it * 2 }
      * </pre>
      *
@@ -3258,7 +3567,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Recursively iterates through this Iterable transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * list of transformed values.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2,[4,6],[8],[]] == [1,[2,3],[4],[]].collectNested { it * 2 }
      * </pre>
      *
@@ -3275,7 +3584,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Recursively iterates through this Iterable transforming each non-Collection value
      * into a new value using the <code>transform</code> closure. Returns a potentially nested
      * collection of transformed values.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def x = [1,[2,3],[4],[]].collectNested(new Vector()) { it * 2 }
      * assert x == [2,[4,6],[8],[]]
      * assert x instanceof Vector
@@ -3309,7 +3618,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Maps' values leaving the keys unchanged.
      * Similar to {@link #withCollectedValues(Iterable, Map, Function)} but for Maps.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
      * def squared = (e) -&gt; e ** 2
      * assert lengths.collectValues([Clojure:49], squared) ==
@@ -3333,7 +3642,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform a Maps' values leaving the keys unchanged.
      * Similar to {@link #withCollectedValues(Iterable, Function)} but for Maps.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def lengths = [Groovy:6, Java:4, Kotlin:6, Scala:5]
      * def squared = (e) -&gt; e ** 2
      * assert lengths.collectValues(squared) == [Groovy:36, Java:16, Kotlin:36, Scala:25]
@@ -3355,7 +3664,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds all combinations of items from the given aggregate of collections.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * result = [['a', 'b'], [1, 2, 3]].combinations()
      * assert result == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]
      * </pre>
@@ -3374,7 +3683,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * then returns the results of the supplied transform.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * result = [[2, 3], [4, 5, 6]].combinations { x,y {@code ->} x*y }
      * assert result == [8, 12, 10, 15, 12, 18]
      * </pre>
@@ -3498,7 +3807,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The iterator will become exhausted of elements after determining the count value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var nums = [2,4,2,1,3,2,4]
      * assert nums.iterator().count(2) == 3
      * assert nums.iterator().count(4) == 2
@@ -3528,7 +3837,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The iterator will become exhausted of elements after determining the count value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2,4,2,1,3,5,2,4,3].toSet().iterator().count{ it % 2 == 0 } == 2
      * </pre>
      *
@@ -3550,7 +3859,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The iterator will become exhausted of elements after determining the count value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2,4,2,1,3,5,2,4,3].toSet().iterator().count(100){ it % 2 == 0 } == 102
      * </pre>
      *
@@ -3572,12 +3881,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of occurrences which satisfy the given predicate from the
+     * items within this Iterator.
+     * A "fat-free" variant of {@link #count(Iterator, Closure)} accepting a {@link Predicate}.
+     * The iterator will become exhausted of elements after determining the count value.
+     * <p>
+     * Example usage:
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [2, 4, 2, 1, 3, 5, 2, 4, 3].iterator().count(isEven) == 5
+     * </pre>
+     *
+     * @param self      the Iterator from which we count the number of matching occurrences
+     * @param predicate a predicate condition
+     * @return the number of occurrences
+     * @since 6.0.0
+     */
+    public static <T> Number count(Iterator<T> self, Predicate<? super T> predicate) {
+        long answer = 0;
+        while (self.hasNext()) {
+            if (predicate.test(self.next())) {
+                answer++;
+            }
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
+        return answer;
+    }
+
+    /**
      * Counts the number of occurrences of the given value inside this Iterable.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2,4,2,1,3,5,2,4,3].count(4) == 2
      * </pre>
      *
@@ -3594,7 +3933,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences which satisfy the given closure from inside this Iterable.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2,4,2,1,3,5,2,4,3].count{ it % 2 == 0 } == 5
      * </pre>
      *
@@ -3608,10 +3947,56 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of occurrences which satisfy the given predicate from inside this Iterable.
+     * A "fat-free" variant of {@link #count(Iterable, Closure)} accepting a {@link Predicate}.
+     * <p>
+     * Example usage:
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(isEven) == 5
+     * </pre>
+     *
+     * @param self      the Iterable within which we count the number of occurrences
+     * @param predicate a predicate condition
+     * @return the number of occurrences
+     * @since 6.0.0
+     */
+    public static <T> Number count(Iterable<T> self, Predicate<? super T> predicate) {
+        return count(self.iterator(), predicate);
+    }
+
+    /**
+     * Counts the number of occurrences which satisfy the given two-argument condition, with the
+     * supplied <code>param</code> fixed as the second argument. Combines
+     * {@link #count(Iterable, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code list.count(condition, param)} is equivalent to
+     * {@code list.count(curryWith(condition, param))}.
+     * <p>
+     * Example usage:
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [2, 4, 2, 1, 3, 5, 2, 4, 3].count(divisibleBy, 2) == 5
+     * </pre>
+     *
+     * @param self      the Iterable within which we count the number of occurrences
+     * @param predicate a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return the number of occurrences
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> Number count(Iterable<T> self, BiPredicate<? super T, ? super P> predicate, P param) {
+        return count(self, item -> predicate.test(item, param));
+    }
+
+    /**
      * Counts the number of occurrences which satisfy the given closure from inside this Iterable.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [2,4,2,1,3,5,2,4,3].count(100L){ it % 2 == 0 } == 105L
      * </pre>
      *
@@ -3631,7 +4016,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Otherwise, the closure should take two parameters and will be passed the key and value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:1, b:1, c:2, d:2].count{ k,v {@code ->} k == 'a' {@code ||} v == 2 } == 3
      * </pre>
      *
@@ -3653,7 +4038,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Otherwise, the closure should take two parameters and will be passed the key and value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:1, b:1, c:2, d:2].count(100G){ k,v {@code ->} k == 'a' {@code ||} v == 2 } == 103G
      * </pre>
      *
@@ -3685,7 +4070,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * items occurring for that group.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [0:2, 1:3] == [1,2,3,4,5].countBy { it % 2 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [0:2, 1:3] == [1,2,3,4,5].countBy { it % 2 }</pre>
      *
      * @param self    a collection to group and count
      * @param closure a closure mapping items to the frequency keys
@@ -3700,7 +4085,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates a multiset-like map of the collection members.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [1:2, 2:2, 3:1] == [1,2,1,2,3].countBy()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1:2, 2:2, 3:1] == [1,2,1,2,3].countBy()</pre>
      *
      * @param self    a collection to group and count
      * @return a new Map where the keys are the set of values in the collection and the values are the frequency counts
@@ -3718,7 +4103,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * items occurring for that group.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [1,2,2,2,3].toSet().iterator().countBy{ it % 2 } == [1:2, 0:1]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,2,2,3].toSet().iterator().countBy{ it % 2 } == [1:2, 0:1]</pre>
      *
      * @param self    an iterator to group and count
      * @param closure a closure mapping items to the frequency keys
@@ -3738,7 +4123,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates a multiset-like map of the iterator members.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [1:2, 2:2, 3:1] == [1,2,1,2,3].iterator().countBy()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1:2, 2:2, 3:1] == [1,2,1,2,3].iterator().countBy()</pre>
      *
      * @param self    an iterator to group and count
      * @return a new Map where the keys are the set of values produced by the iterator and the values are the frequency counts
@@ -3757,7 +4142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the frequency counts for that 'group'.
      * <p>
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5].countBy { it.value % 2 }
+     * <pre class="language-groovy groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5].countBy { it.value % 2 }
      * assert result == [0:2, 1:3]</pre>
      *
      * @param self    a map to group and count
@@ -3788,8 +4173,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns <code>true</code> if the intersection of two iterables is empty.
-     * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
-     * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
      *
      * @param left  an Iterable
      * @param right an Iterable
@@ -4098,7 +4483,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drain the queue of elements, returning them as a list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = new PriorityQueue(String.CASE_INSENSITIVE_ORDER)
      * letters.addAll(['Z', 'y', 'X', 'a', 'B', 'c'])
      * assert letters.toList() == ['a', 'B', 'c', 'Z', 'X', 'y']
@@ -4123,7 +4508,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of elements from the head of this List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ] as SortedSet
      * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ] as SortedSet
      * assert strings.drop( 2 ) == [ 'c' ] as SortedSet
@@ -4142,7 +4527,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of elements from the head of this List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ]
      * assert strings.drop( 2 ) == [ 'c' ]
@@ -4161,7 +4546,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of elements from the head of this Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ]
      * assert strings.drop( 2 ) == [ 'c' ]
@@ -4191,7 +4576,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of key/value pairs from the head of this map if they are available.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a':10, 'b':20, 'c':30 ]
      * assert strings.drop( 0 ) == [ 'a':10, 'b':20, 'c':30 ]
      * assert strings.drop( 2 ) == [ 'c':30 ]
@@ -4229,7 +4614,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Drops the given number of elements from the head of this iterator if they are available.
      * The original iterator is stepped along by <code>num</code> elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def iteratorCompare( Iterator a, List b ) {
      *     a.collect { it } == b
      * }
@@ -4258,7 +4643,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of elements from the tail of this SortedSet.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ] as SortedSet
      * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ] as SortedSet
      * assert strings.dropRight( 2 ) == [ 'a' ] as SortedSet
@@ -4277,7 +4662,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of elements from the tail of this List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ]
      * assert strings.dropRight( 2 ) == [ 'a' ]
@@ -4296,7 +4681,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of elements from the tail of this Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ]
      * assert strings.dropRight( 2 ) == [ 'a' ]
@@ -4335,7 +4720,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Drops the given number of elements from the tail of this Iterator.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def getObliterator() { "obliter8".iterator() }
      * assert obliterator.dropRight(-1).toList() == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
      * assert obliterator.dropRight(0).toList() == ['o', 'b', 'l', 'i', 't', 'e', 'r', '8']
@@ -4409,7 +4794,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * while the given Closure evaluates to true.
      * Similar to {@link #dropWhile(Iterable, groovy.lang.Closure)}
      * except that it attempts to preserve the type of the original SortedSet.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [ 1, 2, 3 ] as SortedSet
      * assert nums.dropWhile{ it {@code <} 4 } == [] as SortedSet
      * assert nums.dropWhile{ it {@code <} 2 } == [ 2, 3 ] as SortedSet
@@ -4432,7 +4817,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * while the given Closure evaluates to true.
      * Similar to {@link #dropWhile(Iterable, groovy.lang.Closure)}
      * except that it attempts to preserve the type of the original list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [ 1, 3, 2 ]
      * assert nums.dropWhile{ it {@code <} 4 } == []
      * assert nums.dropWhile{ it {@code <} 3 } == [ 3, 2 ]
@@ -4462,7 +4847,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a suffix of this Iterable where elements are dropped from the front
      * while the given closure evaluates to true.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class HorseIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "horse".iterator() }
      * }
@@ -4488,7 +4873,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a suffix of the given Map by dropping as many entries as possible from the
      * front of the original Map such that calling the given closure condition evaluates to
      * true when passed each of the dropped entries (or key/value pairs).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def shopping = [milk:1, bread:2, chocolate:3]
      * assert shopping.dropWhile{ it.key.size() {@code <} 6 } == [chocolate:3]
      * assert shopping.dropWhile{ it.value % 2 } == [bread:2, chocolate:3]
@@ -4522,7 +4907,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates an Iterator that returns a suffix of the elements from an original Iterator. As many elements
      * as possible are dropped from the front of the original Iterator such that calling the given closure
      * condition evaluates to true when passed each of the dropped elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = 0
      * def iter = [ hasNext:{ a {@code <} 10 }, next:{ a++ } ] as Iterator
      * assert [].iterator().dropWhile{ it {@code <} 3 }.toList() == []
@@ -4599,7 +4984,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Generates a detailed dump string of an object showing its class,
      * hashCode and all accessible fields.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert null.dump() == 'null'
      * class Base {
      *   static String zero = ' '
@@ -4672,7 +5057,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passing each item to the given closure.  Custom types may utilize this
      * method by simply providing an "iterator()" method.  The items returned
      * from the resulting iterator will be passed to the closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String result = ''
      * ['a', 'b', 'c'].each{ result += it }
      * assert result == 'abc'
@@ -4697,6 +5082,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Iterable<T> each(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         each(self.iterator(), closure);
+        return self;
+    }
+
+    /**
+     * Iterates through an Iterable, passing each item to the given consumer.
+     * A "fat-free" variant of {@link #each(Iterable, Closure)} accepting a {@link Consumer}.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = []
+     * assert [1, 2, 3].each(result::add) == [1, 2, 3]
+     * assert result == [1, 2, 3]
+     * </pre>
+     *
+     * @param self     the Iterable over which we iterate
+     * @param consumer the consumer applied on each element found
+     * @return the self Iterable
+     * @since 6.0.0
+     */
+    public static <T> Iterable<T> each(Iterable<T> self, Consumer<? super T> consumer) {
+        for (T item : self) {
+            consumer.accept(item);
+        }
         return self;
     }
 
@@ -4769,10 +5175,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure takes one parameter then it will be passed the Map.Entry
      * otherwise if the closure takes two parameters then it will be
      * passed the key and the value.
-     * <pre class="groovyTestCase">def result = ""
+     * <pre class="language-groovy groovyTestCase">def result = ""
      * [a:1, b:3].each { key, value {@code ->} result += "$key$value" }
      * assert result == "a1b3"</pre>
-     * <pre class="groovyTestCase">def result = ""
+     * <pre class="language-groovy groovyTestCase">def result = ""
      * [a:1, b:3].each { entry {@code ->} result += entry }
      * assert result == "a=1b=3"</pre>
      *
@@ -4800,7 +5206,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Applies a function on each combination of the input lists.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">[[2, 3],[4, 5, 6]].eachCombination { println "Found $it" }</pre>
+     * <pre class="language-groovy groovyTestCase">[[2, 3],[4, 5, 6]].eachCombination { println "Found $it" }</pre>
      *
      * @param self a Collection of lists
      * @param function a closure to be called on each combination
@@ -4819,7 +5225,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over all permutations of a collection, running a closure for each iteration.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">def permutations = []
+     * <pre class="language-groovy groovyTestCase">def permutations = []
      * [1, 2, 3].eachPermutation{ permutations &lt;&lt; it }
      * assert permutations == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]</pre>
      *
@@ -4843,7 +5249,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through an aggregate type or data structure,
      * passing each item and the item's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String result = ''
      * ['a', 'b', 'c'].eachWithIndex{ letter, index {@code ->} result += "$index:$letter" }
      * assert result == '0:a1:b2:c'
@@ -4877,6 +5283,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Iterable<T> eachWithIndex(Iterable<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         eachWithIndex(self.iterator(), closure);
+        return self;
+    }
+
+    /**
+     * Iterates through an Iterable, passing each item and the item's index
+     * (a counter starting at zero) to the given consumer.
+     * A "fat-free" variant of {@link #eachWithIndex(Iterable, Closure)} accepting an {@link ObjIntConsumer}.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = [:]
+     * ['a', 'b', 'c'].eachWithIndex((item, index) -&gt; result[item] = index)
+     * assert result == [a: 0, b: 1, c: 2]
+     * </pre>
+     *
+     * @param self     the Iterable over which we iterate
+     * @param consumer a consumer which accepts each item and its index
+     * @return the self Iterable
+     * @since 6.0.0
+     */
+    public static <T> Iterable<T> eachWithIndex(Iterable<T> self, ObjIntConsumer<? super T> consumer) {
+        int counter = 0;
+        for (T item : self) {
+            consumer.accept(item, counter++);
+        }
         return self;
     }
 
@@ -4963,10 +5392,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the item's index (a counter starting at zero) otherwise if the closure
      * takes three parameters then it will be passed the key, the value, and
      * the index.
-     * <pre class="groovyTestCase">def result = ""
+     * <pre class="language-groovy groovyTestCase">def result = ""
      * [a:1, b:3].eachWithIndex { key, value, index {@code ->} result += "$index($key$value)" }
      * assert result == "0(a1)1(b3)"</pre>
-     * <pre class="groovyTestCase">def result = ""
+     * <pre class="language-groovy groovyTestCase">def result = ""
      * [a:1, b:3].eachWithIndex { entry, index {@code ->} result += "$index($entry)" }
      * assert result == "0(a=1)1(b=3)"</pre>
      *
@@ -4990,7 +5419,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Determines if the contents of this list are equal to the
      * contents of the given array in the same order. This returns
      * <code>false</code> if either collection is <code>null</code>.
-     * <pre class="groovyTestCase">assert [1, "a"].equals( [ 1, "a" ] as Object[] )</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1, "a"].equals( [ 1, "a" ] as Object[] )</pre>
      *
      * @param left  a List
      * @param right the Object[] being compared to
@@ -5007,7 +5436,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * for example 2 == 2L. If both lists are <code>null</code>, the result
      * is true; otherwise if either list is <code>null</code>, the result
      * is <code>false</code>.
-     * <pre class="groovyTestCase">assert ["a", 2].equals(["a", 2])
+     * <pre class="language-groovy groovyTestCase">assert ["a", 2].equals(["a", 2])
      * assert ![2, "a"].equals("a", 2)
      * assert [2.0, "a"].equals(2L, "a") // number comparison at work</pre>
      *
@@ -5053,7 +5482,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * for example 2 == 2L.  If both sets are <code>null</code>, the result
      * is true; otherwise if either set is <code>null</code>, the result
      * is <code>false</code>. Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Set s1 = ["a", 2]
      * def s2 = [2, 'a'] as Set
      * Set s3 = [3, 'a']
@@ -5106,7 +5535,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares two Maps treating coerced numerical values as identical.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [a:2, b:3] == [a:2L, b:3.0]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [a:2, b:3] == [a:2L, b:3.0]</pre>
      *
      * @param self  this Map
      * @param other the Map being compared to
@@ -5142,7 +5571,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     static boolean coercedEquals(Object o1, Object o2) {
-        if (o1 instanceof Comparable) {
+        // An object that is both Comparable and a List (e.g. Tuple) must be
+        // compared as a List here, consistent with how a plain (non-Comparable)
+        // List is compared by DefaultTypeTransformation.compareEqual, rather
+        // than taking the Comparable/numberAwareCompareTo short-circuit below;
+        // otherwise nested Tuple/List equality (element-wise list equals)
+        // would be inconsistent with `==` and with Tuple.equals(List).
+        if (o1 instanceof Comparable && !(o1 instanceof List && o2 instanceof List)) {
             if (!(o2 instanceof Comparable && numberAwareCompareTo((Comparable) o1, (Comparable) o2) == 0)) {
                 return false;
             }
@@ -5262,12 +5697,66 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Used to determine if the given predicate is valid (i.e.&#160;returns
+     * <code>true</code> for all items in this iterable). A "fat-free" variant of
+     * {@link #every(Iterable, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; greaterThanTwo = n -&gt; n &gt; 2
+     * assert [3, 4, 5].every(greaterThanTwo)
+     * assert ![1, 4, 5].every(greaterThanTwo)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @return true if every element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    public static <T> boolean every(Iterable<T> self, Predicate<? super T> predicate) {
+        for (T item : self) {
+            if (!predicate.test(item)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Used to determine if the given predicate is valid (i.e.&#160;returns
+     * <code>true</code> for all items in this iterable) when called with each
+     * element and the supplied <code>param</code>. A "fat-free" variant of
+     * {@link #every(Iterable, Closure)} accepting a {@link BiPredicate} together with an
+     * additional argument, mirroring {@link #findAll(Iterable, BiPredicate, Object)}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [2, 4, 6].every(divisibleBy, 2)
+     * assert ![2, 3, 4].every(divisibleBy, 2)
+     * </pre>
+     *
+     * @param self      the iterable over which we iterate
+     * @param predicate the predicate used for matching
+     * @param param     the additional argument passed to the predicate
+     * @return true if every element of the iterable matches the predicate
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> boolean every(Iterable<T> self, BiPredicate<? super T, ? super P> predicate, P param) {
+        for (T item : self) {
+            if (!predicate.test(item, param)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for all entries. If the
      * closure takes one parameter then it will be passed the Map.Entry
      * otherwise if the closure takes two parameters then it will be
      * passed the key and the value.
-     * <pre class="groovyTestCase">def map = [a:1, b:2.0, c:2L]
+     * <pre class="language-groovy groovyTestCase">def map = [a:1, b:2.0, c:2L]
      * assert !map.every { key, value {@code ->} value instanceof Integer }
      * assert map.every { entry {@code ->} entry.value instanceof Number }</pre>
      *
@@ -5290,7 +5779,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over every element of a collection, and checks whether all
      * elements are <code>true</code> according to the Groovy Truth.
      * Equivalent to <code>self.every({element {@code ->} element})</code>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [true, true].every()
      * assert [1, 1].every()
      * assert ![1, 0].every()
@@ -5301,9 +5790,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static boolean every(Object self) {
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
-            if (!bmi.convertToBoolean(iter.next())) {
+            if (!DefaultTypeTransformation.castToBoolean(iter.next())) {
                 return false;
             }
         }
@@ -5316,7 +5804,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Finds the first value matching the closure condition.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def numbers = [1, 2, 3]
      * def result = numbers.find { it {@code >} 1}
      * assert result == 2
@@ -5342,7 +5830,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds the first item matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [null, 0, 0.0, false, '', [], 42, 43]
      * assert items.find() == 42
      * </pre>
@@ -5358,7 +5846,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds the first value matching the closure condition.  Example:
-     * <pre class="groovyTestCase">def list = [1,2,3]
+     * <pre class="language-groovy groovyTestCase">def list = [1,2,3]
      * assert 2 == list.find { it {@code >} 1 }
      * </pre>
      *
@@ -5378,10 +5866,117 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the first value matching the given predicate.
+     * A "fat-free" variant of {@link #find(Collection, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; greaterThanOne = n -&gt; n &gt; 1
+     * assert [1, 2, 3].find(greaterThanOne) == 2
+     * assert [1, 2, 3].find(n -&gt; n &gt; 3) == null
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition the predicate condition
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    public static <T> T find(Iterable<T> self, Predicate<? super T> condition) {
+        for (T value : self) {
+            if (condition.test(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first value matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. This is the single-result
+     * counterpart of {@link #findAll(Iterable, BiPredicate, Object)}, combining
+     * {@link #find(Iterable, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code list.find(condition, param)} is equivalent to
+     * {@code list.find(curryWith(condition, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].find(divisibleBy, 3) == 3
+     * assert [1, 2, 3, 4, 5, 6].find(divisibleBy, 7) == null
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> T find(Iterable<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        for (T value : self) {
+            if (condition.test(value, param)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first value matching the given predicate.
+     * A "fat-free" variant of {@link #find(Collection, Closure)} accepting a {@link Predicate},
+     * operating on an Iterator. The iterator is consumed up to and including the first
+     * matching element.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; greaterThanOne = n -&gt; n &gt; 1
+     * assert [1, 2, 3].iterator().find(greaterThanOne) == 2
+     * assert [1, 2, 3].iterator().find(n -&gt; n &gt; 3) == null
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param condition the predicate condition
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    public static <T> T find(Iterator<T> self, Predicate<? super T> condition) {
+        while (self.hasNext()) {
+            T value = self.next();
+            if (condition.test(value)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first value matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. This is the Iterator counterpart of
+     * {@link #find(Iterable, BiPredicate, Object)}, so that
+     * {@code iter.find(condition, param)} is equivalent to
+     * {@code iter.find(curryWith(condition, param))}. The iterator is consumed up to and
+     * including the first matching element.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 3) == 3
+     * assert [1, 2, 3, 4, 5, 6].iterator().find(divisibleBy, 7) == null
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return the first element matching the condition, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> T find(Iterator<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        return find(self, item -> condition.test(item, param));
+    }
+
+    /**
      * Finds the first item matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [null, 0, 0.0, false, '', [], 42, 43]
      * assert items.find() == 42
      * </pre>
@@ -5399,7 +5994,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds the first entry matching the closure condition.
      * If the closure takes two parameters, the entry key and value are passed.
      * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">assert [a:1, b:3].find { it.value == 3 }.key == "b"</pre>
+     * <pre class="language-groovy groovyTestCase">assert [a:1, b:3].find { it.value == 3 }.key == "b"</pre>
      *
      * @param self    a Map
      * @param closure a 1 or 2 arg Closure condition
@@ -5430,7 +6025,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * be returned.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def result = [a:1, b:2, c:4, d:5].findAll { it.value % 2 == 0 }
      * assert result.every { it instanceof Map.Entry }
      * assert result*.key == ["b", "c"]
@@ -5454,8 +6049,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all entries matching the given predicate (which is passed the key and value
+     * of each entry). A "fat-free" variant of {@link #findAll(Map, Closure)} accepting a
+     * {@link BiPredicate}. If the <code>self</code> map is one of TreeMap, LinkedHashMap,
+     * Hashtable or Properties, the returned Map will preserve that type, otherwise a
+     * HashMap will be returned.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = [a: 1, b: 2, c: 4, d: 5].findAll((k, v) -&gt; v % 2 == 0)
+     * assert result*.key == ['b', 'c']
+     * assert result*.value == [2, 4]
+     * </pre>
+     *
+     * @param self      a Map
+     * @param condition the predicate condition applied on the key and value of each entry
+     * @return a new subMap
+     * @since 6.0.0
+     */
+    public static <K, V> Map<K, V> findAll(Map<K, V> self, BiPredicate<? super K, ? super V> condition) {
+        Map<K, V> answer = createSimilarMap(self);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (condition.test(entry.getKey(), entry.getValue())) {
+                answer.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return answer;
+    }
+
+    /**
      * Finds all values matching the closure condition.
-     * <pre class="groovyTestCase">assert ([2,4] as Set) == ([1,2,3,4] as Set).findAll { it % 2 == 0 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert ([2,4] as Set) == ([1,2,3,4] as Set).findAll { it % 2 == 0 }</pre>
      *
      * @param self    a Set
      * @param closure a closure condition
@@ -5467,8 +6089,53 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all values matching the given predicate, preserving the Set type.
+     * A "fat-free" variant of {@link #findAll(Set, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">assert ([2, 4] as Set) == ([1, 2, 3, 4] as Set).findAll(n -&gt; n % 2 == 0)</pre>
+     *
+     * @param self      a Set
+     * @param condition the predicate condition
+     * @return a Set of matching values
+     * @since 6.0.0
+     */
+    public static <T> Set<T> findAll(Set<T> self, Predicate<? super T> condition) {
+        return findMany(createSimilarSet(self), self.iterator(), condition);
+    }
+
+    /**
+     * Finds all values matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument, preserving the Set type. This is
+     * the Set-preserving counterpart of {@link #findAll(Iterable, BiPredicate, Object)},
+     * combining {@link #findAll(Set, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code set.findAll(condition, param)} is equivalent to
+     * {@code set.findAll(curryWith(condition, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert ([1, 2, 3, 4, 5, 6] as Set).findAll(divisibleBy, 2) == ([2, 4, 6] as Set)
+     * </pre>
+     *
+     * @param self      a Set
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return a Set of matching values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> Set<T> findAll(Set<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        Set<T> answer = createSimilarSet(self);
+        for (T item : self) {
+            if (condition.test(item, param)) {
+                answer.add(item);
+            }
+        }
+        return answer;
+    }
+
+    /**
      * Finds all values matching the closure condition.
-     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
      *
      * @param self    a List
      * @param closure a closure condition
@@ -5481,7 +6148,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds all values matching the closure condition.
-     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
      *
      * @param self    a Collection
      * @param closure a closure condition
@@ -5493,10 +6160,70 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all values matching the given predicate.
+     * A "fat-free" variant of {@link #findAll(Collection, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">assert [2, 4] == [1, 2, 3, 4].findAll(n -&gt; n % 2 == 0)</pre>
+     *
+     * @param self      an Iterable
+     * @param condition the predicate condition
+     * @return a List of matching values
+     * @since 6.0.0
+     */
+    public static <T> List<T> findAll(Iterable<T> self, Predicate<? super T> condition) {
+        return findMany(new ArrayList<>(), self.iterator(), condition);
+    }
+
+    /**
+     * Finds all values matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. This is a "fat-free" variant
+     * combining {@link #findAll(Iterable, Predicate)} with the right-currying performed
+     * by {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code list.findAll(condition, param)} is equivalent to
+     * {@code list.findAll(curryWith(condition, param))}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].findAll(divisibleBy, 2) == [2, 4, 6]
+     * assert [1, 2, 3, 4, 5, 6].findAll(divisibleBy, 3) == [3, 6]
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition a two-argument predicate condition
+     * @param param     the value to fix as the predicate's second argument
+     * @return a List of matching values
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> List<T> findAll(Iterable<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        List<T> answer = new ArrayList<>();
+        for (T item : self) {
+            if (condition.test(item, param)) {
+                answer.add(item);
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Finds all values matching the given predicate. The iterator will become
+     * exhausted of elements after this operation. An Iterator variant of
+     * {@link #findAll(Iterable, Predicate)} provided for consistency.
+     * <pre class="language-groovy groovyTestCase">assert [2, 4] == [1, 2, 3, 4].iterator().findAll(n -&gt; n % 2 == 0)</pre>
+     *
+     * @param self      an Iterator
+     * @param condition the predicate condition
+     * @return a List of matching values
+     * @since 6.0.0
+     */
+    public static <T> List<T> findAll(Iterator<T> self, Predicate<? super T> condition) {
+        return findMany(new ArrayList<>(), self, condition);
+    }
+
+    /**
      * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Set
      * assert items.findAll() == [1, 2, true, 'foo', [4, 5]] as Set
      * </pre>
@@ -5514,7 +6241,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
      * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -5532,7 +6259,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds the items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
      * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -5563,7 +6290,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds all items matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
      * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -5588,10 +6315,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return collector;
     }
 
+    static <T, C extends Collection<T>> C findMany(C collector, Iterator<? extends T> iter, Predicate<? super T> condition) {
+        while (iter.hasNext()) {
+            T value = iter.next();
+            if (condition.test(value)) {
+                collector.add(value);
+            }
+        }
+        return collector;
+    }
+
     /**
      * Lazily finds all items matching the closure condition.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = Iterators.iterate('A', String::next).take(26).plus(Iterators.iterate('a', String::next).take(26))
      * assert letters.findingAll{ it.toUpperCase() &lt; 'D' }.toList() == ['A', 'B', 'C', 'a', 'b', 'c']
      * </pre>
@@ -5606,6 +6343,52 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         @DelegatesTo(genericTypeIndex = 0)
         @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
         return new FindAllIterator<>(self, transform);
+    }
+
+    /**
+     * Lazily finds all items matching the predicate condition. A "fat-free" variant of
+     * {@link #findingAll(Iterator, Closure)} accepting a {@link Predicate}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.Predicate
+     * Predicate&lt;Integer&gt; isEven = n -&gt; n % 2 == 0
+     * assert [1, 2, 3].repeat().findingAll(isEven).take(4).toList() == [2, 2, 2, 2]
+     * </pre>
+     *
+     * @param self      a source Iterator
+     * @param condition the predicate used to select elements
+     * @return an Iterator returning the selected elements
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> findingAll(Iterator<T> self, Predicate<? super T> condition) {
+        return new FindingAllPredicateIterator<>(self, condition);
+    }
+
+    /**
+     * Lazily finds all items matching the given two-argument condition, with the supplied
+     * <code>param</code> fixed as the second argument. Combines
+     * {@link #findingAll(Iterator, Predicate)} with the right-currying performed by
+     * {@link org.apache.groovy.util.Lambdas#curryWith(BiPredicate, Object)}, so that
+     * {@code iter.findingAll(condition, param)} is equivalent to
+     * {@code iter.findingAll(curryWith(condition, param))}.
+     * Since the result is lazy, it is suitable for use with potentially infinite iterators.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiPredicate
+     * BiPredicate&lt;Integer, Integer&gt; divisibleBy = (n, d) -&gt; n % d == 0
+     * assert [1, 2, 3, 4, 5, 6].repeat().findingAll(divisibleBy, 3).take(4).toList() == [3, 6, 3, 6]
+     * </pre>
+     *
+     * @param self      a source Iterator
+     * @param condition a two-argument predicate used to select elements
+     * @param param     the value to fix as the predicate's second argument
+     * @return an Iterator returning the selected elements
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <T, P> Iterator<T> findingAll(Iterator<T> self, BiPredicate<? super T, ? super P> condition, P param) {
+        return findingAll(self, item -> condition.test(item, param));
     }
 
     private static final class FindAllIterator<T> implements Iterator<T> {
@@ -5653,6 +6436,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    private static final class FindingAllPredicateIterator<T> implements Iterator<T> {
+        private final Iterator<T> source;
+        private final Predicate<? super T> condition;
+        private T current;
+        private boolean found;
+
+        private FindingAllPredicateIterator(Iterator<T> source, Predicate<? super T> condition) {
+            this.source = source;
+            this.condition = condition;
+            this.found = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return found;
+        }
+
+        private void advance() {
+            while (!found && source.hasNext()) {
+                current = source.next();
+                if (condition.test(current)) {
+                    found = true;
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("FindingAllPredicateIterator has been exhausted and contains no more elements");
+            }
+            T result = current;
+            found = false;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     //--------------------------------------------------------------------------
     // findIndexOf
 
@@ -5674,7 +6502,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * specified startIndex, and returns the index of the first item that matches the
      * condition specified in the closure.
      * Example (aggregate is {@code ChronoUnit} enum values):
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.time.temporal.ChronoUnit
      * def nameStartsWithM = { it.name().startsWith('M') }
      * def first  = ChronoUnit.findIndexOf(nameStartsWithM)
@@ -5858,7 +6686,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns an iterator of transformed values from the source iterator using the
      * <code>transform</code> closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = ('a'..'z').iterator()
      * def vowels = 'aeiou'.toSet()
      * assert letters.findIndexValues{ vowels.contains(it) }.toList() == [0, 4, 8, 14, 20]
@@ -5880,7 +6708,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns an iterator of transformed values from the source iterator using the
      * <code>transform</code> closure and starting with index <code>startIndex</code>.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = ('a'..'z')
      * def vowels = 'aeiou'.toSet()
      * assert letters.iterator().findIndexValues(0){ vowels.contains(it) }.toList() == [0, 4, 8, 14, 20]
@@ -5959,7 +6787,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates over the elements of an aggregate of items and returns
      * the index of the last item that matches the condition specified in the closure.
      * Example (aggregate is {@code ChronoUnit} enum values):
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.time.temporal.ChronoUnit
      * def nameStartsWithM = { it.name().startsWith('M') }
      * def first = ChronoUnit.findIndexOf(nameStartsWithM)
@@ -6066,7 +6894,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns null.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] numbers = [1, 2, 3]
      * assert numbers.findResult { if(it {@code >} 1) return it } == 2
      * assert numbers.findResult { if(it {@code >} 4) return it } == null
@@ -6091,7 +6919,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null value, otherwise returns null.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Foo {
      *     List items
      *     Iterator iterator() {
@@ -6113,7 +6941,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null result obtained from calling the closure, otherwise returns the defaultResult.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] numbers = [1, 2, 3]
      * assert numbers.findResult(5) { if(it {@code >} 1) return it } == 2
      * assert numbers.findResult(5) { if(it {@code >} 4) return it } == 5
@@ -6134,7 +6962,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Treats the object as iterable, iterating through the values it represents and returns the first non-null result, otherwise returns the defaultResult.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Foo {
      *     List items
      *     Iterator iterator() {
@@ -6161,7 +6989,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * result is found and returning that result. If all are null, the defaultResult is returned.
      * <p>
      * Examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def iter = [1,2,3].iterator()
      * assert "Found 2" == iter.findResult("default") { it {@code >} 1 ? "Found $it" : null }
      * assert "default" == iter.findResult("default") { it {@code >} 3 ? "Found $it" : null }
@@ -6184,7 +7012,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * result is found and returning that result. If all are null, the defaultResult is returned.
      * <p>
      * Examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [null, 1, 2].iterator().findResult('default') == 1
      * assert [null, null].findResult('default') == 'default'
      * </pre>
@@ -6236,7 +7064,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * result is found and returning that result. If all are null, the defaultResult is returned.
      * <p>
      * Examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1,2,3]
      * assert "Found 2" == list.findResult("default") { it {@code >} 1 ? "Found $it" : null }
      * assert "default" == list.findResult("default") { it {@code >} 3 ? "Found $it" : null }
@@ -6259,7 +7087,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * result is found and returning that result. If all are null, the defaultResult is returned.
      * <p>
      * Examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [null, 1, 2].findResult('default') == 1
      * assert [null, null].findResult('default') == 'default'
      * </pre>
@@ -6304,7 +7132,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the first non-null closure result found by passing each map entry to the closure, otherwise null is returned.
      * If the closure takes two parameters, the entry key and value are passed.
      * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert "Found b:3" == [a:1, b:3].findResult { if (it.value == 3) return "Found ${it.key}:${it.value}" }
      * assert null == [a:1, b:3].findResult { if (it.value == 9) return "Found ${it.key}:${it.value}" }
      * assert "Found a:1" == [a:1, b:3].findResult { k, v {@code ->} if (k.size() + v == 2) return "Found $k:$v" }
@@ -6329,7 +7157,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the first non-null closure result found by passing each map entry to the closure, otherwise the defaultResult is returned.
      * If the closure takes two parameters, the entry key and value are passed.
      * If the closure takes one parameter, the Map.Entry object is passed.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert "Found b:3" == [a:1, b:3].findResult("default") { if (it.value == 3) return "Found ${it.key}:${it.value}" }
      * assert "default" == [a:1, b:3].findResult("default") { if (it.value == 9) return "Found ${it.key}:${it.value}" }
      * assert "Found a:1" == [a:1, b:3].findResult("default") { k, v {@code ->} if (k.size() + v == 2) return "Found $k:$v" }
@@ -6355,7 +7183,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * and collecting any non-null results.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1,2,3]
      * def result = list.findResults { it {@code >} 1 ? "Found $it" : null }
      * assert result == ["Found 2", "Found 3"]
@@ -6374,7 +7202,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through the Iterable collecting any non-null results.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, null, 2, null, 3].findResults() == [1, 2, 3]
      * </pre>
      *
@@ -6404,7 +7232,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * and finding any non-null results.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def vowels = [a:1, e:5, i:9, o:15, u:21]
      * assert Iterators.iterate('a', n -> ++n).findingResults{ vowels[it] }.take(3).toList() == [1, 5, 9]
      * </pre>
@@ -6484,7 +7312,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes one parameter, the Map.Entry object is passed.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [a:1, b:2, hi:2, cat:3, dog:2]
      * def result = map.findResults { k, v {@code ->} k.size() == v ? "Found $k:$v" : null }
      * assert result == ["Found a:1", "Found hi:2", "Found cat:3"]
@@ -6511,7 +7339,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [3, 4, 2]
      * assert list.first() == 3
      * // check original is unaltered
@@ -6532,7 +7360,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def set = [3, 4, 2] as LinkedHashSet
      * assert set.first() == 3
      * // check original is unaltered
@@ -6561,7 +7389,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten a Collection. This Collection and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
      * @param self a Collection to flatten
      * @return a flattened Collection
@@ -6574,7 +7402,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten an Iterable. This Iterable and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
      * @param self an Iterable to flatten
      * @return a flattened Collection
@@ -6590,7 +7418,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If flattenOptionals is true, the non-empty optionals are also flattened.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var items = [1..2, [3, [4]], Optional.of(5), Optional.empty()]
      * assert items.flatten() == [1, 2, 3, 4, 5]
      * // boolean param determines whether to flatten optionals (false for legacy behavior)
@@ -6613,7 +7441,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Non-empty optionals are also flattened.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var items = [1..2, [3, [4]], Optional.of(5)]
      * assert items.iterator().flatten().toList() == [1, 2, 3, 4, 5]
      * </pre>
@@ -6632,7 +7460,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If flattenOptionals is true, the non-empty optionals are also flattened.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var items = [1..2, [3, [4]], Optional.of(5), Optional.empty()]
      * assert items.iterator().flatten(true).toList() == [1, 2, 3, 4, 5]
      * assert items.iterator().flatten(false).toList() == [1, 2, 3, 4, Optional.of(5), Optional.empty()]
@@ -6720,7 +7548,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                                     returnedSelf = true;
                                 }
                                 if (!returnedSelf) {
-                                    cache.push(flatten((Collection<?>) transformed, flattenOptionals).iterator());
+                                    cache.push(flatten(c, flattenOptionals).iterator());
                                     flattenUsingStack.push(null);
                                     continue outer;
                                 }
@@ -6763,7 +7591,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten a List. This List and any nested arrays or
      * collections have their contents (recursively) added to the new List.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
      * @param self a List to flatten
      * @return a flattened List
@@ -6776,7 +7604,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten a Set. This Set and any nested arrays or
      * collections have their contents (recursively) added to the new Set.
-     * <pre class="groovyTestCase">assert [1,2,3,4,5] as Set == ([1,[2,3],[[4]],[],5] as Set).flatten()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,4,5] as Set == ([1,[2,3],[[4]],[],5] as Set).flatten()</pre>
      *
      * @param self a Set to flatten
      * @return a flattened Set
@@ -6789,7 +7617,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten a SortedSet. This SortedSet and any nested arrays or
      * collections have their contents (recursively) added to the new SortedSet.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Set nested = [[0,1],[2],3,[4],5]
      * SortedSet sorted = new TreeSet({ a, b {@code ->} (a instanceof List ? a[0] : a) {@code <=>} (b instanceof List ? b[0] : b) } as Comparator)
      * sorted.addAll(nested)
@@ -6819,7 +7647,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * otherwise, the closure should just return the (optionally modified) leaf.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * // some examples just transforming the leaf
      * var items = [1..2, [3, [4]]]
      * assert items.flatten(n {@code ->} n + 5) == 6..9
@@ -6856,7 +7684,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a leaf node represents some other kind of collective type,
      * the supplied closure should yield the contained item or items;
      * otherwise, the closure should just return the (optionally modified) leaf.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var items = ['a'..'b', ['c'], Optional.of('d'), Optional.empty()]
      * var unknown = { it instanceof Optional ? it.orElse('Unknown') : it.toUpperCase() }
      *
@@ -6884,7 +7712,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * if the Optional is present, or an empty collection otherwise.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Optional.of(1).flatten() == [1]
      * assert Optional.empty().flatten() == []
      * </pre>
@@ -6906,7 +7734,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Non-container elements are leaf elements.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1..2, [3, [4]]].iterator().flatten(n {@code ->} n + 5).toList() == 6..9
      * </pre>
      *
@@ -6948,7 +7776,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flatten an Iterable. This Iterable and any nested arrays, collections or
      * optionals have their contents (recursively) added to a new collection.
      * A transform is applied to any leaf nodes before further flattening.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * var items = ['1', '2', 'foo', '3', 'bar']
      * var toInt = s {@code ->} s.number ? Optional.of(s.toInteger()) : Optional.empty()
      * assert items.flattenMany(toInt) == [1, 2, 3]
@@ -7002,7 +7830,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Looks up an item in a Map for the given key and returns the corresponding value.
      * If there is no entry for the given key return instead the default value and
      * also add the key and default value to the map.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map=[:]
      * map.get("a", []) &lt;&lt; 5
      * assert map == [a:[5]]
@@ -7046,7 +7874,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the range subscript operator for a List.
-     * <pre class="groovyTestCase">def list = [1, "a", 4.5, true]
+     * <pre class="language-groovy groovyTestCase">def list = [1, "a", 4.5, true]
      * assert list[1..2] == ["a", 4.5]</pre>
      *
      * @param self  a List
@@ -7073,7 +7901,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Select a List of items from an eager or lazy List using a Collection to
      * identify the indices to be selected.
-     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
+     * <pre class="language-groovy groovyTestCase">def list = [].withDefault { 42 }
      * assert list[1,0,2] == [42, 42, 42]</pre>
      *
      * @param self    a ListWithDefault
@@ -7097,7 +7925,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the range subscript operator for an eager or lazy List.
-     * <pre class="groovyTestCase">def list = [].withDefault { 42 }
+     * <pre class="language-groovy groovyTestCase">def list = [].withDefault { 42 }
      * assert list[1..2] == [null, 42]</pre>
      *
      * @param self  a ListWithDefault
@@ -7127,7 +7955,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the range subscript operator for an eager or lazy List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [true, 1, 3.4].withDefault{ 42 }
      * {@code assert list[0..<0] == []}
      * </pre>
@@ -7144,7 +7972,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the range subscript operator for a List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [true, 1, 3.4]
      * {@code assert list[0..<0] == []}
      * </pre>
@@ -7162,7 +7990,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Select a List of items from a List using a Collection to
      * identify the indices to be selected.
-     * <pre class="groovyTestCase">def list = [true, 1, 3.4, false]
+     * <pre class="language-groovy groovyTestCase">def list = [true, 1, 3.4, false]
      * assert list[1,0,2] == [1, true, 3.4]</pre>
      *
      * @param self    a List
@@ -7186,7 +8014,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for a List.
-     * <pre class="groovyTestCase">def list = [2, "a", 5.3]
+     * <pre class="language-groovy groovyTestCase">def list = [2, "a", 5.3]
      * assert list[1] == "a"</pre>
      *
      * @param self a List
@@ -7216,12 +8044,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * will be partially exhausted up until the idx entry after returning
      * if a +ve or 0 idx is used, or fully exhausted if a -ve idx is used
      * or no corresponding entry was found. Typical usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def iter = [2, "a", 5.3].iterator()
      * assert iter[1] == "a"
      * </pre>
      * A more elaborate example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [2, "a", 5.3]
      * def iter = items.iterator()
      * assert iter[-1] == 5.3
@@ -7262,7 +8090,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for an Iterable. Typical usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * // custom Iterable example:
      * class MyIterable implements Iterable {
      *   Iterator iterator() { [1, 2, 3].iterator() }
@@ -7286,7 +8114,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for a Map.
-     * <pre class="groovyTestCase">def map = [1:10]
+     * <pre class="language-groovy groovyTestCase">def map = [1:10]
      * assert map[1] == 10</pre>
      *
      * @param self a Map
@@ -7295,6 +8123,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static <K,V> V getAt(Map<K,V> self, Object key) {
+        return self.get(key);
+    }
+
+    /**
+     * Support the subscript operator for a Map.
+     * <pre class="language-groovy groovyTestCase">def map = [foo:'bar', class:'baz', empty:'nope']
+     * assert map['foo'] == 'bar'
+     * assert map['class'] == 'baz'
+     * assert map['empty'] == 'nope'
+     * assert map['properties'] == null // GROOVY-12024
+     * </pre>
+     *
+     * @param self a Map
+     * @param key  a String as a key for the map
+     * @return the value corresponding to the given key
+     * @since 6.0.0
+     */
+    public static <V> V getAt(Map<? super String,V> self, String key) {
         return self.get(key);
     }
 
@@ -7343,8 +8189,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator for Collection.
-     * <pre class="groovyTestCase">
+     * Support the subscript operator for a Collection.
+     * <pre class="language-groovy groovyTestCase">
      * assert [String, Long, Integer] == ["a",5L,2]["class"]
      * </pre>
      *
@@ -7395,7 +8241,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns indices of the collection.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert 0..2 == [5, 6, 7].indices
      * </pre>
      *
@@ -7562,7 +8408,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
      * assert list.grep( ~/a+/ )  == ['a', 'aa']
      * assert list.grep( ~/../ )  == ['aa', 'bc']
@@ -7578,10 +8424,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static Collection grep(Object self, Object filter) {
         Collection answer = createSimilarOrDefaultCollection(self);
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object object = iter.next();
-            if (bmi.invoke(filter, object)) {
+            if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(filter, "isCase", object))) {
                 answer.add(object);
             }
         }
@@ -7594,7 +8439,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * method used by switch statements. method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
      * assert list.grep( ~/a+/ )  == ['a', 'aa']
      * assert list.grep( ~/../ )  == ['aa', 'bc']
@@ -7609,9 +8454,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> grep(Collection<T> self, Object filter) {
         Collection<T> answer = createSimilarCollection(self);
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (T element : self) {
-            if (bmi.invoke(filter, element)) {
+            if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(filter, "isCase", element))) {
                 answer.add(element);
             }
         }
@@ -7624,7 +8468,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ['a', 'b', 'aa', 'bc', 3, 4.5]
      * assert list.grep( ~/a+/ )  == ['a', 'aa']
      * assert list.grep( ~/../ )  == ['aa', 'bc']
@@ -7647,7 +8491,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def set = ['a', 'b', 'aa', 'bc', 3, 4.5] as Set
      * assert set.grep( ~/a+/ )  == ['a', 'aa'] as Set
      * assert set.grep( ~/../ )  == ['aa', 'bc'] as Set
@@ -7669,7 +8513,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
      * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -7688,7 +8532,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
      * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -7707,7 +8551,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null]
      * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -7726,7 +8570,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Set
      * assert items.grep() == [1, 2, true, 'foo', [4, 5]] as Set
      * </pre>
@@ -7741,6 +8585,90 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // grepping
+
+    /**
+     * Lazily returns an Iterator of items matching the given filter - calling the
+     * <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code> method used by
+     * switch statements. This method can be used with different kinds of filters like
+     * regular expressions, classes, ranges etc.
+     * <pre class="groovyTestCase">
+     * def iter = [1, 'a', 'aa', 2, 'bc', 3, 4.5].iterator()
+     * assert iter.grepping(Number).toList() == [1, 2, 3, 4.5]
+     * </pre>
+     *
+     * @param self   a source Iterator
+     * @param filter the filter to perform on each element (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return an Iterator returning the filtered elements
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> grepping(Iterator<T> self, Object filter) {
+        return new GrepIterator<>(self, filter);
+    }
+
+    /**
+     * Lazily returns an Iterator of elements which satisfy Groovy truth.
+     * Equivalent to calling {@link #grepping(Iterator, Object)} with the IDENTITY Closure.
+     * <pre class="groovyTestCase">
+     * def iter = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null].iterator()
+     * assert iter.grepping().toList() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self a source Iterator
+     * @return an Iterator of elements satisfying Groovy truth
+     * @see Closure#IDENTITY
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> grepping(Iterator<T> self) {
+        return grepping(self, Closure.IDENTITY);
+    }
+
+    private static final class GrepIterator<T> implements Iterator<T> {
+        private final Iterator<T> source;
+        private final Object filter;
+        private T current;
+        private boolean found;
+
+        private GrepIterator(Iterator<T> source, Object filter) {
+            this.source = source;
+            this.filter = filter;
+            this.found = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return found;
+        }
+
+        private void advance() {
+            while (!found && source.hasNext()) {
+                current = source.next();
+                if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(filter, "isCase", current))) {
+                    found = true;
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("GrepIterator has been exhausted and contains no more elements");
+            }
+            T result = current;
+            found = false;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //--------------------------------------------------------------------------
     // groupBy
 
     /**
@@ -7750,7 +8678,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * with each value being a list of items for that group.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }
      * </pre>
      *
@@ -7769,6 +8697,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all Iterable members into groups determined by the supplied mapping
+     * function. A "fat-free" variant of {@link #groupBy(Iterable, Closure)} accepting
+     * a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [0: [2, 4, 6], 1: [1, 3, 5]] == [1, 2, 3, 4, 5, 6].groupBy(n -&gt; n % 2)
+     * </pre>
+     *
+     * @param self     a collection to group
+     * @param function a function mapping entries on keys
+     * @return a new Map grouped by keys
+     * @since 6.0.0
+     */
+    public static <K, T> Map<K, List<T>> groupBy(Iterable<T> self, Function<? super T, ? extends K> function) {
+        Map<K, List<T>> answer = new LinkedHashMap<>();
+        for (T element : self) {
+            K value = function.apply(element);
+            groupAnswer(answer, element, value);
+        }
+        return answer;
+    }
+
+    /**
      * Sorts all Iterable members into (sub)groups determined by the supplied
      * mapping closures. Each closure should return the key that this item
      * should be grouped by. The returned LinkedHashMap will have an entry for each
@@ -7776,7 +8726,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * of items for that 'group path'.
      *
      * Example usage:
-     * <pre class="groovyTestCase">def result = [1,2,3,4,5,6].groupBy({ it % 2 }, { it {@code <} 4 })
+     * <pre class="language-groovy groovyTestCase">def result = [1,2,3,4,5,6].groupBy({ it % 2 }, { it {@code <} 4 })
      * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]</pre>
      *
      * Another example:
@@ -7826,7 +8776,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * of items for that 'group path'.
      *
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def result = [1,2,3,4,5,6].groupBy([{ it % 2 }, { it {@code <} 4 }])
      * assert result == [1:[(true):[1, 3], (false):[5]], 0:[(true):[2], (false):[4, 6]]]
      * </pre>
@@ -7869,7 +8819,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the <code>self</code> map is one of TreeMap, Hashtable or Properties,
      * the returned Map will preserve that type, otherwise a LinkedHashMap will
      * be returned.
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
+     * <pre class="language-groovy groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
      * assert result == [0:[b:2, d:4, f:6], 1:[a:1, c:3, e:5]]</pre>
      *
      * @param self    a map to group
@@ -7903,7 +8853,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the returned Map will preserve that type, otherwise a LinkedHashMap will
      * be returned.
      *
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy({ it.value % 2 }, { it.key.next() })
+     * <pre class="language-groovy groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy({ it.value % 2 }, { it.key.next() })
      * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
      * If an empty array of closures is supplied the IDENTITY Closure will be used.
      *
@@ -7946,7 +8896,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the returned Map will preserve that type, otherwise a LinkedHashMap will
      * be returned.
      *
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy([{ it.value % 2 }, { it.key.next() }])
+     * <pre class="language-groovy groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy([{ it.value % 2 }, { it.key.next() }])
      * assert result == [1:[b:[a:1], d:[c:3], f:[e:5]], 0:[c:[b:2], e:[d:4], g:[f:6]]]</pre>
      * If an empty list of closures is supplied the IDENTITY Closure will be used.
      *
@@ -7983,7 +8933,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The item will be grouped under each key from the list.
      *
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def people = [
      *     [name: 'Alice', cities: ['NY', 'LA']],
      *     [name: 'Bob',   cities: ['NY']],
@@ -8006,12 +8956,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, K> Map<K, List<T>> groupByMany(
         Iterable<T> self,
-        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Iterable<? extends K>> keyFn
+        Function<? super T, ? extends Iterable<? extends K>> keyFn
     ) {
         Map<K, List<T>> result = new HashMap<>();
 
         for (T item : self) {
-            Iterable<? extends K> keys = keyFn.call(item);
+            Iterable<? extends K> keys = keyFn.apply(item);
             if (keys == null) continue;
 
             for (K key : keys) {
@@ -8029,7 +8979,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The value returned by mapping the element with the value mapping closure will be grouped under each key from the list.
      *
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * record Person(String name, List&lt;String> cities) { }
      *
      * def people = [
@@ -8055,18 +9005,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T, U, K> Map<K, List<U>> groupByMany(
         Iterable<T> self,
-        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends U> valueFn,
-        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Iterable<? extends K>> keyFn
+        Function<? super T, ? extends U> valueFn,
+        Function<? super T, ? extends Iterable<? extends K>> keyFn
     ) {
         Map<K, List<U>> result = new HashMap<>();
 
         for (T item : self) {
-            Iterable<? extends K> keys = keyFn.call(item);
+            Iterable<? extends K> keys = keyFn.apply(item);
             if (keys == null) continue;
 
             for (K key : keys) {
                 result.computeIfAbsent(key, k -> new ArrayList<>())
-                    .add(valueFn.call(item));
+                    .add(valueFn.apply(item));
             }
         }
 
@@ -8078,7 +9028,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Each key will be grouped under each item in the value list.
      *
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def citiesLived = [
      *     Alice: ['NY', 'LA'],
      *     Bob: ['NY'],
@@ -8126,7 +9076,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure, with values being the list of map entries that belong to each
      * group. (If instead of a list of map entries, you want an actual map
      * use {code}groupBy{code}.)
-     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { it.value % 2 }
+     * <pre class="language-groovy groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupEntriesBy { it.value % 2 }
      * assert result[0]*.key == ["b", "d", "f"]
      * assert result[1]*.value == [1, 3, 5]</pre>
      *
@@ -8142,6 +9092,101 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             groupAnswer(answer, entry, value);
         }
         return answer;
+    }
+
+    //--------------------------------------------------------------------------
+    // groovyToString
+
+    /**
+     * Returns Groovy's default string representation for a Map.
+     * This is used by Groovy's formatting infrastructure (e.g., GString interpolation,
+     * {@code println}, assert messages). By default, it delegates to
+     * {@link FormatHelper#toMapString(Map)}.
+     * <p>
+     * <pre class="language-groovy groovyTestCase">
+     * assert [a:1, b:2].groovyToString() == '[a:1, b:2]'
+     * </pre>
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(Map)},
+     * the normal map {@code toString()} is used instead.
+     * Alternatively, you have the option to provide a replacement extension method in an extension module
+     * to customize how maps are displayed throughout Groovy.
+     *
+     * @param self the Map to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(Map self) {
+        return FormatHelper.toMapString(self);
+    }
+
+    /**
+     * Returns Groovy's default string representation for a Range.
+     * By default, it delegates to {@code Range#toString()},
+     * producing the compact {@code from..to} notation.
+     * <p>
+     * <pre class="language-groovy groovyTestCase">
+     * assert (1..4).groovyToString() == '1..4'
+     * </pre>
+     * <p>
+     * This method exists to stop the {@code groovyToString(Collection)} variant
+     * from overriding the built-in {@code Range#toString}.
+     * Since a range is a list, you can use {@code range.toListString()}
+     * to print it using normal list formatting.
+     *
+     * @param self the Range to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(Range self) {
+        return self.toString();
+    }
+
+    /**
+     * Returns Groovy's default string representation for a Collection.
+     * This is used by Groovy's formatting infrastructure (e.g., GString interpolation,
+     * {@code println}, assert messages). By default, it delegates to
+     * {@link FormatHelper#toListString(Collection)}.
+     * <p>
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3].groovyToString() == '[1, 2, 3]'
+     * </pre>
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(Collection)},
+     * the normal list {@code toString()} is used instead.
+     * Alternatively, you have the option to provide a replacement extension method in an extension module
+     * to customize how collections are displayed throughout Groovy.
+     *
+     * @param self the Collection to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(Collection self) {
+        return FormatHelper.toListString(self);
+    }
+
+    /**
+     * Returns Groovy's default string representation for an XML Element.
+     * This is used by Groovy's formatting infrastructure. By default, it
+     * serializes the element using {@code groovy.xml.XmlUtil.serialize(Element)}.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(Element)},
+     * the element's default {@code toString()} is used instead.
+     * Alternatively, you have the option to provide a replacement extension method in an extension module
+     * to customize how elements are displayed throughout Groovy.
+     *
+     * @param self the Element to format
+     * @return the serialized XML string
+     * @since 6.0.0
+     */
+    public static String groovyToString(org.w3c.dom.Element self) {
+        try {
+            java.lang.reflect.Method serialize = Class.forName("groovy.xml.XmlUtil")
+                    .getMethod("serialize", org.w3c.dom.Element.class);
+            return (String) serialize.invoke(null, self);
+        } catch (Exception e) {
+            return self.toString();
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -8168,7 +9213,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def set = [3, 4, 2] as LinkedHashSet
      * assert set.head() == 3
      * // check original is unaltered
@@ -8189,7 +9234,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the List.
-     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * <pre class="language-groovy groovyTestCase">def list = [3, 4, 2]
      * assert list.head() == 3
      * assert list == [3, 4, 2]</pre>
      *
@@ -8240,7 +9285,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an Iterable with indices in (index, value) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [0: "a", 1: "b"] == ["a", "b"].indexed()
      * assert ["0: a", "1: b"] == ["a", "b"].indexed().collect { idx, str {@code ->} "$idx: $str" }
      * </pre>
@@ -8258,7 +9303,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an Iterable with indices in (index, value) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [5: "a", 6: "b"] == ["a", "b"].indexed(5)
      * assert ["1: a", "2: b"] == ["a", "b"].indexed(1).collect { idx, str {@code ->} "$idx: $str" }
      * </pre>
@@ -8284,7 +9329,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an iterator with indices in (index, value) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [[0, "a"], [1, "b"]] == ["a", "b"].iterator().indexed().collect{ tuple {@code ->} [tuple.first, tuple.second] }
      * assert ["0: a", "1: b"] == ["a", "b"].iterator().indexed().collect { idx, str {@code ->} "$idx: $str" }.toList()
      * </pre>
@@ -8302,7 +9347,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an iterator with indices in (index, value) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [[5, "a"], [6, "b"]] == ["a", "b"].iterator().indexed(5).toList()
      * assert ["a: 1", "b: 2"] == ["a", "b"].iterator().indexed(1).collect { idx, str {@code ->} "$str: $idx" }.toList()
      * </pre>
@@ -8348,7 +9393,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the Iterable excluding the last item. Leaves the original Iterable unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [3, 4, 2]
      * assert list.init() == [3, 4]
      * assert list == [3, 4, 2]
@@ -8375,7 +9420,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the List excluding the last item. Leaves the original List unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [3, 4, 2]
      * assert list.init() == [3, 4]
      * assert list == [3, 4, 2]
@@ -8392,7 +9437,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the SortedSet excluding the last item. Leaves the original SortedSet unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def sortedSet = [3, 4, 2] as SortedSet
      * assert sortedSet.init() == [2, 3] as SortedSet
      * assert sortedSet == [3, 4, 2] as SortedSet
@@ -8409,7 +9454,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns an Iterator containing all the items from this iterator except the last one.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def iter = [3, 4, 2].listIterator()
      * def result = iter.init()
      * assert result.toList() == [3, 4]
@@ -8467,7 +9512,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the init values of this Iterable: the first value will be this list of all items from the iterable and the final one will be an empty list, with the intervening values the results of successive applications of init on the items.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3, 4].inits() == [[1, 2, 3, 4], [1, 2, 3], [1, 2], [1], []]
      * </pre>
      *
@@ -8507,7 +9552,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure. The result is passed back (injected) to the closure along with
      * the third element and so on until all elements have been consumed.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 3, 4]
      * def value = items.inject { acc, val {@code ->} acc * val }
      * assert value == 1 * 2 * 3 * 4
@@ -8534,6 +9579,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             throw new NoSuchElementException("Cannot call inject() on an empty iterable without passing an initial value.");
         }
         return inject(iter, iter.next(), closure);
+    }
+
+    /**
+     * Iterates through the given iterable, passing the first two elements to the
+     * operator. The result is passed back (injected) to the operator along with
+     * the third element and so on until all elements have been consumed.
+     * A "fat-free" variant of {@link #inject(Iterable, Closure)} accepting a {@link BinaryOperator}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BinaryOperator
+     * BinaryOperator&lt;Integer&gt; mult = (acc, val) -&gt; acc * val
+     * assert [1, 2, 3, 4].inject(mult) == 1 * 2 * 3 * 4
+     * </pre>
+     *
+     * @param self     an iterable
+     * @param operator a binary operator combining the running result with each element
+     * @return the result of the last operator call
+     * @throws NoSuchElementException if the iterable is empty
+     * @since 6.0.0
+     */
+    public static <T> T inject(Iterable<T> self, BinaryOperator<T> operator) {
+        Iterator<T> iter = self.iterator();
+        if (!iter.hasNext()) {
+            throw new NoSuchElementException("Cannot call inject() on an empty iterable without passing an initial value.");
+        }
+        T value = iter.next();
+        while (iter.hasNext()) {
+            value = operator.apply(value, iter.next());
+        }
+        return value;
     }
 
     //
@@ -8569,7 +9644,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
      *
      * Examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val {@code ->} acc * val }
      *
      * assert 0+1+2+3+4 == [1,2,3,4].inject(0) { acc, val {@code ->} acc + val }
@@ -8603,6 +9678,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E, T, U extends T, V extends T> T inject(Iterable<E> self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         return inject(self.iterator(), initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given iterable, passing in the initial value to the
+     * function along with the first item. The result is passed back (injected) into
+     * the function along with the second item and so on until all elements have
+     * been consumed.
+     * <p>
+     * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
+     * A "fat-free" variant of {@link #inject(Iterable, Object, Closure)} accepting a {@link BiFunction}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;Integer, Integer, Integer&gt; add = (acc, val) -&gt; acc + val
+     * assert [1, 2, 3, 4].inject(0, add) == 0 + 1 + 2 + 3 + 4
+     * assert ['quick', 'brown', 'fox'].inject('The', (acc, val) -&gt; acc + ' ' + val) == 'The quick brown fox'
+     * </pre>
+     *
+     * @param self         an iterable
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each element
+     * @return the result of the last function call
+     * @since 6.0.0
+     */
+    public static <E, U> U inject(Iterable<E> self, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+        U value = initialValue;
+        for (E element : self) {
+            value = function.apply(value, element);
+        }
+        return value;
     }
 
     /**
@@ -8642,7 +9747,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Also known as <tt>foldLeft</tt> or <tt>reduce</tt> in functional parlance.
      *
      * Examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [a:1, b:2, c:3]
      * assert map.inject([]) { list, k, v {@code ->}
      *   list + [k] * v
@@ -8676,7 +9781,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Also known as <em>prefix sum</em> or <em>scan</em> in functional parlance.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert (1..3).injectAll(''){ carry, next {@code ->} carry + next } == ['1', '12', '123']
      * var runningAvg = [1.0, 2.0, 3.0].injectAll([0.0, 0, null]){ accum, next {@code ->}
      *     var total = accum[0] + next
@@ -8704,7 +9809,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * but returns the list of all calculated values instead of just the final result.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert (1..5).injectAll { carry, next {@code ->} carry + next } == [3, 6, 10, 15]
      * assert (1..5).injectAll(Integer::plus) == [3, 6, 10, 15]
      * </pre>
@@ -8727,7 +9832,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * but returns the list of all calculated values instead of just the final result.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert (1..3)
      *     .iterator()
      *     .injectAll(''){ carry, next {@code ->} carry + next }
@@ -8746,7 +9851,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * but returns the list of all calculated values instead of just the final result.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert (1..5).iterator().injectAll(Integer::plus).toList() == [3, 6, 10, 15]
      * </pre>
      *
@@ -8798,7 +9903,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * and then similarly for other map entries. The results are collected in a list.
      *
      * Examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [a:1, b:2, c:3]
      * assert map.injectAll('') { carry, k, v {@code ->}
      *     carry + k * v
@@ -8907,7 +10012,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * size as the shorter one.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def abc = 'A'..'C'
      * def nums = 1..2
      * assert ['A', 1, 'B', 2] == abc.interleave(nums)
@@ -8931,7 +10036,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the extra elements from the longer source will be appended after interleaving.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = (1..4)
      * def other = [10, 20]
      * assert [1, 10, 2, 20, 3, 4] == items.interleave(other, true)
@@ -8957,7 +10062,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * size of the shorter one.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = (1..4).iterator()
      * def other = [10, 20].iterator()
      * assert [1, 10, 2, 20] == items.interleave(other).toList()
@@ -8978,7 +10083,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the extra elements from the longer source will be appended after interleaving.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = (1..4).iterator()
      * def other = [10, 20].iterator()
      * assert [1, 10, 2, 20, 3, 4] == items.interleave(other, true).toList()
@@ -9049,7 +10154,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the intersection of both collections.  Any
      * elements that exist in both collections are added to the resultant collection.
      * For collections of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
+     * <pre class="language-groovy groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in both collections.
      *
@@ -9067,11 +10172,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the intersection of both collections.  Any
      * elements that exist in both collections are added to the resultant collection.
      * For collections of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
      * assert [2,4] == [1,2,3,4].intersect([4,8,12,16,20], (x, y) {@code -> x * x <=> y})
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def one = ['a', 'B', 'c', 'd']
      * def two = ['b', 'C', 'd', 'e']
      * def compareIgnoreCase = { a, b {@code ->} a.toLowerCase() {@code <=>} b.toLowerCase() }
@@ -9107,7 +10212,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
      * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -9127,7 +10232,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the intersection of both iterables.  Any
      * elements that exist in both iterables are added to the resultant collection.
      * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [3,4] == [1,2,3,4].intersect([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *
@@ -9150,7 +10255,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are deemed equal).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def one = ['a', 'B', 'c', 'd']
      * def two = ['b', 'C', 'd', 'e']
      * def compareIgnoreCase = { it.toLowerCase() }
@@ -9174,7 +10279,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a List composed of the intersection of a List and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -9193,7 +10298,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a List composed of the intersection of a List and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [3,4] == [1,2,3,4].intersect([3,4,5,6])
      * </pre>
      *
@@ -9210,7 +10315,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Set composed of the intersection of a Set and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [4,5] as Set == ([1,2,3,4,5] as Set).intersect([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -9229,7 +10334,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Set composed of the intersection of a Set and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [3,4] as Set == ([1,2,3,4] as Set).intersect([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *
@@ -9246,7 +10351,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -9265,7 +10370,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [4,5] as SortedSet == ([1,2,3,4,5] as SortedSet).intersect([4,5,6,7,8])
      * </pre>
      *
@@ -9282,8 +10387,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Map composed of the intersection of both maps.
      * Any entries that exist in both maps are added to the resultant map.
-     * <pre class="groovyTestCase">assert [4:4,5:5] == [1:1,2:2,3:3,4:4,5:5].intersect([4:4,5:5,6:6,7:7,8:8])</pre>
-     * <pre class="groovyTestCase">assert [1: 1, 2: 2, 3: 3, 4: 4].intersect( [1: 1.0, 2: 2, 5: 5] ) == [1:1, 2:2]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [4:4,5:5] == [1:1,2:2,3:3,4:4,5:5].intersect([4:4,5:5,6:6,7:7,8:8])</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1: 1, 2: 2, 3: 3, 4: 4].intersect( [1: 1.0, 2: 2, 5: 5] ) == [1:1, 2:2]</pre>
      *
      * @param left     a map
      * @param right    a map
@@ -9400,7 +10505,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the switch value is an object, {@code isCase} will return true if the
      * switch value is assignment compatible with the class (case value),
      * i.e.&nbsp;is an {@code instanceof} the class, for example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def someList = []
      * switch (someList) {
      *   case List:
@@ -9418,7 +10523,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the switch value is a class, {@code isCase} will return true if the
      * switch value is assignable from the given class (case value), i.e.&nbsp;the case class
      * is the same as, or a superclass, or a super-interface of the switch class, for example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * switch (ArrayList) {
      *   case List:
      *     assert true : 'is a list'
@@ -9448,7 +10553,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Special 'case' implementation for collections which tests if the 'switch'
      * operand is contained in any of the 'case' values. For example:
-     * <pre class="groovyTestCase">switch( 3 ) {
+     * <pre class="language-groovy groovyTestCase">switch( 3 ) {
      *   case [1,3,5]:
      *     assert true
      *     break
@@ -9469,7 +10574,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Special 'case' implementation for iterables which tests if the 'switch'
      * operand is contained in any of the 'case' values. For example:
-     * <pre class="groovyTestCase">Iterable it = {[1,3,5].iterator()}
+     * <pre class="language-groovy groovyTestCase">Iterable it = {[1,3,5].iterator()}
      * switch( 3 ) {
      *   case it:
      *     assert true
@@ -9496,7 +10601,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Special 'case' implementation for maps which tests if the 'switch' operand
      * exists in the key set. For example:
-     * <pre class="groovyTestCase">switch( 'foo' ) {
+     * <pre class="language-groovy groovyTestCase">switch( 'foo' ) {
      *   case [foo:true, bar:false]:
      *     assert true
      *     break
@@ -9548,7 +10653,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Check whether an <code>Iterable</code> has elements
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1]
      * def iterable = { [ hasNext:{ !items.isEmpty() }, next:{ items.pop() } ] as Iterator } as Iterable
      * assert !iterable.isEmpty()
@@ -9655,6 +10760,180 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static boolean isNotCase(Map<?, ?>     caseValue, Object switchValue) {
         return !isCase(caseValue, switchValue);
+    }
+
+    //--------------------------------------------------------------------------
+    // isSorted
+
+    /**
+     * Determines if the Iterable is sorted. Assumes the elements are
+     * comparable and uses a {@link NumberAwareComparator} to determine the order.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3].isSorted()
+     * assert !([3, 1, 2].isSorted())
+     * assert [].isSorted()
+     * </pre>
+     *
+     * @param self the Iterable to check
+     * @return true if the elements are sorted in non-descending order
+     * @see #isSorted(Iterable, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterable<T> self) {
+        return isSorted(self, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Determines if the Iterable is sorted according to the given Comparator.
+     * This is efficient — it checks adjacent pairs in a single pass and
+     * short-circuits on the first out-of-order pair.
+     * {@code SortedSet} instances always return {@code true}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ["hello","Hey","hi"].isSorted(String.CASE_INSENSITIVE_ORDER)
+     * assert !(["hi","Hey","hello"].isSorted(String.CASE_INSENSITIVE_ORDER))
+     * assert (new TreeSet(["c","a","b"])).isSorted()
+     * </pre>
+     *
+     * @param self       the Iterable to check
+     * @param comparator a Comparator used for the comparison
+     * @return true if the elements are sorted according to the comparator
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterable<T> self, Comparator<? super T> comparator) {
+        if (self instanceof SortedSet) return true;
+        return isSorted(self.iterator(), comparator);
+    }
+
+    /**
+     * Determines if the Iterable is sorted in non-descending order of the
+     * keys returned by the given key extractor. Keys are compared
+     * number-aware, consistent with {@link #isSorted(Iterable)}. For a
+     * custom ordering use {@link #isSorted(Iterable, Comparator)} (a
+     * two-arg closure coerces to a Comparator).
+     * <pre class="language-groovy groovyTestCase">
+     * assert ["hi","hey","hello"].isSorted { it.length() }
+     * assert !["hello","hi","hey"].isSorted { it.length() }
+     * assert ["hi","hey","hello"].isSorted { a, b {@code ->} a.length() {@code <=>} b.length() } // Comparator overload
+     * </pre>
+     *
+     * @param self         the Iterable to check
+     * @param keyExtractor extracts the sort key from each element
+     * @return true if the elements are sorted by key in non-descending order
+     * @see #isSorted(Iterable, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterable<T> self, Function<? super T, ?> keyExtractor) {
+        Comparator<Object> byKey = new NumberAwareComparator<>();
+        Comparator<T> comparator = (a, b) -> byKey.compare(keyExtractor.apply(a), keyExtractor.apply(b));
+        return isSorted(self, comparator);
+    }
+
+    /**
+     * Determines if the Iterator elements are sorted. Assumes the elements are
+     * comparable and uses a {@link NumberAwareComparator} to determine the order.
+     * <p>
+     * The iterator will be exhausted of elements after determining the sorted status.
+     *
+     * @param self the Iterator to check
+     * @return true if the elements are sorted in non-descending order
+     * @see #isSorted(Iterator, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterator<T> self) {
+        return isSorted(self, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Determines if the Iterator elements are sorted according to the given Comparator.
+     * This is efficient — it checks adjacent pairs and short-circuits on the first
+     * out-of-order pair. The iterator will be exhausted only if the elements are sorted.
+     *
+     * @param self       the Iterator to check
+     * @param comparator a Comparator used for the comparison
+     * @return true if the elements are sorted according to the comparator
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterator<T> self, Comparator<? super T> comparator) {
+        if (!self.hasNext()) return true;
+        T prev = self.next();
+        while (self.hasNext()) {
+            T curr = self.next();
+            if (comparator.compare(prev, curr) > 0) return false;
+            prev = curr;
+        }
+        return true;
+    }
+
+    /**
+     * Determines if the Iterator elements are sorted in non-descending order
+     * of the keys returned by the given key extractor. Keys are compared
+     * number-aware. For a custom ordering use
+     * {@link #isSorted(Iterator, Comparator)} (a two-arg closure coerces to
+     * a Comparator).
+     * <p>
+     * The iterator will be exhausted of elements after determining the sorted status.
+     *
+     * @param self         the Iterator to check
+     * @param keyExtractor extracts the sort key from each element
+     * @return true if the elements are sorted by key in non-descending order
+     * @see #isSorted(Iterator, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterator<T> self, Function<? super T, ?> keyExtractor) {
+        Comparator<Object> byKey = new NumberAwareComparator<>();
+        Comparator<T> comparator = (a, b) -> byKey.compare(keyExtractor.apply(a), keyExtractor.apply(b));
+        return isSorted(self, comparator);
+    }
+
+    /**
+     * Determines if the Map entries are sorted.
+     * Assumes the entries are comparable and uses a {@link NumberAwareValueComparator}
+     * to determine the order. The map's iteration order is checked.
+     * <pre class="language-groovy groovyTestCase">
+     * def map = new LinkedHashMap([b:3, d:4, a:5, c:6])
+     * assert map.isSorted()
+     * </pre>
+     *
+     * @param self the Map to check
+     * @return true if the map entries are sorted in non-descending order
+     * @since 6.0.0
+     */
+    public static <K, V> boolean isSorted(Map<K, V> self) {
+        return isSorted(self, new NumberAwareValueComparator<>());
+    }
+
+    /**
+     * Determines if the Map entries are sorted according to the given Comparator.
+     * The map's iteration order is checked.
+     * {@code SortedMap} instances always return {@code true}.
+     *
+     * @param self       the Map to check
+     * @param comparator a Comparator used to compare Map.Entry instances
+     * @return true if the map entries are sorted according to the comparator
+     * @since 6.0.0
+     */
+    public static <K, V> boolean isSorted(Map<K, V> self, Comparator<Map.Entry<K, V>> comparator) {
+        if (self instanceof SortedMap) return true;
+        return isSorted(self.entrySet(), comparator);
+    }
+
+    /**
+     * Determines if the Map entries are sorted in non-descending order of the
+     * keys returned by the given entry key extractor. Keys are compared
+     * number-aware. For a custom ordering use
+     * {@link #isSorted(Map, Comparator)} (a two-arg closure over entries
+     * coerces to a Comparator).
+     *
+     * @param self         the Map to check
+     * @param keyExtractor extracts the sort key from each Map.Entry
+     * @return true if the map entries are sorted by key in non-descending order
+     * @see #isSorted(Map, Comparator)
+     * @since 6.0.0
+     */
+    public static <K, V> boolean isSorted(Map<K, V> self, Function<? super Map.Entry<K, V>, ?> keyExtractor) {
+        Comparator<Object> byKey = new NumberAwareComparator<>();
+        Comparator<Map.Entry<K, V>> comparator = (a, b) -> byKey.compare(keyExtractor.apply(a), keyExtractor.apply(b));
+        return isSorted(self, comparator);
     }
 
     //--------------------------------------------------------------------------
@@ -9773,7 +11052,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Concatenates the <code>toString()</code> representation of each item from
      * the Iterable.
      *
-     * <pre class="groovyTestCase">assert [1,2,3].join() == "123"</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3].join() == "123"</pre>
      *
      * @param self an Iterable of objects
      * @return the joined String
@@ -9808,7 +11087,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Concatenates the <code>toString()</code> representation of each item from
      * the Iterable, with the given String as a separator between each item.
      *
-     * <pre class="groovyTestCase">assert [1,2,3].join(", ") == "1, 2, 3"</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3].join(", ") == "1, 2, 3"</pre>
      *
      * @param self      an Iterable of objects
      * @param separator a String separator
@@ -9824,7 +11103,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [3, 4, 2]
      * assert list.last() == 2
      * // check original is unaltered
@@ -9857,7 +11136,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def set = [3, 4, 2] as LinkedHashSet
      * assert set.last() == 2
      * // check original unaltered
@@ -9890,7 +11169,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Overloads the left shift operator to provide an easy way to append
      * objects to a Collection.
-     * <pre class="groovyTestCase">def list = [1,2]
+     * <pre class="language-groovy groovyTestCase">def list = [1,2]
      * list &lt;&lt; 3
      * assert list == [1,2,3]</pre>
      *
@@ -9907,7 +11186,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Overloads the left shift operator to provide an easy way to append
      * objects to a List.
-     * <pre class="groovyTestCase">def list = [1,2]
+     * <pre class="language-groovy groovyTestCase">def list = [1,2]
      * list &lt;&lt; 3
      * assert list == [1,2,3]</pre>
      *
@@ -9923,7 +11202,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Overloads the left shift operator to provide an easy way to append
      * objects to a Set.
-     * <pre class="groovyTestCase">def set = [1,2] as Set
+     * <pre class="language-groovy groovyTestCase">def set = [1,2] as Set
      * set &lt;&lt; 3
      * assert set == [1,2,3] as Set</pre>
      *
@@ -9939,7 +11218,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Overloads the left shift operator to provide an easy way to append
      * objects to a SortedSet.
-     * <pre class="groovyTestCase">def set = [1,2] as SortedSet
+     * <pre class="language-groovy groovyTestCase">def set = [1,2] as SortedSet
      * set &lt;&lt; 3
      * assert set == [1,2,3] as SortedSet</pre>
      *
@@ -9956,7 +11235,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Overloads the left shift operator to provide an easy way to append
      * objects to a BlockingQueue.
      * In case of bounded queue the method will block till space in the queue become available
-     * <pre class="groovyTestCase">def list = new java.util.concurrent.LinkedBlockingQueue ()
+     * <pre class="language-groovy groovyTestCase">def list = new java.util.concurrent.LinkedBlockingQueue ()
      * list &lt;&lt; 3 &lt;&lt; 2 &lt;&lt; 1
      * assert list.iterator().collect{it} == [3,2,1]</pre>
      *
@@ -9990,7 +11269,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <code>map1 &lt;&lt; map2</code>; otherwise it's just a synonym for
      * <code>putAll</code> though it returns the original map rather than
      * being a <code>void</code> method. Example usage:
-     * <pre class="groovyTestCase">def map = [a:1, b:2]
+     * <pre class="language-groovy groovyTestCase">def map = [a:1, b:2]
      * map &lt;&lt; [c:3, d:4]
      * assert map == [a:1, b:2, c:3, d:4]</pre>
      *
@@ -10042,7 +11321,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds max() method to Iterable objects.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert 5 == [2,3,1,5,4].max()
      * </pre>
      *
@@ -10076,7 +11355,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found in the Iterable using the given comparator.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert "hello" == ["hello","hi","hey"].max( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )
      * </pre>
      *
@@ -10123,9 +11402,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
-     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { it.length() }</pre>
-     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">assert "hello" == ["hello","hi","hey"].max { it.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">assert "hello" == ["hello","hi","hey"].max { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">
      * def pets = ['dog', 'elephant', 'anaconda']
      * def longestName = pets.max{ it.size() } // one of 'elephant' or 'anaconda'
      * assert longestName.size() == 8
@@ -10196,7 +11475,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison. An example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def zoo = [monkeys:6, lions:5, tigers:7]
      * def mostCommonEntry = zoo.max{ it.value }
      * assert mostCommonEntry.value == 7
@@ -10204,7 +11483,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert leastCommonEntry.value == 5
      * </pre>
      * Edge case for multiple max values:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def zoo = [monkeys:6, lions:5, tigers:7]
      * def lengthOfNamePlusNumber = { e {@code ->} e.key.size() + e.value }
      * def ans = zoo.max(lengthOfNamePlusNumber) // one of [monkeys:6, tigers:7]
@@ -10336,7 +11615,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds min() method to Collection objects.
-     * <pre class="groovyTestCase">assert 2 == [4,2,5].min()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 2 == [4,2,5].min()</pre>
      *
      * @param self a Collection
      * @return the minimum value
@@ -10369,7 +11648,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found in the Iterable using the given comparator.
-     * <pre class="groovyTestCase">assert "hi" == ["hello","hi","hey"].min( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )</pre>
+     * <pre class="language-groovy groovyTestCase">assert "hi" == ["hello","hi","hey"].min( { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )</pre>
      *
      * @param self       an Iterable
      * @param comparator a Comparator
@@ -10418,14 +11697,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert "hi" == ["hello","hi","hey"].min { it.length() }
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def lastDigit = { a, b {@code ->} a % 10 {@code <=>} b % 10 }
      * assert [19, 55, 91].min(lastDigit) == 91
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def pets = ['dog', 'cat', 'anaconda']
      * def shortestName = pets.min{ it.size() } // one of 'dog' or 'cat'
      * assert shortestName.size() == 3
@@ -10499,7 +11778,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def zoo = [monkeys:6, lions:5, tigers:7]
      * def leastCommonEntry = zoo.min{ it.value }
      * assert leastCommonEntry.value == 5
@@ -10507,7 +11786,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert mostCommonEntry.value == 7
      * </pre>
      * Edge case for multiple min values:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def zoo = [monkeys:6, lions:5, tigers:7]
      * def lastCharOfName = { e {@code ->} e.key[-1] }
      * def ans = zoo.min(lastCharOfName) // some random entry
@@ -10530,36 +11809,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Set composed of the elements of the first Set minus the
      * elements of the given Collection.
      *
-     * @param self     a Set object
-     * @param removeMe the items to remove from the Set
-     * @return the resulting Set
+     * @param self     a Set
+     * @param removeMe the elements to exclude
+     * @return a new Set
      * @since 1.5.0
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> minus(Set<T> self, Collection<?> removeMe) {
-        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
-        final Set<T> ansSet = createSimilarSet(self);
-        ansSet.addAll(self);
+        Comparator comparator = self instanceof SortedSet set ? set.comparator() : null;
+        Set<T> answer = createSimilarSet(self);
+        answer.addAll(self);
         if (removeMe != null) {
             for (T o1 : self) {
                 for (Object o2 : removeMe) {
                     boolean areEqual = (comparator != null) ? (comparator.compare(o1, o2) == 0) : coercedEquals(o1, o2);
                     if (areEqual) {
-                        ansSet.remove(o1);
+                        answer.remove(o1);
                     }
                 }
             }
         }
-        return ansSet;
+        return answer;
     }
 
     /**
      * Create a Set composed of the elements of the first Set minus the
      * elements from the given Iterable.
      *
-     * @param self     a Set object
-     * @param removeMe the items to remove from the Set
-     * @return the resulting Set
+     * @param self     a Set
+     * @param removeMe the elements to exclude
+     * @return a new Set
      * @since 1.8.7
      */
     public static <T> Set<T> minus(Set<T> self, Iterable<?> removeMe) {
@@ -10569,29 +11848,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Set composed of the elements of the first Set minus the given element.
      *
-     * @param self     a Set object
-     * @param removeMe the element to remove from the Set
-     * @return the resulting Set
+     * @param self     a Set
+     * @param removeMe the element to exclude
+     * @return a new Set
      * @since 1.5.0
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> minus(Set<T> self, Object removeMe) {
-        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
-        final Set<T> ansSet = createSimilarSet(self);
+        Comparator comparator = self instanceof SortedSet set ? set.comparator() : null;
+        Set<T> answer = createSimilarSet(self);
         for (T t : self) {
-            boolean areEqual = (comparator != null)? (comparator.compare(t, removeMe) == 0) : coercedEquals(t, removeMe);
-            if (!areEqual) ansSet.add(t);
+            boolean areEqual = (comparator != null) ? (comparator.compare(t, removeMe) == 0) : coercedEquals(t, removeMe);
+            if (!areEqual) answer.add(t);
         }
-        return ansSet;
+        return answer;
     }
 
     /**
      * Create a SortedSet composed of the elements of the first SortedSet minus the
      * elements of the given Collection.
      *
-     * @param self     a SortedSet object
-     * @param removeMe the items to remove from the SortedSet
-     * @return the resulting SortedSet
+     * @param self     a SortedSet
+     * @param removeMe the elements to exclude
+     * @return a new SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> minus(SortedSet<T> self, Collection<?> removeMe) {
@@ -10602,9 +11881,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a SortedSet composed of the elements of the first SortedSet minus the
      * elements of the given Iterable.
      *
-     * @param self     a SortedSet object
-     * @param removeMe the items to remove from the SortedSet
-     * @return the resulting SortedSet
+     * @param self     a SortedSet
+     * @param removeMe the elements to exclude
+     * @return a new SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> minus(SortedSet<T> self, Iterable<?> removeMe) {
@@ -10614,9 +11893,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a SortedSet composed of the elements of the first SortedSet minus the given element.
      *
-     * @param self     a SortedSet object
-     * @param removeMe the element to remove from the SortedSet
-     * @return the resulting SortedSet
+     * @param self     a SortedSet
+     * @param removeMe the element to exclude
+     * @return a new SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> minus(SortedSet<T> self, Object removeMe) {
@@ -10624,13 +11903,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List composed of the elements of the first list minus
+     * Create a List composed of the elements of the given List minus
      * every occurrence of elements of the given Collection.
-     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     * <pre class="language-groovy groovyTestCase">
+     * def one = [1, "a", true, true, false, 5.3, null], two = [null, true, 5.3]
+     * def sub = one.asUnmodifiable() - two.asUnmodifiable()
+     * assert sub == [1, "a", false]
+     * </pre>
      *
      * @param self     a List
-     * @param removeMe a Collection of elements to remove
-     * @return a List with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new List
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Collection<?> removeMe) {
@@ -10640,11 +11923,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a new Collection composed of the elements of the first Collection minus
      * every occurrence of elements of the given Collection.
-     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a Collection
-     * @param removeMe a Collection of elements to remove
-     * @return a Collection with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new Collection
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
@@ -10654,11 +11937,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a new List composed of the elements of the first List minus
      * every occurrence of elements of the given Iterable.
-     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a List
-     * @param removeMe an Iterable of elements to remove
-     * @return a new List with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new List
      * @since 1.8.7
      */
     public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
@@ -10668,13 +11951,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a new Collection composed of the elements of the first Iterable minus
      * every occurrence of elements of the given Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]
      * </pre>
      *
      * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
-     * @return a new Collection with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new Collection
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
@@ -10684,14 +11967,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a new Collection composed of the elements of the first Iterable minus
      * every matching occurrence as determined by the condition closure of elements of the given Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D']) { it.toLowerCase() } == ['a', 'E']
      * </pre>
      *
-     * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
-     * @param condition a Closure used to determine unique items
-     * @return a new Collection with the given elements removed
+     * @param self      an Iterable
+     * @param removeMe  the elements to exclude
+     * @param condition a Closure used to determine uniqueness
+     * @return a new Collection
      * @since 4.0.0
      */
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
@@ -10704,68 +11987,67 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a new Collection composed of the elements of the first Iterable minus
      * every matching occurrence as determined by the condition comparator of elements of the given Iterable.
-     * <pre class="groovyTestCase">
-     * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D'], {@code (i, j) -> i.toLowerCase() <=> j.toLowerCase()}) == ['a', 'E']
+     * <pre class="language-groovy groovyTestCase">
+     * List&lt;String> one = ['a', 'B', 'c', 'D', 'E'], two = ['b', 'C', 'D']
+     * def sub = one.minus(two, Comparator.comparing(String::toLowerCase))
+     * assert sub == ['a', 'E']
      * </pre>
      *
-     * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
+     * @param self       an Iterable
+     * @param removeMe   the elements to exclude
      * @param comparator a Comparator
-     * @return a new Collection with the given elements removed
+     * @return a new Collection
      * @since 4.0.0
      */
-    @SuppressWarnings("unchecked")
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, Comparator<? super T> comparator) {
-        Collection<T> ansCollection = createSimilarCollection(self);
-        if (!self.iterator().hasNext())
-            return ansCollection;
-        T head = self.iterator().next();
+        Collection<T> answer = createSimilarCollection(self);
+        Iterator<T> iterator = self.iterator();
+        if (iterator.hasNext()) {
+            T next = iterator.next();
+            boolean more = iterator.hasNext();
+            Predicate exclude; // the elements of self are discarded if this returns true
 
-        // We can't use the same tactic as for intersection
-        // since AbstractCollection only does a remove on the first
-        // element it encounters.
-        boolean nlgnSort = sameType(new Iterable[]{self, removeMe});
-
-        if (nlgnSort && (head instanceof Comparable)) {
-            //n*LOG(n) version
-            Set<T> removeMe2 = new TreeSet<>(comparator);
-            for(Object o: removeMe) {
-                removeMe2.add((T) o);
-            }
-            for (T o : self) {
-                if (!removeMe2.contains(o))
-                    ansCollection.add(o);
-            }
-        } else {
-            //n*n version
-            Collection<T> tmpAnswer = asCollection(self);
-            for (Iterator<T> iter = self.iterator(); iter.hasNext();) {
-                T element = iter.next();
-                boolean elementRemoved = false;
-                for (Iterator<?> iterator = removeMe.iterator(); iterator.hasNext() && !elementRemoved;) {
-                    Object elt = iterator.next();
-                    if (DefaultTypeTransformation.compareEqual(element, elt)) {
-                        iter.remove();
-                        elementRemoved = true;
+            // We can't use the same tactic as for intersection, since AbstractCollection
+            // only does a remove on the first element it encounters.
+            if (next instanceof Comparable && sameType(new Iterable[]{self, removeMe})) {
+                // O(log(n)) version
+                Set removeMe2 = new TreeSet<>(comparator);
+                for (Object o : removeMe) {
+                    removeMe2.add(o);
+                }
+                exclude = removeMe2::contains;
+            } else {
+                // O(n) version
+                exclude = (o1) -> {
+                    for (Object o2 : removeMe) {
+                        if (DefaultTypeTransformation.compareEqual(o1, o2)) {
+                            return true;
+                        }
                     }
+                    return false;
+                };
+            }
+
+            while (true) {
+                if (!exclude.test(next))
+                    answer.add(next); // include duplicates unless answer dedups
+                if (!more) break; else {
+                    next = iterator.next();
+                    more = iterator.hasNext();
                 }
             }
-
-            //remove duplicates
-            //can't use treeset since the base classes are different
-            ansCollection.addAll(tmpAnswer);
         }
-        return ansCollection;
+        return answer;
     }
 
     /**
      * Create a new List composed of the elements of the first List minus every occurrence of the
      * given element to remove.
-     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
+     * <pre class="language-groovy groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
      *
-     * @param self     a List object
-     * @param removeMe an element to remove from the List
-     * @return the resulting List with the given element removed
+     * @param self     a List
+     * @param removeMe the element to exclude
+     * @return a new List
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Object removeMe) {
@@ -10775,43 +12057,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a new Collection composed of the elements of the first Iterable minus every occurrence of the
      * given element to remove.
-     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
+     * <pre class="language-groovy groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
      *
-     * @param self     an Iterable object
-     * @param removeMe an element to remove from the Iterable
-     * @return the resulting Collection with the given element removed
+     * @param self     an Iterable
+     * @param removeMe an element to exclude
+     * @return a new Collection
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Iterable<T> self, Object removeMe) {
-        Collection<T> ansList = createSimilarCollection(self);
+        Collection<T> answer = createSimilarCollection(self);
         for (T t : self) {
-            if (!coercedEquals(t, removeMe)) ansList.add(t);
+            if (!coercedEquals(t, removeMe)) {
+                answer.add(t);
+            }
         }
-        return ansList;
+        return answer;
     }
 
     /**
      * Create a Map composed of the entries of the first map minus the
      * entries of the given map.
      *
-     * @param self     a map object
-     * @param removeMe the entries to remove from the map
-     * @return the resulting map
+     * @param self     a Map
+     * @param removeMe the entries to exclude
+     * @return a new Map
      * @since 1.7.4
      */
     public static <K,V> Map<K,V> minus(Map<K,V> self, Map removeMe) {
-        final Map<K,V> ansMap = createSimilarMap(self);
-        ansMap.putAll(self);
+        Map<K,V> answer = createSimilarMap(self);
+        answer.putAll(self);
         if (removeMe != null && !removeMe.isEmpty()) {
-            for (Map.Entry<K, V> e1 : self.entrySet()) {
-                for (Object e2 : removeMe.entrySet()) {
+            for (var e1 : self.entrySet()) {
+                for (var e2 : removeMe.entrySet()) {
                     if (DefaultTypeTransformation.compareEqual(e1, e2)) {
-                        ansMap.remove(e1.getKey());
+                        answer.remove(e1.getKey());
                     }
                 }
             }
         }
-        return ansMap;
+        return answer;
     }
 
     /**
@@ -10949,7 +12233,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Collection composed of the elements of this Iterable, repeated
      * a certain number of times.  Note that for non-primitive
      * elements, multiple references to the same instance will be added.
-     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
      *
      * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
      * method will effectively return a Collection with a single copy of the Iterable's items.
@@ -10973,7 +12257,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a List composed of the elements of this Iterable, repeated
      * a certain number of times.  Note that for non-primitive
      * elements, multiple references to the same instance will be added.
-     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
      *
      * Note: if the Iterable happens to not support duplicates, e.g. a Set, then the
      * method will effectively return a Collection with a single copy of the Iterable's items.
@@ -11189,7 +12473,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = [1,2,3,4] as Set
      * def b = [3,4,5,6] as Set
      * assert (a | b) == [1,2,3,4,5,6] as Set
@@ -11212,7 +12496,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = [1,2,3,4] as SortedSet
      * def b = [3,4,5,6] as Set
      * assert (a | b) == [1,2,3,4,5,6] as SortedSet
@@ -11235,12 +12519,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The list is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [7, 15, 3, 5, 4, 12, 6]
      * assert list.partitionPoint(0..&lt;list.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
      * // usage case as lower_bound(cpp), bisect_left(python)
      * assert list.partitionPoint(0..&lt;list.size()) { it &lt; 4 } == 4
@@ -11262,7 +12546,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an integer that is the index of the first element of the second partition
      * @since 5.0.0
      */
-    public static <T> int partitionPoint(List<T> self, IntRange range, Predicate<T> condition) {
+    public static <T> int partitionPoint(List<T> self, IntRange range, Predicate<? super T> condition) {
         Objects.requireNonNull(self);
         RangeInfo info = range.subListBorders(self.size());
         Objects.checkFromToIndex(info.from, info.to, self.size());
@@ -11284,12 +12568,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The list is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [7, 15, 3, 5, 4, 12, 6] // partitioned into odds then evens
      * assert list.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
      * // usage case as lower_bound(cpp), bisect_left(python)
      * assert list.partitionPoint{ it &lt; 4 } == 4
@@ -11302,6 +12586,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * // predicate of reverse logic examples:
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it > 4 } == 3
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it >= 4 } == 5
+     * // empty input
+     * assert [].partitionPoint{ it &lt; 4 } == 0
      * </pre>
      *
      * @param self      a groovy list
@@ -11309,7 +12595,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an integer that is the index of the first element of the second partition
      * @since 5.0.0
      */
-    public static <T> int partitionPoint(List<T> self, Predicate<T> condition) {
+    public static <T> int partitionPoint(List<T> self, Predicate<? super T> condition) {
+        Objects.requireNonNull(self);
+        if (self.isEmpty()) return 0;
         return partitionPoint(self, new IntRange(true, 0, self.size() - 1), condition);
     }
 
@@ -11320,7 +12608,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds all permutations of an iterable.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">def result = [1, 2, 3].permutations()
+     * <pre class="language-groovy groovyTestCase">def result = [1, 2, 3].permutations()
      * assert result == [[3, 2, 1], [3, 1, 2], [1, 3, 2], [2, 3, 1], [2, 1, 3], [1, 2, 3]] as Set</pre>
      *
      * @param self the Iterable of items
@@ -11341,7 +12629,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * into a list.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">Set result = [1, 2, 3].permutations { it.collect { v {@code ->} 2*v }}
+     * <pre class="language-groovy groovyTestCase">Set result = [1, 2, 3].permutations { it.collect { v {@code ->} 2*v }}
      * assert result == [[6, 4, 2], [6, 2, 4], [2, 6, 4], [4, 6, 2], [4, 2, 6], [2, 4, 6]] as Set</pre>
      *
      * @param self the Iterable of items
@@ -11361,7 +12649,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is a Set, then the returned collection will be a Set otherwise a List.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
      *
      * @param left  the left Collection
      * @param right the right Collection
@@ -11379,7 +12667,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is a Set, then the returned collection will be a Set otherwise a List.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
      *
      * @param left  the left Iterable
      * @param right the right Iterable
@@ -11507,7 +12795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * array operands are modified while the operation is in progress.
      * The original list and array operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 3]
      * def newItems = items.plus(2, 'a'..'c' as String[])
      * assert newItems == [1, 2, 'a', 'b', 'c', 3]
@@ -11537,7 +12825,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The behavior of this operation is undefined if the original lists
      * are modified while the operation is in progress. The original lists remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 3]
      * def newItems = items.plus(2, 'a'..'c')
      * assert newItems == [1, 2, 'a', 'b', 'c', 3]
@@ -11579,7 +12867,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is a Set, then the returned collection will be a Set otherwise a List.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
      *
      * @param left  a Collection
      * @param right an object to add/append
@@ -11597,7 +12885,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is a Set, then the returned collection will be a Set otherwise a List.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
      *
      * @param left  an Iterable
      * @param right an object to add/append
@@ -11612,7 +12900,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a List as a union of a List and an Object.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
      *
      * @param left  a List
      * @param right an object to add/append
@@ -11627,7 +12915,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Set as a union of a Set and an Object.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
      *
      * @param left  a Set
      * @param right an object to add/append
@@ -11642,7 +12930,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a SortedSet as a union of a SortedSet and an Object.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
      *
      * @param left  a SortedSet
      * @param right an object to add/append
@@ -11664,7 +12952,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Roughly equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
      * but with some additional logic to preserve the <code>left</code> Map type for common cases as
      * described above.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:10, b:20] + [a:5, c:7] == [a:5, b:20, c:7]
      * </pre>
      *
@@ -11750,7 +13038,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Appends a String to the literal of the Map instance.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert '[a:1] is a map' == [a:1] + ' is a map'
      * </pre>
      *
@@ -11766,7 +13054,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Appends a GString to the literal of the Map instance.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert '[a:1] is a map' == [a:1] + " is ${'a'} map"
      * </pre>
      *
@@ -11782,7 +13070,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Appends two iterators.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2].iterator().plus([3, 4].iterator()).toList() == 1..4
      * </pre>
      *
@@ -11829,7 +13117,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Removes the initial item from the List.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", false, 2]
      * assert list.pop() == 'a'
      * assert list == [false, 2]
@@ -12285,7 +13573,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Prepends an item to the start of the List.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [3, 4, 2]
      * list.push("x")
      * assert list == ['x', 3, 4, 2]
@@ -12345,7 +13633,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">def list = [2, 3]
+     * <pre class="language-groovy groovyTestCase">def list = [2, 3]
      * list[0] = 1
      * assert list == [1, 3]</pre>
      *
@@ -12376,7 +13664,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", true]
      * {@code list[1..<1] = 5}
      * assert list == ["a", 5, true]
@@ -12402,7 +13690,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", true]
      * {@code list[1..<1] = [4, 3, 2]}
      * assert list == ["a", 4, 3, 2, true]
@@ -12434,7 +13722,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * List subscript assignment operator when given a range as the index and
      * the assignment operand is a collection.
-     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
+     * Example: <pre class="language-groovy groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
      * myList[3..5] = ["a", true]
      * assert myList == [4, 3, 5, "a", true, 10]</pre>
      *
@@ -12455,7 +13743,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * List subscript assignment operator when given a range as the index.
-     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
+     * Example: <pre class="language-groovy groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
      * myList[3..5] = "b"
      * assert myList == [4, 3, 5, "b", 10]</pre>
      *
@@ -12476,7 +13764,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
+     * <pre class="language-groovy groovyTestCase">def list = ["a", true, 42, 9.4]
      * list[1, 4] = ["x", false]
      * assert list == ["a", "x", 42, 9.4, false]</pre>
      *
@@ -12507,7 +13795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
-     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
+     * <pre class="language-groovy groovyTestCase">def list = ["a", true, 42, 9.4]
      * list[1, 3] = 5
      * assert list == ["a", 5, 42, 5]</pre>
      *
@@ -12532,15 +13820,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A helper method to allow maps to work with subscript operators
+     * A helper method to allow maps to work with subscript operators.
      *
      * @param self  a Map
      * @param key   an Object as a key for the map
      * @param value the value to put into the map
-     * @return the value corresponding to the given key
+     * @return the value
      * @since 1.0
      */
     public static <K,V> V putAt(Map<K,V> self, K key, V value) {
+        self.put(key, value);
+        return value;
+    }
+
+    /**
+     * A helper method to allow maps to work with subscript operators.
+     * <pre class="language-groovy groovyTestCase">def map = [:]
+     * assert map['properties'] == null
+     * map['properties'] = new Object() // GROOVY-12024
+     * assert map['properties'] != null
+     * </pre>
+     *
+     * @param self  a Map
+     * @param key   an Object as a key for the map
+     * @param value the value to put into the map
+     * @return the value
+     * @since 6.0.0
+     */
+    public static <V> V putAt(Map<? super String,V> self, String key, V value) {
         self.put(key, value);
         return value;
     }
@@ -12615,7 +13922,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Modifies this collection by removing the elements that are matched according
      * to the specified closure condition.
      *
-     * <pre class="groovyTestCase">def list = ['a', 'b']
+     * <pre class="language-groovy groovyTestCase">def list = ['a', 'b']
      * list.removeAll { it == 'b' }
      * assert list == ['a']</pre>
      *
@@ -12638,7 +13945,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passed the <code>Map.Entry</code>. Otherwise the closure should take two parameters, which
      * will be the key and the value.
      *
-     * <pre class="groovyTestCase">def map = [a:1, b:2]
+     * <pre class="language-groovy groovyTestCase">def map = [a:1, b:2]
      * map.removeAll { k,v {@code ->} k == 'b' }
      * assert map == [a:1]</pre>
      *
@@ -12663,7 +13970,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * {@link List#remove(int)} but with no ambiguity for List&lt;Integer&gt;.
      * <p/>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1, 2, 3]
      * list.removeAt(1)
      * assert [1, 3] == list
@@ -12687,7 +13994,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * {@link Collection#remove(Object)} but with no ambiguity for Collection&lt;Integer&gt;.
      * <p/>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1, 2, 3, 2]
      * list.removeElement(2)
      * assert [1, 3, 2] == list
@@ -12708,7 +14015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Removes the last item from the List.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ['a', false, 2]
      * assert list.removeLast() == 2
      * assert list == ['a', false]
@@ -12734,7 +14041,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Repeat the elements from an iterable. An alias for multiply.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ['a', 42].repeat(2) == ['a', 42, 'a', 42]
      * </pre>
      *
@@ -12752,7 +14059,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Repeat the elements from an iterable infinitely.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ['a', 42].repeat().take(5).toList() == ['a', 42, 'a', 42, 'a']
      * </pre>
      *
@@ -12767,7 +14074,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Repeat the elements from an iterator.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ['a', 42].iterator().repeat(2).toList() == ['a', 42, 'a', 42]
      * </pre>
      *
@@ -12783,7 +14090,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Repeat the elements from an iterator infinitely.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ['a', 42].iterator().repeat().take(5).toList() == ['a', 42, 'a', 42, 'a']
      * </pre>
      *
@@ -12914,7 +14221,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * that are matched according to the specified closure condition.  In other words,
      * removes from this collection all of its elements that don't match.
      *
-     * <pre class="groovyTestCase">def list = ['a', 'b']
+     * <pre class="language-groovy groovyTestCase">def list = ['a', 'b']
      * list.retainAll { it == 'b' }
      * assert list == ['b']</pre>
      *
@@ -12948,7 +14255,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * parameter then it will be passed the <code>Map.Entry</code>. Otherwise the closure should
      * take two parameters, which will be the key and the value.
      *
-     * <pre class="groovyTestCase">def map = [a:1, b:2]
+     * <pre class="language-groovy groovyTestCase">def map = [a:1, b:2]
      * map.retainAll { k,v {@code ->} k == 'b' }
      * assert map == [b:2]</pre>
      *
@@ -12980,7 +14287,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new List with the identical contents to this list
      * but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", 4, false]
      * assert list.reverse() == [false, 4, "a"]
      * assert list == ["a", 4, false]
@@ -12998,7 +14305,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the elements in a list. If mutate is true, the original list is modified in place and returned.
      * Otherwise, a new list containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", 4, false]
      * assert list.reverse(false) == [false, 4, "a"]
      * assert list == ["a", 4, false]
@@ -13066,7 +14373,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterate over each element of the list in the reverse order.
-     * <pre class="groovyTestCase">def result = []
+     * <pre class="language-groovy groovyTestCase">def result = []
      * [1,2,3].reverseEach { result &lt;&lt; it }
      * assert result == [3,2,1]</pre>
      *
@@ -13082,7 +14389,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterate over each element of the set in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * TreeSet navSet = [2, 4, 1, 3]  // natural order is sorted
      * List result = []
      * navSet.reverseEach { result &lt;&lt; it }
@@ -13341,7 +14648,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Randomly reorders the elements of the specified list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", 4, false]
      * def origSize = list.size()
      * def origCopy = new ArrayList(list)
@@ -13361,7 +14668,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Randomly reorders the elements of the specified list using the
      * specified random instance as the source of randomness.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def r = new Random()
      * def list = ["a", 4, false]
      * def origSize = list.size()
@@ -13385,7 +14692,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new list containing the elements of the specified list
      * but in a random order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = ["a", 4, false]
      * def result = list.shuffled()
      * assert list !== result
@@ -13407,7 +14714,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new list containing the elements of the specified list but in a random
      * order using the specified random instance as the source of randomness.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def r = new Random()
      * def list = ["a", 4, false]
      * def result = list.shuffled(r)
@@ -13449,7 +14756,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Provide the standard Groovy <code>size()</code> method for <code>Iterable</code>.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 3]
      * def iterable = { [ hasNext:{ !items.isEmpty() }, next:{ items.pop() } ] as Iterator } as Iterable
      * assert iterable.size() == 3
@@ -13472,7 +14779,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the Collection is a List, it is sorted in place and returned.
      * Otherwise, the elements are first placed into a new list which is then
      * sorted and returned - leaving the original Collection unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
      *
      * @param self the Iterable to be sorted
      * @return the sorted Iterable as a List
@@ -13489,8 +14796,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the Iterable is a List and mutate is true,
      * it is sorted in place and returned. Otherwise, the elements are first placed
      * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
-     * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 2]
      * def sorted = orig.sort(false)
      * assert orig == [1, 3, 2]
@@ -13512,7 +14819,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sorts the elements from the given map into a new ordered map using
      * the closure as a comparator to determine the ordering.
      * The original map is unchanged.
-     * <pre class="groovyTestCase">def map = [a:5, b:3, c:6, d:4].sort { a, b {@code ->} a.value {@code <=>} b.value }
+     * <pre class="language-groovy groovyTestCase">def map = [a:5, b:3, c:6, d:4].sort { a, b {@code ->} a.value {@code <=>} b.value }
      * assert map == [b:3, d:4, a:5, c:6]</pre>
      *
      * @param self the original unsorted map
@@ -13534,7 +14841,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sorts the elements from the given map into a new ordered Map using
      * the specified key comparator to determine the ordering.
      * The original map is unchanged.
-     * <pre class="groovyTestCase">def map = [ba:3, cz:6, ab:5].sort({ a, b {@code ->} a[-1] {@code <=>} b[-1] } as Comparator)
+     * <pre class="language-groovy groovyTestCase">def map = [ba:3, cz:6, ab:5].sort({ a, b {@code ->} a[-1] {@code <=>} b[-1] } as Comparator)
      * assert map*.value == [3, 5, 6]</pre>
      *
      * @param self the original unsorted map
@@ -13552,7 +14859,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sorts the elements from the given map into a new ordered Map using
      * the natural ordering of the keys to determine the ordering.
      * The original map is unchanged.
-     * <pre class="groovyTestCase">map = [ba:3, cz:6, ab:5].sort()
+     * <pre class="language-groovy groovyTestCase">map = [ba:3, cz:6, ab:5].sort()
      * assert map*.value == [5, 3, 6]
      * </pre>
      *
@@ -13602,10 +14909,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sorts the Iterable using the given Comparator. If the Iterable is a List and mutate
      * is true, it is sorted in place and returned. Otherwise, the elements are first placed
      * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ["hi","hey","hello"] == ["hello","hi","hey"].sort(false, { a, b {@code ->} a.length() {@code <=>} b.length() } as Comparator )
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ["hello","hi","Hey"]
      * def sorted = orig.sort(false, String.CASE_INSENSITIVE_ORDER)
      * assert orig == ["hello","hi","Hey"]
@@ -13628,7 +14935,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sorts the Iterable using the given Comparator over the given index range. If the Iterable is a List and mutate
      * is true, it is sorted in place and returned. Otherwise, the elements are first placed
      * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ['hello', 'hi', 'Hey', 'a']
      * def sorted = orig.sort(0..2, false, String.CASE_INSENSITIVE_ORDER)
      * assert orig == ['hello', 'hi', 'Hey', 'a']
@@ -13661,7 +14968,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sorts the Iterable using the given Comparator over the given index range.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ['hello', 'hi', 'Hey', 'a']
      * orig.sort(0..2, String.CASE_INSENSITIVE_ORDER)
      * assert orig == ['hello', 'Hey', 'hi', 'a']
@@ -13682,7 +14989,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If mutate is true, it is sorted in place and returned. Otherwise, the elements are first placed
      * into a new list which is then sorted and returned, leaving the original List unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * // a list with some odd then even numbers
      * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
      *
@@ -13736,7 +15043,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A sort variant that takes an index range and always mutates the original list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
      * nums.sort(0..4) { it }
      * assert nums == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
@@ -13752,7 +15059,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A mutating sort variant that takes an index range.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
      * nums.sort(0..4)
      * assert nums == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
@@ -13802,8 +15109,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
      *
      * @param self    the Iterable to be sorted
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
@@ -13828,9 +15135,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ["hello","hi","Hey"]
      * def sorted = orig.sort(false) { it.toUpperCase() }
      * assert orig == ["hello","hi","Hey"]
@@ -13903,7 +15210,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The second list all those that don't.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }</pre>
      *
      * @param self    a Collection of values
      * @param closure a closure condition
@@ -13939,7 +15246,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The second list all those that don't.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }</pre>
      *
      * @param self    a List of values
      * @param closure a closure condition
@@ -13957,7 +15264,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The second list all those that don't.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert [[2,4] as Set, [1,3] as Set] == ([1,2,3,4] as Set).split { it % 2 == 0 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [[2,4] as Set, [1,3] as Set] == ([1,2,3,4] as Set).split { it % 2 == 0 }</pre>
      *
      * @param self    a Set of values
      * @param closure a closure condition
@@ -14166,7 +15473,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a view of the portion of this list given by the specified range.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [0, 1, 2, 3, 4]
      * assert nums.subList(1..3) == 1..3
      * assert nums.subList(0&lt;..&lt;-1) == 1..3
@@ -14192,7 +15499,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a sub-Map containing the given keys. This method is similar to
      * List.subList() but uses keys rather than index ranges.
-     * <pre class="groovyTestCase">assert [1:10, 2:20, 4:40].subMap( [2, 4] ) == [2:20, 4:40]</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1:10, 2:20, 4:40].subMap( [2, 4] ) == [2:20, 4:40]</pre>
      *
      * @param map  a Map
      * @param keys a Collection of keys
@@ -14213,7 +15520,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates a sub-Map containing the given keys. This method is similar to
      * List.subList() but uses keys rather than index ranges. The original
      * map is unaltered.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [1:10, 2:20, 3:30, 4:40]
      * assert orig.subMap([1, 3] as int[]) == [1:10, 3:30]
      * assert orig.subMap([2, 4] as Integer[]) == [2:20, 4:40]
@@ -14242,7 +15549,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Submits a value-returning task for execution and returns a {@link Future}
      * representing the pending results of the task.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def executor = java.util.concurrent.Executors.newSingleThreadExecutor()
      * try {
      *   def future = executor.submit {
@@ -14267,7 +15574,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds all non-null subsequences of a list.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">def result = [1, 2, 3].subsequences()
+     * <pre class="language-groovy groovyTestCase">def result = [1, 2, 3].subsequences()
      * assert result == [[1, 2, 3], [1, 3], [2, 3], [1, 2], [1], [2], [3]] as Set</pre>
      *
      * @param self the List of items
@@ -14284,7 +15591,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sums the items in an Iterable. This is equivalent to invoking the
      * "plus" method on all items in the Iterable.
-     * <pre class="groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
      *
      * @param self Iterable of values to add together
      * @return The sum of all the items
@@ -14310,7 +15617,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an Iterable, adding the result to some initial value.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert 5+1+2+3+4 == [1,2,3,4].sum(5)
      * </pre>
      *
@@ -14359,7 +15666,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sums the result of applying a closure to each item of an Iterable.
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
-     * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum { it * 2 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum { it * 2 }</pre>
      *
      * @param self    an Iterable
      * @param closure a single parameter closure that returns a (typically) numeric value.
@@ -14391,7 +15698,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sums the result of applying a closure to each item of an Iterable to some initial value.
      * <code>iter.sum(initVal, closure)</code> is equivalent to:
      * <code>iter.collect(closure).sum(initVal)</code>.
-     * <pre class="groovyTestCase">assert 50+4+6+10+12 == [2,3,5,6].sum(50) { it * 2 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert 50+4+6+10+12 == [2,3,5,6].sum(50) { it * 2 }</pre>
      *
      * @param self         an Iterable
      * @param closure      a single parameter closure that returns a (typically) numeric value.
@@ -14446,7 +15753,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 3, 2, 4] == [1, 2, 3, 4].swap(1, 2)
      * </pre>
      *
@@ -14467,7 +15774,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the List excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [3, 4, 2]
      * assert list.tail() == [4, 2]
      * assert list == [3, 4, 2]
@@ -14484,7 +15791,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the SortedSet excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def sortedSet = [3, 4, 2] as SortedSet
      * assert sortedSet.tail() == [3, 4] as SortedSet
      * assert sortedSet == [3, 4, 2] as SortedSet
@@ -14501,7 +15808,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the tail values of this Iterable: the first value will be this list of all items from the iterable and the final one will be an empty list, with the intervening values the results of successive applications of tail on the items.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3, 4].tails() == [[1, 2, 3, 4], [2, 3, 4], [3, 4], [4], []]
      * </pre>
      *
@@ -14515,7 +15822,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the Iterable excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [3, 4, 2]
      * assert list.tail() == [4, 2]
      * assert list == [3, 4, 2]
@@ -14556,7 +15863,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first <code>num</code> elements from the head of this List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.take( 0 ) == []
      * assert strings.take( 2 ) == [ 'a', 'b' ]
@@ -14575,7 +15882,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first <code>num</code> elements from the head of this SortedSet.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ] as SortedSet
      * assert strings.take( 0 ) == [] as SortedSet
      * assert strings.take( 2 ) == [ 'a', 'b' ] as SortedSet
@@ -14594,7 +15901,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first <code>num</code> elements from the head of this Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.take( 0 ) == []
      * assert strings.take( 2 ) == [ 'a', 'b' ]
@@ -14626,7 +15933,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a new map containing the first <code>num</code> elements from the head of this map.
      * If the map instance does not have ordered keys, then this function could return a random <code>num</code>
      * entries. Groovy by default uses LinkedHashMap, so this shouldn't be an issue in the main.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a':10, 'b':20, 'c':30 ]
      * assert strings.take( 0 ) == [:]
      * assert strings.take( 2 ) == [ 'a':10, 'b':20 ]
@@ -14659,7 +15966,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns an iterator of up to the first <code>num</code> elements from this iterator.
      * The original iterator is stepped along by <code>num</code> elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = 0
      * def iter = [ hasNext:{ true }, next:{ a++ } ] as Iterator
      * def iteratorCompare( Iterator a, List b ) {
@@ -14707,11 +16014,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // takeIf
+
+    /**
+     * Returns this object if it satisfies the given predicate, or {@code null}
+     * otherwise. Useful for guarding a value through a chain, particularly with
+     * the Elvis or safe-navigation operators.
+     * <pre class="language-groovy groovyTestCase">
+     * assert 'hello'.takeIf{ it.startsWith('h') } == 'hello'
+     * assert 'hello'.takeIf{ it.startsWith('z') } == null
+     * assert ('input'.takeIf{ it.startsWith('http') } ?: "https://input") == 'https://input'
+     * assert [1, 2, 3].takeIf{ !it.isEmpty() }?.size() == 3
+     * assert [].takeIf{ !it.isEmpty() }?.size() == null
+     * </pre>
+     * The predicate is invoked with the receiver as its argument; the receiver
+     * is not used as a delegate. The receiver is passed through to the predicate
+     * unchanged, including when it is {@code null}.
+     *
+     * @param self      the object to test
+     * @param condition the predicate applied to {@code self}
+     * @return {@code self} if {@code condition.test(self)} is {@code true}, otherwise {@code null}
+     * @since 6.0.0
+     */
+    public static <T> T takeIf(T self, Predicate<? super T> condition) {
+        return condition.test(self) ? self : null;
+    }
+
+    //--------------------------------------------------------------------------
     // takeRight
 
     /**
      * Returns the last <code>num</code> elements from the tail of this Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.takeRight( 0 ) == []
      * assert strings.takeRight( 2 ) == [ 'b', 'c' ]
@@ -14750,7 +16084,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last <code>num</code> elements from the tail of this List.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ]
      * assert strings.takeRight( 0 ) == []
      * assert strings.takeRight( 2 ) == [ 'b', 'c' ]
@@ -14769,7 +16103,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last <code>num</code> elements from the tail of this SortedSet.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def strings = [ 'a', 'b', 'c' ] as SortedSet
      * assert strings.takeRight( 0 ) == [] as SortedSet
      * assert strings.takeRight( 2 ) == [ 'b', 'c' ] as SortedSet
@@ -14794,7 +16128,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passed to the given closure condition evaluates to true.
      * Similar to {@link #takeWhile(Iterable, groovy.lang.Closure)}
      * except that it attempts to preserve the type of the original list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [ 1, 3, 2 ]
      * assert nums.takeWhile{ it {@code <} 1 } == []
      * assert nums.takeWhile{ it {@code <} 3 } == [ 1 ]
@@ -14824,7 +16158,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a Collection containing the longest prefix of the elements from this Iterable
      * where each element passed to the given closure evaluates to true.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
@@ -14851,7 +16185,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passed to the given closure condition evaluates to true.
      * Similar to {@link #takeWhile(Iterable, groovy.lang.Closure)}
      * except that it attempts to preserve the type of the original SortedSet.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [ 1, 2, 3 ] as SortedSet
      * assert nums.takeWhile{ it {@code <} 1 } == [] as SortedSet
      * assert nums.takeWhile{ it {@code <} 2 } == [ 1 ] as SortedSet
@@ -14872,7 +16206,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the longest prefix of this Map where each entry (or key/value pair) when
      * passed to the given closure evaluates to true.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def shopping = [milk:1, bread:2, chocolate:3]
      * assert shopping.takeWhile{ it.key.size() {@code <} 6 } == [milk:1, bread:2]
      * assert shopping.takeWhile{ it.value % 2 } == [milk:1]
@@ -14905,7 +16239,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the longest prefix of elements in this iterator where
      * each element passed to the given condition closure evaluates to true.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = 0
      * def iter = [ hasNext:{ true }, next:{ a++ } ] as Iterator
      *
@@ -15247,11 +16581,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convert an iterator to an immutable List. The iterator will become
+     * exhausted of elements after making this conversion. Returns the
+     * canonical empty list ({@link Collections#emptyList()}) when the iterator
+     * is empty.
+     * <p>
+     * Null elements are preserved (unlike {@link List#copyOf(java.util.Collection)},
+     * which rejects nulls). The returned list is unmodifiable; mutation
+     * attempts throw {@link UnsupportedOperationException}.
+     * <p>
+     * <pre class="language-groovy groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     * def list = [1, 2, null, 3].iterator().toImmutableList()
+     * assert list == [1, 2, null, 3]
+     * shouldFail(UnsupportedOperationException) { list &lt;&lt; 4 }
+     * assert [].iterator().toImmutableList() === Collections.emptyList()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return an immutable List of the elements from the iterator
+     * @since 6.0.0
+     */
+    public static <T> List<T> toImmutableList(Iterator<T> self) {
+        if (!self.hasNext()) return Collections.emptyList();
+        List<T> answer = new ArrayList<>();
+        while (self.hasNext()) {
+            answer.add(self.next());
+        }
+        return Collections.unmodifiableList(answer);
+    }
+
+    /**
      * Convert an Iterable to a List. The Iterable's iterator will
      * become exhausted of elements after making this conversion.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
+     * <pre class="language-groovy groovyTestCase">def x = [1,2,3] as HashSet
      * assert x.class == HashSet
      * assert x.toList() instanceof List</pre>
      *
@@ -15261,6 +16626,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> toList(Iterable<T> self) {
         return toList(self.iterator());
+    }
+
+    /**
+     * Convert an Iterable to an immutable List. The Iterable's iterator will
+     * become exhausted of elements after making this conversion.
+     *
+     * @param self an Iterable
+     * @return an immutable List of the elements from the Iterable
+     * @since 6.0.0
+     */
+    public static <T> List<T> toImmutableList(Iterable<T> self) {
+        return toImmutableList(self.iterator());
     }
 
     /**
@@ -15376,7 +16753,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * even if the Collection is already a Set.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def result = [1, 2, 2, 2, 3].toSet()
      * assert result instanceof Set
      * assert result == [1, 2, 3] as Set
@@ -15397,7 +16774,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * even if the Iterable is already a Set.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def result = [1, 2, 2, 2, 3].toSet()
      * assert result instanceof Set
      * assert result == [1, 2, 3] as Set
@@ -15409,6 +16786,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Set<T> toSet(Iterable<T> self) {
         return toSet(self.iterator());
+    }
+
+    /**
+     * Convert an Iterable to an immutable Set. The Iterable's iterator will
+     * become exhausted of elements after making this conversion.
+     *
+     * @param self an Iterable
+     * @return an immutable Set of the elements from the Iterable
+     * @since 6.0.0
+     */
+    public static <T> Set<T> toImmutableSet(Iterable<T> self) {
+        return toImmutableSet(self.iterator());
     }
 
     /**
@@ -15425,6 +16814,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.add(self.next());
         }
         return answer;
+    }
+
+    /**
+     * Convert an iterator to an immutable Set. The iterator will become
+     * exhausted of elements after making this conversion. Returns the
+     * canonical empty set ({@link Collections#emptySet()}) when the iterator
+     * is empty.
+     * <p>
+     * Null elements are preserved (unlike {@link Set#copyOf(java.util.Collection)},
+     * which rejects nulls). The returned set is unmodifiable; mutation
+     * attempts throw {@link UnsupportedOperationException}.
+     * <p>
+     * <pre class="language-groovy groovyTestCase">
+     * import static groovy.test.GroovyAssert.shouldFail
+     * def set = [1, 2, null, 3].iterator().toImmutableSet()
+     * assert set == [1, 2, null, 3] as Set
+     * shouldFail(UnsupportedOperationException) { set &lt;&lt; 4 }
+     * assert [].iterator().toImmutableSet() === Collections.emptySet()
+     * </pre>
+     *
+     * @param self an iterator
+     * @return an immutable Set of the elements from the iterator
+     * @since 6.0.0
+     */
+    public static <T> Set<T> toImmutableSet(Iterator<T> self) {
+        if (!self.hasNext()) return Collections.emptySet();
+        Set<T> answer = new HashSet<>();
+        while (self.hasNext()) {
+            answer.add(self.next());
+        }
+        return Collections.unmodifiableSet(answer);
     }
 
     /**
@@ -15451,7 +16871,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * {@code NumberAwareComparator} has special treatment for numbers but otherwise uses the
      * natural ordering of the Iterable elements. The elements are first placed into a new list which
      * is then sorted and returned - leaving the original Iterable unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 2]
      * def sorted = orig.toSorted()
      * assert orig == [1, 3, 2]
@@ -15470,7 +16890,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the Iterable using the given Comparator. The elements are first placed
      * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ["hello","hi","Hey"]
      * def sorted = orig.toSorted(String.CASE_INSENSITIVE_ORDER)
      * assert orig == ["hello","hi","Hey"]
@@ -15500,8 +16920,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
-     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
+     * <pre class="language-groovy groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b {@code ->} a.length() {@code <=>} b.length() }</pre>
      *
      * @param self    the Iterable to be sorted
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
@@ -15579,7 +16999,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A sort variant that takes an index range and never modifies the original list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
      * assert nums.toSorted(0..4) { it } == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
      * </pre>
@@ -15598,7 +17018,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a list, sorted over the given range
      * using a {@link NumberAwareComparator}, leaving the original list unmodified.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
      * assert nums.toSorted(0..4, Comparator.reverseOrder()) == [9, 7, 5, 3, 1, 4, 8, 6, 0, 2]
      * assert nums.toSorted(5..-1, Comparator.reverseOrder()) == [5, 9, 1, 7, 3, 8, 6, 4, 2, 0]
@@ -15618,7 +17038,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a list, sorted over the given range
      * using a {@link NumberAwareComparator}, leaving the original list unmodified.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
      * assert nums.toSorted(0..4) == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
      * assert nums.toSorted(5..-1) == [5, 9, 1, 7, 3, 0, 2, 4, 6, 8]
@@ -15639,7 +17059,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * a {@link NumberAwareComparator} on map entry values to determine the resulting order.
      * {@code NumberAwareComparator} has special treatment for numbers but otherwise uses the
      * natural ordering of the Iterator elements. The original map is unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [a:5L, b:3, c:6, d:4.0].toSorted()
      * assert map.toString() == '[b:3, d:4.0, a:5, c:6]'
      * </pre>
@@ -15655,7 +17075,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the elements from the given map into a new ordered map using
      * the supplied comparator to determine the ordering. The original map is unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def keyComparator = [compare: { e1, e2 {@code ->} e1.key {@code <=>} e2.key }] as Comparator
      * def valueComparator = [compare: { e1, e2 {@code ->} e1.value {@code <=>} e2.value }] as Comparator
      * def map1 = [a:5, b:3, d:4, c:6].toSorted(keyComparator)
@@ -15687,7 +17107,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
      * the Closure is assumed to take a single entry parameter and return a Comparable (typically an Integer)
      * which is then used for further comparison.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [a:5, b:3, c:6, d:4].toSorted { a, b {@code ->} a.value {@code <=>} b.value }
      * assert map.toString() == '[b:3, d:4, a:5, c:6]'
      * </pre>
@@ -15732,7 +17152,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a new <code>SpreadMap</code> from this map.
      * <p>
      * The example below shows the various possible use cases:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def fn(Map m) { return m.a + m.b + m.c + m.d }
      *
      * assert fn(a:1, b:2, c:3, d:4) == 10
@@ -15836,7 +17256,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Tuple from the key and value of this Map Entry.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [a:1, b:2, c:3]*.toTuple().toString() == '[[a, 1], [b, 2], [c, 3]]'
      * assert [a:1, b:2, c:3].findAll(e -> e.toTuple().sum() != 'b2') == [a:1, c:3]
      * </pre>
@@ -15862,14 +17282,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = "Hello".toList() + [null, null] + "there".toList()
      * def toLower = { it == null ? null : it.toLowerCase() }
      * def noDups = items.iterator().toUnique(toLower).toList()
      * assert noDups == ['H', 'e', 'l', 'o', null, 't', 'r']
      * </pre>
-     * <pre class="groovyTestCase">assert [1,4] == [1,3,4,5].toUnique { it % 2 }</pre>
-     * <pre class="groovyTestCase">assert [2,3,4] == [2,3,3,4].toUnique { a, b {@code ->} a {@code <=>} b }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,4] == [1,3,4,5].toUnique { it % 2 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [2,3,4] == [2,3,3,4].toUnique { a, b {@code ->} a {@code <=>} b }</pre>
      *
      * @param self an Iterator
      * @param condition a Closure used to determine unique items
@@ -15914,7 +17334,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For each duplicate, the first member which is returned from the
      * Iterable is retained, but all other ones are removed.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -15965,7 +17385,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For each duplicate, the first member which is returned from the
      * List is retained, but all other ones are removed.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -16012,7 +17432,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a Collection containing the items from the Iterable but with duplicates removed
      * using the natural ordering of the items to determine uniqueness.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['c', 'a', 't', 's', 'a', 't', 'h', 'a', 't']
      * String[] expected = ['c', 'a', 't', 's', 'h']
      * assert letters.toUnique() == expected
@@ -16030,7 +17450,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a List containing the items from the List but with duplicates removed
      * using the natural ordering of the items to determine uniqueness.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = ['c', 'a', 't', 's', 'a', 't', 'h', 'a', 't']
      * def expected = ['c', 'a', 't', 's', 'h']
      * assert letters.toUnique() == expected
@@ -16055,7 +17475,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the Iterable
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -16099,7 +17519,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the Iterable
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -16200,11 +17620,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * rows are constructed similarly.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def result = [['a', 'b'], [1, 2]].transpose()
      * assert result == [['a', 1], ['b', 2]]
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def result = [['a', 'b'], [1, 2], [3, 4]].transpose()
      * assert result == [['a', 1, 3], ['b', 2, 4]]
      * </pre>
@@ -16345,7 +17765,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements that exist in either collections are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
      * For collections of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])</pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
      * element exists in the resultant collection.
      *
@@ -16364,11 +17784,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements that exist in either collections are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
      * For collections of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6], Comparator.naturalOrder())
      * assert [4,8,12,16,20,1,3] == [4,8,12,16,20].union([1,2,3,4], (x, y) {@code -> x * x <=> y})
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def one = ['a', 'B', 'c', 'd']
      * def two = ['b', 'C', 'd', 'e']
      * def compareIgnoreCase = { a, b {@code ->} a.toLowerCase() {@code <=>} b.toLowerCase() }
@@ -16412,7 +17832,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
      * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -16433,7 +17853,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
      * For iterables of custom objects; the objects should implement java.lang.Comparable
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *
@@ -16457,7 +17877,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are deemed equal).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def one = ['a', 'B', 'c', 'd']
      * def two = ['b', 'C', 'd', 'e']
      * def compareIgnoreCase = { it.toLowerCase() }
@@ -16482,7 +17902,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a List composed of the union of a List and an Iterable.  Any
      * elements that exist in both iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6,7,8] == [1,2,3,4,5].union([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -16502,7 +17922,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a List composed of the union of a List and an Iterable.  Any
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6] == [1,2,3,4].union([3,4,5,6])
      * </pre>
      *
@@ -16520,7 +17940,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Set composed of the union of a Set and an Iterable.  Any
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6,7,8] as Set == ([1,2,3,4,5] as Set).union([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -16540,7 +17960,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Set composed of the union of a Set and an Iterable.  Any
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6] as Set == ([1,2,3,4] as Set).union([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *
@@ -16558,7 +17978,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a SortedSet composed of the union of a SortedSet and an Iterable.  Any
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6,7,8] as SortedSet == ([1,2,3,4,5] as SortedSet).union([4,5,6,7,8])
      * </pre>
      * By default, Groovy uses a {@link NumberAwareComparator} when determining if an
@@ -16578,7 +17998,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a SortedSet composed of the intersection of a SortedSet and an Iterable.  Any
      * elements that exist in either iterables are added to the resultant collection, such
      * that no elements are duplicated in the resultant collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,3,4,5,6,7,8] as SortedSet == ([1,2,3,4,5] as SortedSet).union([4,5,6,7,8])
      * </pre>
      *
@@ -16612,7 +18032,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Modifies this collection to remove all duplicated items, using Groovy's
      * default number-aware comparator.
-     * <pre class="groovyTestCase">assert [1,3] == [1,3,3].unique()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,3] == [1,3,3].unique()</pre>
      *
      * @param self a collection
      * @return the now modified collection
@@ -16626,7 +18046,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Modifies this List to remove all duplicated items, using Groovy's
      * default number-aware comparator.
-     * <pre class="groovyTestCase">assert [1,3] == [1,3,3].unique()</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,3] == [1,3,3].unique()</pre>
      *
      * @param self a List
      * @return the now modified List
@@ -16641,10 +18061,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Remove all duplicates from a given Collection using Groovy's default number-aware comparator.
      * If mutate is true, it works by modifying the original object (and also returning it).
      * If mutate is false, a new collection is returned leaving the original unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,3] == [1,3,3].unique()
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 2, 3]
      * def uniq = orig.unique(false)
      * assert orig == [1, 3, 2, 3]
@@ -16675,10 +18095,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Remove all duplicates from a given List using Groovy's default number-aware comparator.
      * If mutate is true, it works by modifying the original object (and also returning it).
      * If mutate is false, a new collection is returned leaving the original unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,3] == [1,3,3].unique()
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 2, 3]
      * def uniq = orig.unique(false)
      * assert orig == [1, 3, 2, 3]
@@ -16729,8 +18149,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
-     * <pre class="groovyTestCase">assert [1,4] == [1,3,4,5].unique { it % 2 }</pre>
-     * <pre class="groovyTestCase">assert [2,3,4] == [2,3,3,4].unique { a, b {@code ->} a {@code <=>} b }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,4] == [1,3,4,5].unique { it % 2 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [2,3,4] == [2,3,3,4].unique { a, b {@code ->} a {@code <=>} b }</pre>
      *
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine unique items
@@ -16753,8 +18173,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes two parameters, two items from the List
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
-     * <pre class="groovyTestCase">assert [1,4] == [1,3,4,5].unique { it % 2 }</pre>
-     * <pre class="groovyTestCase">assert [2,3,4] == [2,3,3,4].unique { a, b {@code ->} a {@code <=>} b }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [1,4] == [1,3,4,5].unique { it % 2 }</pre>
+     * <pre class="language-groovy groovyTestCase">assert [2,3,4] == [2,3,3,4].unique { a, b {@code ->} a {@code <=>} b }</pre>
      *
      * @param self    a List
      * @param closure a 1 or 2 arg Closure used to determine unique items
@@ -16774,13 +18194,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
      * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 4, 5]
      * def uniq = orig.unique(false) { it % 2 }
      * assert orig == [1, 3, 4, 5]
      * assert uniq == [1, 4]
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [2, 3, 3, 4]
      * def uniq = orig.unique(false) { a, b {@code ->} a {@code <=>} b }
      * assert orig == [2, 3, 3, 4]
@@ -16812,13 +18232,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * should return a value used for comparison (either using {@link java.lang.Comparable#compareTo(java.lang.Object)} or
      * {@link java.lang.Object#equals(java.lang.Object)}). If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an int value (with 0 indicating the items are not unique).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [1, 3, 4, 5]
      * def uniq = orig.unique(false) { it % 2 }
      * assert orig == [1, 3, 4, 5]
      * assert uniq == [1, 4]
      * </pre>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = [2, 3, 3, 4]
      * def uniq = orig.unique(false) { a, b {@code ->} a {@code <=>} b }
      * assert orig == [2, 3, 3, 4]
@@ -16857,7 +18277,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * by the given Collection's iterator is retained, but all other ones are removed.
      * The given Collection's original order is preserved.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -16908,7 +18328,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * by the given List's iterator is retained, but all other ones are removed.
      * The given List's original order is preserved.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -16959,7 +18379,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * by the given Collection's iterator is retained, but all other ones are removed.
      * The given Collection's original order is preserved.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -17015,7 +18435,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * by the given List's iterator is retained, but all other ones are removed.
      * The given List's original order is preserved.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Person {
      *     def fname, lname
      *     String toString() {
@@ -17414,7 +18834,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Any method invoked inside the closure will first be invoked on the
      * self reference. For instance, the following method calls to the append()
      * method are invoked on the StringBuilder instance:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def b = new StringBuilder().with {
      *   append('foo')
      *   append('bar')
@@ -17456,7 +18876,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * self reference. For example, the following method calls to the append()
      * method are invoked on the StringBuilder instance and then, because
      * 'returning' is true, the self instance is returned:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def b = new StringBuilder().with(true) {
      *   append('foo')
      *   append('bar')
@@ -17502,6 +18922,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the object
      * @param mc the method closure
      * @return the result of calling the method closure
+     * @since 5.0.0
      */
     public static Object withMethodClosure(Object self, MethodClosure mc) {
         return mc.call(self);
@@ -17541,7 +18962,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform Iterable elements into Map entries with values unchanged
      * and keys transformed using the supplied function.
      * The supplied map is used as the destination for transformed entries.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
      * def firstLetter = s {@code ->} s[0]
      * assert languages.withCollectedKeys([C:'Clojure'], firstLetter) ==
@@ -17563,7 +18984,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Transform Iterable elements into Map entries with values unchanged
      * and keys transformed using the supplied function.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
      * def firstLetter = s {@code ->} s[0]
      * assert languages.withCollectedKeys(firstLetter) ==
@@ -17615,7 +19036,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Transform Iterable elements into Map entries with keys unchanged
      * and values transformed using the supplied function.
      * The supplied collector map is used as the destination for transformed entries.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
      * assert languages.withCollectedValues([Clojure:7], String::size) ==
      *     [Clojure:7, Groovy:6, Java:4, Kotlin:6, Scala:5]
@@ -17636,7 +19057,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Transform Iterable elements into Map entries with keys unchanged
      * and values transformed using the supplied function.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
      * assert languages.withCollectedValues(String::size) ==
      *     [Groovy:6, Java:4, Kotlin:6, Scala:5]
@@ -17663,7 +19084,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * result of calling the supplied Closure with the key as the parameter to the Closure.
      *
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def map = [a:1, b:2].withDefault{ k {@code ->} k.toCharacter().isLowerCase() ? 10 : -10 }
      * def expected = [a:1, b:2, c:10, D:-10]
      * assert expected.every{ e {@code ->} e.value == map[e.key] }
@@ -17706,7 +19127,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * for calling <code>getOrDefault</code> with the default value supplied once as a Closure.
      *
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * // sparse map example
      * def answers = [life: 100].withDefault(false, true){ 42 }
      * assert answers.size() == 1
@@ -17765,7 +19186,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If generating a default value is a costly operation consider using <code>withLazyDefault</code>.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [0, 1].withEagerDefault{ 42 }
      * assert list[0] == 0
      * assert list[1] == 1
@@ -17813,7 +19234,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * operation and the <code>init</code> Closure is called to populate the value.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [0, 1].withLazyDefault{ 42 }
      * assert list[0] == 0
      * assert list[1] == 1
@@ -17848,7 +19269,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an Iterable with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [["a", 0], ["b", 1]] == ["a", "b"].withIndex()
      * assert ["0: a", "1: b"] == ["a", "b"].withIndex().collect { str, idx {@code ->} "$idx: $str" }
      * </pre>
@@ -17866,7 +19287,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an Iterable with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [["a", 5], ["b", 6]] == ["a", "b"].withIndex(5)
      * assert ["1: a", "2: b"] == ["a", "b"].withIndex(1).collect { str, idx {@code ->} "$idx: $str" }
      * </pre>
@@ -17885,7 +19306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an iterator with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [["a", 0], ["b", 1]] == ["a", "b"].iterator().withIndex().toList()
      * assert ["0: a", "1: b"] == ["a", "b"].iterator().withIndex().collect { str, idx {@code ->} "$idx: $str" }.toList()
      * </pre>
@@ -17903,7 +19324,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an iterator with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [["a", 5], ["b", 6]] == ["a", "b"].iterator().withIndex(5).toList()
      * assert ["1: a", "2: b"] == ["a", "b"].iterator().withIndex(1).collect { str, idx {@code ->} "$idx: $str" }.toList()
      * </pre>
@@ -17953,7 +19374,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * size as the shorter one.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def one = ['cat', 'spider']
      * def two = ['fish', 'monkey']
      * assert ['catfish', 'spidermonkey'] == one.zip(two).collect{ a, b {@code ->} a + b }
@@ -17978,7 +19399,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * size as the shorter one.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def small = [1, 2, 3].iterator()
      * def large = [100, 200, 300].iterator()
      * assert [101, 202, 303] == small.zip(large).collect{ a, b {@code ->} a + b }
@@ -18029,7 +19450,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * size as the longer one with values completed using the provided default.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def ab = ['a', 'b']
      * def abcd = 'a'..'d'
      * def nums = 1..3
@@ -18054,7 +19475,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * size as the longer one with values completed using the provided default.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def ab = ['a', 'b'].iterator()
      * def abcd = ('a'..'d').iterator()
      * def nums = (1..3).iterator()
@@ -18095,6 +19516,346 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!hasNext()) throw new NoSuchElementException();
             return new Tuple2<>(left.hasNext() ? left.next() : leftDefault,
                                 right.hasNext() ? right.next() : rightDefault);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // zipWithNext
+
+    /**
+     * Returns a list of all the successive adjacent pairs from this Iterable
+     * (a sliding window of size 2, step 1). The result has one fewer element
+     * than the input; an empty or single-element Iterable yields an empty list.
+     * Each pair is a {@link Tuple2}, which is also a {@code List}.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 4].zipWithNext() == [[1, 2], [2, 3], [3, 4]]
+     * assert [].zipWithNext() == []
+     * assert [42].zipWithNext() == []
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a list of the adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T> List<Tuple2<T, T>> zipWithNext(Iterable<T> self) {
+        List<Tuple2<T, T>> result = new ArrayList<>();
+        addAll(result, zipWithNext(self.iterator()));
+        return result;
+    }
+
+    /**
+     * Applies the combiner to each successive adjacent pair from this Iterable,
+     * returning the list of results. The result has one fewer element than the
+     * input; an empty or single-element Iterable yields an empty list.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 4].zipWithNext{ a, b {@code ->} b - a } == [1, 1, 1]
+     * assert [3, 1, 4, 1, 5].zipWithNext{ a, b {@code ->} a {@code <=} b } == [false, true, false, true]
+     * assert 'abcd'.toList().zipWithNext{ a, b {@code ->} a + b } == ['ab', 'bc', 'cd']
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param combiner a function applied to each adjacent pair
+     * @return a list of the combined adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T, R> List<R> zipWithNext(Iterable<T> self, BiFunction<? super T, ? super T, ? extends R> combiner) {
+        List<R> result = new ArrayList<>();
+        addAll(result, zipWithNext(self.iterator(), combiner));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator of all the successive adjacent pairs from this Iterator.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3].iterator().zipWithNext().toList() == [[1, 2], [2, 3]]
+     * </pre>
+     *
+     * @param self an Iterator
+     * @return an iterator of the adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T> Iterator<Tuple2<T, T>> zipWithNext(Iterator<T> self) {
+        return new ZipWithNextIterator<>(self);
+    }
+
+    /**
+     * Returns a (lazy) iterator applying the combiner to each successive
+     * adjacent pair from this Iterator.
+     *
+     * @param self an Iterator
+     * @param combiner a function applied to each adjacent pair
+     * @return an iterator of the combined adjacent pairs
+     * @since 6.0.0
+     */
+    public static <T, R> Iterator<R> zipWithNext(Iterator<T> self, BiFunction<? super T, ? super T, ? extends R> combiner) {
+        Iterator<Tuple2<T, T>> pairs = new ZipWithNextIterator<>(self);
+        return new Iterator<R>() {
+            @Override
+            public boolean hasNext() {
+                return pairs.hasNext();
+            }
+
+            @Override
+            public R next() {
+                Tuple2<T, T> pair = pairs.next();
+                return combiner.apply(pair.getV1(), pair.getV2());
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+    }
+
+    private static final class ZipWithNextIterator<T> implements Iterator<Tuple2<T, T>> {
+        private final Iterator<T> delegate;
+        private T prev;
+        private boolean hasPrev;
+
+        private ZipWithNextIterator(Iterator<T> delegate) {
+            this.delegate = delegate;
+            if (delegate.hasNext()) {
+                prev = delegate.next();
+                hasPrev = true;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasPrev && delegate.hasNext();
+        }
+
+        @Override
+        public Tuple2<T, T> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            T curr = delegate.next();
+            Tuple2<T, T> pair = new Tuple2<>(prev, curr);
+            prev = curr;
+            return pair;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // groupConsecutive
+
+    /**
+     * Splits this Iterable into a list of sublists, each a maximal run of
+     * adjacent elements considered equal. Element order is preserved and the
+     * same value may appear in more than one run (unlike {@link #groupBy(Iterable, Closure)},
+     * which builds a map). Equality uses Groovy's number-aware coercion,
+     * consistent with {@link #unique(Collection)}.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 1, 2, 2, 2, 3, 1, 1].groupConsecutive() == [[1, 1], [2, 2, 2], [3], [1, 1]]
+     * assert [1, 1L, 1.0, 2, 2].groupConsecutive() == [[1, 1L, 1.0], [2, 2]]
+     * assert [].groupConsecutive() == []
+     * assert [7].groupConsecutive() == [[7]]
+     * // run-length encoding; "dedupe consecutive" is just the run heads
+     * assert 'aaabbbcccd'.toList().groupConsecutive().collect{ run {@code ->} [run[0], run.size()] } == [['a', 3], ['b', 3], ['c', 3], ['d', 1]]
+     * assert 'aaabbbcccd'.toList().groupConsecutive()*.first().join() == 'abcd'
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return a list of the runs of adjacent equal elements
+     * @since 6.0.0
+     */
+    public static <T> List<List<T>> groupConsecutive(Iterable<T> self) {
+        List<List<T>> result = new ArrayList<>();
+        addAll(result, groupConsecutive(self.iterator()));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator over the runs of adjacent equal elements
+     * (number-aware coercion).
+     *
+     * @param self an Iterator
+     * @return an iterator over the runs of adjacent equal elements
+     * @since 6.0.0
+     */
+    public static <T> Iterator<List<T>> groupConsecutive(Iterator<T> self) {
+        return new GroupConsecutiveIterator<>(self, (a, b) -> coercedEquals(a, b));
+    }
+
+    /**
+     * Splits this Iterable into runs of adjacent elements whose key, as
+     * computed by the given function, is equal (number-aware coercion).
+     * {@code keyFn} is evaluated exactly once per element.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert ['apple', 'avocado', 'banana', 'cherry', 'citrus', 'date'].groupConsecutive{ it[0] } == [['apple', 'avocado'], ['banana'], ['cherry', 'citrus'], ['date']]
+     * assert [1, 3, 5, 2, 4, 7, 9].groupConsecutive{ it % 2 } == [[1, 3, 5], [2, 4], [7, 9]]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param keyFn extracts the grouping key for each element
+     * @return a list of the runs of adjacent key-equal elements
+     * @since 6.0.0
+     */
+    public static <T, K> List<List<T>> groupConsecutive(Iterable<T> self, Function<? super T, ? extends K> keyFn) {
+        List<List<T>> result = new ArrayList<>();
+        addAll(result, groupConsecutive(self.iterator(), keyFn));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator over the runs of adjacent key-equal elements.
+     * {@code keyFn} is evaluated exactly once per element.
+     *
+     * @param self an Iterator
+     * @param keyFn extracts the grouping key for each element
+     * @return an iterator over the runs of adjacent key-equal elements
+     * @since 6.0.0
+     */
+    public static <T, K> Iterator<List<T>> groupConsecutive(Iterator<T> self, Function<? super T, ? extends K> keyFn) {
+        return new GroupConsecutiveByKeyIterator<>(self, keyFn);
+    }
+
+    /**
+     * Splits this Iterable into runs where the given predicate, applied to the
+     * current run's previous element and the next element, holds. Use this to
+     * opt out of the default number-aware equality, e.g.
+     * {@code { a, b -> Objects.equals(a, b) }} for strict equality or
+     * {@code { a, b -> (a <=> b) == 0 }} for natural-order equivalence.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 1L, 1.0, 2, 2].groupConsecutive{ a, b {@code ->} a.equals(b) } == [[1], [1L], [1.0], [2, 2]]
+     * assert [1.0G, 1.00G, 2.0G].groupConsecutive{ a, b {@code ->} (a {@code <=>} b) == 0 } == [[1.0, 1.00], [2.0]]
+     * </pre>
+     *
+     * @param self an Iterable
+     * @param sameRun tests whether the next element continues the current run
+     * @return a list of the runs
+     * @since 6.0.0
+     */
+    public static <T> List<List<T>> groupConsecutive(Iterable<T> self, BiPredicate<? super T, ? super T> sameRun) {
+        List<List<T>> result = new ArrayList<>();
+        addAll(result, groupConsecutive(self.iterator(), sameRun));
+        return result;
+    }
+
+    /**
+     * Returns a (lazy) iterator over the runs determined by the given predicate.
+     *
+     * @param self an Iterator
+     * @param sameRun tests whether the next element continues the current run
+     * @return an iterator over the runs
+     * @since 6.0.0
+     */
+    public static <T> Iterator<List<T>> groupConsecutive(Iterator<T> self, BiPredicate<? super T, ? super T> sameRun) {
+        return new GroupConsecutiveIterator<>(self, sameRun);
+    }
+
+    private static final class GroupConsecutiveIterator<T> implements Iterator<List<T>> {
+        private final Iterator<T> delegate;
+        private final BiPredicate<? super T, ? super T> sameRun;
+        private T pending;
+        private boolean hasPending;
+
+        private GroupConsecutiveIterator(Iterator<T> delegate, BiPredicate<? super T, ? super T> sameRun) {
+            this.delegate = delegate;
+            this.sameRun = sameRun;
+            if (delegate.hasNext()) {
+                pending = delegate.next();
+                hasPending = true;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasPending;
+        }
+
+        @Override
+        public List<T> next() {
+            if (!hasPending) throw new NoSuchElementException();
+            List<T> run = new ArrayList<>();
+            run.add(pending);
+            T prev = pending;
+            hasPending = false;
+            while (delegate.hasNext()) {
+                T curr = delegate.next();
+                if (sameRun.test(prev, curr)) {
+                    run.add(curr);
+                    prev = curr;
+                } else {
+                    pending = curr;
+                    hasPending = true;
+                    break;
+                }
+            }
+            return run;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class GroupConsecutiveByKeyIterator<T, K> implements Iterator<List<T>> {
+        private final Iterator<T> delegate;
+        private final Function<? super T, ? extends K> keyFn;
+        private T pending;
+        private K pendingKey;
+        private boolean hasPending;
+
+        private GroupConsecutiveByKeyIterator(Iterator<T> delegate, Function<? super T, ? extends K> keyFn) {
+            this.delegate = delegate;
+            this.keyFn = keyFn;
+            if (delegate.hasNext()) {
+                pending = delegate.next();
+                pendingKey = keyFn.apply(pending); // key computed once for the first element
+                hasPending = true;
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            return hasPending;
+        }
+
+        @Override
+        public List<T> next() {
+            if (!hasPending) throw new NoSuchElementException();
+            List<T> run = new ArrayList<>();
+            run.add(pending);
+            K prevKey = pendingKey;
+            hasPending = false;
+            while (delegate.hasNext()) {
+                T curr = delegate.next();
+                K currKey = keyFn.apply(curr); // each element's key evaluated exactly once
+                if (coercedEquals(prevKey, currKey)) {
+                    run.add(curr);
+                    prevKey = currKey; // advance, mirroring the adjacent-pair semantics
+                } else {
+                    pending = curr;
+                    pendingKey = currKey; // carried to the next run, not recomputed
+                    hasPending = true;
+                    break;
+                }
+            }
+            return run;
         }
 
         @Override
@@ -18170,7 +19931,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = [1,2,3,4] as Set
      * def b = [3,4,5,6] as Set
      * assert (a ^ b) == [1,2,5,6] as Set
@@ -18196,7 +19957,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,5,6] as Set == ([1,2,3,4] as Set).xor([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *
@@ -18218,7 +19979,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = [1,2,3,4] as SortedSet
      * def b = [3,4,5,6] as Set
      * assert (a ^ b) == [1,2,5,6] as SortedSet
@@ -18244,7 +20005,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1,2,5,6] as SortedSet == ([1,2,3,4] as SortedSet).xor([3,4,5,6], Comparator.naturalOrder())
      * </pre>
      *

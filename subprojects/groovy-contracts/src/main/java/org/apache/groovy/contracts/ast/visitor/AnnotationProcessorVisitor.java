@@ -62,12 +62,25 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
     private static final String CONTRACT_ELEMENT_CLASSNAME = ContractElement.class.getName();
     private final ProcessingContextInformation pci;
 
+    /**
+     * Creates a visitor that dispatches contract annotations to their registered processors.
+     *
+     * @param sourceUnit the source unit currently being transformed
+     * @param source the reader source backing the source unit
+     * @param pci per-class processing context shared across the contracts pipeline
+     */
     public AnnotationProcessorVisitor(final SourceUnit sourceUnit, final ReaderSource source, final ProcessingContextInformation pci) {
         super(sourceUnit, source);
         Validate.notNull(pci);
         this.pci = pci;
     }
 
+    /**
+     * Processes contract annotations declared on the class, its methods, inherited interfaces,
+     * and relevant abstract base methods.
+     *
+     * @param type the class currently being transformed
+     */
     @Override
     public void visitClass(ClassNode type) {
         handleClassNode(type);
@@ -223,6 +236,12 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         throw new GroovyBugError("Annotation processing class could not be instantiated! This indicates a bug in groovy-contracts, please file an issue!");
     }
 
+    /**
+     * Instantiates the annotation processor with the supplied implementation class name.
+     *
+     * @param name the fully qualified processor class name
+     * @return the instantiated processor, or {@code null} if it could not be created
+     */
     public static AnnotationProcessor getAnnotationProcessor(String name) {
         try {
             var apt = Class.forName(name);

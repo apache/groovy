@@ -314,6 +314,61 @@ Hello, dependency 2!
 Hello, dependency 2!
 ----
 
+[[integ-javashell]]
+=== JavaShell
+
+While `GroovyShell` and `GroovyClassLoader` compile Groovy source, `org.apache.groovy.util.JavaShell`
+compiles _Java_ source in-memory using the platform `javax.tools.JavaCompiler`. It is useful when a
+Groovy or polyglot application needs to compile and load Java classes at runtime: code generation,
+plug-in loaders, scripting-style Java endpoints, or mixed-language testing setups.
+
+NOTE: `JavaShell` requires a JDK at runtime, not just a JRE — `ToolProvider.getSystemJavaCompiler()`
+returns `null` on a JRE.
+
+The simplest usage compiles a single source string and returns the loaded `Class`:
+
+[source,groovy]
+----
+include::../test/IntegrationTest.groovy[tags=javashell_compile,indent=0]
+----
+<1> create a new `JavaShell` (an optional `ClassLoader` argument sets the parent loader)
+<2> compile the source; `className` is the fully-qualified binary name and must match the
+    `package` declaration — see the `JavaShell` javadoc for the full naming rules
+<3> invoke the compiled method reflectively
+
+`compileAll` returns _every_ class produced from the source unit — useful when the source declares
+auxiliary or nested classes:
+
+[source,groovy]
+----
+include::../test/IntegrationTest.groovy[tags=javashell_compile_all,indent=0]
+----
+<1> compile a primary public class together with its package-private helper
+<2> the returned map is keyed by binary class name
+
+To additionally persist the generated class files to disk (for tools that consume `.class` files
+or to seed a classpath outside the JVM), use `compileAllTo`. It accepts a `Path` output directory
+and writes each class to its conventional package subdirectory:
+
+[source,groovy]
+----
+include::../test/IntegrationTest.groovy[tags=javashell_compile_all_to,indent=0]
+----
+<1> compile and write to disk in one call; the second argument passes `javac` options (here
+    `-parameters` to retain formal parameter names)
+<2> packaged classes land under `<outputDir>/<package as path>/<ClassName>.class`; default-package
+    classes land directly under `outputDir`
+
+The compiled classes remain available through `js.getClassLoader()` after `compileAllTo` returns,
+so the same instance covers both "compile to memory" and "compile to memory and disk".
+
+When the source fails to compile, `JavaShell` throws `JavaShellCompilationException` carrying the
+`javac` diagnostics. See the `JavaShell` javadoc for the full set of overloads (with/without an
+`Iterable<String>` options argument) and the expected `className`/`options` formats.
+
+NOTE: `compileAllTo` and its no-options overload are marked `@Incubating` — their signatures may
+evolve in a subsequent 6.x release based on usage feedback.
+
 === CompilationUnit
 
 Ultimately, it is possible to perform more operations during compilation by relying directly on the

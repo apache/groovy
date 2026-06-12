@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A property path full binding
+ * A full binding that watches an entire property path rather than a single observable bean property.
  */
 public class PropertyPathFullBinding extends AbstractFullBinding implements PropertyChangeListener {
 
@@ -43,6 +43,9 @@ public class PropertyPathFullBinding extends AbstractFullBinding implements Prop
      */
     boolean bound;
 
+    /**
+     * Attaches listeners across every configured bind path.
+     */
     @Override
     public void bind() {
         updateObjects.clear();
@@ -52,6 +55,9 @@ public class PropertyPathFullBinding extends AbstractFullBinding implements Prop
         bound = true;
     }
 
+    /**
+     * Removes listeners from every configured bind path.
+     */
     @Override
     public void unbind() {
         updateObjects.clear();
@@ -63,11 +69,19 @@ public class PropertyPathFullBinding extends AbstractFullBinding implements Prop
         bound = false;
     }
 
+    /**
+     * Rebuilds listener registrations when the binding is currently active.
+     */
     @Override
     public void rebind() {
         if (bound) bind();
     }
 
+    /**
+     * Refreshes bind-path listeners and propagates the resulting value change.
+     *
+     * @param evt the property change event that triggered the refresh
+     */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (updateObjects.contains(evt.getSource())) {

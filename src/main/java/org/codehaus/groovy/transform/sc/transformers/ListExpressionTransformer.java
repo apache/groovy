@@ -38,17 +38,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.codehaus.groovy.classgen.AsmClassGenerator.containsSpreadExpression;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
+/**
+ * Rewrites list expressions into specialized static-compilation forms when possible.
+ */
 class ListExpressionTransformer {
 
     private final StaticCompilationTransformer scTransformer;
 
+    /**
+     * Creates a list-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param scTransformer the shared transformer context
+     */
     ListExpressionTransformer(final StaticCompilationTransformer scTransformer) {
         this.scTransformer = scTransformer;
     }
 
+    /**
+     * Rewrites a list expression when the static compiler can emit a more direct representation.
+     *
+     * @param le the list expression to transform
+     * @return the transformed expression
+     */
     Expression transformListExpression(final ListExpression le) {
         MethodNode mn = le.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (mn instanceof ConstructorNode) {
@@ -111,6 +126,16 @@ class ListExpressionTransformer {
                 var list = new ConstructorCallExpression(ArrayList_TYPE, new ConstantExpression(getExpressions().size(), true));
                 list.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, ArrayList_NEW);
                 list.visit(visitor);
+                // GROOVY-11967: when the constructor goes through a dynamic call
+                // site (indy or non-indy), the call leaves Object on the JVM stack
+                // and the following INVOKEVIRTUAL ArrayList.add fails verification
+                // unless preceded by CHECKCAST. The direct INVOKESPECIAL path of
+                // StaticInvocationWriter already leaves ArrayList on the stack, so
+                // there the cast is unnecessary.
+                if (!ArrayList_TYPE.equals(os.getTopOperand())) {
+                    mv.visitTypeInsn(CHECKCAST, "java/util/ArrayList");
+                    os.replace(ArrayList_TYPE);
+                }
 
                 for (Expression li : getExpressions()) {
                     mv.visitInsn(DUP);

@@ -22,20 +22,51 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents a range expression such as for iterating.
- * E.g.:
- * <pre>for i in 0..10 {...}</pre>
+ * Represents a range expression for creating range objects with bounded endpoints.
+ * Supports inclusive ranges (e.g., {@code 0..10}) and exclusive ranges (e.g., {@code 0..<10} or {@code <0..10}).
+ * Range expressions are commonly used in for-loops (e.g., {@code for (i in 0..10)}) and other iteration contexts.
+ * The type of a range expression is always {@link ClassHelper#RANGE_TYPE}.
+ * 
+ * @see {@link Expression} for the boundary expressions
+ * @see {@link ClassHelper#RANGE_TYPE} for the range type
  */
 public class RangeExpression extends Expression {
+    /**
+     * The starting value of the range.
+     */
     private final Expression from;
+    /**
+     * The ending value of the range.
+     */
     private final Expression to;
+    /**
+     * Whether the left endpoint is exclusive (i.e., using {@code <..}).
+     */
     private final boolean exclusiveLeft;
+    /**
+     * Whether the right endpoint is exclusive (i.e., using {@code ..<}).
+     */
     private final boolean exclusiveRight;
 
+    /**
+     * Creates an inclusive or exclusive range expression.
+     * 
+     * @param from the starting expression (non-null)
+     * @param to the ending expression (non-null)
+     * @param inclusive true for inclusive range (no exclusion), false for exclusive right endpoint
+     */
     public RangeExpression(final Expression from, final Expression to, final boolean inclusive) {
         this(from, to, false, !inclusive);
     }
 
+    /**
+     * Creates a range expression with full control over inclusivity of both endpoints.
+     * 
+     * @param from the starting expression (non-null)
+     * @param to the ending expression (non-null)
+     * @param exclusiveLeft true if the left endpoint should be excluded (using {@code <..})
+     * @param exclusiveRight true if the right endpoint should be excluded (using {@code ..<})
+     */
     public RangeExpression(final Expression from, final Expression to, final boolean exclusiveLeft, final boolean exclusiveRight) {
         this.from = from; this.to = to;
         this.exclusiveLeft = exclusiveLeft;
@@ -57,22 +88,47 @@ public class RangeExpression extends Expression {
         return ret;
     }
 
+    /**
+     * Returns the starting expression of the range.
+     * 
+     * @return the from expression
+     */
     public Expression getFrom() {
         return from;
     }
 
+    /**
+     * Returns the ending expression of the range.
+     * 
+     * @return the to expression
+     */
     public Expression getTo() {
         return to;
     }
 
+    /**
+     * Indicates whether this is an inclusive range (no exclusion on the right endpoint).
+     * 
+     * @return true if the range is inclusive on the right, false if exclusive
+     */
     public boolean isInclusive() {
         return !isExclusiveRight();
     }
 
+    /**
+     * Indicates whether the left endpoint is exclusive (uses {@code <..}).
+     * 
+     * @return true if the left endpoint is excluded, false otherwise
+     */
     public boolean isExclusiveLeft() {
         return exclusiveLeft;
     }
 
+    /**
+     * Indicates whether the right endpoint is exclusive (uses {@code ..<}).
+     * 
+     * @return true if the right endpoint is excluded, false otherwise
+     */
     public boolean isExclusiveRight() {
         return exclusiveRight;
     }

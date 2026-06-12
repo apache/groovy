@@ -18,7 +18,11 @@
  */
 package groovy.xml.streamingmarkupsupport
 
+/**
+ * Base support for streaming XML builders that manage namespaces and special {@code mkp} helper tags.
+ */
 class AbstractStreamingBuilder {
+    /** Closure used when a namespace forbids a requested tag. */
     def badTagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, Object[] rest ->
         def uri = pendingNamespaces[prefix]
         if (uri == null) {
@@ -27,6 +31,7 @@ class AbstractStreamingBuilder {
         throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
     }
 
+    /** Closure backing {@code mkp.declareNamespace} to queue namespace declarations for the next element. */
     def namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
         attrs.each { key, value ->
             if ( key == '') {
@@ -43,6 +48,7 @@ class AbstractStreamingBuilder {
         }
     }
 
+    /** Closure backing {@code mkp.declareAlias} to register namespace-specific tag aliases. */
     @SuppressWarnings('Instanceof')
     def aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
         attrs.each { key, value ->
@@ -64,8 +70,10 @@ class AbstractStreamingBuilder {
         }
     }
 
+    /** Closure backing {@code mkp.getNamespaces} to expose active and pending namespace mappings. */
     def getNamespaceClosure = { doc, pendingNamespaces, namespaces, Object[] rest -> [namespaces, pendingNamespaces] }
 
+    /** Utility closure for rendering map entries as pseudo-attribute text, e.g. in processing instructions. */
     def toMapStringClosure = { Map instruction, checkDoubleQuotationMarks={ value -> !value.toString().contains('"') } ->
         def buf = new StringBuilder()
         instruction.each { name, value ->
@@ -78,9 +86,11 @@ class AbstractStreamingBuilder {
         buf.toString()
     }
 
+    /** Registry of built-in {@code mkp} helper tags shared by concrete streaming builders. */
     def specialTags = ['declareNamespace':namespaceSetupClosure,
                            'declareAlias':aliasSetupClosure,
-                          'getNamespaces':getNamespaceClosure]
+                           'getNamespaces':getNamespaceClosure]
 
+    /** Backing builder assigned by concrete subclasses when they install their element closures. */
     def builder = null
 }

@@ -362,6 +362,33 @@ final class GinqErrorTest {
     }
 
     @Test
+    void "testGinq - from groupby into where - not yet supported"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                groupby n into g
+                where g.count() > 1
+                select g.key, g.count()
+            }.toList()
+        '''
+
+        assert err.message.toString().contains('`where` after `groupby...into` is not yet supported')
+    }
+
+    @Test
+    void "testGinq - into without groupby"() {
+        def err = shouldFail '''\
+            GQ {
+                from n in [1, 2, 3]
+                into g
+                select g
+            }.toList()
+        '''
+
+        assert err.message.toString().contains('`into` is only supported after `groupby`')
+    }
+
+    @Test
     void "testGinq - subQuery - 13"() {
         def err = shouldFail '''\
             GQ {

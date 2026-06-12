@@ -31,20 +31,43 @@ import java.lang.reflect.Modifier;
  */
 public class NewStaticMetaMethod extends NewMetaMethod {
 
+    /**
+     * Constructs a new NewStaticMetaMethod.
+     *
+     * @param method the cached static method
+     */
     public NewStaticMetaMethod(CachedMethod method) {
         super(method);
     }
 
+    /**
+     * Indicates this method is static.
+     *
+     * @return true, as this wraps a static method
+     */
     @Override
     public boolean isStatic() {
         return true;
     }
 
+    /**
+     * Returns the modifiers for this method (PUBLIC | STATIC).
+     *
+     * @return PUBLIC and STATIC modifiers
+     */
     @Override
     public int getModifiers() {
         return Modifier.PUBLIC | Modifier.STATIC;
     }
 
+    /**
+     * Invokes the underlying static method with null as the first argument.
+     * This adapts static method calls to the underlying static method signature.
+     *
+     * @param object the object (ignored for static methods)
+     * @param arguments the method arguments
+     * @return the method return value
+     */
     @Override
     public Object invoke(Object object, Object[] arguments) {
         int size = arguments.length;

@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -124,44 +125,118 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         return className.substring(1);
     }
 
+    /**
+     * Whether short {@code @Grab} usage is allowed for the current source unit.
+     */
     boolean allowShortGrab;
+    /**
+     * Import aliases matching {@code Grab}.
+     */
     Set<String> grabAliases;
+    /**
+     * Collected {@code @Grab} annotations.
+     */
     List<AnnotationNode> grabAnnotations;
 
+    /**
+     * Whether short {@code @GrabExclude} usage is allowed for the current source unit.
+     */
     boolean allowShortGrabExcludes;
+    /**
+     * Import aliases matching {@code GrabExclude}.
+     */
     Set<String> grabExcludeAliases;
+    /**
+     * Collected {@code @GrabExclude} annotations.
+     */
     List<AnnotationNode> grabExcludeAnnotations;
 
+    /**
+     * Whether short {@code @GrabConfig} usage is allowed for the current source unit.
+     */
     boolean allowShortGrabConfig;
+    /**
+     * Import aliases matching {@code GrabConfig}.
+     */
     Set<String> grabConfigAliases;
+    /**
+     * Collected {@code @GrabConfig} annotations.
+     */
     List<AnnotationNode> grabConfigAnnotations;
 
+    /**
+     * Whether short {@code @Grapes} usage is allowed for the current source unit.
+     */
     boolean allowShortGrapes;
+    /**
+     * Import aliases matching {@code Grapes}.
+     */
     Set<String> grapesAliases;
+    /**
+     * Collected {@code @Grapes} annotations.
+     */
     List<AnnotationNode> grapesAnnotations;
 
+    /**
+     * Whether short {@code @GrabResolver} usage is allowed for the current source unit.
+     */
     boolean allowShortGrabResolver;
+    /**
+     * Import aliases matching {@code GrabResolver}.
+     */
     Set<String> grabResolverAliases;
+    /**
+     * Collected {@code @GrabResolver} annotations.
+     */
     List<AnnotationNode> grabResolverAnnotations;
 
+    /**
+     * Compilation unit receiving generated support code.
+     */
     CompilationUnit compilationUnit;
+    /**
+     * Source unit currently being transformed.
+     */
     SourceUnit sourceUnit;
+    /**
+     * Class loader used for grab resolution.
+     */
     ClassLoader loader;
+    /**
+     * Whether the context class loader needs initialization.
+     */
     boolean initContextClassLoader;
+    /**
+     * Auto-download setting inferred for the current source unit.
+     */
     Boolean autoDownload;
+    /**
+     * Checksum verification setting inferred for the current source unit.
+     */
     Boolean disableChecksums;
+    /**
+     * System properties inferred for the current source unit.
+     */
     Map<String, String> systemProperties;
 
+    /** {@inheritDoc} */
     @Override
     public SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setCompilationUnit(final CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit;
     }
 
+    /**
+     * Visits the source module and processes supported Grape annotations.
+     *
+     * @param nodes the AST nodes to process
+     * @param source the source unit being transformed
+     */
     @Override
     public void visit(final ASTNode[] nodes, final SourceUnit source) {
         loader = null;
@@ -204,6 +279,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         Collection<Map<String,Object>> grabExcludeMaps = new ArrayList<>();
 
         for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
+            if (classNode.isAnnotationDefinition()) continue; // GROOVY-11900
+
             grabAnnotations         = new ArrayList<>();
             grabExcludeAnnotations  = new ArrayList<>();
             grabConfigAnnotations   = new ArrayList<>();
@@ -392,6 +469,11 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             final Collection<Map<String,Object>> grabMapsInit, final Collection<Map<String, Object>> grabExcludeMaps) {
         List<Statement> grabInitializers = new ArrayList<>();
         MapExpression basicArgs = new MapExpression();
+        // Pass the class's own ClassLoader so chooseClassLoader doesn't have to walk the
+        // call stack — the stack-walk depth is tuned for the compile-time path, not the
+        // generated static-initializer path, and would overshoot into java.lang.reflect frames.
+        basicArgs.addMapEntryExpression(constX("classLoader"),
+                callX(new ClassExpression(classNode), "getClassLoader"));
         if (autoDownload != null)  {
             basicArgs.addMapEntryExpression(constX(AUTO_DOWNLOAD_SETTING), constX(autoDownload));
         }

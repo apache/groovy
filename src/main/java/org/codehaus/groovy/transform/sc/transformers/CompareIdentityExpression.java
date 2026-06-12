@@ -46,24 +46,54 @@ import static org.objectweb.asm.Opcodes.IF_ACMPNE;
  */
 public class CompareIdentityExpression extends BinaryExpression {
 
+    /**
+     * Creates an identity comparison between two expressions.
+     *
+     * @param leftExpression the left operand
+     * @param eq {@code true} for {@code ===}; {@code false} for {@code !==}
+     * @param rightExpression the right operand
+     */
     public CompareIdentityExpression(final Expression leftExpression, final boolean eq, final Expression rightExpression) {
         super(leftExpression, Token.newSymbol(eq ? "===" : "!==", -1, -1), rightExpression);
         super.setType(ClassHelper.boolean_TYPE);
     }
 
+    /**
+     * Creates an identity-equality comparison between two expressions.
+     *
+     * @param leftExpression the left operand
+     * @param rightExpression the right operand
+     */
     public CompareIdentityExpression(final Expression leftExpression, final Expression rightExpression) {
         this(leftExpression, true, rightExpression);
     }
 
+    /**
+     * Indicates whether this expression checks identity equality rather than inequality.
+     *
+     * @return {@code true} for {@code ===}; {@code false} for {@code !==}
+     */
     public boolean isEq() {
         return getOperation().getText().charAt(0) == '=';
     }
 
+    /**
+     * Prevents changing the fixed boolean result type of this expression.
+     *
+     * @param type ignored
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public void setType(final ClassNode type) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Transforms both operands while preserving identity-comparison semantics.
+     *
+     * @param transformer the expression transformer to apply
+     * @return a transformed identity-comparison expression
+     */
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         Expression ret = new CompareIdentityExpression(transformer.transform(getLeftExpression()), isEq(), transformer.transform(getRightExpression()));
@@ -72,6 +102,11 @@ public class CompareIdentityExpression extends BinaryExpression {
         return ret;
     }
 
+    /**
+     * Emits direct reference-comparison bytecode for this expression.
+     *
+     * @param visitor the visitor to accept
+     */
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         if (!(visitor instanceof AsmClassGenerator)) {

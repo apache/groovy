@@ -27,6 +27,7 @@ import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.io.Serial;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,7 @@ public class GroovyCategorySupport {
     private static int categoriesInUse = 0;
 
     public static class CategoryMethodList extends ArrayList<CategoryMethod> {
+        @Serial
         private static final long serialVersionUID = 1631799972200881802L;
         public final int level;
         final CategoryMethodList previous;
@@ -73,6 +75,7 @@ public class GroovyCategorySupport {
     public static class ThreadCategoryInfo extends HashMap<String, CategoryMethodList>{
 
         private static final Object LOCK = new Object();
+        @Serial
         private static final long serialVersionUID = 1348443374952726263L;
 
         int level;

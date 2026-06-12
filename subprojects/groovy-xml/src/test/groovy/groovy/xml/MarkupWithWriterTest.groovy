@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 final class MarkupWithWriterTest extends TestXmlSupport {
 
     @Test
-    void testSmallTreeWithStringWriter() {
+    void smallTreeWithStringWriter() {
         def writer = new java.io.StringWriter()
         def b = new MarkupBuilder(writer)
 
@@ -45,7 +45,7 @@ final class MarkupWithWriterTest extends TestXmlSupport {
     }
 
     @Test
-    void testWriterUseInScriptFile() {
+    void writerUseInScriptFile() {
         assertScriptFile 'src/test/groovy/groovy/xml/UseMarkupWithWriterScript.groovy'
     }
 }

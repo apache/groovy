@@ -16,3 +16,4 @@
 # global xforms for groovy-contracts
 org.apache.groovy.contracts.ast.GContractsASTTransformation
 org.apache.groovy.contracts.ast.ClosureExpressionEvaluationASTTransformation
+org.apache.groovy.contracts.ast.MethodVariantInheritanceASTTransformation

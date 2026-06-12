@@ -25,13 +25,27 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 
+/**
+ * Applies static-compilation-specific rewrites to closure expressions.
+ */
 public class ClosureExpressionTransformer {
     private final StaticCompilationTransformer transformer;
 
+    /**
+     * Creates a closure-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param staticCompilationTransformer the shared transformer context
+     */
     public ClosureExpressionTransformer(StaticCompilationTransformer staticCompilationTransformer) {
         transformer = staticCompilationTransformer;
     }
 
+    /**
+     * Transforms closure parameters and visits the closure body in the current static-compilation context.
+     *
+     * @param expr the closure expression to transform
+     * @return the transformed closure expression
+     */
     Expression transformClosureExpression(final ClosureExpression expr) {
         for (Parameter parameter : getParametersSafe(expr)) {
             if (parameter.hasInitialExpression()) {

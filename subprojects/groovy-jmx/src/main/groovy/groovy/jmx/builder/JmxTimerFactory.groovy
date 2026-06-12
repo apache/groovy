@@ -43,6 +43,15 @@ import javax.management.ObjectName
  * </pre>
  */
 class JmxTimerFactory extends AbstractFactory {
+    /**
+     * Creates and registers a JMX timer.
+     *
+     * @param builder the active builder
+     * @param nodeName the node name
+     * @param nodeParam positional node arguments
+     * @param nodeAttribs named node attributes
+     * @return the exported timer facade
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttribs) {
         if (nodeParam) {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")
@@ -184,14 +193,34 @@ class JmxTimerFactory extends AbstractFactory {
         noteFilter
     }
 
+    /**
+     * Leaves attribute handling to {@link #newInstance(FactoryBuilderSupport, Object, Object, Map)}.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param nodeAttribs remaining node attributes
+     * @return {@code false}
+     */
     boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
         false
     }
 
+    /**
+     * Indicates that the timer node is terminal.
+     *
+     * @return {@code true}
+     */
     boolean isLeaf() {
         true
     }
 
+    /**
+     * Adds the created timer to its parent collection when one exists.
+     *
+     * @param builder the active builder
+     * @param parentNode the parent node
+     * @param thisNode the created timer
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
         if (parentNode != null) {
             parentNode.add(thisNode)

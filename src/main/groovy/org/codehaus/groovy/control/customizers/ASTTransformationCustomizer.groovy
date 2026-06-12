@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control.customizers
 
+import groovy.transform.AnnotationCollector
 import groovy.transform.AutoFinal
 import groovy.transform.CompilationUnitAware
 import groovy.transform.CompileStatic
@@ -86,8 +87,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 class ASTTransformationCustomizer extends CompilationCustomizer implements CompilationUnitAware {
 
     private boolean applied // global xforms
+    /**
+     * Compilation unit currently being customized.
+     */
     protected CompilationUnit compilationUnit
     private final AnnotationNode annotationNode
+    /**
+     * Transformation instance applied by this customizer.
+     */
             final ASTTransformation transformation
 
     /**
@@ -135,6 +142,14 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
         this.annotationParameters = annotationParams
     }
 
+    /**
+     * Creates an AST transformation customizer using the specified annotation, annotation parameters,
+     * and transformation class name.
+     *
+     * @param annotationParams the annotation member values to apply
+     * @param transformationAnnotation the transformation annotation type
+     * @param astTransformationClassName the implementation class name for the transformation
+     */
     ASTTransformationCustomizer(Map annotationParams, Class<? extends Annotation> transformationAnnotation, String astTransformationClassName) {
         this(annotationParams, transformationAnnotation, transformationAnnotation.classLoader)
     }
@@ -184,10 +199,22 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
         this.annotationParameters = annotationParams
     }
 
+    /**
+     * Creates an AST transformation customizer using the specified annotation and annotation parameters.
+     *
+     * @param annotationParams the annotation member values to apply
+     * @param transformationAnnotation the transformation annotation type
+     */
     ASTTransformationCustomizer(Map annotationParams, Class<? extends Annotation> transformationAnnotation) {
         this(annotationParams, transformationAnnotation, transformationAnnotation.classLoader)
     }
 
+    /**
+     * Creates an AST transformation customizer using the specified transformation and annotation parameters.
+     *
+     * @param annotationParams the annotation member values to apply
+     * @param transformation the transformation to invoke
+     */
     ASTTransformationCustomizer(Map annotationParams, ASTTransformation transformation) {
         this(transformation)
         this.annotationParameters = annotationParams
@@ -195,20 +222,95 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
 
     @SuppressWarnings('ClassForName')
     private static Class<ASTTransformation> findASTTransformationClass(Class<? extends Annotation> anAnnotationClass, ClassLoader transformationClassLoader) {
+        List<Class<ASTTransformation>> classes = findASTTransformationClasses(anAnnotationClass, transformationClassLoader)
+        if (classes.size() == 1) return classes[0]
+        // Multi-class annotation: pick the authoritative (non-CONVERSION) transform.
+        // Shape C joint-compile-aware annotations pair a CONVERSION-phase stubber
+        // with a later authoritative pass; the customizer mechanism doesn't fire
+        // CONVERSION-phase transforms in pure-Groovy compilation (no invoker
+        // exists outside JavaAwareCompilationUnit), so the authoritative one is
+        // the meaningful choice for a single-customizer construction. Callers
+        // wanting all transform classes (e.g. for joint-compile setups) should
+        // use forAnnotation(...) which returns the full list.
+        Class<ASTTransformation> authoritative = classes.find { Class<ASTTransformation> c ->
+            GroovyASTTransformation gat = c.getAnnotation(GroovyASTTransformation)
+            gat == null || gat.phase() != CompilePhase.CONVERSION
+        }
+        return authoritative ?: classes[0]
+    }
+
+    @SuppressWarnings('ClassForName')
+    private static List<Class<ASTTransformation>> findASTTransformationClasses(Class<? extends Annotation> anAnnotationClass, ClassLoader transformationClassLoader) {
         GroovyASTTransformationClass annotation = anAnnotationClass.getAnnotation(GroovyASTTransformationClass)
         if (annotation == null) throw new IllegalArgumentException("Provided class doesn't look like an AST @interface")
 
-        Class[] classes = annotation.classes()
-        String[] classesAsStrings = annotation.value()
-        if (classes.length + classesAsStrings.length > 1) {
-            throw new IllegalArgumentException("AST transformation customizer doesn't support AST transforms with multiple classes")
+        ClassLoader loader = transformationClassLoader ?: anAnnotationClass.classLoader
+        List<Class<ASTTransformation>> result = []
+        annotation.classes().each { Class c -> result << (c as Class<ASTTransformation>) }
+        annotation.value().each { String name -> result << (Class.forName(name, true, loader) as Class<ASTTransformation>) }
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("No AST transformation class found for ${anAnnotationClass.name}")
         }
-        classes ? classes[0] : (Class) Class.forName(classesAsStrings[0], true, transformationClassLoader ?: anAnnotationClass.classLoader)
+        result
     }
 
     @SuppressWarnings('ClassForName')
     private static Class<ASTTransformation> findASTTransformationClass(Class<? extends Annotation> anAnnotationClass, String astTransformationClassName, ClassLoader transformationClassLoader) {
         Class.forName(astTransformationClassName, true, transformationClassLoader ?: anAnnotationClass.classLoader) as Class<ASTTransformation>
+    }
+
+    /**
+     * Creates one {@link ASTTransformationCustomizer} per AST transformation class declared by the
+     * given annotation's {@link GroovyASTTransformationClass} list. This is the way to use the
+     * customizer with annotations whose implementation is split across multiple transforms running
+     * at different compile phases (e.g. {@link groovy.transform.Sealed}, {@link groovy.transform.RecordBase}).
+     * <p>
+     * Spread the result into {@link org.codehaus.groovy.control.CompilerConfiguration#addCompilationCustomizers}:
+     * <pre>
+     *     configuration.addCompilationCustomizers(*ASTTransformationCustomizer.forAnnotation(Sealed))
+     * </pre>
+     *
+     * @since 6.0.0
+     */
+    static List<ASTTransformationCustomizer> forAnnotation(Class<? extends Annotation> transformationAnnotation) {
+        forAnnotation([:], transformationAnnotation, transformationAnnotation.classLoader)
+    }
+
+    /**
+     * @see #forAnnotation(Class)
+     * @since 6.0.0
+     */
+    static List<ASTTransformationCustomizer> forAnnotation(Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
+        forAnnotation([:], transformationAnnotation, transformationClassLoader)
+    }
+
+    /**
+     * @see #forAnnotation(Class)
+     * @since 6.0.0
+     */
+    static List<ASTTransformationCustomizer> forAnnotation(Map annotationParams, Class<? extends Annotation> transformationAnnotation) {
+        forAnnotation(annotationParams, transformationAnnotation, transformationAnnotation.classLoader)
+    }
+
+    /**
+     * @see #forAnnotation(Class)
+     * @since 6.0.0
+     */
+    static List<ASTTransformationCustomizer> forAnnotation(Map annotationParams, Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
+        // expand @AnnotationCollector aliases (e.g. @AutoExternalize -> @ExternalizeMethods + @ExternalizeVerifier)
+        AnnotationCollector collector = transformationAnnotation.getAnnotation(AnnotationCollector)
+        if (collector != null) {
+            List<ASTTransformationCustomizer> result = []
+            for (Class<? extends Annotation> aliased : collector.value()) {
+                result.addAll(forAnnotation(annotationParams, aliased, transformationClassLoader))
+            }
+            return result
+        }
+        findASTTransformationClasses(transformationAnnotation, transformationClassLoader).collect { Class<ASTTransformation> txClass ->
+            annotationParams
+                ? new ASTTransformationCustomizer(annotationParams, transformationAnnotation, txClass.name, transformationClassLoader)
+                : new ASTTransformationCustomizer(transformationAnnotation, txClass.name, transformationClassLoader)
+        }
     }
 
     private static CompilePhase findPhase(ASTTransformation transformation) {
@@ -297,11 +399,23 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Records the compilation unit that will receive the configured transformation.
+     *
+     * @param compilationUnit the owning compilation unit
+     */
     @Override
     void setCompilationUnit(CompilationUnit compilationUnit) {
         this.compilationUnit = compilationUnit
     }
 
+    /**
+     * Applies the configured transformation to the supplied class or source unit.
+     *
+     * @param sourceUnit the current source unit
+     * @param context the current generator context
+     * @param classNode the class node being customized
+     */
     @Override
     void call(SourceUnit sourceUnit, GeneratorContext context, ClassNode classNode) {
         if (transformation instanceof CompilationUnitAware unitAware) {

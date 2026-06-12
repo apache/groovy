@@ -21,9 +21,15 @@ package groovy.console.ui
 import javax.swing.JTable
 import java.awt.event.MouseEvent
 
+/**
+ * Table that exposes the current cell value as a tooltip.
+ */
 class CellValueToolTipJTable extends JTable {
     private static final long serialVersionUID = 7112943034646629299L
 
+    /**
+     * Returns the hovered cell value as tooltip text.
+     */
     String getToolTipText(MouseEvent me) {
         int viewRowIndex = rowAtPoint(me.point)
         int viewColumnIndex = columnAtPoint(me.point)

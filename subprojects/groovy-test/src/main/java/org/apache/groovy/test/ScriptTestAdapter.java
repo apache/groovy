@@ -29,16 +29,32 @@ public class ScriptTestAdapter implements Test {
     private Class scriptClass;
     private String[] arguments;
 
+    /**
+     * Creates an adapter that runs the supplied Groovy script class as a JUnit test.
+     *
+     * @param scriptClass the compiled Groovy script class to execute
+     * @param arguments the command-line arguments passed to the script
+     */
     public ScriptTestAdapter(Class scriptClass, String[] arguments) {
         this.scriptClass = scriptClass;
         this.arguments = arguments;
     }
 
+    /**
+     * Returns the number of test cases represented by this adapter.
+     *
+     * @return always {@code 1}
+     */
     @Override
     public int countTestCases() {
         return 1;
     }
 
+    /**
+     * Executes the adapted script and reports the result to JUnit.
+     *
+     * @param result the {@link TestResult} receiving lifecycle callbacks and errors
+     */
     @Override
     public void run(TestResult result) {
         try {
@@ -52,6 +68,11 @@ public class ScriptTestAdapter implements Test {
         }
     }
 
+    /**
+     * Returns a human-readable description of the adapted script test.
+     *
+     * @return the script test description
+     */
     @Override
     public String toString() {
         return "TestCase for script: " + scriptClass.getName();

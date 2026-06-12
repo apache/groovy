@@ -22,16 +22,35 @@ package groovy.text.markup;
  * An enumeration used internally to map include types to {@link groovy.text.markup.BaseTemplate} method calls.
  */
 enum IncludeType {
-    template("includeGroovy"), // includes another Groovy template
-    escaped("includeEscaped"), // includes raw content, escaped before rendering
+    /**
+     * Includes another Groovy template.
+     */
+    template("includeGroovy"),
+    /**
+     * Includes raw content after escaping it for markup output.
+     */
+    escaped("includeEscaped"),
+    /**
+     * Includes raw content without escaping it.
+     */
     unescaped("includeUnescaped");
 
     private final String methodName;
 
+    /**
+     * Creates an include type that maps to the specified {@link BaseTemplate} helper method.
+     *
+     * @param methodName helper method used to realize the include
+     */
     IncludeType(final String methodName) {
         this.methodName = methodName;
     }
 
+    /**
+     * Returns the helper method name corresponding to this include type.
+     *
+     * @return the {@link BaseTemplate} method invoked for this include type
+     */
     public String getMethodName() {
         return methodName;
     }

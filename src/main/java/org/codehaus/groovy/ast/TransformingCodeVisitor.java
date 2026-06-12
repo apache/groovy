@@ -68,13 +68,49 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 
+/**
+ * Code visitor that combines depth-first traversal with expression transformation, delegating both
+ * to an underlying {@link ClassCodeExpressionTransformer}.
+ *
+ * <p>This visitor implements a two-phase approach for each statement and expression:
+ * <ol>
+ *   <li>Depth-first traversal via the parent {@link CodeVisitorSupport} class visits child nodes</li>
+ *   <li>Expression transformation via the {@link ClassCodeExpressionTransformer} processes the node</li>
+ * </ol>
+ *
+ * <p>This pattern enables both traversal and transformation in a single pass. The transformer receives
+ * fully-traversed nodes, allowing it to operate on complete subtrees or apply post-processing
+ * transformations after children are visited.
+ *
+ * <p>Typical usage involves creating a subclass of {@link ClassCodeExpressionTransformer} and
+ * passing it to this visitor:
+ * <pre>
+ *   ClassCodeExpressionTransformer transformer = new MyTransformer(...);
+ *   TransformingCodeVisitor visitor = new TransformingCodeVisitor(transformer);
+ *   node.visit(visitor);
+ * </pre>
+ *
+ * @see CodeVisitorSupport for base traversal implementation
+ * @see ClassCodeExpressionTransformer for transformation implementation
+ */
 public class TransformingCodeVisitor extends CodeVisitorSupport {
     private final ClassCodeExpressionTransformer trn;
 
+    /**
+     * Creates a new transforming visitor with the given transformer.
+     *
+     * @param trn the {@link ClassCodeExpressionTransformer} to apply after traversing each node;
+     *            must not be null
+     */
     public TransformingCodeVisitor(final ClassCodeExpressionTransformer trn) {
         this.trn = trn;
     }
 
+    /**
+     * Visits a {@link BlockStatement}, performing depth-first traversal followed by transformer processing.
+     *
+     * @param block the block statement to visit and transform
+     */
     @Override
     public void visitBlockStatement(final BlockStatement block) {
         super.visitBlockStatement(block);

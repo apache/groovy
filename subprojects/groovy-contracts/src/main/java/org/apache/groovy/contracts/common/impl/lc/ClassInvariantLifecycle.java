@@ -30,6 +30,13 @@ import org.codehaus.groovy.ast.MethodNode;
  */
 public class ClassInvariantLifecycle extends BaseLifecycle {
 
+    /**
+     * Adds class-invariant checks to an eligible method after contract metadata has been assembled.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param methodNode the method to update
+     */
     @Override
     public void afterProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode) {
         if (!CandidateChecks.isClassInvariantCandidate(classNode, methodNode)) return;
@@ -39,6 +46,13 @@ public class ClassInvariantLifecycle extends BaseLifecycle {
         classInvariantGenerator.addInvariantAssertionStatement(classNode, methodNode);
     }
 
+    /**
+     * Adds class-invariant checks to an eligible constructor after contract metadata has been assembled.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param constructorNode the constructor to update
+     */
     @Override
     public void afterProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode) {
         if (!CandidateChecks.isClassInvariantCandidate(classNode, constructorNode)) return;

@@ -21,6 +21,16 @@ package org.codehaus.groovy.tools.groovydoc;
 import java.io.IOException;
 import java.io.Reader;
 
+/**
+ * Provides character streams for documentation templates and related resources.
+ */
 public interface ResourceManager {
+    /**
+     * Returns a reader for the named resource.
+     *
+     * @param resourceName the resource to open
+     * @return a reader for the resource
+     * @throws IOException if the resource cannot be opened
+     */
     Reader getReader(String resourceName) throws IOException;
 }

@@ -21,6 +21,12 @@ package groovy.cli
 import groovy.transform.AnnotationCollector
 import groovy.transform.Field
 
+import java.lang.annotation.Documented
+
+/**
+ * Convenience annotation combining {@link Unparsed} and {@link Field}.
+ */
+@Documented
 @Unparsed
 @Field
 @AnnotationCollector

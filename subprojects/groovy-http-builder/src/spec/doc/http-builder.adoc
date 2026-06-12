@@ -1,0 +1,483 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= HttpBuilder – lightweight HTTP client DSL (incubating)
+
+The `groovy-http-builder` module provides a tiny declarative DSL over
+the JDK `java.net.http.HttpClient`.
+It is designed for scripting and simple automation tasks where a full-blown
+HTTP library would be overkill.
+
+== Goals
+
+* Keep the implementation small and easy to maintain.
+* Use only JDK HTTP client primitives (Jsoup is optionally supported for HTML parsing).
+* Make common request setup declarative with Groovy closures.
+* Handle only the simple cases that often pop up in scripting — not the full
+  use cases that Apache Geb covers.
+* Include JSON/XML/HTML response parsing hooks while intentionally keeping
+  request hooks minimal.
+
+== Basic Usage
+
+Create a client with `HttpBuilder.http`, configure shared settings in the
+closure, and issue requests:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=basic_get_with_query,indent=0]
+----
+
+`query(...)` encodes keys and values as URI query components using RFC 3986
+style percent-encoding — for example, spaces become `%20`.
+
+=== Non-DSL Equivalent (JDK HttpClient)
+
+The snippet above is equivalent to the following plain JDK code:
+
+[source,groovy]
+----
+import java.net.URI
+import java.net.URLEncoder
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
+
+def encodeQueryComponent = { Object value ->
+    URLEncoder.encode(value.toString(), StandardCharsets.UTF_8)
+            .replace('+', '%20')
+            .replace('*', '%2A')
+            .replace('%7E', '~')
+}
+
+def baseUri = 'https://example.com/'
+def query = [page: 1, size: 10]
+        .collect { k, v ->
+            "${encodeQueryComponent(k)}=${encodeQueryComponent(v)}"
+        }
+        .join('&')
+
+def target = URI.create(baseUri).resolve("/api/items?${query}")
+
+def client = HttpClient.newHttpClient()
+def request = HttpRequest.newBuilder(target)
+        .header('User-Agent', 'my-app/1.0')
+        .GET()
+        .build()
+
+def response = client.send(request, HttpResponse.BodyHandlers.ofString())
+
+assert response.statusCode() == 200
+println response.body()
+----
+
+== JSON
+
+=== GET
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=json_get,indent=0]
+----
+
+`res.json` lazily parses the response body as JSON.
+`res.parsed` auto-dispatches by the response `Content-Type` header, so for
+`application/json` it behaves identically to `res.json`.
+
+=== POST
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=json_post,indent=0]
+----
+
+The `json(...)` helper serializes the supplied object as JSON and sets
+`Content-Type: application/json` automatically.
+
+== XML
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=xml_get,indent=0]
+----
+
+`result.xml` parses the response body with `XmlSlurper`.
+`result.parsed` dispatches to `xml` for XML content types.
+
+== HTML (jsoup)
+
+If https://jsoup.org[jsoup] is on the classpath, `result.html` returns a
+jsoup `Document`:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=html_jsoup,indent=0]
+----
+
+`result.parsed` dispatches to jsoup for `text/html` content types when jsoup
+is available, otherwise it falls back to the raw string body.
+
+== Form URL-Encoding
+
+The `form(...)` helper sends `application/x-www-form-urlencoded` POST bodies:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=form_post,indent=0]
+----
+
+`form(...)` encodes values as `application/x-www-form-urlencoded` and sets
+`Content-Type` automatically (unless you override it with `header`).
+
+Unlike `query(...)`, `form(...)` uses _form semantics_, so spaces become `+`.
+
+== HTML Login Example
+
+Combining `form(...)` with HTML parsing enables simple login flows:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=html_login,indent=0]
+----
+
+== Content-Type Auto-Parsing
+
+`result.parsed` dispatches by the response `Content-Type`:
+
+[cols="1,1"]
+|===
+| Content-Type | Parsed as
+
+| `application/json`, `application/\*+json`
+| JSON object (`JsonSlurper`)
+
+| `application/xml`, `text/xml`, `application/*+xml`
+| XML object (`XmlSlurper`)
+
+| `text/html`
+| jsoup `Document` (if jsoup is on the classpath, otherwise raw string)
+
+| anything else
+| raw string body
+|===
+
+== Advanced Client Configuration
+
+The `clientConfig` hook gives direct access to the JDK `HttpClient.Builder`
+for advanced configuration — authenticator, SSL context, proxy, cookie handler:
+
+[source,groovy]
+----
+def http = HttpBuilder.http {
+    baseUri 'https://api.example.com'
+    header 'Authorization', "Bearer ${token}"
+    clientConfig { builder ->
+        builder.authenticator(myAuthenticator)
+               .sslContext(mySSLContext)
+               .proxy(ProxySelector.of(new InetSocketAddress('proxy.corp', 8080)))
+    }
+}
+----
+
+The `clientConfig` closure receives the `HttpClient.Builder` before `build()`
+is called, so any JDK-supported configuration is available.
+
+== Async Requests
+
+Every HTTP method has an async variant that returns a `CompletableFuture<HttpResult>`
+using the JDK `HttpClient.sendAsync()` natively (no extra threads):
+
+[source,groovy]
+----
+def http = HttpBuilder.http('https://api.example.com')
+
+def future = http.getAsync('/users/alice')
+// ... do other work while the request is in flight ...
+def result = future.get()
+assert result.json.name == 'alice'
+----
+
+Available methods: `getAsync`, `postAsync`, `putAsync`, `deleteAsync`,
+`patchAsync`, and the generic `requestAsync(method, uri, spec)`.
+
+These compose naturally with `CompletableFuture` methods:
+
+[source,groovy]
+----
+http.getAsync('/data')
+    .thenApply { it.json }
+    .thenAccept { data -> println "Got: $data" }
+----
+
+If the Groovy async module is on the classpath, these futures are
+automatically `await`-able:
+
+[source,groovy]
+----
+def result = await http.getAsync('/data')
+----
+
+== Declarative HTTP Clients
+
+For APIs with multiple endpoints, you can define a typed interface and let
+Groovy generate the implementation at compile time. Annotate an interface with
+`@HttpBuilderClient` and each method with an HTTP method annotation:
+
+[source,groovy]
+----
+@HttpBuilderClient('https://api.example.com')
+@Header(name = 'Accept', value = 'application/json')
+interface BookApi {
+    @Get('/books/{id}')
+    Map getBook(String id)
+
+    @Get('/books')
+    List searchBooks(@Query('q') String query)
+
+    @Post('/books')
+    Map createBook(@Body Map book)
+
+    @Delete('/books/{id}')
+    void deleteBook(String id)
+}
+
+def api = BookApi.create()
+def book = api.getBook('978-0-321-12521-7')
+----
+
+The AST transform generates an implementation class that uses `HttpBuilder`
+under the hood. Three `create()` factory methods are added to the interface:
+
+- `create()` — uses the annotation URL and default settings
+- `create(String baseUrl)` — overrides the base URL at runtime
+- `create(Closure config)` — full control over the underlying `HttpBuilder`
+  for runtime values (e.g. auth tokens) or anything not covered by the
+  annotations, including `clientConfig` for JDK-level settings
+  (authenticator, SSL, proxy)
+
+[source,groovy]
+----
+// Runtime auth token
+def api = MyApi.create {
+    baseUri 'https://api.example.com'
+    header 'Authorization', "Bearer ${token}"
+}
+
+// Full JDK client customization
+def api = MyApi.create {
+    baseUri 'https://internal.corp'
+    clientConfig { builder ->
+        builder.sslContext(mySSLContext)
+    }
+}
+----
+
+=== Parameter Mapping
+
+Method parameters are mapped automatically by convention — no annotation
+is needed for the common case:
+
+[cols="1,2"]
+|===
+| Condition | Mapping
+
+| Name matches `{placeholder}` in URL
+| Path variable — substituted into the URL (URL-encoded)
+
+| Annotated with `@Body`
+| Request body — serialized as JSON
+
+| Everything else
+| Query parameter — the parameter name is used as the query key
+
+|===
+
+The `@Query` annotation is only needed when the query parameter name differs
+from the method parameter name:
+
+[source,groovy]
+----
+@Get('/search')
+List search(String q)                    // ?q=...  (implied)
+
+@Get('/search')
+List search(@Query('q') String query)    // ?q=...  (explicit, different name)
+----
+
+=== HTTP Methods
+
+All standard HTTP methods are supported via annotations:
+`@Get`, `@Post`, `@Put`, `@Delete`, `@Patch`.
+
+[source,groovy]
+----
+@Patch('/items/{id}')
+Map patchItem(String id, @Body Map updates)
+----
+
+=== Headers
+
+`@Header` annotations can be placed on the interface (applies to all methods)
+or on individual methods. Method-level headers are merged with interface-level headers.
+
+=== Timeouts and Redirects
+
+Connection timeout, default request timeout, and redirect following can be
+configured on the `@HttpBuilderClient` annotation:
+
+[source,groovy]
+----
+@HttpBuilderClient(value = 'https://api.example.com',
+                   connectTimeout = 5,
+                   requestTimeout = 10,
+                   followRedirects = true)
+interface MyApi {
+    @Get('/users/{id}')
+    Map getUser(String id)              // uses default 10s timeout
+
+    @Get('/reports/generate')
+    @Timeout(60)
+    Map generateReport()                // overrides to 60s for this method
+}
+----
+
+- `connectTimeout` -- how long to wait for the TCP connection (client-level, in seconds)
+- `requestTimeout` -- default request timeout applied to all methods (in seconds)
+- `@Timeout(value)` -- per-method override of the request timeout (in seconds)
+- `followRedirects` -- whether to follow HTTP redirects
+
+Default `0` means no timeout.
+
+=== Return Types
+
+The return type of each method determines how the response is processed:
+
+[cols="1,2"]
+|===
+| Return type | Behaviour
+
+| `Map` or `List`
+| Response parsed as JSON
+
+| Typed class (e.g. `User`)
+| Response parsed as JSON, then coerced to the target type
+
+| `GPathResult`
+| Response parsed as XML (via `XmlSlurper`)
+
+| jsoup `Document`
+| Response parsed as HTML (requires jsoup on classpath)
+
+| `String`
+| Raw response body
+
+| `HttpResult`
+| Full response (status, headers, body)
+
+| `void`
+| Response discarded
+
+| `CompletableFuture<T>`
+| Asynchronous execution; inner type determines parsing
+
+|===
+
+For typed responses, the JSON is parsed and coerced to the target class
+using Groovy's `as` coercion:
+
+[source,groovy]
+----
+class User {
+    String name
+    String bio
+}
+
+@HttpBuilderClient('https://api.example.com')
+interface UserApi {
+    @Get('/users/{id}')
+    User getUser(String id)
+}
+----
+
+=== Request Bodies
+
+By default, `@Body` parameters are serialized as JSON. Additional body
+modes are available:
+
+[cols="1,2"]
+|===
+| Annotation | Behaviour
+
+| `@Body`
+| JSON body (default)
+
+| `@BodyText`
+| Plain text body (sent as-is)
+
+| `@Form` (on method)
+| All non-path parameters become form-encoded fields (`application/x-www-form-urlencoded`)
+
+|===
+
+[source,groovy]
+----
+@Post('/login')
+@Form
+Map login(String username, String password)    // form-encoded POST
+
+@Post('/notes')
+Map createNote(@BodyText String content)       // plain text body
+----
+
+=== Error Handling
+
+By default, HTTP 4xx/5xx responses throw a `RuntimeException`. You can
+declare a specific exception type in the method's `throws` clause, and
+the generated client will throw that type instead:
+
+[source,groovy]
+----
+@Get('/users/{id}')
+Map getUser(String id) throws NotFoundException
+----
+
+The exception class is instantiated by trying constructors in order:
+`(int status, String body)`, then `(String message)`, then no-arg.
+
+=== Async
+
+Methods returning `CompletableFuture` execute asynchronously:
+
+[source,groovy]
+----
+@HttpBuilderClient('https://api.example.com')
+interface AsyncApi {
+    @Get('/data/{id}')
+    CompletableFuture<Map> getData(String id)
+}
+
+def api = AsyncApi.create()
+def future = api.getData('42')
+// ... do other work ...
+def data = future.get()
+----
+

@@ -23,17 +23,41 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+/**
+ * Adapts a {@link PropertyChangeListener} so it can be used as a {@link TargetBinding}.
+ */
 public class PropertyChangeProxyTargetBinding implements TargetBinding {
+    /**
+     * The object reported as the event source.
+     */
     Object proxyObject;
+    /**
+     * The property name reported to the listener.
+     */
     String propertyName;
+    /**
+     * The listener receiving synthetic change events.
+     */
     PropertyChangeListener listener;
 
+    /**
+     * Creates a proxy target binding that synthesizes property change events.
+     *
+     * @param proxyObject the object to report as the event source
+     * @param propertyName the property name to report
+     * @param listener the listener to notify
+     */
     public PropertyChangeProxyTargetBinding(Object proxyObject, String propertyName, PropertyChangeListener listener) {
         this.proxyObject = proxyObject;
         this.propertyName = propertyName;
         this.listener = listener;
     }
 
+    /**
+     * Forwards a synthetic property-change event containing the supplied target value.
+     *
+     * @param value the new property value to report
+     */
     @Override
     public void updateTargetValue(Object value) {
         listener.propertyChange(new PropertyChangeEvent(proxyObject, propertyName,

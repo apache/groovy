@@ -57,10 +57,24 @@ public class DynamicSetterInjectionVisitor extends BaseVisitor {
 
     private BlockStatement invariantAssertionBlockStatement;
 
+    /**
+     * Creates a visitor that injects synthetic setters and constructors needed for invariant checks.
+     *
+     * @param sourceUnit the source unit currently being transformed
+     * @param source the reader source backing the source unit
+     */
     public DynamicSetterInjectionVisitor(final SourceUnit sourceUnit, final ReaderSource source) {
         super(sourceUnit, source);
     }
 
+    /**
+     * Creates the body of a synthetic setter that wraps the assignment with invariant checks.
+     *
+     * @param classNode the declaring class
+     * @param field the field being written
+     * @param parameter the synthetic setter parameter
+     * @return the generated setter body
+     */
     protected Statement createSetterBlock(final ClassNode classNode, final FieldNode field, final Parameter parameter) {
         return block(
                 invariantAssertionBlockStatement, // check invariant before assignment
@@ -69,6 +83,11 @@ public class DynamicSetterInjectionVisitor extends BaseVisitor {
         );
     }
 
+    /**
+     * Adds a synthetic setter for invariant-checked properties when no explicit setter is present.
+     *
+     * @param node the property being visited
+     */
     @Override
     public void visitProperty(PropertyNode node) {
         final ClassNode classNode = node.getDeclaringClass();
@@ -83,6 +102,11 @@ public class DynamicSetterInjectionVisitor extends BaseVisitor {
         }
     }
 
+    /**
+     * Prepares invariant-check blocks for the class and adds a synthetic default constructor when needed.
+     *
+     * @param classNode the class being visited
+     */
     @Override
     public void visitClass(ClassNode classNode) {
         // if a class invariant is available visit all property nodes else skip this class

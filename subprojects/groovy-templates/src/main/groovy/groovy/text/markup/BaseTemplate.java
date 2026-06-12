@@ -27,6 +27,7 @@ import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.StringReader;
 import java.io.Writer;
 import java.net.URL;
@@ -62,6 +63,14 @@ public abstract class BaseTemplate implements Writable {
     private Writer out;
     private boolean doWriteIndent;
 
+    /**
+     * Creates a template instance bound to a rendering engine, model, optional model types, and configuration.
+     *
+     * @param templateEngine engine that created this template instance
+     * @param model model values visible to template code
+     * @param modelTypes optional model type hints used for nested type-checked templates
+     * @param configuration rendering configuration
+     */
     public BaseTemplate(final MarkupTemplateEngine templateEngine, final Map model, final Map<String,String> modelTypes, final TemplateConfiguration configuration) {
         this.model = model==null?EMPTY_MODEL:model;
         this.engine = templateEngine;
@@ -70,10 +79,20 @@ public abstract class BaseTemplate implements Writable {
         this.cachedFragments = new LinkedHashMap<String, Template>();
     }
 
+    /**
+     * Returns the model currently exposed to the template.
+     *
+     * @return the model map, never {@code null}
+     */
     public Map getModel() {
         return model;
     }
 
+    /**
+     * Executes the compiled template body.
+     *
+     * @return the script result produced by the compiled template
+     */
     public abstract Object run();
 
     /**
@@ -103,6 +122,13 @@ public abstract class BaseTemplate implements Writable {
         return this;
     }
 
+    /**
+     * Renders the supplied closure into an in-memory buffer and returns the resulting text.
+     *
+     * @param cl closure to render
+     * @return the rendered closure output
+     * @throws IOException if writing the closure output fails
+     */
     public String stringOf(Closure cl) throws IOException {
         Writer old = out;
         Writer stringWriter = new StringBuilderWriter(32);
@@ -433,20 +459,38 @@ public abstract class BaseTemplate implements Writable {
      */
     public Closure contents(final Closure cl) {
         return new Closure(cl.getOwner(), cl.getThisObject()) {
+            @Serial
             private static final long serialVersionUID = -5733727697043906478L;
 
+            /**
+             * Invokes the wrapped closure without arguments and suppresses its direct return value.
+             *
+             * @return an empty string for layout insertion
+             */
             @Override
             public Object call() {
                 cl.call();
                 return "";
             }
 
+            /**
+             * Invokes the wrapped closure with varargs and suppresses its direct return value.
+             *
+             * @param args arguments forwarded to the wrapped closure
+             * @return an empty string for layout insertion
+             */
             @Override
             public Object call(final Object... args) {
                 cl.call(args);
                 return "";
             }
 
+            /**
+             * Invokes the wrapped closure with a single argument and suppresses its direct return value.
+             *
+             * @param arguments argument forwarded to the wrapped closure
+             * @return an empty string for layout insertion
+             */
             @Override
             public Object call(final Object arguments) {
                 cl.call(arguments);
@@ -492,14 +536,29 @@ public abstract class BaseTemplate implements Writable {
             this.array = (Object[])args;
         }
 
+        /**
+         * Returns the attribute map extracted from the tag arguments.
+         *
+         * @return the extracted attribute map, or {@code null} when none was supplied
+         */
         public Map getAttributes() {
             return attributes;
         }
 
+        /**
+         * Returns the body object extracted from the tag arguments.
+         *
+         * @return the extracted body object, or {@code null} when none was supplied
+         */
         public Object getBody() {
             return body;
         }
 
+        /**
+         * Splits the raw tag arguments into attributes and body components.
+         *
+         * @return this tag data instance
+         */
         public TagData invoke() {
             attributes = null;
             body = null;
@@ -514,6 +573,11 @@ public abstract class BaseTemplate implements Writable {
         }
     }
 
+    /**
+     * Renders this template to a string by writing it to an in-memory buffer.
+     *
+     * @return rendered template output
+     */
     @Override
     public String toString() {
         Writer wrt = new StringBuilderWriter(512);

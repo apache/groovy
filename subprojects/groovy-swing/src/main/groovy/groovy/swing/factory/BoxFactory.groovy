@@ -21,12 +21,27 @@ package groovy.swing.factory
 import javax.swing.*
 import java.awt.*
 
+/**
+ * Factory for creating {@link Box} containers.
+ */
 public class BoxFactory extends ComponentFactory {
 
+    /**
+     * Creates a factory for {@link Box} nodes.
+     */
     public BoxFactory() {
         super(null);
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsType(value, name, Box)) {
             return value;
@@ -42,26 +57,65 @@ public class BoxFactory extends ComponentFactory {
     }
 }
 
+/**
+ * Factory for creating horizontal {@link Box} containers.
+ */
 public class HBoxFactory extends ComponentFactory {
 
+    /**
+     * Creates a factory for horizontal {@link Box} nodes.
+     */
     public HBoxFactory() {
         super(null);
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createHorizontalBox();
     }
 }
 
+/**
+ * Factory for creating horizontal glue components.
+ */
 public class HGlueFactory extends AbstractFactory {
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createHorizontalGlue();
     }
 }
 
+/**
+ * Factory for creating horizontal strut components.
+ */
 public class HStrutFactory extends AbstractFactory {
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsType(value, name, Number);
         Object num;
@@ -78,26 +132,65 @@ public class HStrutFactory extends AbstractFactory {
     }
 }
 
+/**
+ * Factory for creating vertical {@link Box} containers.
+ */
 public class VBoxFactory extends ComponentFactory {
 
+    /**
+     * Creates a factory for vertical {@link Box} nodes.
+     */
     public VBoxFactory() {
         super(null);
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createVerticalBox();
     }
 }
 
+/**
+ * Factory for creating vertical glue components.
+ */
 public class VGlueFactory extends AbstractFactory {
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createVerticalGlue();
     }
 }
 
+/**
+ * Factory for creating vertical strut components.
+ */
 public class VStrutFactory extends AbstractFactory {
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsType(value, name, Number);
         Object num;
@@ -114,14 +207,38 @@ public class VStrutFactory extends AbstractFactory {
     }
 }
 
+/**
+ * Factory for creating glue components that expand in both directions.
+ */
 public class GlueFactory extends AbstractFactory {
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         return Box.createGlue();
     }
 }
 
+/**
+ * Factory for creating rigid area components.
+ */
 public class RigidAreaFactory extends AbstractFactory {
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         Dimension dim;

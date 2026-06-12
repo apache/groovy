@@ -33,19 +33,38 @@ public class ListOfExpressionsExpression extends Expression {
 
     private final List<Expression> expressions;
 
+    /**
+     * Creates an empty list-backed expression container.
+     */
     public ListOfExpressionsExpression() {
         expressions = new LinkedList<Expression>();
     }
 
+    /**
+     * Creates a container for the supplied expressions.
+     *
+     * @param expressions the expressions to visit as a group
+     */
     public ListOfExpressionsExpression(final List<Expression> expressions) {
         this.expressions = expressions;
     }
 
+    /**
+     * Transforms each contained expression with the supplied transformer.
+     *
+     * @param transformer the expression transformer to apply
+     * @return a container holding the transformed expressions
+     */
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         return new ListOfExpressionsExpression(transformExpressions(expressions,transformer));
     }
 
+    /**
+     * Visits each contained expression in declaration order.
+     *
+     * @param visitor the visitor to accept
+     */
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         for (Expression expression : expressions) {
@@ -53,6 +72,11 @@ public class ListOfExpressionsExpression extends Expression {
         }
     }
 
+    /**
+     * Appends an expression to this container.
+     *
+     * @param expression the expression to add
+     */
     public void addExpression(Expression expression) {
         expressions.add(expression);
     }

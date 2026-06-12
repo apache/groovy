@@ -35,24 +35,43 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class GroovyIdiomBench {
+    /** Number of loop iterations used by each benchmark invocation. */
     static final int ITERATIONS = 1_000_000
 
-    // Helper class for safe-nav / spread-dot / with tests
+    /**
+     * Helper class for safe-nav / spread-dot / with tests.
+     */
     static class Person {
+        /** Person name used by safe-navigation and spread-dot benchmarks. */
         String name
+
+        /** Address associated with the person, when present. */
         Address address
     }
 
+    /**
+     * Helper class for nested property access tests.
+     */
     static class Address {
+        /** City value used for nested property access. */
         String city
+
+        /** Postal code paired with the benchmark city value. */
         String zip
     }
 
-    // Pre-built test data
+    /** Person with a non-null address. */
     Person personWithAddress
+
+    /** Person with a null address for safe-nav null path testing. */
     Person personNullAddress
+
+    /** List of people for spread-dot tests. */
     List<Person> people
 
+    /**
+     * Prepares the sample people used by the idiom benchmarks.
+     */
     @Setup(Level.Trial)
     void setup() {
         personWithAddress = new Person(name: "Alice", address: new Address(city: "Springfield", zip: "62704"))

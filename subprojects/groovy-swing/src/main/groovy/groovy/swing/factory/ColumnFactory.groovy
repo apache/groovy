@@ -24,9 +24,21 @@ import javax.swing.table.TableCellRenderer
 import javax.swing.table.TableColumn
 import javax.swing.table.TableColumnModel
 
+/**
+ * Factory for creating table columns and related renderers.
+ */
 @Log
 class ColumnFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         if (value instanceof TableColumn) {
             return value
@@ -81,6 +93,13 @@ class ColumnFactory extends AbstractFactory {
         return node
     }
 
+    /**
+     * Finalizes a node after its children have been processed.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param node the current node
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if (!(parent instanceof TableColumnModel)) {
             log.warning("Column must be a child of a columnModel. Found " + parent.getClass())
@@ -88,6 +107,13 @@ class ColumnFactory extends AbstractFactory {
         parent.addColumn(node)
     }
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(parent instanceof TableColumn)) {
             log.warning("Renderer must be a child of a tableColumn. Found " + parent.getClass())

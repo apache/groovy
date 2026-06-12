@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
@@ -236,14 +237,29 @@ import static org.objectweb.asm.TypeReference.newTypeReference;
 public class AsmClassGenerator extends ClassGenerator {
 
     // fields
+    /**
+     * Runtime helper used for dynamic field writes.
+     */
     public  static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
+    /**
+     * Runtime helper used for dynamic field reads.
+     */
     public  static final MethodCallerMultiAdapter getField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getField", false, false);
     private static final MethodCallerMultiAdapter setFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setFieldOnSuper", false, false);
     private static final MethodCallerMultiAdapter getFieldOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getFieldOnSuper", false, false);
+    /**
+     * Runtime helper used for dynamic field writes against {@code GroovyObject} receivers.
+     */
     public  static final MethodCallerMultiAdapter setGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectField", false, false);
+    /**
+     * Runtime helper used for dynamic field reads against {@code GroovyObject} receivers.
+     */
     public  static final MethodCallerMultiAdapter getGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectField", false, false);
 
     // properties
+    /**
+     * Runtime helper used for dynamic property writes.
+     */
     public  static final MethodCallerMultiAdapter setProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setProperty", false, false);
     private static final MethodCallerMultiAdapter getProperty = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getProperty", false, false);
     private static final MethodCallerMultiAdapter setPropertyOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setPropertyOnSuper", false, false);
@@ -270,9 +286,21 @@ public class AsmClassGenerator extends ClassGenerator {
      * Add marker in the bytecode to show source-bytecode relationship.
      */
     public static final boolean ASM_DEBUG = false;
+    /**
+     * Enables emission of local-variable and source debug metadata.
+     */
     public static final boolean CREATE_DEBUG_INFO = true;
+    /**
+     * Enables emission of line number tables.
+     */
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
+    /**
+     * Metadata key used to mark expressions whose value should be discarded.
+     */
     public static final String  ELIDE_EXPRESSION_VALUE = "_EXPR_VALUE_UNUSED";
+    /**
+     * Metadata key used to request a minimum emitted bytecode level.
+     */
     public static final String  MINIMUM_BYTECODE_VERSION = "_MINIMUM_BYTECODE_VERSION";
 
     private WriterController controller;
@@ -283,6 +311,14 @@ public class AsmClassGenerator extends ClassGenerator {
     private ClassVisitor classVisitor;
     private final String sourceFile;
 
+    /**
+     * Creates a bytecode generator for a single class.
+     *
+     * @param source the source unit being compiled
+     * @param context shared generation state for the enclosing compile unit
+     * @param classVisitor the ASM visitor receiving the emitted class
+     * @param sourceFile the source file name recorded in the generated class
+     */
     public AsmClassGenerator(final SourceUnit source, final GeneratorContext context, final ClassVisitor classVisitor, final String sourceFile) {
         this.source = source;
         this.context = context;
@@ -290,11 +326,19 @@ public class AsmClassGenerator extends ClassGenerator {
         this.sourceFile = sourceFile;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SourceUnit getSourceUnit() {
         return source;
     }
 
+    /**
+     * Returns the writer controller coordinating bytecode emission.
+     *
+     * @return the active writer controller
+     */
     public WriterController getController() {
         return controller;
     }
@@ -302,6 +346,9 @@ public class AsmClassGenerator extends ClassGenerator {
     // GroovyClassVisitor interface
     //--------------------------------------------------------------------------
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode classNode) {
         referencedClasses.clear();
@@ -425,10 +472,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             visitAnnotations(recordComponent, visitor);
 
-            // the int encoded value of the type reference is ALWAYS `318767104`
-            // TODO Get the magic number `318767104` via `TypeReference.newXXX()`
-            TypeReference typeRef = new TypeReference(318767104);
-
+            TypeReference typeRef = newTypeReference(FIELD);
             visitTypeAnnotations(type, visitor, typeRef, "", true);
 
             visitor.visitEnd();
@@ -480,10 +524,18 @@ public class AsmClassGenerator extends ClassGenerator {
                     classVisitor.visitNestMember(nest);
                     toVisit.put(nest, expr);
                 }
+
+                /**
+                 * Registers nested closures as additional nest members.
+                 */
                 @Override
                 public  void visitClosureExpression(final ClosureExpression expression) {
                     visitNested("closure", expression);
                 }
+
+                /**
+                 * Registers statically compiled functional-interface lambdas as nest members.
+                 */
                 @Override
                 public  void visitLambdaExpression(final LambdaExpression expression) {
                     if (Boolean.TRUE.equals(innerClass.getNodeMetaData(org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE))
@@ -559,6 +611,9 @@ public class AsmClassGenerator extends ClassGenerator {
         return modifiers;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         Parameter[] parameters = node.getParameters();
@@ -621,7 +676,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             try {
                 mv.visitMaxs(0, 0);
-            } catch (Exception e) {
+            } catch (Throwable t) {
                 Writer writer = null;
                 if (mv instanceof TraceMethodVisitor) {
                     writer = new StringBuilderWriter();
@@ -638,7 +693,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     message.append("\nLast known generated bytecode in last generated method or constructor:\n");
                     message.append(writer);
                 }
-                throw new GroovyRuntimeException(message.toString(), e);
+                throw new GroovyRuntimeException(message.toString(), t);
             }
         }
         mv.visitEnd();
@@ -755,18 +810,27 @@ public class AsmClassGenerator extends ClassGenerator {
         visitAnnotationDefaultExpression(av,node.getReturnType(),exp);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         controller.setConstructorNode(node);
         super.visitConstructor(node);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethod(final MethodNode node) {
         controller.setMethodNode(node);
         super.visitMethod(node);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitField(final FieldNode fieldNode) {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
@@ -800,6 +864,9 @@ public class AsmClassGenerator extends ClassGenerator {
         fv.visitEnd();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitProperty(final PropertyNode statement) {
         // the verifier created the field and the setter/getter methods, so here is
@@ -814,86 +881,137 @@ public class AsmClassGenerator extends ClassGenerator {
     // Statements
     //--------------------------------------------------------------------------
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void visitStatement(final Statement statement) {
         throw new GroovyBugError("visitStatement should not be visited here.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBlockStatement(final BlockStatement statement) {
         controller.getStatementWriter().writeBlockStatement(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitForLoop(final ForStatement statement) {
         controller.getStatementWriter().writeForStatement(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitWhileLoop(final WhileStatement statement) {
         controller.getStatementWriter().writeWhileLoop(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitDoWhileLoop(final DoWhileStatement statement) {
         controller.getStatementWriter().writeDoWhileLoop(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitIfElse(final IfStatement statement) {
         controller.getStatementWriter().writeIfElse(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitAssertStatement(final AssertStatement statement) {
         controller.getStatementWriter().writeAssert(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
         controller.getStatementWriter().writeTryCatchFinally(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitCatchStatement(final CatchStatement statement) {
         maybeInnerClassEntry(statement.getExceptionType());
         statement.getCode().visit(this);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitSwitch(final SwitchStatement statement) {
         controller.getStatementWriter().writeSwitch(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBreakStatement(final BreakStatement statement) {
         controller.getStatementWriter().writeBreak(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitContinueStatement(final ContinueStatement statement) {
         controller.getStatementWriter().writeContinue(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitSynchronizedStatement(final SynchronizedStatement statement) {
         controller.getStatementWriter().writeSynchronized(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitThrowStatement(final ThrowStatement statement) {
         controller.getStatementWriter().writeThrow(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitReturnStatement(final ReturnStatement statement) {
         controller.getStatementWriter().writeReturn(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitExpressionStatement(final ExpressionStatement statement) {
         controller.getStatementWriter().writeExpressionStatement(statement);
@@ -902,6 +1020,9 @@ public class AsmClassGenerator extends ClassGenerator {
     // Expressions
     //--------------------------------------------------------------------------
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitTernaryExpression(final TernaryExpression expression) {
         onLineNumber(expression, "visitTernaryExpression");
@@ -909,12 +1030,18 @@ public class AsmClassGenerator extends ClassGenerator {
         doPostVisit(expression); // GROOVY-7473
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         onLineNumber(expression, "visitDeclarationExpression: " + expression.getText());
         controller.getBinaryExpressionHelper().evaluateEqual(expression, true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         onLineNumber(expression, "visitBinaryExpression: " + expression.getOperation().getText());
@@ -923,23 +1050,35 @@ public class AsmClassGenerator extends ClassGenerator {
         doPostVisit(expression); // GROOVY-5746
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitPostfixExpression(final PostfixExpression expression) {
         controller.getBinaryExpressionHelper().evaluatePostfixMethod(expression);
         controller.getAssertionWriter().record(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitPrefixExpression(final PrefixExpression expression) {
         controller.getBinaryExpressionHelper().evaluatePrefixMethod(expression);
         controller.getAssertionWriter().record(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
         controller.getClosureWriter().writeClosure(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitLambdaExpression(final LambdaExpression expression) {
         controller.getLambdaWriter().writeLambda(expression);
@@ -962,11 +1101,17 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitSpreadExpression(final SpreadExpression expression) {
         throw new GroovyBugError("SpreadExpression should not be visited here");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitSpreadMapExpression(final SpreadMapExpression expression) {
         // GROOVY-3421: SpreadMapExpression is key expression and contains value
@@ -975,37 +1120,73 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethodPointerExpression(final MethodPointerExpression expression) {
         controller.getMethodPointerExpressionWriter().writeMethodPointerExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethodReferenceExpression(final MethodReferenceExpression expression) {
         controller.getMethodReferenceExpressionWriter().writeMethodReferenceExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
         controller.getUnaryExpressionHelper().writeUnaryMinus(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
         controller.getUnaryExpressionHelper().writeUnaryPlus(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
         controller.getUnaryExpressionHelper().writeBitwiseNegate(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitCastExpression(final CastExpression castExpression) {
         Expression expression = castExpression.getExpression();
+        ClassNode type = castExpression.getType();
+
+        // GROOVY-11998: lambda / method-reference factory invocations already
+        // emit an object that implements every component of an intersection
+        // target via altMetafactory FLAG_MARKERS, so the outer cast is a no-op.
+        if (type instanceof IntersectionTypeClassNode
+                && (expression instanceof LambdaExpression
+                    || expression instanceof MethodReferenceExpression)) {
+            expression.visit(this);
+            return;
+        }
+        // GROOVY-11998: non-functional intersection casts route through the
+        // runtime helper IntersectionCastSupport, which strict-casts for `()`
+        // and may build a multi-interface proxy via ProxyGenerator for `as`.
+        if (type instanceof IntersectionTypeClassNode) {
+            emitIntersectionCastCall((IntersectionTypeClassNode) type, expression, castExpression.isCoerce());
+            return;
+        }
+
         expression.visit(this);
 
-        ClassNode type = castExpression.getType();
         if (isObjectType(type)) return;
         maybeInnerClassEntry(type);
 
@@ -1022,11 +1203,58 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * Emits a call to {@link org.codehaus.groovy.runtime.IntersectionCastSupport}
+     * for an intersection-target cast or coercion on a non-functional source.
+     *
+     * Bytecode layout:
+     * <pre>
+     *   visit(source)             // pushes source on the JVM stack
+     *   bipush/iconst N           // component count
+     *   anewarray Class           // create Class[N]
+     *   for each component i:
+     *     dup; bipush i; ldc Type; aastore
+     *   invokestatic IntersectionCastSupport.{castTo|asType}(Object, Class[]) Object
+     * </pre>
+     */
+    private void emitIntersectionCastCall(final IntersectionTypeClassNode it, final Expression source, final boolean coerce) {
+        source.visit(this); // leaves source on the operand / JVM stack as Object-ish
+        controller.getOperandStack().box();   // ensure boxed reference (handles primitive sources)
+
+        MethodVisitor mv = controller.getMethodVisitor();
+        ClassNode[] components = it.getComponents();
+
+        BytecodeHelper.pushConstant(mv, components.length);
+        mv.visitTypeInsn(ANEWARRAY, "java/lang/Class");
+        for (int i = 0; i < components.length; i += 1) {
+            mv.visitInsn(DUP);
+            BytecodeHelper.pushConstant(mv, i);
+            BytecodeHelper.visitClassLiteral(mv, components[i]);
+            mv.visitInsn(AASTORE);
+        }
+
+        mv.visitMethodInsn(
+            INVOKESTATIC,
+            "org/codehaus/groovy/runtime/IntersectionCastSupport",
+            coerce ? "asType" : "castTo",
+            "(Ljava/lang/Object;[Ljava/lang/Class;)Ljava/lang/Object;",
+            false
+        );
+
+        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitNotExpression(final NotExpression expression) {
         controller.getUnaryExpressionHelper().writeNotExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBooleanExpression(final BooleanExpression expression) {
         OperandStack operandStack = controller.getOperandStack();
@@ -1036,6 +1264,9 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.castToBool(mark, true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethodCallExpression(final MethodCallExpression call) {
         onLineNumber(call, "visitMethodCallExpression: \"" + call.getMethod() + "\":");
@@ -1043,6 +1274,9 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getAssertionWriter().record(call.getMethod());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
         onLineNumber(call, "visitStaticMethodCallExpression: \"" + call.getMethod() + "\":");
@@ -1051,6 +1285,9 @@ public class AsmClassGenerator extends ClassGenerator {
         maybeInnerClassEntry(call.getOwnerType());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         onLineNumber(call, "visitConstructorCallExpression: \"" + call.getType().getName() + "\":");
@@ -1098,6 +1335,14 @@ public class AsmClassGenerator extends ClassGenerator {
         return field != null && isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass);
     }
 
+    /**
+     * Determines whether a member with the supplied modifiers is directly accessible to a class.
+     *
+     * @param modifiers the member modifiers
+     * @param declaringClass the class declaring the member
+     * @param accessingClass the class attempting access
+     * @return {@code true} if direct bytecode access is legal
+     */
     public static boolean isMemberDirectlyAccessible(final int modifiers, final ClassNode declaringClass, final ClassNode accessingClass) {
         // a public member is accessible from anywhere
         if (Modifier.isPublic(modifiers)) return true;
@@ -1118,6 +1363,15 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
+    /**
+     * Resolves a field declared on the current class or an accessible superclass.
+     *
+     * @param accessingNode the class performing the access
+     * @param current the class whose hierarchy is being searched
+     * @param fieldName the field name to resolve
+     * @param skipCurrent whether to skip the current class and start with its superclass
+     * @return the resolved field, or {@code null} if none is directly accessible
+     */
     public static FieldNode getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(final ClassNode accessingNode, final ClassNode current, final String fieldName, final boolean skipCurrent) {
         return getField(current, fieldName, fieldNode ->
             (!skipCurrent || !current.equals(fieldNode.getDeclaringClass())) && isFieldDirectlyAccessible(fieldNode, accessingNode)
@@ -1215,6 +1469,9 @@ public class AsmClassGenerator extends ClassGenerator {
         return expression instanceof ClassExpression || controller.isStaticContext();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
@@ -1276,6 +1533,9 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitAttributeExpression(final AttributeExpression expression) {
         Expression objectExpression = expression.getObjectExpression();
@@ -1312,6 +1572,9 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
         if (expression.getField().isStatic()) {
@@ -1329,6 +1592,11 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * Loads a static field value onto the operand stack.
+     *
+     * @param expression the field expression to load
+     */
     public void loadStaticField(final FieldExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         FieldNode field = expression.getField();
@@ -1425,6 +1693,9 @@ public class AsmClassGenerator extends ClassGenerator {
         return BytecodeHelper.getClassInternalName(field.getOwner());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
@@ -1457,13 +1728,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
             pexp.getProperty().setSourcePosition(expression);
-            pexp.setType(expression.getType());
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
-
-            if (!compileStack.isLHS() && !expression.isDynamicTyped()) {
-                controller.getOperandStack().doGroovyCast(typeOf(expression));
-            }
         }
 
         if (!compileStack.isLHS()) {
@@ -1471,9 +1737,16 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * Creates helper class literal fields for interface bytecode generation.
+     */
     protected void createInterfaceSyntheticStaticFields() {
-        if (referencedClasses.isEmpty()) return;
         var icl = controller.getInterfaceClassLoadingClass();
+        // GROOVY-11982: also materialise the helper when there are call sites
+        // (e.g. dynamic code in default methods under indy=false), otherwise
+        // CallSiteWriter routes INVOKESTATIC at a class that was never emitted
+        boolean hasCallSites = !controller.getCallSiteWriter().getCallSites().isEmpty();
+        if (referencedClasses.isEmpty() && !hasCallSites) return;
         addInnerClass(icl);
         for (Map.Entry<String, ClassNode> entry : referencedClasses.entrySet()) {
             // generate a field node
@@ -1483,6 +1756,9 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * Creates synthetic class-literal helper fields and accessors on the current class.
+     */
     protected void createSyntheticStaticFields() {
         if (referencedClasses.isEmpty()) {
             return;
@@ -1546,6 +1822,9 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitMaxs(0, 0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClassExpression(final ClassExpression expression) {
         ClassNode type = expression.getType();
@@ -1580,6 +1859,9 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.push(ClassHelper.CLASS_Type);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitRangeExpression(final RangeExpression expression) {
         OperandStack operandStack = controller.getOperandStack();
@@ -1594,11 +1876,17 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.replace(ClassHelper.RANGE_TYPE, 4);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMapEntryExpression(final MapEntryExpression expression) {
         throw new GroovyBugError("MapEntryExpression should not be visited here");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMapExpression(final MapExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
@@ -1630,6 +1918,9 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.push(ClassHelper.MAP_TYPE);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitArgumentlistExpression(final ArgumentListExpression ale) {
         if (containsSpreadExpression(ale)) {
@@ -1639,11 +1930,20 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitTupleExpression(final TupleExpression expression) {
         visitTupleExpression(expression, false);
     }
 
+    /**
+     * Visits a tuple expression and stores its values in a new object array.
+     *
+     * @param expression the tuple expression to visit
+     * @param useWrapper {@code true} to wrap special constructor-call arguments when needed
+     */
     void visitTupleExpression(final TupleExpression expression, final boolean useWrapper) {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = expression.getExpressions().size();
@@ -1667,6 +1967,9 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitArrayExpression(final ArrayExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
@@ -1799,6 +2102,9 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.push(arrayType);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClosureListExpression(final ClosureListExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
@@ -1829,6 +2135,9 @@ public class AsmClassGenerator extends ClassGenerator {
         final Label tableEnd = new Label();
         final Label[] labels = new Label[size];
         instructions.add(new BytecodeInstruction() {
+            /**
+             * Emits the switch dispatch for the requested closure index.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 mv.visitVarInsn(ILOAD, 1);
@@ -1842,6 +2151,9 @@ public class AsmClassGenerator extends ClassGenerator {
             Expression expr = expressions.get(i);
             labels[i] = label;
             instructions.add(new BytecodeInstruction() {
+                /**
+                 * Marks the current case label and drops the placeholder stack value.
+                 */
                 @Override
                 public void visit(MethodVisitor mv) {
                     mv.visitLabel(label);
@@ -1851,6 +2163,9 @@ public class AsmClassGenerator extends ClassGenerator {
             });
             instructions.add(expr);
             instructions.add(new BytecodeInstruction() {
+                /**
+                 * Jumps to the shared return label after evaluating a case body.
+                 */
                 @Override
                 public void visit(MethodVisitor mv) {
                     mv.visitJumpInsn(GOTO, tableEnd);
@@ -1860,6 +2175,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // default case
         instructions.add(new BytecodeInstruction() {
+            /**
+             * Marks the default branch of the closure-index switch.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 mv.visitLabel(dflt);
@@ -1872,6 +2190,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // return
         instructions.add(new BytecodeInstruction() {
+            /**
+             * Emits the shared return path for the generated closure-index switch.
+             */
             @Override
             public void visit(MethodVisitor mv) {
                 mv.visitLabel(tableEnd);
@@ -1940,12 +2261,18 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().pop();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBytecodeExpression(final BytecodeExpression expression) {
         expression.visit(controller.getMethodVisitor());
         controller.getOperandStack().push(expression.getType());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBytecodeSequence(final BytecodeSequence bytecodeSequence) {
         MethodVisitor mv = controller.getMethodVisitor();
@@ -1969,6 +2296,9 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.remove(mark - operandStack.getStackLength());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitListExpression(final ListExpression expression) {
         onLineNumber(expression, "ListExpression");
@@ -2034,6 +2364,9 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.push(ClassHelper.LIST_TYPE);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitGStringExpression(final GStringExpression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
@@ -2073,6 +2406,9 @@ public class AsmClassGenerator extends ClassGenerator {
         operandStack.push(ClassHelper.GSTRING_TYPE);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitAnnotations(final AnnotatedNode node) {
         // ignore it; annotation generation needs the current visitor
@@ -2301,6 +2637,12 @@ public class AsmClassGenerator extends ClassGenerator {
     // Implementation methods
     //--------------------------------------------------------------------------
 
+    /**
+     * Registers a generated inner class with the enclosing module.
+     *
+     * @param innerClass the inner class to register
+     * @return {@code true} if the inner class was queued for later emission
+     */
     public boolean addInnerClass(final ClassNode innerClass) {
         ModuleNode mn = controller.getClassNode().getModule();
         innerClass.setModule(mn);
@@ -2308,6 +2650,12 @@ public class AsmClassGenerator extends ClassGenerator {
         return innerClasses.add(innerClass);
     }
 
+    /**
+     * Calculates the argument count represented by an argument expression.
+     *
+     * @param arguments the argument expression to inspect
+     * @return the represented argument count
+     */
     public static int argumentSize(final Expression arguments) {
         if (arguments instanceof TupleExpression tupleExpression) {
             int size = tupleExpression.getExpressions().size();
@@ -2329,6 +2677,12 @@ public class AsmClassGenerator extends ClassGenerator {
         return true;
     }
 
+    /**
+     * Determines whether the supplied argument or collection expression contains a spread element.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if any spread element is present
+     */
     public static boolean containsSpreadExpression(final Expression expression) {
         List<Expression> expressions;
         if (expression instanceof TupleExpression) {
@@ -2346,6 +2700,12 @@ public class AsmClassGenerator extends ClassGenerator {
         return false;
     }
 
+    /**
+     * Expands spread arguments into the runtime list representation expected by call sites.
+     *
+     * @param expressions the argument expressions to expand
+     * @param wrap whether certain arguments should be wrapped for constructor dispatch
+     */
     public void despreadList(final List<Expression> expressions, final boolean wrap) {
         final int expressionCnt = expressions.size();
         List<Expression> spreadIndexes = new ArrayList<>(expressionCnt);
@@ -2415,6 +2775,11 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * Wraps the top-of-stack value for reflective invocation helper paths.
+     *
+     * @param expression the expression whose runtime value should be wrapped
+     */
     public void loadWrapper(final Expression expression) {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode goalClass = expression.getType();
@@ -2427,6 +2792,12 @@ public class AsmClassGenerator extends ClassGenerator {
         controller.getOperandStack().remove(1);
     }
 
+    /**
+     * Emits line number information for the supplied node when appropriate.
+     *
+     * @param node the current source node
+     * @param message a debug message retained for compatibility with existing callers
+     */
     public void onLineNumber(final ASTNode node, final String message) {
         if (node != null && !(node instanceof BlockStatement)) {
             currentASTNode = node;
@@ -2437,6 +2808,11 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
+    /**
+     * Throws a parser exception associated with the current AST node.
+     *
+     * @param message the exception message
+     */
     public void throwException(final String message) {
         throw new RuntimeParserException(message, currentASTNode);
     }

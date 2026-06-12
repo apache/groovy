@@ -50,18 +50,27 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class GrailsLikePatternsBench {
+    /** Number of iterations per benchmark. */
     static final int ITERATIONS = 100_000
 
-    // ===== DOMAIN CLASS SIMULATION =====
-
+    /**
+     * Simulates a Grails domain class with validation and persistence.
+     */
     static class DomainObject {
+        /** Unique identifier. */
         Long id
+        /** Name field. */
         String name
+        /** Email field. */
         String email
+        /** Version for optimistic locking. */
         int version = 0
+        /** Map of validation errors. */
         Map errors = [:]
+        /** Validation constraints. */
         Map constraints = [name: [nullable: false, maxSize: 255], email: [nullable: false, email: true]]
 
+        /** Validates the object against constraints. */
         boolean validate() {
             errors.clear()
             constraints.each { field, rules ->
@@ -76,6 +85,7 @@ class GrailsLikePatternsBench {
             errors.isEmpty()
         }
 
+        /** Saves the object after validation. */
         DomainObject save() {
             if (validate()) {
                 version++
@@ -84,26 +94,35 @@ class GrailsLikePatternsBench {
             this
         }
 
+        /** Converts the object to a map. */
         Map toMap() {
             [id: id, name: name, email: email, version: version]
         }
     }
 
-    // ===== SERVICE SIMULATION =====
-
+    /**
+     * Simulates a service that validates domain fields.
+     */
     static class ValidationService {
+        /** Validates an email address. */
         boolean validateEmail(String email) {
             email != null && email.contains('@') && email.contains('.')
         }
 
+        /** Validates a name field. */
         boolean validateName(String name) {
             name != null && name.length() >= 2 && name.length() <= 255
         }
     }
 
+    /**
+     * Simulates a service that creates and lists domain objects.
+     */
     static class DomainService {
+        /** Injected validation service. */
         ValidationService validationService
 
+        /** Creates a domain object from parameters. */
         DomainObject create(Map params) {
             def obj = new DomainObject()
             params.each { key, value ->
@@ -116,30 +135,40 @@ class GrailsLikePatternsBench {
             obj
         }
 
+        /** Lists domain objects as maps. */
         List<Map> list(List<DomainObject> objects) {
             objects.findAll { it.id != null }.collect { it.toMap() }
         }
     }
 
-    // ===== CONTROLLER SIMULATION =====
-
+    /**
+     * Simulates a Grails controller context.
+     */
     static class ControllerContext {
+        /** Request parameters. */
         Map params = [:]
+        /** Model for view rendering. */
         Map model = [:]
+        /** Name of the view to render. */
         String viewName
+        /** Flash scope for messages. */
         List flash = []
 
+        /** Renders a view with model. */
         void render(Map args) {
             viewName = args.view ?: 'default'
             if (args.model) model.putAll(args.model)
         }
     }
 
-    // ===== CONFIGURATION DSL SIMULATION =====
-
+    /**
+     * Simulates a Grails configuration builder DSL.
+     */
     static class ConfigBuilder {
+        /** Configuration map. */
         Map config = [:]
 
+        /** Configures data source settings. */
         void dataSource(@DelegatesTo(DataSourceConfig) Closure cl) {
             def dsc = new DataSourceConfig()
             cl.delegate = dsc
@@ -148,6 +177,7 @@ class GrailsLikePatternsBench {
             config.dataSource = dsc.toMap()
         }
 
+        /** Configures server settings. */
         void server(@DelegatesTo(ServerConfig) Closure cl) {
             def sc = new ServerConfig()
             cl.delegate = sc
@@ -157,34 +187,55 @@ class GrailsLikePatternsBench {
         }
     }
 
+    /**
+     * Data source configuration holder.
+     */
     static class DataSourceConfig {
+        /** Database URL. */
         String url = 'jdbc:h2:mem:default'
+        /** JDBC driver class name. */
         String driverClassName = 'org.h2.Driver'
+        /** Database username. */
         String username = 'sa'
+        /** Database password. */
         String password = ''
+        /** Connection pool settings. */
         Map pool = [maxActive: 10]
 
+        /** Converts to map representation. */
         Map toMap() { [url: url, driverClassName: driverClassName, username: username, pool: pool] }
     }
 
+    /**
+     * Server configuration holder.
+     */
     static class ServerConfig {
+        /** Server port. */
         int port = 8080
+        /** Server host. */
         String host = 'localhost'
+        /** SSL configuration. */
         Map ssl = [enabled: false]
 
+        /** Converts to map representation. */
         Map toMap() { [port: port, host: host, ssl: ssl] }
     }
 
-    // ===== BUILDER / VIEW SIMULATION =====
-
+    /**
+     * Markup builder context for HTML generation.
+     */
     static class MarkupContext {
+        /** Buffer for accumulating markup. */
         StringBuilder buffer = new StringBuilder()
+        /** Current nesting depth. */
         int depth = 0
 
+        /** Creates a tag with name and body closure. */
         void tag(String name, Closure body) {
             tag(name, [:], body)
         }
 
+        /** Creates a tag with name, attributes, and optional body. */
         void tag(String name, Map attrs = [:], Closure body = null) {
             buffer.append('  ' * depth).append("<$name")
             attrs.each { k, v -> buffer.append(" $k=\"$v\"") }
@@ -201,17 +252,23 @@ class GrailsLikePatternsBench {
             }
         }
 
+        /** Appends text content. */
         void text(String content) {
             buffer.append(content)
         }
 
+        /** Renders the accumulated markup. */
         String render() { buffer.toString() }
     }
 
+    /** Validation service instance for benchmarking. */
     ValidationService validationService
+    /** Domain service instance for benchmarking. */
     DomainService domainService
+    /** Sample domain data for benchmarking. */
     List<DomainObject> sampleData
 
+    /** Sets up services and sample data before each iteration. */
     @Setup(Level.Iteration)
     void setup() {
         GroovySystem.metaClassRegistry.removeMetaClass(DomainObject)

@@ -56,10 +56,23 @@ public class FileIterator implements Iterator<File> {
     /* Return only directories? */
     private final boolean iterateDirectories;
 
+    /**
+     * Creates a file iterator that yields files from the supplied file sets.
+     *
+     * @param project the Ant project used to resolve each file set
+     * @param fileSetIterator the file sets to iterate
+     */
     public FileIterator(Project project, Iterator<FileSet> fileSetIterator) {
         this(project, fileSetIterator, false);
     }
 
+    /**
+     * Creates a file iterator that yields files or directories from the supplied file sets.
+     *
+     * @param project the Ant project used to resolve each file set
+     * @param fileSetIterator the file sets to iterate
+     * @param iterateDirectories {@code true} to iterate directories instead of files
+     */
     public FileIterator(Project project, Iterator<FileSet> fileSetIterator, boolean iterateDirectories) {
         this.project = project;
         this.fileSetIterator = fileSetIterator;
@@ -144,5 +157,4 @@ public class FileIterator implements Iterator<File> {
         }
     }
 }
-
 

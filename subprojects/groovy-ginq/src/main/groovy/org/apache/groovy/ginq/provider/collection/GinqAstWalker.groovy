@@ -36,6 +36,7 @@ import org.apache.groovy.ginq.dsl.expression.LimitExpression
 import org.apache.groovy.ginq.dsl.expression.OnExpression
 import org.apache.groovy.ginq.dsl.expression.OrderExpression
 import org.apache.groovy.ginq.dsl.expression.SelectExpression
+import org.apache.groovy.ginq.dsl.expression.SetOperationExpression
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
@@ -112,6 +113,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 @CompileStatic
 class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable {
 
+    /**
+     * Creates a walker for the supplied source unit.
+     *
+     * @param sourceUnit the source unit being transformed
+     */
     GinqAstWalker(SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit
     }
@@ -120,6 +126,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         ginqExpressionStack.peek()
     }
 
+    /**
+     * Visits a full GINQ expression and converts it into chained queryable calls.
+     *
+     * @param ginqExpression the expression to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitGinqExpression(GinqExpression ginqExpression) {
         if (!ginqExpression) {
@@ -316,6 +328,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
     }
 
+    /**
+     * Visits a {@code from} clause.
+     *
+     * @param fromExpression the clause to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitFromExpression(FromExpression fromExpression) {
         MethodCallExpression fromMethodCallExpression = constructFromMethodCallExpression(fromExpression.dataSourceExpr)
@@ -324,6 +342,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return fromMethodCallExpression
     }
 
+    /**
+     * Visits a join clause.
+     *
+     * @param joinExpression the clause to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitJoinExpression(JoinExpression joinExpression) {
         Expression receiver = joinExpression.getNodeMetaData(__METHOD_CALL_RECEIVER)
@@ -344,6 +368,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return joinMethodCallExpression
     }
 
+    /**
+     * Leaves {@code on} clauses to their owning join clause.
+     *
+     * @param onExpression the clause being visited
+     * @return {@code null}
+     */
     @Override
     MethodCallExpression visitOnExpression(OnExpression onExpression) {
         // do nothing
@@ -389,7 +419,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             joinName = equalExpressionList ? JoinExpression.INNER_HASH_JOIN : JoinExpression.INNER_JOIN
         }
 
-        if (joinName.toLowerCase().contains('hash')) {
+        if (joinName.toLowerCase(Locale.ROOT).contains('hash')) {
             List<Expression> leftExpressionList = []
             List<Expression> rightExpressionList = []
 
@@ -527,6 +557,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
     }
 
+    /**
+     * Visits a {@code where} clause.
+     *
+     * @param whereExpression the clause to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitWhereExpression(WhereExpression whereExpression) {
         DataSourceExpression dataSourceExpression = whereExpression.getDataSourceExpression()
@@ -575,6 +611,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return callX(visit(expression), "toList")
     }
 
+    /**
+     * Visits a {@code groupby} clause.
+     *
+     * @param groupExpression the clause to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitGroupExpression(GroupExpression groupExpression) {
         DataSourceExpression dataSourceExpression = groupExpression.dataSourceExpression
@@ -587,6 +629,24 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         List<Expression> argList = [classifierLambdaExpression] as List<Expression>
 
         getCurrentGinqExpression().putNodeMetaData(__GROUPBY_VISITED, true)
+
+        String intoAlias = groupExpression.intoAlias
+        if (intoAlias) {
+            getCurrentGinqExpression().putNodeMetaData(__GROUPBY_INTO_ALIAS, intoAlias)
+
+            HavingExpression havingExpression = groupExpression.havingExpression
+            if (havingExpression) {
+                // In into-mode, the having lambda parameter is the alias (a GroupResult)
+                def havingLambda = lambdaX(
+                        params(param(dynamicType(), intoAlias)),
+                        stmt(havingExpression.filterExpr))
+                argList << havingLambda
+            }
+
+            MethodCallExpression groupMethodCallExpression = callX(groupMethodCallReceiver, "groupByInto", args(argList))
+            groupMethodCallExpression.setSourcePosition(groupExpression)
+            return groupMethodCallExpression
+        }
 
         HavingExpression havingExpression = groupExpression.havingExpression
         if (havingExpression) {
@@ -601,11 +661,23 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return groupMethodCallExpression
     }
 
+    /**
+     * Leaves {@code having} clauses to their owning group clause.
+     *
+     * @param havingExpression the clause being visited
+     * @return {@code null}
+     */
     @Override
     Expression visitHavingExpression(HavingExpression havingExpression) {
         // do nothing
     }
 
+    /**
+     * Visits an {@code orderby} clause.
+     *
+     * @param orderExpression the clause to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitOrderExpression(OrderExpression orderExpression) {
         DataSourceExpression dataSourceExpression = orderExpression.dataSourceExpression
@@ -677,6 +749,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
     }
 
+    /**
+     * Visits a {@code limit} clause.
+     *
+     * @param limitExpression the clause to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitLimitExpression(LimitExpression limitExpression) {
         Expression limitMethodCallReceiver = limitExpression.getNodeMetaData(__METHOD_CALL_RECEIVER)
@@ -687,6 +765,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return limitMethodCallExpression
     }
 
+    /**
+     * Visits a {@code select} clause.
+     *
+     * @param selectExpression the clause to transform
+     * @return the transformed method call
+     */
     @Override
     MethodCallExpression visitSelectExpression(SelectExpression selectExpression) {
         currentGinqExpression.putNodeMetaData(__VISITING_SELECT, true)
@@ -852,6 +936,35 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return selectMethodCallExpression
     }
 
+    /**
+     * Visits a set-operation expression.
+     *
+     * @param setOperationExpression the expression to transform
+     * @return the transformed expression
+     */
+    @Override
+    Expression visitSetOperationExpression(SetOperationExpression setOperationExpression) {
+        Expression leftExpr = visit(setOperationExpression.left)
+        Expression rightExpr = visitGinqExpression(setOperationExpression.right)
+
+        String methodName
+        switch (setOperationExpression.operation) {
+            case 'union': methodName = 'union'; break
+            case 'unionall': methodName = 'unionAll'; break
+            case 'intersect': methodName = 'intersect'; break
+            case 'minus': methodName = 'minus'; break
+            default: throw new GroovyBugError("Unknown set operation: ${setOperationExpression.operation}")
+        }
+
+        return callX(leftExpr, methodName, args(rightExpr))
+    }
+
+    /**
+     * Visits a shutdown expression.
+     *
+     * @param shutdownExpression the expression to transform
+     * @return the shutdown call expression
+     */
     @Override
     Expression visitShutdownExpression(ShutdownExpression shutdownExpression) {
         return callX(classX(makeCached(QueryableHelper)), 'shutdown', constX(shutdownExpression.mode))
@@ -1015,6 +1128,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private void validateGroupCols(List<Expression> expressionList) {
+        if (groupByIntoAlias) {
+            return // In into-mode, access is through the alias; validation handled by the type system
+        }
         if (groupByVisited) {
             for (Expression expression : expressionList) {
                 new ListExpression(Collections.singletonList(expression)).transformExpression(new ExpressionTransformer() {
@@ -1388,6 +1504,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         expression
     }
 
+    /**
+     * Visits an arbitrary GINQ expression.
+     *
+     * @param expression the expression to transform
+     * @return the transformed expression
+     */
     @Override
     Expression visit(AbstractGinqExpression expression) {
         expression.accept(this)
@@ -1451,6 +1573,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private String getLambdaParamName(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
         boolean groupByVisited = isGroupByVisited()
+        String intoAlias = groupByIntoAlias
+        if (groupByVisited && intoAlias) {
+            lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, intoAlias)
+            return intoAlias
+        }
         String lambdaParamName
         if (dataSourceExpression instanceof JoinExpression || groupByVisited || visitingWindowFunction) {
             lambdaParamName = lambdaCode.getNodeMetaData(__LAMBDA_PARAM_NAME)
@@ -1466,8 +1593,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private Tuple3<String, List<DeclarationExpression>, Expression> correctVariablesOfLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
         boolean groupByVisited = isGroupByVisited()
+        String intoAlias = groupByIntoAlias
         List<DeclarationExpression> declarationExpressionList = Collections.emptyList()
         String lambdaParamName = getLambdaParamName(dataSourceExpression, lambdaCode)
+
+        // In into-mode, the lambda parameter IS the alias (a GroupResult).
+        // No variable rewriting or __sourceRecord/__group injection needed.
+        if (groupByVisited && intoAlias) {
+            return tuple(lambdaParamName, declarationExpressionList, lambdaCode)
+        }
+
         if (dataSourceExpression instanceof JoinExpression || groupByVisited) {
             Tuple2<List<DeclarationExpression>, Expression> declarationAndLambdaCode = correctVariablesOfGinqExpression(dataSourceExpression, lambdaCode)
             if (!visitingAggregateFunctionStack) {
@@ -1514,6 +1649,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private boolean isGroupByVisited() {
         return currentGinqExpression.getNodeMetaData(__GROUPBY_VISITED)
+    }
+
+    private String getGroupByIntoAlias() {
+        return (String) currentGinqExpression.getNodeMetaData(__GROUPBY_INTO_ALIAS)
     }
 
     private boolean isVisitingSelect() {
@@ -1613,6 +1752,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String __SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX = "__salp_"
     private static final String __SOURCE_RECORD = "__sourceRecord"
     private static final String __GROUP = "__group"
+    private static final String __GROUPBY_INTO_ALIAS = "__GROUPBY_INTO_ALIAS"
     private static final String MD_GROUP_NAME_LIST = "groupNameList"
     private static final String MD_SELECT_NAME_LIST = "selectNameList"
     private static final String MD_ALIAS_NAME_LIST = 'aliasNameList'

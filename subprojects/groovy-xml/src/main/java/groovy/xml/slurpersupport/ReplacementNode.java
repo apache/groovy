@@ -30,8 +30,16 @@ import java.util.Map;
  * Helper base class used for lazy updates.
  */
 public abstract class ReplacementNode implements Buildable, Writable {
+    /**
+     * Emits this lazy replacement through the supplied builder.
+     *
+     * @param builder target builder
+     * @param namespaceMap namespace declarations already in scope
+     * @param namespaceTagHints preferred namespace prefixes
+     */
     public abstract void build(GroovyObject builder, Map namespaceMap, Map<String, String> namespaceTagHints);
 
+    /** {@inheritDoc} */
     @Override
     public void build(final GroovyObject builder) {
         build(builder, null, null);

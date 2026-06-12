@@ -28,10 +28,16 @@ import org.objectweb.asm.util.TraceClassVisitor;
  * @since 2.5.0
  */
 public class LoggableClassVisitor extends ClassVisitor {
+    /**
+     * Creates a logging visitor that uses the default compiler configuration.
+     */
     public LoggableClassVisitor(final ClassVisitor cv) {
         this(cv, CompilerConfiguration.DEFAULT);
     }
 
+    /**
+     * Creates a logging visitor that formats bytecode according to the supplied compiler configuration.
+     */
     public LoggableClassVisitor(ClassVisitor cv, CompilerConfiguration compilerConfiguration) {
         super(CompilerConfiguration.ASM_API_VERSION, new TraceClassVisitor(cv, new LoggableTextifier(compilerConfiguration), null));
     }

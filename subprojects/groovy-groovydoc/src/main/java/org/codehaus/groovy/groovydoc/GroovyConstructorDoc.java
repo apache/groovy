@@ -18,5 +18,8 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes a constructor in the Groovydoc model.
+ */
 public interface GroovyConstructorDoc extends GroovyExecutableMemberDoc {
 }

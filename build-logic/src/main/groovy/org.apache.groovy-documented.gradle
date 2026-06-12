@@ -17,6 +17,15 @@
  *  under the License.
  */
 
+import org.apache.groovy.gradle.GroovydocAntPlugin
+
+pluginManager.apply(GroovydocAntPlugin)
+
+groovydocAnt {
+    syntaxHighlighter = 'prism'
+    preLanguage = 'groovy'
+}
+
 configurations {
     /*
      * This setup is very specific to the Groovy project:
@@ -47,6 +56,13 @@ tasks.withType(Javadoc).configureEach {
     options {
         addBooleanOption('html5', true)
         addStringOption('Xdoclint:none', '-quiet')
+        // JUnit 5 (and other libs) ship as named modules; this project's
+        // sources are in the unnamed module. JDK 21+ javadoc warns by default
+        // when --link targets a named-module API from the unnamed module.
+        // Downgrade to info so it doesn't pollute the build output.
+        if (JavaVersion.current() >= JavaVersion.VERSION_21) {
+            addStringOption('-link-modularity-mismatch', 'info')
+        }
         addStringOption('tag', 'apiNote:a:"API Note:"')
         addStringOption('tag', 'implSpec:a:"Implementation Requirements:"')
         addStringOption('tag', 'implNote:a:"Implementation Note:"')
@@ -62,9 +78,25 @@ tasks.withType(Javadoc).configureEach {
         links("https://docs.oracle.com/en/java/javase/${17}/docs/api/",
               'https://docs.oracle.com/javaee/7/api/',
               'https://commons.apache.org/proper/commons-cli/javadocs/api-release/',
-              'https://junit.org/junit4/javadoc/latest/',
-              'https://docs.junit.org/current/api/',
+              "https://junit.org/junit4/javadoc/${versions.junit}/",
+              "https://docs.junit.org/${versions.junit5}/api/",
               'https://picocli.info/apidocs/')
+        // JEP 413 {@snippet file=...} resolution (JDK 18+): Gradle's default
+        // source-path inference doesn't reliably surface per-package
+        // snippet-files/ dirs to Javadoc when source files are passed
+        // individually. Feed both --source-path and --snippet-path so the
+        // lookup has the module's source roots. JDK 17's javadoc silently
+        // drops the unknown tag, so skip these flags there (they'd error).
+        if (JavaVersion.current() >= JavaVersion.VERSION_18 && sourceSets.findByName('main')) {
+            def srcPath = (sourceSets.main.java.srcDirs + sourceSets.main.groovy.srcDirs)
+                    .findAll { it.exists() }
+                    .collect { it.absolutePath }
+                    .join(File.pathSeparator)
+            if (srcPath) {
+                addStringOption('-source-path', srcPath)
+                addStringOption('-snippet-path', srcPath)
+            }
+        }
     }
 }
 
@@ -73,7 +105,6 @@ tasks.withType(Groovydoc).configureEach {
         source = sourceSets.main.groovy.srcDirs + sourceSets.main.java.srcDirs
     }
     groovyClasspath = configurations.groovydocClasspath
-    use = true
     windowTitle = "Groovy ${versions.groovy}"
     docTitle = "Groovy ${versions.groovy}"
     header = "Groovy ${versions.groovy}"
@@ -83,8 +114,8 @@ tasks.withType(Groovydoc).configureEach {
     link 'https://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
     link "https://docs.oracle.com/javase/${17}/docs/api/java.base/", 'java.', 'org.xml.', 'javax.', 'org.w3c.'
     link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
-    link 'https://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
-    link 'https://docs.junit.org/current/api/org.junit.jupiter.api/', 'org.junit.jupiter.', 'org.junit.platform.'
+    link "https://junit.org/junit4/javadoc/${versions.junit}/", 'org.junit.', 'junit.'
+    link "https://docs.junit.org/${versions.junit6}/api/", 'org.junit.jupiter.', 'org.junit.platform.'
     link 'https://www.antlr.org/api/Java/', 'org.antlr.v4.'
     link 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
     link 'https://picocli.info/apidocs/', 'picocli.'

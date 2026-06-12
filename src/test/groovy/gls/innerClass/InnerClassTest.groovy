@@ -89,6 +89,34 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-11877
+    @Test
+    void testInnerAIC2() {
+        assertScript '''import java.lang.reflect.Modifier
+            interface I {
+                def bar = new Object[1]
+                def foo = new Runnable() {
+                    @Override
+                    void run() {
+                        bar[0] = true
+                    }
+                }
+            }
+
+            def obj = I.foo
+            assert !I.bar[0]
+            obj.run()
+            assert  I.bar[0]
+
+            def aic = obj.getClass()
+            assert aic.getName() == 'I$1'
+            assert aic.getEnclosingClass().getName() == 'I'
+            assert !Modifier.isFinal   (aic.getModifiers())
+            assert !Modifier.isStatic  (aic.getModifiers())
+            assert !Modifier.isAbstract(aic.getModifiers())
+        '''
+    }
+
     // GROOVY-11854
     @Test
     void testScriptAIC() {
@@ -451,6 +479,43 @@ final class InnerClassTest {
             o = new A().m()
             assert o.p == 'x'
             assert o.q == 'y'
+        '''
+    }
+
+    // GROOVY-12045
+    @Test
+    void testStaticInnerClass4() {
+        shouldFail MissingMethodException, '''
+            class A {
+                static class B {
+                }
+                def f() {
+                }
+                def g() {
+                    new B().f()
+                }
+            }
+
+            new A().g()
+        '''
+    }
+
+    // GROOVY-12045
+    @Test
+    void testStaticInnerClass5() {
+        assertScript '''
+            class A {
+                static class B {
+                }
+                def f() {
+                    this.class.simpleName
+                }
+                def g() {
+                    new B().with { f() }
+                }
+            }
+
+            assert new A().g() == 'A'
         '''
     }
 
@@ -2120,27 +2185,18 @@ final class InnerClassTest {
     @Test
     void testThisReferenceForAICInOpenBlock() {
         assertScript '''
-            import java.security.AccessController
-            import java.security.PrivilegedAction
-
             static void injectVariables(final def instance, def variables) {
                 instance.class.declaredFields.each { field ->
                     if (variables[field.name]) {
-                        AccessController.doPrivileged(new PrivilegedAction() {
-                            @Override
-                            Object run() {
-                                boolean wasAccessible = field.isAccessible()
-                                try {
-                                    field.accessible = true
-                                    field.set(instance, variables[field.name])
-                                    return null; // return nothing...
-                                } catch (IllegalArgumentException | IllegalAccessException ex) {
-                                    throw new IllegalStateException("Cannot set field: " + field, ex)
-                                } finally {
-                                    field.accessible = wasAccessible
-                                }
-                            }
-                        })
+                        boolean wasAccessible = field.isAccessible()
+                        try {
+                            field.accessible = true
+                            field.set(instance, variables[field.name])
+                        } catch (IllegalArgumentException | IllegalAccessException ex) {
+                            throw new IllegalStateException("Cannot set field: " + field, ex)
+                        } finally {
+                            field.accessible = wasAccessible
+                        }
                     }
                 }
             }
@@ -2439,9 +2495,33 @@ final class InnerClassTest {
         '''
     }
 
-    // GROOVY-9618
+    // GROOVY-11875
     @Test
     void testNestedPropertyHandling6() {
+        assertScript '''import java.util.concurrent.atomic.AtomicBoolean
+            class Outer {
+                private AtomicBoolean foo = [true]
+                boolean isFoo() {
+                    foo.get()
+                }
+                Boolean bar() {
+                    def i = new Inner()
+                    i.baz()
+                }
+                class Inner {
+                    def baz() {
+                        foo
+                    }
+                }
+            }
+
+            assert new Outer().bar()
+        '''
+    }
+
+    // GROOVY-9618
+    @Test
+    void testNestedPropertyHandling7() {
         assertScript '''
             class Super {
                 public static X = 1

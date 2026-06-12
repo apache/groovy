@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -27,16 +28,27 @@ import java.io.Serializable;
  */
 public class Reference<T> extends GroovyObjectSupport implements Serializable {
 
-    private static final long serialVersionUID = 4963704631487573488L;
+    @Serial private static final long serialVersionUID = 4963704631487573488L;
     private T value;
 
+    /**
+     * Creates an empty reference.
+     */
     public Reference() {
     }
 
+    /**
+     * Creates a reference initialized with the supplied value.
+     *
+     * @param value the initial value
+     */
     public Reference(T value) {
         this.value = value;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object getProperty(String property) {
         Object value = get();
@@ -46,6 +58,9 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
         return super.getProperty(property);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setProperty(String property, Object newValue) {
         Object value = get();
@@ -57,6 +72,9 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Object invokeMethod(String name, Object args) {
         Object value = get();
@@ -73,10 +91,20 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
         }
     }
 
+    /**
+     * Returns the referenced value.
+     *
+     * @return the referenced value
+     */
     public T get() {
         return value;
     }
 
+    /**
+     * Updates the referenced value.
+     *
+     * @param value the new value
+     */
     public void set(T value) {
         this.value = value;
     }

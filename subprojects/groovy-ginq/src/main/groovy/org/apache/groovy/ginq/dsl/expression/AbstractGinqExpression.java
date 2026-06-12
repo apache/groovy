@@ -30,14 +30,32 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
  * @since 4.0.0
  */
 public abstract class AbstractGinqExpression extends Expression implements NodeMetaDataHandler {
+    /**
+     * Returns this expression because GINQ expressions are transformed elsewhere.
+     *
+     * @param transformer the transformer requesting the change
+     * @return this expression
+     */
     @Override
     public Expression transformExpression(ExpressionTransformer transformer) {
         // do nothing for now
         return this;
     }
 
+    /**
+     * Accepts a GINQ visitor.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     public abstract <R> R accept(GinqAstVisitor<R> visitor);
 
+    /**
+     * Does nothing because GINQ expressions are visited through {@link GinqAstVisitor}.
+     *
+     * @param visitor the Groovy code visitor
+     */
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         // do nothing for now

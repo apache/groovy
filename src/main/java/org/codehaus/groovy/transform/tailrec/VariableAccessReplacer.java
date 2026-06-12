@@ -32,15 +32,31 @@ import java.util.Map;
  * The VariableReplacedListener can be set if clients want to react to variable replacement.
  */
 public class VariableAccessReplacer {
+    /**
+     * Creates a replacer with the supplied name/type mapping.
+     *
+     * @param nameAndTypeMapping the variables to replace and their replacements
+     */
     public VariableAccessReplacer(Map<String, Map> nameAndTypeMapping) {
         this.nameAndTypeMapping = nameAndTypeMapping;
     }
 
+    /**
+     * Creates a replacer with the supplied name/type mapping and listener.
+     *
+     * @param nameAndTypeMapping the variables to replace and their replacements
+     * @param listener the listener notified about replacements
+     */
     public VariableAccessReplacer(Map<String, Map> nameAndTypeMapping, VariableReplacedListener listener) {
         this.nameAndTypeMapping = nameAndTypeMapping;
         this.listener = listener;
     }
 
+    /**
+     * Replaces matching variable accesses within the supplied AST subtree.
+     *
+     * @param root the AST subtree to mutate
+     */
     public void replaceIn(ASTNode root) {
         Closure<Boolean> whenParam = new Closure<Boolean>(this, this) {
             public Boolean doCall(VariableExpression expr) {
@@ -59,14 +75,29 @@ public class VariableAccessReplacer {
         new VariableExpressionReplacer(whenParam, replaceWithLocalVariable).replaceIn(root);
     }
 
+    /**
+     * Sets the variable replacement mapping.
+     *
+     * @param nameAndTypeMapping the variables to replace and their replacements
+     */
     public void setNameAndTypeMapping(Map<String, Map> nameAndTypeMapping) {
         this.nameAndTypeMapping = nameAndTypeMapping;
     }
 
+    /**
+     * Returns the listener notified when replacements occur.
+     *
+     * @return the replacement listener
+     */
     public VariableReplacedListener getListener() {
         return listener;
     }
 
+    /**
+     * Sets the listener notified when replacements occur.
+     *
+     * @param listener the replacement listener
+     */
     public void setListener(VariableReplacedListener listener) {
         this.listener = listener;
     }

@@ -22,24 +22,44 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents a number of field models which can be ValueModel, 
+ * Represents a number of field models which can be ValueModel,
  * PropertyModel, TableModel, TreeModel or nested FormModel instances
  */
 public class FormModel {
     private Map<String, Object> fieldModels;
 
+    /**
+     * Creates an empty form model.
+     */
     public FormModel() {
         this(new HashMap<>());
     }
 
+    /**
+     * Creates a form model backed by the supplied model map.
+     *
+     * @param fieldModels the initial field model map
+     */
     public FormModel(Map<String, Object> fieldModels) {
         this.fieldModels = fieldModels;
     }
 
+    /**
+     * Registers a model under the given field name.
+     *
+     * @param name the field name
+     * @param model the field model to expose
+     */
     public void addModel(String name, Object model) {
         fieldModels.put(name, model);
     }
 
+    /**
+     * Looks up the model associated with the supplied field name.
+     *
+     * @param name the field name
+     * @return the registered model, or {@code null} if none exists
+     */
     public Object getModel(String name) {
         return fieldModels.get(name);
     }

@@ -42,10 +42,18 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
 
     private final ClassNode classNode;
 
+    /**
+     * Creates a new verifier code visitor for the given class.
+     *
+     * @param classNode the class node being verified
+     */
     public VerifierCodeVisitor(ClassNode classNode) {
         this.classNode = classNode;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitForLoop(ForStatement statement) {
         Optional.ofNullable(statement.getIndexVariable()).map(Variable::getName)
@@ -55,6 +63,9 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
         super.visitForLoop(statement);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitFieldExpression(FieldExpression expression) {
         if (!expression.getField().isSynthetic()) {
@@ -63,12 +74,18 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
         super.visitFieldExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitVariableExpression(VariableExpression expression) {
         assertValidIdentifier(expression.getName(), "variable name", expression);
         super.visitVariableExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitListExpression(ListExpression expression) {
         for (Expression element : expression.getExpressions()) {
@@ -79,6 +96,9 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
         super.visitListExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         ClassNode callType = call.getType();
@@ -87,6 +107,13 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
         }
     }
 
+    /**
+     * Verifies that the supplied name is a valid Java identifier.
+     *
+     * @param name the identifier text to validate
+     * @param message the error context to include in failures
+     * @param node the node to associate with any parse error
+     */
     public static void assertValidIdentifier(String name, String message, ASTNode node) {
         int size = name.length();
         if (size <= 0) {

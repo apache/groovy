@@ -35,18 +35,37 @@ public class MethodCallUtils {
 
     private MethodCallUtils() { }
 
+    /**
+     * Creates a statement that appends the supplied expression to the target receiver.
+     *
+     * @param result the receiver of the {@code append} call
+     * @param expr the expression to append
+     * @return a statement wrapping the append call
+     */
     public static Statement appendS(Expression result, Expression expr) {
         MethodCallExpression append = callX(result, "append", expr);
         append.setImplicitThis(false);
         return stmt(append);
     }
 
+    /**
+     * Creates an explicit {@code toString()} method call expression.
+     *
+     * @param object the receiver of the call
+     * @return a {@code toString()} call expression
+     */
     public static Expression toStringX(final Expression object) {
         MethodCallExpression toString = callX(object, "toString");
         toString.setImplicitThis(false);
         return toString;
     }
 
+    /**
+     * Creates a null-safe expression that renders {@code null} as the string {@code "null"}.
+     *
+     * @param object the expression to stringify
+     * @return a conditional stringification expression
+     */
     public static Expression maybeNullToStringX(final Expression object) {
         return ternaryX(isNullX(object), constX("null"), toStringX(object));
     }

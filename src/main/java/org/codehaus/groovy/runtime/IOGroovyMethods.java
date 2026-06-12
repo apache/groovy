@@ -28,7 +28,7 @@ import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import org.apache.groovy.io.StringBuilderWriter;
-import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
+import org.codehaus.groovy.runtime.BooleanClosureWrapper;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

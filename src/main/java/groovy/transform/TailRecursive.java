@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,7 +31,7 @@ import java.lang.annotation.Target;
  * since the JVM cannot do this itself. This works for both static and non-static methods.
  * <p/>
  * It allows you to write a method like this:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.TailRecursive
  * class Target {
  *      {@code @TailRecursive}
@@ -60,7 +61,7 @@ import java.lang.annotation.Target;
  * </ul>
  *
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.TailRecursive
  *
  * &#64;TailRecursive
@@ -79,6 +80,7 @@ import java.lang.annotation.Target;
  *
  * @since 2.3
  */
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
 @GroovyASTTransformationClass({"org.codehaus.groovy.transform.tailrec.TailRecursiveASTTransformation"})

@@ -28,6 +28,11 @@ public abstract class NodeIterator implements Iterator {
     private final Iterator iter;
     private Object nextNode;
 
+    /**
+     * Creates a filtering iterator over another iterator of candidate nodes.
+     *
+     * @param iter source iterator
+     */
     public NodeIterator(final Iterator iter) {
         this.iter = iter;
         this.nextNode = DELAYED_INIT;
@@ -37,12 +42,14 @@ public abstract class NodeIterator implements Iterator {
         if (nextNode==DELAYED_INIT) nextNode = getNextNode(iter);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         initNextNode();
         return this.nextNode != null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object next() {
         initNextNode();
@@ -53,10 +60,17 @@ public abstract class NodeIterator implements Iterator {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Returns the next node visible to callers, or {@code null} when iteration is exhausted.
+     *
+     * @param iter source iterator
+     * @return next matching node or {@code null}
+     */
     protected abstract Object getNextNode(Iterator iter);
 }

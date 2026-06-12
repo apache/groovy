@@ -108,6 +108,12 @@ public class Node implements Writable {
         this.children.add(child);
     }
 
+    /**
+     * Queues a lazy replacement for this node.
+     *
+     * @param replacementClosure closure that emits replacement markup
+     * @param result current result passed back to the closure
+     */
     public void replaceNode(final Closure replacementClosure, final GPathResult result) {
         this.replacementNodeStack.push(new ReplacementNode() {
             @Override
@@ -130,6 +136,12 @@ public class Node implements Writable {
         this.children.add(newValue);
     }
 
+    /**
+     * Appends literal content or lazy markup to this node body.
+     *
+     * @param newValue content to append
+     * @param result current result passed to appended closures
+     */
     protected void appendNode(final Object newValue, final GPathResult result) {
         if (newValue instanceof Closure) {
             this.children.add(new ReplacementNode() {
@@ -217,6 +229,7 @@ public class Node implements Writable {
         };
     }
 
+    /** {@inheritDoc} */
     @Override
     public Writer writeTo(final Writer out) throws IOException {
         if (this.replacementNodeStack.empty()) {
@@ -233,6 +246,13 @@ public class Node implements Writable {
         }
     }
 
+    /**
+     * Rebuilds this node through the streaming markup infrastructure.
+     *
+     * @param builder target builder
+     * @param namespaceMap namespace declarations already in scope
+     * @param namespaceTagHints preferred namespace prefixes
+     */
     public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
         if (this.replacementNodeStack.empty()) {
             final Closure rest = new Closure(null) {

@@ -83,6 +83,23 @@ executed.
 * You can turn the System.out capture on and off by selecting `Capture
 System.out` from the `Actions` menu
 
+[[GroovyConsole-RunningAsJava]]
+=== Running and compiling as Java
+
+The console can also treat the editor contents as Java source rather than Groovy:
+
+* `Script > Run as Java` (shortcut `Alt+R`) compiles the input as Java and invokes its `main`
+  method, with any program arguments taken from `Script > Set Script Arguments`.
+* `Script > Run Selection as Java` does the same for just the highlighted text.
+* `Script > Compile as Java` compiles the input without running it — useful as a quick syntax
+  check.
+
+The source must declare a single top-level public class whose name matches a fully-qualified
+binary name in any `package` declaration; the console parses the source to locate that class
+and reports if none is found. Compilation and execution go through the
+`org.apache.groovy.util.JavaShell` API, so the same `javac` diagnostics surface in the output
+area.
+
 [[GroovyConsole-EditingFiles]]
 === Editing Files
 
@@ -136,7 +153,13 @@ handle interruption, at the cost of extra execution time.
 
 * You can change the font size by selecting `Smaller Font` or `Larger
 Font` from the `Actions menu`
-* The console can be run as an Applet thanks to `groovy.ui.ConsoleApplet`
+* You can switch between Light, Dark, and System (if supported by your OS) themes from the
+`View -> Theme` menu or by clicking the theme cycle button in the toolbar.
+The theme preference is remembered across sessions. The System option
+follows your operating system's dark mode setting.
+
+image:{reldir_console}/assets/img/gconsole-dark-theme.png[Dark Theme]
+
 * Code is auto indented when you hit return
 * You can drag'n'drop a Groovy script over the text area to open a file
 * You can modify the classpath with which the script in the console is

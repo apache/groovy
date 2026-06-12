@@ -26,6 +26,7 @@ import javax.swing.text.Position;
 import javax.swing.text.Segment;
 import javax.swing.text.Style;
 import javax.swing.text.StyleContext;
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
@@ -40,8 +41,14 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Document filter that applies regex-driven syntax highlighting to styled text.
+ */
 public class StructuredSyntaxDocumentFilter extends DocumentFilter {
 
+    /**
+     * Spaces inserted in place of tab characters.
+     */
     public static final String TAB_REPLACEMENT = "    ";
 
     private static final MLComparator ML_COMPARATOR = new MLComparator();
@@ -51,7 +58,9 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
      */
     protected LexerNode lexer = new LexerNode(true);
 
-    // The styled document the filter parses
+    /**
+     * The styled document currently being parsed.
+     */
     protected DefaultStyledDocument styledDocument;
 
     // the document buffer and segment
@@ -272,6 +281,9 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         return string;
     }
 
+    /**
+     * Regex-driven lexer node that applies styles and nested lexers.
+     */
     public final class LexerNode {
 
         private Style defaultStyle;
@@ -286,8 +298,10 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
 
         private CharBuffer lastBuffer;
 
-        /*
-         * Creates a new instance of LexerNode
+        /**
+         * Creates a lexer node.
+         *
+         * @param isParent {@code true} if this node is the root node
          */
         LexerNode(boolean isParent) {
             StyleContext sc = StyleContext.getDefaultStyleContext();
@@ -305,6 +319,11 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             return regexp.substring(1);
         }
 
+        /**
+         * Returns the fallback style for unmatched text.
+         *
+         * @return the default style
+         */
         public Style getDefaultStyle() {
             return defaultStyle;
         }
@@ -340,10 +359,12 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         }
 
         /**
-         * @param buffer
-         * @param offset
-         * @param length
-         * @throws BadLocationException
+         * Parses the supplied buffer and applies styles to matching ranges.
+         *
+         * @param buffer the character buffer to parse
+         * @param offset the starting offset
+         * @param length the number of characters to parse
+         * @throws BadLocationException if document positions cannot be resolved
          */
         public void parse(CharBuffer buffer, int offset, int length) throws BadLocationException {
             // get the index of where we can start to look for an exit:
@@ -416,8 +437,10 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         }
 
         /**
-         * @param regexp
-         * @param node
+         * Registers a child lexer for matches of the supplied expression.
+         *
+         * @param regexp the expression to match
+         * @param node the child lexer to apply within matching text
          */
         public void putChild(String regexp, LexerNode node) {
             node.defaultStyle = styleMap.get(regexp);
@@ -428,16 +451,20 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         }
 
         /**
-         * @param regexps
-         * @param node
+         * Registers a child lexer for matches of any supplied expression.
+         *
+         * @param regexps the expressions to match
+         * @param node the child lexer to apply within matching text
          */
         public void putChild(String[] regexps, LexerNode node) {
             putChild(buildRegexp(regexps), node);
         }
 
         /**
-         * @param regexp
-         * @param style
+         * Associates a style with matches of the supplied expression.
+         *
+         * @param regexp the expression to match
+         * @param style the style to apply
          */
         public void putStyle(String regexp, Style style) {
             checkRegexp(regexp);
@@ -446,22 +473,28 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         }
 
         /**
-         * @param regexps
-         * @param style
+         * Associates a style with matches of any supplied expression.
+         *
+         * @param regexps the expressions to match
+         * @param style the style to apply
          */
         public void putStyle(String[] regexps, Style style) {
             putStyle(buildRegexp(regexps), style);
         }
 
         /**
-         * @param regexp
+         * Removes the child lexer registered for the supplied expression.
+         *
+         * @param regexp the expression whose child lexer should be removed
          */
         public void removeChild(String regexp) {
             children.remove(regexp);
         }
 
         /**
-         * @param regexp
+         * Removes the style associated with the supplied expression.
+         *
+         * @param regexp the expression whose style should be removed
          */
         public void removeStyle(String regexp) {
             styleMap.remove(regexp);
@@ -469,27 +502,52 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         }
 
         /**
-         * @param regexps
+         * Removes the style associated with any of the supplied expressions.
+         *
+         * @param regexps the expressions whose combined style should be removed
          */
         public void removeStyle(String[] regexps) {
             removeStyle(buildRegexp(regexps));
         }
 
+        /**
+         * Sets the fallback style for unmatched text.
+         *
+         * @param style the default style to use
+         */
         public void setDefaultStyle(Style style) {
             defaultStyle = style;
         }
     }
 
+    /**
+     * Tracks a multi-line styled region within the document.
+     */
     protected class MultiLineRun {
 
         private Position start;
         private Position end;
         private int delimiterSize;
 
+        /**
+         * Creates a multi-line run using a two-character delimiter.
+         *
+         * @param start the inclusive start offset
+         * @param end the inclusive end offset
+         * @throws BadLocationException if either offset is invalid
+         */
         public MultiLineRun(int start, int end) throws BadLocationException {
             this(start, end, 2);
         }
 
+        /**
+         * Creates a multi-line run with the supplied delimiter size.
+         *
+         * @param start the inclusive start offset
+         * @param end the inclusive end offset
+         * @param delimiterSize the delimiter width in characters
+         * @throws BadLocationException if either offset is invalid
+         */
         public MultiLineRun(int start, int end, int delimiterSize) throws BadLocationException {
             if (start > end) {
                 String msg = "Start offset is after end: ";
@@ -504,6 +562,11 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             this.delimiterSize = delimiterSize;
         }
 
+        /**
+         * Returns the delimiter width used by this run.
+         *
+         * @return the delimiter size in characters
+         */
         public int getDelimiterSize() {
             return delimiterSize;
         }
@@ -516,18 +579,38 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             return getDelimiterSize();
         }
 
+        /**
+         * Returns the inclusive end offset.
+         *
+         * @return the end offset
+         */
         public int end() {
             return end.getOffset();
         }
 
+        /**
+         * Returns the run length.
+         *
+         * @return the number of characters in the run
+         */
         public int length() {
             return end.getOffset() - start.getOffset();
         }
 
+        /**
+         * Returns the inclusive start offset.
+         *
+         * @return the start offset
+         */
         public int start() {
             return start.getOffset();
         }
 
+        /**
+         * Returns a textual description of the run bounds.
+         *
+         * @return the start and end positions
+         */
         @Override
         public String toString() {
             return start.toString() + " " + end.toString();
@@ -537,6 +620,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
 
     private static class MLComparator implements Comparator<Object>, Serializable {
 
+        @Serial
         private static final long serialVersionUID = -4210196728719411217L;
 
         @Override

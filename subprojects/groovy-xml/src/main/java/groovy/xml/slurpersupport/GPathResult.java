@@ -49,10 +49,25 @@ import java.util.Stack;
  * Base class for representing lazy evaluated GPath expressions.
  */
 public abstract class GPathResult extends GroovyObjectSupport implements Writable, Buildable, Iterable {
+    /**
+     * Previous step in the lazy GPath chain, used for expression backtracking.
+     */
     protected final GPathResult parent;
+    /**
+     * Node or attribute name selected by this result.
+     */
     protected final String name;
+    /**
+     * Namespace prefix constraint applied to this result, if any.
+     */
     protected final String namespacePrefix;
+    /**
+     * Namespace declarations added while traversing or rebuilding this result.
+     */
     protected final Map namespaceMap = new HashMap();
+    /**
+     * Namespace prefix hints captured while parsing for stable QName rendering.
+     */
     protected final Map<String, String> namespaceTagHints;
 
     /**
@@ -213,17 +228,38 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         return this;
     }
 
-    // GROOVY-9852: so that XmlSlurper plus (shorthand for replaceNode)
-    // is preferred ahead of the DGM plus(Iterable, Iterable) method
-    // since GPathResult is Iterable
+    /**
+     * Delegates to {@link #plus(Object)} while preserving XmlSlurper replacement semantics for closures.
+     *
+     * @param newValue closure supplying replacement markup
+     * @return {@code this}
+     */
     public Object plus(final Closure newValue) {
+        // GROOVY-9852: so that XmlSlurper plus (shorthand for replaceNode)
+        // is preferred ahead of the DGM plus(Iterable, Iterable) method
+        // since GPathResult is Iterable
         return plus((Object) newValue);
     }
 
+    /**
+     * Lazily replaces the nodes represented by this result.
+     *
+     * @param newValue closure generating the replacement content
+     */
     protected abstract void replaceNode(Closure newValue);
 
+    /**
+     * Lazily replaces the body content represented by this result.
+     *
+     * @param newValue replacement body content
+     */
     protected abstract void replaceBody(Object newValue);
 
+    /**
+     * Lazily appends content to the nodes represented by this result.
+     *
+     * @param newValue content to append
+     */
     protected abstract void appendNode(Object newValue);
 
     /**
@@ -406,11 +442,13 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return text().hashCode();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object obj) {
         if (null == obj) {
@@ -422,7 +460,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
     /**
      * Supports the subscript operator for a GPathResult.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.xml.slurpersupport.*
      * import groovy.xml.XmlSlurper
      * def text = """
@@ -466,7 +504,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
     /**
      * Supports the range subscript operator for a GPathResult.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.xml.slurpersupport.*
      * import groovy.xml.XmlSlurper
      * def text = """
@@ -689,6 +727,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      */
     public abstract Iterator childNodes();
 
+    /** {@inheritDoc} */
     @Override
     public abstract Iterator iterator();
 
@@ -708,8 +747,19 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      */
     public abstract GPathResult findAll(Closure closure);
 
+    /**
+     * Returns the raw node iterator backing this lazy result.
+     *
+     * @return the underlying node iterator
+     */
     public abstract Iterator nodeIterator();
 
+    /**
+     * Creates a single-element iterator used by scalar GPath results.
+     *
+     * @param obj the sole element to expose
+     * @return an iterator yielding {@code obj} once
+     */
     protected Iterator createIterator(final Object obj) {
         return new Iterator() {
             private boolean hasNext = true;

@@ -31,9 +31,28 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
  */
 public abstract class AnnotationProcessor {
 
+    /**
+     * Processes a class-level contract annotation and updates the contract domain model.
+     *
+     * @param processingContextInformation the current processing context
+     * @param contract the mutable contract model
+     * @param classNode the annotated class
+     * @param blockStatement the original contract block
+     * @param booleanExpression the normalized boolean expression
+     */
     public void process(final ProcessingContextInformation processingContextInformation, final Contract contract, final ClassNode classNode, final BlockStatement blockStatement, final BooleanExpression booleanExpression) {
     }
 
+    /**
+     * Processes a method- or constructor-level contract annotation and updates the contract domain model.
+     *
+     * @param processingContextInformation the current processing context
+     * @param contract the mutable contract model
+     * @param classNode the declaring class
+     * @param methodNode the annotated method or constructor
+     * @param blockStatement the original contract block
+     * @param booleanExpression the normalized boolean expression
+     */
     public void process(final ProcessingContextInformation processingContextInformation, final Contract contract, final ClassNode classNode, final MethodNode methodNode, final BlockStatement blockStatement, final BooleanExpression booleanExpression) {
     }
 

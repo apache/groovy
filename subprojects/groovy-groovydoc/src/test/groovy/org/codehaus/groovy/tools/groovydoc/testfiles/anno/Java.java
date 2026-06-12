@@ -23,8 +23,9 @@ import picocli.CommandLine;
 
 import java.io.Serializable;
 
-// The annotations that are used here don't really matter,
-// since groovydoc shows all annotations, not just @Documented ones.
+// GROOVY-4634: groovydoc now filters by @Documented (like Javadoc). Mix of
+// @Documented (e.g. @Deprecated) and non-@Documented (e.g. @SuppressWarnings,
+// @CommandLine.Parameters) used to exercise both arms of the filter.
 @Deprecated
 @SuppressWarnings("foo")
 public class Java implements Serializable {

@@ -18,6 +18,14 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes a member declared within a documented type.
+ */
 public interface GroovyMemberDoc extends GroovyProgramElementDoc {
+    /**
+     * Indicates whether this member was synthesized rather than declared directly in source.
+     *
+     * @return {@code true} if this member is synthetic
+     */
     boolean isSynthetic();
 }

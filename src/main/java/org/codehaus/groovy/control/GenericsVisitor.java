@@ -48,17 +48,32 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
 
     private final SourceUnit source;
 
+    /**
+     * Returns the source unit currently being verified.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
+    /**
+     * Creates a visitor that validates generic type usage for one source unit.
+     *
+     * @param source the source unit being verified
+     */
     public GenericsVisitor(final SourceUnit source) {
         this.source = source;
     }
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Validates generic usage in a class header and its contents.
+     *
+     * @param node the class to inspect
+     */
     @Override
     public void visitClass(final ClassNode node) {
         ClassNode sc = node.getUnresolvedSuperClass(false);
@@ -74,6 +89,11 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         node.visitContents(this);
     }
 
+    /**
+     * Validates generic usage for a field declaration.
+     *
+     * @param node the field to inspect
+     */
     @Override
     public void visitField(final FieldNode node) {
         checkGenericsUsage(node.getType());
@@ -81,6 +101,12 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         super.visitField(node);
     }
 
+    /**
+     * Validates generic usage for a constructor or method signature.
+     *
+     * @param node the executable member to inspect
+     * @param isConstructor whether {@code node} is a constructor
+     */
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         for (Parameter p : node.getParameters()) {
@@ -93,6 +119,11 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         super.visitConstructorOrMethod(node, isConstructor);
     }
 
+    /**
+     * Validates generic usage on constructor call types.
+     *
+     * @param expression the constructor call to inspect
+     */
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
         ClassNode type = expression.getType();
@@ -103,6 +134,11 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         super.visitConstructorCallExpression(expression);
     }
 
+    /**
+     * Validates generic usage in declared variable types.
+     *
+     * @param expression the declaration expression to inspect
+     */
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         if (expression.isMultipleAssignmentDeclaration()) {
@@ -116,6 +152,11 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         super.visitDeclarationExpression(expression);
     }
 
+    /**
+     * Validates generic usage for array element types.
+     *
+     * @param expression the array expression to inspect
+     */
     @Override
     public void visitArrayExpression(final ArrayExpression expression) {
         checkGenericsUsage(expression.getType());
@@ -123,6 +164,11 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         super.visitArrayExpression(expression);
     }
 
+    /**
+     * Validates generic usage for cast target types.
+     *
+     * @param expression the cast expression to inspect
+     */
     @Override
     public void visitCastExpression(final CastExpression expression) {
         checkGenericsUsage(expression.getType());

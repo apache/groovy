@@ -22,20 +22,40 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 
 /**
- * Represents a continue statement in a loop statement
+ * Represents a continue statement that skips the remainder of the current loop iteration.
+ * When a continue statement is encountered, control flow jumps to the next iteration of
+ * the innermost enclosing loop. Labeled continue statements can skip to the next iteration
+ * of an outer loop.
+ *
+ * @see {@link LoopingStatement}
+ * @see {@link BreakStatement}
+ * @see {@link Statement}
  */
 public class ContinueStatement extends Statement {
 
     private String label;
 
+    /**
+     * Constructs an unlabeled continue statement that continues the innermost enclosing loop.
+     */
     public ContinueStatement() {
         this(null);
     }
 
+    /**
+     * Constructs a labeled continue statement that continues the enclosing loop with the given label.
+     *
+     * @param label the name of the label to continue to, or null for an unlabeled continue
+     */
     public ContinueStatement(String label) {
         this.label = label;
     }
 
+    /**
+     * Returns the label associated with this continue statement.
+     *
+     * @return the label name, or null if this is an unlabeled continue statement
+     */
     public String getLabel() {
         return label;
     }

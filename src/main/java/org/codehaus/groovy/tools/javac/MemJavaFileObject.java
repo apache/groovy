@@ -64,11 +64,24 @@ public class MemJavaFileObject extends SimpleJavaFileObject {
         }
     }
 
+    /**
+     * Returns the in-memory source content.
+     *
+     * @param ignoreEncodingErrors ignored because the content is already a
+     * character sequence
+     * @return the source content
+     */
     @Override
     public CharSequence getCharContent(boolean ignoreEncodingErrors) {
         return src;
     }
 
+    /**
+     * Compares this file object by its class name.
+     *
+     * @param o the object to compare against
+     * @return {@code true} if the other object represents the same class name
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -76,11 +89,21 @@ public class MemJavaFileObject extends SimpleJavaFileObject {
         return Objects.equals(className, that.className);
     }
 
+    /**
+     * Returns the hash code derived from the class name.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return Objects.hash(className);
     }
 
+    /**
+     * Returns a diagnostic string for this in-memory Java file object.
+     *
+     * @return a string representation of this file object
+     */
     @Override
     public String toString() {
         return "MemJavaFileObject{" +

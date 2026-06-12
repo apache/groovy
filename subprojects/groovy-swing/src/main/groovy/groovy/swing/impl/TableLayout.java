@@ -22,21 +22,34 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Represents a HTML style table layout
+ * A lightweight container that arranges children using table-like row and cell semantics.
  */
 public class TableLayout extends JPanel {
 
     private int rowCount;
     private int cellpadding;
 
+    /**
+     * Creates an empty table layout backed by a {@link GridBagLayout}.
+     */
     public TableLayout() {
         setLayout(new GridBagLayout());
     }
 
+    /**
+     * Returns the padding applied around each cell.
+     *
+     * @return the cell padding in pixels
+     */
     public int getCellpadding() {
         return cellpadding;
     }
 
+    /**
+     * Sets the padding applied around each cell.
+     *
+     * @param cellpadding the cell padding in pixels
+     */
     public void setCellpadding(int cellpadding) {
         this.cellpadding = cellpadding;
     }

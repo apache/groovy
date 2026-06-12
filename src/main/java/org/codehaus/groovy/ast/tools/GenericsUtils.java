@@ -62,16 +62,36 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUnbo
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.resolveClassNodeGenerics;
 
 /**
- * Utility methods to deal with parameterized types.
+ * Utility methods for working with parameterized (generic) types in Groovy AST.
+ *
+ * <p>Provides comprehensive support for generic type operations including:
+ * <ul>
+ *   <li>Type parameter extraction and alignment</li>
+ *   <li>Wildcard type construction and handling</li>
+ *   <li>Generic type specification creation and resolution</li>
+ *   <li>Inheritance hierarchy generic type parameterization</li>
+ *   <li>Type compatibility and assignability checks with generics</li>
+ * </ul>
+ *
+ * <p>Used extensively in static type checking, method resolution, and AST transformation
+ * to properly handle Java generic type syntax in Groovy code.
+ *
+ * @see GenericsType for type parameter/argument representation
+ * @see ClassNode for class information with generics
+ * @see ClassHelper for related class utilities
  */
 public class GenericsUtils {
 
     /**
+     * An empty array of generic type arguments, used as a constant to avoid repeated allocations.
+     *
      * @since 2.0.0
      */
     public static final GenericsType[] EMPTY_GENERICS_ARRAY = GenericsType.EMPTY_ARRAY;
 
     /**
+     * Canonical string representation of {@code java.lang.Object}.
+     *
      * @since 3.0.0
      */
     public static final String JAVA_LANG_OBJECT = ClassHelper.OBJECT;

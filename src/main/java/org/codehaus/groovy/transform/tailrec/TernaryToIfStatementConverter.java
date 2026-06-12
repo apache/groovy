@@ -30,6 +30,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
  * Therefore this class translates a ternary statement (or Elvis operator) into the equivalent if-else statement.
  */
 public class TernaryToIfStatementConverter {
+    /**
+     * Rewrites a return statement containing a ternary or Elvis expression into an equivalent if/else statement.
+     *
+     * @param statementWithInnerTernaryExpression the return statement to convert
+     * @return the converted statement, or the original statement if no ternary expression is present
+     */
     @SuppressWarnings("Instanceof")
     public Statement convert(ReturnStatement statementWithInnerTernaryExpression) {
         if (!(statementWithInnerTernaryExpression.getExpression() instanceof TernaryExpression ternary))

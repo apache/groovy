@@ -20,22 +20,41 @@ package groovy.yaml;
 
 import groovy.lang.GroovyRuntimeException;
 
+import java.io.Serial;
+
 /**
- * Represents runtime exception occurred when parsing or building YAML
+ * Represents a runtime exception raised while parsing or building YAML.
  *
  * @since 3.0.0
  */
 public class YamlRuntimeException extends GroovyRuntimeException {
+    @Serial
     private static final long serialVersionUID = -6071053120162025455L;
 
+    /**
+     * Creates an exception with a detail message.
+     *
+     * @param msg the description of the failure
+     */
     public YamlRuntimeException(String msg) {
         super(msg);
     }
 
+    /**
+     * Creates an exception that wraps the underlying cause.
+     *
+     * @param cause the original failure
+     */
     public YamlRuntimeException(Throwable cause) {
         super(cause);
     }
 
+    /**
+     * Creates an exception with both a detail message and an underlying cause.
+     *
+     * @param msg the description of the failure
+     * @param cause the original failure
+     */
     public YamlRuntimeException(String msg, Throwable cause) {
         super(msg, cause);
     }

@@ -49,20 +49,47 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 
+/**
+ * Utility methods for reasoning about Groovy AST expressions.
+ */
 public final class ExpressionUtils {
 
+    /**
+     * Checks whether the supplied expression is the {@code null} literal.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if the expression is a null constant
+     */
     public static boolean isNullConstant(final Expression expression) {
         return expression instanceof ConstantExpression && ((ConstantExpression) expression).isNullExpression();
     }
 
+    /**
+     * Checks whether the supplied expression references {@code this}.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if the expression is a {@code this} reference
+     */
     public static boolean isThisExpression(final Expression expression) {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isThisExpression();
     }
 
+    /**
+     * Checks whether the supplied expression references {@code super}.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if the expression is a {@code super} reference
+     */
     public static boolean isSuperExpression(final Expression expression) {
         return expression instanceof VariableExpression && ((VariableExpression) expression).isSuperExpression();
     }
 
+    /**
+     * Checks whether the supplied expression references {@code this} or {@code super}.
+     *
+     * @param expression the expression to inspect
+     * @return {@code true} if the expression is either a {@code this} or {@code super} reference
+     */
     public static boolean isThisOrSuper(final Expression expression) {
         return isThisExpression(expression) || isSuperExpression(expression);
     }

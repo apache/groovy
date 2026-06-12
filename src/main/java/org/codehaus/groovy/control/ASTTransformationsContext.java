@@ -27,24 +27,54 @@ import java.util.Set;
  * Stores state information about global AST transformations applied to a compilation unit.
 */
 public class ASTTransformationsContext {
-    protected final GroovyClassLoader transformLoader;  // Classloader for global and local transforms
+    /**
+     * Class loader used to load global and local AST transformations.
+     */
+    protected final GroovyClassLoader transformLoader;
 
-    protected final CompilationUnit compilationUnit; // The compilation unit global AST transformations are applied on
-    protected final Set<String> globalTransformNames = new HashSet<String>(); // collected AST transformation names
+    /**
+     * Compilation unit that receives the transformations.
+     */
+    protected final CompilationUnit compilationUnit;
+    /**
+     * Names of the global transformations applied so far.
+     */
+    protected final Set<String> globalTransformNames = new HashSet<String>();
 
+    /**
+     * Creates a context for tracking AST transformations during compilation.
+     *
+     * @param compilationUnit the compilation unit being transformed
+     * @param transformLoader the class loader used for transformation classes
+     */
     public ASTTransformationsContext(final CompilationUnit compilationUnit, final GroovyClassLoader transformLoader) {
         this.compilationUnit = compilationUnit;
         this.transformLoader = transformLoader;
     }
 
+    /**
+     * Returns the compilation unit associated with this context.
+     *
+     * @return the owning compilation unit
+     */
     public CompilationUnit getCompilationUnit() {
         return compilationUnit;
     }
 
+    /**
+     * Returns the names of applied global AST transformations.
+     *
+     * @return the recorded transformation names
+     */
     public Set<String> getGlobalTransformNames() {
         return globalTransformNames;
     }
 
+    /**
+     * Returns the class loader used to load transformations.
+     *
+     * @return the transformation class loader
+     */
     public GroovyClassLoader getTransformLoader() {
         return transformLoader;
     }

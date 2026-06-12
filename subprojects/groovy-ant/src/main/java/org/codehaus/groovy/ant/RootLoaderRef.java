@@ -27,8 +27,6 @@ import org.apache.tools.ant.types.Reference;
 import org.codehaus.groovy.tools.LoaderConfiguration;
 import org.codehaus.groovy.tools.RootLoader;
 
-import java.security.PrivilegedAction;
-
 /**
  * Sets the RootLoader as reference.
  * Re-execution of this task will set a new instance of RootLoader for
@@ -67,6 +65,11 @@ public class RootLoaderRef extends MatchingTask {
         name = n;
     }
 
+    /**
+     * Creates the referenced loader and stores it in the current Ant project.
+     *
+     * @throws BuildException if the classpath has not been configured
+     */
     @Override
     public void execute() throws BuildException {
         if (taskClasspath == null || taskClasspath.isEmpty()) {
@@ -88,9 +91,7 @@ public class RootLoaderRef extends MatchingTask {
             lc.addFile(s);
         }
 
-        @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-        AntClassLoader loader = java.security.AccessController.doPrivileged((PrivilegedAction<AntClassLoader>) () ->
-                new AntClassLoader(new RootLoader(lc), true));
+        AntClassLoader loader = new AntClassLoader(new RootLoader(lc), true);
 
         project.addReference(name, loader);
     }

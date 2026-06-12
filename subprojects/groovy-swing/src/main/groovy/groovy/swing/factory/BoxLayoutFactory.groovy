@@ -23,8 +23,20 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import javax.swing.*
 import java.awt.*
 
+/**
+ * Factory for creating {@link BoxLayout} instances for the current container.
+ */
 public class BoxLayoutFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name);
         Object parent = builder.getCurrent();
@@ -47,6 +59,13 @@ public class BoxLayoutFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Attaches the current node to its parent when parent-specific handling is required.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
         if (parent instanceof Container) {
             Container target = groovy.swing.factory.LayoutFactory.getLayoutTarget(parent);

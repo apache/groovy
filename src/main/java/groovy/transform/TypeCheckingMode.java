@@ -24,6 +24,13 @@ package groovy.transform;
  * to annotate the class itself then annotate only the methods which require exclusion.
  */
 public enum TypeCheckingMode {
+    /**
+     * Applies type checking to the annotated element.
+     */
     PASS,
+
+    /**
+     * Skips type checking for the annotated element.
+     */
     SKIP
 }

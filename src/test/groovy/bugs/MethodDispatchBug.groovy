@@ -20,32 +20,32 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class MethodDispatchBug {
 
-class MethodDispatchBug {
     def doit(Object parameter1, Object parameter2) {
-        "OO"
+        'OO'
     }
 
     def doit(Boolean parameter1, Object parameter2) {
-        "BO"
+        'BO'
     }
 
     def doit(Object parameter1, Boolean parameter2) {
-        "OB"
+        'OB'
     }
 
     def doit(Boolean parameter1, Boolean parameter2) {
-        "BB"
+        'BB'
     }
 
     @Test
     void testBug() {
-        def o = this;
+        def o = this
 
-        assert "BB" == o.doit(true, true);
-        assert "BO" == o.doit(true, 9);
-        assert "OB" == o.doit(9, true);
-        assert "OO" == o.doit(9, 9);
+        assert 'BB' == o.doit(true, true)
+        assert 'BO' == o.doit(true, 9)
+        assert 'OB' == o.doit(9, true)
+        assert 'OO' == o.doit(9, 9)
     }
 
     def methodWithDefaults(a,b,c=1000) {

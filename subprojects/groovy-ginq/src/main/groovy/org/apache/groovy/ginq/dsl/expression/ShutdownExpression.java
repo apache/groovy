@@ -30,29 +30,62 @@ public class ShutdownExpression extends AbstractGinqExpression {
     private final Expression expr;
     private final int mode;
 
+    /**
+     * Creates a shutdown expression.
+     *
+     * @param expr the original shutdown expression
+     * @param mode the shutdown mode
+     */
     public ShutdownExpression(Expression expr, int mode) {
         this.expr = expr;
         this.mode = mode;
     }
 
+    /**
+     * Accepts a visitor for this expression.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {
         return visitor.visitShutdownExpression(this);
     }
 
+    /**
+     * Returns the original shutdown expression.
+     *
+     * @return the original expression
+     */
     public Expression getExpr() {
         return expr;
     }
 
+    /**
+     * Returns the shutdown mode.
+     *
+     * @return the shutdown mode
+     */
     public int getMode() {
         return mode;
     }
 
+    /**
+     * Returns the textual form of the shutdown expression.
+     *
+     * @return the expression text
+     */
     @Override
     public String getText() {
         return expr.getText();
     }
 
+    /**
+     * Returns the textual form of this expression.
+     *
+     * @return the expression text
+     */
     @Override
     public String toString() {
         return getText();

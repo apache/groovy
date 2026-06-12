@@ -29,13 +29,13 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,8 +51,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)
 public class RecordCompletionASTTransformation extends AbstractASTTransformation {
 
-    private static final Class<? extends Annotation> MY_CLASS = RecordBase.class;
-    public static final ClassNode MY_TYPE = makeWithoutCaching(MY_CLASS, false);
+    public static final ClassNode MY_TYPE = makeWithoutCaching(RecordBase.class, false);
     private static final String MY_TYPE_NAME = MY_TYPE.getNameWithoutPackage();
 
     @Override
@@ -87,6 +86,11 @@ public class RecordCompletionASTTransformation extends AbstractASTTransformation
         ConstructorNode consNode = cNode.getDeclaredConstructor(params.toArray(Parameter.EMPTY_ARRAY));
         if (consNode != null) {
             Statement code = copyWith.getCode();
+            // nested-aware copyWith wraps the return in a block (the leading
+            // statement resolves nested-path keys); unwrap to the return.
+            if (code instanceof BlockStatement bs && !bs.getStatements().isEmpty()) {
+                code = bs.getStatements().get(bs.getStatements().size() - 1);
+            }
             if (code instanceof ReturnStatement rs) {
                 Expression expr = rs.getExpression();
                 if (expr instanceof ConstructorCallExpression) {

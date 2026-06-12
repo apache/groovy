@@ -41,14 +41,34 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static java.lang.System.Logger.Level.INFO;
+
+/**
+ * {@link JavaCompiler} implementation that delegates to the JDK system Java
+ * compiler.
+ */
 public class JavacJavaCompiler implements JavaCompiler {
+
+    private static final System.Logger LOGGER = System.getLogger(JavacJavaCompiler.class.getName());
 
     private final CompilerConfiguration config;
 
+    /**
+     * Creates a javac-backed compiler for the supplied configuration.
+     *
+     * @param config the compiler configuration to use
+     */
     public JavacJavaCompiler(final CompilerConfiguration config) {
         this.config = Objects.requireNonNull(config);
     }
 
+    /**
+     * Compiles the supplied Java source files with javac and reports any
+     * errors back to the Groovy compilation unit.
+     *
+     * @param files the Java source files to compile
+     * @param cu the owning Groovy compilation unit
+     */
     @Override
     public void compile(final List<String> files, final CompilationUnit cu) {
         List<String> javacParameters = makeParameters(cu.getClassLoader());
@@ -76,7 +96,7 @@ public class JavacJavaCompiler implements JavaCompiler {
                 default -> "unexpected return value by javac.";
             }, javacOutput.toString(), cu);
         } else {
-            System.out.print(javacOutput); // print errors/warnings
+            LOGGER.log(INFO, javacOutput.toString()); // javac errors/warnings
         }
     }
 
@@ -213,10 +233,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             || param.equals("release") || param.equals("-release");
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private static java.security.CodeSource getCodeSource() {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<java.security.CodeSource>) () ->
-            GroovyObject.class.getProtectionDomain().getCodeSource()
-        );
+        return GroovyObject.class.getProtectionDomain().getCodeSource();
     }
 }

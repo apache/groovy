@@ -29,7 +29,7 @@ import java.lang.annotation.Target
  * Meta annotation used when defining immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.Immutable} class Customer {
  *     String first, last
  *     int age
@@ -133,7 +133,7 @@ import java.lang.annotation.Target
  * </ul>
  * <p>More examples:</p>
  --------------------------------------------------------------------------------
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * &#64;Immutable(defaults=true, noArg=false)
@@ -201,12 +201,24 @@ import java.lang.annotation.Target
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 @interface Immutable {
-    /** No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only. */
+    /**
+     * No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only.
+     *
+     * @return additional classes treated as immutable for legacy handling
+     */
     Class[] knownImmutableClasses() default []
 
-    /** No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only. */
+    /**
+     * No longer used directly but instead collected from {@link ImmutableOptions}. Remains for legacy handling only.
+     *
+     * @return additional property names treated as immutable for legacy handling
+     */
     String[] knownImmutables() default []
 
-    /** No longer used directly but instead collected from {@link ImmutableBase}. Remains for legacy handling only. */
+    /**
+     * No longer used directly but instead collected from {@link ImmutableBase}. Remains for legacy handling only.
+     *
+     * @return {@code true} if copy-with support should be enabled for legacy handling
+     */
     boolean copyWith() default false
 }

@@ -23,6 +23,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.namespace.QName;
 import groovy.xml.DOMBuilder;
+import groovy.xml.FactorySupport;
 import org.apache.groovy.xml.extensions.XmlExtensions;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.w3c.dom.Attr;
@@ -35,7 +36,6 @@ import org.w3c.dom.Text;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,6 +45,8 @@ import java.util.Map;
 
 /**
  * Category class which adds GPath style operations to Java's DOM classes.
+ * These helpers provide property access, traversal, mutation, and XPath support
+ * for W3C DOM nodes in a style similar to Groovy's XML slurper APIs.
  */
 public class DOMCategory {
     private static boolean trimWhitespace = false;
@@ -86,10 +88,26 @@ public class DOMCategory {
         DOMCategory.keepIgnorableWhitespace = keepIgnorableWhitespace;
     }
 
+    /**
+     * Resolves a GPath-style property lookup against a DOM element.
+     * Supports child element lookup, attribute access using {@code @name},
+     * parent lookup using {@code ..}, and depth-first traversal using {@code **}.
+     *
+     * @param element the element to query
+     * @param elementName the property or selector name
+     * @return the matching child nodes, attribute value, parent node, or traversal view
+     */
     public static Object get(Element element, String elementName) {
         return xgetAt(element, elementName);
     }
 
+    /**
+     * Resolves a GPath-style property lookup against every element in a node list.
+     *
+     * @param nodeList the nodes to query
+     * @param elementName the property or selector name
+     * @return an aggregated result for the supplied selector
+     */
     public static Object get(NodeList nodeList, String elementName) {
         if (nodeList instanceof Element) {
             // things like com.sun.org.apache.xerces.internal.dom.DeferredElementNSImpl
@@ -102,6 +120,13 @@ public class DOMCategory {
         }
     }
 
+    /**
+     * Returns the value of a named attribute from a DOM attribute map.
+     *
+     * @param nodeMap the attributes to query
+     * @param elementName the attribute name
+     * @return the attribute value
+     */
     public static Object get(NamedNodeMap nodeMap, String elementName) {
         return xgetAt(nodeMap, elementName);
     }
@@ -133,6 +158,12 @@ public class DOMCategory {
         return new NodeListsHolder(results);
     }
 
+    /**
+     * Returns the attributes belonging to the supplied element.
+     *
+     * @param element the element whose attributes should be returned
+     * @return the element's attribute map
+     */
     public static NamedNodeMap attributes(Element element) {
         return element.getAttributes();
     }
@@ -142,30 +173,82 @@ public class DOMCategory {
         return a.getValue();
     }
 
+    /**
+     * Returns the number of attributes in a DOM attribute map.
+     *
+     * @param namedNodeMap the attributes to inspect
+     * @return the number of attributes
+     */
     public static int size(NamedNodeMap namedNodeMap) {
         return namedNodeMap.getLength();
     }
 
+    /**
+     * Returns the indexed child visible through DOMCategory navigation.
+     * Negative indices count backward from the end of the result.
+     *
+     * @param o the node or element to index
+     * @param i the zero-based index
+     * @return the selected node, or {@code null} if the index is out of range
+     */
     public static Node getAt(Node o, int i) {
         return nodeGetAt(o, i);
     }
 
+    /**
+     * Returns the indexed node from an aggregated node-list view.
+     * Negative indices count backward from the end of the result.
+     *
+     * @param o the aggregated node-list view
+     * @param i the zero-based index
+     * @return the selected node, or {@code null} if the index is out of range
+     */
     public static Node getAt(NodeListsHolder o, int i) {
         return nodeGetAt(o, i);
     }
 
+    /**
+     * Returns the indexed node from a simple node-list view.
+     * Negative indices count backward from the end of the result.
+     *
+     * @param o the node-list view
+     * @param i the zero-based index
+     * @return the selected node, or {@code null} if the index is out of range
+     */
     public static Node getAt(NodesHolder o, int i) {
         return nodeGetAt(o, i);
     }
 
+    /**
+     * Returns a range of child nodes visible through DOMCategory navigation.
+     * Negative bounds count backward from the end of the result.
+     *
+     * @param o the node or element to slice
+     * @param r the range of indices to select
+     * @return a node-list view containing the selected nodes
+     */
     public static NodeList getAt(Node o, IntRange r) {
         return nodesGetAt(o, r);
     }
 
+    /**
+     * Returns a range of nodes from an aggregated node-list view.
+     *
+     * @param o the aggregated node-list view
+     * @param r the range of indices to select
+     * @return a node-list view containing the selected nodes
+     */
     public static NodeList getAt(NodeListsHolder o, IntRange r) {
         return nodesGetAt(o, r);
     }
 
+    /**
+     * Returns a range of nodes from a simple node-list view.
+     *
+     * @param o the node-list view
+     * @param r the range of indices to select
+     * @return a node-list view containing the selected nodes
+     */
     public static NodeList getAt(NodesHolder o, IntRange r) {
         return nodesGetAt(o, r);
     }
@@ -253,14 +336,33 @@ public class DOMCategory {
         return new NodesHolder(nodes);
     }
 
+    /**
+     * Returns the DOM node name used for GPath name lookups.
+     *
+     * @param node the node to inspect
+     * @return the node name
+     */
     public static String name(Node node) {
         return node.getNodeName();
     }
 
+    /**
+     * Returns the parent DOM node.
+     *
+     * @param node the node whose parent should be returned
+     * @return the parent node, or {@code null} for a root node
+     */
     public static Node parent(Node node) {
         return node.getParentNode();
     }
 
+    /**
+     * Returns the text visible from a DOM node.
+     * Text and CDATA nodes return their value directly; other nodes concatenate descendant text.
+     *
+     * @param node the node to inspect
+     * @return the concatenated text for the node
+     */
     public static String text(Node node) {
         if (node.getNodeType() == Node.TEXT_NODE || node.getNodeType() == Node.CDATA_SECTION_NODE) {
             return node.getNodeValue();
@@ -271,6 +373,12 @@ public class DOMCategory {
         return "";
     }
 
+    /**
+     * Concatenates the text visible from every node in the list.
+     *
+     * @param nodeList the nodes to inspect
+     * @return the concatenated text for all nodes in document order
+     */
     public static String text(NodeList nodeList) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nodeList.getLength(); i++) {
@@ -279,6 +387,12 @@ public class DOMCategory {
         return sb.toString();
     }
 
+    /**
+     * Copies a {@link NodeList} into a mutable {@link List}.
+     *
+     * @param self the node list to copy
+     * @return a list containing the nodes from the node list
+     */
     public static List<Node> list(NodeList self) {
         List<Node> answer = new ArrayList<Node>();
         Iterator<Node> it = XmlExtensions.iterator(self);
@@ -288,6 +402,12 @@ public class DOMCategory {
         return answer;
     }
 
+    /**
+     * Returns a depth-first traversal view containing the element itself followed by descendant elements.
+     *
+     * @param self the root element for traversal
+     * @return a node-list view in depth-first order
+     */
     public static NodeList depthFirst(Element self) {
         List<NodeList> result = new ArrayList<NodeList>();
         result.add(createNodeList(self));
@@ -295,6 +415,12 @@ public class DOMCategory {
         return new NodeListsHolder(result);
     }
 
+    /**
+     * Sets the value of the first child text node, creating one if the element has no children.
+     *
+     * @param self the element to update
+     * @param value the text value to set
+     */
     public static void setValue(Element self, String value) {
         Node firstChild = self.getFirstChild();
         if (firstChild == null) {
@@ -304,6 +430,14 @@ public class DOMCategory {
         firstChild.setNodeValue(value);
     }
 
+    /**
+     * Performs a GPath-style property assignment on an element.
+     * Attribute assignments use the {@code @name} form; all other properties are delegated to Groovy property handling.
+     *
+     * @param self the element to update
+     * @param property the property or attribute selector
+     * @param value the value to assign
+     */
     public static void putAt(Element self, String property, Object value) {
         if (property.startsWith("@")) {
             String attributeName = property.substring(1);
@@ -316,14 +450,37 @@ public class DOMCategory {
         InvokerHelper.setProperty(self, property, value);
     }
 
+    /**
+     * Appends a child element with the given name.
+     *
+     * @param self the parent element
+     * @param name the child element name, optionally a {@link QName}
+     * @return the appended child element
+     */
     public static Element appendNode(Element self, Object name) {
         return appendNode(self, name, (String)null);
     }
 
+    /**
+     * Appends a child element with the given name and attributes.
+     *
+     * @param self the parent element
+     * @param name the child element name, optionally a {@link QName}
+     * @param attributes the attributes to apply to the new child
+     * @return the appended child element
+     */
     public static Element appendNode(Element self, Object name, Map attributes) {
         return appendNode(self, name, attributes, null);
     }
 
+    /**
+     * Appends a child element with the given name and optional text value.
+     *
+     * @param self the parent element
+     * @param name the child element name, optionally a {@link QName}
+     * @param value the text value to append inside the new child, or {@code null}
+     * @return the appended child element
+     */
     public static Element appendNode(Element self, Object name, String value) {
         Document doc = self.getOwnerDocument();
         Element newChild;
@@ -340,6 +497,15 @@ public class DOMCategory {
         return newChild;
     }
 
+    /**
+     * Appends a child element with attributes and optional text content.
+     *
+     * @param self the parent element
+     * @param name the child element name, optionally a {@link QName}
+     * @param attributes the attributes to apply to the new child
+     * @param value the text value to append inside the new child, or {@code null}
+     * @return the appended child element
+     */
     public static Element appendNode(Element self, Object name, Map attributes, String value) {
         Element result = appendNode(self, name, value);
         for (Object o : attributes.entrySet()) {
@@ -349,6 +515,14 @@ public class DOMCategory {
         return result;
     }
 
+    /**
+     * Replaces a single selected node with the nodes produced by the supplied builder closure.
+     *
+     * @param self the node selection to replace; it must contain exactly one node
+     * @param c the builder closure creating replacement nodes
+     * @return the removed node
+     * @throws GroovyRuntimeException if the selection does not contain exactly one node
+     */
     public static Node replaceNode(NodesHolder self, Closure c) {
         if (self.getLength() != 1) {
             throw new GroovyRuntimeException(
@@ -359,6 +533,14 @@ public class DOMCategory {
         return replaceNode(self.item(0), c);
     }
 
+    /**
+     * Replaces a node with the nodes produced by the supplied builder closure.
+     *
+     * @param self the node to replace
+     * @param c the builder closure creating replacement nodes
+     * @return the removed node
+     * @throws UnsupportedOperationException if {@code self} is the document root
+     */
     public static Node replaceNode(Node self, Closure c) {
         if (self.getParentNode() instanceof Document) {
             throw new UnsupportedOperationException("Replacing the root node is not supported");
@@ -368,6 +550,13 @@ public class DOMCategory {
         return self;
     }
 
+    /**
+     * Adds sibling nodes after the supplied element using the builder closure.
+     *
+     * @param self the element after which new siblings should be inserted
+     * @param c the builder closure creating the sibling nodes
+     * @throws UnsupportedOperationException if {@code self} is the document root
+     */
     public static void plus(Element self, Closure c) {
         if (self.getParentNode() instanceof Document) {
             throw new UnsupportedOperationException("Adding sibling nodes to the root node is not supported");
@@ -408,6 +597,12 @@ public class DOMCategory {
         return result;
     }
 
+    /**
+     * Adds sibling nodes after every element in the supplied node list.
+     *
+     * @param self the elements after which new siblings should be inserted
+     * @param c the builder closure creating the sibling nodes
+     */
     public static void plus(NodeList self, Closure c) {
         for (int i = 0; i < self.getLength(); i++) {
             plus((Element) self.item(i), c);
@@ -420,6 +615,12 @@ public class DOMCategory {
         return new NodesHolder(first);
     }
 
+    /**
+     * Returns a breadth-first traversal view containing the element and its descendants level by level.
+     *
+     * @param self the root element for traversal
+     * @return a node-list view in breadth-first order
+     */
     public static NodeList breadthFirst(Element self) {
         List<NodeList> result = new ArrayList<NodeList>();
         NodeList thisLevel = createNodeList(self);
@@ -441,6 +642,13 @@ public class DOMCategory {
         return new NodeListsHolder(result);
     }
 
+    /**
+     * Returns the child nodes visible to DOMCategory navigation.
+     * Child elements are always included, and retained text nodes are included when they are not discarded as ignorable whitespace.
+     *
+     * @param self the parent element
+     * @return a node-list view of the visible children
+     */
     public static NodeList children(Element self) {
         return getChildElements(self, "*");
     }
@@ -473,6 +681,12 @@ public class DOMCategory {
         return new NodesHolder(result);
     }
 
+    /**
+     * Renders a DOMCategory value in a GPath-friendly string form.
+     *
+     * @param o the value to render
+     * @return text for text nodes, list-style output for node lists, or {@code o.toString()}
+     */
     public static String toString(Object o) {
         if (o instanceof Node) {
             if (((Node) o).getNodeType() == Node.TEXT_NODE) {
@@ -485,8 +699,17 @@ public class DOMCategory {
         return o.toString();
     }
 
+    /**
+     * Evaluates an XPath expression against the supplied node.
+     *
+     * @param self the context node
+     * @param expression the XPath expression to evaluate
+     * @param returnType the desired XPath return type
+     * @return the XPath evaluation result
+     * @throws GroovyRuntimeException if the expression cannot be evaluated
+     */
     public static Object xpath(Node self, String expression, javax.xml.namespace.QName returnType) {
-        final XPath xpath = XPathFactory.newInstance().newXPath();
+        final XPath xpath = FactorySupport.createXPathFactory().newXPath();
         try {
             return xpath.evaluate(expression, self, returnType);
         } catch (XPathExpressionException e) {
@@ -494,8 +717,16 @@ public class DOMCategory {
         }
     }
 
+    /**
+     * Evaluates an XPath expression against the supplied node and returns the string result.
+     *
+     * @param self the context node
+     * @param expression the XPath expression to evaluate
+     * @return the string result of the XPath evaluation
+     * @throws GroovyRuntimeException if the expression cannot be evaluated
+     */
     public static String xpath(Node self, String expression) {
-        final XPath xpath = XPathFactory.newInstance().newXPath();
+        final XPath xpath = FactorySupport.createXPathFactory().newXPath();
         try {
             return xpath.evaluate(expression, self);
         } catch (XPathExpressionException e) {
@@ -515,10 +746,22 @@ public class DOMCategory {
         return sb.toString();
     }
 
+    /**
+     * Returns the number of nodes in the supplied node list.
+     *
+     * @param self the node list to inspect
+     * @return the number of nodes
+     */
     public static int size(NodeList self) {
         return self.getLength();
     }
 
+    /**
+     * Determines whether the supplied node list is empty.
+     *
+     * @param self the node list to inspect
+     * @return {@code true} if the node list contains no nodes
+     */
     public static boolean isEmpty(NodeList self) {
         return size(self) == 0;
     }
@@ -541,6 +784,9 @@ public class DOMCategory {
             this.nodeLists = nodeLists;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public int getLength() {
             int length = 0;
@@ -550,6 +796,9 @@ public class DOMCategory {
             return length;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Node item(int index) {
             int relativeIndex = index;
@@ -562,6 +811,11 @@ public class DOMCategory {
             return null;
         }
 
+        /**
+         * Returns the DOMCategory list rendering of this aggregated node-list view.
+         *
+         * @return a list-style string representation
+         */
         @Override
         public String toString() {
             return DOMCategory.toString(this);
@@ -575,11 +829,17 @@ public class DOMCategory {
             this.nodes = nodes;
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public int getLength() {
             return nodes.size();
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Node item(int index) {
             if (index < 0 || index >= getLength()) {

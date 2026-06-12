@@ -18,10 +18,21 @@
  */
 package org.apache.groovy.groovysh.jline
 
+/**
+ * Stores a source fragment together with its snippet classification.
+ */
 class Snippet {
+    /** Classification assigned to the snippet. */
     SnippetType type
+    /** Source text stored for the snippet. */
     String snippet
 
+    /**
+     * Creates a typed snippet wrapper.
+     *
+     * @param type snippet classification
+     * @param snippet source text to store
+     */
     Snippet(SnippetType type, String snippet) {
         this.type = type
         this.snippet = snippet

@@ -18,14 +18,21 @@
  */
 package groovy.yaml;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import groovy.json.JsonSlurper;
 import org.apache.groovy.yaml.util.YamlConverter;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -37,6 +44,9 @@ import java.nio.file.Path;
 public class YamlSlurper {
     private final JsonSlurper jsonSlurper;
 
+    /**
+     * Creates a YAML parser that produces standard Groovy data structures.
+     */
     public YamlSlurper() {
         this.jsonSlurper = new JsonSlurper();
     }
@@ -68,7 +78,7 @@ public class YamlSlurper {
      * @return the root node of the parsed tree of Nodes
      */
     public Object parse(InputStream stream) {
-        return parse(new InputStreamReader(stream));
+        return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     /**
@@ -88,7 +98,88 @@ public class YamlSlurper {
      * @return the root node of the parsed tree of Nodes
      */
     public Object parse(Path path) throws IOException {
-        // note: convert to an input stream to allow the support of foreign file objects
-        return parse(Files.newInputStream(path));
+        try (InputStream stream = Files.newInputStream(path)) {
+            return parse(new InputStreamReader(stream, StandardCharsets.UTF_8));
+        }
+    }
+
+    /**
+     * Parse the content of the specified YAML text into a typed object using Jackson databinding.
+     * Supports {@code @JsonProperty} and {@code @JsonFormat} annotations for
+     * property mapping and type conversion.
+     *
+     * @param type the target type
+     * @param yaml the content of YAML
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseTextAs(Class<T> type, String yaml) {
+        return parseAs(type, new StringReader(yaml));
+    }
+
+    /**
+     * Parse YAML from a reader into a typed object.
+     *
+     * @param type the target type
+     * @param reader the reader of YAML
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Reader reader) {
+        try {
+            return mapper(new YAMLFactory()).readValue(reader, type);
+        } catch (IOException e) {
+            throw new YamlRuntimeException(e);
+        }
+    }
+
+    static ObjectMapper mapper(YAMLFactory factory) {
+        return new ObjectMapper(factory)
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
+    }
+
+    /**
+     * Parse YAML from an input stream into a typed object.
+     *
+     * @param type the target type
+     * @param stream the input stream of YAML
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, InputStream stream) {
+        return parseAs(type, new InputStreamReader(stream, StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Parse YAML from a file into a typed object.
+     *
+     * @param type the target type
+     * @param file the YAML file
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, File file) throws IOException {
+        return parseAs(type, file.toPath());
+    }
+
+    /**
+     * Parse YAML from a path into a typed object.
+     *
+     * @param type the target type
+     * @param path the path to the YAML file
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Path path) throws IOException {
+        try (InputStream stream = Files.newInputStream(path)) {
+            return parseAs(type, new InputStreamReader(stream, StandardCharsets.UTF_8));
+        }
     }
 }

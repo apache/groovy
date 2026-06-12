@@ -30,11 +30,18 @@ public class MapEntry implements Map.Entry {
     private Object key;
     private Object value;
 
+    /**
+     * Creates a map entry with the supplied key and value.
+     *
+     * @param key the entry key
+     * @param value the entry value
+     */
     public MapEntry(Object key, Object value) {
         this.key = key;
         this.value = value;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object that) {
         if (that instanceof MapEntry) {
@@ -43,34 +50,50 @@ public class MapEntry implements Map.Entry {
         return false;
     }
 
+    /**
+     * Compares this entry with another {@code MapEntry}.
+     *
+     * @param that the entry to compare with
+     * @return {@code true} if both key and value are equal
+     */
     public boolean equals(MapEntry that) {
         return DefaultTypeTransformation.compareEqual(this.key, that.key) && DefaultTypeTransformation.compareEqual(this.value, that.value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return hash(key) ^ hash(value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return key + ":" + value;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object getKey() {
         return key;
     }
 
+    /**
+     * Updates the entry key.
+     *
+     * @param key the new key
+     */
     public void setKey(Object key) {
         this.key = key;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object getValue() {
         return value;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object setValue(Object value) {
         this.value = value;

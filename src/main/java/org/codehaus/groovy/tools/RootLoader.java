@@ -19,12 +19,19 @@
 package org.codehaus.groovy.tools;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * This ClassLoader should be used as root of class loaders. Any
@@ -166,6 +173,27 @@ public class RootLoader extends URLClassLoader {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Collapses entries that resolve to the same canonical jar file so callers
+     * such as {@link java.util.ServiceLoader} don't see the same providers
+     * twice when the launcher's startup classpath and the {@code load} entries
+     * in {@code groovy-starter.conf} reference the same jar (GROOVY-11978).
+     */
+    @Override
+    public Enumeration<URL> getResources(final String name) throws IOException {
+        LinkedHashSet<URL> result = new LinkedHashSet<>();
+        Set<File> seenJars = new HashSet<>();
+        appendUnique(findResources(name), result, seenJars);
+        ClassLoader parent = getParent();
+        Enumeration<URL> parentResources = (parent != null)
+                ? parent.getResources(name)
+                : ClassLoader.getSystemResources(name);
+        appendUnique(parentResources, result, seenJars);
+        return Collections.enumeration(result);
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     public void addURL(final URL url) {
@@ -178,5 +206,45 @@ public class RootLoader extends URLClassLoader {
     @Override
     protected Class<?> findClass(final String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name);
+    }
+
+    private static void appendUnique(Enumeration<URL> in, Set<URL> out, Set<File> seenJars) {
+        while (in.hasMoreElements()) {
+            URL u = in.nextElement();
+            File jar = jarFileOf(u);
+            if (jar == null) {
+                out.add(u); // directory or non-file URL — URL identity is enough
+            } else if (seenJars.add(jar)) {
+                out.add(u); // first occurrence of this jar wins
+            }
+        }
+    }
+
+    private static File jarFileOf(URL u) {
+        if (!"jar".equals(u.getProtocol())) return null;
+        String s = u.toString();
+        int bang = s.indexOf("!/");
+        if (bang < 0) return null;
+        String inner = s.substring(4, bang); // strip "jar:" prefix
+        if (!inner.startsWith("file:")) return null;
+        try {
+            return canonicalFile(new File(URI.create(inner)));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private static File canonicalFile(File f) {
+        try {
+            // Path.toRealPath follows symlinks on every platform; File.getCanonicalFile
+            // only does so on UNIX, which is why we don't use it here.
+            return f.toPath().toRealPath().toFile();
+        } catch (IOException e) {
+            try {
+                return f.getCanonicalFile();
+            } catch (IOException e2) {
+                return f.getAbsoluteFile();
+            }
+        }
     }
 }

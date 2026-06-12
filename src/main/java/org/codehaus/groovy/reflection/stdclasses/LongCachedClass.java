@@ -20,14 +20,32 @@ package org.codehaus.groovy.reflection.stdclasses;
 
 import org.codehaus.groovy.reflection.ClassInfo;
 
+/**
+ * Provides optimized reflection caching for {@code long} and {@link java.lang.Long}.
+ * Coerces numeric arguments to long values for type-safe method invocation.
+ * Optionally allows {@code null} values for the boxed {@link Long} class variant.
+ */
 public class LongCachedClass extends NumberCachedClass {
     private final boolean allowNull;
 
+    /**
+     * Constructs a cached class representation for the given long class.
+     *
+     * @param klazz the long class to cache (either {@code long.class} or {@link Long}.class)
+     * @param classInfo the class information associated with this cached class
+     * @param allowNull {@code true} to allow {@code null} values (for {@link Long}.class), {@code false} for primitive {@code long}
+     */
     public LongCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
         this.allowNull = allowNull;
     }
 
+    /**
+     * Coerces the given numeric argument to a long value.
+     *
+     * @param argument the argument to coerce
+     * @return the argument as a {@code long}, or the original argument if not a number
+     */
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Long) {
@@ -40,11 +58,24 @@ public class LongCachedClass extends NumberCachedClass {
         return argument;
     }
 
+    /**
+     * Checks if the given argument is directly assignable without type conversion.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is a {@link Long} instance, or {@code null} is allowed, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return (allowNull && argument == null) || argument instanceof Long;
     }
 
+    /**
+     * Determines if the given class can be transformed to long/Long.
+     * Accepts integral types and boxed integral types.
+     *
+     * @param classToTransformFrom the source class to check
+     * @return {@code true} if the class can be transformed to long, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return (allowNull && classToTransformFrom == null)

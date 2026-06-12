@@ -18,9 +18,19 @@
  */
 package groovy.lang;
 
-public class SpreadListEvaluatingException extends GroovyRuntimeException {
-    private static final long serialVersionUID = 4565947835333349093L;
+import java.io.Serial;
 
+/**
+ * Thrown when evaluating a spread list expression fails.
+ */
+public class SpreadListEvaluatingException extends GroovyRuntimeException {
+    @Serial private static final long serialVersionUID = 4565947835333349093L;
+
+    /**
+     * Creates a spread list evaluation exception.
+     *
+     * @param message the detail message
+     */
     public SpreadListEvaluatingException(String message) {
         super(message);
     }

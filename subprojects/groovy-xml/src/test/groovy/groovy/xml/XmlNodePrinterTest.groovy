@@ -104,12 +104,12 @@ class XmlNodePrinterTest {
     }
 
     @Test
-    void testNamespacesDefault() {
+    void namespacesDefault() {
         checkRoundtrip namespaceInput, namespaceInput
     }
 
     @Test
-    void testNamespacesPreserving() {
+    void namespacesPreserving() {
         parser.trimWhitespace = false
         parser.keepIgnorableWhitespace = true
         setUpNoindentingPrinter()
@@ -117,25 +117,25 @@ class XmlNodePrinterTest {
     }
 
     @Test
-    void testNamespacesDisabledOnParsing() {
+    void namespacesDisabledOnParsing() {
         parser = new XmlParser(false, false)
         parser.trimWhitespace = true
         checkRoundtrip namespaceInput, namespaceInput
     }
 
     @Test
-    void testNamespacesDisabledOnPrinting() {
+    void namespacesDisabledOnPrinting() {
         printer.namespaceAware = false
         checkRoundtrip namespaceInput, noNamespaceInputVerbose
     }
 
     @Test
-    void testWithoutNamespacesVerboseInDefaultOut() {
+    void withoutNamespacesVerboseInDefaultOut() {
         checkRoundtrip noNamespaceInputVerbose, noNamespaceInputVerbose
     }
 
     @Test
-    void testWithoutNamespacesVerbosePreserving() {
+    void withoutNamespacesVerbosePreserving() {
         parser.trimWhitespace = false
         parser.keepIgnorableWhitespace = true
         setUpNoindentingPrinter()
@@ -143,64 +143,64 @@ class XmlNodePrinterTest {
     }
 
     @Test
-    void testWithoutNamespacesVerboseInPreserveOut() {
+    void withoutNamespacesVerboseInPreserveOut() {
         printer.preserveWhitespace = true
         checkRoundtrip noNamespaceInputVerbose, noNamespaceInputCompact
     }
 
     @Test
-    void testWithoutNamespacesCompactInPreserveOut() {
+    void withoutNamespacesCompactInPreserveOut() {
         printer.preserveWhitespace = true
         checkRoundtrip noNamespaceInputCompact, noNamespaceInputCompact
     }
 
     @Test
-    void testNoExpandOfEmptyElements() {
+    void noExpandOfEmptyElements() {
         checkRoundtrip emptyTagExpanded, emptyTagCompact
     }
 
     @Test
-    void testExpandEmptyElements() {
+    void expandEmptyElements() {
         printer.expandEmptyElements = true
         checkRoundtrip emptyTagExpanded, emptyTagExpanded
     }
 
     @Test
-    void testWithoutNamespacesCompactInDefaultOut() {
+    void withoutNamespacesCompactInDefaultOut() {
         checkRoundtrip noNamespaceInputCompact, noNamespaceInputVerbose
     }
 
     @Test
-    void testAttributeWithQuot() {
+    void attributeWithQuot() {
         printer = new XmlNodePrinter(pw, "  ", "\"")
         checkRoundtrip attributeInput, attributeExpectedOutputQuot
     }
 
     @Test
-    void testAttributeWithApos() {
+    void attributeWithApos() {
         printer = new XmlNodePrinter(pw, "  ", "'")
         checkRoundtrip attributeInput, attributeExpectedOutputApos
     }
 
     @Test
-    void testAttributeWithNewline() {
+    void attributeWithNewline() {
         checkRoundtrip attributeWithNewlineInput, attributeWithNewlineExpectedOutput
     }
 
     @Test
-    void testContentWithSpecialSymbolsApos() {
+    void contentWithSpecialSymbolsApos() {
         printer = new XmlNodePrinter(pw, "  ", "'")
         checkRoundtrip tagWithSpecialChars, tagWithSpecialChars
     }
 
     @Test
-    void testContentWithSpecialSymbolsQuot() {
+    void contentWithSpecialSymbolsQuot() {
         printer = new XmlNodePrinter(pw, "  ", "\"")
         checkRoundtrip tagWithSpecialChars, tagWithSpecialChars
     }
 
     @Test
-    void testAttributeWithNamespaceInput() {
+    void attributeWithNamespaceInput() {
         checkRoundtrip attributeWithNamespaceInput, attributeWithNamespaceInput
     }
 

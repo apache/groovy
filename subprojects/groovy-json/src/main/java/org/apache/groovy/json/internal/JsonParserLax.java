@@ -21,6 +21,9 @@ package org.apache.groovy.json.internal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * JSON parser variant that also accepts comments, single quotes, and unquoted strings.
+ */
 public class JsonParserLax extends JsonParserCharArray {
 
     private final boolean useValues;
@@ -28,22 +31,51 @@ public class JsonParserLax extends JsonParserCharArray {
     private final boolean lazyChop;
     private final boolean defaultCheckDates;
 
+    /**
+     * Creates a lax parser with eager value containers and lazy chopping.
+     */
     public JsonParserLax() {
         this(true);
     }
 
+    /**
+     * Creates a lax parser with the supplied value-container mode.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     */
     public JsonParserLax(boolean useValues) {
         this(useValues, false);
     }
 
+    /**
+     * Creates a lax parser with explicit chopping behavior.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     * @param chop whether to eagerly copy overlay slices
+     */
     public JsonParserLax(boolean useValues, boolean chop) {
         this(useValues, chop, !chop);
     }
 
+    /**
+     * Creates a lax parser with explicit lazy chopping behavior.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     * @param chop whether to eagerly copy overlay slices
+     * @param lazyChop whether to defer chopping until values are accessed
+     */
     public JsonParserLax(boolean useValues, boolean chop, boolean lazyChop) {
         this(useValues, chop, lazyChop, true);
     }
 
+    /**
+     * Creates a lax parser with full overlay configuration.
+     *
+     * @param useValues whether to use eager {@link Value} containers
+     * @param chop whether to eagerly copy overlay slices
+     * @param lazyChop whether to defer chopping until values are accessed
+     * @param defaultCheckDates whether strings should be tested for supported date formats
+     */
     public JsonParserLax(boolean useValues, boolean chop, boolean lazyChop, boolean defaultCheckDates) {
         this.useValues = useValues;
         this.chop = chop;
@@ -51,7 +83,10 @@ public class JsonParserLax extends JsonParserCharArray {
         this.defaultCheckDates = defaultCheckDates;
     }
 
+    @SuppressWarnings("unchecked")
     private Value decodeJsonObjectLax() {
+        enterNesting();
+        try {
         if (__currentChar == '{')
             this.nextChar();
 
@@ -168,6 +203,9 @@ public class JsonParserLax extends JsonParserCharArray {
         }
 
         return value;
+        } finally {
+            exitNesting();
+        }
     }
 
     private Value extractLaxString(int startIndexOfKey, int end, boolean encoded, boolean checkDate) {
@@ -210,6 +248,11 @@ public class JsonParserLax extends JsonParserCharArray {
         return new CharSequenceValue(chop, Type.STRING, startIndexOfKey, endIndex + 1, this.charArray, encoded, checkDate);
     }
 
+    /**
+     * Decodes the next value using the parser's lax JSON rules.
+     *
+     * @return parsed Groovy JSON value or overlay value
+     */
     @Override
     protected final Object decodeValue() {
         return this.decodeValueInternal();
@@ -589,6 +632,8 @@ public class JsonParserLax extends JsonParserCharArray {
     }
 
     private Value decodeJsonArrayLax() {
+        enterNesting();
+        try {
         if (__currentChar == '[') {
             __index++;
         }
@@ -597,7 +642,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         if (__currentChar == ']') {
             __index++;
-            return new ValueContainer(new ArrayList());
+            return new ValueContainer(new ArrayList<>());
         }
 
         List<Object> list;
@@ -655,8 +700,17 @@ public class JsonParserLax extends JsonParserCharArray {
         } while (this.hasMore());
 
         return value;
+        } finally {
+            exitNesting();
+        }
     }
 
+    /**
+     * Parses a character buffer and unwraps top-level container values.
+     *
+     * @param cs JSON content to parse
+     * @return parsed Groovy JSON value
+     */
     @Override
     protected final Object decodeFromChars(char[] cs) {
         Value value = ((Value) super.decodeFromChars(cs));

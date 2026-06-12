@@ -26,17 +26,23 @@ import java.util.Set;
  * a later time.  Users much implement the HasCleanup interface.
  */
 public class Janitor implements HasCleanup {
-    private final Set pending = new HashSet();   // All objects pending cleanup
+    private final Set<HasCleanup> pending = new HashSet<>();
 
+    /**
+     * Registers a cleanup participant to be closed later.
+     *
+     * @param object the cleanup participant to register
+     */
     public void register(HasCleanup object) {
         pending.add(object);
     }
 
+    /**
+     * Invokes cleanup on all registered participants and clears the registry.
+     */
     @Override
     public void cleanup() {
-        for (Object o : pending) {
-            HasCleanup object = (HasCleanup) o;
-
+        for (HasCleanup object : pending) {
             try {
                 object.cleanup();
             } catch (Exception e) {

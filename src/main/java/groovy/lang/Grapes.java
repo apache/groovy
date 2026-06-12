@@ -18,6 +18,10 @@
  */
 package groovy.lang;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
+
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -60,8 +64,15 @@ import java.lang.annotation.RetentionPolicy;
  * It is also sometimes also useful to use {@code @GrabConfig} to further adjust how dependencies
  * are grabbed. See {@code @GrabConfig} for further information.
  */
+@Documented
 @Retention(RetentionPolicy.SOURCE)
+@ExtendedTarget(ExtendedElementType.IMPORT)
 public @interface Grapes {
+    /**
+     * Lists the grab-related annotations to apply together.
+     *
+     * @return the grouped grab annotations
+     */
     Grab[] value();
 
     /**

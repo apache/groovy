@@ -73,6 +73,9 @@ public class GroovyAssert {
 
     private static final AtomicInteger counter = new AtomicInteger(0);
 
+    /**
+     * Prefix used for synthetic script names created by assertion helpers.
+     */
     public static final String TEST_SCRIPT_NAME_PREFIX = "TestScript";
 
     /**
@@ -105,6 +108,11 @@ public class GroovyAssert {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Fails the current test with the supplied message.
+     *
+     * @param message the failure message; may be {@code null}
+     */
     public static void fail(final String message) {
         if (message == null) {
             throw new AssertionError();

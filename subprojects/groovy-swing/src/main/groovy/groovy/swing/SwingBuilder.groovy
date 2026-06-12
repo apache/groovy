@@ -85,18 +85,29 @@ import java.lang.reflect.InvocationTargetException
 import java.util.logging.Logger
 
 /**
- * A helper class for creating Swing widgets using GroovyMarkup
+ * Builder that exposes Swing components, layouts, bindings, and threading helpers through a Groovy DSL.
  */
 class SwingBuilder extends FactoryBuilderSupport {
 
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
     private static boolean headless = false
 
+    /**
+     * Context key containing the attribute name used to publish created nodes as builder variables.
+     */
     static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id"
+    /**
+     * Default attribute name used when no custom delegate property id is configured.
+     */
     static final String DEFAULT_DELEGATE_PROPERTY_OBJECT_ID = "id"
 
     private static final Random random = new Random()
 
+    /**
+     * Creates a new Swing builder and optionally performs the default initialization.
+     *
+     * @param init whether superclass initialization should run immediately
+     */
     SwingBuilder(boolean init = true) {
         super(init)
         headless = GraphicsEnvironment.isHeadless()
@@ -104,6 +115,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         this[DELEGATE_PROPERTY_OBJECT_ID] = DEFAULT_DELEGATE_PROPERTY_OBJECT_ID
     }
 
+    /**
+     * Registers support nodes, explicit methods, and attribute delegates that do not create visible widgets.
+     */
     def registerSupportNodes() {
         registerFactory("action", new ActionFactory())
         registerFactory("actions", new CollectionFactory())
@@ -121,6 +135,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerExplicitMethod("shortcut", this.&shortcut)
     }
 
+    /**
+     * Registers binding-related factories and delegates.
+     */
     def registerBinding() {
         BindFactory bindFactory = new BindFactory()
         registerFactory("bind", bindFactory)
@@ -129,6 +146,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory ("bindGroup", new BindGroupFactory())
     }
 
+    /**
+     * Registers pass-through nodes that wrap existing beans or components.
+     */
     def registerPassThruNodes() {
         registerFactory("widget", new WidgetFactory(Component, true))
         registerFactory("container", new WidgetFactory(Component, false))
@@ -136,6 +156,9 @@ class SwingBuilder extends FactoryBuilderSupport {
     }
 
 
+    /**
+     * Registers top-level window factories.
+     */
     def registerWindows() {
         registerFactory("dialog", new DialogFactory())
         registerBeanFactory("fileChooser", JFileChooser)
@@ -144,6 +167,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("window", new WindowFactory())
     }
 
+    /**
+     * Registers button-like widgets that can share Swing actions.
+     */
     def registerActionButtonWidgets() {
         registerFactory("button", new RichActionWidgetFactory(JButton))
         registerFactory("checkBox", new RichActionWidgetFactory(JCheckBox))
@@ -154,6 +180,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("toggleButton", new RichActionWidgetFactory(JToggleButton))
     }
 
+    /**
+     * Registers text-oriented Swing widgets.
+     */
     def registerTextWidgets() {
         registerFactory("editorPane", new TextArgWidgetFactory(JEditorPane))
         registerFactory("label", new TextArgWidgetFactory(JLabel))
@@ -164,11 +193,17 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("textPane", new TextArgWidgetFactory(JTextPane))
     }
 
+    /**
+     * Registers desktop and internal-frame widgets used for MDI applications.
+     */
     def registerMDIWidgets() {
         registerBeanFactory("desktopPane", JDesktopPane)
         registerFactory("internalFrame", new InternalFrameFactory())
     }
 
+    /**
+     * Registers basic selection and value widgets.
+     */
     def registerBasicWidgets() {
         registerBeanFactory("colorChooser", JColorChooser)
 
@@ -182,12 +217,18 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerBeanFactory("tree", JTree)
     }
 
+    /**
+     * Registers menu-related widgets.
+     */
     def registerMenuWidgets() {
         registerBeanFactory("menu", JMenu)
         registerBeanFactory("menuBar", JMenuBar)
         registerBeanFactory("popupMenu", JPopupMenu)
     }
 
+    /**
+     * Registers container widgets that can host child components.
+     */
     def registerContainers() {
         registerBeanFactory("panel", JPanel)
         registerFactory("scrollPane", new ScrollPaneFactory())
@@ -198,6 +239,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerBeanFactory("layeredPane", JLayeredPane)
     }
 
+    /**
+     * Registers standard Swing data model nodes.
+     */
     def registerDataModels() {
         registerBeanFactory("boundedRangeModel", DefaultBoundedRangeModel)
 
@@ -207,6 +251,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerBeanFactory("spinnerNumberModel", SpinnerNumberModel)
     }
 
+    /**
+     * Registers tables, columns, and table model helper nodes.
+     */
     def registerTableComponents() {
         registerFactory("table", new TableFactory())
         registerBeanFactory("tableColumn", TableColumn)
@@ -217,6 +264,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("column", new ColumnFactory())
     }
 
+    /**
+     * Registers core Swing layout managers and their attribute delegates.
+     */
     def registerBasicLayouts() {
         registerFactory("borderLayout", new LayoutFactory(BorderLayout))
         registerFactory("cardLayout", new LayoutFactory(CardLayout))
@@ -234,6 +284,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         addAttributeDelegate(LayoutFactory.&constraintsAttributeDelegate)
     }
 
+    /**
+     * Registers {@code BoxLayout}-based containers and spacing helpers.
+     */
     def registerBoxLayout() {
         registerFactory("boxLayout", new BoxLayoutFactory())
         registerFactory("box", new BoxFactory())
@@ -247,12 +300,18 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("rigidArea", new RigidAreaFactory())
     }
 
+    /**
+     * Registers table-layout nodes.
+     */
     def registerTableLayout() {
         registerFactory("tableLayout", new TableLayoutFactory())
         registerFactory("tr", new TRFactory())
         registerFactory("td", new TDFactory())
     }
 
+    /**
+     * Registers border factories.
+     */
     def registerBorders() {
         registerFactory("lineBorder", new LineBorderFactory())
         registerFactory("loweredBevelBorder", new BevelBorderFactory(BevelBorder.LOWERED))
@@ -266,6 +325,9 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("matteBorder", new MatteBorderFactory())
     }
 
+    /**
+     * Registers renderer factories for tables, lists, and headers.
+     */
     def registerRenderers() {
         RendererFactory renderFactory = new RendererFactory()
         registerFactory("tableCellRenderer", renderFactory)
@@ -275,12 +337,18 @@ class SwingBuilder extends FactoryBuilderSupport {
         registerFactory("headerRenderer", renderFactory)
     }
 
+    /**
+     * Registers cell editor factories.
+     */
     def registerEditors() {
       registerFactory("cellEditor", new CellEditorFactory())
       registerFactory("editorValue", new CellEditorGetValueFactory())
       registerFactory("prepareEditor", new CellEditorPrepareFactory())
     }
 
+    /**
+     * Registers threading helper methods such as {@code edt} and {@code doLater}.
+     */
     def registerThreading() {
         registerExplicitMethod "edt", this.&edt
         registerExplicitMethod "doOutside", this.&doOutside
@@ -289,7 +357,11 @@ class SwingBuilder extends FactoryBuilderSupport {
 
 
     /**
-     * Do some overrides for standard component handlers, else use super
+     * Registers a bean factory, substituting Swing-specific factory implementations for special component types.
+     *
+     * @param nodeName the builder node name
+     * @param groupName the factory group name
+     * @param klass the bean class to register
      */
     void registerBeanFactory(String nodeName, String groupName, Class klass) {
         // poke at the type to see if we need special handling
@@ -300,7 +372,6 @@ class SwingBuilder extends FactoryBuilderSupport {
         } else if (JTable.isAssignableFrom(klass)) {
             registerFactory(nodeName, groupName, new TableFactory(klass))
         } else if (JComponent.isAssignableFrom(klass)
-            || JApplet.isAssignableFrom(klass)
             || JDialog.isAssignableFrom(klass)
             || JFrame.isAssignableFrom(klass)
             || JWindow.isAssignableFrom(klass)
@@ -313,10 +384,12 @@ class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Utility method to run a closure in EDT,
-     * using <code>SwingUtilities.invokeAndWait</code>.
+     * Runs a closure on the Event Dispatch Thread using {@link SwingUtilities#invokeAndWait(Runnable)} when needed.
      *
-     * @param c this closure is run in the EDT
+     * <p>When already on the EDT, or when running headless, the closure executes immediately.</p>
+     *
+     * @param c the closure to run on the EDT
+     * @return this builder
      */
     SwingBuilder edt(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
@@ -346,10 +419,12 @@ class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Utility method to run a closure in EDT,
-     * using <code>SwingUtilities.invokeLater</code>.
+     * Schedules a closure to run on the Event Dispatch Thread using {@link SwingUtilities#invokeLater(Runnable)}.
      *
-     * @param c this closure is run in the EDT
+     * <p>When running headless, the closure executes immediately.</p>
+     *
+     * @param c the closure to run on the EDT
+     * @return this builder
      */
     SwingBuilder doLater(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
@@ -365,13 +440,12 @@ class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Utility method to run a closure outside of the EDT.
-     * <p>
-     * The closure is wrapped in a thread, and the thread is started
-     * immediately, only if the current thread is the EDT, otherwise the
-     * closure will be called immediately.
+     * Runs a closure outside of the Event Dispatch Thread.
      *
-     * @param c this closure is started outside of the EDT
+     * <p>If called from the EDT a new thread is started immediately; otherwise the closure runs in the current thread.</p>
+     *
+     * @param c the closure to run outside the EDT
+     * @return this builder
      */
     SwingBuilder doOutside(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
@@ -386,10 +460,10 @@ class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Factory method to create a SwingBuilder, and run the
-     * the closure in it on the EDT
+     * Creates a new builder and runs the supplied closure on the EDT.
      *
-     * @param c run this closure in the new builder using the edt method
+     * @param c the closure to execute with the new builder
+     * @return the initialized builder
      */
     static SwingBuilder edtBuilder(@DelegatesTo(SwingBuilder) Closure c) {
         SwingBuilder builder = new SwingBuilder()
@@ -397,8 +471,11 @@ class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Old factory method static SwingBuilder.build(Closure).
-     * @param c run this closure in the builder using the edt method
+     * Supports the legacy static {@code SwingBuilder.build(Closure)} entry point.
+     *
+     * @param method the missing static method name
+     * @param args the missing static method arguments
+     * @return the builder created for the legacy {@code build} call
      */
     @Deprecated
     static SwingBuilder '$static_methodMissing'(String method, Object args) {
@@ -410,19 +487,34 @@ class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Compatibility API.
+     * Executes a closure against this builder for compatibility with older APIs.
      *
-     * @param c run this closure in the builder
+     * @param c the closure to execute
+     * @return the closure result
      */
     Object build(@DelegatesTo(SwingBuilder) Closure c) {
         c.setDelegate(this)
         return c.call()
     }
 
+    /**
+     * Creates a menu-shortcut keystroke for the supplied key and additional modifiers.
+     *
+     * @param key the key specification accepted by {@link KeyStroke#getKeyStroke(Object, int)}
+     * @param modifier additional modifier mask bits
+     * @return the created keystroke
+     */
     KeyStroke shortcut(key, modifier = 0) {
         return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier)
     }
 
+    /**
+     * Creates a menu-shortcut keystroke from a string description.
+     *
+     * @param key the keystroke description
+     * @param modifier additional modifier mask bits
+     * @return the created keystroke, or {@code null} if the description cannot be parsed
+     */
     KeyStroke shortcut(String key, modifier = 0) {
         KeyStroke ks = KeyStroke.getKeyStroke(key)
         if (ks == null) {
@@ -431,10 +523,25 @@ class SwingBuilder extends FactoryBuilderSupport {
             return KeyStroke.getKeyStroke(ks.getKeyCode(), ks.getModifiers() | modifier | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())        }
     }
 
+    /**
+     * Resolves and installs a look and feel with an optional initialization closure.
+     *
+     * @param laf the look and feel instance, alias, or class name
+     * @param initCode optional initialization closure
+     * @return the installed look and feel
+     */
     static LookAndFeel lookAndFeel(Object laf, Closure initCode) {
         lookAndFeel([:], laf, initCode)
     }
 
+    /**
+     * Resolves and installs a look and feel with optional attributes and initialization logic.
+     *
+     * @param attributes look and feel configuration attributes
+     * @param laf the look and feel instance, alias, or class name
+     * @param initCode optional initialization closure
+     * @return the installed look and feel
+     */
     static LookAndFeel lookAndFeel(Map attributes = [:], Object laf = null, Closure initCode = null) {
         // if we get rid of this warning, we can make it static.
         //if (context) {
@@ -443,6 +550,12 @@ class SwingBuilder extends FactoryBuilderSupport {
         groovy.swing.LookAndFeelHelper.instance.lookAndFeel(laf, attributes, initCode)
     }
 
+    /**
+     * Attempts multiple look and feel candidates until one installs successfully.
+     *
+     * @param lafs the look and feel candidates to try
+     * @return the first installed look and feel, or {@code null} if all candidates fail
+     */
     static LookAndFeel lookAndFeel(Object... lafs) {
         if (lafs.length == 1) {
             lookAndFeel([:], lafs[0], null as Closure)
@@ -484,6 +597,13 @@ class SwingBuilder extends FactoryBuilderSupport {
         lookAndFeel([:], laf, null as Closure)
     }
 
+    /**
+     * Publishes created nodes into the builder variable namespace using the configured id attribute.
+     *
+     * @param builder the active builder
+     * @param node the created node
+     * @param attributes the node attributes to inspect and mutate
+     */
     static objectIDAttributeDelegate(def builder, def node, def attributes) {
         def idAttr = builder.getAt(DELEGATE_PROPERTY_OBJECT_ID) ?: DEFAULT_DELEGATE_PROPERTY_OBJECT_ID
         def theID = attributes.remove(idAttr)
@@ -499,6 +619,13 @@ class SwingBuilder extends FactoryBuilderSupport {
         }
     }
 
+    /**
+     * Applies {@code clientProperties} and {@code clientProperty*} attributes to the target component.
+     *
+     * @param builder the active builder
+     * @param node the component receiving client properties
+     * @param attributes the node attributes to inspect and mutate
+     */
     static clientPropertyAttributeDelegate(def builder, def node, def attributes) {
         def clientPropertyMap = attributes.remove("clientProperties")
         clientPropertyMap.each { key, value ->
@@ -510,6 +637,15 @@ class SwingBuilder extends FactoryBuilderSupport {
         }
     }
 
+    /**
+     * Binds one or more keystrokes to an action on the resolved target component.
+     *
+     * <p>The target component is taken from the method argument, a {@code component:} attribute,
+     * or the current builder node. Unknown conditions default to {@link JComponent#WHEN_FOCUSED}.</p>
+     *
+     * @param attributes action registration attributes
+     * @param component optional explicit target component
+     */
     void createKeyStrokeAction( Map attributes, JComponent component = null ) {
         component = findTargetComponent(attributes, component)
         if( !attributes.containsKey("keyStroke") ) {
@@ -522,7 +658,7 @@ class SwingBuilder extends FactoryBuilderSupport {
         def condition = attributes.remove("condition") ?: JComponent.WHEN_FOCUSED
         if (condition instanceof GString) condition = condition as String
         if( condition instanceof String ) {
-            condition = condition.toUpperCase().replace(" ", "_")
+            condition = condition.toUpperCase(Locale.ROOT).replace(" ", "_")
             if( !condition.startsWith("WHEN_") ) condition = "WHEN_"+condition
         }
         switch(condition) {

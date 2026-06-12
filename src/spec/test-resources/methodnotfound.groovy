@@ -22,7 +22,7 @@ methodNotFound { receiver, name, argList, argTypes, call ->
     // name is the name of the called method
     // argList is the list of arguments the method was called with
     // argTypes is the array of inferred types for each argument
-    // call is the method call for which we couldn’t find a target method
+    // call is the method call for which we couldn't find a target method
     if (receiver==classNodeFor(String)
             && name=='longueur'
             && argList.size()==0) {

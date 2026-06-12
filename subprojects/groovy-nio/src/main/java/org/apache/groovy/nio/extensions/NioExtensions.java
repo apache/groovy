@@ -35,7 +35,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
@@ -56,6 +56,9 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -63,11 +66,13 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 import static java.lang.Boolean.FALSE;
@@ -143,6 +148,11 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
 
     /**
      * Coerce the path to a {@code boolean} value.
+     * <p>
+     * By default this returns whether the file at the path exists. Set the
+     * system property {@code groovy.truth.file.exists.enabled} to {@code false}
+     * to restore the pre-Groovy-5 behavior where any non-{@code null} {@code Path}
+     * is truthy regardless of whether the underlying file exists.
      *
      * @param path a {@code Path} object
      * @return {@code true} if the file at the path exists, {@code false} otherwise
@@ -150,6 +160,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static boolean asBoolean(final Path path) {
+        if (!ResourceGroovyMethods.FILE_EXISTS_ENABLED) return path != null;
         return Files.exists(path);
     }
 
@@ -1320,13 +1331,10 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
         // throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
-            Iterator<Path> itr = stream.iterator();
-            BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
-            while (itr.hasNext()) {
-                Path currentPath = itr.next();
+            for (Path currentPath : stream) {
                 if ((fileType != FileType.FILES && Files.isDirectory(currentPath)) ||
-                        (fileType != FileType.DIRECTORIES && Files.isRegularFile(currentPath))) {
-                    if (bmi.invoke(nameFilter, currentPath.getFileName().toString()))
+                    (fileType != FileType.DIRECTORIES && Files.isRegularFile(currentPath))) {
+                    if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(nameFilter, "isCase", currentPath.getFileName().toString())))
                         closure.call(currentPath);
                 }
             }
@@ -2034,6 +2042,253 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
     @Deprecated
     public static <T> T withCloseable(Closeable self, @ClosureParams(value = SimpleType.class, options = "java.io.Closeable") Closure<T> action) throws IOException {
         return IOGroovyMethods.withCloseable(self, action);
+    }
+
+    // -------------------------------------------------------------------------
+    // Asynchronous file I/O extensions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Asynchronously read the content of the Path and return it as a String
+     * using the platform's default charset.
+     * <p>
+     * Uses {@link AsynchronousFileChannel} internally, making the I/O
+     * non-blocking. The returned {@link CompletableFuture} completes
+     * when the entire file has been read.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.nio.file.Files
+     * def path = Files.createTempFile('test', '.txt')
+     * path.text = 'Hello async'
+     * assert path.textAsync.get() == 'Hello async'
+     * Files.delete(path)
+     * </pre>
+     *
+     * @param self the file whose content we want to read
+     * @return a CompletableFuture that completes with the file content as a String
+     * @since 6.0.0
+     */
+    public static CompletableFuture<String> getTextAsync(Path self) {
+        return getTextAsync(self, Charset.defaultCharset().name());
+    }
+
+    /**
+     * Asynchronously read the content of the Path and return it as a String
+     * using the specified charset.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.nio.file.Files
+     * def path = Files.createTempFile('test', '.txt')
+     * path.text = 'Hello async'
+     * assert path.getTextAsync('UTF-8').get() == 'Hello async'
+     * Files.delete(path)
+     * </pre>
+     *
+     * @param self    the file whose content we want to read
+     * @param charset the charset used to decode the file content
+     * @return a CompletableFuture that completes with the file content as a String
+     * @since 6.0.0
+     */
+    public static CompletableFuture<String> getTextAsync(Path self, String charset) {
+        return getBytesAsync(self).thenApply(bytes -> new String(bytes, Charset.forName(charset)));
+    }
+
+    /**
+     * Asynchronously read the content of the Path and return it as a byte array.
+     * <p>
+     * Uses {@link AsynchronousFileChannel} internally. The entire file content
+     * is read into a byte array.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.nio.file.Files
+     * def path = Files.createTempFile('test', '.txt')
+     * path.bytes = [72, 105] as byte[]
+     * assert path.bytesAsync.get() == [72, 105] as byte[]
+     * Files.delete(path)
+     * </pre>
+     *
+     * @param self the file whose content we want to read
+     * @return a CompletableFuture that completes with the file content as a byte array
+     * @since 6.0.0
+     */
+    public static CompletableFuture<byte[]> getBytesAsync(Path self) {
+        CompletableFuture<byte[]> result = new CompletableFuture<>();
+        AsynchronousFileChannel channel = null;
+        try {
+            channel = AsynchronousFileChannel.open(self, StandardOpenOption.READ);
+            long size = channel.size();
+            if (size > Integer.MAX_VALUE) {
+                channel.close();
+                result.completeExceptionally(new IOException("File too large to read into a single byte array: " + size + " bytes"));
+                return result;
+            }
+            ByteBuffer buf = ByteBuffer.allocate((int) size);
+            readFully(channel, buf, 0, result);
+        } catch (IOException | RuntimeException e) {
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException ignored) {
+                }
+            }
+            result.completeExceptionally(e);
+        }
+        return result;
+    }
+
+    private static void readFully(AsynchronousFileChannel channel, ByteBuffer buf,
+                                  long position, CompletableFuture<byte[]> result) {
+        channel.read(buf, position, null, new CompletionHandler<Integer, Void>() {
+            @Override
+            public void completed(Integer bytesRead, Void attachment) {
+                if (bytesRead == -1 || !buf.hasRemaining()) {
+                    try {
+                        channel.close();
+                    } catch (IOException e) {
+                        result.completeExceptionally(e);
+                        return;
+                    }
+                    buf.flip();
+                    byte[] bytes = new byte[buf.remaining()];
+                    buf.get(bytes);
+                    result.complete(bytes);
+                } else {
+                    readFully(channel, buf, position + bytesRead, result);
+                }
+            }
+
+            @Override
+            public void failed(Throwable exc, Void attachment) {
+                try {
+                    channel.close();
+                } catch (IOException ignored) {
+                }
+                result.completeExceptionally(exc);
+            }
+        });
+    }
+
+    /**
+     * Asynchronously write the String content to the Path using the
+     * platform's default charset.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.nio.file.Files
+     * def path = Files.createTempFile('test', '.txt')
+     * path.writeAsync('Hello async').get()
+     * assert path.text == 'Hello async'
+     * Files.delete(path)
+     * </pre>
+     *
+     * @param self the file to write to
+     * @param text the text to write
+     * @return a CompletableFuture that completes when the write is finished
+     * @since 6.0.0
+     */
+    public static CompletableFuture<Void> writeAsync(Path self, String text) {
+        return writeAsync(self, text, Charset.defaultCharset().name());
+    }
+
+    /**
+     * Asynchronously write the String content to the Path using the
+     * specified charset.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.nio.file.Files
+     * def path = Files.createTempFile('test', '.txt')
+     * path.writeAsync('Hello async', 'UTF-8').get()
+     * assert path.text == 'Hello async'
+     * Files.delete(path)
+     * </pre>
+     *
+     * @param self    the file to write to
+     * @param text    the text to write
+     * @param charset the charset used to encode the text
+     * @return a CompletableFuture that completes when the write is finished
+     * @since 6.0.0
+     */
+    public static CompletableFuture<Void> writeAsync(Path self, String text, String charset) {
+        try {
+            return writeBytesAsync(self, text.getBytes(Charset.forName(charset)));
+        } catch (RuntimeException e) {
+            CompletableFuture<Void> result = new CompletableFuture<>();
+            result.completeExceptionally(e);
+            return result;
+        }
+    }
+
+    /**
+     * Asynchronously write the byte array to the Path, creating the file
+     * if it doesn't exist and truncating it if it does.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.nio.file.Files
+     * def path = Files.createTempFile('test', '.txt')
+     * path.writeBytesAsync([72, 105] as byte[]).get()
+     * assert path.bytes == [72, 105] as byte[]
+     * Files.delete(path)
+     * </pre>
+     *
+     * @param self  the file to write to
+     * @param bytes the byte array to write
+     * @return a CompletableFuture that completes when the write is finished
+     * @since 6.0.0
+     */
+    public static CompletableFuture<Void> writeBytesAsync(Path self, byte[] bytes) {
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        AsynchronousFileChannel channel = null;
+        try {
+            channel = AsynchronousFileChannel.open(self,
+                    StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            ByteBuffer buf = ByteBuffer.wrap(bytes);
+            writeFully(channel, buf, 0, result);
+        } catch (IOException | RuntimeException e) {
+            if (channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException ignored) {
+                }
+            }
+            result.completeExceptionally(e);
+        }
+        return result;
+    }
+
+    private static void writeFully(AsynchronousFileChannel channel, ByteBuffer buf,
+                                   long position, CompletableFuture<Void> result) {
+        channel.write(buf, position, null, new CompletionHandler<Integer, Void>() {
+            @Override
+            public void completed(Integer bytesWritten, Void attachment) {
+                if (buf.hasRemaining()) {
+                    if (bytesWritten <= 0) {
+                        try {
+                            channel.close();
+                        } catch (IOException ignored) {
+                        }
+                        result.completeExceptionally(new IOException("Async write made no progress"));
+                        return;
+                    }
+                    writeFully(channel, buf, position + bytesWritten, result);
+                } else {
+                    try {
+                        channel.close();
+                    } catch (IOException e) {
+                        result.completeExceptionally(e);
+                        return;
+                    }
+                    result.complete(null);
+                }
+            }
+
+            @Override
+            public void failed(Throwable exc, Void attachment) {
+                try {
+                    channel.close();
+                } catch (IOException ignored) {
+                }
+                result.completeExceptionally(exc);
+            }
+        });
     }
 
 }

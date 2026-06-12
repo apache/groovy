@@ -21,12 +21,26 @@ package org.codehaus.groovy.macro.matcher.internal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.syntax.Token
 
+/**
+ * Token predicate that accepts every token.
+ *
+ * @since 2.5.0
+ */
 @CompileStatic
 class AnyTokenMatch implements ConstraintPredicate<Token> {
+    /**
+     * Shared instance.
+     */
     public static final AnyTokenMatch INSTANCE = new AnyTokenMatch()
 
     private AnyTokenMatch() {}
 
+    /**
+     * Always matches.
+     *
+     * @param a the token to test
+     * @return {@code true}
+     */
     @Override
     boolean apply(final Token a) {
         true

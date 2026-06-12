@@ -79,6 +79,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
+/**
+ * Handles generation of variant methods with named parameters via the {@link NamedVariant} annotation.
+ */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class NamedVariantASTTransformation extends AbstractASTTransformation {
 
@@ -100,6 +103,22 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         if (mNodeParams.length == 0) {
             addError("Error during " + NAMED_VARIANT + " processing. No-arg methods aren't supported.", mNode);
             return;
+        }
+
+        // GEP-21 Shape C: discard any stubber-emitted placeholder Map-variant
+        // for this method/constructor so the createMapVariant duplicate-method
+        // check sees only genuine user-declared overloads.
+        ClassNode declaringClass = mNode.getDeclaringClass();
+        if (declaringClass != null) {
+            if (mNode instanceof ConstructorNode) {
+                declaringClass.getDeclaredConstructors().removeIf(StubberSupport::isStub);
+            } else {
+                java.util.List<MethodNode> stubs = new java.util.ArrayList<>();
+                for (MethodNode m : declaringClass.getMethods()) {
+                    if (StubberSupport.isStub(m)) stubs.add(m);
+                }
+                stubs.forEach(declaringClass::removeMethod);
+            }
         }
 
         boolean autoDelegate = memberHasValue(anno, "autoDelegate", Boolean.TRUE);
@@ -170,6 +189,14 @@ public class NamedVariantASTTransformation extends AbstractASTTransformation {
         return true;
     }
 
+    /**
+     * Creates a NamedParam annotation node with the given configuration.
+     *
+     * @param name the parameter name
+     * @param type the parameter class type
+     * @param required whether the parameter is required
+     * @return a new AnnotationNode for @NamedParam
+     */
     public static AnnotationNode createNamedParam(String name, ClassNode type, boolean required) {
         AnnotationNode namedParam = new AnnotationNode(NAMED_PARAM_TYPE);
         namedParam.addMember("value", constX(name));

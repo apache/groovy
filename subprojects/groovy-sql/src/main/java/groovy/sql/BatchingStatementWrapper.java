@@ -35,11 +35,22 @@ import java.util.logging.Logger;
  */
 public class BatchingStatementWrapper extends GroovyObjectSupport implements AutoCloseable {
     private final Statement delegate;
+    /** Automatic execution threshold; {@code 0} disables automatic partitioning. */
     protected int batchSize;
+    /** Number of commands added since the last delegate batch execution. */
     protected int batchCount;
+    /** Logger used for batch diagnostics. */
     protected Logger log;
+    /** Accumulated update counts across delegate batch executions. */
     protected List<Integer> results;
 
+    /**
+     * Creates a batching wrapper for a statement.
+     *
+     * @param delegate the statement to wrap
+     * @param batchSize the automatic execution threshold; {@code 0} disables automatic partitioning
+     * @param log the logger to use for batch diagnostics
+     */
     public BatchingStatementWrapper(Statement delegate, int batchSize, Logger log) {
         this.delegate = delegate;
         this.batchSize = batchSize;
@@ -47,16 +58,32 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
         reset();
     }
 
+    /**
+     * Resets the wrapper's in-memory batch bookkeeping.
+     */
     protected void reset() {
         batchCount = 0;
         results = new ArrayList<Integer>();
     }
 
+    /**
+     * Delegates unknown method calls to the wrapped {@link Statement}.
+     *
+     * @param name the method name
+     * @param args the method arguments
+     * @return the delegated result
+     */
     @Override
     public Object invokeMethod(String name, Object args) {
         return InvokerHelper.invokeMethod(delegate, name, args);
     }
 
+    /**
+     * Adds a SQL command to the current batch.
+     *
+     * @param sql the SQL command to add
+     * @throws SQLException if the command cannot be added
+     */
     public void addBatch(String sql) throws SQLException {
         delegate.addBatch(sql);
         incrementBatchCount();
@@ -75,6 +102,11 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
         }
     }
 
+    /**
+     * Clears the current batch and resets this wrapper's batch bookkeeping.
+     *
+     * @throws SQLException if the wrapped statement fails to clear its batch
+     */
     public void clearBatch() throws SQLException {
         if (batchSize != 0) {
             reset();
@@ -82,6 +114,12 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
         delegate.clearBatch();
     }
 
+    /**
+     * Executes any pending batched commands and returns the aggregated update counts.
+     *
+     * @return one update count per executed batch command
+     * @throws SQLException if batch execution fails
+     */
     public int[] executeBatch() throws SQLException {
         if (shouldCallDelegate()) {
             int[] lastResult = delegate.executeBatch();
@@ -106,6 +144,11 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
         return false;
     }
 
+    /**
+     * Incorporates one delegate batch execution result into this wrapper's state.
+     *
+     * @param lastResult the update counts returned by the wrapped statement
+     */
     protected void processResult(int[] lastResult) {
         boolean foundError = false;
         for (int i : lastResult) {
@@ -122,6 +165,11 @@ public class BatchingStatementWrapper extends GroovyObjectSupport implements Aut
         }
     }
 
+    /**
+     * Closes the wrapped statement.
+     *
+     * @throws SQLException if the statement cannot be closed
+     */
     @Override
     public void close() throws SQLException {
         delegate.close();

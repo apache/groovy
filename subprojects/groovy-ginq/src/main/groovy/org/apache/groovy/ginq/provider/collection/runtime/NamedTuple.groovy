@@ -40,6 +40,12 @@ class NamedTuple<E> extends Tuple<E> {
 
     private final Map<String, E> data
 
+    /**
+     * Creates an immutable tuple backed by the supplied names.
+     *
+     * @param elementList the element values
+     * @param nameList the names matching those values
+     */
     NamedTuple(List<E> elementList, List<String> nameList) {
         super(elementList as E[])
 
@@ -60,22 +66,50 @@ class NamedTuple<E> extends Tuple<E> {
         }
     }
 
+    /**
+     * Returns the value bound to the supplied name.
+     *
+     * @param name the tuple element name
+     * @return the bound value
+     */
     public get(String name) {
         return data.get(name)
     }
 
+    /**
+     * Returns the value bound to the supplied name.
+     *
+     * @param name the tuple element name
+     * @return the bound value
+     */
     public getAt(String name) {
         return data.get(name)
     }
 
+    /**
+     * Tests whether this tuple contains the supplied name.
+     *
+     * @param name the tuple element name
+     * @return {@code true} if the name exists
+     */
     boolean exists(String name) {
         return data.containsKey(name)
     }
 
+    /**
+     * Returns the tuple element names in order.
+     *
+     * @return the tuple element names
+     */
     List<String> getNameList() {
         return new ArrayList<>(data.keySet())
     }
 
+    /**
+     * Returns the tuple contents in {@code name:value} form.
+     *
+     * @return the tuple string form
+     */
     @Override
     public String toString() {
         StringJoiner sj = new StringJoiner(', ', '(', ')')

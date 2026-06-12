@@ -26,11 +26,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Runtime support for {@code StreamingMarkupBuilder} closures bound to namespace-aware tag handlers.
+ */
 public class BaseMarkupBuilder extends Builder {
+    /**
+     * Creates a builder backed by the supplied namespace method map.
+     *
+     * @param namespaceMethodMap namespace-specific tag handler metadata
+     */
     public BaseMarkupBuilder(final Map namespaceMethodMap) {
         super(namespaceMethodMap);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object bind(final Closure root) {
         return new Document(root, this.namespaceMethodMap);

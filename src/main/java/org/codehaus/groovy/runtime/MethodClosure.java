@@ -23,6 +23,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
+import java.io.Serial;
 import java.util.Arrays;
 
 /**
@@ -31,13 +32,24 @@ import java.util.Arrays;
  */
 public class MethodClosure extends Closure {
 
+    /**
+     * Enables flexible object serialization behavior for MethodClosure instances.
+     */
     public static boolean ALLOW_RESOLVE; // choose readObject/readResolve return/throw
+
+    /**
+     * Property name indicating whether an instance method exists for this method closure.
+     */
     public static final String ANY_INSTANCE_METHOD_EXISTS = "anyInstanceMethodExists";
+
+    /**
+     * Method name constant for constructor invocations.
+     */
     public static final String NEW = "new";
 
     //
 
-    private static final long serialVersionUID = -2491254866810955844L;
+    @Serial private static final long serialVersionUID = -2491254866810955844L;
 
     /**
      * Indicates if this may be related to an instance method.
@@ -48,6 +60,12 @@ public class MethodClosure extends Closure {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Constructs a MethodClosure wrapping a method of the given owner object.
+     *
+     * @param owner the object on which the method is invoked, or a Class for static methods
+     * @param method the name of the method to wrap, or "new" for constructor invocations
+     */
     public MethodClosure(final Object owner, final String method) {
         super(owner);
         this.method = method;
@@ -120,6 +138,10 @@ public class MethodClosure extends Closure {
     }
 
     /**
+     * Returns the class of the owner object, unwrapping it if it's a Wrapper.
+     * If the owner is a Class, returns that Class; otherwise, returns the class of the owner.
+     *
+     * @return the class of the owner object
      * @since 5.0.0
      */
     public Class<?> getOwnerClass() {
@@ -145,6 +167,7 @@ public class MethodClosure extends Closure {
         return InvokerHelper.invokeMethod(getOwner(), getMethod(), arguments);
     }
 
+    @Serial
     private void readObject(final java.io.ObjectInputStream stream) throws java.io.IOException, ClassNotFoundException {
         if (ALLOW_RESOLVE) {
             stream.defaultReadObject();
@@ -152,6 +175,7 @@ public class MethodClosure extends Closure {
         throw new UnsupportedOperationException();
     }
 
+    @Serial
     private Object readResolve() {
         if (ALLOW_RESOLVE) {
             return this;

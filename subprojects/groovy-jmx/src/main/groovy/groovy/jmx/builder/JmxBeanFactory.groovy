@@ -89,6 +89,15 @@ import javax.management.MBeanServer
  * </code></pre>
  */
 class JmxBeanFactory extends AbstractFactory {
+    /**
+     * Creates the meta map used to export a single bean.
+     *
+     * @param builder the active builder
+     * @param nodeName the node name
+     * @param nodeParam the positional target object, if supplied
+     * @param nodeAttributes the named node attributes
+     * @return the normalized bean metadata
+     */
     Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttributes) {
 
         JmxBuilder fsb = (JmxBuilder) builder
@@ -116,10 +125,25 @@ class JmxBeanFactory extends AbstractFactory {
         return metaMap
     }
 
+    /**
+     * Leaves attribute handling to {@link #newInstance(FactoryBuilderSupport, Object, Object, Map)}.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param nodeAttribs remaining node attributes
+     * @return {@code false}
+     */
     boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
         return false
     }
 
+    /**
+     * Registers the exported bean and adds it to the parent collection when appropriate.
+     *
+     * @param builder the active builder
+     * @param parentNode the parent export container
+     * @param thisNode the bean metadata
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
         JmxBuilder fsb = (JmxBuilder) builder
         MBeanServer server = (MBeanServer) fsb.getMBeanServer()
@@ -145,6 +169,11 @@ class JmxBeanFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Indicates that the bean node may contain nested configuration nodes.
+     *
+     * @return {@code false}
+     */
     boolean isLeaf() {
         return false
     }

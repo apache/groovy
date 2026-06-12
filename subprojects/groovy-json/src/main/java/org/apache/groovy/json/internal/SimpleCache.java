@@ -21,9 +21,21 @@ package org.apache.groovy.json.internal;
 import org.codehaus.groovy.runtime.memoize.CommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 
+/**
+ * Thin adapter that exposes {@link CommonCache} through the internal {@link Cache} API.
+ *
+ * @param <K> the key type
+ * @param <V> the value type
+ */
 public class SimpleCache<K, V> implements Cache<K, V> {
     private EvictableCache<K, V> cache;
 
+    /**
+     * Creates a cache with the supplied size limit and eviction policy.
+     *
+     * @param limit the maximum number of entries
+     * @param type the eviction strategy
+     */
     public SimpleCache(final int limit, CacheType type) {
         if (type.equals(CacheType.LRU)) {
             cache = new CommonCache<K, V>(limit);
@@ -32,15 +44,22 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         }
     }
 
+    /**
+     * Creates an LRU cache with the supplied size limit.
+     *
+     * @param limit the maximum number of entries
+     */
     public SimpleCache(final int limit) {
         this(limit, CacheType.LRU);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void put(K key, V value) {
         cache.put(key, value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public V get(K key) {
         return cache.get(key);
@@ -48,6 +67,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
 
     //For testing only
 
+    /** {@inheritDoc} */
     @Override
     public V getSilent(K key) {
         V value = cache.get(key);
@@ -58,16 +78,23 @@ public class SimpleCache<K, V> implements Cache<K, V> {
         return value;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove(K key) {
         cache.remove(key);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
         return cache.size();
     }
 
+    /**
+     * Returns the underlying cache state as a string.
+     *
+     * @return the cache state string
+     */
     @Override
     public String toString() {
         return cache.toString();

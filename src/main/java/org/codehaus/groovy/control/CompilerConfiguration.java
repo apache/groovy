@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -81,17 +82,17 @@ public class CompilerConfiguration {
     /** This (<code>"10"</code>) is the value for targetBytecode to compile for a JDK 10. */
     @Deprecated public static final String JDK10 = "10";
     /** This (<code>"11"</code>) is the value for targetBytecode to compile for a JDK 11. */
-    public static final String JDK11 = "11";
+    @Deprecated public static final String JDK11 = "11";
     /** This (<code>"12"</code>) is the value for targetBytecode to compile for a JDK 12. */
-    public static final String JDK12 = "12";
+    @Deprecated public static final String JDK12 = "12";
     /** This (<code>"13"</code>) is the value for targetBytecode to compile for a JDK 13. */
-    public static final String JDK13 = "13";
+    @Deprecated public static final String JDK13 = "13";
     /** This (<code>"14"</code>) is the value for targetBytecode to compile for a JDK 14. */
-    public static final String JDK14 = "14";
+    @Deprecated public static final String JDK14 = "14";
     /** This (<code>"15"</code>) is the value for targetBytecode to compile for a JDK 15. */
-    public static final String JDK15 = "15";
+    @Deprecated public static final String JDK15 = "15";
     /** This (<code>"16"</code>) is the value for targetBytecode to compile for a JDK 16. */
-    public static final String JDK16 = "16";
+    @Deprecated public static final String JDK16 = "16";
     /** This (<code>"17"</code>) is the value for targetBytecode to compile for a JDK 17. */
     public static final String JDK17 = "17";
     /** This (<code>"18"</code>) is the value for targetBytecode to compile for a JDK 18. */
@@ -112,17 +113,13 @@ public class CompilerConfiguration {
     public static final String JDK25 = "25";
     /** This (<code>"26"</code>) is the value for targetBytecode to compile for a JDK 26. */
     public static final String JDK26 = "26";
+    /** This (<code>"27"</code>) is the value for targetBytecode to compile for a JDK 27. */
+    public static final String JDK27 = "27";
 
     /**
      * JDK version to bytecode version mapping.
      */
     public static final Map<String, Integer> JDK_TO_BYTECODE_VERSION_MAP = Maps.of(
-            JDK11, Opcodes.V11,
-            JDK12, Opcodes.V12,
-            JDK13, Opcodes.V13,
-            JDK14, Opcodes.V14,
-            JDK15, Opcodes.V15,
-            JDK16, Opcodes.V16,
             JDK17, Opcodes.V17,
             JDK18, Opcodes.V18,
             JDK19, Opcodes.V19,
@@ -132,7 +129,8 @@ public class CompilerConfiguration {
             JDK23, Opcodes.V23,
             JDK24, Opcodes.V24,
             JDK25, Opcodes.V25,
-            JDK26, Opcodes.V26
+            JDK26, Opcodes.V26,
+            JDK27, Opcodes.V27
     );
 
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
@@ -656,6 +654,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 11+
      */
+    @Deprecated
     public static boolean isPostJDK11(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK11);
     }
@@ -666,6 +665,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 12+
      */
+    @Deprecated
     public static boolean isPostJDK12(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK12);
     }
@@ -676,6 +676,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 13+
      */
+    @Deprecated
     public static boolean isPostJDK13(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK13);
     }
@@ -686,6 +687,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 14+
      */
+    @Deprecated
     public static boolean isPostJDK14(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK14);
     }
@@ -696,6 +698,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 15+
      */
+    @Deprecated
     public static boolean isPostJDK15(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK15);
     }
@@ -706,6 +709,7 @@ public class CompilerConfiguration {
      * @param bytecodeVersion The parameter can take one of the values in {@link #ALLOWED_JDKS}.
      * @return true if the bytecode version is JDK 16+
      */
+    @Deprecated
     public static boolean isPostJDK16(final String bytecodeVersion) {
         return isAtLeast(bytecodeVersion, JDK16);
     }
@@ -744,7 +748,7 @@ public class CompilerConfiguration {
         try {
             numeric = Integer.parseInt(text);
         } catch (NumberFormatException e) {
-            text = text.toLowerCase();
+            text = text.toLowerCase(Locale.ROOT);
             if ("none".equals(text)) {
                 numeric = WarningMessage.NONE;
             } else if (text.startsWith("likely")) {
@@ -1017,6 +1021,11 @@ public class CompilerConfiguration {
         this.scriptBaseClass = scriptBaseClass;
     }
 
+    /**
+     * Returns the parser plugin factory to use for source parsing.
+     *
+     * @return the configured parser plugin factory
+     */
     public ParserPluginFactory getPluginFactory() {
         if (pluginFactory == null) {
             pluginFactory = ParserPluginFactory.antlr4();
@@ -1024,14 +1033,29 @@ public class CompilerConfiguration {
         return pluginFactory;
     }
 
+    /**
+     * Sets the parser plugin factory to use for source parsing.
+     *
+     * @param pluginFactory the parser plugin factory to use
+     */
     public void setPluginFactory(final ParserPluginFactory pluginFactory) {
         this.pluginFactory = pluginFactory;
     }
 
+    /**
+     * Replaces the set of recognized script file extensions.
+     *
+     * @param scriptExtensions the script extensions to use
+     */
     public void setScriptExtensions(final Set<String> scriptExtensions) {
         this.scriptExtensions = Optional.ofNullable(scriptExtensions).orElseGet(LinkedHashSet::new);
     }
 
+    /**
+     * Returns the recognized script file extensions.
+     *
+     * @return the configured script extensions
+     */
     public Set<String> getScriptExtensions() {
         if (scriptExtensions == null || scriptExtensions.isEmpty()) {
             /*
@@ -1045,26 +1069,56 @@ public class CompilerConfiguration {
         return scriptExtensions;
     }
 
+    /**
+     * Returns the default file extension used for generated scripts.
+     *
+     * @return the default script extension
+     */
     public String getDefaultScriptExtension() {
         return defaultScriptExtension;
     }
 
+    /**
+     * Sets the default file extension used for generated scripts.
+     *
+     * @param defaultScriptExtension the default script extension
+     */
     public void setDefaultScriptExtension(final String defaultScriptExtension) {
         this.defaultScriptExtension = defaultScriptExtension;
     }
 
+    /**
+     * Indicates whether Groovy sources should be recompiled when they change.
+     *
+     * @return {@code true} if recompilation is enabled
+     */
     public boolean getRecompileGroovySource() {
         return recompileGroovySource;
     }
 
+    /**
+     * Sets whether changed Groovy sources should be recompiled.
+     *
+     * @param recompile {@code true} to enable recompilation checks
+     */
     public void setRecompileGroovySource(final boolean recompile) {
         recompileGroovySource = recompile;
     }
 
+    /**
+     * Returns the minimum interval between recompilation checks.
+     *
+     * @return the recompilation interval in milliseconds
+     */
     public int getMinimumRecompilationInterval() {
         return minimumRecompilationInterval;
     }
 
+    /**
+     * Sets the minimum interval between recompilation checks.
+     *
+     * @param time the recompilation interval in milliseconds
+     */
     public void setMinimumRecompilationInterval(final int time) {
         minimumRecompilationInterval = Math.max(0,time);
     }
@@ -1128,7 +1182,7 @@ public class CompilerConfiguration {
         if (JDK_TO_BYTECODE_VERSION_MAP.containsKey(javaVersion)) {
             return javaVersion;
         }
-        return JDK11;
+        return JDK17;
     }
 
     /**
@@ -1273,16 +1327,30 @@ public class CompilerConfiguration {
         this.disabledGlobalASTTransformations = disabledGlobalASTTransformations;
     }
 
+    /**
+     * Returns the optional bytecode post-processor.
+     *
+     * @return the configured bytecode post-processor, or {@code null}
+     */
     public BytecodeProcessor getBytecodePostprocessor() {
         return bytecodePostprocessor;
     }
 
+    /**
+     * Sets the bytecode post-processor applied to generated classes.
+     *
+     * @param bytecodePostprocessor the post-processor to use
+     */
     public void setBytecodePostprocessor(final BytecodeProcessor bytecodePostprocessor) {
         this.bytecodePostprocessor = bytecodePostprocessor;
     }
 
     /**
      * Checks if invoke dynamic is enabled.
+     * Enabled by default since Groovy 4.0. Can be disabled by setting
+     * the system property {@code groovy.target.indy} to {@code false}
+     * or by setting the {@code indy} optimization option to {@code false}.
+     * The ability to disable may be removed in a future version.
      */
     public boolean isIndyEnabled() {
         return !Boolean.FALSE.equals(getOptimizationOptions().get(INVOKEDYNAMIC));

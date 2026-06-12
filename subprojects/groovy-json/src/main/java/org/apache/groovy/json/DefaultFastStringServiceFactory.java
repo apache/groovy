@@ -18,7 +18,15 @@
  */
 package org.apache.groovy.json;
 
+/**
+ * Default factory for the standard {@link FastStringService} implementation.
+ */
 public class DefaultFastStringServiceFactory implements FastStringServiceFactory {
+    /**
+     * Returns the default fast string service.
+     *
+     * @return the default fast string service
+     */
     @Override
     public FastStringService getService() {
         return new DefaultFastStringService();

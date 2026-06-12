@@ -69,12 +69,23 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      */
     boolean mapChopped = false;
 
+    /**
+     * Creates a lazy map with the default item buffer size.
+     *
+     * @param lazyChop whether touched branches should be chopped on access
+     */
     @SuppressWarnings("unchecked")
     public LazyValueMap(boolean lazyChop) {
         this.items = new Entry[5];
         this.lazyChop = lazyChop;
     }
 
+    /**
+     * Creates a lazy map with a caller-supplied item buffer size.
+     *
+     * @param lazyChop whether touched branches should be chopped on access
+     * @param initialSize initial item buffer size
+     */
     @SuppressWarnings("unchecked")
     public LazyValueMap(boolean lazyChop, int initialSize) {
         this.items = new Entry[initialSize];
@@ -182,12 +193,24 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
         }
     }
 
+    /**
+     * Unsupported because parser-created entries are appended through {@link #add(MapItemValue)}.
+     *
+     * @param key ignored
+     * @param value ignored
+     * @return never returns normally
+     */
     @Override
     public Value put(String key, Object value) {
         die("Not that kind of map");
         return null;
     }
 
+    /**
+     * Returns the hydrated entry set, building the backing map if necessary.
+     *
+     * @return hydrated entry set
+     */
     @Override
     public Set<Entry<String, Object>> entrySet() {
         if (map == null) {
@@ -215,34 +238,58 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
         items = null;
     }
 
+    /**
+     * Returns the hydrated values collection, building the backing map if necessary.
+     *
+     * @return hydrated values collection
+     */
     @Override
     public Collection<Object> values() {
         if (map == null) buildMap();
         return map.values();
     }
 
+    /**
+     * Returns the hydrated map size, building the backing map if necessary.
+     *
+     * @return hydrated size
+     */
     @Override
     public int size() {
         if (map == null) buildMap();
         return map.size();
     }
 
+    /**
+     * Returns the hydrated map string form, building the backing map if necessary.
+     *
+     * @return hydrated map text
+     */
     @Override
     public String toString() {
         if (map == null) buildMap();
         return map.toString();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int len() {
         return len;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean hydrated() {
         return map != null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Entry<String, Value>[] items() {
         return items;

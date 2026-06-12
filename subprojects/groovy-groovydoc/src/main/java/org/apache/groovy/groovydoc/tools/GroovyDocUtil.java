@@ -20,7 +20,16 @@ package org.apache.groovy.groovydoc.tools;
 
 import java.io.File;
 
+/**
+ * Utility methods for deriving package and file names from source paths.
+ */
 public class GroovyDocUtil {
+    /**
+     * Returns the package-style path for the supplied source file name.
+     *
+     * @param filename the source file name to inspect
+     * @return the parent path, or {@code DefaultPackage} when the source belongs to the default package
+     */
     public static String getPath(String filename) {
         String path = new File(filename).getParent();
         // path length of 1 indicates that probably is 'default package' i.e. "/"
@@ -30,6 +39,12 @@ public class GroovyDocUtil {
         return path;
     }
 
+    /**
+     * Returns the simple file name portion of the supplied source path.
+     *
+     * @param filename the source path to inspect
+     * @return the file name without its parent directories
+     */
     public static String getFile(String filename) {
         return new File(filename).getName();
     }

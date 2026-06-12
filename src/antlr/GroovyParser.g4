@@ -119,6 +119,7 @@ packageDeclaration
 
 importDeclaration
     :   annotationsOpt IMPORT STATIC? qualifiedName (DOT MUL | AS alias=identifier)?
+    |   annotationsOpt IMPORT MODULE qualifiedName
     ;
 
 
@@ -133,6 +134,7 @@ modifier
           |   TRANSIENT
           |   VOLATILE
           |   DEF
+          |   VAL
           |   VAR
           )
     ;
@@ -174,6 +176,7 @@ variableModifier
     :   annotation
     |   m=( FINAL
           | DEF
+          | VAL
           | VAR
           // Groovy supports declaring local variables as instance/class fields,
           // e.g. import groovy.transform.*; @Field static List awe = [1, 2, 3]
@@ -286,8 +289,9 @@ methodDeclaration[int t, int ct]
         (   { $ct == 3 }? // GROOVY-11208: @interface only
             (DEFAULT nls elementValue)
         |
-            (nls THROWS nls qualifiedClassNameList)?
-            (nls methodBody)?
+            nls THROWS nls qualifiedClassNameList (nls methodBody)?
+        |
+            nls methodBody
         )?
     ;
 
@@ -576,10 +580,15 @@ variableDeclaration[int t]
 
 typeNamePairs
     :   LPAREN typeNamePair (COMMA typeNamePair)* RPAREN
+    |   LPAREN keyedPair (COMMA keyedPair)* RPAREN
     ;
 
 typeNamePair
-    :   type? variableDeclaratorId
+    :   (DEF | VAL | VAR | type)? MUL? variableDeclaratorId
+    ;
+
+keyedPair
+    :   key=identifier COLON (DEF | VAL | VAR | type)? variableDeclaratorId
     ;
 
 variableNames
@@ -600,9 +609,9 @@ switchStatement
     ;
 
 loopStatement
-    :   FOR LPAREN forControl RPAREN nls statement                                                            #forStmtAlt
-    |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
-    |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
+    :   annotationsOpt FOR AWAIT? LPAREN forControl RPAREN nls statement                                      #forStmtAlt
+    |   annotationsOpt WHILE expressionInPar nls statement                                                    #whileStmtAlt
+    |   annotationsOpt DO nls statement nls WHILE expressionInPar                                             #doWhileStmtAlt
     ;
 
 continueStatement
@@ -642,6 +651,8 @@ statement
     |   continueStatement                                                                                   #continueStmtAlt
     |   { inSwitchExpressionLevel > 0 }?
         yieldStatement                                                                                      #yieldStmtAlt
+    |   YIELD RETURN nls expression                                                                         #yieldReturnStmtAlt
+    |   DEFER nls statementExpression                                                                       #deferStmtAlt
     |   identifier COLON nls statement                                                                      #labeledStmtAlt
     |   assertStatement                                                                                     #assertStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
@@ -697,7 +708,7 @@ enhancedForControl
     ;
 
 indexVariable
-    :   (BuiltInPrimitiveType | DEF | VAR)? identifier
+    :   (BuiltInPrimitiveType | DEF | VAL | VAR)? identifier
     ;
 
 originalForControl
@@ -717,7 +728,16 @@ forUpdate
 // EXPRESSIONS
 
 castParExpression
-    :   LPAREN type RPAREN
+    :   LPAREN intersectionType RPAREN
+    ;
+
+intersectionType
+    :   type (BITAND nls type)*
+    ;
+
+coercionType
+    :   castParExpression                                                                       // (T) or (A & B & ...)
+    |   type                                                                                    // T
     ;
 
 parExpression
@@ -778,6 +798,14 @@ expression
     // must come before postfixExpression to resolve the ambiguities between casting and call on parentheses expression, e.g. (int)(1 / 2)
     :   castParExpression castOperandExpression                                             #castExprAlt
 
+    // async closure/lambda must come before postfixExpression to resolve ambiguity with method call, e.g. async { ... }
+    |   ASYNC nls closureOrLambdaExpression                                                 #asyncClosureExprAlt
+
+    // await expression: single-arg or multi-arg (parenthesized or unparenthesized)
+    |   AWAIT nls ( LPAREN expression (COMMA nls expression)* RPAREN
+                  | expression (COMMA nls expression)*
+                  )                                                                         #awaitExprAlt
+
     // qualified names, array expressions, method invocation, post inc/dec
     |   postfixExpression                                                                   #postfixExprAlt
 
@@ -814,7 +842,7 @@ expression
 
     // boolean relational expressions (level 7)
     |   left=expression nls op=INSTANCEOF nls matchingType                                  #relationalExprAlt
-    |   left=expression nls op=(AS | NOT_INSTANCEOF) nls type                               #relationalExprAlt
+    |   left=expression nls op=(AS | NOT_INSTANCEOF) nls coercionType                       #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN) nls right=expression       #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)
@@ -1228,11 +1256,16 @@ identifier
     :   Identifier
     |   CapitalizedIdentifier
     |   AS
+    |   ASYNC
+    |   AWAIT
+    |   DEFER
     |   IN
+    |   MODULE
     |   PERMITS
     |   RECORD
     |   SEALED
     |   TRAIT
+    |   VAL
     |   VAR
     |   YIELD
     ;
@@ -1246,6 +1279,8 @@ keywords
     :   ABSTRACT
     |   AS
     |   ASSERT
+    |   ASYNC
+    |   AWAIT
     |   BREAK
     |   CASE
     |   CATCH
@@ -1254,6 +1289,7 @@ keywords
     |   CONTINUE
     |   DEF
     |   DEFAULT
+    |   DEFER
     |   DO
     |   ELSE
     |   ENUM
@@ -1288,6 +1324,7 @@ keywords
     |   TRAIT
     |   THREADSAFE
     |   TRY
+    |   VAL
     |   VAR
     |   VOLATILE
     |   WHILE

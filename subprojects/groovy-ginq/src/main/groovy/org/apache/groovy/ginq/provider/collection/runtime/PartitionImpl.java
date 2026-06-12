@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.io.Serial;
+
 /**
  * Represents partition implementation
  *
@@ -25,8 +27,13 @@ package org.apache.groovy.ginq.provider.collection.runtime;
  * @since 4.0.0
  */
 class PartitionImpl<T> extends QueryableCollection<T> implements Partition<T> {
-    private static final long serialVersionUID = -3650144225768070117L;
+    @Serial private static final long serialVersionUID = -3650144225768070117L;
 
+    /**
+     * Creates a partition backed by the supplied iterable.
+     *
+     * @param sourceIterable the partition elements
+     */
     PartitionImpl(Iterable<T> sourceIterable) {
         super(sourceIterable);
     }

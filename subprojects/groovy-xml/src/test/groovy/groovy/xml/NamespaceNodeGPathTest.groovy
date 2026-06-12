@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 final class NamespaceNodeGPathTest extends TestXmlSupport {
 
     @Test
-    void testTree() {
+    void tree() {
         Node root = new XmlParser().parseText("""
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:annotation xsd:cheese="Edam">

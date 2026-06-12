@@ -31,6 +31,7 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.filters.util.ChainReaderHelper;
 import org.apache.tools.ant.taskdefs.Java;
 import org.apache.tools.ant.types.Commandline;
+import org.apache.tools.ant.types.Environment;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.FilterChain;
 import org.apache.tools.ant.types.Path;
@@ -62,8 +63,10 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.security.PrivilegedAction;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -118,6 +121,7 @@ public class Groovy extends Java {
     private boolean fork = false;
     private boolean includeAntRuntime = true;
     private boolean useGroovyShell = false;
+    private boolean inheritAll = false;
 
     private String scriptBaseClass;
     private String configscript;
@@ -184,6 +188,22 @@ public class Groovy extends Java {
      */
     public void setIncludeAntRuntime(boolean includeAntRuntime) {
         this.includeAntRuntime = includeAntRuntime;
+    }
+
+    /**
+     * If true, pass all properties from the parent Ant project to the forked JVM as system
+     * properties so the script can read them via {@code System.getProperty(name)}.
+     * Only takes effect when {@code fork} is true. Defaults to false.
+     * <p>
+     * For fine-grained control, use a nested {@code <syspropertyset>} (inherited from the
+     * {@code <java>} task) instead. Both may be combined; explicit {@code <sysproperty>}
+     * and {@code <syspropertyset>} entries take precedence on name collision.
+     *
+     * @param inheritAll true to inherit all Ant properties into the forked JVM
+     * @since 6.0.0
+     */
+    public void setInheritAll(boolean inheritAll) {
+        this.inheritAll = inheritAll;
     }
 
     /**
@@ -442,6 +462,11 @@ public class Groovy extends Java {
         }
     }
 
+    /**
+     * Creates a nested command-line argument for the executed script.
+     *
+     * @return the argument to configure
+     */
     @Override
     public Commandline.Argument createArg() {
         return cmdline.createArgument();
@@ -519,6 +544,9 @@ public class Groovy extends Java {
                 super.setFork(fork);
                 super.setClassname(useGroovyShell ? "groovy.lang.GroovyShell" : "org.codehaus.groovy.ant.Groovy");
                 configureCompiler();
+                if (inheritAll) {
+                    passParentAntProperties();
+                }
                 super.execute();
             } catch (Exception e) {
                 Writer writer = new StringBuilderWriter();
@@ -561,9 +589,7 @@ public class Groovy extends Java {
         }
 
         final String scriptName = computeScriptName();
-        @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-        final GroovyClassLoader classLoader = java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () ->
-                new GroovyClassLoader(baseClassLoader));
+        final GroovyClassLoader classLoader = new GroovyClassLoader(baseClassLoader);
         addClassPathes(classLoader);
         configureCompiler();
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
@@ -641,6 +667,11 @@ public class Groovy extends Java {
         throw new BuildException("Script Failed: " + message, e, getLocation());
     }
 
+    /**
+     * Command-line entry point used when the task executes scripts in forked mode.
+     *
+     * @param args the script file followed by script arguments
+     */
     public static void main(String[] args) {
         final GroovyShell shell = new GroovyShell(new Binding());
         final Groovy groovy = new Groovy();
@@ -697,6 +728,25 @@ public class Groovy extends Java {
                 path = super.createClasspath();
                 path.setLocation(file);
             }
+        }
+    }
+
+    /**
+     * Copies Ant project properties into the forked process unless they were already supplied as
+     * explicit system properties.
+     */
+    void passParentAntProperties() {
+        Set<String> alreadySet = new HashSet<>();
+        for (Environment.Variable v : super.getSysProperties().getVariablesVector()) {
+            alreadySet.add(v.getKey());
+        }
+        for (Map.Entry<String, Object> entry : getProject().getProperties().entrySet()) {
+            Object value = entry.getValue();
+            if (value == null || alreadySet.contains(entry.getKey())) continue;
+            Environment.Variable var = new Environment.Variable();
+            var.setKey(entry.getKey());
+            var.setValue(value.toString());
+            super.addSysproperty(var);
         }
     }
 

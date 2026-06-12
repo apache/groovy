@@ -34,6 +34,9 @@ import java.util.Map;
  * Lazy evaluated representation of a node's attributes.
  */
 public class Attributes extends NodeChildren {
+    /**
+     * Attribute name stripped of the leading {@code @} from the selector.
+     */
     final String attributeName;
 
     /**
@@ -56,6 +59,9 @@ public class Attributes extends NodeChildren {
         this(parent, name, "*", namespaceTagHints);
     }
 
+    /**
+     * Returns the selected attribute name without the leading {@code @}.
+     */
     @Override
     public String name() {
         // this name contains @name we need to return name
@@ -70,6 +76,7 @@ public class Attributes extends NodeChildren {
         throw new GroovyRuntimeException("Can't get the child nodes on a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator iterator() {
         return new NodeIterator(nodeIterator()) {
@@ -101,16 +108,19 @@ public class Attributes extends NodeChildren {
         };
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator nodeIterator() {
         return this.parent.nodeIterator();
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult parents() {
         return super.parents();
     }
 
+    /** {@inheritDoc} */
     @Override
     public String text() {
         final StringBuilder sb = new StringBuilder();
@@ -120,6 +130,7 @@ public class Attributes extends NodeChildren {
         return sb.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public List list() {
         final Iterator iter = iterator();
@@ -130,17 +141,20 @@ public class Attributes extends NodeChildren {
         return result;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult findAll(final Closure closure) {
         return new FilteredAttributes(this, closure, this.namespaceTagHints);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Writer writeTo(final Writer out) throws IOException {
         out.write(text());
         return out;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void build(final GroovyObject builder) {
         builder.getProperty("mkp");

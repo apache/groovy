@@ -21,16 +21,38 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
+/**
+ * Provides optimized reflection caching for {@link java.lang.Object}.
+ * The root cached class that accepts all argument types for assignment,
+ * making it a universal fallback for method invocation.
+ */
 public class ObjectCachedClass extends CachedClass {
+    /**
+     * Constructs a cached class representation for {@link Object}.
+     *
+     * @param classInfo the class information associated with {@link Object}
+     */
     public ObjectCachedClass(ClassInfo classInfo) {
-        super(Object.class,classInfo);
+        super(Object.class, classInfo);
     }
 
+    /**
+     * Returns {@code null} since {@link Object} has no superclass in the type hierarchy.
+     *
+     * @return {@code null} always
+     */
     @Override
     public synchronized CachedClass getCachedSuperClass() {
         return null;
     }
 
+    /**
+     * Accepts any class as assignable to {@link Object}.
+     * This is always true since all Java classes inherit from {@link Object}.
+     *
+     * @param argument the class to check
+     * @return {@code true} always
+     */
     @Override
     public boolean isAssignableFrom(Class argument) {
         return true;

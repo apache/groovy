@@ -302,8 +302,19 @@ class CliBuilder {
      */
     Options options = new Options()
 
+    /**
+     * Typed option metadata keyed by long name or short name.
+     */
     Map<String, TypedOption> savedTypeOptions = new HashMap<String, TypedOption>()
 
+    /**
+     * Creates and registers a typed option definition.
+     *
+     * @param args option attributes using the standard DSL keys
+     * @param type the target type for the option value
+     * @param description the option description
+     * @return the created typed option
+     */
     public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
         def name = args.opt ?: '_'
         args.type = type
@@ -335,7 +346,7 @@ class CliBuilder {
                     throw new CliBuilderException("'type' must be a Class")
                 }
                 if ((convert || type) && !args[0].containsKey('args') &&
-                        type?.simpleName?.toLowerCase() != 'boolean') {
+                        type?.simpleName?.toLowerCase(Locale.ROOT) != 'boolean') {
                     args[0].args = 1
                 }
                 def option = option(name, args[0], args[1])
@@ -406,6 +417,12 @@ class CliBuilder {
         optionInstance
     }
 
+    /**
+     * Adds options declared with {@link Option} annotations to this builder.
+     *
+     * @param optionClass the annotated class or interface
+     * @param namesAreSetters whether annotated methods should be treated as setters
+     */
     void addOptionsFromAnnotations(Class optionClass, boolean namesAreSetters) {
         optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
             Annotation annotation = m.getAnnotation(Option)
@@ -453,7 +470,7 @@ class CliBuilder {
         if (optionalArg && (!type || !type.isArray())) {
             throw new CliBuilderException("Attempted to set optional argument for non array type")
         }
-        def isFlag = type.simpleName.toLowerCase() == 'boolean'
+        def isFlag = type.simpleName.toLowerCase(Locale.ROOT) == 'boolean'
         if (numberOfArgumentsString) {
             details.args = numberOfArgumentsString
             details = adjustDetails(details)
@@ -506,6 +523,14 @@ class CliBuilder {
         result
     }
 
+    /**
+     * Applies parsed option values to an annotated target object or map.
+     *
+     * @param cli the parsed options accessor
+     * @param optionClass the annotated class or interface
+     * @param t the target object or backing map
+     * @param namesAreSetters whether annotated methods should be treated as setters
+     */
     def setOptionsFromAnnotations(def cli, Class optionClass, Object t, boolean namesAreSetters) {
         optionClass.methods.findAll{ it.getAnnotation(Option) }.each { Method m ->
             Annotation annotation = m.getAnnotation(Option)
@@ -555,14 +580,14 @@ class CliBuilder {
         boolean hasArg = savedTypeOptions[name]?.cliOption?.args == 1
         boolean noArg = savedTypeOptions[name]?.cliOption?.args == 0
         if (namesAreSetters) {
-            def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase() == 'boolean'
+            def isBoolArg = m.parameterTypes.size() > 0 && m.parameterTypes[0].simpleName.toLowerCase(Locale.ROOT) == 'boolean'
             boolean isFlag = (isBoolArg && !hasArg) || noArg
             if (cli.hasOption(name) || isFlag || cli.defaultValue(name)) {
                 m.invoke(t, [isFlag ? cli.hasOption(name) :
                                      cli.hasOption(name) ? optionValue(cli, name) : cli.defaultValue(name)] as Object[])
             }
         } else {
-            def isBoolRetType = m.returnType.simpleName.toLowerCase() == 'boolean'
+            def isBoolRetType = m.returnType.simpleName.toLowerCase(Locale.ROOT) == 'boolean'
             boolean isFlag = (isBoolRetType && !hasArg) || noArg
             t.put(m.getName(), cli.hasOption(name) ?
                     { -> isFlag ? true : optionValue(cli, name) } :
@@ -611,6 +636,12 @@ class CliBuilder {
         return option
     }
 
+    /**
+     * Normalizes DSL option details into Commons CLI-compatible values.
+     *
+     * @param m the raw option details
+     * @return the normalized option details
+     */
     static Map adjustDetails(Map m) {
         m.collectMany { k, v ->
             if (k == 'args' && v == '+') {
@@ -626,6 +657,13 @@ class CliBuilder {
         }.sum()
     }
 
+    /**
+     * Expands {@code @file} arguments using command argument file semantics.
+     *
+     * @param args the original command-line arguments
+     * @return the arguments with any argument files expanded
+     * @throws IOException if an argument file cannot be read
+     */
     static expandArgumentFiles(args) throws IOException {
         def result = []
         for (arg in args) {

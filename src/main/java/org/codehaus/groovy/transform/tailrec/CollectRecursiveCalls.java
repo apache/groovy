@@ -35,6 +35,7 @@ public class CollectRecursiveCalls extends CodeVisitorSupport {
 	private final List<Expression> recursiveCalls = new ArrayList<>();
 	private MethodNode method;
 
+    /** {@inheritDoc} */
 	@Override
 	public void visitMethodCallExpression(MethodCallExpression call) {
 		if (isRecursive(call)) {
@@ -43,6 +44,7 @@ public class CollectRecursiveCalls extends CodeVisitorSupport {
         super.visitMethodCallExpression(call);
     }
 
+    /** {@inheritDoc} */
 	@Override
 	public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
 		if (isRecursive(call)) {
@@ -50,7 +52,13 @@ public class CollectRecursiveCalls extends CodeVisitorSupport {
         }
 		super.visitStaticMethodCallExpression(call);
 	}
-	
+
+    /**
+     * Collects recursive call expressions from the supplied method.
+     *
+     * @param method the method to inspect
+     * @return the recursive calls found in the method body
+     */
 	public synchronized List<Expression> collect(MethodNode method) {
 		recursiveCalls.clear();
 		this.method = method;

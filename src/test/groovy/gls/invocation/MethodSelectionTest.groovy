@@ -102,6 +102,33 @@ final class MethodSelectionTest extends CompilableTestSupport {
         '''
     }
 
+    @Test // GROOVY-6289: closure doCall with null selects most specific applicable method
+    void testClosureCallWithNullSelectsMethod() {
+        assertScript '''
+            class MyClosure extends Closure {
+                MyClosure(owner) { super(owner) }
+                def doCall(String s) { 'string' }
+                def doCall(Integer i) { 'integer' }
+            }
+            // String is more specific than Integer for null (both reference types)
+            assert new MyClosure(this)(null) == 'string'
+        '''
+    }
+
+    @Test // GROOVY-6289: closure doCall with null and unrelated types should be ambiguous
+    void testClosureCallWithNullAmbiguous() {
+        shouldFail '''
+            class A {}
+            class B {}
+            class MyClosure extends Closure {
+                MyClosure(owner) { super(owner) }
+                def doCall(A a) { 'a' }
+                def doCall(B b) { 'b' }
+            }
+            new MyClosure(this)(null)
+        '''
+    }
+
     @Test
     void testMethodSelectionException() {
         assertScript '''

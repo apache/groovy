@@ -228,8 +228,8 @@ public class SwingExtensions {
      * increasing the size of the model by 1.
      *
      * @param self  a DefaultListModel
-     * @param index an index
-     * @param e     the element to insert at the given index
+     * @param index the index of the element to replace
+     * @param e     the element to store at the given index
      * @since 1.6.4
      */
     public static void putAt(DefaultListModel<Object> self, int index, Object e) {
@@ -281,6 +281,7 @@ public class SwingExtensions {
      * @return the item count of the comboBox
      * @since 1.6.4
      */
+    @SuppressWarnings("rawtypes")
     public static int size(JComboBox self) {
         return self.getItemCount();
     }
@@ -293,6 +294,7 @@ public class SwingExtensions {
      * @return the tem at the given index
      * @since 1.6.4
      */
+    @SuppressWarnings("rawtypes")
     public static Object getAt(JComboBox self, int index) {
         return self.getItemAt(index);
     }
@@ -639,13 +641,12 @@ public class SwingExtensions {
     }
 
     /**
-     * Overloads the left shift operator to provide an easy way to add
-     * paths to a treePath.<p>
-     * <b>WARNING:</b> this operation returns a new TreePath, not the original one.<p>
+     * Overloads the left shift operator to create a new {@code TreePath}
+     * with an additional child element.
      *
      * @param self a TreePath
-     * @param p    an object to be added to the treePath.
-     * @return same treePath, after the value was added to it.
+     * @param p    the child path element to append
+     * @return a new TreePath containing the original path plus {@code p}
      * @since 1.6.4
      */
     public static TreePath leftShift(TreePath self, Object p) {
@@ -1064,8 +1065,8 @@ public class SwingExtensions {
      * Support the subscript operator for JToolBar.
      *
      * @param self  a JToolBar
-     * @param index the index of the tab component to get
-     * @return the tab component at the given index
+     * @param index the index of the component to get
+     * @return the component at the given index
      * @since 1.6.4
      */
     public static Component getAt(JToolBar self, int index) {
@@ -1073,9 +1074,10 @@ public class SwingExtensions {
     }
 
     /**
-     * Allows the usage of a one-element string for a mnemonic
-     * @param button a AbstractButton
-     * @param mnemonic the String
+     * Supports assigning a button mnemonic from a single-character String.
+     *
+     * @param button   an AbstractButton
+     * @param mnemonic the mnemonic text to coerce to a character
      * @since 2.3.7
      */
     public static void setMnemonic(AbstractButton button, String mnemonic) {

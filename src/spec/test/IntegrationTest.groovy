@@ -256,4 +256,59 @@ try {
 }
 '''
     }
+
+    @Test
+    void testJavaShell() {
+        assertScript '''// tag::javashell_compile[]
+import org.apache.groovy.util.JavaShell
+
+def js = new JavaShell()                                                    // <1>
+def src = """
+    package demo;
+    public class Foo {
+        public static String greet(String who) { return "hello, " + who; }
+    }
+"""
+Class<?> foo = js.compile('demo.Foo', src)                                  // <2>
+assert foo.getDeclaredMethod('greet', String).invoke(null, 'world') == 'hello, world'  // <3>
+// end::javashell_compile[]
+'''
+
+        assertScript '''// tag::javashell_compile_all[]
+import org.apache.groovy.util.JavaShell
+
+def js = new JavaShell()
+def src = """
+    package demo;
+    public class Box { public static int hidden() { return Helper.value(); } }
+    class Helper { static int value() { return 42; } }
+"""
+Map<String, Class<?>> classes = js.compileAll('demo.Box', src)              // <1>
+assert classes.keySet() == ['demo.Box', 'demo.Helper'] as Set               // <2>
+assert classes['demo.Box'].getDeclaredMethod('hidden').invoke(null) == 42
+// end::javashell_compile_all[]
+'''
+
+        assertScript '''// tag::javashell_compile_all_to[]
+import org.apache.groovy.util.JavaShell
+import java.nio.file.Files
+
+def out = Files.createTempDirectory('javashell-')
+try {
+    def js = new JavaShell()
+    def src = """
+        package demo;
+        public class Deep { public static String tag(String label) { return label; } }
+    """
+    def written = js.compileAllTo('demo.Deep', ['-parameters'], src, out)   // <1>
+    def classFile = out.resolve('demo/Deep.class')                          // <2>
+    assert written['demo.Deep'] == classFile && Files.exists(classFile)
+    // classes also remain available through js.classLoader, same as compileAll
+    assert js.classLoader.loadClass('demo.Deep').getDeclaredMethod('tag', String).invoke(null, 'x') == 'x'
+} finally {
+    out.toFile().deleteDir()
+}
+// end::javashell_compile_all_to[]
+'''
+    }
 }

@@ -54,6 +54,9 @@ import java.util.stream.BaseStream;
  */
 public class ScriptBytecodeAdapter {
 
+    /**
+     * An empty Object array constant.
+     */
     public static final Object[] EMPTY_ARGS = {};
     private static final Integer ONE = 1;
     private static final Integer ZERO = 0;
@@ -62,6 +65,14 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     //                   exception handling
     //  --------------------------------------------------------
+
+    /**
+     * Unwraps a GroovyRuntimeException, extracting the actual cause if present.
+     * Converts GroovyRuntimeException instances that wrap actual exceptions to those exceptions.
+     *
+     * @param gre the GroovyRuntimeException to unwrap
+     * @return the unwrapped Throwable
+     */
     public static Throwable unwrap(GroovyRuntimeException gre) {
         if (gre.getCause() == null) {
             if (gre instanceof MissingPropertyExceptionNoStack noStack) {
@@ -998,4 +1009,26 @@ public class ScriptBytecodeAdapter {
             throw unwrap(gre);
         }
     }
+
+    /**
+     * GEP-15: dispatcher for compound-assignment operators in dynamic Groovy.
+     * If {@code receiver} responds to {@code assignName} with the supplied argument,
+     * invoke it and return {@code receiver} (so the caller's STORE assigns the same
+     * reference back, leaving the in-place mutation visible). Otherwise fall back to
+     * {@code baseName} and return its result for the caller to assign.
+     *
+     * @since 6.0.0
+     */
+    public static Object compoundAssign(final Object receiver, final Object arg,
+                                        final String assignName, final String baseName) throws Throwable {
+        if (receiver != null) {
+            MetaClass mc = InvokerHelper.getMetaClass(receiver);
+            if (!mc.respondsTo(receiver, assignName, new Object[]{arg}).isEmpty()) {
+                invokeMethodN(ScriptBytecodeAdapter.class, receiver, assignName, new Object[]{arg});
+                return receiver;
+            }
+        }
+        return invokeMethodN(ScriptBytecodeAdapter.class, receiver, baseName, new Object[]{arg});
+    }
+
 }

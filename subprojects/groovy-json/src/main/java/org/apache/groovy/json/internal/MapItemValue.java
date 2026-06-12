@@ -26,13 +26,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MapItemValue implements Map.Entry<String, Value> {
 
+    /**
+     * Lazily decoded key token.
+     */
     final Value name;
+    /**
+     * Lazily decoded value token.
+     */
     final Value value;
 
     private String key = null;
 
     private static final boolean internKeys = Boolean.parseBoolean(System.getProperty("groovy.json.implementation.internKeys", "false"));
 
+    /**
+     * Shared cache for optional key interning.
+     */
     protected static final ConcurrentHashMap<String, String> internedKeysCache;
 
     static {
@@ -43,11 +52,20 @@ public class MapItemValue implements Map.Entry<String, Value> {
         }
     }
 
+    /**
+     * Creates a lazily decoded entry pair.
+     *
+     * @param name key token
+     * @param value value token
+     */
     public MapItemValue(Value name, Value value) {
         this.name = name;
         this.value = value;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getKey() {
         if (key == null) {
@@ -68,11 +86,20 @@ public class MapItemValue implements Map.Entry<String, Value> {
         return key;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Value getValue() {
         return value;
     }
 
+    /**
+     * Unsupported for parser-created entries.
+     *
+     * @param value replacement value
+     * @return never returns normally
+     */
     @Override
     public Value setValue(Value value) {
         Exceptions.die("not that kind of Entry");

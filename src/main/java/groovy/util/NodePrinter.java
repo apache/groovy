@@ -30,16 +30,32 @@ import java.util.Map;
  */
 public class NodePrinter {
 
+    /**
+     * Writer used for node output.
+     */
     protected final IndentPrinter out;
 
+    /**
+     * Creates a printer that writes to {@code System.out}.
+     */
     public NodePrinter() {
         this(new IndentPrinter(new PrintWriter(new OutputStreamWriter(System.out))));
     }
 
+    /**
+     * Creates a printer backed by the supplied writer.
+     *
+     * @param out the writer to wrap
+     */
     public NodePrinter(PrintWriter out) {
         this(new IndentPrinter(out));
     }
 
+    /**
+     * Creates a printer backed by the supplied {@link IndentPrinter}.
+     *
+     * @param out the printer to use
+     */
     public NodePrinter(IndentPrinter out) {
         if (out == null) {
             throw new NullPointerException("IndentPrinter 'out' must not be null!");
@@ -47,6 +63,11 @@ public class NodePrinter {
         this.out = out;
     }
 
+    /**
+     * Prints the supplied node tree.
+     *
+     * @param node the node to print
+     */
     public void print(Node node) {
         out.printIndent();
         printName(node);
@@ -73,6 +94,11 @@ public class NodePrinter {
         out.flush();
     }
 
+    /**
+     * Prints the node name.
+     *
+     * @param node the node whose name should be printed
+     */
     protected void printName(Node node) {
         Object name = node.name();
         if (name != null) {
@@ -82,6 +108,11 @@ public class NodePrinter {
         }
     }
 
+    /**
+     * Prints a node value list.
+     *
+     * @param list the list to print
+     */
     protected void printList(List list) {
         if (list.isEmpty()) {
             out.println("");
@@ -103,6 +134,11 @@ public class NodePrinter {
     }
 
 
+    /**
+     * Prints node attributes.
+     *
+     * @param attributes the attributes to print
+     */
     protected void printAttributes(Map attributes) {
         out.print("(");
         boolean first = true;

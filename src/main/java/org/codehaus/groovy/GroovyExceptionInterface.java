@@ -19,13 +19,25 @@
 package org.codehaus.groovy;
 
 /**
- *  An interface for use by all Groovy compiler exceptions.
+ * An interface for use by all Groovy compiler exceptions.
+ * Provides control over exception fatality, indicating whether an exception should halt compilation.
  */
-
 public interface GroovyExceptionInterface {
 
+    /**
+     * Returns whether this exception is fatal.
+     * A fatal exception typically causes compilation to stop.
+     *
+     * @return {@code true} if this exception is fatal; {@code false} otherwise
+     */
     boolean isFatal();
 
-    void setFatal( boolean fatal );
+    /**
+     * Sets whether this exception is fatal.
+     * A fatal exception typically causes compilation to stop.
+     *
+     * @param fatal {@code true} to mark this exception as fatal; {@code false} otherwise
+     */
+    void setFatal(boolean fatal);
 
 }

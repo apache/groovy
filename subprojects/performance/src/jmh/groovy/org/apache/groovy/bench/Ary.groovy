@@ -20,8 +20,16 @@ package org.apache.groovy.bench
 
 import groovy.transform.CompileStatic
 
+/**
+ * Helper class providing array manipulation benchmark implementations.
+ */
 class Ary {
 
+    /**
+     * Performs array operations in dynamic Groovy mode.
+     * @param n the size of the arrays
+     * @return the sum of first and last elements
+     */
     static int ary(int n) {
         int[] x = new int[n]
         int[] y = new int[n]
@@ -35,6 +43,11 @@ class Ary {
         return y[0] + y[n-1]
     }
 
+    /**
+     * Performs array operations in {@code @CompileStatic} mode.
+     * @param n the size of the arrays
+     * @return the sum of first and last elements
+     */
     @CompileStatic
     static int aryCS(int n) {
         int[] x = new int[n]

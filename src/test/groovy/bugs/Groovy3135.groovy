@@ -1,0 +1,78 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package bugs
+
+import org.junit.jupiter.api.Test
+
+final class Groovy3135 {
+
+    private static Byte b = Byte.parseByte('1')
+    private static Short s = Short.parseShort('2')
+    private static Integer i = Integer.parseInt('3')
+    private static Long l = Long.parseLong('4')
+    private static Float f = Float.parseFloat('5')
+    private static Double d = Double.parseDouble('6')
+    private static BigInteger bi = new BigInteger('7')
+    private static BigDecimal bd = new BigDecimal('8')
+
+    private Object values
+
+    @Test
+    void testConversionForPrimitiveTypeVarArgs() {
+        setVarArgsShort('', b, s)
+        checkConversionAndVarArgCount(Short.TYPE, 2)
+
+        setVarArgsInteger('', b, s, i)
+        checkConversionAndVarArgCount(Integer.TYPE, 3)
+
+        setVarArgsLong('', b, s, i, l)
+        checkConversionAndVarArgCount(Long.TYPE, 4)
+
+        setVarArgsFloat('', b, s, i, l, f)
+        checkConversionAndVarArgCount(Float.TYPE, 5)
+
+        setVarArgsDouble('', b, s, i, l, f, d, bi, bd)
+        checkConversionAndVarArgCount(Double.TYPE, 8)
+    }
+
+    void setVarArgsShort(String str, short... varArgValues) {
+        values = varArgValues
+    }
+
+    void setVarArgsInteger(String str, int... varArgValues) {
+        values = varArgValues
+    }
+
+    void setVarArgsLong(String str, long... varArgValues) {
+        values = varArgValues
+    }
+
+    void setVarArgsFloat(String str, float... varArgValues) {
+        values = varArgValues
+    }
+
+    void setVarArgsDouble(String str, double... varArgValues) {
+        values = varArgValues
+    }
+
+    void checkConversionAndVarArgCount(expectedType, varArgsCount) {
+        assert values.class.componentType == expectedType
+        assert values.size() == varArgsCount
+    }
+}

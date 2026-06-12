@@ -65,7 +65,20 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Commons {
+    /**
+     * Returns the injected logger field name.
+     * Defaults to {@code "log"}.
+     *
+     * @return the logger field name
+     */
     String value() default "log";
+
+    /**
+     * Returns the logger category name.
+     * Defaults to {@link LogASTTransformation#DEFAULT_CATEGORY_NAME}, which uses the host class name.
+     *
+     * @return the logger category name
+     */
     String category() default LogASTTransformation.DEFAULT_CATEGORY_NAME;
 
     /**
@@ -73,17 +86,34 @@ public @interface Commons {
      */
     String visibilityId() default Undefined.STRING;
 
+    /**
+     * Returns the logging strategy implementation used by this transform.
+     * Defaults to {@link CommonsLoggingStrategy}.
+     *
+     * @return the logging strategy type
+     */
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default CommonsLoggingStrategy.class;
 
+    /**
+     * Logging strategy for Apache Commons Logging.
+     */
     class CommonsLoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
 
         private static final String LOGGER_NAME = "org.apache.commons.logging.Log";
         private static final String LOGGERFACTORY_NAME = "org.apache.commons.logging.LogFactory";
 
+        /**
+         * Creates a Commons Logging strategy.
+         *
+         * @param loader the class loader used to resolve logger classes
+         */
         protected CommonsLoggingStrategy(final GroovyClassLoader loader) {
             super(loader);
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName, int fieldModifiers) {
             return classNode.addField(logFieldName,
@@ -95,11 +125,17 @@ public @interface Commons {
                             new ConstantExpression(getCategoryName(classNode, categoryName))));
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public boolean isLoggingMethod(String methodName) {
             return methodName.matches("fatal|error|warn|info|debug|trace");
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
             MethodCallExpression condition = new MethodCallExpression(

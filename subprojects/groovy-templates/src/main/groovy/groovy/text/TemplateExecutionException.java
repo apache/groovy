@@ -18,28 +18,54 @@
  */
 package groovy.text;
 
+import java.io.Serial;
+
 /**
  * A custom exception class to flag template execution errors
  */
 public class TemplateExecutionException extends Exception  {
-    private static final long serialVersionUID = 3940987189684210921L;
+    @Serial private static final long serialVersionUID = 3940987189684210921L;
     private final int lineNumber;
 
+    /**
+     * Creates an exception for an execution failure at the supplied template line.
+     *
+     * @param lineNumber one-based line number in the template source
+     */
     public TemplateExecutionException(int lineNumber) {
         super();
         this.lineNumber = lineNumber;
     }
 
+    /**
+     * Creates an exception for an execution failure at the supplied template line.
+     *
+     * @param lineNumber one-based line number in the template source
+     * @param message a description of the execution failure
+     */
     public TemplateExecutionException(int lineNumber, String message) {
         super(message);
         this.lineNumber = lineNumber;
     }
 
+    /**
+     * Creates an exception for an execution failure at the supplied template line.
+     *
+     * @param lineNumber one-based line number in the template source
+     * @param message a description of the execution failure
+     * @param cause the underlying execution failure
+     */
     public TemplateExecutionException(int lineNumber, String message, Throwable cause) {
         super(message, cause);
         this.lineNumber = lineNumber;
     }
 
+    /**
+     * Creates an exception for an execution failure at the supplied template line.
+     *
+     * @param lineNumber one-based line number in the template source
+     * @param cause the underlying execution failure
+     */
     public TemplateExecutionException(int lineNumber, Throwable cause) {
         super(cause);
         this.lineNumber = lineNumber;
@@ -48,7 +74,7 @@ public class TemplateExecutionException extends Exception  {
     /**
      * Returns the line number in the template source where the error occurred
      *
-     * @return the one-based line number of the template parsing error.
+     * @return the one-based line number of the template execution error
      */
     public int getLineNumber() {
         return lineNumber;

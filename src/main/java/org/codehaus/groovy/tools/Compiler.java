@@ -31,6 +31,9 @@ import java.io.File;
  */
 public class Compiler {
     // TODO: delete this constant?
+    /**
+     * Shared compiler instance using the default configuration.
+     */
     public static final Compiler DEFAULT = new Compiler();
 
     private final CompilerConfiguration configuration;  // Optional configuration data
@@ -91,7 +94,3 @@ public class Compiler {
     }
 
 }
-
-
-
-

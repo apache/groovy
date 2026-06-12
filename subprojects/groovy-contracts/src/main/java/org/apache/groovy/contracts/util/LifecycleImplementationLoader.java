@@ -45,6 +45,9 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
     private final Map<String, S> providers = new LinkedHashMap<>();
     private LazyIterator lookupIterator;
 
+    /**
+     * Clears cached providers and restarts service discovery.
+     */
     public void reload() {
         providers.clear();
         lookupIterator = new LazyIterator(service, loader);
@@ -118,10 +121,29 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
 
     private final class LazyIterator implements Iterator<S> {
 
+        /**
+         * Service type currently being resolved.
+         */
         Class<S> service;
+
+        /**
+         * Class loader used to discover provider configuration resources.
+         */
         ClassLoader loader;
+
+        /**
+         * Service configuration resources still to be processed.
+         */
         Enumeration<URL> configs = null;
+
+        /**
+         * Provider class names parsed from the current configuration file.
+         */
         Iterator<String> pending = null;
+
+        /**
+         * Next provider class name ready to be instantiated.
+         */
         String nextName = null;
 
         private LazyIterator(Class<S> service, ClassLoader loader) {
@@ -129,6 +151,11 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
             this.loader = loader;
         }
 
+        /**
+         * Indicates whether another provider is available.
+         *
+         * @return {@code true} if another provider can be loaded
+         */
         @Override
         public boolean hasNext() {
             if (nextName != null) {
@@ -155,6 +182,11 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
             return true;
         }
 
+        /**
+         * Instantiates and returns the next provider implementation.
+         *
+         * @return the next provider instance
+         */
         @Override
         public S next() {
             if (!hasNext()) {
@@ -174,6 +206,9 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
             throw new Error();          // This cannot happen
         }
 
+        /**
+         * Removal is not supported for provider iteration.
+         */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -181,6 +216,11 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
 
     }
 
+    /**
+     * Returns an iterator over already loaded providers followed by lazily discovered providers.
+     *
+     * @return an iterator across provider instances
+     */
     @Override
     public Iterator<S> iterator() {
         return new Iterator<S>() {
@@ -212,6 +252,11 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
     /**
      * Creates a new {@link org.apache.groovy.contracts.common.spi.Lifecycle} for the given type and class
      * loader.
+     *
+     * @param service the service type to load
+     * @param loader the class loader used to discover providers
+     * @param <S> the service type
+     * @return a loader for the requested service type
      */
     public static <S> LifecycleImplementationLoader<S> load(Class<S> service, ClassLoader loader) {
         return new LifecycleImplementationLoader<>(service, loader);

@@ -19,10 +19,38 @@
 package org.codehaus.groovy.groovydoc;
 
 
+/**
+ * Describes a field or property in the Groovydoc model.
+ */
 public interface GroovyFieldDoc extends GroovyMemberDoc {
+    /**
+     * Returns the constant value of this field when one is available.
+     *
+     * @return the constant value, or {@code null} if none is defined
+     */
     Object constantValue();
+    /**
+     * Returns the source expression used to define the constant value.
+     *
+     * @return the constant value expression, or {@code null} if none is available
+     */
     String constantValueExpression();
+    /**
+     * Indicates whether this field is declared {@code transient}.
+     *
+     * @return {@code true} if this field is transient
+     */
     boolean isTransient();
+    /**
+     * Indicates whether this field is declared {@code volatile}.
+     *
+     * @return {@code true} if this field is volatile
+     */
     boolean isVolatile();
+    /**
+     * Returns the declared type of this field.
+     *
+     * @return the field type
+     */
     GroovyType type();
 }

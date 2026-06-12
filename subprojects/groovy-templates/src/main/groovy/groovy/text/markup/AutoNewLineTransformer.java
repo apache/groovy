@@ -43,15 +43,26 @@ class AutoNewLineTransformer extends ClassCodeVisitorSupport {
     private final SourceUnit unit;
     private boolean inBuilderMethod;
 
+    /**
+     * Creates a transformer bound to the supplied source unit.
+     *
+     * @param unit source unit being transformed
+     */
     AutoNewLineTransformer(final SourceUnit unit) {
         this.unit = unit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return unit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethodCallExpression(final MethodCallExpression call) {
         boolean old = inBuilderMethod;
@@ -75,6 +86,9 @@ class AutoNewLineTransformer extends ClassCodeVisitorSupport {
         inBuilderMethod = old;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
         super.visitClosureExpression(expression);

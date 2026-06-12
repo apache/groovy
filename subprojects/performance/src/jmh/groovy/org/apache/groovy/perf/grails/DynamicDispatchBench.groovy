@@ -51,12 +51,17 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class DynamicDispatchBench {
+    /** Number of iterations per benchmark. */
     static final int ITERATIONS = 100_000
 
-    // Class with methodMissing - like Grails domain class dynamic finders
+    /**
+     * Class with methodMissing - like Grails domain class dynamic finders.
+     */
     static class DynamicFinder {
+        /** Storage for dynamic finder data. */
         Map storage = [:]
 
+        /** Handles dynamic finder methods. */
         def methodMissing(String name, args) {
             if (name.startsWith('findBy')) {
                 String field = name.substring(6).toLowerCase()
@@ -71,24 +76,34 @@ class DynamicDispatchBench {
         }
     }
 
-    // Class with propertyMissing - like Grails controller params/session
+    /**
+     * Class with propertyMissing - like Grails controller params/session.
+     */
     static class DynamicProperties {
+        /** Storage for dynamic properties. */
         Map attributes = [name: "test", age: 25, active: true, role: "admin"]
 
+        /** Handles dynamic property reads. */
         def propertyMissing(String name) {
             attributes[name]
         }
 
+        /** Handles dynamic property writes. */
         def propertyMissing(String name, value) {
             attributes[name] = value
         }
     }
 
-    // Class with invokeMethod override - like Grails interceptors
+    /**
+     * Class with invokeMethod override - like Grails interceptors.
+     */
     static class MethodInterceptor implements GroovyInterceptable {
+        /** Count of intercepted method calls. */
         int callCount = 0
+        /** Real value for computations. */
         int realValue = 42
 
+        /** Intercepts all method invocations. */
         def invokeMethod(String name, args) {
             callCount++
             def metaMethod = metaClass.getMetaMethod(name, args)
@@ -98,21 +113,32 @@ class DynamicDispatchBench {
             return null
         }
 
+        /** Computes double of the real value. */
         int compute() { realValue * 2 }
+        /** Returns a description string. */
         String describe() { "value=$realValue" }
     }
 
-    // Plain class for baseline comparison
+    /**
+     * Plain class for baseline comparison.
+     */
     static class PlainService {
+        /** Value for computations. */
         int value = 42
+        /** Computes double of the value. */
         int compute() { value * 2 }
     }
 
+    /** DynamicFinder instance for benchmarking. */
     DynamicFinder finder
+    /** DynamicProperties instance for benchmarking. */
     DynamicProperties props
+    /** MethodInterceptor instance for benchmarking. */
     MethodInterceptor interceptor
+    /** PlainService instance for benchmarking. */
     PlainService plain
 
+    /** Sets up fresh instances and injected methods before each iteration. */
     @Setup(Level.Iteration)
     void setup() {
         GroovySystem.metaClassRegistry.removeMetaClass(DynamicFinder)

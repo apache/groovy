@@ -22,6 +22,17 @@ import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 
 import java.util.Map;
 
+/**
+ * Parses a single source unit into Groovydoc class documentation objects.
+ */
 public interface GroovyDocParserI {
+    /**
+     * Parses one source unit and returns the classes discovered in it.
+     *
+     * @param packagePath the package path associated with the source
+     * @param file the source file name
+     * @param src the source text to parse
+     * @return a map of discovered class names to class documentation objects
+     */
     Map<String, GroovyClassDoc> getClassDocsFromSingleSource(String packagePath, String file, String src);
 }

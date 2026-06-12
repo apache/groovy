@@ -34,10 +34,21 @@ public class AnnotationContractParameterVisitor extends BaseVisitor {
 
     private MethodNode currentMethodNode;
 
+    /**
+     * Creates a visitor that scans inherited method parameters for contract annotations.
+     *
+     * @param sourceUnit the source unit currently being transformed
+     * @param source the reader source backing the source unit
+     */
     public AnnotationContractParameterVisitor(final SourceUnit sourceUnit, final ReaderSource source) {
         super(sourceUnit, source);
     }
 
+    /**
+     * Visits the class hierarchy and implemented interfaces of the supplied node.
+     *
+     * @param node the class to inspect
+     */
     @Override
     public void visitClass(ClassNode node) {
         if (node == null) return;
@@ -51,6 +62,11 @@ public class AnnotationContractParameterVisitor extends BaseVisitor {
         }
     }
 
+    /**
+     * Tracks the currently visited method so parameter annotations can be resolved in context.
+     *
+     * @param node the method being visited
+     */
     @Override
     public void visitMethod(MethodNode node) {
         currentMethodNode = node;
@@ -58,6 +74,11 @@ public class AnnotationContractParameterVisitor extends BaseVisitor {
         currentMethodNode = null;
     }
 
+    /**
+     * Triggers contract-meta-annotation lookup for parameter annotations on the current method.
+     *
+     * @param node the annotated node being visited
+     */
     @Override
     public void visitAnnotations(AnnotatedNode node) {
         if (!(node instanceof Parameter) || currentMethodNode == null) return;

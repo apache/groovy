@@ -24,16 +24,36 @@ import javax.swing.*
 import javax.swing.table.TableColumn
 import javax.swing.table.TableModel
 
+/**
+ * Factory for creating tables and attaching child models or columns.
+ */
 class TableFactory extends BeanFactory {
 
+    /**
+     * Creates a new factory for creating tables and attaching child models or columns
+     */
     public TableFactory() {
         this(JTable)
     }
 
+    /**
+     * Creates a new factory for creating tables and attaching child models or columns
+     *
+     * @param klass the widget class to instantiate
+     */
     public TableFactory(Class klass) {
         super(klass, false)
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         Object table = super.newInstance(builder, name, value, attributes);
         // insure metaproperties are registered
@@ -41,6 +61,13 @@ class TableFactory extends BeanFactory {
         return table
     }
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (child instanceof TableColumn) {
             parent.addColumn(child);

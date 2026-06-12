@@ -21,8 +21,20 @@ package groovy.swing.factory
 import javax.swing.*
 import java.awt.*
 
+/**
+ * Factory for creating {@link JSplitPane} nodes.
+ */
 public class SplitPaneFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsType(value, name, JSplitPane)) {
             return value;
@@ -35,6 +47,13 @@ public class SplitPaneFactory extends AbstractFactory {
         return answer;
     }
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param factory the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setChild(FactoryBuilderSupport factory, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;

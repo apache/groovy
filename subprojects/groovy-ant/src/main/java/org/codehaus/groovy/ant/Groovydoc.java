@@ -30,6 +30,7 @@ import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager;
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
+import org.codehaus.groovy.tools.groovydoc.PreLanguageRewriter;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
 import java.io.File;
@@ -39,10 +40,13 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Access to the GroovyDoc tool from Ant.
  */
 public class Groovydoc extends Task {
+    private static final System.Logger LOGGER = System.getLogger(Groovydoc.class.getName());
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path sourcePath;
@@ -64,18 +68,30 @@ public class Groovydoc extends Task {
     private boolean includeNoSourcePackages;
     private Boolean noTimestamp;
     private Boolean noVersionStamp;
+    private Boolean showInternal;
+    private Boolean noIndex;
+    private Boolean noDeprecatedList;
+    private Boolean noHelp;
+    private String syntaxHighlighter;
+    private String theme;
     private String javaVersion;
+    private String preLanguage;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
     private final List<LinkArgument> links = new ArrayList<>();
     private File overviewFile;
     private File styleSheetFile;
+    // GROOVY-11941: additional stylesheets populated via nested <addStylesheet file="..."/>.
+    private final List<File> addStylesheetFiles = new ArrayList<>();
     // dev note: update javadoc comment for #setExtensions(String) if updating below
     private String extensions = ".java:.groovy:.gv:.gvy:.gsh";
 
     private String charset;
     private String fileEncoding;
 
+    /**
+     * Creates a Groovydoc Ant task with the default option set.
+     */
     public Groovydoc() {
         packageNames = new ArrayList<>();
         excludePackageNames = new ArrayList<>();
@@ -92,6 +108,12 @@ public class Groovydoc extends Task {
         includeMainForScripts = true;
         noTimestamp = false;
         noVersionStamp = false;
+        showInternal = false;
+        noIndex = false;
+        noDeprecatedList = false;
+        noHelp = false;
+        syntaxHighlighter = "none";
+        theme = "auto";
     }
 
     /**
@@ -155,6 +177,94 @@ public class Groovydoc extends Task {
     }
 
     /**
+     * Default language id for {@code <pre>} blocks in rendered doc comments
+     * that carry no {@code class=} attribute. When set (e.g. {@code "groovy"}),
+     * a post-pass rewrites such {@code <pre>} openings to
+     * {@code <pre class="language-xxx">}, which enables Prism syntax
+     * highlighting for legacy doc-comment code blocks without touching
+     * source files. {@code <pre>} blocks that already have any {@code class}
+     * attribute (including {@code class="groovyTestCase"}) are left alone.
+     *
+     * @param preLanguage the language id, or empty/null to disable
+     *
+     * @since 6.0.0
+     */
+    public void setPreLanguage(String preLanguage) {
+        this.preLanguage = preLanguage;
+    }
+
+    /**
+     * If set to true, members annotated with {@code groovy.transform.@Internal}
+     * (per GEP-17) are still included in the generated documentation. Defaults
+     * to false, so internal members are hidden.
+     *
+     * @param showInternal new value
+     *
+     * @since 6.0.0
+     */
+    public void setShowInternal(boolean showInternal) {
+        this.showInternal = showInternal;
+    }
+
+    /**
+     * GROOVY-11943: if set to true, suppress generation of the alphabetical
+     * index page ({@code index-all.html}) and its nav-bar link.
+     *
+     * @since 6.0.0
+     */
+    public void setNoIndex(boolean noIndex) {
+        this.noIndex = noIndex;
+    }
+
+    /**
+     * GROOVY-11943: if set to true, suppress generation of the deprecated-list
+     * page ({@code deprecated-list.html}) and its nav-bar link.
+     *
+     * @since 6.0.0
+     */
+    public void setNoDeprecatedList(boolean noDeprecatedList) {
+        this.noDeprecatedList = noDeprecatedList;
+    }
+
+    /**
+     * GROOVY-11943: if set to true, suppress generation of the help page
+     * ({@code help-doc.html}) and its nav-bar link.
+     *
+     * @since 6.0.0
+     */
+    public void setNoHelp(boolean noHelp) {
+        this.noHelp = noHelp;
+    }
+
+    /**
+     * GROOVY-11938 stage 4: selects a client-side syntax highlighter for
+     * {@code {@snippet}} and fenced Markdown code blocks. Valid values are
+     * {@code "prism"} (bundled) or {@code "none"} (default). Any other value
+     * is treated as {@code "none"}.
+     *
+     * @since 6.0.0
+     */
+    public void setSyntaxHighlighter(String syntaxHighlighter) {
+        this.syntaxHighlighter = syntaxHighlighter;
+    }
+
+    /**
+     * GROOVY-11947: theme lock mode for the generated docs.
+     * <ul>
+     *   <li>{@code "auto"} (default) — emit a {@code prefers-color-scheme}
+     *       media query so each reader sees their OS preference.</li>
+     *   <li>{@code "light"} — lock the palette to light regardless of OS.</li>
+     *   <li>{@code "dark"} — lock the palette to dark regardless of OS.</li>
+     * </ul>
+     * Any other value is treated as {@code "auto"}.
+     *
+     * @since 6.0.0
+     */
+    public void setTheme(String theme) {
+        this.theme = theme;
+    }
+
+    /**
      * If set to false, Scripts will not be processed.
      * Defaults to true.
      *
@@ -198,6 +308,31 @@ public class Groovydoc extends Task {
         }
     }
 
+    /**
+     * Set the packages to exclude from documentation. Mirrors the CLI
+     * {@code -exclude} option; the Ant task already honoured
+     * {@code excludePackageNames} internally when generating but lacked
+     * the public setter.
+     *
+     * @param packages a comma-separated (or colon-separated, to match
+     *                 the CLI form) list of package specs, possibly
+     *                 wildcarded.
+     *
+     * @since 6.0.0
+     */
+    public void setExcludePackageNames(String packages) {
+        StringTokenizer tok = new StringTokenizer(packages, ",:");
+        while (tok.hasMoreTokens()) {
+            String name = tok.nextToken().trim();
+            if (!name.isEmpty()) excludePackageNames.add(name);
+        }
+    }
+
+    /**
+     * Accepts the historical Ant {@code use} attribute for compatibility.
+     *
+     * @param b ignored
+     */
     public void setUse(boolean b) {
         //ignore as 'use external file' irrelevant with groovydoc :-)
     }
@@ -335,15 +470,64 @@ public class Groovydoc extends Task {
     }
 
     /**
-     * Add the directories matched by the nested dirsets to the resulting
-     * packages list and the base directories of the dirsets to the Path.
-     * It also handles the packages and excludepackages attributes and
-     * elements.
+     * GROOVY-11941: Ant nested element {@code <addStylesheet file="custom.css"/>}
+     * to include an additional stylesheet in the generated docs alongside the
+     * default. Repeatable — specify once per extra stylesheet.
      *
-     * @param resultantPackages a list to which we add the packages found
-     * @param sourcePath        a path to which we add each basedir found
-     * @since 1.5
+     * @return a holder that Ant will populate with the nested element's file attribute
+     *
+     * @since 6.0.0
      */
+    public AddStylesheet createAddStylesheet() {
+        AddStylesheet a = new AddStylesheet();
+        return a;
+    }
+
+    /**
+     * Nested-element holder populated by Ant introspection for {@code <addStylesheet file="..."/>}.
+     *
+     * @since 6.0.0
+     */
+    public class AddStylesheet {
+        private File file;
+
+        /**
+         * Registers an additional stylesheet to copy into the generated documentation.
+         *
+         * @param f the stylesheet file to add
+         */
+        public void setFile(File f) {
+            this.file = f;
+            if (f != null) addStylesheetFiles.add(f);
+        }
+
+        /**
+         * Returns the stylesheet file configured for this nested element.
+         *
+         * @return the configured stylesheet file
+         */
+        public File getFile() { return file; }
+    }
+
+    /**
+     * Whether {@code relativeDir} (file-separator-delimited path) has every
+     * segment a valid Java/Groovy package identifier. Rejects empty segments
+     * and segments containing characters illegal in identifiers, which
+     * filters out resource directories like {@code snippet-files/} and
+     * {@code doc-files/} whose hyphenated names can't be packages.
+     */
+    private static boolean isValidPackagePath(String relativeDir) {
+        if (relativeDir == null || relativeDir.isEmpty()) return true;
+        for (String segment : relativeDir.split(java.util.regex.Pattern.quote(File.separator))) {
+            if (segment.isEmpty()) return false;
+            if (!Character.isJavaIdentifierStart(segment.charAt(0))) return false;
+            for (int k = 1; k < segment.length(); k++) {
+                if (!Character.isJavaIdentifierPart(segment.charAt(k))) return false;
+            }
+        }
+        return true;
+    }
+
     private void parsePackages(List<String> resultantPackages, Path sourcePath) {
         List<String> addedPackages = new ArrayList<>();
         List<DirSet> dirSets = new ArrayList<DirSet>(packageSets);
@@ -396,6 +580,12 @@ public class Groovydoc extends Task {
             String[] dirs = dsc.getIncludedDirectories();
             boolean containsPackages = false;
             for (String dir : dirs) {
+                // Skip directories whose path contains a segment that isn't a
+                // valid Java/Groovy identifier — notably `snippet-files` (for
+                // {@snippet file=...}) and `doc-files` (Javadoc-inherited).
+                // Source files inside such directories are resources consumed
+                // at render time, not package members to be documented.
+                if (!isValidPackagePath(dir)) continue;
                 // are there any groovy or java files in this directory?
                 File pd = new File(baseDir, dir);
                 String[] files = pd.list((dir1, name) -> {
@@ -439,6 +629,11 @@ public class Groovydoc extends Task {
         }
     }
 
+    /**
+     * Generates Groovydoc output for the configured source path.
+     *
+     * @throws BuildException if generation fails
+     */
     @Override
     public void execute() throws BuildException {
         List<String> packagesToDoc = new ArrayList<>();
@@ -461,6 +656,20 @@ public class Groovydoc extends Task {
         properties.setProperty("fileEncoding", fileEncoding != null ? fileEncoding : "");
         properties.setProperty("timestamp", Boolean.valueOf(!noTimestamp).toString());
         properties.setProperty("versionStamp", Boolean.valueOf(!noVersionStamp).toString());
+        properties.setProperty("showInternal", showInternal.toString());
+        // GROOVY-11943: javadoc-parity disable flags.
+        properties.setProperty("noIndex", noIndex.toString());
+        properties.setProperty("noDeprecatedList", noDeprecatedList.toString());
+        properties.setProperty("noHelp", noHelp.toString());
+        properties.setProperty("syntaxHighlighter", syntaxHighlighter != null ? syntaxHighlighter : "none");
+        properties.setProperty("theme", theme != null ? theme : "auto");
+        // GROOVY-11941: expose additional stylesheet basenames to templates.
+        StringBuilder extras = new StringBuilder();
+        for (int k = 0; k < addStylesheetFiles.size(); k++) {
+            if (k > 0) extras.append(',');
+            extras.append(addStylesheetFiles.get(k).getName());
+        }
+        properties.setProperty("additionalStylesheets", extras.toString());
         String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override");
         if (phaseOverride != null) properties.put("phaseOverride", phaseOverride);
 
@@ -485,7 +694,11 @@ public class Groovydoc extends Task {
             FileOutputTool output = new FileOutputTool();
             htmlTool.renderToOutput(output, destDir.getCanonicalPath()); // TODO push destDir through APIs?
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new BuildException("Groovydoc generation failed: " + e.getMessage(), e);
+        }
+        int errorCount = htmlTool.getErrorCount();
+        if (errorCount > 0) {
+            throw new BuildException("Groovydoc failed to parse " + errorCount + " source file(s).");
         }
         // try to override the default stylesheet with custom specified one if needed
         if (styleSheetFile != null) {
@@ -494,10 +707,23 @@ public class Groovydoc extends Task {
                 File outfile = new File(destDir, "stylesheet.css");
                 ResourceGroovyMethods.setText(outfile, css);
             } catch (IOException e) {
-                System.out.println("Warning: Unable to copy specified stylesheet '" + styleSheetFile.getAbsolutePath() +
-                        "'. Using default stylesheet instead. Due to: " + e.getMessage());
+                LOGGER.log(WARNING, "Unable to copy specified stylesheet ''{0}''. Using default stylesheet instead. Due to: {1}",
+                        styleSheetFile.getAbsolutePath(), e.getMessage());
             }
         }
+        // GROOVY-11941: copy each additional stylesheet next to the default,
+        // preserving basename.
+        for (File f : addStylesheetFiles) {
+            try {
+                String css = ResourceGroovyMethods.getText(f);
+                File outfile = new File(destDir, f.getName());
+                ResourceGroovyMethods.setText(outfile, css);
+            } catch (IOException e) {
+                LOGGER.log(WARNING, "Unable to copy additional stylesheet ''{0}'': {1}",
+                        f.getAbsolutePath(), e.getMessage());
+            }
+        }
+        PreLanguageRewriter.rewriteDirectory(destDir, preLanguage);
     }
 
     private void checkScopeProperties(Properties properties) {

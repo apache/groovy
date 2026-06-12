@@ -20,28 +20,40 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.GroovyType;
 
+/**
+ * Simple immutable {@link GroovyType} implementation backed by a type name string.
+ */
 public class SimpleGroovyType implements GroovyType {
     private final String typeName;
 
+    /**
+     * Creates a type wrapper for the supplied name.
+     *
+     * @param typeName the type name to expose
+     */
     public SimpleGroovyType(String typeName) {
         this.typeName = typeName;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String typeName() {
         return typeName;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isPrimitive() {
         return false; // TODO
     }
 
+    /** {@inheritDoc} */
     @Override
     public String qualifiedTypeName() {
         return typeName.startsWith("DefaultPackage.") ? typeName.substring("DefaultPackage.".length()) : typeName;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String simpleTypeName() {
         int lastDot = typeName.lastIndexOf('.');

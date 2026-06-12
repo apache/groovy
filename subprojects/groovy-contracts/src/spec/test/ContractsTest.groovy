@@ -110,6 +110,116 @@ class ContractsTest extends GroovyTestCase {
         '''
     }
 
+    void testLoopInvariantForIn() {
+        assertScript '''
+        // tag::loop_invariant_for_example[]
+        import groovy.contracts.Invariant
+
+        int sum = 0
+        @Invariant({ 0 <= i && i <= 4 })
+        for (int i in 0..4) {
+            sum += i
+        }
+        assert sum == 10
+        // end::loop_invariant_for_example[]
+        '''
+    }
+
+    void testLoopInvariantWhile() {
+        assertScript '''
+        // tag::loop_invariant_while_example[]
+        import groovy.contracts.Invariant
+
+        int n = 10
+        @Invariant({ n >= 0 })
+        while (n > 0) {
+            n--
+        }
+        assert n == 0
+        // end::loop_invariant_while_example[]
+        '''
+    }
+
+    void testLoopInvariantMultiple() {
+        assertScript '''
+        // tag::loop_invariant_multiple_example[]
+        import groovy.contracts.Invariant
+
+        int sum = 0
+        @Invariant({ sum >= 0 })
+        @Invariant({ sum <= 100 })
+        for (int i in 1..5) {
+            sum += i
+        }
+        assert sum == 15
+        // end::loop_invariant_multiple_example[]
+        '''
+    }
+
+    void testDecreasesWhile() {
+        assertScript '''
+        // tag::decreases_while_example[]
+        import groovy.contracts.Decreases
+
+        int n = 10
+        @Decreases({ n })
+        while (n > 0) {
+            n--
+        }
+        assert n == 0
+        // end::decreases_while_example[]
+        '''
+    }
+
+    void testDecreasesFor() {
+        assertScript '''
+        // tag::decreases_for_example[]
+        import groovy.contracts.Decreases
+
+        int remaining = 5
+        @Decreases({ remaining })
+        for (int i = 0; i < 5; i++) {
+            remaining--
+        }
+        assert remaining == 0
+        // end::decreases_for_example[]
+        '''
+    }
+
+    void testDecreasesLexicographic() {
+        assertScript '''
+        // tag::decreases_lexicographic_example[]
+        import groovy.contracts.Decreases
+
+        int outer = 2, inner = 3
+        @Decreases({ [outer, inner] })
+        while (outer > 0) {
+            if (inner > 0) {
+                inner--
+            } else {
+                outer--
+                inner = 3
+            }
+        }
+        assert outer == 0
+        // end::decreases_lexicographic_example[]
+        '''
+    }
+
+    void testDecreasesRecursion() {
+        assertScript '''
+        // tag::decreases_recursion_example[]
+        import groovy.contracts.Decreases
+
+        @Decreases({ n })                       // strictly decreases on every recursive call
+        int factorial(int n) {
+            n <= 1 ? 1 : n * factorial(n - 1)
+        }
+        assert factorial(5) == 120
+        // end::decreases_recursion_example[]
+        '''
+    }
+
     void testJep445Script() {
         runScript '''
         // tag::jep445_example[]

@@ -18,6 +18,8 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
+
 /**
  * A TrampolineClosure wraps a closure that needs to be executed on a functional trampoline.
  * Upon calling, a TrampolineClosure will call the original closure waiting for its result.
@@ -28,9 +30,14 @@ package groovy.lang;
  */
 final class TrampolineClosure<V> extends Closure<V> {
 
-    private static final long serialVersionUID = -4096349147398489925L;
+    @Serial private static final long serialVersionUID = -4096349147398489925L;
     private final Closure<V> original;
 
+    /**
+     * Creates a trampoline wrapper for the supplied closure.
+     *
+     * @param original the wrapped closure
+     */
     TrampolineClosure(final Closure<V> original) {
         super(original.getOwner(), original.getDelegate());
         this.original = original;

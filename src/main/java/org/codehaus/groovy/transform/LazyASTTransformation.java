@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform;
 
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -95,6 +96,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         String backingFieldName = "$" + fieldNode.getName();
         fieldNode.rename(backingFieldName);
         fieldNode.setModifiers(ACC_PRIVATE | ACC_SYNTHETIC | (fieldNode.getModifiers() & (~(ACC_PUBLIC | ACC_PROTECTED))));
+        AnnotatedNodeUtils.markAsInternal(fieldNode);
         PropertyNode pNode = fieldNode.getDeclaringClass().getProperty(backingFieldName);
         if (pNode != null) {
             fieldNode.getDeclaringClass().getProperties().remove(pNode);

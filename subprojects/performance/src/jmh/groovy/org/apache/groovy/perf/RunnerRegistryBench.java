@@ -35,6 +35,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Benchmark comparing GroovyRunnerRegistry iteration against plain list iteration.
+ */
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(2)
@@ -43,7 +46,14 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class RunnerRegistryBench {
 
+    /**
+     * Baseline list used for plain iteration comparisons.
+     */
     static List<Object> control = new ArrayList<>();
+
+    /**
+     * Registry instance iterated by the benchmark.
+     */
     static GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance();
     static {
         control.add(new Object());
@@ -52,6 +62,10 @@ public class RunnerRegistryBench {
         registry.load(RunnerRegistryBench.class.getClassLoader());
     }
 
+    /**
+     * Benchmark iteration over the GroovyRunnerRegistry.
+     * @param bh the blackhole for consuming results
+     */
     @Benchmark
     public void registryIterator(Blackhole bh) {
         for (GroovyRunner runner : registry) {
@@ -59,6 +73,10 @@ public class RunnerRegistryBench {
         }
     }
 
+    /**
+     * Benchmark iteration over a plain list (baseline).
+     * @param bh the blackhole for consuming results
+     */
     @Benchmark
     public void listIterator(Blackhole bh) {
         for (Object obj : control) {

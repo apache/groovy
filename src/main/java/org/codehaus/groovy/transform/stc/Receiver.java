@@ -23,8 +23,14 @@ import org.codehaus.groovy.ast.ClassNode;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Describes a method-call receiver together with optional auxiliary data.
+ */
 public class Receiver<T> {
 
+    /**
+     * Creates an object receiver for the supplied type or {@code Object} when null.
+     */
     public static <T> Receiver<T> make(final ClassNode type) {
         return new Receiver<>(type == null ? ClassHelper.OBJECT_TYPE.getPlainNodeReference() : type);
     }
@@ -33,14 +39,23 @@ public class Receiver<T> {
     private final boolean object;
     private final T data;
 
+    /**
+     * Creates an object receiver without auxiliary data.
+     */
     public Receiver(final ClassNode type) {
         this(type, true, null);
     }
 
+    /**
+     * Creates an object receiver with auxiliary data.
+     */
     public Receiver(final ClassNode type, final T data) {
         this(type, true, data);
     }
 
+    /**
+     * Creates a receiver descriptor.
+     */
     public Receiver(final ClassNode type, final boolean object, final T data) {
         this.type = requireNonNull(type);
         this.object = object;
@@ -49,6 +64,9 @@ public class Receiver<T> {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns the auxiliary data associated with this receiver.
+     */
     public T getData() {
         return data;
     }
@@ -62,10 +80,16 @@ public class Receiver<T> {
         return object;
     }
 
+    /**
+     * Returns the receiver type.
+     */
     public ClassNode getType() {
         return type;
     }
 
+    /**
+     * Returns a diagnostic representation of this receiver.
+     */
     @Override
     public final String toString() {
         return "Receiver{data=" + data + ", type=" + (object ? "" : "*") + type.toString(false) + "}";

@@ -26,11 +26,21 @@ package org.apache.groovy.ginq.dsl.expression;
 public abstract class ProcessExpression extends AbstractGinqExpression implements DataSourceHolder {
     private DataSourceExpression dataSourceExpression;
 
+    /**
+     * Returns the data source feeding this clause.
+     *
+     * @return the data source
+     */
     @Override
     public DataSourceExpression getDataSourceExpression() {
         return dataSourceExpression;
     }
 
+    /**
+     * Sets the data source feeding this clause.
+     *
+     * @param dataSourceExpression the data source to set
+     */
     @Override
     public void setDataSourceExpression(DataSourceExpression dataSourceExpression) {
         this.dataSourceExpression = dataSourceExpression;

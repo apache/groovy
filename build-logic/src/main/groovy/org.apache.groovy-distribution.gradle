@@ -19,13 +19,14 @@
 
 import org.apache.groovy.gradle.DistributionExtension
 import org.apache.groovy.gradle.DocGDK
+import org.apache.groovy.gradle.GenerateGDKMocks
 
 plugins {
     id 'jvm-ecosystem'
     id 'org.apache.groovy-common'
     id 'org.apache.groovy-aggregating-project'
     id 'org.apache.groovy-doc-aggregator'
-    id 'org.asciidoctor.jvm.pdf.classic'
+    id 'org.asciidoctor.jvm.pdf'
 }
 
 def distributionExtension = project.extensions.create('distribution', DistributionExtension, project)
@@ -94,11 +95,6 @@ dependencies {
     }
     distributions(project(":")) {
         capabilities {
-            requireCapability 'org.apache.groovy:groovy-gpars'
-        }
-    }
-    distributions(project(":")) {
-        capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
@@ -111,11 +107,14 @@ dependencies {
     docgeneratorTool projects.groovyDocgenerator
 }
 
-def docGDK = tasks.register('docGDK', DocGDK) {
+def generateGDKMocks = tasks.register('generateGDKMocks', GenerateGDKMocks) {
     classpath.from configurations.docgeneratorTool
     classes.set(distributionExtension.docgeneratorClasses)
-    resources.from project.project(projects.groovyDocgenerator.path).file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
-    resources.from project.project(projects.groovyDocgenerator.path).file('src/main/resources/org/apache/groovy/docgenerator/stylesheet.css')
+}
+
+def docGDK = tasks.register('docGDK', DocGDK) {
+    classpath.from configurations.docgeneratorTool
+    mocksDirectory.set(generateGDKMocks.flatMap { it.outputDirectory })
 }
 
 def distBin = tasks.register('distBin', Zip) {
@@ -179,6 +178,11 @@ tasks.register('dist') {
     dependsOn distSrc, distSdk, distDoc, distBin
 }
 
+def installGroovyExtraLibs = configurations.detachedConfiguration(
+    dependencies.create("org.slf4j:slf4j-simple:${versions.slf4j}")
+)
+installGroovyExtraLibs.transitive = false
+
 tasks.register("installGroovy", Sync) {
     duplicatesStrategy = DuplicatesStrategy.FAIL
     def installDir = sharedConfiguration.installationDirectory.orElse(layout.buildDirectory.dir("install").get().asFile)
@@ -187,6 +191,9 @@ tasks.register("installGroovy", Sync) {
         logger.lifecycle "Groovy installed under ${installDir.get()}"
     }
     with distributionExtension.distSpec
+    into('lib') {
+        from installGroovyExtraLibs
+    }
     into installDir
 }
 
@@ -198,6 +205,7 @@ tasks.register("asciidocAll", Copy) {
     from configurations.allAsciidoc
     from tasks.named('asciidoctor')
     into layout.buildDirectory.dir("asciidocAll/html5")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.named('asciidoctorPdf') {

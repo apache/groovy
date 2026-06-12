@@ -34,6 +34,9 @@ import java.awt.Component
 class ButtonOrDefaultRenderer extends DefaultTableCellRenderer {
     private static final long serialVersionUID = 4771388915540692105L
 
+    /**
+     * Returns the supplied component directly when possible, otherwise delegates to the default renderer.
+     */
     Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof JComponent) {
             value.setSize(Math.round(value.getSize().getWidth())?.toInteger(), table.getRowHeight(row))

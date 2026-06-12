@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 
 class Groovy_2473Bug {
     @Test
-    void testBug() {
+    void bug() {
         def w = new StringWriter()
         def b = new StreamingMarkupBuilder()
 

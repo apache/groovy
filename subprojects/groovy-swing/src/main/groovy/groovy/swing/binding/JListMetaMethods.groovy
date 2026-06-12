@@ -22,9 +22,16 @@ import javax.swing.JList
 import javax.swing.ListModel
 
 /**
+ * Adds synthetic convenience properties used by Swing binding code for {@link JList}.
+ *
  * @since 1.7.5
  */
 class JListMetaMethods {
+    /**
+     * Enhances the list with synthetic element and selection accessors.
+     *
+     * @param list the list to enhance
+     */
     static void enhanceMetaClass(JList list) {
         AbstractSyntheticMetaMethods.enhance(list, [
                 getElements        : { ->

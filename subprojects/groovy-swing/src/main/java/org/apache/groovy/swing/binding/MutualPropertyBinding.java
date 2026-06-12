@@ -21,25 +21,68 @@ package org.apache.groovy.swing.binding;
 import groovy.lang.Closure;
 
 /**
+ * Maintains two synchronized {@link PropertyBinding} instances that update each other.
+ *
  * @since Groovy 1.6
  */
 public class MutualPropertyBinding implements FullBinding {
 
+    /**
+     * Indicates whether the mutual binding pair is currently active.
+     */
     boolean bound;
 
+    /**
+     * The forward source-side property binding.
+     */
     PropertyBinding sourceBinding;
+    /**
+     * The forward target-side property binding.
+     */
     PropertyBinding targetBinding;
+    /**
+     * Optional validator applied to forward updates.
+     */
     Closure validator;
+    /**
+     * Optional converter applied from source to target.
+     */
     Closure converter;
+    /**
+     * Optional converter applied from target to source.
+     */
     Closure reverseConverter;
 
+    /**
+     * Factory used to create trigger bindings for each property side.
+     */
     Closure triggerFactory;
 
+    /**
+     * Trigger binding for forward updates.
+     */
     TriggerBinding forwardTriggerBinding;
+    /**
+     * Full binding used for forward propagation.
+     */
     FullBinding forwardBinding;
+    /**
+     * Trigger binding for reverse updates.
+     */
     TriggerBinding reverseTriggerBinding;
+    /**
+     * Full binding used for reverse propagation.
+     */
     FullBinding reverseBinding;
 
+    /**
+     * Creates a mutual binding between two property bindings.
+     *
+     * @param forwardTrigger the trigger binding for the initial source side
+     * @param source the source property binding
+     * @param target the target property binding
+     * @param triggerFactory factory used to create trigger bindings for each side
+     */
     MutualPropertyBinding(TriggerBinding forwardTrigger, PropertyBinding source, PropertyBinding target, Closure triggerFactory) {
         // order matters here!
         this.triggerFactory = triggerFactory;
@@ -49,16 +92,31 @@ public class MutualPropertyBinding implements FullBinding {
         rebuildBindings();
     }
 
+    /**
+     * Returns the forward source-side property binding.
+     *
+     * @return the source binding
+     */
     @Override
     public SourceBinding getSourceBinding() {
         return sourceBinding;
     }
 
+    /**
+     * Returns the forward target-side property binding.
+     *
+     * @return the target binding
+     */
     @Override
     public TargetBinding getTargetBinding() {
         return targetBinding;
     }
 
+    /**
+     * Replaces the source-side property binding and rebuilds the paired bindings.
+     *
+     * @param sourceBinding the new source binding
+     */
     @Override
     public void setSourceBinding(SourceBinding sourceBinding) {
         try {
@@ -74,6 +132,11 @@ public class MutualPropertyBinding implements FullBinding {
         rebuildBindings();
     }
 
+    /**
+     * Replaces the target-side property binding and rebuilds the paired bindings.
+     *
+     * @param targetBinding the new target binding
+     */
     @Override
     public void setTargetBinding(TargetBinding targetBinding) {
         try {
@@ -89,39 +152,72 @@ public class MutualPropertyBinding implements FullBinding {
         rebuildBindings();
     }
 
+    /**
+     * Replaces the validator applied to forward updates.
+     *
+     * @param validator the validator closure, or {@code null}
+     */
     @Override
     public void setValidator(Closure validator) {
         this.validator = validator;
         rebuildBindings();
     }
 
+    /**
+     * Returns the validator applied to forward updates.
+     *
+     * @return the validator closure, or {@code null}
+     */
     @Override
     public Closure getValidator() {
         return validator;
     }
 
+    /**
+     * Replaces the converter applied from source to target.
+     *
+     * @param converter the forward converter, or {@code null}
+     */
     @Override
     public void setConverter(Closure converter) {
         this.converter = converter;
         rebuildBindings();
     }
 
+    /**
+     * Returns the converter applied from source to target.
+     *
+     * @return the forward converter, or {@code null}
+     */
     @Override
     public Closure getConverter() {
         return converter;
     }
 
+    /**
+     * Replaces the converter applied from target to source.
+     *
+     * @param reverseConverter the reverse converter, or {@code null}
+     */
     @Override
     public void setReverseConverter(Closure reverseConverter) {
-       this.reverseConverter = reverseConverter;
+        this.reverseConverter = reverseConverter;
         rebuildBindings();
     }
 
+    /**
+     * Returns the converter applied from target to source.
+     *
+     * @return the reverse converter, or {@code null}
+     */
     @Override
     public Closure getReverseConverter() {
         return reverseConverter;
     }
 
+    /**
+     * Rebuilds the internal forward and reverse bindings to match the current configuration.
+     */
     protected void rebuildBindings() {
         // tear stuff down, even if we are half built
         if (bound) {
@@ -159,6 +255,9 @@ public class MutualPropertyBinding implements FullBinding {
 
     }
 
+    /**
+     * Binds both forward and reverse bindings when the pair is fully configured.
+     */
     @Override
     public void bind() {
         if (!bound) {
@@ -182,6 +281,9 @@ public class MutualPropertyBinding implements FullBinding {
         }
     }
 
+    /**
+     * Unbinds both forward and reverse bindings.
+     */
     @Override
     public void unbind() {
         if (bound) {
@@ -191,6 +293,9 @@ public class MutualPropertyBinding implements FullBinding {
         }
     }
 
+    /**
+     * Rebinds both forward and reverse bindings when currently active.
+     */
     @Override
     public void rebind() {
         if (bound) {
@@ -199,14 +304,19 @@ public class MutualPropertyBinding implements FullBinding {
         }
     }
 
+    /**
+     * Pushes an update from the source side to the target side.
+     */
     @Override
     public void update() {
         forwardBinding.update();
     }
 
+    /**
+     * Pushes an update from the target side back to the source side.
+     */
     @Override
     public void reverseUpdate() {
         reverseBinding.update();
     }
 }
-

@@ -71,6 +71,7 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
     private static final Class MY_CLASS = groovy.beans.ListenerList
     private static final ClassNode COLLECTION_TYPE = ClassHelper.make(Collection)
 
+    /** {@inheritDoc} */
     @SuppressWarnings('Instanceof')
     void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -80,6 +81,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
         FieldNode field = nodes[1]
         ClassNode declaringClass = nodes[1].declaringClass
         ClassNode parentClass = field.type
+
+        // GEP-21 Shape C: discard any stubber-emitted placeholder methods so
+        // the conflict checks in addAddListener / addRemoveListener / etc.
+        // catch only genuine user-written method conflicts, not the stubber's
+        // own placeholders. Use removeMethod() rather than removeIf() on the
+        // list, since ClassNode keeps a parallel name->methods map.
+        def stubs = declaringClass.methods.findAll { org.codehaus.groovy.transform.StubberSupport.isStub(it) }
+        stubs.each { declaringClass.removeMethod(it) }
 
         boolean isCollection = parentClass.isDerivedFrom(COLLECTION_TYPE) || parentClass.implementsInterface(COLLECTION_TYPE)
 
@@ -138,6 +147,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *     ${field.name}.add(listener)
      * }
      * </pre>
+     *
+     * @param source the current source unit
+     * @param node the {@code @ListenerList} annotation node
+     * @param declaringClass the class receiving the generated method
+     * @param field the annotated listener list field
+     * @param listener the listener type
+     * @param name the logical listener name used in generated method names
+     * @param synchronize {@code true} if the generated method should be synchronized
      */
     void addAddListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
 
@@ -179,6 +196,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *     ${field.name}.remove(listener)
      * }
      * </pre>
+     *
+     * @param source the current source unit
+     * @param node the {@code @ListenerList} annotation node
+     * @param declaringClass the class receiving the generated method
+     * @param field the annotated listener list field
+     * @param listener the listener type
+     * @param name the logical listener name used in generated method names
+     * @param synchronize {@code true} if the generated method should be synchronized
      */
     void addRemoveListener(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
         def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
@@ -218,6 +243,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *     return __result as ${name.capitalize}[]
      * }
      * </pre>
+     *
+     * @param source the current source unit
+     * @param node the {@code @ListenerList} annotation node
+     * @param declaringClass the class receiving the generated method
+     * @param field the annotated listener list field
+     * @param listener the listener type
+     * @param name the logical listener name used in generated method names
+     * @param synchronize {@code true} if the generated method should be synchronized
      */
     void addGetListeners(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, ClassNode listener, String name, synchronize) {
         def methodModifiers = synchronize ? ACC_PUBLIC | ACC_SYNCHRONIZED : ACC_PUBLIC
@@ -254,6 +287,14 @@ class ListenerListASTTransformation implements ASTTransformation, Opcodes {
      *     }
      * }
      * </pre>
+     *
+     * @param source the current source unit
+     * @param node the {@code @ListenerList} annotation node
+     * @param declaringClass the class receiving the generated methods
+     * @param field the annotated listener list field
+     * @param types the generic listener list types
+     * @param synchronize {@code true} if generated fire methods should be synchronized
+     * @param method the listener callback method used to derive the fire method
      */
     void addFireMethods(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field, GenericsType[] types, boolean synchronize, MethodNode method) {
 

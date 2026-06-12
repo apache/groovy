@@ -27,6 +27,7 @@ import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,59 +42,98 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
     private static final GroovyPackageDoc[] EMPTY_GROOVYPACKAGEDOC_ARRAY = new GroovyPackageDoc[0];
     private static final GroovyMethodDoc[] EMPTY_GROOVYMETHODDOC_ARRAY = new GroovyMethodDoc[0];
     private static final GroovyType[] EMPTY_GROOVYTYPE_ARRAY = new GroovyType[0];
-    private final Class externalClass;
+    private final Class<?> externalClass;
     private final List<GroovyAnnotationRef> annotationRefs;
 
-    public ExternalGroovyClassDoc(Class externalClass) {
+    /**
+     * Creates a doc entry for the given external (non-source) class.
+     *
+     * @param externalClass the reflected class to represent
+     */
+    public ExternalGroovyClassDoc(Class<?> externalClass) {
         this.externalClass = externalClass;
         annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isPrimitive() {
         return externalClass.isPrimitive();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyAnnotationRef[] annotations() {
         return annotationRefs.toArray(EMPTY_GROOVYANNOTATIONREF_ARRAY);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String qualifiedTypeName() {
-        return externalClass.getName();
+        String canonicalName = externalClass.getCanonicalName();
+        return canonicalName != null ? canonicalName : externalClass.getName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyClassDoc superclass() {
-        Class aClass = externalClass.getSuperclass();
-        if (aClass != null) return new ExternalGroovyClassDoc(aClass);
-        return new ExternalGroovyClassDoc(Object.class);
+        Class<?> aClass = externalClass.getSuperclass();
+        return aClass != null ? new ExternalGroovyClassDoc(aClass) : null;
     }
 
-    public Class externalClass() {
+    /**
+     * Returns the underlying reflected class.
+     */
+    public Class<?> externalClass() {
         return externalClass;
     }
 
+    /**
+     * Returns {@code "interface"} if the external class is an interface; otherwise {@code "class"}.
+     */
     public String getTypeSourceDescription() {
         return externalClass.isInterface() ? "interface" : "class";
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String simpleTypeName() {
-        return qualifiedTypeName(); // TODO fix
+        String simpleName = externalClass.getSimpleName();
+        if (!simpleName.isEmpty()) return simpleName;
+        String qualifiedName = qualifiedTypeName();
+        int lastDot = qualifiedName.lastIndexOf('.');
+        return lastDot >= 0 ? qualifiedName.substring(lastDot + 1) : qualifiedName;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String typeName() {
         return qualifiedTypeName(); // TODO fix
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return qualifiedTypeName().hashCode();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
@@ -104,286 +144,464 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
 
     // TODO implement below if/when needed
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyType superclassType() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyConstructorDoc[] constructors() {
         return EMPTY_GROOVYCONSTRUCTORDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyConstructorDoc[] constructors(boolean filter) {
         return EMPTY_GROOVYCONSTRUCTORDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean definesSerializableFields() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyFieldDoc[] enumConstants() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyFieldDoc[] fields() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyFieldDoc[] properties() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyFieldDoc[] fields(boolean filter) {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyClassDoc findClass(String className) {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyClassDoc[] importedClasses() {
         return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyPackageDoc[] importedPackages() {
         return EMPTY_GROOVYPACKAGEDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyClassDoc[] innerClasses() {
         return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyClassDoc[] innerClasses(boolean filter) {
         return EMPTY_GROOVYCLASSDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyClassDoc[] interfaces() {
-        return EMPTY_GROOVYCLASSDOC_ARRAY;
+        Class<?>[] interfaces = externalClass.getInterfaces();
+        if (interfaces.length == 0) return EMPTY_GROOVYCLASSDOC_ARRAY;
+
+        GroovyClassDoc[] result = new GroovyClassDoc[interfaces.length];
+        for (int i = 0; i < interfaces.length; i++) {
+            result[i] = new ExternalGroovyClassDoc(interfaces[i]);
+        }
+        return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyType[] interfaceTypes() {
         return EMPTY_GROOVYTYPE_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isAbstract() {
-        return false;
+        return Modifier.isAbstract(externalClass.getModifiers());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isExternalizable() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isSerializable() {
-        return false;
+        return java.io.Serializable.class.isAssignableFrom(externalClass);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyMethodDoc[] methods() {
-        return EMPTY_GROOVYMETHODDOC_ARRAY;
+        return ExternalJavadocSupport.methodsFor(this);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyMethodDoc[] methods(boolean filter) {
-        return EMPTY_GROOVYMETHODDOC_ARRAY;
+        return methods();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyFieldDoc[] serializableFields() {
         return EMPTY_GROOVYFIELDDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyMethodDoc[] serializationMethods() {
         return EMPTY_GROOVYMETHODDOC_ARRAY;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean subclassOf(GroovyClassDoc gcd) {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getFullPathName() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getRelativeRootPath() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyClassDoc containingClass() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public GroovyPackageDoc containingPackage() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isFinal() {
-        return false;
+        return Modifier.isFinal(externalClass.getModifiers());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isPackagePrivate() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isPrivate() {
-        return false;
+        return Modifier.isPrivate(externalClass.getModifiers());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isProtected() {
-        return false;
+        return Modifier.isProtected(externalClass.getModifiers());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isPublic() {
-        return false;
+        return Modifier.isPublic(externalClass.getModifiers());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isStatic() {
-        return false;
+        return Modifier.isStatic(externalClass.getModifiers());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String modifiers() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int modifierSpecifier() {
-        return 0;
+        return externalClass.getModifiers();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String qualifiedName() {
-        return null;
+        return externalClass.getName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String commentText() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getRawCommentText() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isAnnotationType() {
-        return false;
+        return externalClass.isAnnotation();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isAnnotationTypeElement() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isClass() {
-        return false;
+        return !externalClass.isInterface() && !externalClass.isAnnotation() && !externalClass.isEnum() && !externalClass.isRecord();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isConstructor() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isDeprecated() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isEnum() {
-        return false;
+        return externalClass.isEnum();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isRecord() {
-        return false;
+        return externalClass.isRecord();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isEnumConstant() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isError() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isException() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isField() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isIncluded() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isInterface() {
-        return false;
+        return externalClass.isInterface();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isMethod() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isOrdinaryClass() {
-        return false;
+        return isClass();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String name() {
         return externalClass.getSimpleName();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setRawCommentText(String arg0) {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String firstSentenceCommentText() {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int compareTo(GroovyDoc o) {
         return 0;

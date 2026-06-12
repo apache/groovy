@@ -49,14 +49,12 @@ final class Groovy9892 extends StaticTypeCheckingTestCase implements StaticCompi
     @Test
     void testIncrementPropertyWithinClosure2() {
         assertScript '''
-            import groovyx.gpars.dataflow.Dataflow
-
             class C {
                 boolean stopProcessing = true
                 int processedEvents = 0
 
                 void test() {
-                    def promise = Dataflow.task {
+                    def promise = async {
                         while (!stopProcessing) {
                             processedEvents++
                         }

@@ -122,6 +122,7 @@ You might need to use the _contextClassLoader_ attribute (see below) if any of y
 |output|Set the output file; defaults to the Ant log.|No
 |append|If enabled and output is to a file, append to existing file rather than overwrite. Defaults to false.|No
 |fork|If enabled the script will be executed in a forked JVM process (disabled by default).|No
+|inheritAll|If enabled and `fork` is true, all properties from the parent Ant project are passed to the forked JVM as system properties. For selective passing, use a nested `<syspropertyset>` instead. Defaults to false.|No
 |scriptBaseClass|The name of the base class for scripts.|No
 |parameters|Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. |No
 |useGroovyShell|If enabled a new GroovyShell is used to run the script. Special variables won't be available but you don't need Ant in the classpath. Defaults to false. |No
@@ -139,6 +140,20 @@ Groovy's classpath attribute is a PATH like structure and can also be set via a 
 === <arg>
 
 Arguments can be set via one or more nested <arg> elements using the standard Ant https://ant.apache.org/manual/using.html#arg[command line conventions].
+
+=== <sysproperty> and <syspropertyset>
+
+Because `<groovy>` extends Ant's https://ant.apache.org/manual/Tasks/java.html[`<java>`] task, you can use nested
+`<sysproperty>` and `<syspropertyset>` elements to pass specific properties into the forked JVM when `fork="true"`.
+The forked script reads them via `System.getProperty("name")`.
+
+If you want to pass _all_ properties from the parent Ant project, set `inheritAll="true"` instead.
+Explicit `<sysproperty>` and `<syspropertyset>` entries take precedence on name collision.
+
+[NOTE]
+The `properties` binding (see below) reflects only the child JVM's Ant project when `fork="true"`,
+not the parent project's properties. Use system properties (via `<sysproperty>`, `<syspropertyset>`,
+or `inheritAll`) to communicate values to a forked script.
 
 == Available bindings
 
@@ -316,6 +331,30 @@ Setting arguments:
         args.each{ ant.echo(message:it) }
     </groovy>
 </target>
+---------------------------------------------------------------------------------
+
+Passing Ant properties into a forked JVM selectively via `<syspropertyset>`:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<property name="myapp.url" value="https://example.com"/>
+<property name="myapp.timeout" value="30"/>
+<groovy fork="true">
+    <syspropertyset>
+        <propertyref prefix="myapp."/>
+    </syspropertyset>
+    println "Calling ${System.getProperty('myapp.url')} with timeout ${System.getProperty('myapp.timeout')}"
+</groovy>
+---------------------------------------------------------------------------------
+
+Or pass every parent property at once with `inheritAll`:
+
+[source,xml]
+---------------------------------------------------------------------------------
+<property name="target.env" value="staging"/>
+<groovy fork="true" inheritAll="true">
+    println "Deploying to ${System.getProperty('target.env')}"
+</groovy>
 ---------------------------------------------------------------------------------
 
 Output:

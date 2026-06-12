@@ -20,9 +20,22 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.GroovyRuntimeException;
 
-public class CacheAccessControlException extends GroovyRuntimeException {
-    private static final long serialVersionUID = -5315107566539656474L;
+import java.io.Serial;
 
+/**
+ * Exception thrown when access control restrictions prevent reflection operations on cached classes.
+ * <p>
+ * Extends {@link GroovyRuntimeException} to indicate runtime errors in reflection cache management.
+ */
+public class CacheAccessControlException extends GroovyRuntimeException {
+    @Serial private static final long serialVersionUID = -5315107566539656474L;
+
+    /**
+     * Constructs a {@code CacheAccessControlException} with the specified detail message and cause.
+     *
+     * @param message the detail message describing why access was denied
+     * @param cause the underlying exception that triggered the access control error
+     */
     public CacheAccessControlException(String message, Throwable cause) {
         super(message, cause);
     }

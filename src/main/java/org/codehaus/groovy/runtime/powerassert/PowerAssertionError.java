@@ -18,16 +18,28 @@
  */
 package org.codehaus.groovy.runtime.powerassert;
 
+import java.io.Serial;
+
 /**
  * Indicates that a power assertion has failed.
  */
 public class PowerAssertionError extends java.lang.AssertionError {
-    private static final long serialVersionUID = -2204531294530022591L;
+    @Serial private static final long serialVersionUID = -2204531294530022591L;
 
+    /**
+     * Creates an error containing the rendered power assertion output.
+     *
+     * @param msg the rendered assertion failure details
+     */
     public PowerAssertionError(String msg) {
         super(msg);
     }
 
+    /**
+     * Returns the standard power assertion failure message shown to callers.
+     *
+     * @return the formatted assertion failure text
+     */
     @Override
     public String toString() {
         return String.format("Assertion failed: %n%n%s%n", getMessage());

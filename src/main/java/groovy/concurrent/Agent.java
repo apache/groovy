@@ -1,0 +1,508 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package groovy.concurrent;
+
+import org.apache.groovy.runtime.async.AsyncSupport;
+import org.apache.groovy.runtime.async.GroovyPromise;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SubmissionPublisher;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
+
+/**
+ * A thread-safe mutable-value container inspired by Clojure's agents and
+ * GPars' {@code Agent}.
+ * <p>
+ * An {@code Agent} wraps a value that can be read by any thread but
+ * modified only through serialized update functions. Updates are queued
+ * and applied one at a time on a dedicated executor, guaranteeing that
+ * the value is never corrupted by concurrent writes.
+ * <p>
+ * Reading the current value via {@link #get()} is non-blocking and
+ * returns a snapshot. Sending an update via {@link #send(Function)} is
+ * also non-blocking — the function is queued and applied asynchronously.
+ * Use {@link #sendAndGet(Function)} to obtain an {@link Awaitable} that
+ * completes with the new value after the update is applied.
+ *
+ * <pre>{@code
+ * // Groovy:
+ * def counter = Agent.create(0)
+ * counter.send { it + 1 }
+ * counter.send { it + 1 }
+ * assert await(counter.getAsync()) == 2
+ *
+ * // Java:
+ * Agent<Integer> counter = Agent.create(0);
+ * counter.send(n -> n + 1);
+ * Awaitable<Integer> result = counter.sendAndGet(n -> n + 1);
+ * }</pre>
+ *
+ * @param <T> the value type
+ * @see Pool
+ * @see AsyncScope
+ * @since 6.0.0
+ */
+public final class Agent<T> {
+
+    /** Default per-subscriber buffer size for {@link #changes()}. */
+    private static final int DEFAULT_CHANGES_BUFFER = 256;
+
+    private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final ExecutorService updateExecutor;
+    private final Object lifecycleLock = new Object();
+    private volatile T value;
+    private volatile SubmissionPublisher<T> changesPublisher;
+    private volatile boolean shutdownInvoked;
+
+    private Agent(T initialValue, ExecutorService executor) {
+        this.value = initialValue;
+        this.updateExecutor = executor;
+    }
+
+    /**
+     * Creates an agent with the given initial value, using a
+     * single-thread executor for serialized updates.
+     *
+     * @param initialValue the starting value
+     * @param <T>          the value type
+     * @return a new agent
+     */
+    public static <T> Agent<T> create(T initialValue) {
+        return new Agent<>(initialValue,
+                Executors.newSingleThreadExecutor(r -> {
+                    Thread t = new Thread(r, "groovy-agent");
+                    t.setDaemon(true);
+                    return t;
+                }));
+    }
+
+    /**
+     * Creates an agent backed by the given pool for update execution.
+     * Updates are still serialized (only one at a time), but they run
+     * on the pool's threads.
+     *
+     * @param initialValue the starting value
+     * @param pool         the pool to use for updates
+     * @param <T>          the value type
+     * @return a new agent
+     */
+    public static <T> Agent<T> create(T initialValue, Pool pool) {
+        Objects.requireNonNull(pool, "pool must not be null");
+        // Use a SerialExecutor to serialize updates on the pool's threads.
+        // We cannot use newSingleThreadExecutor with a delegating ThreadFactory
+        // because that breaks the executor's internal task loop.
+        return new Agent<>(initialValue, new SerialExecutor(pool));
+    }
+
+    /**
+     * Returns the current value. This is a non-blocking snapshot read.
+     *
+     * @return the current value
+     */
+    public T get() {
+        rwLock.readLock().lock();
+        try {
+            return value;
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Returns the current value as an {@link Awaitable}. The awaitable
+     * completes after all previously queued updates have been applied,
+     * ensuring a consistent read.
+     *
+     * @return an awaitable holding the value after pending updates
+     */
+    public Awaitable<T> getAsync() {
+        CompletableFuture<T> cf = new CompletableFuture<>();
+        updateExecutor.execute(() -> {
+            rwLock.readLock().lock();
+            try {
+                cf.complete(value);
+            } finally {
+                rwLock.readLock().unlock();
+            }
+        });
+        return GroovyPromise.of(cf);
+    }
+
+    /**
+     * Queues an update function to be applied to the current value.
+     * The function receives the current value and returns the new value.
+     * <p>
+     * Updates are applied asynchronously and serialized: only one update
+     * runs at a time.
+     *
+     * @param updateFn a function from current value to new value
+     */
+    public void send(Function<T, T> updateFn) {
+        Objects.requireNonNull(updateFn, "update function must not be null");
+        updateExecutor.execute(() -> applyUpdate(updateFn));
+    }
+
+    /**
+     * Queues an update function and returns an {@link Awaitable} that
+     * completes with the new value after the update is applied.
+     *
+     * @param updateFn a function from current value to new value
+     * @return an awaitable holding the new value
+     */
+    public Awaitable<T> sendAndGet(Function<T, T> updateFn) {
+        Objects.requireNonNull(updateFn, "update function must not be null");
+        CompletableFuture<T> cf = new CompletableFuture<>();
+        updateExecutor.execute(() -> {
+            try {
+                T newVal = applyUpdate(updateFn);
+                cf.complete(newVal);
+            } catch (Throwable t) {
+                cf.completeExceptionally(t);
+            }
+        });
+        return GroovyPromise.of(cf);
+    }
+
+    /**
+     * Shuts down the agent's update executor. No further updates will
+     * be accepted. Pending updates are executed before shutdown completes.
+     * The changes publisher (if any subscribers attached) is closed after
+     * pending updates drain, signalling {@code onComplete} to all live
+     * subscribers. Calling {@code shutdown()} more than once is a no-op.
+     */
+    public void shutdown() {
+        SubmissionPublisher<T> p;
+        synchronized (lifecycleLock) {
+            if (shutdownInvoked) return;
+            shutdownInvoked = true;
+            p = changesPublisher;
+        }
+        if (p != null) {
+            // Submit close as a terminator task so it runs after any queued
+            // updates have drained — ensures applyUpdate never offers to a
+            // publisher that has already been closed.
+            try {
+                updateExecutor.execute(p::close);
+            } catch (RejectedExecutionException ex) {
+                p.close();
+            }
+        }
+        updateExecutor.shutdown();
+    }
+
+    /**
+     * Returns a {@link Flow.Publisher} that emits the agent's value after
+     * every successful update. The publisher is hot and per-subscriber:
+     * <ul>
+     *   <li>Subscribers see only changes that occur after they subscribe;
+     *       the current value at subscription time is <em>not</em> replayed.</li>
+     *   <li>Each subscriber gets an independent buffer (default
+     *       {@value #DEFAULT_CHANGES_BUFFER} items).</li>
+     *   <li>Slow subscribers drop the most recent value rather than
+     *       blocking the agent's update thread. Values already buffered
+     *       are delivered in order; only newly-offered values that cannot
+     *       fit are discarded.</li>
+     *   <li>Closes (signals {@code onComplete}) when {@link #shutdown()} is
+     *       called. If {@code changes()} is first called after
+     *       {@code shutdown()}, the returned publisher is already closed
+     *       and subscribers receive {@code onComplete} immediately.</li>
+     * </ul>
+     * <p>
+     * Typical use:
+     * <pre>{@code
+     * for await (newValue in agent.changes()) {
+     *     log.info "Agent value is now {}", newValue
+     * }
+     * }</pre>
+     *
+     * @return a hot publisher of state transitions
+     * @since 6.0.0
+     */
+    public Flow.Publisher<T> changes() {
+        SubmissionPublisher<T> p = changesPublisher;
+        if (p == null) {
+            synchronized (lifecycleLock) {
+                p = changesPublisher;
+                if (p == null) {
+                    p = new SubmissionPublisher<>(
+                            AsyncSupport.getExecutor(), DEFAULT_CHANGES_BUFFER);
+                    if (shutdownInvoked) p.close();
+                    changesPublisher = p;
+                }
+            }
+        }
+        return p;
+    }
+
+    /**
+     * Returns the current value in a diagnostic form.
+     *
+     * @return the current value description
+     */
+    @Override
+    public String toString() {
+        return "Agent[" + get() + "]";
+    }
+
+    private T applyUpdate(Function<T, T> updateFn) {
+        rwLock.writeLock().lock();
+        T newValue;
+        try {
+            value = updateFn.apply(value);
+            newValue = value;
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+        SubmissionPublisher<T> p = changesPublisher;
+        if (p != null) {
+            // Two distinct edge cases handled here, on purpose:
+            //
+            //   (a) Slow-subscriber drop policy. The onDrop predicate
+            //       `(sub, item) -> false` tells SubmissionPublisher.offer
+            //       NOT to retry when a subscriber's per-subscriber buffer
+            //       is full — i.e. drop the emission for that lagging
+            //       subscriber. This is the documented contract: the agent's
+            //       serial update loop must never back-pressure on a slow
+            //       downstream.
+            //
+            //   (b) Close-vs-offer race. Between this thread reading
+            //       `changesPublisher` (above) and calling `offer`, another
+            //       thread can run `shutdown()` and close the publisher. The
+            //       resulting IllegalStateException is intentionally
+            //       swallowed: the publisher is gone, this emission is
+            //       moot, and the close path is responsible for
+            //       onComplete-ing remaining subscribers.
+            try {
+                p.offer(newValue, (sub, item) -> false);
+            } catch (IllegalStateException ignore) {
+                // see (b) above
+            }
+        }
+        return newValue;
+    }
+
+    /**
+     * An executor that serializes task execution on a delegate executor.
+     * Tasks are queued and executed one at a time — when one completes,
+     * the next is submitted to the delegate.
+     */
+    private static final class SerialExecutor implements ExecutorService {
+        private final Executor delegate;
+        private final Queue<Runnable> queue = new ConcurrentLinkedQueue<>();
+        private final AtomicBoolean active = new AtomicBoolean();
+        private volatile boolean shutdown;
+
+        /**
+         * Creates a serial executor backed by the supplied delegate.
+         *
+         * @param delegate the executor used to run queued tasks
+         */
+        SerialExecutor(Executor delegate) {
+            this.delegate = delegate;
+        }
+
+        /**
+         * Queues a task for serial execution.
+         *
+         * @param command the task to execute
+         */
+        @Override
+        public void execute(Runnable command) {
+            if (shutdown) throw new RejectedExecutionException("shutdown");
+            queue.add(command);
+            scheduleNext();
+        }
+
+        private void scheduleNext() {
+            if (!queue.isEmpty() && active.compareAndSet(false, true)) {
+                delegate.execute(() -> {
+                    Runnable task = queue.poll();
+                    if (task != null) {
+                        try {
+                            task.run();
+                        } finally {
+                            active.set(false);
+                            scheduleNext();
+                        }
+                    } else {
+                        active.set(false);
+                    }
+                });
+            }
+        }
+
+        /**
+         * Prevents further task submission.
+         */
+        @Override
+        public void shutdown() {
+            shutdown = true;
+        }
+
+        /**
+         * Prevents further task submission and returns no queued tasks.
+         *
+         * @return an empty task list
+         */
+        @Override
+        public List<Runnable> shutdownNow() {
+            shutdown = true;
+            return List.of();
+        }
+
+        /**
+         * Indicates whether shutdown has been requested.
+         *
+         * @return {@code true} if shutdown was requested
+         */
+        @Override public boolean isShutdown() { return shutdown; }
+        /**
+         * Indicates whether shutdown was requested and the queue is empty.
+         *
+         * @return {@code true} if this executor has terminated
+         */
+        @Override public boolean isTerminated() { return shutdown && queue.isEmpty(); }
+
+        /**
+         * Checks the current termination state without blocking.
+         *
+         * @param timeout ignored
+         * @param unit ignored
+         * @return {@code true} if this executor is terminated
+         */
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit) {
+            return isTerminated();
+        }
+
+        /**
+         * Submits a callable for serial execution.
+         *
+         * @param task the task to submit
+         * @param <T> the result type
+         * @return a future for the submitted task
+         */
+        @Override
+        public <T> Future<T> submit(Callable<T> task) {
+            FutureTask<T> ft = new FutureTask<>(task);
+            execute(ft);
+            return ft;
+        }
+
+        /**
+         * Submits a runnable for serial execution with a preset result.
+         *
+         * @param task the task to submit
+         * @param result the result to return on completion
+         * @param <T> the result type
+         * @return a future for the submitted task
+         */
+        @Override
+        public <T> Future<T> submit(Runnable task, T result) {
+            FutureTask<T> ft = new FutureTask<>(task, result);
+            execute(ft);
+            return ft;
+        }
+
+        /**
+         * Submits a runnable for serial execution.
+         *
+         * @param task the task to submit
+         * @return a future for the submitted task
+         */
+        @Override
+        public Future<?> submit(Runnable task) {
+            FutureTask<Void> ft = new FutureTask<>(task, null);
+            execute(ft);
+            return ft;
+        }
+
+        /**
+         * This serial executor does not support bulk invocation.
+         *
+         * @param tasks ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * This serial executor does not support timed bulk invocation.
+         *
+         * @param tasks ignored
+         * @param timeout ignored
+         * @param unit ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * This serial executor does not support invoking any task from a batch.
+         *
+         * @param tasks ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks) {
+            throw new UnsupportedOperationException();
+        }
+
+        /**
+         * This serial executor does not support timed invoke-any operations.
+         *
+         * @param tasks ignored
+         * @param timeout ignored
+         * @param unit ignored
+         * @param <T> the result type
+         * @return never returns normally
+         * @throws UnsupportedOperationException always
+         */
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) {
+            throw new UnsupportedOperationException();
+        }
+    }
+}

@@ -107,23 +107,35 @@ import java.lang.annotation.Target
  * <li>The annotated Collection field must not have a generic wildcard declared</li>
  * <li>The generated methods must not already exist</li>
  * </ul>
+ * <p>
+ * Joint compilation note: when the listener interface is itself a Groovy class in the same compilation
+ * unit and gains methods from another AST transform, those {@code fireXxx} overloads are not visible
+ * in the stub. Classpath listener interfaces (e.g. {@code java.beans.PropertyChangeListener},
+ * {@code java.awt.event.ActionListener}) are fully covered for Java callers.
  *
  * @see ListenerListASTTransformation
  */
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTTransformationClass('groovy.beans.ListenerListASTTransformation')
+@GroovyASTTransformationClass([
+        'groovy.beans.ListenerListASTStubber',
+        'groovy.beans.ListenerListASTTransformation'
+])
 @interface ListenerList {
     /**
      * A suffix for creating the add, remove, and get methods
      * defaulting to the name of the listener type, e.g. if name is set to MyListener,
      * then the class will have addMyListener, removeMyListener, and getMyListeners methods.
+     *
+     * @return the suffix used when deriving generated listener method names
      */
     String name() default ''
 
     /**
      * Whether or not the methods created should be synchronized at the method level.
+     *
+     * @return {@code true} if generated listener methods should be synchronized
      */
     boolean synchronize() default false
 }

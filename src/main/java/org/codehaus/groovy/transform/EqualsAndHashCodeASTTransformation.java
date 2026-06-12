@@ -88,10 +88,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.nonGeneric;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsInternal;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
+/**
+ * Handles generation of equals() and hashCode() methods via the {@link EqualsAndHashCode} annotation.
+ */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = EqualsAndHashCode.class;
@@ -147,37 +151,108 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         }
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, allNames,false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, allNames, allProperties, false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo) {
         createHashCode(cNode, cacheResult, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, false);
     }
 
+    /**
+     * Generates a hashCode method for the given class.
+     *
+     * @param cNode the class to add hashCode method to
+     * @param cacheResult whether to cache the hash code in a field
+     * @param includeFields whether to include fields in the hash code
+     * @param callSuper whether to include superclass hash code
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     * @param useGetter whether to use getter methods instead of direct field access
+     */
     public static void createHashCode(ClassNode cNode, boolean cacheResult, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingHashCode = hasDeclaredMethod(cNode, HASH_CODE, 0);
+        // GEP-21 Shape C: a stubber may have inserted a placeholder hashCode at
+        // CONVERSION so the @EqualsAndHashCode-generated override appears in
+        // the joint compilation stub. Treat that placeholder as "not yet
+        // generated" so we replace its body below.
+        MethodNode stubberHashCodePlaceholder = null;
         if (hasExistingHashCode) {
             // no point in the private method if one with that name already exists
             if (hasDeclaredMethod(cNode, UNDER_HASH_CODE, 0)) return;
-            // an existing generated method also takes precedence
             MethodNode hashCode = cNode.getDeclaredMethod(HASH_CODE, Parameter.EMPTY_ARRAY);
-            if (AnnotatedNodeUtils.isGenerated(hashCode)) return;
+            if (StubberSupport.isStub(hashCode)) {
+                stubberHashCodePlaceholder = hashCode;
+                hasExistingHashCode = false;
+            } else if (AnnotatedNodeUtils.isGenerated(hashCode)) {
+                // an existing non-stub generated method also takes precedence
+                return;
+            }
         }
 
         final BlockStatement body = new BlockStatement();
         // TODO use pList and fList
         if (cacheResult) {
             final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
+            markAsInternal(hashField);
             final Expression hash = varX(hashField);
             body.addStatement(ifS(
                     isZeroX(hash),
@@ -188,13 +263,18 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             body.addStatement(calculateHashStatements(cNode, null, includeFields, callSuper, excludes, includes, allNames, allProperties, pojo, useGetter));
         }
 
-        addGeneratedMethod(cNode,
-                hasExistingHashCode ? UNDER_HASH_CODE : HASH_CODE,
-                hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.int_TYPE,
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                body);
+        if (stubberHashCodePlaceholder != null) {
+            stubberHashCodePlaceholder.setCode(body);
+            StubberSupport.clearStub(stubberHashCodePlaceholder);
+        } else {
+            addGeneratedMethod(cNode,
+                    hasExistingHashCode ? UNDER_HASH_CODE : HASH_CODE,
+                    hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
+                    ClassHelper.int_TYPE,
+                    Parameter.EMPTY_ARRAY,
+                    ClassNode.EMPTY_ARRAY,
+                    body);
+        }
     }
 
     private static Statement calculateHashStatements(ClassNode cNode, Expression hash, boolean includeFields, boolean callSuper, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
@@ -217,7 +297,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         body.addStatement(declS(result, callX(HASHUTIL_TYPE, "initHash")));
 
         for (PropertyNode pNode : pList) {
-            if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
             Expression prop = useGetter ? getterThisX(cNode, pNode) : propX(varX("this"), pNode.getName());
             final Expression current = callX(HASHUTIL_TYPE, UPDATE_HASH, args(result, prop));
@@ -227,7 +307,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(fNode, excludes, includes, allNames)) continue;
             // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
             final Expression fieldExpr = varX(fNode);
             final Expression current = callX(HASHUTIL_TYPE, UPDATE_HASH, args(result, fieldExpr));
@@ -259,7 +339,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         final BlockStatement body = new BlockStatement();
         final ArgumentListExpression args = new ArgumentListExpression();
         for (PropertyNode pNode : pList) {
-            if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             if (useGetter) {
                 args.addExpression(getterThisX(cNode, pNode));
             } else {
@@ -267,7 +347,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             }
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(fNode, excludes, includes, allNames)) continue;
             args.addExpression(varX(fNode));
         }
         if (callSuper) {
@@ -300,31 +380,102 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         NullCheckASTTransformation.markAsProcessed(canEqual);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, false);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames,false);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames, allProperties, false);
     }
 
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo) {
         createEquals(cNode, includeFields, callSuper, useCanEqual, excludes, includes, allNames, allProperties, pojo, false);
     }
+
+    /**
+     * Generates an equals method for the given class.
+     *
+     * @param cNode the class to add equals method to
+     * @param includeFields whether to include fields in the comparison
+     * @param callSuper whether to include superclass comparison
+     * @param useCanEqual whether to generate and use a canEqual helper method
+     * @param excludes property names to exclude
+     * @param includes property names to include
+     * @param allNames whether to include all names (including internal ones with '$')
+     * @param allProperties whether to process all properties
+     * @param pojo whether to treat as plain old Java object
+     * @param useGetter whether to use getter methods instead of direct field access
+     */
     public static void createEquals(ClassNode cNode, boolean includeFields, boolean callSuper, boolean useCanEqual, List<String> excludes, List<String> includes, boolean allNames, boolean allProperties, boolean pojo, boolean useGetter) {
         if (useCanEqual) createCanEqual(cNode);
         // make a public method if none exists otherwise try a private method with leading underscore
         boolean hasExistingEquals = hasDeclaredMethod(cNode, EQUALS, 1);
+        // GEP-21 Shape C: a stubber may have inserted a placeholder equals at
+        // CONVERSION so the @EqualsAndHashCode-generated override appears in
+        // the joint compilation stub. Treat that placeholder as "not yet
+        // generated" so we replace its body below.
+        MethodNode stubberEqualsPlaceholder = null;
         if (hasExistingEquals) {
             // no point in the private method if one with that name already exists
             if (hasDeclaredMethod(cNode, UNDER_EQUALS, 1)) return;
-            // an existing generated method also takes precedence
             MethodNode equals = findDeclaredMethod(cNode, EQUALS, 1);
-            if (AnnotatedNodeUtils.isGenerated(equals)) return;
+            if (StubberSupport.isStub(equals)) {
+                stubberEqualsPlaceholder = equals;
+                hasExistingEquals = false;
+            } else if (AnnotatedNodeUtils.isGenerated(equals)) {
+                // an existing non-stub generated method also takes precedence
+                return;
+            }
         }
         if (hasExistingEquals && hasDeclaredMethod(cNode, UNDER_EQUALS, 1)) return;
 
@@ -357,7 +508,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         final Set<String> names = new HashSet<>();
         final List<PropertyNode> pList = getAllProperties(names, cNode, true, includeFields, allProperties, false, false, false);
         for (PropertyNode pNode : pList) {
-            if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             boolean canBeSelf = StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(
                     pNode.getOriginType(), cNode
             );
@@ -385,7 +536,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(fNode, excludes, includes, allNames)) continue;
             Expression fieldsEqual = pojo
                     ? callX(OBJECTS_TYPE, EQUALS, args(varX(fNode), propX(otherTyped, fNode.getName())))
                     : hasEqualFieldX(fNode, otherTyped);
@@ -408,13 +559,20 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // default
         body.addStatement(returnS(constX(Boolean.TRUE,true)));
 
-        MethodNode equal = addGeneratedMethod(cNode,
-                hasExistingEquals ? UNDER_EQUALS : EQUALS,
-                hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
-                ClassHelper.boolean_TYPE,
-                params(param(OBJECT_TYPE, other.getName())),
-                ClassNode.EMPTY_ARRAY,
-                body);
+        MethodNode equal;
+        if (stubberEqualsPlaceholder != null) {
+            stubberEqualsPlaceholder.setCode(body);
+            StubberSupport.clearStub(stubberEqualsPlaceholder);
+            equal = stubberEqualsPlaceholder;
+        } else {
+            equal = addGeneratedMethod(cNode,
+                    hasExistingEquals ? UNDER_EQUALS : EQUALS,
+                    hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
+                    ClassHelper.boolean_TYPE,
+                    params(param(OBJECT_TYPE, other.getName())),
+                    ClassNode.EMPTY_ARRAY,
+                    body);
+        }
         // don't null check this: prefer false to IllegalArgumentException
         NullCheckASTTransformation.markAsProcessed(equal);
     }

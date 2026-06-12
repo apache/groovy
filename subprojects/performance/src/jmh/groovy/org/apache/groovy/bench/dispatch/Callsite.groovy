@@ -21,14 +21,27 @@ package org.apache.groovy.bench.dispatch
 import groovy.transform.CompileStatic
 import org.openjdk.jmh.infra.Blackhole
 
+/**
+ * Helper class for benchmarking dynamic call site dispatch under different morphic states.
+ */
 class Callsite {
 
+    /**
+     * Dispatches {@code hashCode()} calls through dynamic Groovy.
+     * @param receivers the array of receiver objects
+     * @param bh the blackhole for consuming results
+     */
     static void dispatch(Object[] receivers, bh) {
         for (Object receiver : receivers) {
             bh.consume(receiver.hashCode())
         }
     }
 
+    /**
+     * Dispatches {@code hashCode()} calls through {@code @CompileStatic}.
+     * @param receivers the array of receiver objects
+     * @param bh the blackhole for consuming results
+     */
     @CompileStatic
     static void dispatchCS(Object[] receivers, Blackhole bh) {
         for (Object receiver : receivers) {

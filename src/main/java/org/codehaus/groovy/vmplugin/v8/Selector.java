@@ -101,21 +101,69 @@ import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG_ENABLED;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.switchPoint;
 
+/**
+ * Base state holder for invokedynamic method, property, constructor, and cast selection.
+ */
 public abstract class Selector {
+    /**
+     * Effective invocation arguments, possibly after spread-call normalization.
+     */
     public Object[] args, originalArguments;
+    /**
+     * Selected meta method, when method dispatch resolves through the metaclass.
+     */
     public MetaMethod method;
+    /**
+     * Call-site target type and the currently adapted working type.
+     */
     public MethodType targetType, currentType;
+    /**
+     * Name of the method or property being resolved.
+     */
     public String name;
+    /**
+     * Method handle assembled for the current dispatch path.
+     */
     public MethodHandle handle;
+    /**
+     * Flags controlling metaclass fallback usage and call-site caching.
+     */
     public boolean useMetaClass = false, cache = true;
+    /**
+     * Call site being linked.
+     */
     public CacheableCallSite callSite;
+    /**
+     * Sending class used for visibility and MOP decisions.
+     */
     public Class<?> sender;
+    /**
+     * Indicates whether the selected target accepts varargs.
+     */
     public boolean isVargs;
+    /**
+     * Flags tracking safe navigation and spread-call semantics.
+     */
     public boolean safeNavigation, safeNavigationOrig, spread;
+    /**
+     * Indicates whether spread-collector adaptation should be skipped.
+     */
     public boolean skipSpreadCollector;
+    /**
+     * Indicates whether the invocation is a {@code this} call.
+     */
     public boolean thisCall;
+    /**
+     * Class used as the selection base for metaclass lookups.
+     */
     public Class<?> selectionBase;
+    /**
+     * Controls whether Groovy runtime exceptions are unwrapped around the target.
+     */
     public boolean catchException = true;
+    /**
+     * Call-site category associated with this selector.
+     */
     public CallType callType;
 
     /**
@@ -153,6 +201,9 @@ public abstract class Selector {
         return receiver;
     }
 
+    /**
+     * Finalizes the call-site target represented by this selector.
+     */
     abstract void setCallSiteTarget();
 
     //--------------------------------------------------------------------------
@@ -160,12 +211,23 @@ public abstract class Selector {
     private static class CastSelector extends MethodSelector {
         private final Class<?> staticSourceType, staticTargetType;
 
+        /**
+         * Creates a selector for cast call sites.
+         *
+         * @param callSite the call site being linked
+         * @param sender the sending class
+         * @param spec the cast specifier name
+         * @param args the invocation arguments
+         */
         CastSelector(final CacheableCallSite callSite, final Class<?> sender, final String spec, final Object[] args) {
             super(callSite, sender, spec, CallType.CAST, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, args);
             this.staticSourceType = callSite.type().parameterType(0);
             this.staticTargetType = callSite.type().returnType();
         }
 
+        /**
+         * Builds the method handle used to perform the cast.
+         */
         @Override
         public void setCallSiteTarget() {
             // NOTE: target types String, Class, and Enum are handled by the compiler
@@ -271,6 +333,18 @@ public abstract class Selector {
     private static class PropertySelector extends MethodSelector {
         private boolean insertName;
 
+        /**
+         * Creates a selector for property-get call sites.
+         *
+         * @param callSite the call site being linked
+         * @param sender the sending class
+         * @param propertyName the property name
+         * @param callType the call-site category
+         * @param safeNavigation whether safe navigation is enabled
+         * @param thisCall whether the invocation is a {@code this} call
+         * @param spreadCall whether spread-call semantics are active
+         * @param arguments the invocation arguments
+         */
         public PropertySelector(CacheableCallSite callSite, Class<?> sender, String propertyName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, propertyName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
@@ -325,6 +399,7 @@ public abstract class Selector {
             } else if (mp instanceof CachedField && !mp.isStatic()) {
                 try {
                     // GROOVY-9144, GROOVY-9596: get lookup for sender and unreflect before forcing access
+                    @SuppressWarnings("removal")
                     MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
                     handle = ((CachedField) mp).asAccessMethod(lookup);
                 } catch (IllegalAccessException e) {
@@ -372,6 +447,18 @@ public abstract class Selector {
         private static final MethodType MT_OBJECT = MethodType.methodType(Object.class);
         private boolean beanConstructor;
 
+        /**
+         * Creates a selector for constructor call sites.
+         *
+         * @param callSite the call site being linked
+         * @param sender the sending class
+         * @param methodName the constructor pseudo-name
+         * @param callType the call-site category
+         * @param safeNavigation whether safe navigation is enabled
+         * @param thisCall whether the invocation is a {@code this} call
+         * @param spreadCall whether spread-call semantics are active
+         * @param arguments the invocation arguments
+         */
         public InitSelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
@@ -486,10 +573,27 @@ public abstract class Selector {
     }
 
     private static class InterfaceSelector extends MethodSelector {
+        /**
+         * Creates a selector for interface-default-method call sites.
+         *
+         * @param callSite the call site being linked
+         * @param sender the sending class
+         * @param methodName the method name
+         * @param callType the call-site category
+         * @param safeNavigation whether safe navigation is enabled
+         * @param thisCall whether the invocation is a {@code this} call
+         * @param spreadCall whether spread-call semantics are active
+         * @param arguments the invocation arguments
+         */
         public InterfaceSelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
+        /**
+         * Returns the metaclass for the interface receiver type encoded in the call-site signature.
+         *
+         * @return the initialized metaclass
+         */
         @Override
         public MetaClass getMetaClass() {
             mc = GroovySystem.getMetaClassRegistry().getMetaClass(targetType.parameterType(0));
@@ -498,12 +602,22 @@ public abstract class Selector {
             return mc;
         }
 
+        /**
+         * Uses the interface type as the selection base.
+         */
         @Override
         public void setSelectionBase() {
             selectionBase = mc.getTheClass();
             if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
         }
 
+        /**
+         * Unreflects an interface default method using {@code unreflectSpecial}.
+         *
+         * @param cachedMethod the cached reflective method
+         * @return a special-invocation handle for the method
+         * @throws IllegalAccessException if the sender cannot invoke the method
+         */
         @Override
         public MethodHandle unreflect(Method cachedMethod) throws IllegalAccessException {
             return this.callSite.getLookup().unreflectSpecial(cachedMethod, this.sender); // throws if sender cannot invoke method
@@ -518,8 +632,23 @@ public abstract class Selector {
     private static class MethodSelector extends Selector {
         private static final Object[] SINGLE_NULL_ARRAY = {null};
         private boolean isCategoryMethod;
+        /**
+         * Metaclass used while selecting and invoking the target.
+         */
         protected MetaClass mc;
 
+        /**
+         * Creates a selector for method-style call sites.
+         *
+         * @param callSite the call site being linked
+         * @param sender the sending class
+         * @param methodName the method name
+         * @param callType the call-site category
+         * @param safeNavigation whether safe navigation is enabled
+         * @param thisCall whether the invocation is a {@code this} call
+         * @param spreadCall whether spread-call semantics are active
+         * @param arguments the invocation arguments
+         */
         public MethodSelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) {
             this.callType = callType;
             this.targetType = callSite.type();
@@ -694,6 +823,13 @@ public abstract class Selector {
             }
         }
 
+        /**
+         * Unreflects a cached reflective method against the call-site lookup.
+         *
+         * @param cachedMethod the reflective method to unreflect
+         * @return the corresponding method handle
+         * @throws IllegalAccessException if the sender cannot invoke the method
+         */
         protected MethodHandle unreflect(Method cachedMethod) throws IllegalAccessException {
             return this.callSite.getLookup().unreflect(cachedMethod); // throws if sender cannot invoke method
         }
@@ -884,6 +1020,9 @@ public abstract class Selector {
             if (LOG_ENABLED) LOG.info("binding null object receiver and dropping old receiver");
         }
 
+        /**
+         * Adapts the handle for spread-call argument collection when needed.
+         */
         public void correctSpreading() {
             if (spread && !useMetaClass && !skipSpreadCollector) {
                 handle = handle.asSpreader(Object[].class, args.length - 1);

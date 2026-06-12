@@ -22,12 +22,14 @@ import groovy.jmx.GroovyMBean
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
 import javax.management.MBeanServerConnection
 import javax.management.ObjectName
 
 import static groovy.test.GroovyAssert.shouldFail
 
+@ExtendWith(CgroupV2NpeMitigationExtension)
 final class JmxTimerFactoryTest {
 
     private JmxBuilder builder

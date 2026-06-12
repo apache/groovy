@@ -44,10 +44,11 @@ public class ReflectorLoader extends ClassLoader {
     private static final String REFLECTOR = Reflector.class.getName();
 
     /**
-     * Tries to find a Groovy class.
-     * 
+     * Tries to find a Groovy class. Uses the delegation loader to load classes when available.
+     *
+     * @param name the fully qualified name of the class to find
      * @return the class if found
-     * @throws ClassNotFoundException if not found
+     * @throws ClassNotFoundException if the class cannot be found
      */
     @Override
     protected Class findClass(String name) throws ClassNotFoundException {
@@ -76,11 +77,14 @@ public class ReflectorLoader extends ClassLoader {
     }
 
     /**
-     * helper method to define Reflector classes.
-     * @param name of the Reflector
-     * @param bytecode the bytecode
-     * @param domain  the protection domain
-     * @return the generated class
+     * Helper method to define Reflector classes. This method sets the inDefine flag to true
+     * during class definition to ensure Reflector is resolved correctly, then resolves the
+     * newly defined class and stores it in the loadedClasses cache.
+     *
+     * @param name the fully qualified name of the Reflector class
+     * @param bytecode the bytecode of the Reflector class
+     * @param domain the protection domain for the class
+     * @return the newly defined class
      */
     public synchronized Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
         inDefine = true;
@@ -92,8 +96,11 @@ public class ReflectorLoader extends ClassLoader {
     }
 
     /**
-     * creates a ReflectorLoader.
-     * @param parent the parent loader. This should never be null!
+     * Creates a new ReflectorLoader with the specified parent class loader.
+     * This loader is responsible for defining Reflector classes that can resolve
+     * the Reflector class from the Groovy runtime correctly.
+     *
+     * @param parent the parent class loader (should never be null)
      */
     public ReflectorLoader(ClassLoader parent) {
         super(parent);
@@ -101,14 +108,24 @@ public class ReflectorLoader extends ClassLoader {
     }
 
     /**
-     * try to load one of the defined Reflector classes by name.
-     * @param name of the Reflector class
-     * @return the Reflector class if defined else null.
+     * Retrieves a previously defined Reflector class by name from the cache.
+     *
+     * @param name the fully qualified name of the Reflector class
+     * @return the Reflector class if it has been defined, or null otherwise
      */
     public synchronized Class getLoadedClass(String name) {
         return (Class)loadedClasses.get(name);
     }
 
+    /**
+     * Generates the fully qualified name of a Reflector class for the given class.
+     * For java.* classes, the name is prefixed with "gjdk."; otherwise the package
+     * and class name are used. Array types are handled specially with "_GroovyReflectorArray"
+     * suffix and nesting level indicators.
+     *
+     * @param theClass the class for which to generate the Reflector name
+     * @return the fully qualified name of the Reflector class
+     */
     static String getReflectorName(Class theClass) {
         String className = theClass.getName();
         if (className.startsWith("java.")) {

@@ -20,6 +20,17 @@ package org.codehaus.groovy.macro.matcher;
 
 import org.codehaus.groovy.ast.ASTNode;
 
+/**
+ * Predicate used to test AST nodes.
+ *
+ * @since 2.5.0
+ */
 public interface ASTNodePredicate {
+    /**
+     * Tests whether the supplied node matches.
+     *
+     * @param node the node to test
+     * @return {@code true} if the node matches
+     */
     boolean matches(ASTNode node);
 }

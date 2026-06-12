@@ -49,6 +49,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +86,12 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     private final String scriptPath;
 
+    /** The class/script path with any parameter suffix removed. */
+    private final String resolvedPath;
+
+    /** Parameters parsed from the extension spec, e.g. {@code (strict: true)}. */
+    private final Map<String, Object> extensionParameters;
+
     private final CompilationUnit compilationUnit;
 
     private TypeCheckingExtension delegateExtension;
@@ -94,9 +101,11 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     /**
      * Builds a type checking extension relying on a Groovy script (type checking DSL).
+     * The {@code scriptPath} may include parameters in Groovy named-argument style, e.g.
+     * {@code "groovy.typecheckers.NullChecker(strict: true)"}.
      *
      * @param typeCheckingVisitor the type checking visitor
-     * @param scriptPath the path to the type checking script (in classpath)
+     * @param scriptPath the path to the type checking script (in classpath), optionally with parameters
      * @param compilationUnit
      */
     public GroovyTypeCheckingExtensionSupport(
@@ -105,8 +114,60 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         super(typeCheckingVisitor);
         this.scriptPath = scriptPath;
         this.compilationUnit = compilationUnit;
+        int parenIdx = scriptPath.indexOf('(');
+        if (parenIdx >= 0 && scriptPath.endsWith(")")) {
+            this.resolvedPath = scriptPath.substring(0, parenIdx).trim();
+            this.extensionParameters = parseParameters(scriptPath.substring(parenIdx + 1, scriptPath.length() - 1));
+        } else {
+            this.resolvedPath = scriptPath;
+            this.extensionParameters = Collections.emptyMap();
+        }
     }
 
+    /**
+     * Parses a parameter string of the form {@code "key1: value1, key2: value2"} into a map.
+     * Supports boolean, integer, long, double, and string (quoted) values.
+     * String values cannot contain commas or colons since these are used as delimiters.
+     */
+    private static Map<String, Object> parseParameters(final String paramStr) {
+        if (paramStr == null || paramStr.isBlank()) return Collections.emptyMap();
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (String pair : paramStr.split(",")) {
+            pair = pair.trim();
+            if (pair.isEmpty()) continue;
+            int colonIdx = pair.indexOf(':');
+            if (colonIdx < 0) continue;
+            String key = pair.substring(0, colonIdx).trim();
+            String value = pair.substring(colonIdx + 1).trim();
+            result.put(key, parseValue(value));
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    private static Object parseValue(final String value) {
+        if ("true".equals(value)) return Boolean.TRUE;
+        if ("false".equals(value)) return Boolean.FALSE;
+        if ("null".equals(value)) return null;
+        if (value.length() >= 2
+                && ((value.startsWith("'") && value.endsWith("'"))
+                 || (value.startsWith("\"") && value.endsWith("\"")))) {
+            return value.substring(1, value.length() - 1);
+        }
+        try { return Integer.valueOf(value); } catch (NumberFormatException ignored) { }
+        try { return Long.valueOf(value); } catch (NumberFormatException ignored) { }
+        try { return Double.valueOf(value); } catch (NumberFormatException ignored) { }
+        return value;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Map<String, Object> getOptions() {
+        return extensionParameters;
+    }
+
+    /**
+     * Compares extensions by script specification and compilation unit.
+     */
     @Override
     public boolean equals(Object that) {
         if (that == this) return true;
@@ -115,6 +176,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return Objects.equals(scriptPath,support.scriptPath) && Objects.equals(compilationUnit,support.compilationUnit);
     }
 
+    /**
+     * Returns a hash code based on the script specification and compilation unit.
+     */
     @Override
     public int hashCode() {
         return Objects.hash(scriptPath, compilationUnit);
@@ -122,10 +186,14 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Enables or disables debug logging for the backing extension.
+     */
     public void setDebug(final boolean debug) {
         this.debug = debug;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setup() {
         ImportCustomizer ic = new ImportCustomizer();
@@ -144,7 +212,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         // since Groovy 2.2, it is possible to use FQCN for type checking extension scripts
         TypeCheckingDSL script = null;
         try {
-            Class<?> clazz = transformLoader.loadClass(scriptPath, false, true);
+            Class<?> clazz = transformLoader.loadClass(resolvedPath, false, true);
             if (TypeCheckingDSL.class.isAssignableFrom(clazz)) {
                 script = (TypeCheckingDSL) clazz.getDeclaredConstructor().newInstance();
             } else if (TypeCheckingExtension.class.isAssignableFrom(clazz)) {
@@ -152,6 +220,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 try {
                     Constructor<?> declaredConstructor = clazz.getDeclaredConstructor(StaticTypeCheckingVisitor.class);
                     delegateExtension = (TypeCheckingExtension) declaredConstructor.newInstance(typeCheckingVisitor);
+                    delegateExtension.setOptions(extensionParameters);
                     typeCheckingVisitor.addTypeCheckingExtension(delegateExtension);
                     delegateExtension.setup();
                     return;
@@ -159,7 +228,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                     addLoadingError(config);
                 } catch (NoSuchMethodException e) {
                     context.getErrorCollector().addFatalError(
-                            new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded because it doesn't have a constructor accepting StaticTypeCheckingVisitor.",
+                            new SimpleMessage("Static type checking extension '" + resolvedPath + "' could not be loaded because it doesn't have a constructor accepting StaticTypeCheckingVisitor.",
                                     config.getDebug(), typeCheckingVisitor.getSourceUnit())
                     );
                 }
@@ -172,20 +241,20 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         if (script == null) {
             ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
             // cast to prevent incorrect @since 1.7 warning
-            InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(scriptPath);
+            InputStream is = transformLoader.getResourceAsStream(resolvedPath);
             if (is == null) {
                 // fallback to the source unit classloader
-                is = cl.getResourceAsStream(scriptPath);
+                is = cl.getResourceAsStream(resolvedPath);
             }
             if (is == null) {
                 // fallback to the compiler classloader
                 cl = GroovyTypeCheckingExtensionSupport.class.getClassLoader();
-                is = cl.getResourceAsStream(scriptPath);
+                is = cl.getResourceAsStream(resolvedPath);
             }
             if (is == null) {
                 // if the input stream is still null, we've not found the extension
                 context.getErrorCollector().addFatalError(
-                        new SimpleMessage("Static type checking extension '" + scriptPath + "' was not found on the classpath.",
+                        new SimpleMessage("Static type checking extension '" + resolvedPath + "' was not found on the classpath.",
                                 config.getDebug(), typeCheckingVisitor.getSourceUnit()));
             }
             try {
@@ -218,6 +287,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         );
     }
 
+    /** {@inheritDoc} */
     @Override
     public void finish() {
         if (delegateExtension != null) { typeCheckingVisitor.extension.removeHandler(delegateExtension);
@@ -233,6 +303,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void onMethodSelection(final Expression expression, final MethodNode target) {
         List<Closure> onMethodSelection = eventHandlers.get("onMethodSelection");
@@ -243,6 +314,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void afterMethodCall(final MethodCall call) {
         List<Closure> onMethodSelection = eventHandlers.get("afterMethodCall");
@@ -253,8 +325,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+   /** {@inheritDoc} */
    @Override
-    public boolean beforeMethodCall(final MethodCall call) {
+   public boolean beforeMethodCall(final MethodCall call) {
        setHandled(false);
        List<Closure> onMethodSelection = eventHandlers.get("beforeMethodCall");
        if (onMethodSelection != null) {
@@ -265,6 +338,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
        return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleUnresolvedVariableExpression(final VariableExpression vexp) {
         setHandled(false);
@@ -277,6 +351,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
         setHandled(false);
@@ -289,6 +364,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleUnresolvedAttribute(final AttributeExpression aexp) {
         setHandled(false);
@@ -301,6 +377,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void afterVisitMethod(final MethodNode node) {
         List<Closure> list = eventHandlers.get("afterVisitMethod");
@@ -311,6 +388,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean beforeVisitClass(final ClassNode node) {
         setHandled(false);
@@ -323,6 +401,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void afterVisitClass(final ClassNode node) {
         List<Closure> list = eventHandlers.get("afterVisitClass");
@@ -333,6 +412,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean beforeVisitMethod(final MethodNode node) {
         setHandled(false);
@@ -345,6 +425,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleIncompatibleAssignment(final ClassNode lhsType, final ClassNode rhsType, final Expression assignmentExpression) {
         setHandled(false);
@@ -357,6 +438,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean handleIncompatibleReturnType(final ReturnStatement returnStatement, ClassNode inferredReturnType) {
         setHandled(false);
@@ -369,6 +451,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return handled;
     }
 
+    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
     public List<MethodNode> handleMissingMethod(final ClassNode receiver, final String name, final ArgumentListExpression argumentList, final ClassNode[] argumentTypes, final MethodCall call) {
@@ -391,6 +474,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         return methodList;
     }
 
+    /** {@inheritDoc} */
     @Override
     @SuppressWarnings("unchecked")
     public List<MethodNode> handleAmbiguousMethods(final List<MethodNode> nodes, final Expression origin) {
@@ -491,6 +575,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
         private GroovyTypeCheckingExtensionSupport extension;
 
+        /**
+         * Resolves properties against the backing extension before falling back to the script.
+         */
         @Override
         public Object getProperty(final String name) {
             try {
@@ -500,6 +587,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
             }
         }
 
+        /**
+         * Writes properties to the backing extension when possible.
+         */
         @Override
         public void setProperty(final String name, final Object value) {
             try {
@@ -509,6 +599,9 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
             }
         }
 
+        /**
+         * Registers DSL event handlers or delegates unknown methods to the extension.
+         */
         public Object methodMissing(final String name, final Object args) {
             if (name.startsWith("is") && name.endsWith("Expression") && args instanceof Object[] array && array.length == 1) {
                 Object target = array[0];

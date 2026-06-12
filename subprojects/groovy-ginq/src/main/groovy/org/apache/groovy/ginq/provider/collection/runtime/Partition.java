@@ -34,7 +34,7 @@ public interface Partition<T> extends Queryable<T> {
      * Represents the empty Partition instance
      * @since 4.0.0
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     Partition EMPTY_PARTITION = new PartitionImpl(Collections.emptyList());
 
     /**
@@ -56,6 +56,7 @@ public interface Partition<T> extends Queryable<T> {
      * @return the empty Partition instance
      * @since 4.0.0
      */
+    @SuppressWarnings("unchecked")
     static <T> Partition<T> emptyPartition() {
         return (Partition<T>) EMPTY_PARTITION;
     }

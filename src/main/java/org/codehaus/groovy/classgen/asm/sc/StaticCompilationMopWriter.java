@@ -35,12 +35,19 @@ import java.util.LinkedList;
  */
 public class StaticCompilationMopWriter extends MopWriter {
 
+    /**
+     * Factory for statically compiled MOP writers.
+     */
     public static final MopWriter.Factory FACTORY = StaticCompilationMopWriter::new;
 
+    /**
+     * Creates a MOP writer for fully statically compiled classes.
+     */
     public StaticCompilationMopWriter(final WriterController wc) {
         super(wc);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void createMopMethods() {
         ClassNode classNode = controller.getClassNode();

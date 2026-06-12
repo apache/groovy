@@ -286,6 +286,12 @@ final class GroovyParserTest {
     }
 
     @Test
+    void 'groovy core - AnnotatedLoop'() {
+        doTest('core/AnnotatedLoop_01.groovy')
+        doRunAndTestAntlr4('core/AnnotatedLoop_02x.groovy')
+    }
+
+    @Test
     void 'groovy core - TryCatch'() {
         doTest('core/TryCatch_01.groovy')
     }
@@ -454,6 +460,7 @@ final class GroovyParserTest {
         compilerConfiguration.setOptimizationOptions([(CompilerConfiguration.RUNTIME_GROOVYDOC): true])
 
         doRunAndTestAntlr4('core/Groovydoc_01x.groovy', compilerConfiguration)
+        doRunAndTestAntlr4('core/Groovydoc_02x.groovy', compilerConfiguration)
     }
 
     @Test
@@ -474,6 +481,11 @@ final class GroovyParserTest {
     @Test
     void 'groovy core - SafeChainOperator'() {
         doRunAndTestAntlr4('core/SafeChainOperator.groovy')
+    }
+
+    @Test
+    void 'groovy core - val'() {
+        doRunAndTestAntlr4('core/Val_01x.groovy')
     }
 
     @Test

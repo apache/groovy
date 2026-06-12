@@ -101,6 +101,14 @@ class GinqGroovyMethods {
         callX(GQ(ctx, ginqConfigurationMapExpression, ginqClosureExpression), 'toList')
     }
 
+    /**
+     * Transforms parsed GINQ code into the corresponding queryable method calls.
+     *
+     * @param sourceUnit the source unit owning the code
+     * @param ginqConfigurationMapExpression the optional GINQ configuration
+     * @param code the GINQ code block
+     * @return the transformed expression
+     */
     static Expression transformGinqCode(SourceUnit sourceUnit, MapExpression ginqConfigurationMapExpression, Statement code) {
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
         AbstractGinqExpression ginqExpression = ginqAstBuilder.buildAST(code)
@@ -144,7 +152,9 @@ class GinqGroovyMethods {
 
     private GinqGroovyMethods() {}
 
+    /** Supported GINQ configuration keys. */
     public static final List<String> CONF_LIST = [CONF_PARALLEL, CONF_AST_WALKER, CONF_OPTIMIZE]
+    /** Configuration key enabling parallel execution. */
     public static final String CONF_PARALLEL = 'parallel'
     private static final String CONF_AST_WALKER = 'astWalker'
     private static final String CONF_OPTIMIZE = 'optimize'

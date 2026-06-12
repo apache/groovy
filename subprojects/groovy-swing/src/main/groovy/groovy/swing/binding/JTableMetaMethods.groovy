@@ -25,8 +25,16 @@ import javax.swing.table.TableColumn
 import javax.swing.table.TableColumnModel
 import javax.swing.table.TableModel
 
+/**
+ * Adds synthetic convenience properties used by Swing binding code for {@link JTable}.
+ */
 class JTableMetaMethods {
 
+    /**
+     * Enhances the table with synthetic element and selection accessors.
+     *
+     * @param table the table to enhance
+     */
     static void enhanceMetaClass(table) {
         AbstractSyntheticMetaMethods.enhance(table, [
 
@@ -48,6 +56,16 @@ class JTableMetaMethods {
         ])
     }
 
+    /**
+     * Returns the logical row object for the supplied table row.
+     *
+     * <p>Default Swing table models are exposed as identifier-to-value maps, while Groovy's
+     * table model returns the backing row object.</p>
+     *
+     * @param table the table supplying the model data
+     * @param row the selected row index
+     * @return the row value, or {@code null} when no row is selected
+     */
     static Object getElement(JTable table, int row) {
         if (row == -1) {
             return null

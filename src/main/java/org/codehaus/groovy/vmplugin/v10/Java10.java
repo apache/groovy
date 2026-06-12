@@ -22,13 +22,28 @@ import org.codehaus.groovy.vmplugin.v9.Java9;
 
 import java.util.Arrays;
 
+/**
+ * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
+ */
+@Deprecated(since = "6.0.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class Java10 extends Java9 {
 
+    /**
+     * Returns the Java feature version handled by this plugin.
+     *
+     * @return {@code 10}
+     */
     @Override
     public int getVersion() {
         return 10;
     }
 
+    /**
+     * Returns the default Groovy method extensions available on Java 10.
+     *
+     * @return the plugin default Groovy method classes
+     */
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
         Class<?>[] answer = super.getPluginDefaultGroovyMethods();

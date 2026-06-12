@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import com.github.javaparser.JavaParser;
 import org.apache.groovy.groovydoc.tools.GroovyDocUtil;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
@@ -34,35 +35,61 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
-import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGEX;
-import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.LINK_REGEX;
-import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.TAG_REGEX;
+import static java.lang.System.Logger.Level.WARNING;
 
 /*
  *  todo: order methods alphabetically (implement compareTo enough?)
  */
+/**
+ * Builds a {@link SimpleGroovyRootDoc} from source files by dispatching each file to either the
+ * Groovy AST visitor or the Java parser.
+ */
 public class GroovyRootDocBuilder {
+    private static final System.Logger LOGGER = System.getLogger(GroovyRootDocBuilder.class.getName());
     private final Logger log = Logger.create(GroovyRootDocBuilder.class);
     private static final char FS = '/';
     private final List<LinkArgument> links;
     private final String[] sourcepaths;
     private final SimpleGroovyRootDoc rootDoc;
     private final Properties properties;
+    private final JavaParser javaParser;
+    private int errorCount;
 
+    /**
+     * @deprecated The {@code tool} parameter is unused; use {@link #GroovyRootDocBuilder(String[], List, Properties)} instead.
+     */
     @Deprecated
     public GroovyRootDocBuilder(GroovyDocTool tool, String[] sourcepaths, List<LinkArgument> links, Properties properties) {
-        this(sourcepaths, links, properties);
+        this(sourcepaths, links, properties, null);
     }
 
+    /**
+     * Creates a builder for the given source paths, link arguments, and generation properties.
+     */
     public GroovyRootDocBuilder(String[] sourcepaths, List<LinkArgument> links, Properties properties) {
+        this(sourcepaths, links, properties, null);
+    }
+
+    /**
+     * Creates a builder with an explicit {@link JavaParser} instance; used internally to share the parser configuration set by {@link GroovyDocTool}.
+     */
+    GroovyRootDocBuilder(String[] sourcepaths, List<LinkArgument> links, Properties properties, JavaParser javaParser) {
         this.sourcepaths = sourcepaths == null ? null : Arrays.copyOf(sourcepaths, sourcepaths.length);
         this.links = links;
         this.rootDoc = new SimpleGroovyRootDoc("root");
+        // GROOVY-11938: propagate for render-time snippet-file resolution.
+        this.rootDoc.setSourcepaths(this.sourcepaths);
         this.properties = properties;
+        this.javaParser = javaParser != null ? javaParser : new JavaParser();
     }
 
+    /**
+     * Parses all given source files and populates the root doc.
+     *
+     * @param filenames source file paths to process
+     * @throws IOException if a file cannot be read
+     */
     public void buildTree(List<String> filenames) throws IOException {
         setOverview();
 
@@ -96,7 +123,7 @@ public class GroovyRootDocBuilder {
                 String content = ResourceGroovyMethods.getText(new File(path));
                 calcThenSetOverviewDescription(content);
             } catch (IOException e) {
-                System.err.println("Unable to load overview file: " + e.getMessage());
+                LOGGER.log(WARNING, "Unable to load overview file: {0}", e.getMessage());
             }
         }
     }
@@ -121,7 +148,7 @@ public class GroovyRootDocBuilder {
             return;
         }
         try {
-            GroovyDocParserI docParser = new GroovyDocParser(links, properties);
+            GroovyDocParserI docParser = new GroovyDocParser(javaParser, links, properties);
             Map<String, GroovyClassDoc> classDocs = docParser.getClassDocsFromSingleSource(packagePath, file, src);
             rootDoc.putAllClasses(classDocs);
             if (isAbsolute) {
@@ -140,13 +167,26 @@ public class GroovyRootDocBuilder {
             packageDoc.putAll(classDocs);
             rootDoc.put(packagePath, packageDoc);
         } catch (RuntimeException e) {
+            errorCount++;
             e.printStackTrace(System.err);
             log.error("ignored due to parsing exception: " + filename + " [" + e.getMessage() + "]");
             log.debug("ignored due to parsing exception: " + filename + " [" + e.getMessage() + "]", e);
         }
     }
 
-    /* package private */ void processPackageInfo(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
+    /**
+     * Returns the number of source files that failed to parse.
+     *
+     * @since 6.0.0
+     */
+    public int getErrorCount() {
+        return errorCount;
+    }
+
+    /**
+     * Extracts the package description from a {@code package.html}, {@code package-info.java}, or {@code package-info.groovy} file and stores it in the given package doc.
+     */
+    void processPackageInfo(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
         String relPath = packageDoc.getRelativeRootPath();
         String description = calcThenSetPackageDescription(src, filename, relPath);
         packageDoc.setDescription(description);
@@ -168,26 +208,11 @@ public class GroovyRootDocBuilder {
         return description;
     }
 
-    // TODO remove dup with SimpleGroovyClassDoc
+    // GROOVY-11939: package-info tag processing goes through the same single-pass
+    // tokenizer as class-level docs, just with a different rendering profile.
     private String replaceTags(String orig, String relPath) {
-        String result = orig.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
-
-        // {@link processing hack}
-        result = replaceAllTags(result, "", "", LINK_REGEX, relPath);
-
-        // {@code processing hack}
-        result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX, relPath);
-
-        // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
-        result = replaceAllTags(result + " @endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX, relPath);
-        // remove @endMarker
-        result = result.substring(0, result.length() - 10);
-
-        return SimpleGroovyClassDoc.decodeSpecialSymbols(result);
-    }
-
-    private String replaceAllTags(String self, String s1, String s2, Pattern regex, String relPath) {
-        return SimpleGroovyClassDoc.replaceAllTags(self, s1, s2, regex, links, relPath, rootDoc, null);
+        String result = orig.replaceAll("(?m)^\\s*\\*", "");
+        return TagRenderer.render(result, links, relPath, rootDoc, null, TagRenderer.PACKAGE_LEVEL);
     }
 
     private static void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
@@ -232,6 +257,9 @@ public class GroovyRootDocBuilder {
         return pos;
     }
 
+    /**
+     * Resolves inter-class references and returns the completed root doc.
+     */
     public GroovyRootDoc getRootDoc() {
         rootDoc.resolve();
         return rootDoc;

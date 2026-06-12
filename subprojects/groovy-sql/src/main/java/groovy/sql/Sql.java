@@ -29,7 +29,6 @@ import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.sql.DataSource;
-import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -41,6 +40,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -71,17 +71,26 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * and a few <code>newInstance</code> factory methods available to do this.
  * In simple cases, you can just provide
  * the necessary details to set up a connection (e.g. for hsqldb):
- * <pre>
+ * {@snippet lang="groovy" :
  * def db = [url:'jdbc:hsqldb:mem:testDB', user:'sa', password:'', driver:'org.hsqldb.jdbc.JDBCDriver']
  * def sql = Sql.newInstance(db.url, db.user, db.password, db.driver)
- * </pre>
+ * }
  * or if you have an existing connection (perhaps from a connection pool) or a
  * datasource use one of the constructors:
- * <pre>
+ * {@snippet lang="groovy" :
  * def sql = new Sql(datasource)
- * </pre>
- * Now you can invoke sql, e.g. to create a table:
- * <pre>
+ * }
+ * Now you can invoke sql, e.g. to create a table. Here is the DDL we want to
+ * execute:
+ * {@snippet lang="sql" :
+ * create table PROJECT (
+ *     id integer not null,
+ *     name varchar(50),
+ *     url varchar(100),
+ * )
+ * }
+ * And the Groovy that runs it via the facade:
+ * {@snippet lang="groovy" :
  * sql.execute '''
  *     create table PROJECT (
  *         id integer not null,
@@ -89,72 +98,74 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  *         url varchar(100),
  *     )
  * '''
- * </pre>
+ * }
  * Or insert a row using JDBC PreparedStatement inspired syntax:
- * <pre>
- * def params = [10, 'Groovy', 'http://groovy.codehaus.org']
+ * {@snippet lang="groovy" :
+ * def params = [10, 'Groovy', 'https://groovy-lang.org']
  * sql.execute 'insert into PROJECT (id, name, url) values (?, ?, ?)', params
- * </pre>
+ * }
  * Or insert a row using GString syntax:
- * <pre>
- * def map = [id:20, name:'Grails', url:'http://grails.codehaus.org']
+ * {@snippet lang="groovy" :
+ * def map = [id:20, name:'Grails', url:'https://grails.org']
  * sql.execute "insert into PROJECT (id, name, url) values ($map.id, $map.name, $map.url)"
- * </pre>
+ * }
  * Or a row update:
- * <pre>
- * def newUrl = 'http://grails.org'
+ * {@snippet lang="groovy" :
+ * def newUrl = 'https://grails.org'
  * def project = 'Grails'
  * sql.executeUpdate "update PROJECT set url=$newUrl where name=$project"
- * </pre>
+ * }
  * Now try a query using <code>eachRow</code>:
- * <pre>
+ * {@snippet lang="groovy" :
  * println 'Some GR8 projects:'
- * sql.eachRow('select * from PROJECT') { row {@code ->}
+ * sql.eachRow('select * from PROJECT') { row ->
  *     println "${row.name.padRight(10)} ($row.url)"
  * }
- * </pre>
+ * }
  * Which will produce something like this:
- * <pre>
+ * {@snippet :
  * Some GR8 projects:
- * Groovy     (http://groovy.codehaus.org)
- * Grails     (http://grails.org)
- * Griffon    (http://griffon.codehaus.org)
- * Gradle     (http://gradle.org)
- * </pre>
+ * Groovy     (https://groovy-lang.org)
+ * Grails     (https://grails.org)
+ * Griffon    (https://griffon-framework.org)
+ * Gradle     (https://gradle.org)
+ * }
  * Now try a query using <code>rows</code>:
- * <pre>
+ * {@snippet lang="groovy" :
  * def rows = sql.rows("select * from PROJECT where name like 'Gra%'")
  * assert rows.size() == 2
  * println rows.join('\n')
- * </pre>
+ * }
  * with output like this:
- * <pre>
- * [ID:20, NAME:Grails, URL:http://grails.org]
- * [ID:40, NAME:Gradle, URL:http://gradle.org]
- * </pre>
- * Also, <code>eachRow</code> and <code>rows</code> support paging.  Here's an example:
- * <pre>
- * sql.eachRow('select * from PROJECT', 2, 2) { row {@code ->}
+ * {@snippet :
+ * [ID:20, NAME:Grails, URL:https://grails.org]
+ * [ID:40, NAME:Gradle, URL:https://gradle.org]
+ * }
+ * Also, <code>eachRow</code> and <code>rows</code> support paging. Here's an example:
+ * {@snippet lang="groovy" :
+ * sql.eachRow('select * from PROJECT', 2, 2) { row ->
  *     println "${row.name.padRight(10)} ($row.url)"
  * }
- * </pre>
- * Which will start at the second row and return a maximum of 2 rows.  Here's an example result:
- * <pre>
- * Grails     (http://grails.org)
- * Griffon    (http://griffon.codehaus.org)
- * </pre>
+ * }
+ * Which will start at the second row and return a maximum of 2 rows. Here's an example result:
+ * {@snippet :
+ * Grails     (https://grails.org)
+ * Griffon    (https://griffon-framework.org)
+ * }
  *
  * Finally, we should clean up:
- * <pre>
+ * {@snippet lang="groovy" :
  * sql.close()
- * </pre>
+ * }
  * If we are using a DataSource and we haven't enabled statement caching, then
  * strictly speaking the final <code>close()</code> method isn't required - as all connection
  * handling is performed transparently on our behalf; however, it doesn't hurt to
  * have it there as it will return silently in that case.
  * <p>
  * If instead of <code>newInstance</code> you use <code>withInstance</code>, then
- * <code>close()</code> will be called automatically for you.
+ * <code>close()</code> will be called automatically for you. A complete end-to-end
+ * example combining setup, creation, insertion, querying, and cleanup:
+ * {@snippet file="QuickStart.groovy"}
  *
  * <h4>Avoiding SQL injection</h4>
  *
@@ -186,7 +197,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * ':propname1' and '?.propname2'. For these variations, a single <em>model</em> object is
  * supplied in the parameter list/array/map. The propname refers to a property of that model object.
  * The model object could be a map, Expando or domain class instance. Here are some examples:
- * <pre>
+ * {@snippet lang="groovy" :
  * // using rows() with a named parameter with the parameter supplied in a map
  * println sql.rows('select * from PROJECT where name=:foo', [foo:'Gradle'])
  * // as above for eachRow()
@@ -206,11 +217,11 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * sql.eachRow('select * from PROJECT where name=?.baz', [new MyDomainClass()]) {
  *     // process row
  * }
- * </pre>
+ * }
  * Named ordinal parameter queries have multiple model objects with the index number (starting
  * at 1) also supplied in the placeholder. Only the question mark variation of placeholder is supported.
  * Here are some examples:
- * <pre>
+ * {@snippet lang="groovy" :
  * // an example showing the model objects as vararg style parameters (since rows() has an Object[] variant)
  * println sql.rows("select * from PROJECT where name=?1.baz and id=?2.num", new MyDomainClass(), [num:30])
  *
@@ -218,7 +229,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * sql.eachRow("select * from PROJECT where name=?1.baz and id=?2.num", [new MyDomainClass(), [num:30]]) {
  *     // do something with row
  * }
- * </pre>
+ * }
  *
  * <h4>More details</h4>
  *
@@ -743,100 +754,283 @@ public class Sql implements AutoCloseable {
         }
     }
 
-    public static final OutParameter ARRAY         = new OutParameter(){ @Override
-    public int getType() { return Types.ARRAY; }};
-    public static final OutParameter BIGINT        = new OutParameter(){ @Override
-    public int getType() { return Types.BIGINT; }};
-    public static final OutParameter BINARY        = new OutParameter(){ @Override
-    public int getType() { return Types.BINARY; }};
-    public static final OutParameter BIT           = new OutParameter(){ @Override
-    public int getType() { return Types.BIT; }};
-    public static final OutParameter BLOB          = new OutParameter(){ @Override
-    public int getType() { return Types.BLOB; }};
-    public static final OutParameter BOOLEAN       = new OutParameter(){ @Override
-    public int getType() { return Types.BOOLEAN; }};
-    public static final OutParameter CHAR          = new OutParameter(){ @Override
-    public int getType() { return Types.CHAR; }};
-    public static final OutParameter CLOB          = new OutParameter(){ @Override
-    public int getType() { return Types.CLOB; }};
-    public static final OutParameter DATALINK      = new OutParameter(){ @Override
-    public int getType() { return Types.DATALINK; }};
-    public static final OutParameter DATE          = new OutParameter(){ @Override
-    public int getType() { return Types.DATE; }};
-    public static final OutParameter DECIMAL       = new OutParameter(){ @Override
-    public int getType() { return Types.DECIMAL; }};
-    public static final OutParameter DISTINCT      = new OutParameter(){ @Override
-    public int getType() { return Types.DISTINCT; }};
-    public static final OutParameter DOUBLE        = new OutParameter(){ @Override
-    public int getType() { return Types.DOUBLE; }};
-    public static final OutParameter FLOAT         = new OutParameter(){ @Override
-    public int getType() { return Types.FLOAT; }};
-    public static final OutParameter INTEGER       = new OutParameter(){ @Override
-    public int getType() { return Types.INTEGER; }};
-    public static final OutParameter JAVA_OBJECT   = new OutParameter(){ @Override
-    public int getType() { return Types.JAVA_OBJECT; }};
-    public static final OutParameter LONGVARBINARY = new OutParameter(){ @Override
-    public int getType() { return Types.LONGVARBINARY; }};
-    public static final OutParameter LONGVARCHAR   = new OutParameter(){ @Override
-    public int getType() { return Types.LONGVARCHAR; }};
-    public static final OutParameter NULL          = new OutParameter(){ @Override
-    public int getType() { return Types.NULL; }};
-    public static final OutParameter NUMERIC       = new OutParameter(){ @Override
-    public int getType() { return Types.NUMERIC; }};
-    public static final OutParameter OTHER         = new OutParameter(){ @Override
-    public int getType() { return Types.OTHER; }};
-    public static final OutParameter REAL          = new OutParameter(){ @Override
-    public int getType() { return Types.REAL; }};
-    public static final OutParameter REF           = new OutParameter(){ @Override
-    public int getType() { return Types.REF; }};
-    public static final OutParameter SMALLINT      = new OutParameter(){ @Override
-    public int getType() { return Types.SMALLINT; }};
-    public static final OutParameter STRUCT        = new OutParameter(){ @Override
-    public int getType() { return Types.STRUCT; }};
-    public static final OutParameter TIME          = new OutParameter(){ @Override
-    public int getType() { return Types.TIME; }};
-    public static final OutParameter TIMESTAMP     = new OutParameter(){ @Override
-    public int getType() { return Types.TIMESTAMP; }};
-    public static final OutParameter TINYINT       = new OutParameter(){ @Override
-    public int getType() { return Types.TINYINT; }};
-    public static final OutParameter VARBINARY     = new OutParameter(){ @Override
-    public int getType() { return Types.VARBINARY; }};
-    public static final OutParameter VARCHAR       = new OutParameter(){ @Override
-    public int getType() { return Types.VARCHAR; }};
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#ARRAY ARRAY}. */
+    public static final OutParameter ARRAY         = () -> Types.ARRAY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BIGINT BIGINT}. */
+    public static final OutParameter BIGINT        = () -> Types.BIGINT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BINARY BINARY}. */
+    public static final OutParameter BINARY        = () -> Types.BINARY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BIT BIT}. */
+    public static final OutParameter BIT           = () -> Types.BIT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BLOB BLOB}. */
+    public static final OutParameter BLOB          = () -> Types.BLOB;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#BOOLEAN BOOLEAN}. */
+    public static final OutParameter BOOLEAN       = () -> Types.BOOLEAN;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#CHAR CHAR}. */
+    public static final OutParameter CHAR          = () -> Types.CHAR;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#CLOB CLOB}. */
+    public static final OutParameter CLOB          = () -> Types.CLOB;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DATALINK DATALINK}. */
+    public static final OutParameter DATALINK      = () -> Types.DATALINK;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DATE DATE}. */
+    public static final OutParameter DATE          = () -> Types.DATE;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DECIMAL DECIMAL}. */
+    public static final OutParameter DECIMAL       = () -> Types.DECIMAL;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DISTINCT DISTINCT}. */
+    public static final OutParameter DISTINCT      = () -> Types.DISTINCT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#DOUBLE DOUBLE}. */
+    public static final OutParameter DOUBLE        = () -> Types.DOUBLE;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#FLOAT FLOAT}. */
+    public static final OutParameter FLOAT         = () -> Types.FLOAT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#INTEGER INTEGER}. */
+    public static final OutParameter INTEGER       = () -> Types.INTEGER;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#JAVA_OBJECT JAVA_OBJECT}. */
+    public static final OutParameter JAVA_OBJECT   = () -> Types.JAVA_OBJECT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#LONGVARBINARY LONGVARBINARY}. */
+    public static final OutParameter LONGVARBINARY = () -> Types.LONGVARBINARY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#LONGVARCHAR LONGVARCHAR}. */
+    public static final OutParameter LONGVARCHAR   = () -> Types.LONGVARCHAR;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#NULL NULL}. */
+    public static final OutParameter NULL          = () -> Types.NULL;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#NUMERIC NUMERIC}. */
+    public static final OutParameter NUMERIC       = () -> Types.NUMERIC;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#OTHER OTHER}. */
+    public static final OutParameter OTHER         = () -> Types.OTHER;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#REAL REAL}. */
+    public static final OutParameter REAL          = () -> Types.REAL;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#REF REF}. */
+    public static final OutParameter REF           = () -> Types.REF;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#SMALLINT SMALLINT}. */
+    public static final OutParameter SMALLINT      = () -> Types.SMALLINT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#STRUCT STRUCT}. */
+    public static final OutParameter STRUCT        = () -> Types.STRUCT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#TIME TIME}. */
+    public static final OutParameter TIME          = () -> Types.TIME;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#TIMESTAMP TIMESTAMP}. */
+    public static final OutParameter TIMESTAMP     = () -> Types.TIMESTAMP;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#TINYINT TINYINT}. */
+    public static final OutParameter TINYINT       = () -> Types.TINYINT;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#VARBINARY VARBINARY}. */
+    public static final OutParameter VARBINARY     = () -> Types.VARBINARY;
+    /** Stored procedure OUT parameter marker for JDBC type {@link Types#VARCHAR VARCHAR}. */
+    public static final OutParameter VARCHAR       = () -> Types.VARCHAR;
 
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#ARRAY ARRAY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter ARRAY(Object value) { return in(Types.ARRAY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BIGINT BIGINT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BIGINT(Object value) { return in(Types.BIGINT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BINARY BINARY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BINARY(Object value) { return in(Types.BINARY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BIT BIT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BIT(Object value) { return in(Types.BIT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BLOB BLOB}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BLOB(Object value) { return in(Types.BLOB, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#BOOLEAN BOOLEAN}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter BOOLEAN(Object value) { return in(Types.BOOLEAN, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#CHAR CHAR}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter CHAR(Object value) { return in(Types.CHAR, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#CLOB CLOB}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter CLOB(Object value) { return in(Types.CLOB, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DATALINK DATALINK}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DATALINK(Object value) { return in(Types.DATALINK, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DATE DATE}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DATE(Object value) { return in(Types.DATE, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DECIMAL DECIMAL}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DECIMAL(Object value) { return in(Types.DECIMAL, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DISTINCT DISTINCT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DISTINCT(Object value) { return in(Types.DISTINCT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#DOUBLE DOUBLE}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter DOUBLE(Object value) { return in(Types.DOUBLE, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#FLOAT FLOAT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter FLOAT(Object value) { return in(Types.FLOAT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#INTEGER INTEGER}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter INTEGER(Object value) { return in(Types.INTEGER, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#JAVA_OBJECT JAVA_OBJECT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter JAVA_OBJECT(Object value) { return in(Types.JAVA_OBJECT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#LONGVARBINARY LONGVARBINARY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter LONGVARBINARY(Object value) { return in(Types.LONGVARBINARY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#LONGVARCHAR LONGVARCHAR}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter LONGVARCHAR(Object value) { return in(Types.LONGVARCHAR, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#NULL NULL}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter NULL(Object value) { return in(Types.NULL, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#NUMERIC NUMERIC}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter NUMERIC(Object value) { return in(Types.NUMERIC, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#OTHER OTHER}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter OTHER(Object value) { return in(Types.OTHER, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#REAL REAL}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter REAL(Object value) { return in(Types.REAL, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#REF REF}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter REF(Object value) { return in(Types.REF, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#SMALLINT SMALLINT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter SMALLINT(Object value) { return in(Types.SMALLINT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#STRUCT STRUCT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter STRUCT(Object value) { return in(Types.STRUCT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#TIME TIME}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter TIME(Object value) { return in(Types.TIME, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#TIMESTAMP TIMESTAMP}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter TIMESTAMP(Object value) { return in(Types.TIMESTAMP, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#TINYINT TINYINT}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter TINYINT(Object value) { return in(Types.TINYINT, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#VARBINARY VARBINARY}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter VARBINARY(Object value) { return in(Types.VARBINARY, value); }
+    /**
+     * Creates a typed input parameter for JDBC type {@link Types#VARCHAR VARCHAR}.
+     *
+     * @param value the parameter value
+     * @return an input parameter for the supplied value
+     */
     public static InParameter VARCHAR(Object value) { return in(Types.VARCHAR, value); }
 
+    /** Indicates that stored-procedure helpers should ignore any returned result sets. */
     public static final int NO_RESULT_SETS = 0;
+    /** Indicates that stored-procedure helpers should collect only the first returned result set. */
     public static final int FIRST_RESULT_SET = 1;
+    /** Indicates that stored-procedure helpers should collect every returned result set. */
     public static final int ALL_RESULT_SETS = 2;
 
     /**
@@ -867,12 +1061,7 @@ public class Sql implements AutoCloseable {
      * @return an OutParameter
      */
     public static OutParameter out(final int type) {
-        return new OutParameter() {
-            @Override
-            public int getType() {
-                return type;
-            }
-        };
+        return () -> type;
     }
 
     /**
@@ -902,12 +1091,7 @@ public class Sql implements AutoCloseable {
      * @return a ResultSetOutParameter
      */
     public static ResultSetOutParameter resultSet(final int type) {
-        return new ResultSetOutParameter() {
-            @Override
-            public int getType() {
-                return type;
-            }
-        };
+        return () -> type;
     }
 
     /**
@@ -926,17 +1110,64 @@ public class Sql implements AutoCloseable {
      * // params will be [fieldVal]
      * </pre>
      *
+     * <p>
+     * For the common case of expanding a collection into an {@code IN (...)}
+     * clause, prefer {@link #inList(Collection)} — it produces proper
+     * placeholder-bound parameters rather than inlining values as literals
+     * and so is safe against SQL injection.
+     *
      * @param object the object of interest
      * @return the expanded variable
-     * @see #expand(Object)
+     * @see #inList(Collection)
      */
     public static ExpandedVariable expand(final Object object) {
-        return new ExpandedVariable() {
-            @Override
-            public Object getObject() {
-                return object;
-            }
-        };
+        return () -> object;
+    }
+
+    /**
+     * Wraps a collection so that it expands to a comma-separated list of
+     * positional placeholders when bound to a SQL {@code IN} clause.
+     * <p>
+     * Example usage:
+     * <pre>
+     * def ids = [1, 2, 3]
+     * sql.rows("SELECT name FROM t WHERE id IN (?)", [Sql.inList(ids)])
+     * // executed as: SELECT name FROM t WHERE id IN (?, ?, ?)
+     * // params:      [1, 2, 3]
+     *
+     * // GString form:
+     * sql.rows "SELECT name FROM t WHERE id IN (${Sql.inList(ids)})"
+     *
+     * // Named-parameter form:
+     * sql.rows("SELECT name FROM t WHERE id IN (:ids)", [ids: Sql.inList(ids)])
+     * </pre>
+     * <p>
+     * The collection is snapshotted at construction. Null or empty collections
+     * are rejected with an {@link IllegalArgumentException} — callers must
+     * guard empty input explicitly (e.g. return early or omit the clause).
+     * <p>
+     * Supported in the standard execution methods that route through
+     * {@code getPreparedStatement} or {@code getCallableStatement} — including
+     * {@code rows}, {@code eachRow}, {@code firstRow}, {@code query},
+     * {@code execute}, {@code executeInsert}, {@code executeUpdate}, and the
+     * {@code call} / {@code callWithRows} / {@code callWithAllRows} families.
+     * Not supported inside {@code withBatch} blocks: batch operations prepare
+     * the statement once and bind a fixed parameter shape, which is
+     * incompatible with per-call placeholder expansion.
+     *
+     * @param values the collection to expand; must be non-null and non-empty
+     * @return a marker usable as a parameter value in the methods listed above
+     * @throws IllegalArgumentException if {@code values} is null or empty
+     * @since 6.0.0
+     */
+    public static InListParameter inList(final Collection<?> values) {
+        if (values == null || values.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Sql.inList() requires a non-empty collection; " +
+                "check for empty input before building the query");
+        }
+        final List<Object> snapshot = List.copyOf(values);
+        return () -> snapshot;
     }
 
     /**
@@ -967,6 +1198,12 @@ public class Sql implements AutoCloseable {
         this.useConnection = connection;
     }
 
+    /**
+     * Constructs an {@code Sql} instance backed by the same {@link DataSource}
+     * or {@link Connection} as the supplied parent.
+     *
+     * @param parent the Sql instance to copy the connection source from
+     */
     public Sql(Sql parent) {
         this.dataSource = parent.dataSource;
         this.useConnection = parent.useConnection;
@@ -976,10 +1213,23 @@ public class Sql implements AutoCloseable {
         // supports Map style newInstance method
     }
 
+    /**
+     * Creates a {@link DataSet} facade for the named table.
+     *
+     * @param table the table name to expose as a {@code DataSet}
+     * @return a {@code DataSet} backed by the supplied table
+     */
     public DataSet dataSet(String table) {
         return new DataSet(this, table);
     }
 
+    /**
+     * Creates a {@link DataSet} facade using the table mapping implied by the
+     * supplied type.
+     *
+     * @param type the type describing the table to expose
+     * @return a {@code DataSet} backed by the supplied type
+     */
     public DataSet dataSet(Class<?> type) {
         return new DataSet(this, type);
     }
@@ -3227,7 +3477,8 @@ public class Sql implements AutoCloseable {
         Connection connection = createConnection();
         CallableStatement statement = null;
         try {
-            statement = getCallableStatement(connection, sql, params);
+            SqlWithParams updated = checkForNamedParams(sql, params);
+            statement = getCallableStatement(connection, updated.getSql(), updated.getParams());
             int i = statement.executeUpdate();
             cleanup(statement);
             return i;
@@ -3252,6 +3503,35 @@ public class Sql implements AutoCloseable {
      */
     public int call(String sql, Object[] params) throws SQLException {
         return call(sql, Arrays.asList(params));
+    }
+
+    /**
+     * A variant of {@link #call(String, List)} useful when providing
+     * the named parameters as a map. The SQL may contain {@code :name} style
+     * placeholders looked up against the map.
+     *
+     * @param sql    the SQL statement
+     * @param params a map of named parameters
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public int call(String sql, Map params) throws SQLException {
+        return call(sql, singletonList(params));
+    }
+
+    /**
+     * A variant of {@link #call(String, List)} useful when providing the
+     * named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params a map of named parameters
+     * @param sql    the SQL statement
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public int call(Map params, String sql) throws SQLException {
+        return call(sql, singletonList(params));
     }
 
     /**
@@ -3378,6 +3658,38 @@ public class Sql implements AutoCloseable {
     }
 
     /**
+     * A variant of {@link #call(String, List, Closure)} useful when providing
+     * the named parameters as a map. The SQL may contain {@code :name} style
+     * placeholders looked up against the map. Out parameter markers (e.g.
+     * {@link #VARCHAR}) can appear as map values at their named positions.
+     *
+     * @param sql     the SQL statement
+     * @param params  a map of named parameters
+     * @param closure called once with all out parameter results
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public void call(String sql, Map params,
+                     @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        call(sql, singletonList(params), closure);
+    }
+
+    /**
+     * A variant of {@link #call(String, List, Closure)} useful when providing
+     * the named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params  a map of named parameters
+     * @param sql     the SQL statement
+     * @param closure called once with all out parameter results
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public void call(Map params, String sql,
+                     @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        call(sql, singletonList(params), closure);
+    }
+
+    /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects,
      * and also returning the rows of the ResultSet.
@@ -3434,6 +3746,39 @@ public class Sql implements AutoCloseable {
      */
     public List<GroovyRowResult> callWithRows(String sql, List<?> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         return callWithRows(sql, params, FIRST_RESULT_SET, closure).get(0);
+    }
+
+    /**
+     * A variant of {@link #callWithRows(String, List, Closure)} useful when
+     * providing the named parameters as a map. The SQL may contain
+     * {@code :name} style placeholders looked up against the map.
+     *
+     * @param sql     the SQL statement
+     * @param params  a map of named parameters
+     * @param closure called once with all out parameter results
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<GroovyRowResult> callWithRows(String sql, Map params,
+                                              @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithRows(sql, singletonList(params), closure);
+    }
+
+    /**
+     * A variant of {@link #callWithRows(String, List, Closure)} useful when
+     * providing the named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params  a map of named parameters
+     * @param sql     the SQL statement
+     * @param closure called once with all out parameter results
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<GroovyRowResult> callWithRows(Map params, String sql,
+                                              @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithRows(sql, singletonList(params), closure);
     }
 
     /**
@@ -3496,6 +3841,39 @@ public class Sql implements AutoCloseable {
     }
 
     /**
+     * A variant of {@link #callWithAllRows(String, List, Closure)} useful when
+     * providing the named parameters as a map. The SQL may contain
+     * {@code :name} style placeholders looked up against the map.
+     *
+     * @param sql     the SQL statement
+     * @param params  a map of named parameters
+     * @param closure called once with all out parameter results
+     * @return a list containing lists of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<List<GroovyRowResult>> callWithAllRows(String sql, Map params,
+                                                       @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithAllRows(sql, singletonList(params), closure);
+    }
+
+    /**
+     * A variant of {@link #callWithAllRows(String, List, Closure)} useful when
+     * providing the named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params  a map of named parameters
+     * @param sql     the SQL statement
+     * @param closure called once with all out parameter results
+     * @return a list containing lists of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<List<GroovyRowResult>> callWithAllRows(Map params, String sql,
+                                                       @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithAllRows(sql, singletonList(params), closure);
+    }
+
+    /**
      * If this SQL object was created with a Connection then this method closes
      * the connection. If this SQL object was created from a DataSource then
      * this method only frees any cached objects (statements in particular).
@@ -3514,6 +3892,12 @@ public class Sql implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the {@link DataSource} backing this instance.
+     *
+     * @return the configured data source, or {@code null} when this instance
+     *         was created directly from a {@link Connection}
+     */
     public DataSource getDataSource() {
         return dataSource;
     }
@@ -4026,6 +4410,12 @@ public class Sql implements AutoCloseable {
         CallableStatement statement = null;
         List<GroovyResultSet> resultSetResources = new ArrayList<>();
         try {
+            // Resolve :name-style placeholders before binding and before the
+            // OutParameter scan below — the scan needs to see markers in their
+            // final positional order, not inside a still-wrapped Map.
+            SqlWithParams updated = checkForNamedParams(sql, params);
+            sql = updated.getSql();
+            params = updated.getParams();
             statement = getCallableStatement(connection, sql, params);
             boolean hasResultSet = statement.execute();
             List<Object> results = new ArrayList<>();
@@ -4158,6 +4548,20 @@ public class Sql implements AutoCloseable {
         return asList(sql, rs, 0, 0, metaClosure);
     }
 
+    /**
+     * Hook to allow derived classes to override paged result collection behavior.
+     * The default behavior applies the optional metadata callback, moves to the
+     * requested offset, and converts up to {@code maxRows} rows into
+     * {@link GroovyRowResult} instances.
+     *
+     * @param sql         query to execute
+     * @param rs          the {@link ResultSet} to process
+     * @param offset      the 1-based row offset, or {@code 0} to start at the beginning
+     * @param maxRows     the maximum number of rows to collect, or {@code 0} for no limit
+     * @param metaClosure called once with metadata before any rows are read; may be {@code null}
+     * @return the resulting list of rows, or {@code null} if the offset is beyond the available rows
+     * @throws SQLException if a database error occurs
+     */
     protected List<GroovyRowResult> asList(String sql, ResultSet rs, int offset, int maxRows,
                                            @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         List<GroovyRowResult> results = new ArrayList<>();
@@ -4284,7 +4688,7 @@ public class Sql implements AutoCloseable {
      * @return the index of the found keyword or -1 if not found
      */
     protected int findWhereKeyword(String sql) {
-        char[] chars = sql.toLowerCase().toCharArray();
+        char[] chars = sql.toCharArray();
         char[] whereChars = "where".toCharArray();
         int i = 0;
         boolean inString = false; //TODO: Cater for comments?
@@ -4295,7 +4699,7 @@ public class Sql implements AutoCloseable {
                     inString = !inString;
                     break;
                 default:
-                    if (!inString && chars[i] == whereChars[inWhere]) {
+                    if (!inString && Character.toLowerCase(chars[i]) == whereChars[inWhere]) {
                         inWhere++;
                         if (inWhere == whereChars.length) {
                             return i;
@@ -4412,8 +4816,6 @@ public class Sql implements AutoCloseable {
             return useConnection;
         }
         if (dataSource != null) {
-            // Use a doPrivileged here as many different properties need to be
-            // read, and the policy shouldn't have to list them all.
             Connection con = createConnection(dataSource);
             if (cacheStatements || cacheConnection) {
                 useConnection = con;
@@ -4423,24 +4825,8 @@ public class Sql implements AutoCloseable {
         return useConnection;
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private Connection createConnection(DataSource dataSource) throws SQLException {
-        Connection con;
-        try {
-            con = java.security.AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                public Connection run() throws SQLException {
-                    return dataSource.getConnection();
-                }
-            });
-        } catch (java.security.PrivilegedActionException pae) {
-            Exception e = pae.getException();
-            if (e instanceof SQLException) {
-                throw (SQLException) e;
-            } else {
-                throw (RuntimeException) e;
-            }
-        }
+        Connection con = dataSource.getConnection();
         return con;
     }
 
@@ -4630,6 +5016,7 @@ public class Sql implements AutoCloseable {
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, List<?> params, int returnGeneratedKeys) throws SQLException {
         SqlWithParams updated = checkForNamedParams(sql, params);
+        updated = InListExpander.expand(updated.getSql(), updated.getParams());
         LOG.fine(updated.getSql() + " | " + updated.getParams());
         PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, updated.getSql());
         setParameters(updated.getParams(), statement);
@@ -4638,13 +5025,23 @@ public class Sql implements AutoCloseable {
     }
 
     private CallableStatement getCallableStatement(Connection connection, String sql, List<?> params) throws SQLException {
-        LOG.fine(sql + " | " + params);
-        CallableStatement statement = (CallableStatement) getAbstractStatement(new CreateCallableStatementCommand(), connection, sql);
-        setParameters(params, statement);
+        SqlWithParams updated = InListExpander.expand(sql, params);
+        LOG.fine(updated.getSql() + " | " + updated.getParams());
+        CallableStatement statement = (CallableStatement) getAbstractStatement(new CreateCallableStatementCommand(), connection, updated.getSql());
+        setParameters(updated.getParams(), statement);
         configure(statement);
         return statement;
     }
 
+    /**
+     * Rewrites named or named-ordinal parameter SQL into JDBC positional form
+     * and aligns the supplied parameters with the rewritten placeholders.
+     *
+     * @param sql    the SQL statement to inspect
+     * @param params the original parameter values or parameter carrier objects
+     * @return the rewritten SQL and ordered parameters, or the original SQL and
+     *         params when no named-parameter processing is required
+     */
     public SqlWithParams checkForNamedParams(String sql, List<?> params) {
         SqlWithParams preCheck = buildSqlWithIndexedProps(sql);
         if (preCheck == null) {
@@ -4691,8 +5088,10 @@ public class Sql implements AutoCloseable {
             ExtractIndexAndSql extractIndexAndSql = ExtractIndexAndSql.from(sql);
             newSql = extractIndexAndSql.getNewSql();
             propList = extractIndexAndSql.getIndexPropList();
-            namedParamSqlCache.put(sql, newSql);
-            namedParamIndexPropCache.put(sql, propList);
+            if (cacheNamedQueries) {
+                namedParamSqlCache.put(sql, newSql);
+                namedParamIndexPropCache.put(sql, propList);
+            }
         }
 
         if (sql.equals(newSql)) {
@@ -4703,6 +5102,15 @@ public class Sql implements AutoCloseable {
         return new SqlWithParams(newSql, indexPropList);
     }
 
+    /**
+     * Resolves the positional parameter list required by a named-parameter query.
+     *
+     * @param params         the original parameter carrier objects
+     * @param indexPropList  indexed property descriptors produced by
+     *                       {@link #buildSqlWithIndexedProps(String)}
+     * @return the flattened parameter values in JDBC binding order
+     * @throws IllegalArgumentException if a referenced parameter index or property is invalid
+     */
     public List<Object> getUpdatedParams(List<?> params, List<Tuple> indexPropList) {
         List<Object> updatedParams = new ArrayList<>();
         for (Tuple tuple : indexPropList) {
@@ -4803,10 +5211,35 @@ public class Sql implements AutoCloseable {
             }
             return connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
         }
+    }
 
-        private boolean appearsLikeStoredProc(String sql) {
-            return sql.matches("\\s*[{]?\\s*[?]?\\s*[=]?\\s*[cC][aA][lL][lL].*");
+    /**
+     * Detects a JDBC-style stored proc call prefix: optional whitespace, optional "{",
+     * optional "?", optional "=", then "call" (case-insensitive). Hand-rolled to avoid
+     * catastrophic regex backtracking on whitespace-heavy input (GROOVY-9992).
+     *
+     * @param sql the SQL text to inspect
+     * @return {@code true} if the statement starts with an optional opening
+     *         brace character, optional return placeholder, and the
+     *         {@code call} keyword
+     */
+    static boolean appearsLikeStoredProc(String sql) {
+        int i = skipWhitespace(sql, 0);
+        if (i < sql.length() && sql.charAt(i) == '{') {
+            i = skipWhitespace(sql, i + 1);
         }
+        if (i < sql.length() && sql.charAt(i) == '?') {
+            i = skipWhitespace(sql, i + 1);
+        }
+        if (i < sql.length() && sql.charAt(i) == '=') {
+            i = skipWhitespace(sql, i + 1);
+        }
+        return sql.regionMatches(true, i, "call", 0, 4);
+    }
+
+    private static int skipWhitespace(String s, int i) {
+        while (i < s.length() && Character.isWhitespace(s.charAt(i))) i++;
+        return i;
     }
 
     private class CreateCallableStatementCommand extends AbstractStatementCommand {
@@ -4823,12 +5256,26 @@ public class Sql implements AutoCloseable {
         }
     }
 
+    /**
+     * Base command object for query operations that manage statement and connection lifecycle.
+     */
     protected abstract class AbstractQueryCommand {
+        /**
+         * The SQL text executed by this command.
+         */
         protected final String sql;
+        /**
+         * The statement created while running the command.
+         */
         protected Statement statement;
         private Connection connection;
         private int maxRows = 0;
 
+        /**
+         * Creates a query command for the supplied SQL text.
+         *
+         * @param sql the SQL statement to execute
+         */
         protected AbstractQueryCommand(String sql) {
             // Don't create statement in subclass constructors to avoid throw in constructors
             this.sql = sql;

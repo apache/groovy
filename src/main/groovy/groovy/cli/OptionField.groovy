@@ -21,6 +21,12 @@ package groovy.cli
 import groovy.transform.AnnotationCollector
 import groovy.transform.Field
 
+import java.lang.annotation.Documented
+
+/**
+ * Convenience annotation combining {@link Option} and {@link Field}.
+ */
+@Documented
 @Option
 @Field
 @AnnotationCollector

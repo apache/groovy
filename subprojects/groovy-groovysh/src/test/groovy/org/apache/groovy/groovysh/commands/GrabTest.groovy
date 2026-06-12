@@ -1,0 +1,88 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package org.apache.groovy.groovysh.commands
+
+import groovy.junit6.plugin.ForkedJvm
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty
+
+import static groovy.test.GroovyAssert.shouldFail
+
+/**
+ * Tests for the {@code /grab} command — Maven-coordinate dependency
+ * resolution via Grape. The actual artifact-fetching test is forked and
+ * network-gated; the no-arg test runs always to lock in the documented
+ * "no args is a no-op" behaviour that {@code GroovyCommands.grab} relies
+ * on for {@code grab(input)} when no xargs are supplied.
+ */
+class GrabTest extends SystemTestSupport {
+
+    @Test
+    void grabWithNoArgsIsNoOp() {
+        // grab() returns null when input.xargs() is empty; this should
+        // succeed silently rather than throw.
+        system.execute('/grab')
+    }
+
+    @Test
+    @ForkedJvm
+    @EnabledIfSystemProperty(named = 'junit.network', matches = 'true')
+    void grabFetchesArtifactAndMakesItLoadable() {
+        // commons-lang3 is small, stable, and uses well-known coordinates.
+        // After the grab, the artifact's classes should resolve through
+        // the engine's classloader.
+        system.execute('/grab org.apache.commons:commons-lang3:3.14.0')
+        def cls = engine.execute("Class.forName('org.apache.commons.lang3.StringUtils')")
+        assert cls != null
+        assert cls.name == 'org.apache.commons.lang3.StringUtils'
+    }
+
+    @Test
+    void grabWithMalformedCoordsRaisesAClearError() {
+        // Coords must be group:module:version (3 colon-separated parts).
+        // An incomplete spec should fail fast with a targeted message
+        // rather than reaching the network and timing out.
+        def thrown = shouldFail(IllegalArgumentException) {
+            system.execute('/grab org.apache.commons:commons-lang3')
+        }
+        assert thrown.message.contains('Invalid command parameter')
+        assert thrown.message.contains('commons-lang3')
+    }
+
+    @Test
+    void grabWithUnknownTwoArgFlagRaisesAClearError() {
+        // Two-arg form only accepts -v/--verbose. Anything else (here a
+        // bogus -x) is rejected before any network attempt.
+        def thrown = shouldFail(IllegalArgumentException) {
+            system.execute('/grab -x foo:bar:1.0')
+        }
+        assert thrown.message.contains('Unknown command parameters')
+    }
+
+    @Test
+    void grabListEnumeratesCachedGrapes() {
+        // /grab --list calls Grape.instance.enumerateGrapes() which is
+        // local-only (no network); even with an empty cache it returns
+        // an empty map without throwing. Verifies the --list branch is
+        // reachable and produces output via the printer.
+        int before = printer.output.size()
+        system.execute('/grab --list')
+        assert printer.output.size() > before
+    }
+}

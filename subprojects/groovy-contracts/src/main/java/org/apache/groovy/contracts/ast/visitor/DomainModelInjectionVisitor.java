@@ -46,6 +46,13 @@ public class DomainModelInjectionVisitor extends BaseVisitor {
     private final ProcessingContextInformation pci;
     private final Contract contract;
 
+    /**
+     * Creates a visitor that materializes the accumulated contract domain model back into AST nodes.
+     *
+     * @param sourceUnit the source unit currently being transformed
+     * @param source the reader source backing the source unit
+     * @param pci per-class processing context shared across the contracts pipeline
+     */
     public DomainModelInjectionVisitor(final SourceUnit sourceUnit, final ReaderSource source, final ProcessingContextInformation pci) {
         super(sourceUnit, source);
         Validate.notNull(pci);
@@ -55,6 +62,11 @@ public class DomainModelInjectionVisitor extends BaseVisitor {
         this.contract = pci.contract();
     }
 
+    /**
+     * Injects all contract elements currently present in the domain model into the supplied class.
+     *
+     * @param type the class to update
+     */
     @Override
     public void visitClass(ClassNode type) {
         injectClassInvariant(type, contract.classInvariant());
@@ -68,6 +80,12 @@ public class DomainModelInjectionVisitor extends BaseVisitor {
         }
     }
 
+    /**
+     * Generates AST support for the supplied class invariant.
+     *
+     * @param type the class that should receive the invariant
+     * @param classInvariant the invariant to inject
+     */
     public void injectClassInvariant(final ClassNode type, final ClassInvariant classInvariant) {
         if (!pci.isClassInvariantsEnabled() || !CandidateChecks.isContractsCandidate(type)) return;
 
@@ -77,6 +95,12 @@ public class DomainModelInjectionVisitor extends BaseVisitor {
         classInvariantGenerator.generateInvariantAssertionStatement(type, classInvariant);
     }
 
+    /**
+     * Generates AST support for the supplied precondition.
+     *
+     * @param method the method that should receive the precondition
+     * @param precondition the precondition to inject
+     */
     public void injectPrecondition(final MethodNode method, final Precondition precondition) {
         if (!pci.isPreconditionsEnabled() || !CandidateChecks.isPreconditionCandidate(method.getDeclaringClass(), method))
             return;
@@ -87,6 +111,12 @@ public class DomainModelInjectionVisitor extends BaseVisitor {
         preconditionGenerator.generatePreconditionAssertionStatement(method, precondition);
     }
 
+    /**
+     * Generates AST support for the supplied postcondition.
+     *
+     * @param method the method that should receive the postcondition
+     * @param postcondition the postcondition to inject
+     */
     public void injectPostcondition(final MethodNode method, final Postcondition postcondition) {
         if (!pci.isPostconditionsEnabled() || !CandidateChecks.isPostconditionCandidate(method.getDeclaringClass(), method))
             return;

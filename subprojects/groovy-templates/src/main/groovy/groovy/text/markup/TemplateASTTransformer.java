@@ -56,11 +56,19 @@ class TemplateASTTransformer extends CompilationCustomizer {
     private static final ClassNode TEMPLATECONFIG_CLASSNODE = ClassHelper.make(TemplateConfiguration.class);
     private final TemplateConfiguration config;
 
+    /**
+     * Creates a transformer using the supplied template configuration.
+     *
+     * @param config template configuration that drives generated base class selection
+     */
     TemplateASTTransformer(TemplateConfiguration config) {
         super(CompilePhase.SEMANTIC_ANALYSIS);
         this.config = config;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
         if (classNode.isScriptBody()) {

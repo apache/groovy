@@ -32,13 +32,26 @@ import org.codehaus.groovy.control.SourceUnit;
  * @since 2.1.0
  */
 public abstract class DelegatingCustomizer extends CompilationCustomizer implements CompilationUnitAware {
+    /**
+     * Customizer that receives delegated callbacks.
+     */
     protected final CompilationCustomizer delegate;
 
+    /**
+     * Creates a delegating customizer backed by another customizer.
+     *
+     * @param delegate the customizer to delegate to
+     */
     public DelegatingCustomizer(CompilationCustomizer delegate) {
         super(delegate.getPhase());
         this.delegate = delegate;
     }
 
+    /**
+     * Forwards the compilation unit to the delegate when it supports the callback.
+     *
+     * @param compilationUnit the active compilation unit
+     */
     @Override
     public void setCompilationUnit(final CompilationUnit compilationUnit) {
         if (delegate instanceof CompilationUnitAware) {
@@ -46,6 +59,14 @@ public abstract class DelegatingCustomizer extends CompilationCustomizer impleme
         }
     }
 
+    /**
+     * Delegates customization of the supplied class node.
+     *
+     * @param source the source unit being compiled
+     * @param context the current generator context
+     * @param classNode the class node being customized
+     * @throws CompilationFailedException if the delegate fails
+     */
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
         delegate.call(source, context, classNode);

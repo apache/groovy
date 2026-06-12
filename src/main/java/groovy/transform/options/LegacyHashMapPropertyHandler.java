@@ -86,11 +86,17 @@ public class LegacyHashMapPropertyHandler extends ImmutablePropertyHandler {
         return ifElseS(equalsNullX(baseArgs), assignInit, assignStmt);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validateAttributes(final AbstractASTTransformation xform, final AnnotationNode anno) {
         return !(xform instanceof TupleConstructorASTTransformation) && super.validateAttributes(xform, anno);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean validateProperties(final AbstractASTTransformation xform, final BlockStatement body, final ClassNode cNode, final List<PropertyNode> props) {
         if (!(props.size() == 1 && props.get(0).getType().equals(HMAP_TYPE))) {
@@ -100,6 +106,9 @@ public class LegacyHashMapPropertyHandler extends ImmutablePropertyHandler {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Statement createPropInit(final AbstractASTTransformation xform, final AnnotationNode anno, final ClassNode cNode, final PropertyNode pNode, final Parameter namedArgsMap) {
         FieldNode fNode = pNode.getField();

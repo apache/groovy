@@ -36,6 +36,15 @@ import javax.management.NotificationFilterSupport
  * @see groovy.jmx.builder.JmxEventListener
  */
 class JmxListenerFactory extends AbstractFactory {
+    /**
+     * Creates and registers a listener description.
+     *
+     * @param builder the active builder
+     * @param nodeName the node name
+     * @param nodeParam positional node arguments
+     * @param nodeAttribs named node attributes
+     * @return the normalized listener metadata
+     */
     Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttribs) {
         if (nodeParam) {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")
@@ -64,14 +73,34 @@ class JmxListenerFactory extends AbstractFactory {
         map
     }
 
+    /**
+     * Leaves attribute handling to {@link #newInstance(FactoryBuilderSupport, Object, Object, Map)}.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param nodeAttribs remaining node attributes
+     * @return {@code false}
+     */
     boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
         return false
     }
 
+    /**
+     * Indicates that the listener node is terminal.
+     *
+     * @return {@code true}
+     */
     boolean isLeaf() {
         return true
     }
 
+    /**
+     * Adds the created listener metadata to its parent collection when one exists.
+     *
+     * @param builder the active builder
+     * @param parentNode the parent node
+     * @param thisNode the listener metadata
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parentNode, Object thisNode) {
         if (parentNode != null) {
             parentNode.add(thisNode)

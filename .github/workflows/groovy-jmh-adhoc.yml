@@ -1,0 +1,137 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Ad-hoc benchmarks live under the `org.apache.groovy.adhoc` package and are
+# deliberately EXCLUDED from the regular jmh / jmh-classic / jmh-daily suites
+# (whose benchInclude patterns only match `.bench.` and `.perf.`). They are
+# exploratory, idiom-vs-idiom comparisons (e.g. "fat-free" lambdas) whose
+# headline metric is *allocation*, not throughput-over-time. Running them here,
+# in their own dashboard area, keeps the core regression buckets and their
+# alert thresholds untouched.
+
+name: jmh-adhoc
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'   # 07:00 UTC Mondays (weekly; after the daily benches)
+  workflow_dispatch:
+
+permissions:
+  contents: write         # gh-pages push
+  deployments: write
+  issues: write           # commit comments
+
+jobs:
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: indy
+            indyFlag: ''
+          - mode: classic
+            indyFlag: '-Pindy=false'
+    runs-on: ubuntu-latest
+    env:
+      DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          check-latest: true
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      # The gc profiler captures gc.alloc.rate.norm (bytes/op) as a JMH secondary
+      # metric — the whole point of the adhoc fat-free comparison.
+      - name: JMH adhoc (${{ matrix.mode }})
+        run: ./gradlew perf:jmh -PbenchInclude='\.adhoc\.' ${{ matrix.indyFlag }} -PjmhProfilers=gc -PjmhResultFormat=JSON
+        timeout-minutes: 90
+
+      # ---- Throughput series (ops/time; higher = better) ----
+      # Dashboards index: https://apache.github.io/groovy/dev/bench/jmh-adhoc/
+      # Data is appended to dev/bench/jmh-adhoc/throughput/<mode>/data.js on gh-pages.
+      - name: Publish throughput to dashboard
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          tool: 'jmh'
+          output-file-path: subprojects/performance/build/results/jmh/results.json
+          benchmark-data-dir-path: dev/bench/jmh-adhoc/throughput/${{ matrix.mode }}
+          gh-pages-branch: gh-pages
+          auto-push: true
+          comment-always: false
+          alert-threshold: '200%'
+          fail-on-alert: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---- Allocation series (bytes/op; SMALLER = better) ----
+      # gc.alloc.rate.norm is a JMH secondary metric, so the `jmh` tool above
+      # ignores it; we lift it into customSmallerIsBetter shape here.
+      - name: Extract allocation metric
+        run: |
+          python3 subprojects/performance/dashboard/jmh-adhoc-alloc.py \
+            subprojects/performance/build/results/jmh/results.json \
+            subprojects/performance/build/results/jmh/alloc-${{ matrix.mode }}.json
+
+      - name: Publish allocation to dashboard
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          tool: 'customSmallerIsBetter'
+          output-file-path: subprojects/performance/build/results/jmh/alloc-${{ matrix.mode }}.json
+          benchmark-data-dir-path: dev/bench/jmh-adhoc/alloc/${{ matrix.mode }}
+          gh-pages-branch: gh-pages
+          auto-push: true
+          comment-always: false
+          alert-threshold: '200%'
+          fail-on-alert: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload reports-jmh-adhoc-${{ matrix.mode }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports-jmh-adhoc-${{ matrix.mode }}
+          path: subprojects/performance/build/results/jmh/
+
+  # Single post-matrix job (avoids the matrix jobs racing on a gh-pages push):
+  # after both modes have published their data.js, install the adhoc summary
+  # page + its vendored JS into dev/bench/jmh-adhoc/ on gh-pages.
+  publish-summary:
+    needs: benchmark
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # only this job needs gh-pages write
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Install JMH adhoc summary page
+        run: |
+          set -euo pipefail
+          SRC_DIR=subprojects/performance/dashboard
+          DEST_DIR=dev/bench/jmh-adhoc
+          git fetch origin gh-pages
+          git worktree add /tmp/gh-pages gh-pages
+          mkdir -p "/tmp/gh-pages/$DEST_DIR/vendor"
+          cp "$SRC_DIR/jmh-adhoc-summary.html" "/tmp/gh-pages/$DEST_DIR/index.html"
+          rsync -a --delete "$SRC_DIR/vendor/" "/tmp/gh-pages/$DEST_DIR/vendor/"
+          cd /tmp/gh-pages
+          git add "$DEST_DIR/index.html" "$DEST_DIR/vendor"
+          if git diff --cached --quiet; then
+            echo 'JMH adhoc summary page and vendored assets already up to date.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Update JMH adhoc summary page'
+            git push origin gh-pages
+          fi

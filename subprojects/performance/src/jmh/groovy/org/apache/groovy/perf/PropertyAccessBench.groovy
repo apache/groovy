@@ -36,14 +36,28 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class PropertyAccessBench {
+    /** Number of loop iterations used by each benchmark invocation. */
     static final int ITERATIONS = 1_000_000
 
+    /** Instance field for property access tests. */
     int instanceField = 42
+
+    /** String property for property access tests. */
     String stringProperty = "hello"
 
     // Explicit getter/setter for comparison
     private int _backingField = 10
+
+    /**
+     * Gets the backing field value.
+     * @return the backing field value
+     */
     int getBackingField() { _backingField }
+
+    /**
+     * Sets the backing field value.
+     * @param value the new value
+     */
     void setBackingField(int value) { _backingField = value }
 
     /**

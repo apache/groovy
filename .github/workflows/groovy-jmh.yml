@@ -19,41 +19,100 @@ on: [push, pull_request]
 
 permissions:
   contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
+    if: >-
+      contains(github.event.head_commit.message || '', 'GROOVY-') ||
+      contains(github.event.pull_request.title || '', 'GROOVY-')
     strategy:
       fail-fast: false
       matrix:
         include:
           - suite: bench
             pattern: '\\.bench\\.'
-          - suite: core
-            pattern: '\\.perf\\.[A-Z]'
-          - suite: grails
-            pattern: '\\.perf\\.grails\\.'
+          - suite: core-ag
+            pattern: '\\.perf\\.[A-G]'
+          - suite: core-hz
+            pattern: '\\.perf\\.[H-Z]'
+          - suite: grails-ad
+            pattern: '\\.perf\\.grails\\.[A-D]'
+          - suite: grails-ez
+            pattern: '\\.perf\\.grails\\.[E-Z]'
     runs-on: ubuntu-latest
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
       - name: JMH (${{ matrix.suite }})
-        run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }}
+        run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} -PjmhResultFormat=JSON
         timeout-minutes: 60
       - name: Rename JMH result file
         run: |
-          mv subprojects/performance/build/results/jmh/results.txt \
-             subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.txt
+          mv subprojects/performance/build/results/jmh/results.json \
+             subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.json
+
+      - name: Fetch historical baseline
+        run: |
+          URL="https://apache.github.io/groovy/dev/bench/jmh/${{ matrix.suite }}/indy/data.js"
+          if curl -fsSL "$URL" -o data.js; then
+            sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' data.js > prev.json
+          else
+            echo '{}' > prev.json
+          fi
+
+      - name: Compare against history
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          tool: 'jmh'
+          output-file-path: subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.json
+          external-data-json-path: ./prev.json
+          save-data-file: false
+          summary-always: true
+          # fork PRs get a read-only token; commenting there would 403 and fail the step
+          comment-on-alert: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          alert-threshold: '150%'
+          fail-on-alert: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload reports-jmh-${{ matrix.suite }}
         uses: actions/upload-artifact@v7
         with:
           name: reports-jmh-${{ matrix.suite }}
           path: subprojects/performance/build/results/jmh/
+
+  summary:
+    needs: test
+    if: >-
+      always() &&
+      (contains(github.event.head_commit.message || '', 'GROOVY-') ||
+       contains(github.event.pull_request.title || '', 'GROOVY-'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: reports-jmh-*
+          merge-multiple: true
+      - name: Per-commit JMH group summary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 subprojects/performance/dashboard/jmh-summary.py \
+            --mode indy \
+            --results-dir artifacts \
+            --pr-number "${{ github.event.pull_request.number }}"
 

@@ -51,9 +51,15 @@ The remainder of this page shows you how to:
 
 - Monitor the JVM using MXBeans
 - Monitor Apache Tomcat and display statistics
-- Monitor Oracle OC4J and display information
-- Monitor BEA WebLogic and display information
+- Monitor WebLogic and display information
 - Leverage Spring's MBean annotation support to export your Groovy beans as MBeans
+- Use JmxBuilder to export and manage MBeans with a Groovy DSL
+
+NOTE: Since JDK 9, JMX classes are split across the `java.management` module (core API) and
+the `java.management.rmi` module (RMI connector). If your application runs on the module path,
+you may need to add `requires java.management.rmi` for remote JMX connectivity.
+On JDK 17+, remote JMX connections may require configuring deserialization filters
+via `jmx.remote.rmi.server.serial.filter.pattern` due to stricter default security.
 
 == Monitoring the JVM
 
@@ -208,106 +214,9 @@ image:{reldir_jmx}/assets/img/catalina.png[]
 
 Note: if you get errors running this script, see the **Troubleshooting** section below.
 
-== OC4J Example
-
-Here is a script to access OC4J and print out some information about the server, its runtime and (as an example) the configured JMS destinations:
-
-[source,groovy]
-----
-import javax.management.remote.*
-import oracle.oc4j.admin.jmx.remote.api.JMXConnectorConstant
-
-def serverUrl = new JMXServiceURL('service:jmx:rmi://localhost:23791')
-def serverPath = 'oc4j:j2eeType=J2EEServer,name=standalone'
-def jvmPath = 'oc4j:j2eeType=JVM,name=single,J2EEServer=standalone'
-def provider = 'oracle.oc4j.admin.jmx.remote'
-def credentials = [
-    (JMXConnectorConstant.CREDENTIALS_LOGIN_KEY): 'oc4jadmin',
-    (JMXConnectorConstant.CREDENTIALS_PASSWORD_KEY): 'admin'
-]
-def env = [
-    (JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES): provider,
-    (JMXConnector.CREDENTIALS): credentials
-]
-def server = JmxFactory.connect(serverUrl, env).MBeanServerConnection
-def serverInfo = new GroovyMBean(server, serverPath)
-def jvmInfo = new GroovyMBean(server, jvmPath)
-println """Connected to $serverInfo.node. \
-Server started ${new Date(serverInfo.startTime)}.
-OC4J version:  $serverInfo.serverVersion from $serverInfo.serverVendor
-JVM version:   $jvmInfo.javaVersion from $jvmInfo.javaVendor
-Memory usage:  $jvmInfo.freeMemory bytes free, \
-$jvmInfo.totalMemory bytes total
-"""
-
-def query = new javax.management.ObjectName('oc4j:*')
-String[] allNames = server.queryNames(query, null)
-def dests = allNames.findAll { name ->
-    name.contains('j2eeType=JMSDestinationResource')
-}.collect { new GroovyMBean(server, it) }
-
-println "Found ${dests.size()} JMS destinations. Listing ..."
-dests.each { d -> println "$d.name: $d.location" }
-----
-
-Here is the result of running this script:
-
-----
-Connected to LYREBIRD. Server started Thu May 31 21:04:54 EST 2007.
-OC4J version:  11.1.1.0.0 from Oracle Corp.
-JVM version:   1.6.0_01 from Sun Microsystems Inc.
-Memory usage:  8709976 bytes free, 25153536 bytes total
-
-Found 5 JMS destinations. Listing ...
-Demo Queue: jms/demoQueue
-Demo Topic: jms/demoTopic
-jms/Oc4jJmsExceptionQueue: jms/Oc4jJmsExceptionQueue
-jms/RAExceptionQueue: jms/RAExceptionQueue
-OracleASRouter_store: OracleASRouter_store
-----
-
-As a slight variation, this script displays a pie chart of memory usage using JFreeChart:
-
-[source,groovy]
-----
-import org.jfree.chart.ChartFactory
-import javax.swing.WindowConstants as WC
-import javax.management.remote.*
-import oracle.oc4j.admin.jmx.remote.api.JMXConnectorConstant
-
-def url = 'service:jmx:rmi://localhost:23791'
-def credentials = [:]
-credentials[JMXConnectorConstant.CREDENTIALS_LOGIN_KEY] = "oc4jadmin"
-credentials[JMXConnectorConstant.CREDENTIALS_PASSWORD_KEY] = "password"
-def env = [:]
-env[JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES] = "oracle.oc4j.admin.jmx.remote"
-env[JMXConnector.CREDENTIALS] = credentials
-def server = JMXConnectorFactory.connect(new JMXServiceURL(url), env).MBeanServerConnection
-def jvmInfo = new GroovyMBean(server, 'oc4j:j2eeType=JVM,name=single,J2EEServer=standalone')
-
-def piedata = new org.jfree.data.general.DefaultPieDataset()
-piedata.setValue "Free", jvmInfo.freeMemory
-piedata.setValue "Used", jvmInfo.totalMemory - jvmInfo.freeMemory
-
-def options = [true, true, true]
-def chart = ChartFactory.createPieChart('OC4J Memory Usage', piedata, *options)
-chart.backgroundPaint = java.awt.Color.white
-def swing = new groovy.swing.SwingBuilder()
-def frame = swing.frame(title:'OC4J Memory Usage', defaultCloseOperation:WC.EXIT_ON_CLOSE) {
-    panel(id:'canvas') { rigidArea(width:350, height:250) }
-}
-frame.pack()
-frame.show()
-chart.draw(swing.canvas.graphics, swing.canvas.bounds)
-----
-
-Which looks like:
-
-image:{reldir_jmx}/assets/img/oc4jpie.png[]
-
 == WebLogic Example
 
-This script prints out information about the server followed by information about JMS Destinations (as an example). Many other mbeans are http://docs.oracle.com/cd/E13222_01/wls/docs90/wlsmbeanref/core/index.html[available].
+This script prints out information about the server followed by information about JMS Destinations (as an example). Many other MBeans are available (consult the WebLogic MBean Reference for your version).
 
 [source,groovy]
 ----
@@ -420,8 +329,8 @@ We started the Groovy application with the `-Dcom.sun.management.jmxremote` JVM 
 
 See also:
 
-- https://docs.spring.io/spring/docs/current/spring-framework-reference/languages.html#dynamic-language-beans[Dynamic language beans in Spring]
-- https://docs.spring.io/spring/docs/current/spring-framework-reference/integration.html#jmx[Spring JMX Documentation]
+- https://docs.spring.io/spring-framework/reference/languages/dynamic.html[Dynamic language beans in Spring]
+- https://docs.spring.io/spring-framework/reference/integration/jmx.html[Spring JMX Documentation]
 
 == Troubleshooting
 
@@ -440,7 +349,7 @@ To fix that, add an environment with the credentials when connecting, like this 
 include::../test/JmxTest.groovy[tags=troubleshooting,indent=0]
 ----
 
-Details for the software you are trying to monitor/manage may differ slightly. Check out the other examples using credentials above if appropriate (e.g. OC4J and WebLogic). If you still have troubles, you will have to consult the documentation for the software you are trying to monitor/manage for details on how to provide credentials.
+Details for the software you are trying to monitor/manage may differ slightly. Check out the other examples using credentials above if appropriate (e.g. WebLogic). If you still have troubles, you will have to consult the documentation for the software you are trying to monitor/manage for details on how to provide credentials.
 
 [[jmx_jmxbuilder]]
 == JmxBuilder

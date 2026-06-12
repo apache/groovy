@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -40,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
  * to a given delegate.
  */
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
-    private static final long serialVersionUID = 1162833717190835227L;
+    @Serial private static final long serialVersionUID = 1162833717190835227L;
     private final ConcurrentMap<Method, Object> handleCache = new ConcurrentHashMap<>(16);
     private final Object delegate;
     private MetaClass metaClass;

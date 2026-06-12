@@ -21,6 +21,7 @@ package groovy.lang;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.FormatHelper;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
@@ -33,23 +34,42 @@ import java.util.Objects;
  */
 @Incubating
 public class NamedValue<T> implements Serializable {
-    private static final long serialVersionUID = 8853713635573845253L;
+    @Serial private static final long serialVersionUID = 8853713635573845253L;
     private final String name;
     private final T val;
 
+    /**
+     * Returns the name.
+     *
+     * @return the name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the value.
+     *
+     * @return the value
+     */
     public T getVal() {
         return val;
     }
 
+    /**
+     * Creates a named value pair.
+     *
+     * @param name the name
+     * @param val the value
+     */
     public NamedValue(String name, T val) {
         this.name = name;
         this.val = val;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -58,16 +78,28 @@ public class NamedValue<T> implements Serializable {
         return Objects.equals(name, that.name) && Objects.equals(val, that.val);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         return Objects.hash(name, val);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return name + "=" + FormatHelper.format(val, true, false, -1, true);
     }
 
+    /**
+     * Returns the formatted {@code name=value} representation using the supplied formatting options.
+     *
+     * @param options the formatting options to apply to the value
+     * @return the formatted named value
+     */
     public String toString(Map<String, Object> options) {
         return name + "=" + FormatHelper.toString(options, val);
     }

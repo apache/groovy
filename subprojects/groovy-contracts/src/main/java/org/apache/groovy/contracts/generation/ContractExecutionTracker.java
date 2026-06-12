@@ -27,12 +27,38 @@ import java.util.Set;
  */
 public class ContractExecutionTracker {
 
+    /**
+     * Identifies one contract execution so recursive re-entry can be suppressed.
+     */
     public static final class ContractExecution {
+        /**
+         * Fully qualified name of the declaring class.
+         */
         final String className;
+
+        /**
+         * Method descriptor or constructor descriptor identifying the executable.
+         */
         final String methodIdentifier;
+
+        /**
+         * Logical contract kind such as precondition, postcondition, or invariant.
+         */
         final String assertionType;
+
+        /**
+         * Whether the tracked executable is static.
+         */
         final boolean isStatic;
 
+        /**
+         * Creates a contract execution identifier.
+         *
+         * @param className the declaring class name
+         * @param methodIdentifier the executable identifier
+         * @param assertionType the logical contract kind
+         * @param isStatic whether the executable is static
+         */
         public ContractExecution(String className, String methodIdentifier, String assertionType, boolean isStatic) {
             this.className = className;
             this.methodIdentifier = methodIdentifier;
@@ -40,6 +66,12 @@ public class ContractExecutionTracker {
             this.isStatic = isStatic;
         }
 
+        /**
+         * Compares two execution identifiers for logical equality.
+         *
+         * @param o the object to compare against
+         * @return {@code true} if both identifiers describe the same execution
+         */
         @Override
         public boolean equals(Object o) {
             if (this == o)
@@ -61,6 +93,11 @@ public class ContractExecutionTracker {
             return true;
         }
 
+        /**
+         * Returns the hash code for this execution identifier.
+         *
+         * @return the hash code
+         */
         @Override
         public int hashCode() {
             int result = className != null ? className.hashCode() : 0;
@@ -72,8 +109,16 @@ public class ContractExecutionTracker {
     }
 
 
+    /**
+     * Thread-local holder for the active contract executions on the current thread.
+     */
     static class ContractExecutionThreadLocal extends ThreadLocal<Set<ContractExecution>> {
 
+        /**
+         * Creates the per-thread set used to track active contract executions.
+         *
+         * @return a fresh mutable tracking set
+         */
         @Override
         protected Set<ContractExecution> initialValue() {
             return new HashSet<>();
@@ -82,6 +127,15 @@ public class ContractExecutionTracker {
 
     private static final ThreadLocal<Set<ContractExecution>> executions = new ContractExecutionThreadLocal();
 
+    /**
+     * Attempts to register a contract execution for the current thread.
+     *
+     * @param className the declaring class name
+     * @param methodIdentifier the executable identifier
+     * @param assertionType the logical contract kind
+     * @param isStatic whether the executable is static
+     * @return {@code true} if the execution was newly tracked, {@code false} if it was already active
+     */
     public static boolean track(String className, String methodIdentifier, String assertionType, boolean isStatic) {
         final ContractExecution ce = new ContractExecution(className, methodIdentifier, assertionType, isStatic);
         final Set<ContractExecution> contractExecutions = executions.get();
@@ -94,6 +148,14 @@ public class ContractExecutionTracker {
         return false;
     }
 
+    /**
+     * Removes a previously tracked contract execution from the current thread.
+     *
+     * @param className the declaring class name
+     * @param methodIdentifier the executable identifier
+     * @param assertionType the logical contract kind
+     * @param isStatic whether the executable is static
+     */
     public static void clear(String className, String methodIdentifier, String assertionType, boolean isStatic) {
         final Set<ContractExecution> contractExecutions = executions.get();
 

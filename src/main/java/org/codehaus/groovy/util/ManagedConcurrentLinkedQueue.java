@@ -108,10 +108,16 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
 
     private class Element<V> extends ManagedReference<V> {
 
+        /**
+         * Creates a queue element that participates in managed-reference cleanup.
+         *
+         * @param value the referent stored by this element
+         */
         Element(V value) {
             super(bundle, value);
         }
 
+        /** {@inheritDoc} */
         @Override
         public void finalizeReference() {
             queue.remove(this);
@@ -122,16 +128,34 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
 
     private class Itr implements Iterator<T> {
 
+        /**
+         * Supplies the underlying queue traversal.
+         */
         final Iterator<Element<T>> wrapped;
 
+        /**
+         * Caches the next live value to return.
+         */
         T value;
+        /**
+         * Tracks the element most recently returned to the caller.
+         */
         Element<T> current;
+        /**
+         * Indicates that the wrapped iterator has been fully drained.
+         */
         boolean exhausted;
 
+        /**
+         * Creates an iterator view over the queue's managed elements.
+         *
+         * @param wrapped the underlying queue iterator
+         */
         Itr(Iterator<Element<T>> wrapped) {
             this.wrapped = wrapped;
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean hasNext() {
             if (!exhausted && value == null) {
@@ -140,6 +164,7 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
             return value != null;
         }
 
+        /** {@inheritDoc} */
         @Override
         public T next() {
             if (!hasNext()) {
@@ -150,6 +175,7 @@ public class ManagedConcurrentLinkedQueue<T> implements Iterable<T> {
             return next;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void remove() {
             if (current == null || value != null) {

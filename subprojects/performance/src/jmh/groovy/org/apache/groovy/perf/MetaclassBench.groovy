@@ -41,27 +41,66 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class MetaclassBench {
+    /** Number of metaclass mutation iterations used by each benchmark invocation. */
     static final int ITERATIONS = 100_000
 
+    /**
+     * Helper class for metaclass modification tests.
+     */
     class Foo {
+        /** Returns zero for one benchmark call-site variant. */
         int m0() { 0 }
+
+        /** Returns one for one benchmark call-site variant. */
         int m1() { 1 }
+
+        /** Returns two for one benchmark call-site variant. */
         int m2() { 2 }
+
+        /** Returns three for one benchmark call-site variant. */
         int m3() { 3 }
+
+        /** Returns four for one benchmark call-site variant. */
         int m4() { 4 }
+
+        /** Returns five for one benchmark call-site variant. */
         int m5() { 5 }
+
+        /** Returns six for one benchmark call-site variant. */
         int m6() { 6 }
+
+        /** Returns seven for one benchmark call-site variant. */
         int m7() { 7 }
+
+        /** Returns eight for one benchmark call-site variant. */
         int m8() { 8 }
+
+        /** Returns nine for one benchmark call-site variant. */
         int m9() { 9 }
+
+        /** Returns ten for one benchmark call-site variant. */
         int m10() { 10 }
+
+        /** Returns eleven for one benchmark call-site variant. */
         int m11() { 11 }
+
+        /** Returns twelve for one benchmark call-site variant. */
         int m12() { 12 }
+
+        /** Returns thirteen for one benchmark call-site variant. */
         int m13() { 13 }
+
+        /** Returns fourteen for one benchmark call-site variant. */
         int m14() { 14 }
+
+        /** Returns fifteen for one benchmark call-site variant. */
         int m15() { 15 }
     }
 
+    /**
+     * Benchmark: method calls in the presence of metaclass modifications.
+     * @param bh the blackhole for consuming results
+     */
     @Benchmark
     void methodCallsWithMetaclassChanges(Blackhole bh) {
         long sum = 0

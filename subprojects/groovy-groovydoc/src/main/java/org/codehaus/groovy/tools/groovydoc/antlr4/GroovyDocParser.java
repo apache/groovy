@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.tools.groovydoc.antlr4;
 
-import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseProblemException;
+import com.github.javaparser.ParseResult;
 import org.apache.groovy.antlr.GroovydocVisitor;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -37,19 +39,47 @@ import org.codehaus.groovy.tools.groovydoc.SimpleGroovyMethodDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import static java.lang.System.Logger.Level.WARNING;
+
+/**
+ * Parses Groovy and Java source files and builds {@link GroovyClassDoc} maps. Groovy sources
+ * are processed via the Groovy compiler AST ({@link GroovydocVisitor}); Java sources via
+ * JavaParser ({@link GroovydocJavaVisitor}).
+ */
 public class GroovyDocParser implements GroovyDocParserI {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyDocParser.class.getName());
+
+    private final JavaParser javaParser;
     private final List<LinkArgument> links;
     private final Properties properties;
     private final Logger log = Logger.create(GroovyDocParser.class);
 
+    /**
+     * Creates a parser with a default {@link JavaParser} instance.
+     */
     public GroovyDocParser(List<LinkArgument> links, Properties properties) {
+        this(new JavaParser(), links, properties);
+    }
+
+    /**
+     * Creates a parser with the supplied {@link JavaParser} instance.
+     *
+     * @since 6.0.0
+     */
+    public GroovyDocParser(JavaParser javaParser, List<LinkArgument> links, Properties properties) {
+        this.javaParser = javaParser;
         this.links = links;
         this.properties = properties;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<String, GroovyClassDoc> getClassDocsFromSingleSource(String packagePath, String file, String src)
             throws RuntimeException {
@@ -65,14 +95,18 @@ public class GroovyDocParser implements GroovyDocParserI {
     }
 
     private Map<String, GroovyClassDoc> parseJava(String packagePath, String file, String src) throws RuntimeException {
-        GroovydocJavaVisitor visitor = new GroovydocJavaVisitor(packagePath, links);
+        GroovydocJavaVisitor visitor = new GroovydocJavaVisitor(packagePath, links, properties);
         try {
-            visitor.visit(StaticJavaParser.parse(src), null);
-        } catch(Throwable t) {
-            System.err.println("Attempting to ignore error parsing Java source file: " + packagePath + "/" + file);
-            System.err.println("Consider reporting the error to the Groovy project: https://issues.apache.org/jira/browse/GROOVY");
-            System.err.println("... or directly to the JavaParser project: https://github.com/javaparser/javaparser/issues");
-            System.err.println("Error: " + t.getMessage());
+            ParseResult<com.github.javaparser.ast.CompilationUnit> parseResult = javaParser.parse(src);
+            if (!parseResult.isSuccessful() || parseResult.getResult().isEmpty()) {
+                throw new ParseProblemException(parseResult.getProblems());
+            }
+            visitor.visit(parseResult.getResult().get(), null);
+        } catch (Throwable t) {
+            LOGGER.log(WARNING, "Attempting to ignore error parsing Java source file: {0}/{1}", packagePath, file);
+            LOGGER.log(WARNING, "Consider reporting the error to the Groovy project: https://issues.apache.org/jira/browse/GROOVY");
+            LOGGER.log(WARNING, "... or directly to the JavaParser project: https://github.com/javaparser/javaparser/issues");
+            LOGGER.log(WARNING, "Error: {0}", t.getMessage());
         }
         return visitor.getGroovyClassDocs();
     }
@@ -89,7 +123,7 @@ public class GroovyDocParser implements GroovyDocParserI {
             try {
                 phase = Integer.parseInt(raw);
             } catch(NumberFormatException ignore) {
-                raw = raw.toUpperCase();
+                raw = raw.toUpperCase(Locale.ROOT);
                 switch(raw) {
                     // some dup here but kept simple since we may swap Phases to an enum
                     case "CONVERSION": phase = 3; break;
@@ -98,7 +132,7 @@ public class GroovyDocParser implements GroovyDocParserI {
                     case "INSTRUCTION_SELECTION": phase = 6; break;
                     case "CLASS_GENERATION": phase = 7; break;
                     default:
-                        System.err.println("Ignoring unrecognised or unsuitable phase and keeping default");
+                        LOGGER.log(WARNING, "Ignoring unrecognised or unsuitable phase and keeping default");
                 }
             }
         }

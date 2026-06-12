@@ -40,12 +40,19 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 class ConfigSlurper {
     private static final ENVIRONMENTS_METHOD = 'environments'
+
+    /**
+     * The class loader used to parse configuration scripts.
+     */
     GroovyClassLoader classLoader = new GroovyClassLoader()
     private Map bindingVars = [:]
 
     private final Map<String, String> conditionValues = [:]
     private final Stack<Map<String, ConfigObject>> conditionalBlocks = new Stack<Map<String,ConfigObject>>()
 
+    /**
+     * Constructs a new ConfigSlurper for the default environment.
+     */
     ConfigSlurper() {
         this('')
     }
@@ -59,6 +66,12 @@ class ConfigSlurper {
         conditionValues[ENVIRONMENTS_METHOD] = env
     }
 
+    /**
+     * Registers or removes a named conditional block value.
+     *
+     * @param blockName the conditional block name
+     * @param blockValue the value to match, or {@code null} to remove the registration
+     */
     void registerConditionalBlock(String blockName, String blockValue) {
         if (blockName) {
             if (!blockValue) {
@@ -69,20 +82,37 @@ class ConfigSlurper {
         }
     }
 
+    /**
+     * Returns the currently registered conditional block values.
+     *
+     * @return an unmodifiable view of the conditional block values
+     */
     Map<String, String> getConditionalBlockValues() {
         Collections.unmodifiableMap(conditionValues)
     }
 
+    /**
+     * Returns the configured environment name.
+     *
+     * @return the environment name
+     */
     String getEnvironment() {
         conditionValues[ENVIRONMENTS_METHOD]
     }
 
+    /**
+     * Sets the configured environment name.
+     *
+     * @param environment the environment name
+     */
     void setEnvironment(String environment) {
         conditionValues[ENVIRONMENTS_METHOD] = environment
     }
 
     /**
      * Sets any additional variables that should be placed into the binding when evaluating Config scripts
+     *
+     * @param vars the variables to expose to configuration scripts
      */
     void setBinding(Map vars) {
         this.bindingVars = vars
@@ -91,7 +121,8 @@ class ConfigSlurper {
     /**
      * Parses a ConfigObject instances from an instance of java.util.Properties
      *
-     * @param The java.util.Properties instance
+     * @param properties the properties to convert
+     * @return the parsed configuration object
      */
     ConfigObject parse(Properties properties) {
         ConfigObject config = new ConfigObject()
@@ -138,6 +169,8 @@ class ConfigSlurper {
     /**
      * Parse the given script as a string and return the configuration object
      *
+     * @param script the script text to parse
+     * @return the parsed configuration object
      * @see ConfigSlurper#parse(groovy.lang.Script)
      */
     ConfigObject parse(String script) {
@@ -147,6 +180,8 @@ class ConfigSlurper {
     /**
      * Create a new instance of the given script class and parse a configuration object from it
      *
+     * @param scriptClass the script class to instantiate
+     * @return the parsed configuration object
      * @see ConfigSlurper#parse(groovy.lang.Script)
      */
     ConfigObject parse(Class scriptClass) {
@@ -301,11 +336,21 @@ class ConfigSlurper {
  * functionality
  */
 class ConfigBinding extends Binding {
+    /**
+     * Callback used to handle assigned variables.
+     */
     def callable
+
+    /**
+     * Creates a binding backed by the specified callback.
+     *
+     * @param c the callback used for assignments
+     */
     ConfigBinding(Closure c) {
         this.callable = c
     }
 
+    /** {@inheritDoc} */
     void setVariable(String name, Object value) {
         callable(name, value)
     }

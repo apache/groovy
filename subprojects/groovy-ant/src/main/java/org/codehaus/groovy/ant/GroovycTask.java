@@ -34,12 +34,23 @@ import java.io.File;
 public class GroovycTask
     extends CompileTaskSupport
 {
+    /**
+     * Forces every matching source file to be compiled.
+     */
     protected boolean force;
 
+    /**
+     * Controls whether compilation should ignore timestamp checks.
+     *
+     * @param flag {@code true} to compile every matching source file
+     */
     public void setForce(final boolean flag) {
         this.force = flag;
     }
 
+    /**
+     * Compiles the configured Groovy sources.
+     */
     @Override
     protected void compile() {
         Path path = getClasspath();

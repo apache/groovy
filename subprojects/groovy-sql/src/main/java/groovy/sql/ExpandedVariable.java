@@ -23,5 +23,10 @@ package groovy.sql;
  * sql string rather than representing a placeholder.
  */
 public interface ExpandedVariable {
+    /**
+     * Returns the value that should be expanded directly into the SQL text.
+     *
+     * @return the expanded value
+     */
     Object getObject();
 }

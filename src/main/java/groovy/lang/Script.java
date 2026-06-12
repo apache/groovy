@@ -34,22 +34,41 @@ import java.lang.reflect.Method;
 public abstract class Script extends GroovyObjectSupport {
     private Binding binding;
 
+    /**
+     * Creates a script with a fresh {@link Binding}.
+     */
     protected Script() {
         this(new Binding());
     }
 
+    /**
+     * Creates a script backed by the supplied binding.
+     *
+     * @param binding the binding that supplies script variables
+     */
     protected Script(Binding binding) {
         this.binding = binding;
     }
 
+    /**
+     * Returns the binding used to resolve script variables.
+     *
+     * @return the script binding
+     */
     public Binding getBinding() {
         return binding;
     }
 
+    /**
+     * Replaces the binding used to resolve script variables.
+     *
+     * @param binding the new script binding
+     */
     public void setBinding(Binding binding) {
         this.binding = binding;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object getProperty(String property) {
         try {
@@ -59,6 +78,7 @@ public abstract class Script extends GroovyObjectSupport {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setProperty(String property, Object newValue) {
         if ("binding".equals(property)) {

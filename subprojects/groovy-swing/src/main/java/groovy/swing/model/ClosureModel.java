@@ -32,14 +32,35 @@ public class ClosureModel implements ValueModel, NestedValueModel {
     private final Closure writeClosure;
     private final Class type;
 
+    /**
+     * Creates a read-only closure-backed model.
+     *
+     * @param sourceModel the model that supplies the source object
+     * @param readClosure the closure used to read the derived value
+     */
     public ClosureModel(ValueModel sourceModel, Closure readClosure) {
         this(sourceModel, readClosure, null);
     }
 
+    /**
+     * Creates a closure-backed model with explicit read and write closures.
+     *
+     * @param sourceModel the model that supplies the source object
+     * @param readClosure the closure used to read the derived value
+     * @param writeClosure the closure used to write back a new value, or {@code null} for read-only access
+     */
     public ClosureModel(ValueModel sourceModel, Closure readClosure, Closure writeClosure) {
         this(sourceModel, readClosure, writeClosure, Object.class);
     }
 
+    /**
+     * Creates a closure-backed model with an explicit declared type.
+     *
+     * @param sourceModel the model that supplies the source object
+     * @param readClosure the closure used to read the derived value
+     * @param writeClosure the closure used to write back a new value, or {@code null} for read-only access
+     * @param type the declared type of the derived value
+     */
     public ClosureModel(ValueModel sourceModel, Closure readClosure, Closure writeClosure, Class type) {
         this.sourceModel = sourceModel;
         this.readClosure = readClosure;
@@ -47,11 +68,21 @@ public class ClosureModel implements ValueModel, NestedValueModel {
         this.type = type;
     }
 
+    /**
+     * Returns the model that supplies the source object consumed by the closures.
+     *
+     * @return the nested source model
+     */
     @Override
     public ValueModel getSourceModel() {
         return sourceModel;
     }
 
+    /**
+     * Evaluates the current source object through the read closure.
+     *
+     * @return the derived value, or {@code null} if the source model currently holds {@code null}
+     */
     @Override
     public Object getValue() {
         Object source = sourceModel.getValue();
@@ -61,6 +92,11 @@ public class ClosureModel implements ValueModel, NestedValueModel {
         return null;
     }
 
+    /**
+     * Applies the write closure to the current source object when the model is editable.
+     *
+     * @param value the value to write
+     */
     @Override
     public void setValue(Object value) {
         if (writeClosure != null) {
@@ -71,11 +107,21 @@ public class ClosureModel implements ValueModel, NestedValueModel {
         }
     }
 
+    /**
+     * Returns the declared value type for this derived model.
+     *
+     * @return the model type
+     */
     @Override
     public Class getType() {
         return type;
     }
 
+    /**
+     * Indicates whether this model has a write closure.
+     *
+     * @return {@code true} when a write closure is available
+     */
     @Override
     public boolean isEditable() {
         return writeClosure != null;

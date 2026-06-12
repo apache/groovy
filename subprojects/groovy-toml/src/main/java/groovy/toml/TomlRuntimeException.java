@@ -21,23 +21,42 @@ package groovy.toml;
 import groovy.lang.GroovyRuntimeException;
 import org.apache.groovy.lang.annotation.Incubating;
 
+import java.io.Serial;
+
 /**
- * Represents runtime exception occurred when parsing or building TOML
+ * Represents a runtime exception raised while parsing or building TOML.
  *
  * @since 4.0.0
  */
 @Incubating
 public class TomlRuntimeException extends GroovyRuntimeException {
+    @Serial
     private static final long serialVersionUID = -5723737489247290350L;
 
+    /**
+     * Creates an exception with a detail message.
+     *
+     * @param msg the description of the failure
+     */
     public TomlRuntimeException(String msg) {
         super(msg);
     }
 
+    /**
+     * Creates an exception that wraps the underlying cause.
+     *
+     * @param cause the original failure
+     */
     public TomlRuntimeException(Throwable cause) {
         super(cause);
     }
 
+    /**
+     * Creates an exception with both a detail message and an underlying cause.
+     *
+     * @param msg the description of the failure
+     * @param cause the original failure
+     */
     public TomlRuntimeException(String msg, Throwable cause) {
         super(msg, cause);
     }

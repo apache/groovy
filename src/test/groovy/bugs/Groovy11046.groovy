@@ -18,6 +18,7 @@
  */
 package bugs
 
+import groovy.junit6.plugin.ForkedJvm
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -35,12 +36,15 @@ final class Groovy11046 {
     }
 
     @Test
+    @ForkedJvm(systemProperties = [
+            'Log4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector'])
     void testMissingDependency2() {
+        // Log4jContextSelector is read by log4j at class-load time, so it must
+        // be set on the JVM command line — we run in a forked child to keep
+        // the rest of the suite from inheriting log4j routing changes.
         def err = shouldFail '''
             @Grab('org.apache.logging.log4j:log4j-core:2.22.0')
             org.apache.logging.log4j.core.async.AsyncLogger log
-            System.setProperty('Log4jContextSelector',
-                'org.apache.logging.log4j.core.async.AsyncLoggerContextSelector')
             log = org.apache.logging.log4j.LogManager.getLogger(getClass()) //XXX
         '''
         assert err instanceof NoClassDefFoundError // CompilationFailedException (previously)

@@ -18,19 +18,30 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
- * Tests for the {@link HelpCommand} class.
+ * Tests for the {@code /help} command, registered by JLine's
+ * {@code SystemRegistryImpl} and renamed in {@link SystemTestSupport} to
+ * match the leading-slash convention production uses.
+ *
+ * The help builtin writes through {@code terminal.writer()} rather than
+ * through the printer, so this test demonstrates the
+ * {@link SystemTestSupport#terminalOutput()} capture pattern for any
+ * future test that needs to assert on terminal-side output.
  */
-class HelpCommandTest /*extends CommandTestSupport */{
-    void testList() {
-//        shell.execute(HelpCommand.COMMAND_NAME)
-    }
+class HelpCommandTest extends SystemTestSupport {
 
-    void testCommandHelp() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' exit')
-    }
-
-    void testCommandHelpInvalidCommand() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
+    @Test
+    void helpListsKnownCommands() {
+        system.execute('/help')
+        def out = terminalOutput()
+        assert !out.empty
+        // A handful of stable command names that should appear in the listing.
+        // Names only — don't assert on layout, alignment, or descriptions, so
+        // the test stays robust across JLine cosmetic changes and platforms.
+        assert out.contains('help')
+        assert out.contains('show')
+        assert out.contains('exit')
     }
 }

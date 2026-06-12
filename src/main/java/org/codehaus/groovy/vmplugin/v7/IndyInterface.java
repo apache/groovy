@@ -78,6 +78,11 @@ public class IndyInterface {
          */
         private final String name;
 
+        /**
+         * Creates a call type for the given call-site name.
+         *
+         * @param callSiteName the bootstrap call-site name
+         */
         CallType(String callSiteName) {
             name = callSiteName;
         }
@@ -89,6 +94,12 @@ public class IndyInterface {
             return name;
         }
 
+        /**
+         * Resolves a call type by its bootstrap call-site name.
+         *
+         * @param callSiteName the bootstrap call-site name
+         * @return the matching call type, or {@code null} if unknown
+         */
         public static CallType fromCallSiteName(String callSiteName) {
             return NAME_CALLTYPE_MAP.get(callSiteName);
         }

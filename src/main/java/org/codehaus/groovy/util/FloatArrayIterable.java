@@ -28,10 +28,16 @@ import java.util.Iterator;
 public class FloatArrayIterable implements Iterable<Float> {
     private final float[] array;
 
+    /**
+     * Creates an iterable view that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public FloatArrayIterable(final float[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator<Float> iterator() {
         return new FloatArrayIterator(array);

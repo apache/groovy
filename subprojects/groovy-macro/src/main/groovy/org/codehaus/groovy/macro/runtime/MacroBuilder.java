@@ -19,7 +19,6 @@
 package org.codehaus.groovy.macro.runtime;
 
 import groovy.lang.Closure;
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
@@ -43,25 +42,64 @@ import static org.codehaus.groovy.macro.methods.MacroGroovyMethods.DOLLAR_VALUE;
  *
  * @since 2.5.0
  */
-
-@Incubating
 public enum MacroBuilder {
+    /** Shared macro builder instance. */
     INSTANCE;
 
+    /**
+     * Builds a macro value from source text using the conversion phase.
+     *
+     * @param source the source to parse
+     * @param context the substitution closures used for {@code $v} placeholders
+     * @param resultClass the expected result type
+     * @param <T> the expected result type
+     * @return the built macro value
+     */
     public <T> T macro(String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(false, source, context, resultClass);
     }
 
+    /**
+     * Builds a macro value from source text using the conversion phase.
+     *
+     * @param asIs whether to keep a single-statement closure as a block
+     * @param source the source to parse
+     * @param context the substitution closures used for {@code $v} placeholders
+     * @param resultClass the expected result type
+     * @param <T> the expected result type
+     * @return the built macro value
+     */
     public <T> T macro(boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(null, asIs, source, context, resultClass);
     }
 
+    /**
+     * Builds a macro value from source text at the supplied compile phase.
+     *
+     * @param compilePhase the phase to use when parsing the source
+     * @param source the source to parse
+     * @param context the substitution closures used for {@code $v} placeholders
+     * @param resultClass the expected result type
+     * @param <T> the expected result type
+     * @return the built macro value
+     */
     public <T> T macro(CompilePhase compilePhase, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(compilePhase, false, source, context, resultClass);
     }
 
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
+    /**
+     * Builds a macro value from source text.
+     *
+     * @param compilePhase the phase to use when parsing the source, or {@code null} for conversion
+     * @param asIs whether to keep a single-statement closure as a block
+     * @param source the source to parse
+     * @param context the substitution closures used for {@code $v} placeholders
+     * @param resultClass the expected result type
+     * @param <T> the expected result type
+     * @return the built macro value
+     */
     @SuppressWarnings("unchecked")
     public <T> T macro(CompilePhase compilePhase, boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         boolean isClosure = source.startsWith("{");
@@ -97,6 +135,12 @@ public enum MacroBuilder {
     private static void performSubstitutions(final List<Closure<Expression>> context, final ASTNode astNode) {
         final Iterator<Closure<Expression>> iterator = context.iterator();
         ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
+            /**
+             * Replaces {@code $v} calls with the next substitution expression.
+             *
+             * @param expression the expression to transform
+             * @return the transformed expression
+             */
             @Override
             public Expression transform(Expression expression) {
                 if (!(expression instanceof MethodCallExpression call)) {
@@ -110,6 +154,11 @@ public enum MacroBuilder {
                 return iterator.next().call();
             }
 
+            /**
+             * Returns no source unit when applying runtime substitutions.
+             *
+             * @return {@code null}
+             */
             @Override
             protected SourceUnit getSourceUnit() {
                 // Could be null if there are no errors
@@ -123,6 +172,13 @@ public enum MacroBuilder {
         }
     }
 
+    /**
+     * Extracts the value represented by a parsed macro closure.
+     *
+     * @param closureBlock the parsed closure block
+     * @param asIs whether to keep a single-statement closure as a block
+     * @return the resulting AST node
+     */
     public static ASTNode getMacroValue(BlockStatement closureBlock, boolean asIs) {
         if(!asIs && closureBlock.getStatements().size() == 1) {
             Statement result = closureBlock.getStatements().get(0);

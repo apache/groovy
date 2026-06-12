@@ -33,11 +33,23 @@ import java.nio.file.Path
 import java.util.function.Function
 import java.util.function.Supplier
 
+/**
+ * Registers console built-ins that integrate JLine commands with the Groovy shell buffer.
+ */
 class GroovyBuiltins extends Builtins {
     private final ConfigurationPath configPath
     private final Supplier<Path> workDir
     private final GroovyEngine engine
 
+    /**
+     * Creates the built-in command registry used by groovysh.
+     *
+     * @param engine shell engine that owns the current buffer
+     * @param workDir supplier for the current working directory
+     * @param configPath configuration lookup path
+     * @param reader active line reader
+     * @param widgetCreator widget factory used by the parent built-ins
+     */
     GroovyBuiltins(GroovyEngine engine, Supplier<Path> workDir, ConfigurationPath configPath, LineReader reader, Function<String, Widget> widgetCreator) {
         super(workDir, configPath, widgetCreator)
         this.workDir = workDir
@@ -49,10 +61,10 @@ class GroovyBuiltins extends Builtins {
             if (name in ['nano', 'less']) {
                 methods = new CommandMethods((Function)this::"$name", methods.compileCompleter())
             }
-            [Command."${name.toUpperCase()}", methods]
+            [Command."${name.toUpperCase(Locale.ROOT)}", methods]
         }
         def commandName = commandNames().collectEntries{ name ->
-            [Command."${name.toUpperCase()}", '/' + name]
+            [Command."${name.toUpperCase(Locale.ROOT)}", '/' + name]
         }
         setLineReader(reader)
         registerCommands(commandName, commandExecute)
@@ -70,7 +82,7 @@ class GroovyBuiltins extends Builtins {
                 temp.text = engine.buffer
                 input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
             }
-            GroovyPosixCommands.less(new GroovyPosixContext(input.in(), new PrintStream(input.out()), new PrintStream(input.err()), workDir.get(), input.terminal(), engine::get), ['/less', *input.args()] as String[])
+            GroovyPosixCommands.less(new GroovyPosixContext(input.in(), new PrintStream(input.out()), new PrintStream(input.err()), workDir.get(), input.terminal(), engine::get, configPath), ['/less', *input.args()] as String[])
         } catch (Exception e) {
             saveException(e)
         }
@@ -96,6 +108,11 @@ class GroovyBuiltins extends Builtins {
         }
     }
 
+    /**
+     * Returns the help-group name used for the built-in commands.
+     *
+     * @return the console command group name
+     */
     @Override
     String name() {
         'Console Commands'

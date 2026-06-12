@@ -24,14 +24,35 @@ package groovy.ant
  */
 class FileNameFinder implements IFileNameFinder {
 
+    /**
+     * Finds files below the supplied base directory that match the given include pattern.
+     *
+     * @param basedir the directory to scan
+     * @param pattern the Ant-style include pattern
+     * @return the absolute paths of matching files
+     */
     List<String> getFileNames(String basedir, String pattern) {
         getFileNames(dir: basedir, includes: pattern)
     }
 
+    /**
+     * Finds files below the supplied base directory that match the include pattern and avoid the exclude pattern.
+     *
+     * @param basedir the directory to scan
+     * @param pattern the Ant-style include pattern
+     * @param excludesPattern the Ant-style exclude pattern
+     * @return the absolute paths of matching files
+     */
     List<String> getFileNames(String basedir, String pattern, String excludesPattern) {
         getFileNames(dir: basedir, includes: pattern, excludes: excludesPattern)
     }
 
+    /**
+     * Finds files using the supplied Ant {@code fileset} arguments.
+     *
+     * @param args the arguments passed to the underlying Ant {@code fileset}
+     * @return the absolute paths of matching files
+     */
     List<String> getFileNames(Map args) {
         def ant = new AntBuilder()
         def scanner = ant.fileScanner {

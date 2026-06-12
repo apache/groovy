@@ -40,6 +40,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+import java.io.Serial;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -278,9 +279,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         return traits;
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
     private static InnerLoader createInnerLoader(final ClassLoader parent, final Class<?>[] interfaces) {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
+        return new InnerLoader(parent, interfaces);
     }
 
     private InnerLoader findClassLoader(final Class<?> clazz, final Class<?>[] interfaces) {
@@ -591,14 +591,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         return null;
     }
 
-    private static int registerLen(Type[] args) {
-        int i = 0;
-        for (Type arg : args) {
-            i += registerLen(arg);
-        }
-        return i;
-    }
-
     private static int registerLen(final Type arg) {
         return arg == Type.DOUBLE_TYPE || arg == Type.LONG_TYPE ? 2 : 1;
     }
@@ -840,11 +832,16 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             super(parent);
             if (interfaces != null) {
                 for (Class<?> c : interfaces) {
-                    if (c.getClassLoader() != parent) {
+                    // GROOVY-11999: bootstrap-loaded classes (e.g., java.lang.Runnable,
+                    // java.io.Serializable) report a null classloader. Don't store
+                    // null in the extras list — bootstrap is reachable via every
+                    // non-null parent's delegation chain anyway.
+                    ClassLoader cl = c.getClassLoader();
+                    if (cl != null && cl != parent) {
                         if (internalClassLoaders == null)
                             internalClassLoaders = new ArrayList<>(interfaces.length);
-                        if (!internalClassLoaders.contains(c.getClassLoader())) {
-                            internalClassLoaders.add(c.getClassLoader());
+                        if (!internalClassLoaders.contains(cl)) {
+                            internalClassLoaders.add(cl);
                         }
                     }
                 }
@@ -884,6 +881,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             // Not loaded, try to load it
             if (internalClassLoaders != null) {
                 for (ClassLoader i : internalClassLoaders) {
+                    if (i == null) continue; // GROOVY-11999: defensive, see InnerLoader ctor
                     try {
                         // Ignore parent delegation and just try to load locally
                         loadedClass = i.loadClass(name);
@@ -901,6 +899,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     }
 
     private static class ReturnValueWrappingClosure<V> extends Closure<V>{
+        @Serial
         private static final long serialVersionUID = 1313135457715304501L;
         private final V value;
 

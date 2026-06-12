@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test
 final class VerboseDOMTest extends TestXmlSupport {
 
     @Test
-    void testSmallTree() {
+    void smallTree() {
         def b = DOMBuilder.newInstance()
 
         def root = b.root1(['a':5, 'b':7], {->
@@ -42,7 +42,7 @@ final class VerboseDOMTest extends TestXmlSupport {
     }
 
     @Test
-    void testTree() {
+    void tree() {
         def b = DOMBuilder.newInstance()
 
         def root = b.root2(['a':5, 'b':7], {

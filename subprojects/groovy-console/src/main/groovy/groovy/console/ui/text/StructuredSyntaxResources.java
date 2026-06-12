@@ -32,6 +32,9 @@ public final class StructuredSyntaxResources {
     // ClipBoard
     // ==================================================
 
+    /**
+     * Shared clipboard used by the console text components.
+     */
     public static final Clipboard SYSTEM_CLIPBOARD = getSystemOrAppLevelClipboard();
 
     private static Clipboard getSystemOrAppLevelClipboard() {
@@ -62,21 +65,51 @@ public final class StructuredSyntaxResources {
     // STANDARD FONTS
     // =====================================================
 
+    /**
+     * Large UI font used by legacy console components.
+     */
     public static final Font LARGE_FONT = Font.decode("Arial-24");
+    /**
+     * Medium UI font used by legacy console components.
+     */
     public static final Font MEDIUM_FONT = Font.decode("Arial-18");
+    /**
+     * Small UI font used by legacy console components.
+     */
     public static final Font SMALL_FONT = Font.decode("Arial-12");
 
+    /**
+     * Default monospaced font for editors.
+     */
     public static final Font EDITOR_FONT = Font.decode("Monospaced-12");
 
     // =====================================================
     // UNDO/REDO NAMES
     // =====================================================
 
+    /**
+     * Presentation name for undo actions.
+     */
     public static final String UNDO = "Undo";
+    /**
+     * Presentation name for redo actions.
+     */
     public static final String REDO = "Redo";
+    /**
+     * Presentation name for print actions.
+     */
     public static final String PRINT = "Print";
+    /**
+     * Presentation name for find actions.
+     */
     public static final String FIND = "Find";
+    /**
+     * Presentation name for find-next actions.
+     */
     public static final String FIND_NEXT = "Find Next";
+    /**
+     * Presentation name for replace actions.
+     */
     public static final String REPLACE = "Replace";
 
     // singleton

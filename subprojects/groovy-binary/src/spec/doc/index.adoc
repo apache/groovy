@@ -43,6 +43,7 @@ include::../../../../../src/spec/doc/core-introduction.adoc[]
 
 == Groovy Language Specification
 
+:core-concurrent-actors:
 :core-domain-specific-languages:
 :core-metaprogramming:
 :core-object-orientation:
@@ -56,6 +57,7 @@ include::../../../../../src/spec/doc/core-introduction.adoc[]
 :groovyc-ant-task:
 :guide-integrating:
 :jmx:
+:tools-groovy:
 :tools-groovyc:
 :xml-userguide:
 :sql-userguide:
@@ -71,6 +73,16 @@ include::../../../../../src/spec/doc/core-object-orientation.adoc[leveloffset=+2
 include::../../../../../src/spec/doc/core-closures.adoc[leveloffset=+2]
 
 include::../../../../../src/spec/doc/core-semantics.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-async-await.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-parallel-collections.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-concurrent-dataflow.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-concurrent-actors.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-concurrent-java.adoc[leveloffset=+2]
 
 == Tools
 
@@ -114,9 +126,15 @@ include::../../../../../subprojects/groovy-yaml/src/spec/doc/yaml-userguide.adoc
 
 include::../../../../../subprojects/groovy-toml/src/spec/doc/toml-userguide.adoc[leveloffset=+2]
 
+include::../../../../../subprojects/groovy-csv/src/spec/doc/csv-userguide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-markdown/src/spec/doc/markdown-userguide.adoc[leveloffset=+2]
+
 include::../../../../../subprojects/groovy-typecheckers/src/spec/doc/typecheckers.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-contracts/src/spec/doc/contracts-userguide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-http-builder/src/spec/doc/http-builder.adoc[leveloffset=+2]
 
 === Scripting Ant tasks
 
@@ -169,8 +187,6 @@ offer some of the same security features as Java programs, including:
 
 Special security support is provided through:
 
-* gapi:groovy.lang.GroovyShell[], gapi:groovy.lang.GroovyClassLoader[] and other parts of the Groovy runtime fully support the Java security manager which allows you to sandbox script execution with a security policy. (Note: this functionality might be scaled back in future Groovy versions or when running
-on particular JDK versions in line with https://openjdk.org/jeps/411[JEP 411])
 * gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer[]
 secures source code by controlling what code constructs are permitted or prohibited in a code base
 (or part of a code base)

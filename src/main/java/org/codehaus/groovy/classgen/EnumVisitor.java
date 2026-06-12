@@ -84,19 +84,36 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
+/**
+ * Transforms enum classes by adding required methods and fields according to Java enum semantics.
+ * This visitor adds the synthetic {@code $VALUES} field, {@code values()} and {@code valueOf(String)}
+ * methods that are required for all enum types.
+ */
 public class EnumVisitor extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
 
+    /**
+     * Creates a new enum visitor.
+     *
+     * @param cu the compilation unit (currently unused but kept for API compatibility)
+     * @param su the source unit for error reporting
+     */
     public EnumVisitor(final CompilationUnit cu, final SourceUnit su) {
         sourceUnit = su;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         if (node.isEnum()) completeEnum(node);
@@ -330,6 +347,12 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         );
     }
 
+    /**
+     * Determines whether the enum node represents an anonymous enum constant body.
+     *
+     * @param enumClass the enum-related class node to test
+     * @return {@code true} if the node represents an anonymous inner enum class
+     */
     static boolean isAnonymousInnerClass(final ClassNode enumClass) {
         return enumClass instanceof EnumConstantClassNode
             && ((EnumConstantClassNode) enumClass).getVariableScope() == null;

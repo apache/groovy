@@ -39,6 +39,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass({"org.codehaus.groovy.transform.RecordTypeASTTransformation","org.codehaus.groovy.transform.RecordCompletionASTTransformation"})
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.RecordBaseASTStubber",
+        "org.codehaus.groovy.transform.RecordTypeASTTransformation",
+        "org.codehaus.groovy.transform.RecordCompletionASTTransformation"
+})
 public @interface RecordBase {
 }

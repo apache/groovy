@@ -18,8 +18,17 @@
  */
 package org.apache.groovy.bench
 
+/**
+ * Helper class providing Ackermann function implementation for benchmarking.
+ */
 class Ackermann {
 
+    /**
+     * Computes the Ackermann function for given m and n values.
+     * @param m the first parameter
+     * @param n the second parameter
+     * @return the computed Ackermann value
+     */
     static int ack(int m, int n) {
         if (m == 0) return n + 1
         if (n == 0) return ack(m - 1, 1)

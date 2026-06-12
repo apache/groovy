@@ -19,10 +19,52 @@
 package org.codehaus.groovy.tools.groovydoc.testfiles;
 
 public class ClassWithAnonymousInnerClass {
-}
+    private final Supplier anonymous = new Supplier() {
+        private final String hiddenField = "hidden";
 
-class AnonymusInnerClass  {
+        @Override
+        public int getType() {
+            return hiddenField.length();
+        }
 
-    public void innerClassMethod(){
+        @Override
+        public Object getValue() {
+            return hiddenField;
+        }
+
+        class HiddenType {
+            Object reveal() {
+                return hiddenField;
+            }
+        }
+    };
+
+    public Supplier inout(final Supplier supplier) {
+        return new Supplier() {
+            @Override
+            public int getType() {
+                return supplier.getType();
+            }
+
+            @Override
+            public Object getValue() {
+                return supplier.getValue();
+            }
+        };
+    }
+
+    public int visibleMethod() {
+        return anonymous.getType();
+    }
+
+    public static class NamedNested {
+        public String visibleNestedMethod() {
+            return "visible";
+        }
+    }
+
+    public interface Supplier {
+        int getType();
+        Object getValue();
     }
 }

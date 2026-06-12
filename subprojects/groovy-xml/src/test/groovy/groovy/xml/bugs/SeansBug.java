@@ -24,14 +24,14 @@ import org.junit.jupiter.api.Test;
 final class SeansBug {
 
     @Test
-    void testBug() throws Exception {
+    void bug() throws Exception {
         String code = "for (i in 1..10) \n{\n  println(i)\n}";
         GroovyShell shell = new GroovyShell();
         shell.evaluate(code);
     }
 
     @Test
-    void testMarkupBug() throws Exception {
+    void markupBug() throws Exception {
         String[] lines =
                 {
                         "package groovy.xml",

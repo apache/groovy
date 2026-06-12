@@ -145,6 +145,10 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
 
         // HACK: JavaStubGenerator could have snuck in a constructor we don't want
         cNode.getDeclaredConstructors().removeIf(next -> next.getFirstStatement() == null);
+        // GEP-21 Shape C: discard any stubber-emitted placeholder constructors
+        // (added at CONVERSION so Foo(Map) appears in the joint-compilation
+        // stub). The full transform below is authoritative for the runtime.
+        cNode.getDeclaredConstructors().removeIf(StubberSupport::isStub);
 
         boolean includePseudoGetters = false, includePseudoSetters = allProperties, skipReadOnly = false; // GROOVY-4363
         Set<String> names = new HashSet<>();
@@ -213,8 +217,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
 
     private static void createInitializers(final AbstractASTTransformation xform, final AnnotationNode aNode, final ClassNode cNode, final PropertyHandler handler, final boolean allNames, final List<String> excludes, final List<String> includes, final List<PropertyNode> list, final Parameter map, final BlockStatement block) {
         for (PropertyNode pNode : list) {
-            String name = pNode.getName();
-            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             Statement propInit = handler.createPropInit(xform, aNode, cNode, pNode, map);
             if (propInit != null) {
                 block.addStatement(propInit);

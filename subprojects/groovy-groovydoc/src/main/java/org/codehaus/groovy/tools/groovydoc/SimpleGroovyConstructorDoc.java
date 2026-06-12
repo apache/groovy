@@ -21,7 +21,16 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 
+/**
+ * Default {@link GroovyConstructorDoc} implementation.
+ */
 public class SimpleGroovyConstructorDoc extends SimpleGroovyExecutableMemberDoc implements GroovyConstructorDoc {
+    /**
+     * Creates a documented constructor owned by the supplied class.
+     *
+     * @param name the constructor name
+     * @param belongsToClass the declaring class
+     */
     public SimpleGroovyConstructorDoc(String name, GroovyClassDoc belongsToClass) {
         super(name, belongsToClass);
     }

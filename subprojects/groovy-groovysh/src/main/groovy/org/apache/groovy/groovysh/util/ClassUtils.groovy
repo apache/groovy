@@ -20,11 +20,20 @@ package org.apache.groovy.groovysh.util
 
 import org.apache.groovy.groovysh.jline.GroovyEngine
 
+/**
+ * Utility methods for probing whether classes are available to the shell or current JVM.
+ */
 class ClassUtils {
     private ClassUtils() {
         // utility class
     }
 
+    /**
+     * Determines whether the current JVM can resolve the named class.
+     *
+     * @param s fully qualified class name to resolve
+     * @return {@code true} if the class can be loaded
+     */
     static boolean lookFor(String s) {
         try {
             Class.forName(s)
@@ -34,6 +43,13 @@ class ClassUtils {
         }
     }
 
+    /**
+     * Determines whether the shell script engine can resolve the named class.
+     *
+     * @param engine script engine used to evaluate the lookup
+     * @param s fully qualified class name to resolve
+     * @return {@code true} if the class can be loaded in the engine context
+     */
     static boolean lookFor(GroovyEngine engine, String s) {
         try {
             engine.execute("Class.forName('$s')")

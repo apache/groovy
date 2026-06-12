@@ -18,6 +18,16 @@
  */
 package org.codehaus.groovy.control;
 
+/**
+ * Post-processes generated class bytes before they are written out.
+ */
 public interface BytecodeProcessor {
+    /**
+     * Transforms the bytecode for a generated class.
+     *
+     * @param name the class name
+     * @param original the original class bytes
+     * @return the processed class bytes
+     */
     byte[] processBytecode(String name, byte[] original);
 }

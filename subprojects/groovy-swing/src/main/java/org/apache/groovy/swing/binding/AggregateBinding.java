@@ -28,21 +28,40 @@ import java.util.Set;
  */
 public class AggregateBinding implements BindingUpdatable {
 
+    /**
+     * Indicates whether the aggregate is currently bound.
+     */
     protected  boolean bound;
 
     // use linked hash set so order is preserved
+    /**
+     * The member bindings managed by this aggregate.
+     */
     protected Set<BindingUpdatable> bindings = new LinkedHashSet<BindingUpdatable>();
 
+    /**
+     * Adds a binding to the aggregate.
+     *
+     * @param binding the binding to add
+     */
     public void addBinding(BindingUpdatable binding) {
         if (binding == null || bindings.contains(binding)) return;
         if (bound) binding.bind(); // bind is idempotent, so no state checking
         bindings.add(binding);
     }
 
+    /**
+     * Removes a binding from the aggregate.
+     *
+     * @param binding the binding to remove
+     */
     public void removeBinding(BindingUpdatable binding) {
         bindings.remove(binding);
     }
 
+    /**
+     * Binds every member binding in insertion order.
+     */
     @Override
     public void bind() {
         if (!bound) {
@@ -53,6 +72,9 @@ public class AggregateBinding implements BindingUpdatable {
         }
     }
 
+    /**
+     * Unbinds every member binding in insertion order.
+     */
     @Override
     public void unbind() {
         if (bound) {
@@ -63,6 +85,9 @@ public class AggregateBinding implements BindingUpdatable {
         }
     }
 
+    /**
+     * Rebinds every member binding when the aggregate is currently active.
+     */
     @Override
     public void rebind() {
         if (bound) {
@@ -71,6 +96,9 @@ public class AggregateBinding implements BindingUpdatable {
         }
     }
 
+    /**
+     * Pushes source updates through every member binding.
+     */
     @Override
     public void update() {
         for (BindingUpdatable binding : bindings) {
@@ -78,6 +106,9 @@ public class AggregateBinding implements BindingUpdatable {
         }
     }
 
+    /**
+     * Pushes reverse updates through every member binding.
+     */
     @Override
     public void reverseUpdate() {
         for (BindingUpdatable binding : bindings) {

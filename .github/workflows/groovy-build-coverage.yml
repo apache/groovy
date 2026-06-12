@@ -20,26 +20,92 @@ on: [push, pull_request]
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
+    if: >-
+      contains(github.event.head_commit.message || '', 'GROOVY-') ||
+      contains(github.event.pull_request.title || '', 'GROOVY-')
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
+        with:
+          # SonarCloud needs full history (not a shallow clone) so it can
+          # attribute issues/coverage to the right commits via SCM blame.
+          fetch-depth: 0
       - uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@v5
+      # `setup-gradle` caches ~/.gradle/caches but NOT ~/.groovy/grapes,
+      # which is where @Grab-resolved artifacts (used by tests like
+      # GenericsSTCTest, MethodReferenceTest, …) land. Caching it makes
+      # the build resilient to transient Maven Central / CDN outages:
+      # once an artifact has been resolved on any prior run, subsequent
+      # runs reuse it from cache and don't re-hit the network.
+      #
+      # Same key prefix as `groovy-build-test.yml` so the two workflows
+      # share their accumulated Grape cache.
+      - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes + ~/.m2/repository)"
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.groovy/grapes
+            ~/.m2/repository
+          key: ${{ runner.os }}-grape-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-grape-
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+      - name: "🌡 Pre-warm @Grab artifacts via Maven"
+        shell: bash
+        run: |
+          set +e
+          coords=$(grep -rhEo "@Grab\(\s*(value\s*=\s*)?['\"][^'\"]+['\"]" src/test subprojects/*/src/test 2>/dev/null \
+            | sed -E "s/.*@Grab\(\s*(value\s*=\s*)?['\"]([^'\"]+)['\"].*/\2/" \
+            | grep -E '^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+:[a-zA-Z0-9._+-]+$' \
+            | sort -u)
+          [ -z "$coords" ] && { echo "No @Grab coords — skipping"; exit 0; }
+          n=$(printf '%s\n' "$coords" | wc -l | tr -d ' ')
+          echo "Pre-warming $n coords"
+          ok=0; fail=0
+          while IFS= read -r c; do
+            if mvn -B -q dependency:get -Dartifact="$c" -Dtransitive=true >/dev/null 2>&1; then
+              ok=$((ok+1))
+            else
+              fail=$((fail+1)); echo "  ⚠ $c"
+            fi
+          done <<< "$coords"
+          echo "Pre-warm: $ok ok / $fail failed"
+          exit 0
+        timeout-minutes: 15
       - name: Test with Gradle
-        run: ./gradlew -Pcoverage=true jacocoAllReport
+        run: ./gradlew -Pgroovy.grape.bridge-cache=true -Pcoverage=true jacocoAllReport
         timeout-minutes: 60
+      # Coverage upload is best-effort: fork PRs run without secrets and
+      # codecov-action falls back to a tokenless upload that can fail/be
+      # rate-limited. A failed upload must not fail the build or skip the
+      # Sonar step that follows it.
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        continue-on-error: true
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
+      # SonarCloud needs SONARCLOUD_TOKEN, which GitHub does not expose to
+      # pull_request runs from forks. The Sonar Gradle plugin has no
+      # tokenless fallback, so it would always fail on fork PRs — skip it
+      # there cleanly instead.
+      - name: SonarCloud analysis (with coverage)
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+        run: ./gradlew -Pcoverage=true sonar
+        timeout-minutes: 20

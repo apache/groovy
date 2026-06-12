@@ -27,8 +27,20 @@ import javax.swing.table.TableModel
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 
+/**
+ * Factory for creating table models.
+ */
 class TableModelFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (FactoryBuilderSupport.checkValueIsType(value, name, TableModel)) {
             return value
@@ -47,6 +59,13 @@ class TableModelFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Finalizes a node after its children have been processed.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param node the current node
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if ((node.columnCount > 0) && (parent instanceof JTable)) {
             parent.autoCreateColumnsFromModel = false
@@ -67,8 +86,21 @@ class TableModelFactory extends AbstractFactory {
     }
 }
 
+/**
+ * Factory for creating property-backed table columns.
+ */
 class PropertyColumnFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
+    @SuppressWarnings("unchecked")
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name)
         Object current = builder.getCurrent()
@@ -97,8 +129,21 @@ class PropertyColumnFactory extends AbstractFactory {
     }
 }
 
+/**
+ * Factory for creating closure-backed table columns.
+ */
 class ClosureColumnFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
+    @SuppressWarnings("unchecked")
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name)
         Object current = builder.getCurrent()

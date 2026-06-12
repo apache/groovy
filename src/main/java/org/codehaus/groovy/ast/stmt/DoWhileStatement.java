@@ -22,14 +22,29 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 
 /**
- * Represents a do { ... } while (condition) loop in Groovy
+ * Represents a do { ... } while (condition) loop in Groovy.
+ * A do-while loop executes its body unconditionally on the first iteration, then evaluates
+ * a {@link BooleanExpression} after each iteration to decide whether to repeat.
+ * The loop body always executes at least once, differentiating it from a {@link WhileStatement}.
+ *
+ * @see LoopingStatement
+ * @see Statement
+ * @see BooleanExpression
+ * @see WhileStatement
  */
 public class DoWhileStatement extends Statement implements LoopingStatement {
 
     private BooleanExpression booleanExpression;
     private Statement loopBlock;
 
-
+    /**
+     * Constructs a DoWhileStatement with a loop body and condition.
+     *
+     * @param booleanExpression
+     *      the {@link BooleanExpression}} evaluated after each iteration
+     * @param loopBlock
+     *      the {@link Statement}} to execute; always runs at least once
+     */
     public DoWhileStatement(BooleanExpression booleanExpression, Statement loopBlock) {
         this.booleanExpression = booleanExpression;
         this.loopBlock = loopBlock;
@@ -40,18 +55,41 @@ public class DoWhileStatement extends Statement implements LoopingStatement {
         visitor.visitDoWhileLoop(this);
     }
 
+    /**
+     * Returns the {@link BooleanExpression}} evaluated after each iteration.
+     *
+     * @return the loop condition {@link BooleanExpression}}
+     */
     public BooleanExpression getBooleanExpression() {
         return booleanExpression;
     }
 
+    /**
+     * Returns the loop body {@link Statement}}.
+     *
+     * @return the loop block {@link Statement}}
+     */
     @Override
     public Statement getLoopBlock() {
         return loopBlock;
     }
+
+    /**
+     * Sets the {@link BooleanExpression}} to evaluate after each iteration.
+     *
+     * @param booleanExpression
+     *      the loop condition {@link BooleanExpression}}
+     */
     public void setBooleanExpression(BooleanExpression booleanExpression) {
         this.booleanExpression = booleanExpression;
     }
 
+    /**
+     * Sets the loop body {@link Statement}}.
+     *
+     * @param loopBlock
+     *      the loop block {@link Statement}}
+     */
     @Override
     public void setLoopBlock(Statement loopBlock) {
         this.loopBlock = loopBlock;

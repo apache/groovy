@@ -22,6 +22,8 @@ import groovy.cli.Option
 import groovy.cli.Unparsed
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import picocli.CommandLine.DuplicateOptionAnnotationsException
@@ -45,8 +47,29 @@ class CliBuilderTest {
     /** Commons-cli constant that specifies the number of argument values is infinite */
     private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
 
+    private static final String PICOCLI_ANSI_PROP = 'picocli.ansi'
+    private static String priorPicocliAnsi
+
     private StringWriter stringWriter
     private PrintWriter printWriter
+
+    @BeforeAll
+    static void disablePicocliAnsi() {
+        // picocli's Help.Ansi.AUTO can resolve to ON on terminals that advertise ANSI support
+        // (e.g. Windows CI runners with WT_SESSION/TERM set), which injects escape codes into the
+        // captured usage output and breaks exact-string assertions below. Force it off here so the
+        // test is self-defending regardless of where it runs.
+        priorPicocliAnsi = System.setProperty(PICOCLI_ANSI_PROP, 'false')
+    }
+
+    @AfterAll
+    static void restorePicocliAnsi() {
+        if (priorPicocliAnsi == null) {
+            System.clearProperty(PICOCLI_ANSI_PROP)
+        } else {
+            System.setProperty(PICOCLI_ANSI_PROP, priorPicocliAnsi)
+        }
+    }
 
     @BeforeEach
     void setUp() {
@@ -78,12 +101,13 @@ class CliBuilderTest {
   -c, --encoding=<charset>   character encoding
   -h, --help                 usage information
   -i=[<extension>]           modify files in place, create backup if extension
-                               is specified (e.g. '.bak')"""
-        assertEquals(expectedUsage.toString(), stringWriter.toString().tokenize('\r\n').join('\n'))
+                               is specified (e.g. '.bak')""".toString()
+
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
         resetPrintWriter()
         cli.writer = printWriter
         if (options.help) { cli.usage() }
-        assertEquals(expectedUsage.toString(), stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
         assert options.hasOption('c')
         assert options.c
         assert options.hasOption('encoding')
@@ -96,6 +120,11 @@ class CliBuilderTest {
         assertEquals(false, options.hasOption('noSuchOptionGiven'))
         assertEquals(false, options.x)
         assertEquals(false, options.hasOption('x'))
+    }
+
+    private static void assertEqualsNormalized(String expected, String raw) {
+        def actual = raw.normalize().trim()
+        assertEquals(expected, actual, "expected:\n$expected\nexpected bytes:\n$expected.bytes\nactual:\n$actual\nactual bytes:\n$actual.bytes")
     }
 
     private void resetPrintWriter() {
@@ -172,10 +201,11 @@ class CliBuilderTest {
         cli.x(required: true, 'message')
         cli.parse([])
         // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
-        assert stringWriter.toString() == String.format(
-                "error: Missing required option: '-x'%n" +\
-                "Usage: groovy -x%n" +\
-                "  -x     message%n")
+
+        def expected = "error: Missing required option: '-x'\n" +
+            "Usage: groovy -x\n" +
+            "  -x     message"
+        assertEqualsNormalized(expected, stringWriter.toString())
     }
 
     @Test
@@ -357,12 +387,12 @@ class CliBuilderTest {
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter)
         def options = cli.parse(['-v'])
-        assertEquals('''''', stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals('', stringWriter.toString().normalize())
         assert !options.v
     }
 
     private void checkNoOutput() {
-        assert stringWriter.toString().tokenize('\r\n').join('\n') == ''''''
+        assert stringWriter.toString().normalize() == ''
     }
 
     @Test
@@ -1100,7 +1130,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [-configscript=PARAM]
       -pr, -enable-preview, --enable-preview
                             cli.option.preview.description
   -V, -version, --version   cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
 
         resetPrintWriter()
         cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: false, writer: printWriter)
@@ -1125,7 +1155,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
       -pa, --parameters      cli.option.parameters.description
       -pr, --enable-preview  cli.option.preview.description
   -V, --version              cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEqualsNormalized(expectedUsage, stringWriter.toString())
     }
 
     @Test

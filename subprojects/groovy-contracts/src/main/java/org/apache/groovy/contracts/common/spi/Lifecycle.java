@@ -63,15 +63,55 @@ import org.codehaus.groovy.ast.MethodNode;
  */
 public interface Lifecycle {
 
+    /**
+     * Runs before class-level annotation processors are applied.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the class about to be processed
+     */
     void beforeProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode);
 
+    /**
+     * Runs after class-level processing and domain-model injection are complete.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the processed class
+     */
     void afterProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode);
 
+    /**
+     * Runs before method-level annotation processors are applied.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param methodNode the method about to be processed
+     */
     void beforeProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode);
 
+    /**
+     * Runs after method-level processing and domain-model injection are complete.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param methodNode the processed method
+     */
     void afterProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode);
 
+    /**
+     * Runs before constructor-level annotation processors are applied.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param constructorNode the constructor about to be processed
+     */
     void beforeProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode);
 
+    /**
+     * Runs after constructor-level processing and domain-model injection are complete.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param constructorNode the processed constructor
+     */
     void afterProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode);
 }

@@ -62,16 +62,25 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
         len++;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int len() {
         return len;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean hydrated() {
         return map != null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Entry<String, Value>[] items() {
         return items;
@@ -101,6 +110,13 @@ public class ValueMapImpl extends AbstractMap<String, Value> implements ValueMap
         }
     }
 
+    /**
+     * Unsupported because entries are appended during parsing rather than replaced by key.
+     *
+     * @param key ignored
+     * @param value ignored
+     * @return never returns normally
+     */
     @Override
     public Value put(String key, Value value) {
         die("Not that kind of map");

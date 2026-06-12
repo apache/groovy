@@ -34,11 +34,29 @@ import java.util.Map;
 @SuppressWarnings({"unchecked","rawtypes"})
 public class CustomizersFactory extends AbstractFactory implements PostCompletionFactory {
 
+    /**
+     * Creates the mutable collection that accumulates compilation customizers.
+     *
+     * @param builder the active builder
+     * @param name the node name
+     * @param value the supplied node value
+     * @param attributes the node attributes
+     * @return a new collection used to gather customizers
+     * @throws InstantiationException if instance creation fails
+     * @throws IllegalAccessException if access fails
+     */
     @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         return new ArrayList();
     }
 
+    /**
+     * Adds child customizers to the current collection node.
+     *
+     * @param builder the active builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     @Override
     public void setChild(final FactoryBuilderSupport builder, final Object parent, final Object child) {
         if (parent instanceof Collection && child instanceof CompilationCustomizer) {
@@ -46,6 +64,14 @@ public class CustomizersFactory extends AbstractFactory implements PostCompletio
         }
     }
 
+    /**
+     * Converts the collected customizers to an array when node construction completes.
+     *
+     * @param factory the active builder
+     * @param parent the parent node
+     * @param node the completed node
+     * @return a customizer array or the original node
+     */
     @Override
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
         if (node instanceof Collection) {

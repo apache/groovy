@@ -18,8 +18,19 @@
  */
 package org.apache.groovy.json.internal;
 
+/**
+ * Array helpers used by the JSON internals.
+ */
 public class ArrayUtils {
 
+    /**
+     * Copies a character range into a new array.
+     *
+     * @param source the source array
+     * @param startIndex the inclusive start index
+     * @param endIndex the exclusive end index
+     * @return a new array containing the requested range
+     */
     public static char[] copyRange(char[] source, int startIndex, int endIndex) {
         int len = endIndex - startIndex;
         char[] copy = new char[len];

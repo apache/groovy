@@ -26,6 +26,16 @@ import java.lang.reflect.Field;
  */
 public class FieldValues {
 
+    /**
+     * Reads a field value reflectively from the target object wrapped by a generated closure instance.
+     *
+     * @param obj the generated closure instance
+     * @param fieldName the field name to read from the wrapped target object
+     * @param type the expected field type
+     * @param <T> the result type
+     * @return the reflected field value
+     * @throws IllegalAccessException if reflective access fails
+     */
     @SuppressWarnings("unchecked")
     public static <T> T fieldValue(Object obj, String fieldName, Class<T> type) throws IllegalAccessException {
         Validate.notNull(obj);

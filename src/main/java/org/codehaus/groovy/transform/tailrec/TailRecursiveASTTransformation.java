@@ -54,6 +54,7 @@ import java.util.Map;
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TailRecursiveASTTransformation extends AbstractASTTransformation {
+    /** {@inheritDoc} */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);
@@ -159,6 +160,12 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
         new VariableAccessReplacer(nameAndTypeMapping).replaceIn(method.getCode());
     }
 
+    /**
+     * Builds the parameter-to-iteration-variable mapping used during transformation.
+     *
+     * @param method the method being transformed
+     * @return a mapping from parameter name to iteration variable metadata
+     */
     public Map<String, Map> name2VariableMappingFor(MethodNode method) {
         final Map<String, Map> nameAndTypeMapping = new LinkedHashMap<>();
         Arrays.stream(method.getParameters()).forEach((Parameter param) -> {
@@ -174,6 +181,12 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
         return nameAndTypeMapping;
     }
 
+    /**
+     * Builds the argument-position mapping used during recursive return conversion.
+     *
+     * @param method the method being transformed
+     * @return a mapping from parameter position to iteration variable metadata
+     */
     public Map<Integer, Map> position2VariableMappingFor(MethodNode method) {
         final Map<Integer, Map> positionMapping = new LinkedHashMap<>();
         final Parameter[] parameters = method.getParameters();
@@ -273,6 +286,11 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
         return false;
     }
 
+    /**
+     * Returns the annotation name used in diagnostics emitted by this transformation.
+     *
+     * @return the simple annotation name prefixed with {@code @}
+     */
     public static String getMY_TYPE_NAME() {
         return MY_TYPE_NAME;
     }

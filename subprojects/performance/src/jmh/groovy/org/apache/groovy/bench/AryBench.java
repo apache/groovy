@@ -31,6 +31,9 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Benchmark comparing Java, Groovy, and Groovy {@code @CompileStatic} array operations.
+ */
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(2)
@@ -42,16 +45,28 @@ public class AryBench {
     @Param({"10", "100", "1000", "1000000"})
     private int n;
 
+    /**
+     * Baseline Java array operations.
+     * @return the sum of first and last elements
+     */
     @Benchmark
     public int java() {
         return JavaAry.ary(n);
     }
 
+    /**
+     * Groovy dynamic array operations.
+     * @return the sum of first and last elements
+     */
     @Benchmark
     public int groovy() {
         return Ary.ary(n);
     }
 
+    /**
+     * Groovy {@code @CompileStatic} array operations.
+     * @return the sum of first and last elements
+     */
     @Benchmark
     public int groovyCS() {
         return Ary.aryCS(n);

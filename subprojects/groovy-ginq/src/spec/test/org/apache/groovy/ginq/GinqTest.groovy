@@ -57,13 +57,11 @@ class GinqTest {
     @Test
     void "testGinq - from select - 1"() {
         assertGinqScript '''
-// tag::ginq_execution_01[]
             def numbers = [0, 1, 2]
             assert [0, 1, 2] == GQ {
                 from n in numbers
                 select n
             }.toList()
-// end::ginq_execution_01[]
         '''
     }
 
@@ -3469,6 +3467,204 @@ class GinqTest {
         '''
     }
 
+    // groupby...into tests
+
+    @Test
+    void "testGinq - from groupby into select - 1"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 2], [6, 3]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 2"() {
+        assertGinqScript '''
+            assert [[1, [1, 1]], [3, [3, 3]], [6, [6, 6, 6]]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.toList()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 3"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 6], [6, 18]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.sum(n -> n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 4"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 6], [6, 18]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.n, g.sum(n -> n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 5"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 6], [6, 18]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n as m into g
+                select g.m, g.sum(m -> m)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into having select - 1"() {
+        assertGinqScript '''
+            assert [[6, 3]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                having g.count() > 2
+                select g.key, g.count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with property access - 1"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name as name, n.val as val into g
+                select g.name, g.val, g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with property access - 2"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name, n.val as val into g
+                select g.name, g.val, g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with property access - 3"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name as name, n.val into g
+                select g.name, g.val, g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with property access - 4"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name, n.val into g
+                select g.name, g.val, g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with subscript"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name as name, n.val as val into g
+                select g["name"], g["val"], g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - complex example for intro"() {
+        assertGinqScript '''
+            def sales = [
+                [customer: 'Alice', product: 'Laptop',   amount: 1200],
+                [customer: 'Alice', product: 'Keyboard', amount: 80],
+                [customer: 'Bob',   product: 'Laptop',   amount: 1500],
+                [customer: 'Bob',   product: 'Mouse',    amount: 25],
+                [customer: 'Bob',   product: 'Monitor',  amount: 450],
+                [customer: 'Carol', product: 'Mouse',    amount: 30],
+            ]
+            def result = GQ {
+// tag::ginq_complex[]
+                from s in sales
+                where s.amount > 50
+                groupby s.customer as customer into g
+                having g.count() > 1
+                orderby g.customer
+                select g.customer, g.count() as items, g.sum(s -> s.amount) as total
+// end::ginq_complex[]
+            }.toList()
+            assert result[0].toList() == ['Alice', 2, 1280]
+            assert result[1].toList() == ['Bob', 2, 1950]
+        '''
+    }
+
+    @Test
+    void "testGinq - complex example transformed"() {
+        assertScript '''
+            import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
+            import org.apache.groovy.ginq.provider.collection.runtime.Queryable.Order
+
+            def sales = [
+                [customer: 'Alice', product: 'Laptop',   amount: 1200],
+                [customer: 'Alice', product: 'Keyboard', amount: 80],
+                [customer: 'Bob',   product: 'Laptop',   amount: 1500],
+                [customer: 'Bob',   product: 'Mouse',    amount: 25],
+                [customer: 'Bob',   product: 'Monitor',  amount: 450],
+                [customer: 'Carol', product: 'Mouse',    amount: 30],
+            ]
+            def result =
+// tag::ginq_transformed[]
+            from(sales)
+                .where(s -> s.amount > 50)
+                .groupByInto(s -> s.customer, g -> g.count() > 1)
+                .orderBy(new Order(g -> g.key, true))
+                .select((g, q) -> Tuple.tuple(g.key, g.count(), g.sum(s -> s.amount)))
+// end::ginq_transformed[]
+                .toList()
+            assert result[0].toList() == ['Alice', 2, 1280]
+            assert result[1].toList() == ['Bob', 2, 1950]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - direct API"() {
+        assertScript '''
+            import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
+// tag::ginq_groupby_into_api[]
+            def nums = [1, 2, 2, 3, 3, 4, 4, 5]
+            def result = from(nums)
+                .groupByInto(e -> e, g -> g.count() > 1)
+                .select((g, q) -> Tuple.tuple(g.key, g.count()))
+                .toList()
+            assert [[2, 2], [3, 2], [4, 2]] == result
+// end::ginq_groupby_into_api[]
+        '''
+    }
+
     @Test
     void "testGinq - query json - 1"() {
         assertGinqScript """
@@ -3509,24 +3705,23 @@ class GinqTest {
     @Test
     void "testGinq - query json - 2"() {
         assertGinqScript """
-// tag::ginq_tips_04[]
             import groovy.json.JsonSlurper
+// tag::ginq_tips_04[]
             def json = new JsonSlurper().parseText('''
                 {
                     "fruits": [
                         {"name": "Orange", "price": 11},
                         {"name": "Apple", "price": 6},
                         {"name": "Banana", "price": 4},
-                        {"name": "Mongo", "price": 29},
+                        {"name": "Mango", "price": 28},
                         {"name": "Durian", "price": 32}
                     ]
                 }
             ''')
 
-            def expected = [['Mongo', 29], ['Orange', 11], ['Apple', 6], ['Banana', 4]]
-            assert expected == GQ {
+            assert [['Mango', 28], ['Orange', 11], ['Apple', 6], ['Banana', 4]] == GQ {
                 from f in json.fruits
-                where f.price < 32
+                where f.price < 30
                 orderby f.price in desc
                 select f.name, f.price
             }.toList()
@@ -3647,6 +3842,100 @@ class GinqTest {
             }
             assert [2] == result.toList()
 // end::ginq_tips_12[]
+        '''
+    }
+
+    // set operation tests
+
+    @Test
+    void "testGinq - union"() {
+        assertGinqScript '''
+// tag::ginq_setop_union[]
+            assert [1, 2, 3, 4, 5] == GQ {
+                from n in [1, 2, 3]
+                select n
+                union
+                from m in [3, 4, 5]
+                select m
+            }.toList()
+// end::ginq_setop_union[]
+        '''
+    }
+
+    @Test
+    void "testGinq - unionall"() {
+        assertGinqScript '''
+// tag::ginq_setop_unionall[]
+            assert [1, 2, 3, 3, 4, 5] == GQ {
+                from n in [1, 2, 3]
+                select n
+                unionall
+                from m in [3, 4, 5]
+                select m
+            }.toList()
+// end::ginq_setop_unionall[]
+        '''
+    }
+
+    @Test
+    void "testGinq - intersect"() {
+        assertGinqScript '''
+// tag::ginq_setop_intersect[]
+            assert [3, 4] == GQ {
+                from n in [1, 2, 3, 4]
+                select n
+                intersect
+                from m in [3, 4, 5, 6]
+                select m
+            }.toList()
+// end::ginq_setop_intersect[]
+        '''
+    }
+
+    @Test
+    void "testGinq - minus"() {
+        assertGinqScript '''
+// tag::ginq_setop_minus[]
+            assert [1, 2] == GQ {
+                from n in [1, 2, 3, 4]
+                select n
+                minus
+                from m in [3, 4, 5, 6]
+                select m
+            }.toList()
+// end::ginq_setop_minus[]
+        '''
+    }
+
+    @Test
+    void "testGinq - chained set operations"() {
+        assertGinqScript '''
+            // [1,2,3] union [3,4,5] = [1,2,3,4,5], then minus [4,5,6] = [1,2,3]
+            assert [1, 2, 3] == GQ {
+                from n in [1, 2, 3]
+                select n
+                union
+                from m in [3, 4, 5]
+                select m
+                minus
+                from k in [4, 5, 6]
+                select k
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - union with where"() {
+        assertGinqScript '''
+            assert [2, 4, 5] == GQ {
+                from n in [1, 2, 3]
+                where n % 2 == 0
+                select n
+                union
+                from m in [3, 4, 5]
+                where m > 3
+                select m
+            }.toList()
         '''
     }
 
@@ -4667,12 +4956,12 @@ class GinqTest {
         assert null == ginqExpression.whereExpression
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
-        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+            BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
         assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
         assert '1' == contructedFilterExpr1.rightExpression.text
 
         assert ginqExpression.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
-        BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+            BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
         assert Types.COMPARE_LESS_THAN_EQUAL == contructedFilterExpr2.operation.type
         assert '3' == contructedFilterExpr2.rightExpression.text
     }
@@ -4711,12 +5000,12 @@ class GinqTest {
         assert null == ginqExpression.whereExpression
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
-        BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+            BinaryExpression contructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
         assert Types.COMPARE_GREATER_THAN == contructedFilterExpr1.operation.type
         assert '1' == contructedFilterExpr1.rightExpression.text
 
         assert ginqExpression.joinExpressionList[0].dataSourceExpr instanceof GinqExpression
-        BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
+            BinaryExpression contructedFilterExpr2 = ((GinqExpression) ginqExpression.joinExpressionList[0].dataSourceExpr).whereExpression.filterExpr
         assert Types.COMPARE_LESS_THAN_EQUAL == contructedFilterExpr2.operation.type
         assert '3' == contructedFilterExpr2.rightExpression.text
     }
@@ -4758,7 +5047,7 @@ class GinqTest {
         assert '3' == filterExpr.rightExpression.text
 
         assert ginqExpression.fromExpression.dataSourceExpr instanceof GinqExpression
-        BinaryExpression constructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
+            BinaryExpression constructedFilterExpr1 = ((GinqExpression) ginqExpression.fromExpression.dataSourceExpr).whereExpression.filterExpr
         assert Types.COMPARE_GREATER_THAN == constructedFilterExpr1.operation.type
         assert '1' == constructedFilterExpr1.rightExpression.text
 

@@ -34,6 +34,13 @@ public abstract class MethodKey {
     private final Class sender;
     private final boolean isCallToSuper;
 
+    /**
+     * Constructs a MethodKey for a method invocation.
+     *
+     * @param sender the class that sends the method call
+     * @param name the method name
+     * @param isCallToSuper whether this is a super method call
+     */
     public MethodKey(Class sender, String name, boolean isCallToSuper) {
         this.sender = sender;
         this.name = name;
@@ -117,7 +124,7 @@ public abstract class MethodKey {
         int answer = name.hashCode();
         int size = getParameterCount();
 
-        /** @todo we should use the real Josh Bloch algorithm here */
+        /* @todo we should use the real Josh Bloch algorithm here */
 
         // can't remember the exact Josh Bloch algorithm and I've not got the book handy
         // but it's something like this IIRC

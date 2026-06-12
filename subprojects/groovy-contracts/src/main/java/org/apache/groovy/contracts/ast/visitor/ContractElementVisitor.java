@@ -35,10 +35,21 @@ public class ContractElementVisitor extends BaseVisitor implements ASTNodeMetaDa
     private ClassNode classNode;
     private boolean foundContractElement = false;
 
+    /**
+     * Creates a visitor that detects whether a class participates in contract processing.
+     *
+     * @param sourceUnit the source unit currently being transformed
+     * @param source the reader source backing the source unit
+     */
     public ContractElementVisitor(final SourceUnit sourceUnit, final ReaderSource source) {
         super(sourceUnit, source);
     }
 
+    /**
+     * Visits the supplied class and its hierarchy until any contract element is found.
+     *
+     * @param node the class to inspect
+     */
     @Override
     public void visitClass(ClassNode node) {
         if (!CandidateChecks.isContractsCandidate(node) && !CandidateChecks.isInterfaceContractsCandidate(node)) return;
@@ -71,6 +82,12 @@ public class ContractElementVisitor extends BaseVisitor implements ASTNodeMetaDa
         }
     }
 
+    /**
+     * Checks whether the visited constructor or method already has rewritten contract metadata.
+     *
+     * @param methodNode the method or constructor being inspected
+     * @param isConstructor whether the node represents a constructor
+     */
     @Override
     protected void visitConstructorOrMethod(MethodNode methodNode, boolean isConstructor) {
         if (!CandidateChecks.couldBeContractElementMethodNode(classNode, methodNode) && !(CandidateChecks.isPreconditionCandidate(classNode, methodNode)))
@@ -78,6 +95,11 @@ public class ContractElementVisitor extends BaseVisitor implements ASTNodeMetaDa
         foundContractElement |= methodNode.getNodeMetaData(CLOSURE_REPLACED) != null;
     }
 
+    /**
+     * Indicates whether any contract element was detected while traversing the class hierarchy.
+     *
+     * @return {@code true} once a contract element has been found
+     */
     public boolean isFoundContractElement() {
         return foundContractElement;
     }

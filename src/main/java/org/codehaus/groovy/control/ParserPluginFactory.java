@@ -25,6 +25,11 @@ import org.apache.groovy.parser.antlr4.Antlr4PluginFactory;
  */
 public abstract class ParserPluginFactory {
 
+    /**
+     * Creates a parser plugin instance.
+     *
+     * @return a new parser plugin
+     */
     public abstract ParserPlugin createParserPlugin();
 
     /**

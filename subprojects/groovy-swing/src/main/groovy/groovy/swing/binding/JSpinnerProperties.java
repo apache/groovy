@@ -31,9 +31,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Supplies synthetic binding definitions for {@link JSpinner}.
+ *
  * @since Groovy 1.6.4
  */
 public class JSpinnerProperties {
+    /**
+     * Returns the synthetic trigger bindings exposed for {@link JSpinner}.
+     *
+     * @return the synthetic trigger binding map
+     */
     public static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JSpinner.class.getName() + "#value",
@@ -42,14 +49,29 @@ public class JSpinnerProperties {
     }
 }
 
+/**
+ * Tracks the synthetic {@code value} property on a {@link JSpinner}.
+ */
 class JSpinnerValueBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ChangeListener {
+    /**
+     * The currently bound spinner instance.
+     */
     JSpinner boundSlider;
 
 
+    /**
+     * Creates a value binding for a spinner.
+     *
+     * @param source the source property binding
+     * @param target the target binding
+     */
     JSpinnerValueBinding(PropertyBinding source, TargetBinding target) {
         super(source, target, JSpinner.class, "value");
     }
 
+    /**
+     * Starts listening to the bound spinner and its model.
+     */
     @Override
     public synchronized void syntheticBind() {
         boundSlider = (JSpinner) ((PropertyBinding)sourceBinding).getBean();
@@ -57,6 +79,9 @@ class JSpinnerValueBinding extends AbstractSyntheticBinding implements PropertyC
         boundSlider.getModel().addChangeListener(this);
     }
 
+    /**
+     * Stops listening to the bound spinner and clears the cached reference.
+     */
     @Override
     public synchronized void syntheticUnbind() {
         boundSlider.removePropertyChangeListener("model", this);
@@ -64,6 +89,11 @@ class JSpinnerValueBinding extends AbstractSyntheticBinding implements PropertyC
         boundSlider = null;
     }
 
+    /**
+     * Refreshes the binding after the spinner model instance changes.
+     *
+     * @param event the model change event
+     */
     @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
@@ -71,6 +101,11 @@ class JSpinnerValueBinding extends AbstractSyntheticBinding implements PropertyC
         ((SpinnerModel) event.getNewValue()).addChangeListener(this);
     }
 
+    /**
+     * Refreshes the binding after the spinner value changes.
+     *
+     * @param e the change event
+     */
     @Override
     public void stateChanged(ChangeEvent e) {
         update();

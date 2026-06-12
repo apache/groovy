@@ -19,15 +19,16 @@
 
 -->
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<%
+<% 
 def subtitle = 'Index'
 def title = subtitle + (props.windowTitle ? " (${props.windowTitle})" : "")
 def letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_' as char[]
+def isDocumented = { !(it.respondsTo('isHidden') && it.isHidden()) }
 def elementTypes = [
-    "Method" : { it.methods() },
-    "Constructor" : { it.constructors() },
-    "Field" : { it.fields() },
-    "Property" : { it.properties() },
+    "Method" : { it.methods().findAll(isDocumented) },
+    "Constructor" : { it.constructors().findAll(isDocumented) },
+    "Field" : { it.fields().findAll(isDocumented) },
+    "Property" : { it.properties().findAll(isDocumented) },
     "Enum Constant" : { it.enumConstants() },
 ]
 def encode = { org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(it) }
@@ -42,6 +43,9 @@ def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> pa
         <title>${title}</title>
         <% if (props.timestamp != 'false') { %><meta name="date" content="${new java.text.SimpleDateFormat('yyyy-MM-dd').format(new Date())}"><% } %>
         <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
+<% if (props.additionalStylesheets) props.additionalStylesheets.tokenize(',').each { __ss -> %>
+        <link rel="stylesheet" type="text/css" href="${__ss.trim()}">
+<% } %>
     </head>
 <body class="center">
 <script type="text/javascript"><!--
@@ -64,9 +68,9 @@ if (location.href.indexOf('is-external=true') == -1) {
         <li><a href="overview-summary.html">Overview</a></li>
         <li>Package</li>
         <li>Class</li>
-        <li><a href="deprecated-list.html">Deprecated</a></li>
+        <% if (props.noDeprecatedList != 'true') { %><li><a href="deprecated-list.html">Deprecated</a></li><% } %>
         <li class="navBarCell1Rev">Index</li>
-        <li><a href="help-doc.html">Help</a></li>
+        <% if (props.noHelp != 'true') { %><li><a href="help-doc.html">Help</a></li><% } %>
     </ul>
 </div>
 <div class="subNav">
@@ -153,9 +157,9 @@ letters.each { letter ->
         <li><a href="overview-summary.html">Overview</a></li>
         <li>Package</li>
         <li>Class</li>
-        <li><a href="deprecated-list.html">Deprecated</a></li>
+        <% if (props.noDeprecatedList != 'true') { %><li><a href="deprecated-list.html">Deprecated</a></li><% } %>
         <li class="navBarCell1Rev">Index</li>
-        <li><a href="help-doc.html">Help</a></li>
+        <% if (props.noHelp != 'true') { %><li><a href="help-doc.html">Help</a></li><% } %>
     </ul>
 </div>
 <div class="subNav">

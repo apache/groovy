@@ -27,23 +27,53 @@ import groovy.lang.MetaProperty;
  * WARNING: This class is for internal use only, don't use it for your APIs
  */
 public class MethodMetaProperty extends MetaProperty {
+    /**
+     * The underlying metamethod
+     */
     private final MetaMethod method;
 
+    /**
+     * Constructs a new MethodMetaProperty.
+     *
+     * @param name the property name
+     * @param method the metamethod to wrap
+     */
     public MethodMetaProperty(String name, MetaMethod method) {
         super(name, Object.class);
         this.method = method;
     }
 
+    /**
+     * Gets the property value by invoking the metamethod.
+     * This method always throws UnsupportedOperationException as this is just a wrapper.
+     *
+     * @param object the object (not used)
+     * @return never returns
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public Object getProperty(Object object) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Sets the property value by invoking the metamethod.
+     * This method always throws UnsupportedOperationException as this is just a wrapper.
+     *
+     * @param object the object (not used)
+     * @param newValue the new value (not used)
+     * @throws UnsupportedOperationException always
+     */
     @Override
     public void setProperty(Object object, Object newValue) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Gets the underlying metamethod.
+     *
+     * @return the metamethod
+     */
     public MetaMethod getMetaMethod() {
         return method;
     }
@@ -54,10 +84,22 @@ public class MethodMetaProperty extends MetaProperty {
      */
     public static class GetMethodMetaProperty extends MethodMetaProperty {
 
+        /**
+         * Constructs a new GetMethodMetaProperty.
+         *
+         * @param name the property name
+         * @param theMethod the metamethod to use for getting the property
+         */
         public GetMethodMetaProperty(String name, MetaMethod theMethod) {
             super(name, theMethod);
         }
 
+        /**
+         * Gets the property value by invoking the metamethod with the property name.
+         *
+         * @param object the object to get the property from
+         * @return the property value (result of metamethod invocation)
+         */
         @Override
         public Object getProperty(Object object) {
             return getMetaMethod().doMethodInvoke(object, new Object[]{name});
@@ -69,10 +111,23 @@ public class MethodMetaProperty extends MetaProperty {
      * WARNING: This class is for internal use only, don't use it for your APIs
      */
     public static class GetBeanMethodMetaProperty extends MethodMetaProperty {
+        /**
+         * Constructs a new GetBeanMethodMetaProperty.
+         *
+         * @param name the property name
+         * @param theMethod the metamethod to use for getting the property
+         */
         public GetBeanMethodMetaProperty(String name, MetaMethod theMethod) {
             super(name, theMethod);
         }
 
+        /**
+         * Gets the property value by invoking the metamethod without arguments.
+         * Typically used for getter methods that take no arguments.
+         *
+         * @param object the object to get the property from
+         * @return the property value (result of metamethod invocation)
+         */
         @Override
         public Object getProperty(Object object) {
             return getMetaMethod().doMethodInvoke(object, MetaClassImpl.EMPTY_ARGUMENTS);

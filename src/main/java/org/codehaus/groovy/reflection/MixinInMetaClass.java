@@ -42,6 +42,12 @@ import java.util.Map;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Manages the integration of mixin classes into expandable metaclasses.
+ * <p>
+ * Associates a mixin class with instances of an expandable metaclass, enabling per-instance
+ * mixin functionality. Handles mixin instance creation and registration of mixin methods/properties.
+ */
 public class MixinInMetaClass {
 
     private final ExpandoMetaClass emc;
@@ -57,6 +63,13 @@ public class MixinInMetaClass {
                 .orElseThrow(() -> new GroovyRuntimeException("No default constructor for class " + mixinClass.getName() + "! Can't be mixed in."));
     }
 
+    /**
+     * Returns or creates a mixin instance for the given object.
+     * Creates a new mixin instance on first access, then caches and reuses it for the same object.
+     *
+     * @param object the object to associate with a mixin instance
+     * @return the mixin instance for this object
+     */
     public synchronized Object getMixinInstance(final Object object) {
         return mixinAssociations.computeIfAbsent(object, (final Object owner) -> {
             var mixinInstance = mixinConstructor.invoke(MetaClassHelper.EMPTY_ARRAY);
@@ -65,6 +78,13 @@ public class MixinInMetaClass {
         });
     }
 
+    /**
+     * Sets or clears the mixin instance associated with an object.
+     * Pass {@code null} to remove the mixin association.
+     *
+     * @param object the object to associate or disassociate with a mixin
+     * @param mixinInstance the mixin instance to associate, or {@code null} to clear
+     */
     public synchronized void setMixinInstance(final Object object, final Object mixinInstance) {
         if (mixinInstance != null) {
             mixinAssociations.put(object, mixinInstance);
@@ -73,14 +93,31 @@ public class MixinInMetaClass {
         }
     }
 
+    /**
+     * Returns the cached class for the expandable metaclass that owns this mixin.
+     *
+     * @return the cached class for the instance
+     */
     public CachedClass getInstanceClass() {
         return emc.getTheCachedClass();
     }
 
+    /**
+     * Returns the cached class of the mixin class itself.
+     *
+     * @return the cached mixin class
+     */
     public CachedClass getMixinClass() {
         return mixinClass;
     }
 
+    /**
+     * Integrates mixin classes into the specified metaclass.
+     * Each mixin class provides methods that are mixed into the target class.
+     *
+     * @param self the metaclass to mix methods into
+     * @param categoryClasses the classes providing mixin methods
+     */
     public static void mixinClassesToMetaClass(MetaClass self, final List<Class> categoryClasses) {
         final Class<?> selfClass = self.getTheClass();
 
@@ -171,6 +208,12 @@ public class MixinInMetaClass {
         }
     }
 
+    /**
+     * Checks equality with another object based on the expandable metaclass and mixin class.
+     *
+     * @param that the object to compare with
+     * @return {@code true} if this mixin represents the same metaclass and mixin; {@code false} otherwise
+     */
     @Override
     public boolean equals(final Object that) {
         return (that == this)
@@ -178,6 +221,11 @@ public class MixinInMetaClass {
                 && emc.equals(mmc.emc) && mixinClass.equals(mmc.mixinClass));
     }
 
+    /**
+     * Returns the hash code based on the mixin class.
+     *
+     * @return the hash code
+     */
     @Override
     public int hashCode() {
         return mixinClass.hashCode(); // GROOVY-11775

@@ -27,9 +27,22 @@ import junit.framework.AssertionFailedError
 
 class Demand {
 
+    /**
+     * Recorded method expectations in declaration order.
+     */
     List recorded = []
+    /**
+     * Filters for ignored methods mapped to their optional replacement behavior.
+     */
     Map ignore = [:]
 
+    /**
+     * Records an expected method call together with its cardinality and behavior.
+     *
+     * @param methodName the demanded method name
+     * @param args the optional cardinality and required behavior closure
+     * @return {@code null}
+     */
     Object invokeMethod(String methodName, Object args) {
         def range = 1..1
         if (args[0] instanceof IntRange) {
@@ -43,6 +56,11 @@ class Demand {
         }
     }
 
+    /**
+     * Verifies that the recorded call counts satisfy all declared demand ranges.
+     *
+     * @param calls the observed call counts aligned with {@link #recorded}
+     */
     def verify(List calls) {
         for (i in 0 ..< recorded.size()) {
             def call = recorded[i]
@@ -56,8 +74,20 @@ class Demand {
 
 }
 
+/**
+ * Describes one recorded expectation for a mocked method call.
+ */
 class CallSpec {
+    /**
+     * Name of the demanded method.
+     */
     String  name
+    /**
+     * Behavior to execute when the demand matches.
+     */
     Closure behavior
+    /**
+     * Accepted call-count range for the demand.
+     */
     Range   range
 }

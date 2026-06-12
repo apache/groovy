@@ -23,16 +23,38 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 import java.math.BigDecimal;
 
+/**
+ * Provides optimized reflection caching for {@link java.math.BigDecimal}.
+ * Coerces numeric arguments to {@link BigDecimal} for type-safe method invocation.
+ */
 public class BigDecimalCachedClass extends DoubleCachedClass {
+    /**
+     * Constructs a cached class representation for {@link BigDecimal}.
+     *
+     * @param klazz the {@link BigDecimal} class to cache
+     * @param classInfo the class information associated with this cached class
+     */
     public BigDecimalCachedClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo, true);
     }
 
+    /**
+     * Checks if the given argument is directly assignable to {@link BigDecimal}.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is an instance of {@link BigDecimal}, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return argument instanceof BigDecimal;
     }
 
+    /**
+     * Coerces the given numeric argument to {@link BigDecimal}.
+     *
+     * @param argument the argument to coerce
+     * @return the argument as a {@link BigDecimal}, or the original argument if not a number
+     */
     @Override
     public Object coerceArgument(Object argument) {
         if (argument instanceof Number) {

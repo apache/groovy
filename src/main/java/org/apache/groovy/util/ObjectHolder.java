@@ -28,16 +28,35 @@ import org.apache.groovy.internal.util.Supplier;
 public class ObjectHolder<T> {
     private T object;
 
+    /**
+     * Creates an empty holder.
+     */
     public ObjectHolder() {}
 
+    /**
+     * Creates a holder with an initial object.
+     *
+     * @param object the initial object
+     */
     public ObjectHolder(T object) {
         this.object = object;
     }
 
+    /**
+     * Returns the currently held object.
+     *
+     * @return the held object
+     */
     public T getObject() {
         return object;
     }
 
+    /**
+     * Returns the currently held object, initializing it from the supplier when needed.
+     *
+     * @param def the supplier used when no object has been set
+     * @return the held object
+     */
     public T getObject(Supplier<? extends T> def) {
         if (null == object) {
             object = def.get();
@@ -45,6 +64,11 @@ public class ObjectHolder<T> {
         return object;
     }
 
+    /**
+     * Replaces the currently held object.
+     *
+     * @param object the object to hold
+     */
     public void setObject(T object) {
         this.object = object;
     }

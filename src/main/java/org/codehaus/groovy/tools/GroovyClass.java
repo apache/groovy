@@ -18,23 +18,44 @@
  */
 package org.codehaus.groovy.tools;
 
+/**
+ * Holds the binary form of a compiled Groovy class.
+ */
 public class GroovyClass {
+    /**
+     * Shared empty array instance.
+     */
     public static final GroovyClass[] EMPTY_ARRAY = {};
 
     private final String name;
     private final byte[] bytes;
 
+    /**
+     * Creates a compiled-class holder.
+     *
+     * @param name the binary class name
+     * @param bytes the compiled class bytes
+     */
     public GroovyClass(String name, byte[] bytes) {
         this.name  = name;
         this.bytes = bytes;
     }
 
+    /**
+     * Returns the binary class name.
+     *
+     * @return the class name
+     */
     public String getName() {
         return this.name;
     }
 
+    /**
+     * Returns the compiled class bytes.
+     *
+     * @return the class bytes
+     */
     public byte[] getBytes() {
         return this.bytes;
     }
 }
-

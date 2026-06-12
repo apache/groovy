@@ -27,10 +27,20 @@ import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
  */
 public class MethodReferenceExpressionWriter extends MethodPointerExpressionWriter {
 
+    /**
+     * Creates a method reference expression writer with the given controller.
+     *
+     * @param controller the writer controller
+     */
     public MethodReferenceExpressionWriter(final WriterController controller) {
         super(controller);
     }
 
+    /**
+     * Generates bytecode for a method reference expression.
+     *
+     * @param expression the method reference expression
+     */
     public void writeMethodReferenceExpression(final MethodReferenceExpression expression) {
         super.writeMethodPointerExpression(expression);
     }

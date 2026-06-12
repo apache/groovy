@@ -20,52 +20,48 @@ package org.codehaus.groovy.transform.stc
 
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
-import org.codehaus.groovy.ast.tools.WideningCategories
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.FieldSource
 
-import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.PATTERN_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.RANGE_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.SCRIPT_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.double_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.float_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.make
+import static org.codehaus.groovy.ast.ClassHelper.*
+import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound
 
 /**
  * Unit tests for signature codecs.
  */
-class SignatureCodecTest {
-    SignatureCodec codec
+final class SignatureCodecTest {
 
-    @BeforeEach
-    void setUp() {
-        codec = StaticTypeCheckingVisitor.SignatureCodecFactory.getCodec(1,this.class.classLoader)
-    }
+    private SignatureCodec codec = StaticTypeCheckingVisitor.SignatureCodecFactory.getCodec(1, this.class.classLoader)
 
-    @Test
-    void testVariousSimpleClassNodes() {
-        [OBJECT_TYPE, STRING_TYPE, int_TYPE, float_TYPE, double_TYPE, GSTRING_TYPE, Number_TYPE,
-        MAP_TYPE, PATTERN_TYPE, SCRIPT_TYPE, LIST_TYPE, RANGE_TYPE].each {
-            String signature = codec.encode(it)
-            assert codec.decode(signature) == it
-        }
+    private static final List<ClassNode> types = [
+        OBJECT_TYPE, STRING_TYPE, GSTRING_TYPE,
+        int_TYPE, float_TYPE, double_TYPE, Number_TYPE,
+        MAP_TYPE, LIST_TYPE, RANGE_TYPE, PATTERN_TYPE, SCRIPT_TYPE
+    ]
+
+    @ParameterizedTest @FieldSource('types')
+    void testVariousSimpleClassNodes(ClassNode cn) {
+        String signature = codec.encode(cn)
+        assert codec.decode(signature) == cn
     }
 
     @Test
     void testCodecWithGenericType() {
         ClassNode cn = LIST_TYPE.getPlainNodeReference()
-        cn.genericsTypes = [ new GenericsType(STRING_TYPE) ] as GenericsType[]
+        cn.setGenericsTypes(new GenericsType(STRING_TYPE))
         String signature = codec.encode(cn)
         ClassNode decoded = codec.decode(signature)
         assert decoded == cn
         assert decoded.genericsTypes[0].type == STRING_TYPE
+    }
+
+    @Test
+    void testCodecWithLUBoundType() {
+        ClassNode cn = lowestUpperBound([LIST_TYPE, COMPARABLE_TYPE])
+        String signature = codec.encode(cn)
+        ClassNode decoded = codec.decode(signature)
+        assert decoded == cn
     }
 
     @Test
@@ -77,23 +73,14 @@ class SignatureCodecTest {
     }
 
     @Test
-    void testCodecWithLUBoundType() {
-        ClassNode cn = new WideningCategories.LowestUpperBoundClassNode("foo", LIST_TYPE, make(Comparable))
-        String signature = codec.encode(cn)
-        ClassNode decoded = codec.decode(signature)
-        assert decoded == cn
-    }
-
-    @Test
     void testCodecWithUnionTypeAndGenerics() {
         ClassNode list = LIST_TYPE.getPlainNodeReference()
-        list.genericsTypes = [ new GenericsType(STRING_TYPE) ] as GenericsType[]
+        list.setGenericsTypes(new GenericsType(STRING_TYPE))
         ClassNode cn = new UnionTypeClassNode(STRING_TYPE, list)
         String signature = codec.encode(cn)
         ClassNode decoded = codec.decode(signature)
         assert decoded == cn
         assert decoded.delegates[1] == LIST_TYPE
         assert decoded.delegates[1].genericsTypes[0].type == STRING_TYPE
-
     }
 }

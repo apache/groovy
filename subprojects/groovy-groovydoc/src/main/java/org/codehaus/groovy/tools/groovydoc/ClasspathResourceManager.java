@@ -24,20 +24,41 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
+/**
+ * Loads documentation resources from the classpath.
+ */
 public class ClasspathResourceManager implements ResourceManager {
+    /**
+     * Class loader used to resolve resources.
+     */
     ClassLoader classLoader;
+    /**
+     * Creates a resource manager backed by this class's class loader.
+     */
     public ClasspathResourceManager() {
         classLoader = getClass().getClassLoader();
     }
 
+    /**
+     * Creates a resource manager backed by the supplied class loader.
+     *
+     * @param classLoader the class loader to use for resource lookups
+     */
     public ClasspathResourceManager(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
+    /**
+     * Opens the named resource as an input stream.
+     *
+     * @param resourceName the classpath resource to load
+     * @return the resource stream, or {@code null} if the resource does not exist
+     */
     public InputStream getInputStream(String resourceName) {
         return classLoader.getResourceAsStream(resourceName);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Reader getReader(String resourceName) throws IOException {
         return IOGroovyMethods.newReader(getInputStream(resourceName));

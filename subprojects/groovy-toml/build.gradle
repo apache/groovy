@@ -23,6 +23,7 @@ plugins {
 dependencies {
     api rootProject  // TomlBuilder extends GroovyObjectSupport...
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-toml:${versions.jackson}"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${versions.jackson}"
     implementation projects.groovyJson
     testImplementation projects.groovyTest
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests

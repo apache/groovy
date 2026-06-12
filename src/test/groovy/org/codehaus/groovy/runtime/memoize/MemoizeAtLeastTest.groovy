@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import org.junit.jupiter.api.Test
+
 import java.util.concurrent.atomic.AtomicInteger
 
 class MemoizeAtLeastTest extends AbstractMemoizeTestCase {
@@ -26,6 +28,7 @@ class MemoizeAtLeastTest extends AbstractMemoizeTestCase {
         cl.memoizeAtLeast(100)
     }
 
+    @Test
     void testZeroCache() {
         def flag = false
         Closure cl = {
@@ -37,6 +40,7 @@ class MemoizeAtLeastTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
+    @Test
     void testMemoizeAtLeastConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)
         Closure cl = {

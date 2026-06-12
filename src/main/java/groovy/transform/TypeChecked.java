@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,11 +31,17 @@ import java.lang.annotation.Target;
  *
  * @since 2.0.0
  */
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.StaticTypesTransformation")
 public @interface TypeChecked {
-
+    /**
+     * Controls whether type checking is applied or skipped.
+     * Defaults to {@link TypeCheckingMode#PASS}.
+     *
+     * @return the type-checking mode
+     */
     TypeCheckingMode value() default TypeCheckingMode.PASS;
 
     /**

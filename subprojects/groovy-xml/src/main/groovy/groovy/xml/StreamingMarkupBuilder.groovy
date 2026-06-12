@@ -54,9 +54,17 @@ import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
  */
 @SuppressWarnings('Instanceof')
 class StreamingMarkupBuilder extends AbstractStreamingBuilder {
+    /** Whether generated XML prefers double quotes when quoting attributes and declarations. */
     boolean useDoubleQuotes = false
+    /** Whether empty elements are rendered as explicit start/end pairs instead of empty-element tags. */
     boolean expandEmptyElements = false
+    /**
+     * Returns the quote character currently preferred for generated XML.
+     *
+     * @return the quote character string
+     */
     def getQt() { useDoubleQuotes ? '"' : "'" }
+    /** Stack of namespace declarations suspended while nested elements are rendered. */
     def pendingStack = []
 
     /**
@@ -124,6 +132,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         out.unescaped() << body
     }
 
+    /** Default element-emitting closure used for ordinary builder nodes. */
     def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         boolean pendingIsDefaultNamespace = pendingNamespaces.containsKey(prefix) && !pendingNamespaces[prefix]
         if (prefix != '') {
@@ -202,8 +211,10 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         }
     }
 
+    /** Backing namespace-aware builder reused for each {@link #bind(Closure)} call. */
     def builder = null
 
+    /** Creates a streaming markup builder with the standard {@code mkp} helper tags installed. */
     StreamingMarkupBuilder() {
         specialTags.putAll([
             'yield'         : noopClosure,
@@ -222,6 +233,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         this.builder = new BaseMarkupBuilder(nsSpecificTags)
     }
 
+    /** Optional encoding snapshot applied when bound markup is later written. */
     def encoding = null
 
     /**
@@ -239,6 +251,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      * }.writeTo( new File('myFile.xml').newWriter() )
      * </pre>
      *
+     * @param closure closure describing the XML to generate
      * @return a {@link Writable} to render the markup
      */
     def bind(closure) {
@@ -260,6 +273,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      * the markup directly to a String, or send the output to a stream.
      *
      * @see #bind(Closure)
+     * @param node node or value to write through the builder
      * @return a {@link Writable} to render the markup
      */
     def bindNode(node) {

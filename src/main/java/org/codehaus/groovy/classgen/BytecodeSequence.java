@@ -33,14 +33,29 @@ import java.util.Objects;
  */
 public class BytecodeSequence extends Statement {
 
+    /**
+     * Creates a bytecode sequence containing a single bytecode instruction.
+     *
+     * @param instruction the bytecode instruction to include
+     */
     public BytecodeSequence(final BytecodeInstruction instruction) {
         this.instructions = Collections.singletonList(instruction);
     }
 
+    /**
+     * Creates a bytecode sequence containing multiple instructions or AST nodes.
+     *
+     * @param instructions the list of instructions or AST nodes
+     */
     public BytecodeSequence(final List<?> instructions) {
         this.instructions = Objects.requireNonNull(instructions);
     }
 
+    /**
+     * Returns an immutable view of the instructions in this sequence.
+     *
+     * @return the list of instructions
+     */
     public List<?> getInstructions() {
         return Collections.unmodifiableList(instructions);
     }

@@ -50,10 +50,20 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
     private String conditionMethod
     private ClassNode currentClass
 
+    /**
+     * Returns the annotation type handled by this transformation.
+     *
+     * @return the handled annotation type
+     */
     protected ClassNode type() {
         ClassHelper.make(ConditionalInterrupt)
     }
 
+    /**
+     * Initializes the transformation state from the annotation node.
+     *
+     * @param node the transformation annotation
+     */
     protected void setupTransform(AnnotationNode node) {
         super.setupTransform(node)
         def member = node.getMember('value')
@@ -63,10 +73,20 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
         conditionMethod = 'conditionalTransform' + node.hashCode() + '$condition'
     }
 
+    /**
+     * Returns the message used when the interrupt condition evaluates to {@code true}.
+     *
+     * @return the failure message
+     */
     protected String getErrorMessage() {
         'Execution interrupted. The following condition failed: ' + convertClosureToSource(conditionNode)
     }
 
+    /**
+     * Adds the synthetic condition method and visits eligible class members.
+     *
+     * @param type the class being transformed
+     */
     void visitClass(ClassNode type) {
         currentClass = type
         type.addSyntheticMethod(conditionMethod, ACC_PRIVATE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, conditionNode.code)
@@ -75,16 +95,31 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
         }
     }
 
+    /**
+     * Builds the expression that calls the generated condition method.
+     *
+     * @return the interrupt condition expression
+     */
     protected Expression createCondition() {
         GeneralUtils.callThisX(conditionMethod)
     }
 
+    /**
+     * Skips annotation visitation to avoid re-entering the transformation.
+     *
+     * @param node the annotated node, ignored by this transformation
+     */
     @Override
     void visitAnnotations(AnnotatedNode node) {
         // this transformation does not apply on annotation nodes
         // visiting could lead to stack overflows
     }
 
+    /**
+     * Visits eligible instance fields.
+     *
+     * @param node the field being visited
+     */
     @Override
     void visitField(FieldNode node) {
         if (!node.isStatic() && !node.isSynthetic()) {
@@ -92,6 +127,11 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
         }
     }
 
+    /**
+     * Visits eligible instance properties.
+     *
+     * @param node the property being visited
+     */
     @Override
     void visitProperty(PropertyNode node) {
         if (!node.isStatic() && !node.isSynthetic()) {
@@ -99,6 +139,11 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
         }
     }
 
+    /**
+     * Wraps closure bodies with the interrupt check, excluding the annotation closure itself.
+     *
+     * @param closureExpr the closure being visited
+     */
     @Override
     void visitClosureExpression(ClosureExpression closureExpr) {
         if (closureExpr == conditionNode) return // do not visit the closure from the annotation itself
@@ -107,6 +152,11 @@ class ConditionalInterruptibleASTTransformation extends AbstractInterruptibleAST
         super.visitClosureExpression closureExpr
     }
 
+    /**
+     * Wraps eligible methods with the interrupt check while preserving script bootstrap behavior.
+     *
+     * @param node the method being visited
+     */
     @Override
     void visitMethod(MethodNode node) {
         if (node.name == conditionMethod && !node.isSynthetic()) return // do not visit the generated method

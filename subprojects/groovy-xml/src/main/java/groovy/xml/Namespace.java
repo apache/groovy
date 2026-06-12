@@ -29,13 +29,27 @@ public class Namespace {
     private String uri;
     private String prefix;
 
+    /**
+     * Creates a namespace helper with no default URI or prefix.
+     */
     public Namespace() {
     }
 
+    /**
+     * Creates a namespace helper for the supplied URI.
+     *
+     * @param uri the namespace URI, trimmed before storage
+     */
     public Namespace(String uri) {
         this.uri = uri.trim();
     }
 
+    /**
+     * Creates a namespace helper for the supplied URI and prefix.
+     *
+     * @param uri the namespace URI, trimmed before storage
+     * @param prefix the namespace prefix, trimmed before storage
+     */
     public Namespace(String uri, String prefix) {
         this.uri = uri.trim();
         this.prefix = prefix.trim();

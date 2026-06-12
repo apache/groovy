@@ -27,5 +27,10 @@ import org.objectweb.asm.MethodVisitor;
  */
 // TODO: convert to @FunctionalInterface
 public abstract class BytecodeInstruction {
+    /**
+     * Emits bytecode instructions using the provided method visitor.
+     *
+     * @param mv the ASM method visitor to generate bytecode
+     */
     public abstract void visit(MethodVisitor mv);
 }

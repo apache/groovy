@@ -132,6 +132,8 @@ To build you will need:
 
 * {jdk}[JDK 17+]
 
+The build compiles with whichever JDK runs `gradlew`. To target a different bytecode level, or to run tests on a different JDK, see the "Building and testing against a specific JDK" section in `CONTRIBUTING.md`.
+
 To build everything using Gradle, use the following command (`./gradlew` on Unix-like systems):
 
     gradlew clean dist
@@ -148,6 +150,12 @@ To build everything and launch unit tests, use:
 If you want to launch one unit test, use this. <TestClassName> is like `groovy.GroovyMethodsTest`.
 
     gradlew :test --tests <TestClassName>
+
+To build a runnable local installation of Groovy with your changes applied, use:
+
+    gradlew :groovy-binary:installGroovy
+
+The installation is generated under `subprojects/groovy-binary/build/install`. Its `bin` directory contains the `groovy`, `groovysh`, and `groovyc` launchers, so you can invoke `subprojects/groovy-binary/build/install/bin/groovy <script>` to run a script against the build you just produced.
 
 To build from IntelliJ IDEA:
 
@@ -173,12 +181,8 @@ All code samples of the documentation guide are pulled from actual test cases. T
 The omission of package name: class is `semantics.PowerAssertTest` but only `PowerAssertTest` is added to `testSingle`.
 
 == Verifying dependencies
-To generate the missing verification metadata when add/bump dependencies:
-
-    gradlew --write-verification-metadata pgp,sha512 --dry-run
-
-then compare `verification-metadata.xml` with the generated `verification-metadata.dryrun.xml`, and merge the missing verification metadata into `verification-metadata.xml`
-after the result of the above operation is reviewed.
+The build uses Gradle dependency verification, so adding or bumping a dependency requires regenerating `gradle/verification-metadata.xml`.
+For the regeneration recipe (including the preferred `--dry-run` approach), see the *Dependency verification* section of link:CONTRIBUTING.md[`CONTRIBUTING.md`].
 
 == Continuous Integration Server
 

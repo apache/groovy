@@ -20,18 +20,41 @@ package groovy.swing.factory
 
 import javax.swing.*
 
+/**
+ * Base factory for Swing border nodes.
+ */
 abstract class SwingBorderFactory extends AbstractFactory {
 
+    /**
+     * Indicates whether nodes created by this factory accept children.
+     *
+     * @return true if child nodes are not expected
+     */
     public boolean isLeaf() {
         // no children
         return true;
     }
 
+    /**
+     * Handles custom node attributes before default bean processing.
+     *
+     * @param builder the factory builder
+     * @param node the current node
+     * @param attributes the node attributes
+     * @return true if default attribute handling should continue
+     */
     public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
         // never do bean apply
         return false;
     }
 
+    /**
+     * Attaches the current node to its parent when parent-specific handling is required.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
         if (builder.context.applyBorderToParent) {
             if (parent instanceof JComponent) {

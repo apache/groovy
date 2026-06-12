@@ -18,10 +18,21 @@
  */
 package org.apache.groovy.json.internal;
 
+/**
+ * Identifiers for cache eviction policies.
+ */
 public enum CacheType {
 
+    /**
+     * Least-recently-used cache type.
+     */
     LRU,
+    /**
+     * Least-frequently-used cache type.
+     */
     LFU,
+    /**
+     * First-in-first-out cache type.
+     */
     FIFO
 }
-

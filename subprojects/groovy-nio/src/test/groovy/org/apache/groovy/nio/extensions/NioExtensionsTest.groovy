@@ -1296,4 +1296,99 @@ class NioExtensionsTest extends Specification {
         Files.exists(destPath)
         !Files.exists(path)
     }
+
+    // ---- Async extensions ----
+
+    def testGetTextAsync() {
+        given:
+        def path = tempFile.toPath()
+        path.text = 'Hello async'
+
+        when:
+        def future = path.textAsync
+
+        then:
+        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == 'Hello async'
+    }
+
+    def testGetTextAsyncWithCharset() {
+        given:
+        def path = tempFile.toPath()
+        path.write('Héllo àsync', 'UTF-8')
+
+        when:
+        def future = path.getTextAsync('UTF-8')
+
+        then:
+        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == 'Héllo àsync'
+    }
+
+    def testGetBytesAsync() {
+        given:
+        def path = tempFile.toPath()
+        path.bytes = [72, 101, 108, 108, 111] as byte[]
+
+        when:
+        def future = path.bytesAsync
+
+        then:
+        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == [72, 101, 108, 108, 111] as byte[]
+    }
+
+    def testWriteAsync() {
+        given:
+        def path = tempFile.toPath()
+
+        when:
+        path.writeAsync('Hello async').get(5, java.util.concurrent.TimeUnit.SECONDS)
+
+        then:
+        path.text == 'Hello async'
+    }
+
+    def testWriteAsyncWithCharset() {
+        given:
+        def path = tempFile.toPath()
+
+        when:
+        path.writeAsync('Héllo àsync', 'UTF-8').get(5, java.util.concurrent.TimeUnit.SECONDS)
+
+        then:
+        path.getText('UTF-8') == 'Héllo àsync'
+    }
+
+    def testWriteBytesAsync() {
+        given:
+        def path = tempFile.toPath()
+
+        when:
+        path.writeBytesAsync([72, 105] as byte[]).get(5, java.util.concurrent.TimeUnit.SECONDS)
+
+        then:
+        path.bytes == [72, 105] as byte[]
+    }
+
+    def testGetTextAsyncEmptyFile() {
+        given:
+        def path = tempFile.toPath()
+        path.text = ''
+
+        when:
+        def future = path.textAsync
+
+        then:
+        future.get(5, java.util.concurrent.TimeUnit.SECONDS) == ''
+    }
+
+    def testGetBytesAsyncNonExistentFile() {
+        given:
+        def path = tempDir.toPath().resolve('does-not-exist.txt')
+
+        when:
+        path.bytesAsync.get(5, java.util.concurrent.TimeUnit.SECONDS)
+
+        then:
+        def e = thrown(java.util.concurrent.ExecutionException)
+        e.cause instanceof java.nio.file.NoSuchFileException
+    }
 }

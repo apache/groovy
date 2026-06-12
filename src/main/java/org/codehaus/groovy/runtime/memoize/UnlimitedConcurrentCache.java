@@ -19,6 +19,8 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import javax.annotation.concurrent.ThreadSafe;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.Collection;
@@ -32,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @ThreadSafe
 public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V>, Serializable {
-    private static final long serialVersionUID = -857220494475488328L;
+    @Serial private static final long serialVersionUID = -857220494475488328L;
     private final ConcurrentHashMap<K, V> map;
 
     /**
@@ -62,7 +64,7 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
     /**
      * Remove the cached value by the key
      *
-     * @param key
+     * @param key the key whose mapping should be removed
      * @return returns the removed value
      */
     @Override
@@ -70,11 +72,21 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
         return map.remove(key);
     }
 
+    /**
+     * Copies all mappings from the supplied map into this cache.
+     *
+     * @param m the mappings to copy
+     */
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
         map.putAll(m);
     }
 
+    /**
+     * Returns a live view of the keys in this cache.
+     *
+     * @return the cache keys
+     */
     @Override
     public Set<K> keySet() {
         return map.keySet();
@@ -113,6 +125,11 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
         return map.values();
     }
 
+    /**
+     * Returns a live view of the cache entries.
+     *
+     * @return the cache entries
+     */
     @Override
     public Set<Entry<K, V>> entrySet() {
         return map.entrySet();
@@ -139,6 +156,12 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
         return map.containsKey(key);
     }
 
+    /**
+     * Determines whether the cache contains the specified stored value.
+     *
+     * @param value the value whose presence should be tested
+     * @return {@code true} if the cache contains the value
+     */
     @Override
     public boolean containsValue(Object value) {
         return map.containsValue(value);
@@ -154,6 +177,11 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
         return map.size();
     }
 
+    /**
+     * Returns whether the cache currently holds no entries.
+     *
+     * @return {@code true} if the cache is empty
+     */
     @Override
     public boolean isEmpty() {
         return map.isEmpty();
@@ -186,9 +214,9 @@ public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V
      * Try to get the value from cache.
      * If not found, create the value by {@link MemoizeCache.ValueProvider} and put it into the cache, at last return the value.
      *
-     * @param key
+     * @param key the key to look up
      * @param valueProvider provide the value if the associated value not found
-     * @return the cached value
+     * @return the cached or newly created value
      */
     @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider) {

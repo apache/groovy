@@ -28,6 +28,15 @@ import javax.swing.*
  */
 class ListFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         // FactoryBuilderSupport.checkValueIsType(value, name, JList)
 
@@ -56,6 +65,14 @@ class ListFactory extends AbstractFactory {
         return list
     }
 
+    /**
+     * Handles custom node attributes before default bean processing.
+     *
+     * @param builder the factory builder
+     * @param node the current node
+     * @param attributes the node attributes
+     * @return true if default attribute handling should continue
+     */
     boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
         if (attributes.containsKey("listData")) {
             def listData = attributes.remove("listData")

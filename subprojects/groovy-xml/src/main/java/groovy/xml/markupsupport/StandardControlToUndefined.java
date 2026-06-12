@@ -21,7 +21,11 @@ package groovy.xml.markupsupport;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Replaces XML-disallowed control characters with {@code U+FFFD}.
+ */
 public class StandardControlToUndefined implements Function<Character, Optional<String>> {
+    /** {@inheritDoc} */
     @Override
     public Optional<String> apply(Character ch) {
         if (ch < 32 && !isXmlAllowedControl(ch)) {

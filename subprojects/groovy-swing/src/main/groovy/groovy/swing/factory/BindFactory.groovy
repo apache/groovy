@@ -47,10 +47,16 @@ import java.util.Map.Entry
  */
 class BindFactory extends AbstractFactory {
 
+    /**
+     * Builder context key used to store deferred binding data.
+     */
     public static final String CONTEXT_DATA_KEY = "BindFactoryData";
 
     final Map<String, TriggerBinding> syntheticBindings
 
+    /**
+     * Creates a new factory for creating binding nodes and contextual binding definitions
+     */
     BindFactory() {
         syntheticBindings = new HashMap()
 
@@ -239,6 +245,13 @@ class BindFactory extends AbstractFactory {
         return fb
     }
 
+    /**
+     * Finalizes a node after its children have been processed.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param node the current node
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         super.onNodeCompleted(builder, parent, node);
 
@@ -256,19 +269,45 @@ class BindFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Handles custom node attributes before default bean processing.
+     *
+     * @param builder the factory builder
+     * @param node the current node
+     * @param attributes the node attributes
+     * @return true if default attribute handling should continue
+     */
     boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
         attributes.remove('update')
         true
     }
 
+    /**
+     * Indicates whether nodes created by this factory accept children.
+     *
+     * @return true if child nodes are not expected
+     */
     boolean isLeaf() {
         return false
     }
 
+    /**
+     * Indicates whether this factory processes child closures itself.
+     *
+     * @return true if child closures are handled here
+     */
     boolean isHandlesNodeChildren() {
         return true
     }
 
+    /**
+     * Consumes the child closure for this node.
+     *
+     * @param builder the factory builder
+     * @param node the current node
+     * @param childContent the childContent
+     * @return false once the child closure has been handled
+     */
     boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
         if ((node instanceof FullBinding) && (node.converter == null)) {
             node.converter = childContent
@@ -287,6 +326,12 @@ class BindFactory extends AbstractFactory {
         throw new RuntimeException("Binding nodes do not accept child content when a converter is already specified")
     }
 
+    /**
+     * Resolves a synthetic trigger binding for the supplied property binding when one is available.
+     *
+     * @param psb the property binding to inspect
+     * @return the trigger binding to use
+     */
     TriggerBinding getTriggerBinding(PropertyBinding psb) {
         String property = psb.propertyName
         Class currentClass = psb.bean.getClass()
@@ -302,6 +347,14 @@ class BindFactory extends AbstractFactory {
         return psb
     }
 
+    /**
+     * Resolves deferred binding attributes against the current node.
+     *
+     * @param builder the factory builder
+     * @param node the current node
+     * @param attributes the node attributes
+     * @return the delegate result, when one is produced
+     */
     def bindingAttributeDelegate(FactoryBuilderSupport builder, def node, def attributes) {
         Iterator iter = attributes.entrySet().iterator()
         Map bindContext = builder.context.get(CONTEXT_DATA_KEY) ?: [:]

@@ -20,32 +20,106 @@ package groovy.swing.factory
 
 import java.awt.*
 
+/**
+ * Factory for creating tabbed panes and collecting per-tab metadata.
+ */
 class TabbedPaneFactory extends BeanFactory {
 
+    /**
+     * Builder context key for the child attribute that supplies the tab title.
+     */
     public static final String DELEGATE_PROPERTY_TITLE = "_delegateProperty:title";
+    /**
+     * Default child attribute name for the tab title.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TITLE = "title";
+    /**
+     * Builder context key for the child attribute that supplies the tab icon.
+     */
     public static final String DELEGATE_PROPERTY_TAB_ICON = "_delegateProperty:tabIcon";
+    /**
+     * Default child attribute name for the tab icon.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_ICON = "tabIcon";
+    /**
+     * Builder context key for the child attribute that supplies the disabled tab icon.
+     */
     public static final String DELEGATE_PROPERTY_TAB_DISABLED_ICON = "_delegateProperty:tabDisabledIcon";
+    /**
+     * Default child attribute name for the disabled tab icon.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_DISABLED_ICON = "tabDisabledIcon";
+    /**
+     * Builder context key for the child attribute that supplies the tab tool tip.
+     */
     public static final String DELEGATE_PROPERTY_TAB_TOOL_TIP = "_delegateProperty:tabToolTip";
+    /**
+     * Default child attribute name for the tab tool tip.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_TOOL_TIP = "tabToolTip";
+    /**
+     * Builder context key for the child attribute that supplies the tab foreground.
+     */
     public static final String DELEGATE_PROPERTY_TAB_FOREGROUND = "_delegateProperty:tabForeground";
+    /**
+     * Default child attribute name for the tab foreground.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_FOREGROUND = "tabForeground";
+    /**
+     * Builder context key for the child attribute that supplies the tab background.
+     */
     public static final String DELEGATE_PROPERTY_TAB_BACKGROUND = "_delegateProperty:tabBackground";
+    /**
+     * Default child attribute name for the tab background.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_BACKGROUND = "tabBackground";
+    /**
+     * Builder context key for the child attribute that supplies the tab enabled state.
+     */
     public static final String DELEGATE_PROPERTY_TAB_ENABLED = "_delegateProperty:tabEnabled";
+    /**
+     * Default child attribute name for the tab enabled state.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_ENABLED = "tabEnabled";
+    /**
+     * Builder context key for the child attribute that supplies the tab mnemonic.
+     */
     public static final String DELEGATE_PROPERTY_TAB_MNEMONIC = "_delegateProperty:tabMnemonic";
+    /**
+     * Default child attribute name for the tab mnemonic.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_MNEMONIC = "tabMnemonic";
+    /**
+     * Builder context key for the child attribute that supplies the tab displayed mnemonic index.
+     */
     public static final String DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX = "_delegateProperty:tabDisplayedMnemonicIndex";
+    /**
+     * Default child attribute name for the tab displayed mnemonic index.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX = "tabDisplayedMnemonicIndex";
+    /**
+     * Builder context key used to store per-tab metadata.
+     */
     public static final String CONTEXT_DATA_KEY = "TabbdePaneFactoryData";
 
+    /**
+     * Creates a new factory for creating tabbed panes and collecting per-tab metadata
+     *
+     * @param beanClass the bean type created by this factory
+     */
     public TabbedPaneFactory(Class beanClass) {
         super(beanClass, false)
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         def newChild = super.newInstance(builder, name, value, attributes)
         builder.context.tabbedPaneFactoryClosure =
@@ -69,6 +143,13 @@ class TabbedPaneFactory extends BeanFactory {
         return newChild;
     }
 
+    /**
+     * Collects tab metadata from a child component before it is added to the pane.
+     *
+     * @param builder the factory builder
+     * @param node the current node
+     * @param attributes the node attributes
+     */
     public static void inspectChild(FactoryBuilderSupport builder, Object node, Map attributes) {
         if (!(node instanceof Component) || (node instanceof Window)) {
             return;
@@ -89,6 +170,13 @@ class TabbedPaneFactory extends BeanFactory {
         tabbedPaneContext.put(node, [name, icon, disabledIcon, toolTip, background, foreground, enabled, mnemonic, displayedMnemonicIndex])
     }
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;
@@ -128,6 +216,13 @@ class TabbedPaneFactory extends BeanFactory {
         }
     }
 
+    /**
+     * Finalizes a node after its children have been processed.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param node the current node
+     */
     public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
         super.onNodeCompleted (builder, parent, node)
         builder.removeAttributeDelegate(builder.context.tabbedPaneFactoryClosure)

@@ -41,10 +41,25 @@ import org.jline.reader.impl.completer.AggregateCompleter
 import org.jline.reader.impl.completer.ArgumentCompleter
 import org.jline.reader.impl.completer.NullCompleter
 import org.jline.reader.impl.completer.StringsCompleter
+import org.jline.terminal.Terminal
+import org.jline.terminal.impl.TerminalGraphics
+import org.jline.terminal.impl.TerminalGraphicsManager
 import org.jline.utils.AttributedString
 
+import javax.imageio.ImageIO
+import javax.swing.ImageIcon
+import javax.swing.JComponent
+import javax.swing.JFrame
+import javax.swing.JLabel
+import javax.swing.SwingUtilities
+import javax.swing.WindowConstants
+import java.awt.Color
 import java.awt.Desktop
+import java.awt.Dimension
+import java.awt.Graphics2D
 import java.awt.event.ActionListener
+import java.awt.image.BufferedImage
+import java.awt.image.RenderedImage
 import java.lang.reflect.Method
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -57,8 +72,11 @@ import java.util.function.Function
 import java.util.function.Supplier
 import java.util.stream.Stream
 
+/**
+ * Registers the Groovy-specific commands exposed by the groovysh JLine console.
+ */
 class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
-    private static final String DEFAULT_NANORC_VALUE = 'gron'
+    private static final String DEFAULT_NANORC_VALUE = 'GRON'
     private final GroovyEngine engine
     private final Printer printer
     private final SyntaxHighlighter highlighter
@@ -67,6 +85,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         '/console'     : new Tuple4<>(this::console, this::defCompleter, this::defCmdDesc, ['launch Groovy console']),
         '/doc'         : new Tuple4<>(this::doc, this::importsCompleter, this::defCmdDesc, ['display documentation']),
         '/grab'        : new Tuple4<>(this::grab, this::grabCompleter, this::grabCmdDesc, ['add maven repository dependencies to classpath']),
+        '/img'         : new Tuple4<>(this::img, this::imgCompleter, this::imgCmdDesc, ['display image inline (Sixel/Kitty/iTerm2 terminals)']),
         '/classloader' : new Tuple4<>(this::classLoader, this::classloaderCompleter, this::classLoaderCmdDesc, ['display/manage Groovy classLoader data']),
         '/imports'     : new Tuple4<>(this::importsCommand, this::importsCompleter, this::nameDeleteCmdDesc, ['show/delete import statements']),
         '/vars'        : new Tuple4<>(this::varsCommand, this::varsCompleter, this::nameDeleteCmdDesc, ['show/delete variable declarations']),
@@ -84,8 +103,17 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         'YAML'     : 'groovy.yaml.YamlSlurper',
         'XML'      : 'groovy.xml.XmlParser',
         'TOML'     : 'groovy.toml.TomlSlurper',
+        'MARKDOWN' : 'groovy.markdown.MarkdownSlurper',
     ]
 
+    /**
+     * Creates the Groovy-specific command registry for groovysh.
+     *
+     * @param engine shell execution engine
+     * @param workDir supplier for the current working directory
+     * @param printer terminal printer
+     * @param highlighter syntax highlighter used for previews
+     */
     GroovyCommands(GroovyEngine engine, Supplier<Path> workDir, Printer printer, SyntaxHighlighter highlighter) {
         this.engine = engine
         this.printer = printer
@@ -104,27 +132,56 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             commands.remove('/grab')
         }
 
+        // /img depends on java.desktop (BufferedImage, ImageIO, Swing fallback).
+        // It's "static transitive" in JLine's module descriptor, so check at runtime.
+        if (!ClassUtils.lookFor('javax.imageio.ImageIO')) {
+            commands.remove('/img')
+        }
+
         def available = commands.collectEntries { name, tuple ->
             [name, new CommandMethods((Function)tuple.v1, tuple.v2)]
         }
         registerCommands(available)
     }
 
+    /**
+     * Returns the short help text registered for the named command.
+     *
+     * @param command command name
+     * @return command summary lines
+     */
     @Override
     List<String> commandInfo(String command) {
         commands[command].v4
     }
 
+    /**
+     * Builds the detailed description for the selected command.
+     *
+     * @param args command arguments whose first element identifies the command
+     * @return command description metadata
+     */
     @Override
     CmdDesc commandDescription(List<String> args) {
         String command = args?[0] ?: ''
         commands[command].v3(command)
     }
 
+    /**
+     * Returns the display name for this command registry.
+     *
+     * @return registry name
+     */
     String name() {
         'Groovy Commands'
     }
 
+    /**
+     * Lists cached grapes or grabs the supplied dependency coordinates.
+     *
+     * @param input parsed command input
+     * @return always {@code null}
+     */
     def grab(CommandInput input) {
         if (!input.xargs()) {
             return null
@@ -180,12 +237,230 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         return null
     }
 
+    /**
+     * Displays an image inline using JLine's terminal-graphics support
+     * (Sixel, Kitty, iTerm2). Falls back to a summary line when the
+     * terminal doesn't speak any supported protocol; the {@code --gui}
+     * flag opens a Swing window instead.
+     *
+     * @param input parsed command input
+     * @return always {@code null}
+     */
+    def img(CommandInput input) {
+        // No fixed arg-count cap: a fully-specified invocation
+        //   /img --width 64 --height 32 --no-preserve-aspect-ratio --gui $img
+        // is already 7 tokens. The parse loop below validates every flag and
+        // treats the lone non-option token as the positional, which is the
+        // useful constraint.
+        if (maybePrintHelp(input, '/img')) return
+        try {
+            Integer width = null
+            Integer height = null
+            boolean preserveAspect = true
+            boolean gui = false
+            Object positional = null
+            String positionalLabel = null
+            for (int i = 0; i < input.args().length; i++) {
+                String a = input.args()[i]
+                if (a == null) {
+                    // JLine puts null into args() when a $var reference resolves
+                    // to null — usually because the variable isn't defined yet.
+                    throw new IllegalArgumentException(
+                            '/img: variable reference resolved to null ' +
+                                    '(undefined or not yet assigned) — define it first, e.g. ' +
+                                    "'panel = ScatterPlot.of(...).canvas().panel()'")
+                }
+                if (a == '-w' || a == '--width') {
+                    width = Integer.parseInt(requireArgValue(input, ++i, a))
+                } else if (a.startsWith('--width=')) {
+                    width = Integer.parseInt(a.substring('--width='.length()))
+                } else if (a == '--height') {
+                    height = Integer.parseInt(requireArgValue(input, ++i, a))
+                } else if (a.startsWith('--height=')) {
+                    height = Integer.parseInt(a.substring('--height='.length()))
+                } else if (a == '-p' || a == '--no-preserve-aspect-ratio') {
+                    preserveAspect = false
+                } else if (a == '-g' || a == '--gui') {
+                    gui = true
+                } else if (!a.startsWith('-')) {
+                    // Use the resolved value from xargs — for "$myImage" this
+                    // is the variable's value (e.g. a BufferedImage); for a
+                    // plain string ("foo.png") it's the same string.
+                    positional = input.xargs()[i]
+                    positionalLabel = a
+                }
+            }
+            if (positional == null) {
+                throw new IllegalArgumentException('No image path, URL, or variable provided')
+            }
+            BufferedImage image = positional instanceof String
+                    ? loadImage((String) positional)
+                    : coerceToImage(positional, width, height)
+            if (image == null) {
+                throw new IllegalArgumentException("Not a recognised image: $positionalLabel")
+            }
+            // For raw-pixel inputs (file/URL/BufferedImage/RenderedImage), --width
+            // and --height are terminal-display dimensions (cells). For inputs
+            // that *generate* the image from those dims (createBufferedImage /
+            // toBufferedImage / JComponent paint), the values are already
+            // consumed as source pixels and must NOT also be passed to the
+            // terminal opts — otherwise e.g. "--width=600" gets reinterpreted
+            // as 600 character cells and the chart renders blank/clipped.
+            boolean dimsConsumedByGeneration = !(positional instanceof String
+                    || positional instanceof BufferedImage
+                    || positional instanceof RenderedImage)
+            Terminal terminal = input.terminal()
+            if (gui) {
+                showInSwing(image, positionalLabel)
+            } else if (TerminalGraphicsManager.isGraphicsSupported(terminal)) {
+                def opts = new TerminalGraphics.ImageOptions().preserveAspectRatio(preserveAspect)
+                if (!dimsConsumedByGeneration) {
+                    if (width != null) opts.width(width)
+                    if (height != null) opts.height(height)
+                }
+                TerminalGraphicsManager.displayImage(terminal, image, opts)
+                // Reset cursor to column 0 of the next line — Sixel/iTerm2/Kitty
+                // protocols typically leave the cursor at the right edge of
+                // the image, which would indent the next prompt.
+                terminal.writer().println()
+                terminal.writer().flush()
+            } else {
+                // Coerce to String — DefaultPrinter renders unknown Object
+                // (including GString) as a field table; we want a plain line.
+                String summary = "[image: ${image.width}x${image.height}, $positionalLabel] " +
+                        "(this terminal doesn't support inline images; try Kitty/iTerm2/WezTerm, or use --gui)"
+                printer.println(summary)
+            }
+        } catch (Exception e) {
+            saveException(e)
+        }
+        return null
+    }
+
+    private static String requireArgValue(CommandInput input, int idx, String flag) {
+        // Trailing-flag guard for `--width`/`--height` (and friends): without
+        // this, `/img --width $img` reads past the end of args() and surfaces
+        // an opaque ArrayIndexOutOfBoundsException via saveException.
+        if (idx >= input.args().length) {
+            throw new IllegalArgumentException("/img: missing value for $flag")
+        }
+        input.args()[idx]
+    }
+
+    private BufferedImage loadImage(String pathOrUrl) {
+        if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+            return ImageIO.read(URI.create(pathOrUrl).toURL())
+        }
+        Path path = workDir.get().resolve(pathOrUrl)
+        if (!Files.exists(path)) {
+            throw new IllegalArgumentException("File not found: $pathOrUrl")
+        }
+        ImageIO.read(path.toFile())
+    }
+
+    /**
+     * Converts an arbitrary value into a {@link BufferedImage} for /img.
+     * Supports:
+     * <ul>
+     *   <li>{@code BufferedImage} — used as-is</li>
+     *   <li>{@code RenderedImage} — drawn into a fresh {@code BufferedImage}</li>
+     *   <li>anything with {@code createBufferedImage(int, int)} (e.g.
+     *       {@code org.jfree.chart.JFreeChart}) — duck-typed so groovysh
+     *       doesn't take a hard dependency on JFreeChart</li>
+     *   <li>anything with {@code toBufferedImage(int, int)} (e.g.
+     *       {@code smile.plot.swing.Figure}) — duck-typed for Smile's
+     *       parallel naming convention</li>
+     *   <li>{@code JComponent} — laid out and painted to a {@code BufferedImage}</li>
+     * </ul>
+     * Other types throw {@link IllegalArgumentException} with a clear message.
+     */
+    private BufferedImage coerceToImage(Object obj, Integer width, Integer height) {
+        if (obj instanceof BufferedImage) {
+            return (BufferedImage) obj
+        }
+        if (obj instanceof RenderedImage) {
+            return renderedToBuffered((RenderedImage) obj)
+        }
+        // Duck-type: createBufferedImage(int, int) — JFreeChart's signature.
+        try {
+            return (BufferedImage) obj.createBufferedImage(width ?: 800, height ?: 600)
+        } catch (MissingMethodException ignore) {
+            // Not a JFreeChart-like — fall through.
+        }
+        // Duck-type: toBufferedImage(int, int) — Smile Figure's signature.
+        try {
+            return (BufferedImage) obj.toBufferedImage(width ?: 800, height ?: 600)
+        } catch (MissingMethodException ignore) {
+            // Not a Smile-Figure-like — fall through.
+        }
+        if (obj instanceof JComponent) {
+            return renderJComponent((JComponent) obj, width, height)
+        }
+        throw new IllegalArgumentException(
+                "/img: don't know how to render ${obj.class.name}; supports " +
+                'BufferedImage, RenderedImage, anything with createBufferedImage(int,int) ' +
+                'or toBufferedImage(int,int), or JComponent')
+    }
+
+    private static BufferedImage renderedToBuffered(RenderedImage src) {
+        if (src instanceof BufferedImage) return (BufferedImage) src
+        BufferedImage out = new BufferedImage(src.width, src.height, BufferedImage.TYPE_INT_ARGB)
+        Graphics2D g = out.createGraphics()
+        try {
+            g.drawRenderedImage(src, new java.awt.geom.AffineTransform())
+        } finally {
+            g.dispose()
+        }
+        out
+    }
+
+    private static BufferedImage renderJComponent(JComponent comp, Integer width, Integer height) {
+        Dimension preferred = comp.preferredSize
+        int w = width ?: (preferred.width > 0 ? preferred.width : 800)
+        int h = height ?: (preferred.height > 0 ? preferred.height : 600)
+        comp.size = new Dimension(w, h)
+        comp.doLayout()
+        BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB)
+        Graphics2D g = image.createGraphics()
+        try {
+            // Most plot panels assume a light background; default JComponent
+            // paints transparent pixels which look broken when displayed.
+            g.color = Color.WHITE
+            g.fillRect(0, 0, w, h)
+            comp.paint(g)
+        } finally {
+            g.dispose()
+        }
+        image
+    }
+
+    private static void showInSwing(BufferedImage image, String title) {
+        SwingUtilities.invokeLater {
+            JFrame frame = new JFrame(title)
+            frame.defaultCloseOperation = WindowConstants.DISPOSE_ON_CLOSE
+            frame.add(new JLabel(new ImageIcon(image)))
+            frame.pack()
+            frame.locationRelativeTo = null
+            frame.visible = true
+        }
+    }
+
+    /**
+     * Clears the current buffer.
+     *
+     * @param input parsed command input
+     */
     void reset(CommandInput input) {
         checkArgCount(input, [0, 1])
         if (maybePrintHelp(input, '/reset')) return
         engine.reset()
     }
 
+    /**
+     * Saves shared state or the current buffer to disk.
+     *
+     * @param input parsed command input
+     */
     void save(CommandInput input) {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/save')) return
@@ -203,6 +478,13 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         saveFile(engine, workDir.get().resolve(arg).toFile(), overwrite)
     }
 
+    /**
+     * Writes the current buffer to the target file.
+     *
+     * @param engine shell execution engine
+     * @param file target file
+     * @param overwrite whether existing files may be replaced
+     */
     static void saveFile(GroovyEngine engine, File file, boolean overwrite = false) {
         if (!file && overwrite) {
             throw new IllegalArgumentException('File to overwrite not found: ' + file.path)
@@ -214,6 +496,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         println "Saved: " + file.path
     }
 
+    /**
+     * Restores saved state or loads a file into the current buffer.
+     *
+     * @param input parsed command input
+     */
     void load(CommandInput input) {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/load')) return
@@ -242,6 +529,12 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         opts[key]
     }
 
+    /**
+     * Opens configured documentation for the supplied object or type.
+     *
+     * @param input parsed command input
+     * @return always {@code null}
+     */
     def doc(CommandInput input) {
         def usage = new String[]{
             "/doc -  open document on browser",
@@ -338,6 +631,12 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
     }
 
+    /**
+     * Reads content into {@code _} from a file, URL, or literal value.
+     *
+     * @param input parsed command input
+     * @return the parsed value
+     */
     def slurpcmd(CommandInput input) {
         checkArgCount(input, [0, 1, 2, 3, 4])
         if (maybePrintHelp(input, '/slurp')) return
@@ -362,7 +661,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                 encoding = Charset.forName(arg)
             }
             if (option in ['-f', '--format'] && arg) {
-                format = arg.toUpperCase()
+                format = arg.toUpperCase(Locale.ROOT)
             }
             optionIndex = optionIdx(args, index)
         }
@@ -395,6 +694,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                         format = 'PROPERTIES'
                     } else if (ext.equalsIgnoreCase('csv')) {
                         format = 'CSV'
+                    } else if (ext.equalsIgnoreCase('md') || ext.equalsIgnoreCase('markdown')) {
+                        format = 'MARKDOWN'
                     } else if (ext.equalsIgnoreCase('txt') || ext.equalsIgnoreCase('text')) {
                         format = 'TEXT'
                     }
@@ -413,8 +714,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     def parser = getParser(format, slurpers[format])
                     out = parser.parse(source)
                 } else if (format == 'CSV') {
-                    def parser = getCsvParser(format)
-                    out = parser.parse(source).toList()*.toMap()
+                    out = parseCsv(source)
                 } else if (format == 'PROPERTIES') {
                     out = new Properties().tap {load(source) }
                 } else {
@@ -429,8 +729,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     def parser = getParser(format, slurpers[format])
                     out = parser.parseText(arg)
                 } else if (format == 'CSV') {
-                    def parser = getCsvParser(format)
-                    out = parser.parse(new StringReader(arg)).toList()*.toMap()
+                    out = parseCsv(new StringReader(arg))
                 } else {
                     out = engine.deserialize(arg, 'AUTO')
                 }
@@ -442,14 +741,29 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         out
     }
 
-    private getCsvParser(String format) {
-        def parserName = 'org.apache.commons.csv.CSVFormat'
-        if (!ClassUtils.lookFor(engine, parserName)) {
-            throw new IllegalArgumentException("$format format requires $parserName to be available")
+    private static final String GROOVY_CSV_SLURPER = 'groovy.csv.CsvSlurper'
+    private static final String COMMONS_CSV_FORMAT = 'org.apache.commons.csv.CSVFormat'
+
+    private parseCsv(Reader source) {
+        // Try groovy-csv (CsvSlurper) first, then fall back to Apache Commons CSV
+        if (ClassUtils.lookFor(GROOVY_CSV_SLURPER)) {
+            def parser = engine.execute("new ${GROOVY_CSV_SLURPER}()")
+            return parser.parse(source)
         }
-        engine.execute("${parserName}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
+        if (ClassUtils.lookFor(engine, COMMONS_CSV_FORMAT)) {
+            def parser = engine.execute("${COMMONS_CSV_FORMAT}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
+            return parser.parse(source).toList()*.toMap()
+        }
+        throw new IllegalArgumentException("CSV format requires $GROOVY_CSV_SLURPER or $COMMONS_CSV_FORMAT to be available")
     }
 
+    /**
+     * Creates the parser implementation backing a named slurper format.
+     *
+     * @param format user-facing format name
+     * @param parserName parser class name
+     * @return parser instance
+     */
     Object getParser(String format, String parserName) {
         if (!ClassUtils.lookFor(parserName)) {
             throw new IllegalArgumentException("$format format requires $parserName to be available")
@@ -457,6 +771,13 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         engine.execute("new ${parserName}()")
     }
 
+    /**
+     * Replays file contents through the engine, optionally merging with existing state.
+     *
+     * @param engine shell execution engine
+     * @param file source file to load
+     * @param merge whether existing state should be preserved
+     */
     static void loadFile(GroovyEngine engine, File file, boolean merge = false) {
         if (!file) {
             throw new IllegalArgumentException('File not found: ' + file.path)
@@ -519,6 +840,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
     }
 
+    /**
+     * Lists or removes import statements tracked by the shell.
+     *
+     * @param input parsed command input
+     */
     void importsCommand(CommandInput input) {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/imports')) return
@@ -531,6 +857,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
     }
 
+    /**
+     * Lists or removes tracked type declarations.
+     *
+     * @param input parsed command input
+     */
     void typesCommand(CommandInput input) {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/types')) return
@@ -543,6 +874,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
     }
 
+    /**
+     * Lists or removes tracked variable declarations.
+     *
+     * @param input parsed command input
+     */
     void varsCommand(CommandInput input) {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/vars')) return
@@ -555,6 +891,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
     }
 
+    /**
+     * Lists or removes tracked method definitions.
+     *
+     * @param input parsed command input
+     */
     void methodsCommand(CommandInput input) {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/methods')) return
@@ -567,6 +908,11 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
     }
 
+    /**
+     * Launches the Swing Groovy console seeded with the current shell state.
+     *
+     * @param input parsed command input
+     */
     void console(CommandInput input) {
         checkArgCount(input, [0, 1])
         if (maybePrintHelp(input, '/console')) return
@@ -582,6 +928,12 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         c.run()
     }
 
+    /**
+     * Displays object details in the terminal or object browser.
+     *
+     * @param input parsed command input
+     * @return always {@code null}
+     */
     def inspect(CommandInput input) {
         checkArgCount(input, [1, 2])
         if (maybePrintHelp(input, '/inspect')) return
@@ -752,6 +1104,18 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         ])
     }
 
+    private CmdDesc imgCmdDesc(String name) {
+        new CmdDesc([
+            new AttributedString("$name [OPTIONS] (FILE | URL | \$VAR)"),
+        ], [], [
+            '-? --help'                       : doDescription('Displays command help'),
+            '-w --width=N'                    : doDescription('Width: terminal cells for raw images, source pixels for charts'),
+            '   --height=N'                   : doDescription('Height: terminal cells for raw images, source pixels for charts'),
+            '-p --no-preserve-aspect-ratio'   : doDescription("Don't preserve aspect ratio"),
+            '-g --gui'                        : doDescription('Open in a Swing window instead of inline')
+        ])
+    }
+
     private CmdDesc inspectCmdDesc(String name) {
         def optDescs = [
             '-? --help'        : doDescription('Displays command help'),
@@ -828,7 +1192,13 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     private List<Completer> slurpCompleter(String command) {
         for (OptDesc o in compileOptDescs(command)) {
             if (o.shortOption()?.equals('-f')) {
-                o.valueCompleter = new StringsCompleter('JSON', 'GROOVY', 'NONE', 'TEXT', 'YAML', 'TOML', 'XML')
+                // Keep completion in sync with the formats /slurp actually
+                // accepts: parser-style ones come from `slurpers`; the rest
+                // are handled directly in slurpcmd's extension branches.
+                // Deriving from `slurpers.keySet()` prevents new entries
+                // (e.g. MARKDOWN, TOML) from drifting out of the completer.
+                def formats = (['CSV', 'GROOVY', 'JSON', 'NONE', 'PROPERTIES', 'TEXT'] + slurpers.keySet()).toSet().sort()
+                o.valueCompleter = new StringsCompleter(formats)
                 break
             }
         }
@@ -841,6 +1211,13 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     private List<Completer> importsCompleter(String command) {
         [new ArgumentCompleter(NullCompleter.INSTANCE,
             new OptionCompleter([new StringsCompleter((Supplier)() -> engine.imports.keySet()), NullCompleter.INSTANCE], this::compileOptDescs, 1))]
+    }
+
+    private List<Completer> imgCompleter(String command) {
+        // Hint common image extensions; users can still tab-complete other files.
+        [new ArgumentCompleter(NullCompleter.INSTANCE,
+                new OptionCompleter(new Completers.FilesCompleter(workDir),
+                        this::compileOptDescs, 1))]
     }
 
     private List<Completer> inspectCompleter(String command) {

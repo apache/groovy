@@ -18,10 +18,11 @@
  */
 package groovy.yaml
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class YamlBuilderTest extends GroovyTestCase {
+class YamlBuilderTest {
 
+    @Test
     void testBuild() {
         // tag::build_text[]
         def builder = new YamlBuilder()
@@ -52,5 +53,31 @@ records:
       description: "production pickup truck with speed of 271kph"
 '''
         // end::build_text[]
+    }
+
+    // tag::typed_writing[]
+    static class ServerConfig {
+        String host
+        int port
+    }
+
+    @Test
+    void testToYaml() {
+        def config = new ServerConfig(host: 'localhost', port: 8080)
+        def yaml = YamlBuilder.toYaml(config)
+        assert yaml.contains('host:')
+        assert yaml.contains('localhost')
+        assert yaml.contains('port:')
+        assert yaml.contains('8080')
+    }
+    // end::typed_writing[]
+
+    @Test
+    void testTypedRoundTrip() {
+        def original = new ServerConfig(host: 'example.com', port: 443)
+        def yaml = YamlBuilder.toYaml(original)
+        def parsed = new YamlSlurper().parseTextAs(ServerConfig, yaml)
+        assert parsed.host == 'example.com'
+        assert parsed.port == 443
     }
 }

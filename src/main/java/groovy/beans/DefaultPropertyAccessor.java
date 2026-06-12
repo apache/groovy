@@ -18,14 +18,23 @@
  */
 package groovy.beans;
 
+/**
+ * Default {@link PropertyAccessor} implementation backed by the standard
+ * Groovy property reader and writer.
+ */
 public class DefaultPropertyAccessor implements PropertyAccessor {
+    /**
+     * Shared accessor instance.
+     */
     public static final PropertyAccessor INSTANCE = new DefaultPropertyAccessor();
 
+    /** {@inheritDoc} */
     @Override
     public Object read(Object owner, String propertyName) {
         return DefaultPropertyReader.INSTANCE.read(owner, propertyName);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void write(Object owner, String propertyName, Object value) {
         DefaultPropertyWriter.INSTANCE.write(owner, propertyName, value);

@@ -26,8 +26,16 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import static java.util.Arrays.stream;
 
+/**
+ * Hint that resolves closure parameter types directly from option class names.
+ *
+ * @since 2.3.0
+ */
 public class SimpleType extends SingleSignatureClosureHint {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public ClassNode[] getParameterTypes(final MethodNode node, final String[] options, final SourceUnit sourceUnit, final CompilationUnit compilationUnit, final ASTNode usage) {
         return stream(options).map(option -> findClassNode(sourceUnit, compilationUnit, option)).toArray(ClassNode[]::new);

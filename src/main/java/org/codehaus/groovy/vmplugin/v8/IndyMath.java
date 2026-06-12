@@ -155,125 +155,329 @@ public class IndyMath {
     // math methods used by indy
 
     // int x int
+    /**
+     * Adds two {@code int} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the sum
+     */
     public static int plus(int a, int b) {
         return a + b;
     }
 
+    /**
+     * Subtracts one {@code int} value from another.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the difference
+     */
     public static int minus(int a, int b) {
         return a - b;
     }
 
+    /**
+     * Multiplies two {@code int} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the product
+     */
     public static int multiply(int a, int b) {
         return a * b;
     }
 
+    /**
+     * Returns the remainder of dividing two {@code int} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the remainder
+     */
     public static int remainder(int a, int b) {
         return a % b;
     }
 
+    /**
+     * Returns Groovy's modulo result for two {@code int} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the modulo result
+     */
     public static int mod(int a, int b) {
         return toBigInteger(a).mod(toBigInteger(b)).intValue();
     }
 
+    /**
+     * Performs a bitwise OR on two {@code int} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the bitwise OR result
+     */
     public static int or(int a, int b) {
         return a | b;
     }
 
+    /**
+     * Performs a bitwise XOR on two {@code int} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the bitwise XOR result
+     */
     public static int xor(int a, int b) {
         return a ^ b;
     }
 
+    /**
+     * Performs a bitwise AND on two {@code int} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the bitwise AND result
+     */
     public static int and(int a, int b) {
         return a & b;
     }
 
+    /**
+     * Left-shifts an {@code int} value.
+     *
+     * @param a the value to shift
+     * @param b the shift distance
+     * @return the shifted result
+     */
     public static int leftShift(int a, int b) {
         return a << b;
     }
 
+    /**
+     * Right-shifts an {@code int} value.
+     *
+     * @param a the value to shift
+     * @param b the shift distance
+     * @return the shifted result
+     */
     public static int rightShift(int a, int b) {
         return a >> b;
     }
 
     // long x long
+    /**
+     * Adds two {@code long} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the sum
+     */
     public static long plus(long a, long b) {
         return a + b;
     }
 
+    /**
+     * Subtracts one {@code long} value from another.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the difference
+     */
     public static long minus(long a, long b) {
         return a - b;
     }
 
+    /**
+     * Multiplies two {@code long} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the product
+     */
     public static long multiply(long a, long b) {
         return a * b;
     }
 
+    /**
+     * Returns the remainder of dividing two {@code long} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the remainder
+     */
     public static long remainder(long a, long b) {
         return a % b;
     }
 
+    /**
+     * Returns Groovy's modulo result for two {@code long} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the modulo result
+     */
     public static long mod(long a, long b) {
         return toBigInteger(a).mod(toBigInteger(b)).longValue();
     }
 
+    /**
+     * Performs a bitwise OR on two {@code long} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the bitwise OR result
+     */
     public static long or(long a, long b) {
         return a | b;
     }
 
+    /**
+     * Performs a bitwise XOR on two {@code long} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the bitwise XOR result
+     */
     public static long xor(long a, long b) {
         return a ^ b;
     }
 
+    /**
+     * Performs a bitwise AND on two {@code long} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the bitwise AND result
+     */
     public static long and(long a, long b) {
         return a & b;
     }
 
+    /**
+     * Left-shifts a {@code long} value.
+     *
+     * @param a the value to shift
+     * @param b the shift distance
+     * @return the shifted result
+     */
     public static long leftShift(long a, long b) {
         return a << b;
     }
 
+    /**
+     * Right-shifts a {@code long} value.
+     *
+     * @param a the value to shift
+     * @param b the shift distance
+     * @return the shifted result
+     */
     public static long rightShift(long a, long b) {
         return a >> b;
     }
 
     // double x double
+    /**
+     * Adds two {@code double} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the sum
+     */
     public static double plus(double a, double b) {
         return a + b;
     }
 
+    /**
+     * Subtracts one {@code double} value from another.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the difference
+     */
     public static double minus(double a, double b) {
         return a - b;
     }
 
+    /**
+     * Multiplies two {@code double} values.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the product
+     */
     public static double multiply(double a, double b) {
         return a * b;
     }
 
+    /**
+     * Divides one {@code double} value by another.
+     *
+     * @param a the left operand
+     * @param b the right operand
+     * @return the quotient
+     */
     public static double div(double a, double b) {
         return a / b;
     }
 
     // next & previous
+    /**
+     * Returns the successor of an {@code int} value.
+     *
+     * @param i the input value
+     * @return {@code i + 1}
+     */
     public static int next(int i) {
         return i + 1;
     }
 
+    /**
+     * Returns the successor of a {@code long} value.
+     *
+     * @param l the input value
+     * @return {@code l + 1}
+     */
     public static long next(long l) {
         return l + 1;
     }
 
+    /**
+     * Returns the successor of a {@code double} value.
+     *
+     * @param d the input value
+     * @return {@code d + 1}
+     */
     public static double next(double d) {
         return d + 1;
     }
 
+    /**
+     * Returns the predecessor of an {@code int} value.
+     *
+     * @param i the input value
+     * @return {@code i - 1}
+     */
     public static int previous(int i) {
         return i - 1;
     }
 
+    /**
+     * Returns the predecessor of a {@code long} value.
+     *
+     * @param l the input value
+     * @return {@code l - 1}
+     */
     public static long previous(long l) {
         return l - 1;
     }
 
+    /**
+     * Returns the predecessor of a {@code double} value.
+     *
+     * @param d the input value
+     * @return {@code d - 1}
+     */
     public static double previous(double d) {
         return d - 1;
     }

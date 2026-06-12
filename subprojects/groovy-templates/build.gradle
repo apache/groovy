@@ -24,6 +24,7 @@ dependencies {
     api rootProject // Template uses Writable...
     implementation projects.groovyXml
     testImplementation projects.groovyTest
+    testImplementation projects.groovyTestJunit6
     testImplementation ("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.apache.groovy'
     }

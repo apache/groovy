@@ -65,7 +65,7 @@ import java.lang.annotation.Target;
  * The normal Groovy property getters and setters will also be created.
  * <p>
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.IndexedProperty
  *
  * class Group {
@@ -103,6 +103,9 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.IndexedPropertyASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.IndexedPropertyASTStubber",
+        "org.codehaus.groovy.transform.IndexedPropertyASTTransformation"
+})
 public @interface IndexedProperty {
 }

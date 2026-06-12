@@ -1,0 +1,148 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: jmh-daily
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 06:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: write         # gh-pages push
+  deployments: write
+  issues: write           # commit comments
+
+jobs:
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: bench
+            pattern: '\\.bench\\.'
+            indy: indy
+            indyFlag: ''
+          - suite: bench
+            pattern: '\\.bench\\.'
+            indy: classic
+            indyFlag: '-Pindy=false'
+          - suite: core-ag
+            pattern: '\\.perf\\.[A-G]'
+            indy: indy
+            indyFlag: ''
+          - suite: core-ag
+            pattern: '\\.perf\\.[A-G]'
+            indy: classic
+            indyFlag: '-Pindy=false'
+          - suite: core-hz
+            pattern: '\\.perf\\.[H-Z]'
+            indy: indy
+            indyFlag: ''
+          - suite: core-hz
+            pattern: '\\.perf\\.[H-Z]'
+            indy: classic
+            indyFlag: '-Pindy=false'
+          - suite: grails-ad
+            pattern: '\\.perf\\.grails\\.[A-D]'
+            indy: indy
+            indyFlag: ''
+          - suite: grails-ad
+            pattern: '\\.perf\\.grails\\.[A-D]'
+            indy: classic
+            indyFlag: '-Pindy=false'
+          - suite: grails-ez
+            pattern: '\\.perf\\.grails\\.[E-Z]'
+            indy: indy
+            indyFlag: ''
+          - suite: grails-ez
+            pattern: '\\.perf\\.grails\\.[E-Z]'
+            indy: classic
+            indyFlag: '-Pindy=false'
+    runs-on: ubuntu-latest
+    env:
+      DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          check-latest: true
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: JMH (${{ matrix.suite }} ${{ matrix.indy }})
+        run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} ${{ matrix.indyFlag }} -PjmhResultFormat=JSON
+        timeout-minutes: 60
+
+      # Dashboards index: https://apache.github.io/groovy/
+      # Data is appended to dev/bench/jmh/<suite>/<indy>/data.js on the gh-pages branch.
+      # To remove a noisy / outage-affected run for commit <BAD_SHA> across all 10 dashboard files:
+      #   git checkout gh-pages
+      #   for F in $(find dev/bench/jmh -name data.js); do
+      #     sed 's/^window\.BENCHMARK_DATA = //; s/;[[:space:]]*$//' "$F" > /tmp/d.json
+      #     jq 'del(.entries[][] | select(.commit.id == "<BAD_SHA>"))' /tmp/d.json > /tmp/c.json
+      #     { printf 'window.BENCHMARK_DATA = '; cat /tmp/c.json; printf ';\n'; } > "$F"
+      #   done
+      #   git commit -am "Drop noisy benchmark run for <BAD_SHA>" && git push
+      - name: Publish to dashboard
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+           tool: 'jmh'
+           output-file-path: subprojects/performance/build/results/jmh/results.json
+           benchmark-data-dir-path: dev/bench/jmh/${{ matrix.suite }}/${{ matrix.indy }}
+           gh-pages-branch: gh-pages
+           auto-push: true
+           comment-always: true
+           alert-threshold: '120%'
+           fail-on-alert: false
+           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload reports-jmh-${{ matrix.suite }}-${{ matrix.indy }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports-jmh-${{ matrix.suite }}-${{ matrix.indy }}
+          path: subprojects/performance/build/results/jmh/
+
+  # Single post-matrix job (avoids 10 matrix jobs racing on a gh-pages push):
+  # after every suite/mode has published its data.js, install the cross-suite
+  # summary page + its vendored JS into dev/bench/jmh/ on gh-pages.
+  publish-summary:
+    needs: benchmark
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # only this job needs gh-pages write
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Install JMH summary page
+        run: |
+          set -euo pipefail
+          SRC_DIR=subprojects/performance/dashboard
+          DEST_DIR=dev/bench/jmh
+          git fetch origin gh-pages
+          git worktree add /tmp/gh-pages gh-pages
+          mkdir -p "/tmp/gh-pages/$DEST_DIR/vendor"
+          cp "$SRC_DIR/jmh-summary.html" "/tmp/gh-pages/$DEST_DIR/summary.html"
+          rsync -a --delete "$SRC_DIR/vendor/" "/tmp/gh-pages/$DEST_DIR/vendor/"
+          cd /tmp/gh-pages
+          git add "$DEST_DIR/summary.html" "$DEST_DIR/vendor"
+          if git diff --cached --quiet; then
+            echo 'JMH summary page and vendored assets already up to date.'
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'Update JMH performance summary page'
+            git push origin gh-pages
+          fi

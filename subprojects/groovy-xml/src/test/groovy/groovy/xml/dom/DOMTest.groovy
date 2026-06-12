@@ -22,13 +22,17 @@ import groovy.xml.DOMBuilder
 import groovy.xml.StreamingDOMBuilder
 import org.junit.jupiter.api.Test
 
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+
 import static groovy.test.GroovyAssert.shouldFail
 
 class DOMTest {
     def benchmark = false
 
     @Test
-    void testDOMParser() {
+    void domParser() {
         def xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>")
         def doc = DOMBuilder.parse(xml)
         def html = doc.documentElement
@@ -36,7 +40,7 @@ class DOMTest {
     }
 
     @Test
-    void testDOMBuilder() {
+    void domBuilder() {
         def html = DOMBuilder.newInstance().
                 html {
                     head {
@@ -50,7 +54,7 @@ class DOMTest {
     }
 
     @Test
-    void testDOMBuilderWithNullValue() {
+    void domBuilderWithNullValue() {
         def html = DOMBuilder.newInstance().
                 html {
                     head {
@@ -63,7 +67,7 @@ class DOMTest {
     }
 
     @Test
-    void testStreamingDOMBuilder() {
+    void streamingDomBuilder() {
         def builder = new StreamingDOMBuilder()
         def make = builder.bind {
             html {
@@ -76,6 +80,26 @@ class DOMTest {
             }
         }
         if (!benchmark) assertCorrect make().documentElement
+    }
+
+    // GROOVY-9698
+    @Test
+    void streamingDomBuilderSiblingsInheritNamespaces() {
+        def make = new StreamingDOMBuilder().bind {
+            mkp.declareNamespace("" : "uri:urn1")
+            mkp.declareNamespace("x" : "uri:urn2")
+            outer {
+                'x:inner'('hello')
+                'x:inner'('hello again')
+            }
+        }
+
+        def sw = new StringWriter()
+        TransformerFactory.newInstance().newTransformer()
+                .transform(new DOMSource(make()), new StreamResult(sw))
+        def output = sw.toString()
+        assert !output.replaceFirst(/xmlns="uri:urn1"/, '').contains('xmlns="uri:urn1"')
+        assert !output.replaceFirst(/xmlns:x="uri:urn2"/, '').contains('xmlns:x="uri:urn2"')
     }
 
     private def assertCorrect(html) {
@@ -100,9 +124,9 @@ class DOMTest {
         def mydomtest = new DOMTest()
         def standard = 0
         mydomtest.benchmark = true
-        [{ mydomtest.testDOMParser() },
-                { mydomtest.testDOMBuilder() },
-                { mydomtest.testStreamingDOMBuilder() }].eachWithIndex { testMethod, index ->
+        [{ mydomtest.dOMParser() },
+                { mydomtest.domBuilder() },
+                { mydomtest.streamingDomBuilder() }].eachWithIndex { testMethod, index ->
             // Run the method once to fill any caches and to load classes
             testMethod()
             def start = System.currentTimeMillis()

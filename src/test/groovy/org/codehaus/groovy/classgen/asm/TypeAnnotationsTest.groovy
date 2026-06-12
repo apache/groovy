@@ -219,7 +219,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     @Test
     void testTypeAnnotationsForMethod4() {
         def bytecode = compile(classNamePattern: 'Foo', method: 'sizeZeroOrPositive', '''\
-            @Grab("net.jqwik:jqwik:1.9.3")
+            @Grab("net.jqwik:jqwik:1.9.3") // Don't change version
             import net.jqwik.api.ForAll
             import net.jqwik.api.Property
             import net.jqwik.api.constraints.IntRange
@@ -299,7 +299,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
             }
         ''')
         assert bytecode.hasStrictSequence([
-                'public doCall(I)I',
+                'public static doCall(I)I',
                 '@LTypeAnno1;() : METHOD_FORMAL_PARAMETER 0, null',
                 'L0'
         ])

@@ -157,26 +157,31 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.transform = transform;
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean cancel(final boolean mayInterruptIfRunning) {
             return delegate.cancel(mayInterruptIfRunning);
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean isCancelled() {
             return delegate.isCancelled();
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean isDone() {
             return delegate.isDone();
         }
 
+        /** {@inheritDoc} */
         @Override
         public E get() throws InterruptedException, ExecutionException {
             return transform.call(delegate.get());
         }
 
+        /** {@inheritDoc} */
         @Override
         public E get(final long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return transform.call(delegate.get(timeout, unit));
@@ -189,7 +194,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Coerce an {@code Optional} instance to a {@code boolean} value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().asBoolean()
      * assert Optional.of(1234).asBoolean()
      * </pre>
@@ -205,7 +210,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalInt}, returns the value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert OptionalInt.of(1234).get() == 1234
      * </pre>
      *
@@ -220,7 +225,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalLong}, returns the value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert OptionalLong.of(1234L).get() == 1234L
      * </pre>
      *
@@ -235,7 +240,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalDouble}, returns the value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert OptionalDouble.of(Math.PI).get() == Math.PI
      * </pre>
      *
@@ -250,7 +255,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns the value or null.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def opt = Optional.empty()
      * assert opt[-1] == null
      * assert opt[0] == null
@@ -284,7 +289,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalInt}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = OptionalInt.empty()
      * def out = opt.peek{ called = true }
@@ -308,7 +313,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalLong}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = OptionalLong.empty()
      * def out = opt.peek{ called = true }
@@ -332,7 +337,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalDouble}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = OptionalDouble.empty()
      * def out = opt.peek{ called = true }
@@ -356,7 +361,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code Optional}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = Optional.empty()
      * def out = opt.peek{ called = true }
@@ -380,7 +385,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code Optional}, returns transformed value
      * obtained using the {@code transform} closure or no value as an optional.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Optional.of("foobar").collect{ it.size() }.get() == 6
      * assert !Optional.empty().collect{ it.size() }.isPresent()
      * </pre>
@@ -399,7 +404,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Tests given value against specified type and changes generics of result.
      * This is equivalent to: <code>self.filter(it -&gt; it instanceof Type).map(it -&gt; (Type) it)</code>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().filter(Number).isPresent()
      * assert !Optional.of('x').filter(Number).isPresent()
      * assert Optional.of(1234).filter(Number).isPresent()
@@ -416,7 +421,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalInt}, tests the value using
      * the given predicate and returns the optional if the test returns true or
      * else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalInt.empty().filter(i -&gt; true).isPresent()
      * assert  OptionalInt.of(1234).filter(i -&gt; true).isPresent()
      * assert !OptionalInt.of(1234).filter(i -&gt; false).isPresent()
@@ -436,7 +441,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalLong}, tests the value using
      * the given predicate and returns the optional if the test returns true or
      * else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalLong.empty().filter(n -&gt; true).isPresent()
      * assert  OptionalLong.of(123L).filter(n -&gt; true).isPresent()
      * assert !OptionalLong.of(123L).filter(n -&gt; false).isPresent()
@@ -456,7 +461,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalDouble}, tests the value using
      * the given predicate and returns the optional if the test returns true or
      * empty otherwise.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalDouble.empty().filter(n -&gt; true).isPresent()
      * assert  OptionalDouble.of(Math.PI).filter(n -&gt; true).isPresent()
      * assert !OptionalDouble.of(Math.PI).filter(n -&gt; false).isPresent()
@@ -475,7 +480,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalInt}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalInt.empty().mapToObj(x -&gt; new Object()).isPresent()
      * assert  OptionalInt.of(1234).mapToObj(x -&gt; new Object()).isPresent()
      * assert !OptionalInt.of(1234).mapToObj(x -&gt; null).isPresent()
@@ -494,7 +499,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalLong}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalLong.empty().mapToObj(x -&gt; new Object()).isPresent()
      * assert  OptionalLong.of(123L).mapToObj(x -&gt; new Object()).isPresent()
      * assert !OptionalLong.of(123L).mapToObj(x -&gt; null).isPresent()
@@ -513,7 +518,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalDouble}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalDouble.empty().mapToObj(x -&gt; new Object()).isPresent()
      * assert  OptionalDouble.of(Math.PI).mapToObj(x -&gt; new Object()).isPresent()
      * assert !OptionalDouble.of(Math.PI).mapToObj(x -&gt; null).isPresent()
@@ -532,7 +537,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns an {@code OptionalInt}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().mapToInt(x -&gt; 42).isPresent()
      * assert  Optional.of('x').mapToInt(x -&gt; 42).getAsInt() == 42
      * </pre>
@@ -546,7 +551,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns an {@code OptionalLong}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().mapToLong(x -&gt; 42L).isPresent()
      * assert  Optional.of('x').mapToLong(x -&gt; 42L).getAsLong() == 42L
      * </pre>
@@ -560,7 +565,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns an {@code OptionalDouble}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().mapToDouble(x -&gt; Math.PI).isPresent()
      * assert  Optional.of('x').mapToDouble(x -&gt; Math.PI).getAsDouble() == Math.PI
      * </pre>
@@ -574,7 +579,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Provides similar functionality to JDK9 {@code or} on JDK8.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def x = Optional.empty()
      * def y = Optional.of('y')
      * assert y.orOptional(() -&gt; Optional.of('z')).get() == 'y'
@@ -692,136 +697,312 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns a single-element stream for the supplied object.
+     *
+     * @param self the source element
+     * @param <T> the element type
+     * @return a stream containing {@code self}
+     */
     @Deprecated
     public static <T> Stream<T> stream(final T self) {
         return Stream.of(self);
     }
 
+    /**
+     * Returns a stream over the supplied array.
+     *
+     * @param self the source array
+     * @param <T> the element type
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final T[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code int} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Integer> stream(final int[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code long} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Long> stream(final long[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code double} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Double> stream(final double[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code char} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Character> stream(final char[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code byte} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Byte> stream(final byte[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code short} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Short> stream(final short[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code boolean} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Boolean> stream(final boolean[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a boxed stream over the supplied {@code float} array.
+     *
+     * @param self the source array
+     * @return a stream over the array contents
+     */
     @Deprecated
     public static Stream<Float> stream(final float[] self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied enumeration.
+     *
+     * @param self the source enumeration
+     * @param <T> the element type
+     * @return a stream over the enumeration contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Enumeration<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied iterable.
+     *
+     * @param self the source iterable
+     * @param <T> the element type
+     * @return a stream over the iterable contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Iterable<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied iterator.
+     *
+     * @param self the source iterator
+     * @param <T> the element type
+     * @return a stream over the iterator contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Iterator<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a stream over the supplied spliterator.
+     *
+     * @param self the source spliterator
+     * @param <T> the element type
+     * @return a stream over the spliterator contents
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Spliterator<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns an empty stream for Groovy's null-object sentinel.
+     *
+     * @param self the null-object sentinel
+     * @param <T> the element type
+     * @return an empty stream
+     */
     @Deprecated
     public static <T> Stream<T> stream(final NullObject self) {
         return Stream.empty();
     }
 
+    /**
+     * Returns a stream over the supplied optional value.
+     *
+     * @param self the source optional
+     * @param <T> the element type
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static <T> Stream<T> stream(final Optional<T> self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns an {@link IntStream} over the supplied optional int value.
+     *
+     * @param self the source optional int
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static IntStream stream(final OptionalInt self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a {@link LongStream} over the supplied optional long value.
+     *
+     * @param self the source optional long
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static LongStream stream(final OptionalLong self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns a {@link DoubleStream} over the supplied optional double value.
+     *
+     * @param self the source optional double
+     * @return a stream containing the optional value when present
+     */
     @Deprecated
     public static DoubleStream stream(final OptionalDouble self) {
         return StreamGroovyMethods.stream(self);
     }
 
+    /**
+     * Returns an {@link IntStream} over the supplied {@code int} array.
+     *
+     * @param self the source array
+     * @return an int stream over the array contents
+     */
     @Deprecated
     public static IntStream intStream(final int[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Returns a {@link LongStream} over the supplied {@code long} array.
+     *
+     * @param self the source array
+     * @return a long stream over the array contents
+     */
     @Deprecated
     public static LongStream longStream(final long[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Returns a {@link DoubleStream} over the supplied {@code double} array.
+     *
+     * @param self the source array
+     * @return a double stream over the array contents
+     */
     @Deprecated
     public static DoubleStream doubleStream(final double[] self) {
         return Arrays.stream(self);
     }
 
+    /**
+     * Collects the stream elements into a typed array.
+     *
+     * @param self the source stream
+     * @param type the component type of the target array
+     * @param <T> the element type
+     * @return an array containing the stream elements
+     */
     @Deprecated
     public static <T> T[] toArray(final Stream<? extends T> self, final Class<T> type) {
         return StreamGroovyMethods.toArray(self, type);
     }
 
+    /**
+     * Collects the stream elements into a list.
+     *
+     * @param self the source stream
+     * @param <T> the element type
+     * @return a list containing the stream elements
+     */
     @Deprecated
     public static <T> List<T> toList(final Stream<T> self) {
         return StreamGroovyMethods.toList(self);
     }
 
+    /**
+     * Collects the base-stream elements into a list.
+     *
+     * @param self the source base stream
+     * @param <T> the element type
+     * @return a list containing the stream elements
+     */
     @Deprecated
     public static <T> List<T> toList(final BaseStream<T, ? extends BaseStream> self) {
         return StreamGroovyMethods.toList(self);
     }
 
+    /**
+     * Collects the stream elements into a set.
+     *
+     * @param self the source stream
+     * @param <T> the element type
+     * @return a set containing the stream elements
+     */
     @Deprecated
     public static <T> Set<T> toSet(final Stream<T> self) {
         return StreamGroovyMethods.toSet(self);
     }
 
+    /**
+     * Collects the base-stream elements into a set.
+     *
+     * @param self the source base stream
+     * @param <T> the element type
+     * @return a set containing the stream elements
+     */
     @Deprecated
     public static <T> Set<T> toSet(final BaseStream<T, ? extends BaseStream> self) {
         return StreamGroovyMethods.toSet(self);

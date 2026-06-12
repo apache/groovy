@@ -21,14 +21,31 @@ package org.apache.groovy.swing.binding;
 import groovy.lang.Closure;
 
 /**
+ * Base implementation for {@link FullBinding} that handles validation and value conversion.
+ *
  * @since Groovy 1.1
  */
 public abstract class AbstractFullBinding  implements FullBinding {
 
+    /**
+     * The source side of the binding.
+     */
     protected SourceBinding sourceBinding;
+    /**
+     * The target side of the binding.
+     */
     protected TargetBinding targetBinding;
+    /**
+     * Optional validator invoked before forward propagation.
+     */
     protected Closure validator;
+    /**
+     * Optional converter applied before writing to the target.
+     */
     protected Closure converter;
+    /**
+     * Optional converter applied before writing back to the source.
+     */
     protected Closure reverseConverter;
 
     private void fireBinding() {
@@ -52,6 +69,9 @@ public abstract class AbstractFullBinding  implements FullBinding {
         targetBinding.updateTargetValue(result);
     }
 
+    /**
+     * Propagates the current source value to the target.
+     */
     @Override
     public void update() {
         fireBinding();
@@ -68,56 +88,109 @@ public abstract class AbstractFullBinding  implements FullBinding {
         ((TargetBinding)sourceBinding).updateTargetValue(result);
     }
 
+    /**
+     * Propagates the current target value back to the source.
+     */
     @Override
     public void reverseUpdate() {
         fireReverseBinding();
     }
 
+    /**
+     * Returns the current source binding.
+     *
+     * @return the source binding
+     */
     @Override
     public SourceBinding getSourceBinding() {
         return sourceBinding;
     }
 
+    /**
+     * Replaces the current source binding.
+     *
+     * @param sourceBinding the new source binding
+     */
     @Override
     public void setSourceBinding(SourceBinding sourceBinding) {
         this.sourceBinding = sourceBinding;
     }
 
+    /**
+     * Returns the current target binding.
+     *
+     * @return the target binding
+     */
     @Override
     public TargetBinding getTargetBinding() {
         return targetBinding;
     }
 
+    /**
+     * Replaces the current target binding.
+     *
+     * @param targetBinding the new target binding
+     */
     @Override
     public void setTargetBinding(TargetBinding targetBinding) {
         this.targetBinding = targetBinding;
     }
 
+    /**
+     * Returns the validator invoked before forward propagation.
+     *
+     * @return the validator closure, or {@code null}
+     */
     @Override
     public Closure getValidator() {
         return validator;
     }
 
+    /**
+     * Sets the validator invoked before forward propagation.
+     *
+     * @param validator the validator closure, or {@code null}
+     */
     @Override
     public void setValidator(Closure validator) {
         this.validator = validator;
     }
 
+    /**
+     * Returns the forward converter.
+     *
+     * @return the converter closure, or {@code null}
+     */
     @Override
     public Closure getConverter() {
         return converter;
     }
 
+    /**
+     * Sets the forward converter.
+     *
+     * @param converter the converter closure, or {@code null}
+     */
     @Override
     public void setConverter(Closure converter) {
         this.converter = converter;
     }
 
+    /**
+     * Returns the reverse converter.
+     *
+     * @return the reverse converter, or {@code null}
+     */
     @Override
     public Closure getReverseConverter() {
         return reverseConverter;
     }
 
+    /**
+     * Sets the reverse converter.
+     *
+     * @param reverseConverter the reverse converter, or {@code null}
+     */
     @Override
     public void setReverseConverter(Closure reverseConverter) {
         this.reverseConverter = reverseConverter;

@@ -28,10 +28,16 @@ import java.util.Iterator;
 public class IntArrayIterable implements Iterable<Integer> {
     private final int[] array;
 
+    /**
+     * Creates an iterable view that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public IntArrayIterable(final int[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator<Integer> iterator() {
         return new IntArrayIterator(array);

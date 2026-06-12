@@ -170,7 +170,7 @@
     <target name="jointForkedCompilation_ExternalJarOnClasspath">
         <path id="the.classpath">
             <path refid="groovyMaterials"/>
-            <fileset file="commons-lang3-3.18.0.jar"/>
+            <pathelement location="${externalJar}"/>
         </path>
 
         <compile-joint fork="true" includeantruntime="false" includes="**/MakesExternalReference.java">

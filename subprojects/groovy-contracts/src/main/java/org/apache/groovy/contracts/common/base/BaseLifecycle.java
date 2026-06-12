@@ -32,26 +32,66 @@ import org.codehaus.groovy.ast.MethodNode;
  */
 public abstract class BaseLifecycle implements Lifecycle {
 
+    /**
+     * No-op default hook invoked before class-level contract processing begins.
+     *
+     * @param processingContextInformation the shared processing context
+     * @param classNode the class about to be processed
+     */
     @Override
     public void beforeProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode) {
     }
 
+    /**
+     * No-op default hook invoked after class-level contract processing completes.
+     *
+     * @param processingContextInformation the shared processing context
+     * @param classNode the class that was processed
+     */
     @Override
     public void afterProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode) {
     }
 
+    /**
+     * No-op default hook invoked before a method is processed.
+     *
+     * @param processingContextInformation the shared processing context
+     * @param classNode the declaring class
+     * @param methodNode the method about to be processed
+     */
     @Override
     public void beforeProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode) {
     }
 
+    /**
+     * No-op default hook invoked after a method is processed.
+     *
+     * @param processingContextInformation the shared processing context
+     * @param classNode the declaring class
+     * @param methodNode the processed method
+     */
     @Override
     public void afterProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode) {
     }
 
+    /**
+     * No-op default hook invoked before a constructor is processed.
+     *
+     * @param processingContextInformation the shared processing context
+     * @param classNode the declaring class
+     * @param constructorNode the constructor about to be processed
+     */
     @Override
     public void beforeProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode) {
     }
 
+    /**
+     * No-op default hook invoked after a constructor is processed.
+     *
+     * @param processingContextInformation the shared processing context
+     * @param classNode the declaring class
+     * @param constructorNode the processed constructor
+     */
     @Override
     public void afterProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode) {
     }

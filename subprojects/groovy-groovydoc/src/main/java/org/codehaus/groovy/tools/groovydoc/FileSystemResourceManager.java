@@ -24,18 +24,30 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 
+/**
+ * Loads documentation resources from the local file system.
+ */
 public class FileSystemResourceManager implements ResourceManager {
     private final String basedir;
     private static final String FS = "/";
 
+    /**
+     * Creates a resource manager rooted at the current working directory.
+     */
     public FileSystemResourceManager() {
         basedir = "";
     }
 
+    /**
+     * Creates a resource manager rooted at the supplied base directory.
+     *
+     * @param basedir the base directory used to resolve resources
+     */
     public FileSystemResourceManager(String basedir) {
         this.basedir = basedir + FS;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Reader getReader(String resourceName) throws IOException {
         return ResourceGroovyMethods.newReader(new File(basedir + resourceName));

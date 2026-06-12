@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the {@code /types} command.
  */
 class TypesTest extends SystemTestSupport {
+    @Test
     void testImport() {
         def names = ['C', 'I', 'T', 'R', 'E', 'A']
         system.execute('/types')
@@ -40,5 +43,14 @@ class TypesTest extends SystemTestSupport {
         system.execute('/types -d C')
         system.execute('/types -d R')
         assert engine.types.keySet() == ['I', 'T', 'E', 'A'] as Set
+    }
+
+    @Test
+    void testDeleteNonexistentTypeIsHarmless() {
+        // /types -d on an unknown type should not throw or corrupt the
+        // type registry.
+        def before = engine.types.keySet().toSet()
+        system.execute('/types -d NoSuchType')
+        assert engine.types.keySet().toSet() == before
     }
 }

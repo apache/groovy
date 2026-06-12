@@ -126,6 +126,16 @@ public class ClassFinder {
         return find(uri, prefix, packageName, recursive, innerClasses);
     }
 
+    /**
+     * Finds class names under the supplied URI and prefix.
+     *
+     * @param uri the filesystem, jar, or runtime image URI
+     * @param prefix the URI-local path prefix to search from
+     * @param packageName the package path to scan
+     * @param recursive whether sub-packages should be included
+     * @param innerClasses whether inner classes should be included
+     * @return the discovered class names mapped to their package paths
+     */
     static Map<String, Set<String>> find(URI uri, String prefix, String packageName, boolean recursive, final boolean innerClasses) {
         boolean wfs = "file".equals(uri.getScheme());
         final Pattern sepPattern = wfs ? FILE_SEP_PATTERN : SLASH_PATTERN;
@@ -139,11 +149,25 @@ public class ClassFinder {
         try {
             fsMaybeNew = maybeNewFileSystem(uri);
             Files.walkFileTree(fsMaybeNew.getV1().getPath(prefix + "/" + packageName), new SimpleFileVisitor<Path>() {
+                /**
+                 * Continues walking through candidate package directories.
+                 *
+                 * @param path the directory being visited
+                 * @param attrs the directory attributes
+                 * @return {@link FileVisitResult#CONTINUE}
+                 */
                 @Override
                 public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes attrs) {
                     return FileVisitResult.CONTINUE;
                 }
 
+                /**
+                 * Records matching class files under the requested package.
+                 *
+                 * @param path the file being visited
+                 * @param attrs the file attributes
+                 * @return {@link FileVisitResult#CONTINUE}
+                 */
                 @Override
                 public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
                     String[] pathElems = sepPattern.split(path.toString());

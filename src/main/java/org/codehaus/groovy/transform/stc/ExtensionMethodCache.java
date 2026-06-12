@@ -38,10 +38,14 @@ import static org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl.EXTENS
  * a method lookup.
  */
 public class ExtensionMethodCache extends AbstractExtensionMethodCache {
+    /** Shared cache instance used by static type checking. */
     public static final ExtensionMethodCache INSTANCE = new ExtensionMethodCache();
 
     private ExtensionMethodCache() {}
 
+    /**
+     * Adds the built-in extension classes used during static type checking.
+     */
     @Override
     protected void addAdditionalClassesToScan(Set<Class> instanceExtClasses, Set<Class> staticExtClasses) {
         Collections.addAll(instanceExtClasses, DefaultGroovyMethods.DGM_LIKE_CLASSES);
@@ -62,16 +66,25 @@ public class ExtensionMethodCache extends AbstractExtensionMethodCache {
         Collections.addAll(staticExtClasses, VMPluginFactory.getPlugin().getPluginStaticGroovyMethods());
     }
 
+    /**
+     * Returns the system property that disables extension methods.
+     */
     @Override
     protected String getDisablePropertyName() {
         return EXTENSION_DISABLE_PROPERTY;
     }
 
+    /**
+     * Returns the filter that excludes deprecated extension methods.
+     */
     @Override
     protected Predicate<MethodNode> getMethodFilter() {
         return m -> !m.getAnnotations(StaticTypeCheckingSupport.Deprecated_TYPE).isEmpty();
     }
 
+    /**
+     * Maps extension methods to their receiver type names.
+     */
     @Override
     protected Function<MethodNode, String> getMethodMapper() {
         return m -> m.getParameters()[0].getType().getName();

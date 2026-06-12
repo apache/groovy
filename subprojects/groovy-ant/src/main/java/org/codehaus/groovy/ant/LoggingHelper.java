@@ -27,31 +27,67 @@ import org.apache.tools.ant.Task;
 public class LoggingHelper {
     private final Task owner;
 
+    /**
+     * Creates a logging helper for the supplied Ant task.
+     *
+     * @param owner the task that should receive log messages
+     */
     public LoggingHelper(final Task owner) {
         assert owner != null;
         this.owner = owner;
     }
 
+    /**
+     * Logs an error message.
+     *
+     * @param msg the message to log
+     */
     public void error(final String msg) {
         owner.log(msg, Project.MSG_ERR);
     }
 
+    /**
+     * Logs an error message together with its cause.
+     *
+     * @param msg the message to log
+     * @param t the associated failure
+     */
     public void error(final String msg, final Throwable t) {
         owner.log(msg, t, Project.MSG_ERR);
     }
 
+    /**
+     * Logs a warning message.
+     *
+     * @param msg the message to log
+     */
     public void warn(final String msg) {
         owner.log(msg, Project.MSG_WARN);
     }
 
+    /**
+     * Logs an informational message.
+     *
+     * @param msg the message to log
+     */
     public void info(final String msg) {
         owner.log(msg, Project.MSG_INFO);
     }
 
+    /**
+     * Logs a verbose diagnostic message.
+     *
+     * @param msg the message to log
+     */
     public void verbose(final String msg) {
         owner.log(msg, Project.MSG_VERBOSE);
     }
 
+    /**
+     * Logs a debug message.
+     *
+     * @param msg the message to log
+     */
     public void debug(final String msg) {
         owner.log(msg, Project.MSG_DEBUG);
     }

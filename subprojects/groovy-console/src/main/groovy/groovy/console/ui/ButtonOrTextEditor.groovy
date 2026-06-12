@@ -42,6 +42,9 @@ class ButtonOrTextEditor extends AbstractCellEditor implements TableCellEditor {
     /** The Swing component being edited. */
     protected JComponent editorComponent
 
+    /**
+     * Returns an editor component that matches the current cell value.
+     */
     @Override
     Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
         if (value instanceof JButton) {
@@ -58,6 +61,9 @@ class ButtonOrTextEditor extends AbstractCellEditor implements TableCellEditor {
         editorComponent
     }
 
+    /**
+     * Returns the current editor component.
+     */
     @Override
     Object getCellEditorValue() {
         editorComponent

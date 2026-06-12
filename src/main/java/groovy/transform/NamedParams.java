@@ -18,6 +18,7 @@
  */
 package groovy.transform;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -28,8 +29,14 @@ import java.lang.annotation.Target;
  *
  * @since 2.5.0
  */
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface NamedParams {
+    /**
+     * Returns the named-parameter declarations collected by this annotation.
+     *
+     * @return the named-parameter declarations
+     */
     NamedParam[] value();
 }

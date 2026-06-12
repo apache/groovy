@@ -55,11 +55,13 @@ import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -183,12 +185,17 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
  */
 public abstract class StaticTypeCheckingSupport {
 
+    /** Cached {@link Matcher} type. */
     protected static final ClassNode Matcher_TYPE = makeWithoutCaching(Matcher.class);
+    /** Cached {@link ArrayList} type. */
     protected static final ClassNode ArrayList_TYPE = makeWithoutCaching(ArrayList.class);
+    /** Cached {@link BaseStream} type. */
     protected static final ClassNode BaseStream_TYPE = makeWithoutCaching(BaseStream.class);
     protected static final ClassNode Collection_TYPE = COLLECTION_TYPE; // TODO: deprecate?
     protected static final ClassNode Deprecated_TYPE = DEPRECATED_TYPE; // TODO: deprecate?
+    /** Cached {@link LinkedHashMap} type. */
     protected static final ClassNode LinkedHashMap_TYPE = makeWithoutCaching(LinkedHashMap.class);
+    /** Cached {@link LinkedHashSet} type. */
     protected static final ClassNode LinkedHashSet_TYPE = makeWithoutCaching(LinkedHashSet.class);
 
     protected static final Map<ClassNode, Integer> NUMBER_TYPES = Maps.of(
@@ -262,10 +269,19 @@ public abstract class StaticTypeCheckingSupport {
         return 1;
     };
 
+    /** Shared cache of extension methods visible to the static type checker. */
     protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
+
+    /**
+     * Clears cached extension methods for the supplied class loader.
+     */
     public static void clearExtensionMethodCache(final ClassLoader loader) {
         EXTENSION_METHOD_CACHE.cache.remove(loader);
     }
+
+    /**
+     * Clears all cached extension methods.
+     */
     public static void clearExtensionMethodCache() {
         EXTENSION_METHOD_CACHE.cache.clearAll();
     }
@@ -323,6 +339,9 @@ public abstract class StaticTypeCheckingSupport {
         return findDGMMethodsForClassNode(MetaClassRegistryImpl.class.getClassLoader(), clazz, name);
     }
 
+    /**
+     * Returns extension methods with the supplied name for the receiver hierarchy.
+     */
     public static Set<MethodNode> findDGMMethodsForClassNode(final ClassLoader loader, final ClassNode clazz, final String name) {
         TreeSet<MethodNode> accumulator = new TreeSet<>(DGM_METHOD_NODE_COMPARATOR);
         findDGMMethodsForClassNode(loader, clazz, name, accumulator);
@@ -337,6 +356,9 @@ public abstract class StaticTypeCheckingSupport {
         findDGMMethodsForClassNode(MetaClassRegistryImpl.class.getClassLoader(), clazz, name, accumulator);
     }
 
+    /**
+     * Collects extension methods with the supplied name for the receiver hierarchy.
+     */
     protected static void findDGMMethodsForClassNode(final ClassLoader loader, final ClassNode clazz, final String name, final TreeSet<MethodNode> accumulator) {
         List<MethodNode> fromDGM = EXTENSION_METHOD_CACHE.get(loader).get(clazz.getName());
         if (fromDGM != null) {
@@ -469,20 +491,32 @@ public abstract class StaticTypeCheckingSupport {
         return (type.isDerivedFrom(CLOSURE_TYPE) && isSAMType(toBeAssignedTo));
     }
 
+    /**
+     * Indicates whether the parameter list uses a varargs parameter.
+     */
     @Deprecated(forRemoval = true, since = "4.0.4")
     static boolean isVargs(final Parameter[] parameters) {
         return ParameterUtils.isVargs(parameters);
     }
 
+    /**
+     * Indicates whether the operation maps to a boolean {@code compareTo} result.
+     */
     public static boolean isCompareToBoolean(final int op) {
         return op == COMPARE_LESS_THAN || op == COMPARE_LESS_THAN_EQUAL
                 || op == COMPARE_GREATER_THAN || op == COMPARE_GREATER_THAN_EQUAL;
     }
 
+    /**
+     * Indicates whether the token represents array access.
+     */
     static boolean isArrayOp(final int op) {
         return op == LEFT_SQUARE_BRACKET;
     }
 
+    /**
+     * Indicates whether the token is an intrinsic boolean operation.
+     */
     static boolean isBoolIntrinsicOp(final int op) {
         return switch (op) {
             case LOGICAL_AND, LOGICAL_OR, COMPARE_NOT_IDENTICAL, COMPARE_IDENTICAL, MATCH_REGEX, KEYWORD_INSTANCEOF,
@@ -491,10 +525,16 @@ public abstract class StaticTypeCheckingSupport {
         };
     }
 
+    /**
+     * Indicates whether the token represents Groovy's power operator.
+     */
     static boolean isPowerOperator(final int op) {
         return op == POWER || op == POWER_EQUAL;
     }
 
+    /**
+     * Returns the method name associated with the supplied operator token.
+     */
     static String getOperationName(final int op) {
         return switch (op) {
             case COMPARE_EQUAL, COMPARE_NOT_EQUAL ->
@@ -524,6 +564,36 @@ public abstract class StaticTypeCheckingSupport {
         };
     }
 
+    /**
+     * GEP-15: returns the dedicated compound-assignment method name for a compound-assign
+     * operator token (e.g. {@code PLUS_EQUAL} -> {@code "plusAssign"}), or {@code null} if
+     * the token is not one of the twelve operators in scope. {@code INTDIV_EQUAL},
+     * {@code MOD_EQUAL}, {@code ELVIS_EQUAL}, {@code LOGICAL_OR_EQUAL} and
+     * {@code LOGICAL_AND_EQUAL} are intentionally excluded.
+     *
+     * @since 6.0.0
+     */
+    public static String getAssignOperationName(final int op) {
+        return switch (op) {
+            case PLUS_EQUAL                 -> "plusAssign";
+            case MINUS_EQUAL                -> "minusAssign";
+            case MULTIPLY_EQUAL             -> "multiplyAssign";
+            case DIVIDE_EQUAL               -> "divAssign";
+            case REMAINDER_EQUAL            -> "remainderAssign";
+            case POWER_EQUAL                -> "powerAssign";
+            case LEFT_SHIFT_EQUAL           -> "leftShiftAssign";
+            case RIGHT_SHIFT_EQUAL          -> "rightShiftAssign";
+            case RIGHT_SHIFT_UNSIGNED_EQUAL -> "rightShiftUnsignedAssign";
+            case BITWISE_AND_EQUAL          -> "andAssign";
+            case BITWISE_OR_EQUAL           -> "orAssign";
+            case BITWISE_XOR_EQUAL          -> "xorAssign";
+            default                         -> null;
+        };
+    }
+
+    /**
+     * Indicates whether the supplied method name is a shift operation.
+     */
     static boolean isShiftOperation(final String name) {
         return "leftShift".equals(name) || "rightShift".equals(name) || "rightShiftUnsigned".equals(name);
     }
@@ -540,6 +610,9 @@ public abstract class StaticTypeCheckingSupport {
         };
     }
 
+    /**
+     * Indicates whether the token represents a bitwise operation.
+     */
     static boolean isBitOperator(final int op) {
         return switch (op) {
             case BITWISE_OR_EQUAL, BITWISE_OR, BITWISE_AND_EQUAL, BITWISE_AND, BITWISE_XOR_EQUAL, BITWISE_XOR -> true;
@@ -547,6 +620,9 @@ public abstract class StaticTypeCheckingSupport {
         };
     }
 
+    /**
+     * Indicates whether the token represents any assignment form.
+     */
     public static boolean isAssignment(final int op) {
         return Types.isAssignment(op);
     }
@@ -563,6 +639,9 @@ public abstract class StaticTypeCheckingSupport {
         return checkCompatibleAssignmentTypes(left, right, null);
     }
 
+    /**
+     * Checks assignment compatibility using the supplied right-hand expression for additional context.
+     */
     public static boolean checkCompatibleAssignmentTypes(final ClassNode left, final ClassNode right, final Expression rightExpression) {
         return checkCompatibleAssignmentTypes(left, right, rightExpression, true);
     }
@@ -693,10 +772,16 @@ public abstract class StaticTypeCheckingSupport {
                 || isClassType(node));
     }
 
+    /**
+     * Indicates whether the class node is still attached to a compile unit.
+     */
     public static boolean isBeingCompiled(final ClassNode node) {
         return (node.getCompileUnit() != null);
     }
 
+    /**
+     * Checks whether assigning the right type could lose numeric precision.
+     */
     static boolean checkPossibleLossOfPrecision(final ClassNode left, final ClassNode right, final Expression rightExpr) {
         if (left == right || left.equals(right)) return false; // identical types
         int leftIndex = NUMBER_TYPES.get(left);
@@ -746,6 +831,9 @@ public abstract class StaticTypeCheckingSupport {
         return true; // possible loss of precision
     }
 
+    /**
+     * Formats a method name and parameter types for diagnostics.
+     */
     static String toMethodParametersString(final String methodName, ClassNode... parameters) {
         if (parameters == null) parameters = ClassNode.EMPTY_ARRAY;
         var joiner = new StringJoiner(", ", methodName + "(", ")");
@@ -790,6 +878,9 @@ public abstract class StaticTypeCheckingSupport {
         return type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getText();
     }
 
+    /**
+     * Indicates whether {@code type} implements or inherits from {@code superOrInterface}.
+     */
     public static boolean implementsInterfaceOrIsSubclassOf(final ClassNode type, final ClassNode superOrInterface) {
         if (type.isArray() && superOrInterface.isArray()) {
             return implementsInterfaceOrIsSubclassOf(type.getComponentType(), superOrInterface.getComponentType());
@@ -819,11 +910,17 @@ public abstract class StaticTypeCheckingSupport {
 
     private static final Integer NON_NUMBER_DEFAULT = 9; // GROOVY-10869: boolean, char, ...
 
+    /**
+     * Returns the numeric widening distance between two primitive-like types.
+     */
     static int getPrimitiveDistance(final ClassNode primA, final ClassNode primB) {
         return Math.abs(NUMBER_TYPES.getOrDefault(primA, NON_NUMBER_DEFAULT)
                       - NUMBER_TYPES.getOrDefault(primB, NON_NUMBER_DEFAULT));
     }
 
+    /**
+     * Returns the relative conversion distance from the actual type to the expected type.
+     */
     static int getDistance(final ClassNode actual, final ClassNode expect) {
         if (actual.isArray() && expect.isArray()) {
             return getDistance(actual.getComponentType(), expect.getComponentType());
@@ -912,6 +1009,9 @@ public abstract class StaticTypeCheckingSupport {
         return findDGMMethodsByNameAndArguments(MetaClassRegistryImpl.class.getClassLoader(), receiver, name, args);
     }
 
+    /**
+     * Returns matching extension methods for the supplied receiver and argument types.
+     */
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassLoader loader, final ClassNode receiver, final String name, final ClassNode[] args) {
         return findDGMMethodsByNameAndArguments(loader, receiver, name, args, new LinkedList<>());
     }
@@ -924,6 +1024,9 @@ public abstract class StaticTypeCheckingSupport {
         return findDGMMethodsByNameAndArguments(MetaClassRegistryImpl.class.getClassLoader(), receiver, name, args, methods);
     }
 
+    /**
+     * Adds matching extension methods for the supplied receiver and argument types.
+     */
     public static List<MethodNode> findDGMMethodsByNameAndArguments(final ClassLoader loader, final ClassNode receiver, final String name, final ClassNode[] args, final List<MethodNode> methods) {
         methods.addAll(findDGMMethodsForClassNode(loader, receiver, name));
         return methods.isEmpty() ? methods : chooseBestMethod(receiver, methods, args);
@@ -953,11 +1056,11 @@ public abstract class StaticTypeCheckingSupport {
 
         // GROOVY-8965: type disjunction
         boolean duckType = receiver instanceof UnionTypeClassNode;
-        if (methods.size() > 1 && !first(methods).isConstructor())
-            methods = removeCovariantsAndInterfaceEquivalents(methods, duckType);
-
-        if (!duckType && argumentTypes == null) {
-            return asList(methods); // GROOVY-11683: no covariants or equivalents
+        if (!duckType) {
+            if (methods.size() > 1 && !first(methods).isConstructor())
+                methods = removeCovariantsAndInterfaceEquivalents(methods, false);
+            if (argumentTypes == null)
+                return asList(methods); // GROOVY-11683: no covariants or equivalents
         }
 
         Set<MethodNode> bestMethods = new HashSet<>(); // choose best method(s) for each possible receiver
@@ -965,6 +1068,9 @@ public abstract class StaticTypeCheckingSupport {
             var view = methods;
             if (duckType) {
                 view = methods.stream().filter(m -> implementsInterfaceOrSubclassOf(rcvr, m.getDeclaringClass())).toList();
+                if (view.size() > 1) { // GROOVY-11888
+                    view = removeCovariantsAndInterfaceEquivalents(view, true);
+                }
             }
             view = chooseBestMethods(rcvr, view, argumentTypes);
             if (view.isEmpty()) {
@@ -1278,6 +1384,9 @@ public abstract class StaticTypeCheckingSupport {
         return genericsType;
     }
 
+    /**
+     * Resolves placeholders and wildcard bounds within the supplied type.
+     */
     protected static ClassNode fullyResolveType(final ClassNode type, final Map<GenericsTypeName, GenericsType> placeholders) {
         if (type.isArray()) {
             return fullyResolveType(type.getComponentType(), placeholders).makeArray();
@@ -1354,6 +1463,9 @@ public abstract class StaticTypeCheckingSupport {
         return true;
     }
 
+    /**
+     * Checks whether the candidate method remains compatible after applying generics.
+     */
     protected static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] argumentTypes, final MethodNode candidateMethod) {
         if (candidateMethod instanceof ExtensionMethodNode) {
             ClassNode[] realTypes = new ClassNode[argumentTypes.length + 1];
@@ -1559,6 +1671,9 @@ public abstract class StaticTypeCheckingSupport {
         }
     }
 
+    /**
+     * Applies resolved placeholders and the surrounding context to the supplied type.
+     */
     public static ClassNode resolveClassNodeGenerics(Map<GenericsTypeName, GenericsType> resolvedPlaceholders, final Map<GenericsTypeName, GenericsType> placeholdersFromContext, final ClassNode currentType) {
         ClassNode type = currentType; // GROOVY-10280, et al.
         type = applyGenericsContext(resolvedPlaceholders, type);
@@ -1566,6 +1681,9 @@ public abstract class StaticTypeCheckingSupport {
         return type;
     }
 
+    /**
+     * Applies new generics connections to previously resolved placeholders.
+     */
     static void applyGenericsConnections(final Map<GenericsTypeName, GenericsType> connections, final Map<GenericsTypeName, GenericsType> resolvedPlaceholders) {
         if (connections == null || connections.isEmpty()) return;
         for (Map.Entry<GenericsTypeName, GenericsType> entry : resolvedPlaceholders.entrySet()) {
@@ -1761,24 +1879,63 @@ public abstract class StaticTypeCheckingSupport {
         connections.put(new GenericsTypeName(placeholderName), gt);
     }
 
+    /**
+     * Returns the generics for the innermost component type of an array.
+     */
     static GenericsType[] getGenericsWithoutArray(final ClassNode type) {
         if (type.isArray()) return getGenericsWithoutArray(type.getComponentType());
         return type.getGenericsTypes();
     }
 
+    /**
+     * Tracks placeholder names whose bounds are currently being expanded by
+     * {@link #applyGenericsContext}, so the recursion can break cycles caused
+     * by F-bounded type parameters whose self-reference appears inside a
+     * wildcard bound (GROOVY-11022). The backing deque is allocated lazily —
+     * the cycle-breaking machinery is only needed when an F-bounded
+     * placeholder is actually encountered, which is rare on the STC hot path.
+     */
+    private static final class BoundExpansionContext {
+        private Deque<GenericsTypeName> expanding;
+
+        boolean isExpanding(final GenericsTypeName name) {
+            return expanding != null && expanding.contains(name);
+        }
+
+        void enter(final GenericsTypeName name) {
+            if (expanding == null) expanding = new ArrayDeque<>();
+            expanding.push(name);
+        }
+
+        void exit() {
+            expanding.pop();
+        }
+    }
+
+    /**
+     * Applies the supplied generics context to the given generic arguments.
+     */
     static GenericsType[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
         if (gts == null || spec == null || spec.isEmpty()) return gts;
+        return applyGenericsContext(new BoundExpansionContext(), spec, gts);
+    }
 
+    private static GenericsType applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
+        return applyGenericsContext(new BoundExpansionContext(), spec, gt);
+    }
+
+    private static GenericsType[] applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final GenericsType[] gts) {
+        if (gts == null) return null;
         int n = gts.length;
         if (n == 0) return gts;
         GenericsType[] newGTs = new GenericsType[n];
         for (int i = 0; i < n; i += 1) {
-            newGTs[i] = applyGenericsContext(spec, gts[i]);
+            newGTs[i] = applyGenericsContext(ctx, spec, gts[i]);
         }
         return newGTs;
     }
 
-    private static GenericsType applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
+    private static GenericsType applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final GenericsType gt) {
         ClassNode type = gt.getType();
 
         if (gt.isPlaceholder()) {
@@ -1786,16 +1943,25 @@ public abstract class StaticTypeCheckingSupport {
             GenericsType specType = spec.get(name);
             if (specType != null) return specType;
             if (hasNonTrivialBounds(gt)) {
-                GenericsType newGT = new GenericsType(type, applyGenericsContext(spec, gt.getUpperBounds()), applyGenericsContext(spec, gt.getLowerBound()));
-                newGT.setPlaceholder(true);
-                return newGT;
+                // GROOVY-11022: avoid infinite recursion on F-bounded type
+                // parameters whose self-reference appears inside a wildcard
+                // bound (e.g. `<K extends Comparable<? super K>>`)
+                if (ctx.isExpanding(name)) return gt;
+                ctx.enter(name);
+                try {
+                    GenericsType newGT = new GenericsType(type, applyGenericsContext(ctx, spec, gt.getUpperBounds()), applyGenericsContext(ctx, spec, gt.getLowerBound()));
+                    newGT.setPlaceholder(true);
+                    return newGT;
+                } finally {
+                    ctx.exit();
+                }
             }
             return gt;
         }
 
         if (gt.isWildcard()) { // TODO: What if a bound itself resolves to a wildcard?
-            ClassNode[] upperBounds = applyGenericsContext(spec, gt.getUpperBounds());
-            ClassNode   lowerBound = applyGenericsContext(spec, gt.getLowerBound());
+            ClassNode[] upperBounds = applyGenericsContext(ctx, spec, gt.getUpperBounds());
+            ClassNode   lowerBound = applyGenericsContext(ctx, spec, gt.getLowerBound());
             GenericsType newGT = new GenericsType(type, upperBounds, lowerBound);
             newGT.setWildcard(true);
             return newGT;
@@ -1803,20 +1969,20 @@ public abstract class StaticTypeCheckingSupport {
 
         ClassNode newType;
         if (type.isArray()) {
-            newType = applyGenericsContext(spec, type.getComponentType()).makeArray();
+            newType = applyGenericsContext(ctx, spec, type.getComponentType()).makeArray();
         } else if (type.getGenericsTypes() == null//type.isGenericsPlaceHolder()
                 && type.getOuterClass() == null) {
             return gt;
         } else {
             newType = type.getPlainNodeReference();
             newType.setGenericsPlaceHolder(type.isGenericsPlaceHolder());
-            newType.setGenericsTypes(applyGenericsContext(spec, type.getGenericsTypes()));
+            newType.setGenericsTypes(applyGenericsContext(ctx, spec, type.getGenericsTypes()));
 
             // GROOVY-10646: non-static inner class + outer class type parameter
             if ((type.getModifiers() & Opcodes.ACC_STATIC) == 0) {
                 Optional.ofNullable(type.getOuterClass())
                     .filter(oc -> oc.getGenericsTypes()!=null)
-                    .map(oc -> applyGenericsContext(spec, oc))
+                    .map(oc -> applyGenericsContext(ctx, spec, oc))
                     .ifPresent(oc -> newType.putNodeMetaData("outer.class", oc));
             }
         }
@@ -1837,27 +2003,45 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
+    /**
+     * Applies the supplied generics context to the given types.
+     */
     static ClassNode[] applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] types) {
+        if (types == null) return null;
+        return applyGenericsContext(new BoundExpansionContext(), spec, types);
+    }
+
+    private static ClassNode[] applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final ClassNode[] types) {
         if (types == null) return null;
         final int nTypes = types.length;
         ClassNode[] newTypes = new ClassNode[nTypes];
         for (int i = 0; i < nTypes; i += 1) {
-            newTypes[i] = applyGenericsContext(spec, types[i]);
+            newTypes[i] = applyGenericsContext(ctx, spec, types[i]);
         }
         return newTypes;
     }
 
+    /**
+     * Applies the supplied generics context to the given type.
+     */
     static ClassNode applyGenericsContext(final Map<GenericsTypeName, GenericsType> spec, final ClassNode type) {
         if (type == null || !isUsingGenericsOrIsArrayUsingGenerics(type)) {
             return type;
         }
+        return applyGenericsContext(new BoundExpansionContext(), spec, type);
+    }
+
+    private static ClassNode applyGenericsContext(final BoundExpansionContext ctx, final Map<GenericsTypeName, GenericsType> spec, final ClassNode type) {
+        if (type == null || !isUsingGenericsOrIsArrayUsingGenerics(type)) {
+            return type;
+        }
         if (type.isArray()) {
-            return applyGenericsContext(spec, type.getComponentType()).makeArray();
+            return applyGenericsContext(ctx, spec, type.getComponentType()).makeArray();
         }
 
         GenericsType[] gt = type.getGenericsTypes();
         if (asBoolean(spec)) {
-            gt = applyGenericsContext(spec, gt);
+            gt = applyGenericsContext(ctx, spec, gt);
         }
         if (!type.isGenericsPlaceHolder()) { // convert Type<T> to Type<...>
             ClassNode cn = type.getPlainNodeReference();
@@ -1880,6 +2064,9 @@ public abstract class StaticTypeCheckingSupport {
         return type; // nothing to do
     }
 
+    /**
+     * Returns the most representative bound for the supplied generics type.
+     */
     static ClassNode getCombinedBoundType(final GenericsType genericsType) {
         // TODO: This method should really return some kind of meta ClassNode
         // representing the combination of all bounds. The code here just picks
@@ -1891,6 +2078,9 @@ public abstract class StaticTypeCheckingSupport {
         return genericsType.getType();
     }
 
+    /**
+     * Combines two generics witnesses into a single representative type.
+     */
     static GenericsType getCombinedGenericsType(final GenericsType gt1, final GenericsType gt2) {
         // GROOVY-7992, GROOVY-10765: "? super T" for gt1 or gt2?
         if (isUnboundedWildcard(gt1) != isUnboundedWildcard(gt2)) return isUnboundedWildcard(gt2) ? gt1 : gt2;
@@ -1961,6 +2151,9 @@ public abstract class StaticTypeCheckingSupport {
         return newType;
     }
 
+    /**
+     * Indicates whether the wildcard has no explicit bounds.
+     */
     public static boolean isUnboundedWildcard(final GenericsType gt) {
         if (gt.isWildcard() && gt.getLowerBound() == null) {
             ClassNode[] upperBounds = gt.getUpperBounds();
@@ -1970,6 +2163,9 @@ public abstract class StaticTypeCheckingSupport {
         return false;
     }
 
+    /**
+     * Extracts generics placeholders visible from the current {@code this} context.
+     */
     static Map<GenericsTypeName, GenericsType> extractGenericsParameterMapOfThis(final TypeCheckingContext context) {
         ClassNode  cn = context.getEnclosingClassNode();
         MethodNode mn = context.getEnclosingMethod();
@@ -2215,6 +2411,9 @@ public abstract class StaticTypeCheckingSupport {
         return GeneralUtils.getInterfacesAndSuperInterfaces(node);
     }
 
+    /**
+     * Corrects the supplied class node against a generics specification.
+     */
     @Deprecated(forRemoval = true, since = "4.0.0")
     public static ClassNode getCorrectedClassNode(final ClassNode cn, final ClassNode sc, final boolean completed) {
         if (completed && GenericsUtils.hasUnresolvedGenerics(cn)) return sc.getPlainNodeReference();
@@ -2239,6 +2438,9 @@ public abstract class StaticTypeCheckingSupport {
                 && !genericsTypes[0].isWildcard();
     }
 
+    /**
+     * Returns matching setter methods from the class and its interfaces.
+     */
     @Deprecated(since = "5.0.0")
     public static List<MethodNode> findSetters(final ClassNode cn, final String setterName, final boolean voidOnly) {
         List<MethodNode> result = new ArrayList<>();
@@ -2259,6 +2461,9 @@ public abstract class StaticTypeCheckingSupport {
         return (!voidOnly || mn.isVoidMethod()) && mn.getParameters().length == 1;
     }
 
+    /**
+     * Returns the trait self type referenced by the supplied variable, if any.
+     */
     public static ClassNode isTraitSelf(final VariableExpression vexp) {
         if (Traits.THIS_OBJECT.equals(vexp.getName())) {
             Variable accessedVariable = vexp.getAccessedVariable();
@@ -2277,116 +2482,221 @@ public abstract class StaticTypeCheckingSupport {
      * A DGM-like class which adds support for method calls which are handled by
      * the Groovy compiler.
      */
+    /**
+     * DGM-like helpers for object arrays.
+     */
     public static class ObjectArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static <T> T getAt(final T[] array, final int index) {
             @SuppressWarnings("unchecked")
             T t = (T)BytecodeInterface8.objectArrayGet(array, index);
             return t;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static <T, U extends T> void putAt(final T[] array, final int index, final U value) {
             BytecodeInterface8.objectArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code boolean[]} access.
+     */
     public static class BooleanArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static boolean getAt(final boolean[] array, final int index) {
             return BytecodeInterface8.zArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Boolean getAt$$bridge(final boolean[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final boolean[] array, final int index, final boolean value) {
             BytecodeInterface8.zArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code char[]} access.
+     */
     public static class CharArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static char getAt(final char[] array, final int index) {
             return BytecodeInterface8.cArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Character getAt$$bridge(final char[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final char[] array, final int index, final char value) {
             BytecodeInterface8.cArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code byte[]} access.
+     */
     public static class ByteArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static byte getAt(final byte[] array, final int index) {
             return BytecodeInterface8.bArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Byte getAt$$bridge(final byte[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final byte[] array, final int index, final byte value) {
             BytecodeInterface8.bArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code short[]} access.
+     */
     public static class ShortArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static short getAt(final short[] array, final int index) {
             return BytecodeInterface8.sArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Short getAt$$bridge(final short[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final short[] array, final int index, final short value) {
             BytecodeInterface8.sArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code int[]} access.
+     */
     public static class IntArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static int getAt(final int[] array, final int index) {
             return BytecodeInterface8.intArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Integer getAt$$bridge(final int[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final int[] array, final int index, final int value) {
             BytecodeInterface8.intArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code long[]} access.
+     */
     public static class LongArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static long getAt(final long[] array, final int index) {
             return BytecodeInterface8.lArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Long getAt$$bridge(final long[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final long[] array, final int index, final long value) {
             BytecodeInterface8.lArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code float[]} access.
+     */
     public static class FloatArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static float getAt(final float[] array, final int index) {
             return BytecodeInterface8.fArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Float getAt$$bridge(final float[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final float[] array, final int index, final float value) {
             BytecodeInterface8.fArraySet(array, index, value);
         }
     }
 
+    /**
+     * DGM-like helpers for {@code double[]} access.
+     */
     public static class DoubleArrayStaticTypesHelper {
+        /**
+         * Returns the element at the supplied index.
+         */
         public static double getAt(final double[] array, final int index) {
             return BytecodeInterface8.dArrayGet(array, index);
         }
+        /**
+         * Returns the boxed element at the supplied index.
+         */
         @Deprecated(since = "5.0.0")
         public static Double getAt$$bridge(final double[] array, final int index) {
             return array != null ? array[index] : null;
         }
+        /**
+         * Stores the element at the supplied index.
+         */
         public static void putAt(final double[] array, final int index, final double value) {
             BytecodeInterface8.dArraySet(array, index, value);
         }

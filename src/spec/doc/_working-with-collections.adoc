@@ -251,6 +251,115 @@ the class, then you must use `getClass()`:
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_property_gotcha,indent=0]
 --------------------------------------------------
 
+[[Maps-PropertyVsSubscript]]
+==== Property access versus subscript and `get`
+
+Because `map.k` reads the *key* `k` (rather than a bean property), property access, the subscript operator
+and `get` can diverge once a key collides with a real property. Every cell in the tables below is included
+from a passing assertion in `WorkingWithCollectionsTest`, so they always reflect the current runtime.
+
+For a *plain* map there are only entries, so all four forms agree:
+
+[cols="2,^1a,^1a,^1a,^1a",options="header"]
+.Plain map (`[foo:'bar']`, `[class:'C']`, `[:]`)
+|===
+| key | `m.k` | `m.k` (`@CompileStatic`) | `m['k']` | `m.get('k')`
+
+| ordinary (`'foo'`)
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_ordinary,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_ordinary,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_ordinary,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_ordinary,indent=0]
+
+| meta-name present (`'class'`)
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_present,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_present,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_present,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_present,indent=0]
+
+| meta-name absent (`'class'`)
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_absent,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_absent,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_absent,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t1_absent,indent=0]
+|===
+
+A map *subclass* can declare real properties. Then `m.k` reads the property (identically under dynamic and
+`@CompileStatic` compilation), while `m['k']` and `m.get('k')` read the entry:
+
+[source,groovy]
+--------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_class,indent=0]
+--------------------------------------------------
+
+then, after `m.put('foo', 11)` and `m.put('baz', 33)`:
+
+[cols="2,^1a,^1a,^1a,^1a",options="header"]
+.Map subclass with declared properties `foo`, `bar`
+|===
+| key | `m.k` | `m.k` (`@CompileStatic`) | `m['k']` | `m.get('k')`
+
+| `'foo'` (property=1, entry=11)
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_foo_prop,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_foo_prop,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_foo_entry,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_foo_entry,indent=0]
+
+| `'bar'` (property=2, no entry)
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_bar_prop,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_bar_prop,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_bar_entry,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_bar_entry,indent=0]
+
+| `'baz'` (no property, entry=33)
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_baz,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_baz,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_baz,indent=0]
+a|
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=t2_baz,indent=0]
+|===
+
+Two things to take away: after the addition of `getAt(Map, String)`/`putAt(Map, String, V)`, `m['k']` is
+equivalent to `m.get('k')` in every row and both compilation modes; and `m.k` resolves to a declared
+property when one exists (use `['k']`/`get` to be sure of reading the entry).
+
+The tables above all use an explicit receiver `m`. A separate gotcha applies to an *unqualified* name read
+inside the body of a `Map` subclass -- a method, a `with(map) { ... }` block, or an anonymous-inner-class
+initializer. There the implicit receiver is the map itself, so the name is a property read on `this` and
+resolves to the *entry*, not to any binding in an enclosing scope. From Groovy 5, this self property takes
+precedence over an enclosing-class field of the same name (see https://issues.apache.org/jira/browse/GROOVY-10985[GROOVY-10985]),
+so such a reference silently yields `null` for a missing entry rather than reading the field:
+
+[source,groovy]
+--------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=bare_self_shadow,indent=0]
+--------------------------------------------------
+
+Qualify the outer reference (`Outer.NAME` above) to read the enclosing field.
+
 === Iterating on maps
 
 As usual in the {gdk}, idiomatic iteration on maps makes use of the `each` and `eachWithIndex` methods.

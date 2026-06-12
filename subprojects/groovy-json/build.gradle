@@ -24,6 +24,7 @@ dependencies {
     api rootProject // JsonBuilder extends GroovyObjectSupport...
 
     testImplementation projects.groovyTest
+    testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation projects.groovyDateutil
     testImplementation 'net.javacrumbs.json-unit:json-unit:2.38.0' // 3.0.0 requires JDK17
 
@@ -33,8 +34,9 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
+    testRuntimeOnly projects.groovyGrapeIvy
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
-    testRuntimeOnly 'com.google.code.gson:gson:2.13.2' // json-unit requires gson, jackson1 or jackson2
+    testRuntimeOnly 'com.google.code.gson:gson:2.14.0' // json-unit requires gson, jackson1 or jackson2
 }
 
 plugins.withId('eclipse') {

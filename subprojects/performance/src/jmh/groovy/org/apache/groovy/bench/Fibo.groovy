@@ -18,8 +18,16 @@
  */
 package org.apache.groovy.bench
 
+/**
+ * Helper class providing Fibonacci function implementation for benchmarking.
+ */
 class Fibo {
 
+    /**
+     * Computes the nth Fibonacci number recursively.
+     * @param n the position in the Fibonacci sequence
+     * @return the Fibonacci value at position n
+     */
     static int fib(int n) {
         if (n < 2) return 1
         return fib(n - 2) + fib(n - 1)

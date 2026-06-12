@@ -17,10 +17,19 @@ import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import java.nio.file.Files
 import java.nio.file.Path
 
+/**
+ * Shared conversion helpers for rendering, parsing, and persisting shell values.
+ */
 class Utils {
 
     private Utils() {}
 
+    /**
+     * Renders a shell value as a human-readable string.
+     *
+     * @param object value to render
+     * @return string representation suitable for shell output
+     */
     static String toString(Object object) {
         if (object == null) {
             return 'null'
@@ -32,11 +41,23 @@ class Utils {
         object.toString()
     }
 
+    /**
+     * Parses JSON text into the corresponding Groovy object graph.
+     *
+     * @param json JSON content to parse
+     * @return parsed object graph
+     */
     static Object toObject(String json) {
         def slurper = new JsonSlurper(type: JsonParserType.LAX)
         slurper.parseText(json)
     }
 
+    /**
+     * Converts an object into a map representation suited for shell persistence.
+     *
+     * @param object value to convert
+     * @return map view of the object
+     */
     static Map<String,Object> toMap(Object object) {
         Map<String,Object> out = [:]
         try {
@@ -54,12 +75,25 @@ class Utils {
         out
     }
 
+    /**
+     * Serializes an object to JSON, pretty-printing structured values when useful.
+     *
+     * @param object value to serialize
+     * @return JSON or plain string representation
+     */
     static String toJson(Object object) {
         String json = object instanceof String ? object : JsonOutput.toJson(object)
         (((json.startsWith("{") && json.endsWith("}"))
             || (json.startsWith("[") && json.endsWith("]"))) && json.length() > 5) ? JsonOutput.prettyPrint(json) : json
     }
 
+    /**
+     * Writes an object to disk using the requested persistence format.
+     *
+     * @param file destination file
+     * @param object value to persist
+     * @param format output format to use
+     */
     static void persist(Path file, Object object, GroovyEngine.Format format) {
         if (format == GroovyEngine.Format.JSON) {
             Files.writeString(file, JsonOutput.toJson(object))

@@ -26,16 +26,32 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @since 4.0.0
  */
 public abstract class FilterExpression extends ProcessExpression {
+    /** Filter expression applied by the clause. */
     protected Expression filterExpr;
 
+    /**
+     * Creates a filter expression.
+     *
+     * @param filterExpr the filter condition
+     */
     public FilterExpression(Expression filterExpr) {
         this.filterExpr = filterExpr;
     }
 
+    /**
+     * Returns the filter condition.
+     *
+     * @return the filter condition
+     */
     public Expression getFilterExpr() {
         return filterExpr;
     }
 
+    /**
+     * Replaces the filter condition.
+     *
+     * @param filterExpr the new filter condition
+     */
     public void setFilterExpr(Expression filterExpr) {
         this.filterExpr = filterExpr;
     }

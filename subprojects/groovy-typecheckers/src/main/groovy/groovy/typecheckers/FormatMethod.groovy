@@ -37,6 +37,8 @@ import java.lang.annotation.Target
  *
  * The {@code FormatStringChecker} ensures that the format string is valid and the
  * remaining arguments are compatible with the embedded format specifiers.
+ *
+ * @since 5.0.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

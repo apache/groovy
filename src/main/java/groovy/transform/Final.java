@@ -71,7 +71,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.FinalASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.FinalASTStubber",
+        "org.codehaus.groovy.transform.FinalASTTransformation"
+})
 public @interface Final {
     /**
      * When disabled, this annotation effectively becomes a no-op.

@@ -64,3 +64,5 @@ include::../test/SwingBuilderTest.groovy[tags=observable_binding_example,indent=
 ----
 
 <<{core-metaprogramming}#xform-Bindable,@Bindable>> is one of the core AST Transformations. It generates all the required boilerplate code to turn a simple bean into an observable one. The `bind()` node creates appropriate `PropertyChangeListeners` that will update the interested parties whenever a `PropertyChangeEvent` is fired.
+
+include::_swing-builder-widgets.adoc[leveloffset=+1]

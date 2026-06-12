@@ -37,9 +37,17 @@ public class TemplateConfiguration {
     private Locale locale = Locale.getDefault();
     private boolean cacheTemplates = true;
 
+    /**
+     * Creates a configuration instance with default markup template settings.
+     */
     public TemplateConfiguration() {
     }
 
+    /**
+     * Creates a configuration by copying values from another instance.
+     *
+     * @param that configuration to copy
+     */
     public TemplateConfiguration(TemplateConfiguration that) {
         this.declarationEncoding = that.declarationEncoding;
         this.expandEmptyElements = that.expandEmptyElements;
@@ -77,6 +85,11 @@ public class TemplateConfiguration {
         return expandEmptyElements;
     }
 
+    /**
+     * Sets whether empty elements should be expanded into explicit opening and closing tags.
+     *
+     * @param expandEmptyElements {@code true} to render {@code <tag></tag>} instead of {@code <tag/>}
+     */
     public void setExpandEmptyElements(final boolean expandEmptyElements) {
         this.expandEmptyElements = expandEmptyElements;
     }
@@ -88,14 +101,29 @@ public class TemplateConfiguration {
         return useDoubleQuotes;
     }
 
+    /**
+     * Sets whether attributes should be rendered with double quotes.
+     *
+     * @param useDoubleQuotes {@code true} to use double quotes around attribute values
+     */
     public void setUseDoubleQuotes(final boolean useDoubleQuotes) {
         this.useDoubleQuotes = useDoubleQuotes;
     }
 
+    /**
+     * Returns the line separator inserted by {@link BaseTemplate#newLine()}.
+     *
+     * @return the configured line separator
+     */
     public String getNewLineString() {
         return newLineString;
     }
 
+    /**
+     * Sets the line separator inserted by {@link BaseTemplate#newLine()}.
+     *
+     * @param newLineString line separator to emit for explicit and automatic new lines
+     */
     public void setNewLineString(final String newLineString) {
         this.newLineString = newLineString;
     }
@@ -135,22 +163,47 @@ public class TemplateConfiguration {
         this.autoIndent = autoIndent;
     }
 
+    /**
+     * Returns the indentation unit inserted when automatic indentation is enabled.
+     *
+     * @return the indentation unit string
+     */
     public String getAutoIndentString() {
         return autoIndentString;
     }
 
+    /**
+     * Sets the indentation unit inserted when automatic indentation is enabled.
+     *
+     * @param autoIndentString indentation unit to write for each nesting level
+     */
     public void setAutoIndentString(final String autoIndentString) {
         this.autoIndentString = autoIndentString;
     }
 
+    /**
+     * Indicates whether source layout should automatically insert line separators.
+     *
+     * @return {@code true} if builder blocks automatically emit new lines
+     */
     public boolean isAutoNewLine() {
         return autoNewLine;
     }
 
+    /**
+     * Sets whether source layout should automatically insert line separators.
+     *
+     * @param autoNewLine {@code true} to insert new lines based on builder block layout
+     */
     public void setAutoNewLine(final boolean autoNewLine) {
         this.autoNewLine = autoNewLine;
     }
 
+    /**
+     * Returns the base class used for generated template scripts.
+     *
+     * @return the configured base template class
+     */
     public Class<? extends BaseTemplate> getBaseTemplateClass() {
         return baseTemplateClass;
     }
@@ -165,14 +218,29 @@ public class TemplateConfiguration {
         this.baseTemplateClass = baseTemplateClass;
     }
 
+    /**
+     * Returns the locale used when resolving localized templates.
+     *
+     * @return the configured template locale
+     */
     public Locale getLocale() {
         return locale;
     }
 
+    /**
+     * Sets the locale used when resolving localized templates.
+     *
+     * @param locale locale to prefer when loading localized template resources
+     */
     public void setLocale(final Locale locale) {
         this.locale = locale;
     }
 
+    /**
+     * Indicates whether templates resolved from external resources are cached.
+     *
+     * @return {@code true} if template compilation results may be reused
+     */
     public boolean isCacheTemplates() {
         return cacheTemplates;
     }

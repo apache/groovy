@@ -32,26 +32,50 @@ import groovy.transform.stc.POJO
 @POJO
 class NamedRecord<E, T> extends NamedTuple<E> {
 
-    private static final long serialVersionUID = -2554041223576761912L
+    @Serial private static final long serialVersionUID = -2554041223576761912L
 
     private final List<String> aliasList
     private SourceRecord<T> sourceRecord
 
+    /**
+     * Creates a named record from projected values and aliases.
+     *
+     * @param elementList the projected values
+     * @param nameList the projected names
+     * @param aliasList the source aliases available for lookup
+     */
     NamedRecord(List<E> elementList, List<String> nameList, List<String> aliasList = Collections.emptyList()) {
         super(elementList, nameList)
         this.aliasList = aliasList
     }
 
+    /**
+     * Returns the tuple-style string form of this record.
+     *
+     * @return the string form of this record
+     */
     @Override
     String toString() {
         return super.toString()
     }
 
+    /**
+     * Returns the value for the supplied name.
+     *
+     * @param name the projected name or source alias
+     * @return the matching value
+     */
     @Override
     def get(String name) {
         return getAt(name)
     }
 
+    /**
+     * Returns the value for the supplied name, falling back to the source record.
+     *
+     * @param name the projected name or source alias
+     * @return the matching value
+     */
     @Override
     def getAt(String name) {
         if (exists(name)) {
@@ -60,10 +84,21 @@ class NamedRecord<E, T> extends NamedTuple<E> {
         return sourceRecord?.get(name)
     }
 
+    /**
+     * Returns the source aliases available to this record.
+     *
+     * @return the source aliases
+     */
     List<String> getAliasList() {
         return Collections.unmodifiableList(aliasList)
     }
 
+    /**
+     * Attaches the original source record for alias-based lookups.
+     *
+     * @param sr the source record
+     * @return this record
+     */
     NamedRecord<E, T> sourceRecord(T sr) {
         sourceRecord = new SourceRecord<>(sr, getAliasList())
         return this

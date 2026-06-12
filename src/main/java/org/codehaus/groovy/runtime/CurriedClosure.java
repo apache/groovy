@@ -20,6 +20,8 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.Serial;
+
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 
 /**
@@ -28,7 +30,7 @@ import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
  * <code>ncurry()</code> methods on <code>Closure</code>.
  * <p>
  * Typical usages:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * // normal usage
  * def unitAdder = { first, second, unit {@code ->} "${first + second} $unit" }
  * assert unitAdder(10, 15, "minutes") == "25 minutes"
@@ -49,7 +51,7 @@ import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
  */
 public final class CurriedClosure<V> extends Closure<V> {
 
-    private static final long serialVersionUID = 2077643745780234126L;
+    @Serial private static final long serialVersionUID = 2077643745780234126L;
     private final Object[] curriedArguments;
     private final int minParamsExpected;
     private int index;
@@ -105,6 +107,28 @@ public final class CurriedClosure<V> extends Closure<V> {
     }
 
     //--------------------------------------------------------------------------
+
+    /**
+     * Fast path for the dominant rcurry/curry shape — one curried argument and a
+     * single incoming argument against a binary owner. Skips the wrapping
+     * {@code Object[1]} that {@link Closure#call(Object)} would otherwise allocate
+     * before dispatch, leaving just the one combined {@code Object[2]} that the
+     * underlying call already requires.
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public V call(final Object argument) {
+        if (varargType == null
+                && curriedArguments.length == 1
+                && maximumNumberOfParameters == 1
+                && (index == 0 || index == 1)) {
+            Object[] combined = index == 0
+                    ? new Object[]{curriedArguments[0], argument}
+                    : new Object[]{argument, curriedArguments[0]};
+            return (V) getOwner().call(combined);
+        }
+        return super.call(argument);
+    }
 
     public Object[] getUncurriedArguments(final Object... arguments) {
         if (isVararg()) {

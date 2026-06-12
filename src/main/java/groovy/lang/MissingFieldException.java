@@ -18,30 +18,52 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
+
 /**
  * An exception occurred if a dynamic field dispatch fails with an unknown field.
- * 
+ *
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
  */
 public class MissingFieldException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = -9209464582858098430L;
+    @Serial private static final long serialVersionUID = -9209464582858098430L;
     private final String field;
     private final Class type;
 
+    /**
+     * Creates an exception for a missing field.
+     *
+     * @param field the missing field name
+     * @param type the target type
+     */
     public MissingFieldException(String field, Class type) {
         super("No such field: " + field + " for class: " + type.getName());
         this.field = field;
         this.type = type;
     }
 
+    /**
+     * Creates an exception for a missing field with an underlying cause.
+     *
+     * @param field the missing field name
+     * @param type the target type
+     * @param e the underlying cause
+     */
     public MissingFieldException(String field, Class type, Throwable e) {
         super("No such field: " + field + " for class: " + type.getName() + ". Reason: " + e, e);
         this.field = field;
         this.type = type;
     }
 
+    /**
+     * Creates an exception with a custom message for a missing field.
+     *
+     * @param message the detail message
+     * @param field the missing field name
+     * @param type the target type
+     */
     public MissingFieldException(String message, String field, Class type) {
         super(message);
         this.field = field;
@@ -56,7 +78,7 @@ public class MissingFieldException extends GroovyRuntimeException {
     }
 
     /**
-     * 
+     *
      * @return The type on which the field was attempted to be called
      */
     public Class getType() {

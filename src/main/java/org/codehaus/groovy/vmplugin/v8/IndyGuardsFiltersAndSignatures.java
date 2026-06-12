@@ -58,6 +58,9 @@ public class IndyGuardsFiltersAndSignatures {
             OBJECT_FILTER = MethodType.methodType(Object.class, Object.class),
             OBJECT_GUARD = MethodType.methodType(boolean.class, Object.class);
 
+    /**
+     * Shared guards, filters, constructors, and invokers used when assembling indy call paths.
+     */
     protected static final MethodHandle
             SAME_CLASS, SAME_CLASSES, SAME_MC, IS_NULL, NON_NULL,
             UNWRAP_METHOD, UNWRAP_EXCEPTION,
@@ -112,6 +115,9 @@ public class IndyGuardsFiltersAndSignatures {
         }
     }
 
+    /**
+     * Constant handle that always returns {@code null}.
+     */
     protected static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
 
     /**

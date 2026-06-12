@@ -71,6 +71,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -79,33 +80,52 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.jline.console.ConsoleEngine.VAR_NANORC;
-
 /**
  * Implements Groovy ScriptEngine.
  * You must be very careful when using GroovyEngine in a multithreaded environment. The Binding instance is not
  * thread safe, and it is shared by all scripts.
  */
+@SuppressWarnings("deprecation")
 public class GroovyEngine implements ScriptEngine {
+    /**
+     * Serialization/deserialization format options.
+     */
     public enum Format {
+        /** JSON format */
         JSON,
+        /** Groovy format */
         GROOVY,
+        /** No format */
         NONE,
+        /** Auto-detect format */
         AUTO
     }
 
+    /** Option key for using canonical class names in descriptions */
     public static final String CANONICAL_NAMES = "canonicalNames";
+    /** Option key for nanorc syntax file location */
     public static final String NANORC_SYNTAX = "nanorcSyntax";
+    /** Option key for nanorc value configuration */
     public static final String NANORC_VALUE = "nanorcValue";
+    /** Environment variable for Groovy color settings */
     public static final String GROOVY_COLORS = "GROOVY_COLORS";
+    /** Option key to disable syntax checking */
     public static final String NO_SYNTAX_CHECK = "noSyntaxCheck";
+    /** Option key for restricted completion mode */
     public static final String RESTRICTED_COMPLETION = "restrictedCompletion";
+    /** Option key to enable completion for all fields including non-public */
     public static final String ALL_FIELDS_COMPLETION = "allFieldsCompletion";
+    /** Option key to enable completion for all methods including non-public */
     public static final String ALL_METHODS_COMPLETION = "allMethodsCompletion";
+    /** Option key to enable completion for all constructors including non-public */
     public static final String ALL_CONSTRUCTORS_COMPLETION = "allConstructorsCompletion";
+    /** Option key to enable completion for all classes including non-public */
     public static final String ALL_CLASSES_COMPLETION = "allClassesCompletion";
+    /** Option key to enable identifier completion */
     public static final String IDENTIFIERS_COMPLETION = "identifiersCompletion";
+    /** Option key to enable meta-method completion */
     public static final String META_METHODS_COMPLETION = "metaMethodsCompletion";
+    /** Option key to enable synthetic method completion */
     public static final String SYNTHETIC_METHODS_COMPLETION = "syntheticMethodsCompletion";
 
     private static final String VAR_GROOVY_OPTIONS = "GROOVY_OPTIONS";
@@ -141,6 +161,7 @@ public class GroovyEngine implements ScriptEngine {
             "java.math.BigDecimal");
     private final Map<String, Class<?>> defaultNameClass = new TreeMap<>();
     private final GroovyShell shell;
+    /** Shared binding that stores variables visible to interactive scripts. */
     protected Binding sharedData;
     private final List<Snippet> snippets = new ArrayList<>();
     private final Map<String, Integer> imports = new LinkedHashMap<>();
@@ -150,18 +171,37 @@ public class GroovyEngine implements ScriptEngine {
     private final Map<String, Integer> types = new LinkedHashMap<>();
     private final Map<String, Class<?>> nameClass;
     private Cloner objectCloner = new ObjectCloner();
+    /** Class loader for dynamically loaded Groovy classes */
     protected final EngineClassLoader classLoader;
     private SyntaxHighlighter syntaxHighlighter;
     private String syntaxHighlighterStyle;
 
+    /**
+     * Strategy used to clone session values for completion and inspection workflows.
+     */
     public interface Cloner {
+        /**
+         * Creates a copy of the given object.
+         *
+         * @param obj the object to clone
+         * @return a copy of the object
+         */
         Object clone(Object obj);
 
+        /**
+         * Marks the current state of the cache.
+         */
         void markCache();
 
+        /**
+         * Purges cache entries created since the last mark.
+         */
         void purgeCache();
     }
 
+    /**
+     * Constructs a new GroovyEngine with default configuration.
+     */
     public GroovyEngine() {
         sharedData = new Binding();
 // for debugging
@@ -174,6 +214,11 @@ public class GroovyEngine implements ScriptEngine {
         nameClass = new HashMap<>(defaultNameClass);
     }
 
+    /**
+     * Returns all defined types mapped to their source definitions.
+     *
+     * @return map of type names to their source code
+     */
     public Map<String, String> getTypes() {
         Map<String, String> out = new LinkedHashMap<>();
         types.forEach((String key, Integer index) -> {
@@ -185,6 +230,11 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Returns all defined variables mapped to their source definitions.
+     *
+     * @return map of variable names to their source code
+     */
     public Map<String, String> getVariables() {
         Map<String, String> out = new LinkedHashMap<>();
         variables.forEach((String key, Integer index) -> {
@@ -196,6 +246,11 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Returns all defined methods mapped to their source definitions.
+     *
+     * @return map of method signatures to their source code
+     */
     public Map<String, String> getMethods() {
         Map<String, String> out = new HashMap<>();
         methods.forEach((String key, Integer index) -> {
@@ -207,10 +262,20 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Returns the set of defined method names.
+     *
+     * @return unmodifiable set of method names
+     */
     public Set<String> getMethodNames() {
         return DefaultGroovyMethods.asUnmodifiable(methodNames);
     }
 
+    /**
+     * Returns all import statements mapped to their source definitions.
+     *
+     * @return map of import identifiers to their source code
+     */
     public Map<String, String> getImports() {
         Map<String, String> out = new HashMap<>();
         imports.forEach((String key, Integer index) -> {
@@ -222,26 +287,55 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Returns the completer for Groovy script completions.
+     *
+     * @return a completer instance
+     */
     @Override
     public Completer getScriptCompleter() {
         return compileCompleter();
     }
 
+    /**
+     * Checks if a variable with the given name exists in the binding.
+     *
+     * @param name the variable name to check
+     * @return {@code true} if the variable exists, {@code false} otherwise
+     */
     @Override
     public boolean hasVariable(String name) {
         return sharedData.hasVariable(name);
     }
 
+    /**
+     * Stores a variable in the binding.
+     *
+     * @param name the variable name
+     * @param value the value to store
+     */
     @Override
     public void put(String name, Object value) {
         sharedData.setProperty(name, value);
     }
 
+    /**
+     * Retrieves a variable from the binding.
+     *
+     * @param name the variable name
+     * @return the variable value, or {@code null} if not found
+     */
     @Override
     public Object get(String name) {
         return sharedData.hasVariable(name) ? sharedData.getVariable(name) : null;
     }
 
+    /**
+     * Finds variables matching the given pattern.
+     *
+     * @param name the variable name pattern, or {@code null} to return all variables
+     * @return a map of matching variable names to their values
+     */
     @SuppressWarnings("unchecked")
     @Override
     public Map<String, Object> find(String name) {
@@ -256,20 +350,37 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Returns the list of supported serialization formats.
+     *
+     * @return list of format names
+     */
     @Override
     public List<String> getSerializationFormats() {
         return Arrays.asList(Format.JSON.toString(), Format.NONE.toString());
     }
 
+    /**
+     * Returns the list of supported deserialization formats.
+     *
+     * @return list of format names
+     */
     @Override
     public List<String> getDeserializationFormats() {
         return Arrays.asList(Format.JSON.toString(), Format.GROOVY.toString(), Format.NONE.toString());
     }
 
+    /**
+     * Deserializes a string value according to the specified format.
+     *
+     * @param value the string to deserialize
+     * @param formatStr the format name (JSON, GROOVY, NONE, or AUTO)
+     * @return the deserialized object
+     */
     @Override
     public Object deserialize(String value, String formatStr) {
         Object out = value;
-        Format format = formatStr != null && !formatStr.isEmpty() ? Format.valueOf(formatStr.toUpperCase()) : null;
+        Format format = formatStr != null && !formatStr.isEmpty() ? Format.valueOf(formatStr.toUpperCase(Locale.ROOT)) : null;
         if (format == Format.NONE) {
             // do nothing
         } else if (format == Format.JSON) {
@@ -312,16 +423,37 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Persists an object to a file using the default serialization format.
+     *
+     * @param file the target file path
+     * @param object the object to persist
+     */
     @Override
     public void persist(Path file, Object object) {
         persist(file, object, getSerializationFormats().get(0));
     }
 
+    /**
+     * Persists an object to a file using the specified serialization format.
+     *
+     * @param file the target file path
+     * @param object the object to persist
+     * @param format the format name to use
+     */
     @Override
     public void persist(Path file, Object object, String format) {
-        Utils.persist(file, object, Format.valueOf(format.toUpperCase()));
+        Utils.persist(file, object, Format.valueOf(format.toUpperCase(Locale.ROOT)));
     }
 
+    /**
+     * Executes a Groovy script from a file.
+     *
+     * @param script the script file to execute
+     * @param args arguments to pass to the script
+     * @return the result of script execution
+     * @throws Exception if script execution fails
+     */
     @Override
     public Object execute(File script, Object[] args) throws Exception {
         sharedData.setProperty("_args", args);
@@ -397,6 +529,11 @@ public class GroovyEngine implements ScriptEngine {
         }
     }
 
+    /**
+     * Returns the current executable buffer reconstructed from the recorded snippets.
+     *
+     * @return buffer content for the current session
+     */
     public String getBuffer() {
         boolean iMode = isInterpreterMode();
         EnumSet<SnippetType> filter = iMode
@@ -405,10 +542,31 @@ public class GroovyEngine implements ScriptEngine {
         return String.join("\n\n", getSnippets(snippets, filter));
     }
 
+    /**
+     * Executes a Groovy statement.
+     *
+     * @param statement the Groovy statement to execute
+     * @return the result of statement execution
+     * @throws Exception if statement execution fails
+     */
     @Override
     public Object execute(String statement) throws Exception {
         Object out = null;
-        if (statement.matches("import\\s+(static\\s+)?(([^;\\s])+)(?:\\s+as\\s+(" + BASE_REGEX_VAR + "))?\\s*(;)?")) {
+        if (statement.matches("import\\s+module\\s+([^;\\s]+)\\s*(;)?")) {
+            String[] p = statement.split("\\s+");
+            String moduleName = p[2].replace(";", "");
+            executeStatement(shell, snippets, EnumSet.of(SnippetType.IMPORT), statement);
+            imports.put("module " + moduleName, addSnippet(SnippetType.IMPORT, statement));
+            // Populate the completion cache with exported packages from the module
+            try {
+                var finder = java.lang.module.ModuleFinder.ofSystem();
+                for (String pkg : org.codehaus.groovy.control.ModuleImportHelper.resolveModulePackages(moduleName, finder)) {
+                    addToNameClass(pkg + ".*");
+                }
+            } catch (Exception ignore) {
+                // module resolution may not be available
+            }
+        } else if (statement.matches("import\\s+(static\\s+)?(([^;\\s])+)(?:\\s+as\\s+(" + BASE_REGEX_VAR + "))?\\s*(;)?")) {
             String[] p = statement.split("\\s+");
             int classIdx = 1;
             boolean isStatic = p[1].equals("static");
@@ -417,14 +575,14 @@ public class GroovyEngine implements ScriptEngine {
             }
             String classname = null;
             if (classIdx < p.length) {
-                classname = p[classIdx].replaceAll(";", "");
+                classname = p[classIdx].replace(";", "");
                 addToNameClass(classname);
                 if (isStatic) {
                     classname = "static " + classname;
                 }
                 // check for alias
                 if (p.length > 3) {
-                    classname = p[p.length - 1].replaceAll(";", "");
+                    classname = p[p.length - 1].replace(";", "");
                 }
             }
             executeStatement(shell, snippets, EnumSet.of(SnippetType.IMPORT), statement);
@@ -548,6 +706,13 @@ public class GroovyEngine implements ScriptEngine {
         return string == null ? "" : string;
     }
 
+    /**
+     * Executes a Groovy closure with the given arguments.
+     *
+     * @param closure the closure to execute
+     * @param args arguments to pass to the closure
+     * @return the result of closure execution
+     */
     @Override
     public Object execute(Object closure, Object... args) {
         if (!(closure instanceof Closure)) {
@@ -556,11 +721,21 @@ public class GroovyEngine implements ScriptEngine {
         return ((Closure<?>) closure).call(args);
     }
 
+    /**
+     * Returns the name of this script engine.
+     *
+     * @return the engine name
+     */
     @Override
     public String getEngineName() {
         return this.getClass().getSimpleName();
     }
 
+    /**
+     * Returns the file extensions supported by this engine.
+     *
+     * @return list of supported file extensions
+     */
     @Override
     public List<String> getExtensions() {
         return Collections.singletonList("groovy");
@@ -618,6 +793,9 @@ public class GroovyEngine implements ScriptEngine {
         }
     }
 
+    /**
+     * Resets the engine state, clearing all variables, methods, types, and imports.
+     */
     public void reset() {
         imports.clear();
         snippets.clear();
@@ -657,6 +835,11 @@ public class GroovyEngine implements ScriptEngine {
         }
     }
 
+    /**
+     * Removes a method definition by name or signature.
+     *
+     * @param name method name or full signature to remove
+     */
     public void removeMethod(String name) {
         if (name.contains("(")) {
             Integer gone = methods.remove(name);
@@ -679,10 +862,15 @@ public class GroovyEngine implements ScriptEngine {
         }
     }
 
+    /**
+     * Removes an import statement by name.
+     *
+     * @param name the import identifier to remove
+     */
     public void removeImport(String name) {
         Integer gone = imports.remove(name);
         if (gone != null) snippets.set(gone, null);
-        if (name.endsWith(".*")) {
+        if (name.endsWith(".*") || name.startsWith("module ")) {
             refreshNameClass();
         } else {
             classLoader.purgeClassCache(name + "(\\$.*)?");
@@ -690,6 +878,11 @@ public class GroovyEngine implements ScriptEngine {
         }
     }
 
+    /**
+     * Removes a type definition by name.
+     *
+     * @param name the type name to remove
+     */
     public void removeType(String name) {
         Integer gone = types.remove(name);
         if (gone != null) snippets.set(gone, null);
@@ -697,11 +890,21 @@ public class GroovyEngine implements ScriptEngine {
         nameClass.remove(name);
     }
 
+    /**
+     * Removes a variable definition by name.
+     *
+     * @param name the variable name to remove
+     */
     public void removeVariable(String name) {
         Integer gone = variables.remove(name);
         if (gone != null) snippets.set(gone, null);
     }
 
+    /**
+     * Deletes multiple variables from the binding.
+     *
+     * @param vars variable names to delete
+     */
     @Override
     public void del(String... vars) {
         if (vars == null) {
@@ -712,42 +915,98 @@ public class GroovyEngine implements ScriptEngine {
         }
     }
 
+    /**
+     * Converts an object to JSON format.
+     *
+     * @param obj the object to convert
+     * @return JSON representation
+     */
     @Override
     public String toJson(Object obj) {
         return Utils.toJson(obj);
     }
 
+    /**
+     * Converts an object to Groovy string format.
+     *
+     * @param obj the object to convert
+     * @return Groovy string representation
+     */
     @Override
     public String toString(Object obj) {
         return Utils.toString(obj);
     }
 
+    /**
+     * Converts an object to a map representation.
+     *
+     * @param obj the object to convert
+     * @return map representation
+     */
     @Override
     public Map<String, Object> toMap(Object obj) {
         return Utils.toMap(obj);
     }
 
+    /**
+     * Sets the object cloner to use for copying session values.
+     *
+     * @param objectCloner the cloner implementation
+     */
     public void setObjectCloner(Cloner objectCloner) {
         this.objectCloner = objectCloner;
     }
 
+    /**
+     * Returns the current object cloner.
+     *
+     * @return the cloner implementation
+     */
     public Cloner getObjectCloner() {
         return objectCloner;
     }
 
+    /**
+     * Generates a description for the given command line.
+     *
+     * @param line the command line to describe
+     * @return the command description
+     */
     public CmdDesc scriptDescription(CmdLine line) {
         return new Inspector(this).scriptDescription(line);
     }
 
+    /**
+     * Returns the current Groovy options map.
+     *
+     * @return map of option keys to values
+     */
     @SuppressWarnings("unchecked")
     protected Map<String, Object> groovyOptions() {
         return hasVariable(VAR_GROOVY_OPTIONS) ? (Map<String, Object>) get(VAR_GROOVY_OPTIONS) : new HashMap<>();
     }
 
+    /**
+     * Returns the value of a specific Groovy option.
+     *
+     * @param option the option key
+     * @param defval the default value if option not found
+     * @param <T> the type of the option value
+     * @return the option value or default
+     */
     protected <T> T groovyOption(String option, T defval) {
         return groovyOption(groovyOptions(), option, defval);
     }
 
+    /**
+     * Returns the value of a specific option from the given options map.
+     *
+     * @param options the options map
+     * @param option the option key
+     * @param defval the default value if option not found
+     * @param <T> the type of the option value
+     * @return the option value or default
+     */
     @SuppressWarnings("unchecked")
     protected static <T> T groovyOption(Map<String, Object> options, String option, T defval) {
         T out = defval;
@@ -759,15 +1018,25 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Refreshes the syntax highlighter, forcing a reload on next use.
+     *
+     * @return true if refresh was successful
+     */
     public boolean refresh() {
         syntaxHighlighter = null;
         return true;
     }
 
+    /**
+     * Returns the syntax highlighter for Groovy code.
+     *
+     * @return the syntax highlighter instance
+     */
     protected SyntaxHighlighter getSyntaxHighlighter() {
         String syntax = groovyOption(NANORC_SYNTAX, DEFAULT_NANORC_SYNTAX);
         if (syntaxHighlighter == null || syntax == null || !syntax.equals(syntaxHighlighterStyle)) {
-            String nanorcString = (String) get(VAR_NANORC);
+            String nanorcString = (String) get("NANORC");
             Path nanorc = nanorcString != null ? Paths.get(nanorcString) : null;
             if (syntax == null) {
                 syntaxHighlighter = SyntaxHighlighter.build("");
@@ -849,6 +1118,11 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
+    /**
+     * Purges classes from the class cache matching the given regex.
+     *
+     * @param regex the pattern to match class names, or null to clear all
+     */
     public void purgeClassCache(String regex) {
         if (regex == null) {
             classLoader.clearCache();
@@ -870,17 +1144,34 @@ public class GroovyEngine implements ScriptEngine {
         classLoader.purgeClassCache();
     }
 
+    /**
+     * Custom class loader for dynamically loaded Groovy classes.
+     * Extends GroovyClassLoader with cache purging capabilities.
+     */
     public static class EngineClassLoader extends GroovyClassLoader {
 
+        /**
+         * Constructs a new EngineClassLoader.
+         */
         public EngineClassLoader() {
             super();
         }
 
+        /**
+         * Returns all packages loaded by this class loader.
+         *
+         * @return array of packages
+         */
         @Override
         public Package[] getPackages() {
             return super.getPackages();
         }
 
+        /**
+         * Purges cached classes matching the given regex pattern.
+         *
+         * @param regex the pattern to match class names
+         */
         public void purgeClassCache(String regex) {
             for (String s : classCache.keys()) {
                 if (s.matches(regex)) {
@@ -889,6 +1180,9 @@ public class GroovyEngine implements ScriptEngine {
             }
         }
 
+        /**
+         * Purges all dynamically generated script classes from the cache.
+         */
         public void purgeClassCache() {
             for (String s : classCache.keys()) {
                 if (s.matches("Script\\d+(\\$.*)?")) {
@@ -898,16 +1192,32 @@ public class GroovyEngine implements ScriptEngine {
         }
     }
 
+    /**
+     * Encapsulates access rules for code completion.
+     * Controls which members are visible during completion.
+     */
     protected static class AccessRules {
+        /** Whether to include all methods (including non-public) in completion */
         protected final boolean allMethods;
+        /** Whether to include all fields (including non-public) in completion */
         protected final boolean allFields;
+        /** Whether to include all constructors (including non-public) in completion */
         protected final boolean allConstructors;
+        /** Whether to include all classes (including non-public) in completion */
         protected final boolean allClasses;
 
+        /**
+         * Constructs AccessRules with default values (all false).
+         */
         public AccessRules() {
             this(new HashMap<>());
         }
 
+        /**
+         * Constructs AccessRules from the given options map.
+         *
+         * @param options map of option keys to values
+         */
         public AccessRules(Map<String, Object> options) {
             this.allMethods = groovyOption(options, ALL_METHODS_COMPLETION, false);
             this.allFields = groovyOption(options, ALL_FIELDS_COMPLETION, false);
@@ -945,6 +1255,14 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Returns all methods of a class including superclass methods.
+         *
+         * @param clazz the class to inspect
+         * @param all whether to include non-public methods
+         * @param synthetic whether to include synthetic methods
+         * @return set of Method objects
+         */
         public static Set<Method> getClassMethods(Class<?> clazz, boolean all, boolean synthetic) {
             Set<Method> out = new HashSet<>();
             do {
@@ -966,14 +1284,38 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Returns the names of instance methods of a class.
+         *
+         * @param clazz the class to inspect
+         * @param all whether to include non-public methods
+         * @param synthetic whether to include synthetic methods
+         * @return set of method names
+         */
         public static Set<String> getMethods(Class<?> clazz, boolean all, boolean synthetic) {
             return getMethods(clazz, all, synthetic, false, false);
         }
 
+        /**
+         * Returns the names of static methods of a class.
+         *
+         * @param clazz the class to inspect
+         * @param all whether to include non-public methods
+         * @param synthetic whether to include synthetic methods
+         * @return set of static method names
+         */
         public static Set<String> getStaticMethods(Class<?> clazz, boolean all, boolean synthetic) {
             return getMethods(clazz, all, synthetic, true, false);
         }
 
+        /**
+         * Checks whether a class has no static methods.
+         *
+         * @param clazz the class to inspect
+         * @param all whether to include non-public methods
+         * @param synthetic whether to include synthetic methods
+         * @return true if class has no static methods
+         */
         public static boolean noStaticMethods(Class<?> clazz, boolean all, boolean synthetic) {
             return getMethods(clazz, all, synthetic, true, true).isEmpty();
         }
@@ -997,14 +1339,38 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Returns the instance fields of a class mapped to their types.
+         *
+         * @param clazz the class to inspect
+         * @param all whether to include non-public fields
+         * @param synthetic whether to include synthetic fields
+         * @return map of field names to type names
+         */
         public static Map<String, String> getFields(Class<?> clazz, boolean all, boolean synthetic) {
             return getFields(clazz, all, synthetic, false, false);
         }
 
+        /**
+         * Returns the static fields of a class mapped to their types.
+         *
+         * @param clazz the class to inspect
+         * @param all whether to include non-public fields
+         * @param synthetic whether to include synthetic fields
+         * @return map of static field names to type names
+         */
         public static Map<String, String> getStaticFields(Class<?> clazz, boolean all, boolean synthetic) {
             return getFields(clazz, all, synthetic, true, false);
         }
 
+        /**
+         * Checks whether a class has no static fields.
+         *
+         * @param clazz the class to inspect
+         * @param all whether to include non-public fields
+         * @param synthetic whether to include synthetic fields
+         * @return true if class has no static fields
+         */
         public static boolean noStaticFields(Class<?> clazz, boolean all, boolean synthetic) {
             return getFields(clazz, all, synthetic, true, true).isEmpty();
         }
@@ -1067,10 +1433,27 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Returns the next domain segments for code completion.
+         *
+         * @param domain the current domain prefix
+         * @param type the candidate type to complete
+         * @param shell the Groovy shell for evaluation
+         * @return set of next domain segment candidates
+         */
         public static Set<String> nextDomain(String domain, CandidateType type, GroovyShell shell) {
             return nextDomain(domain, new AccessRules(), type, shell);
         }
 
+        /**
+         * Returns the next domain segments for code completion with access rules.
+         *
+         * @param domain the current domain prefix
+         * @param access the access rules for completion
+         * @param type the candidate type to complete
+         * @param shell the Groovy shell for evaluation
+         * @return set of next domain segment candidates
+         */
         public static Set<String> nextDomain(String domain, AccessRules access, CandidateType type, GroovyShell shell) {
             Set<String> out = new HashSet<>();
             EngineClassLoader classLoader = (EngineClassLoader) shell.getClassLoader();
@@ -1142,11 +1525,27 @@ public class GroovyEngine implements ScriptEngine {
             return list.stream().collect(Collectors.toMap(it -> it, it -> ""));
         }
 
+        /**
+         * Adds completion candidates for the supplied values.
+         *
+         * @param candidates destination candidate list
+         * @param fields values to expose as candidates
+         * @param curBuf prefix already present in the buffer
+         * @param type semantic candidate type
+         */
         public static void doCandidates(
                 List<Candidate> candidates, Collection<String> fields, String curBuf, CandidateType type) {
             doCandidates(candidates, listToMap(fields), curBuf, type);
         }
 
+        /**
+         * Adds completion candidates for the supplied values and descriptions.
+         *
+         * @param candidates destination candidate list
+         * @param fields candidate values keyed to their descriptions
+         * @param curBuf prefix already present in the buffer
+         * @param type semantic candidate type
+         */
         public static void doCandidates(
                 List<Candidate> candidates, Map<String, String> fields, String curBuf, CandidateType type) {
             if (fields == null || fields.isEmpty()) {
@@ -1202,6 +1601,12 @@ public class GroovyEngine implements ScriptEngine {
             }
         }
 
+        /**
+         * Finds the index where the current statement begins in the buffer.
+         *
+         * @param buffer the code buffer
+         * @return index of statement beginning
+         */
         public static int statementBegin(String buffer) {
             String buf = buffer;
             while (buf.matches(".*\\)\\.\\w+$")) {
@@ -1212,6 +1617,14 @@ public class GroovyEngine implements ScriptEngine {
             return statementBegin(new Brackets(buf));
         }
 
+        /**
+         * Finds the index where the current statement begins relative to the word buffer.
+         *
+         * @param buffer the code buffer
+         * @param wordbuffer the current word buffer
+         * @param brackets bracket tracking for the buffer
+         * @return index of statement beginning relative to wordbuffer
+         */
         public static int statementBegin(String buffer, String wordbuffer, Brackets brackets) {
             int out = -1;
             int idx = buffer.lastIndexOf(wordbuffer);
@@ -1258,6 +1671,12 @@ public class GroovyEngine implements ScriptEngine {
             return Math.max(out, -1);
         }
 
+        /**
+         * Checks if a code fragment is a constructor invocation statement.
+         *
+         * @param fragment the code fragment to check
+         * @return true if fragment contains a constructor invocation
+         */
         public static boolean constructorStatement(String fragment) {
             return fragment.matches("(.*\\s+new|.*\\(new|.*\\{new|.*=new|.*,new|new)");
         }
@@ -1278,6 +1697,12 @@ public class GroovyEngine implements ScriptEngine {
         private final GroovyEngine groovyEngine;
         private final boolean isStatic;
 
+        /**
+         * Constructs an ImportCompleter.
+         *
+         * @param groovyEngine the engine instance
+         * @param isStatic whether this completes static imports
+         */
         public ImportCompleter(GroovyEngine groovyEngine, boolean isStatic) {
             this.groovyEngine = groovyEngine;
             this.isStatic = isStatic;
@@ -1324,6 +1749,12 @@ public class GroovyEngine implements ScriptEngine {
         private final CandidateType type;
         private final GroovyEngine groovyEngine;
 
+        /**
+         * Constructs a PackageCompleter.
+         *
+         * @param type the candidate type for completion
+         * @param groovyEngine the engine instance
+         */
         public PackageCompleter(CandidateType type, GroovyEngine groovyEngine) {
             this.type = type;
             this.groovyEngine = groovyEngine;
@@ -1358,6 +1789,11 @@ public class GroovyEngine implements ScriptEngine {
         private boolean identifierCompletion;
         private boolean syntheticCompletion;
 
+        /**
+         * Constructs a MethodCompleter.
+         *
+         * @param engine the engine instance
+         */
         public MethodCompleter(GroovyEngine engine) {
             this.groovyEngine = engine;
         }
@@ -1708,6 +2144,7 @@ public class GroovyEngine implements ScriptEngine {
         static final String DEFAULT_GROOVY_COLORS = "ti=1;34:me=31";
 
         private final GroovyShell shell;
+        /** Snapshot binding used while evaluating completion and description metadata. */
         protected Binding sharedData = new Binding();
         private final Collection<String> imports;
         private final Map<String, Class<?>> nameClass;
@@ -1724,6 +2161,11 @@ public class GroovyEngine implements ScriptEngine {
         private Object involvedObject = null;
         private final SyntaxHighlighter syntaxHighlighter;
 
+        /**
+         * Constructs an Inspector for code introspection.
+         *
+         * @param groovyEngine the engine instance to inspect
+         */
         public Inspector(GroovyEngine groovyEngine) {
             this.imports = groovyEngine.getImports().values();
             this.nameClass = groovyEngine.nameClass;
@@ -1760,10 +2202,21 @@ public class GroovyEngine implements ScriptEngine {
             }
         }
 
+        /**
+         * Returns the object involved in the last evaluation.
+         *
+         * @return the involved object or null
+         */
         public Object getInvolvedObject() {
             return involvedObject;
         }
 
+        /**
+         * Evaluates a statement to determine the resulting class.
+         *
+         * @param objectStatement the statement to evaluate
+         * @return the resulting class or null
+         */
         public Class<?> evaluateClass(String objectStatement) {
             Class<?> out = null;
             try {
@@ -1800,6 +2253,12 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Executes a statement and returns the result.
+         *
+         * @param statement the statement to execute
+         * @return the result or null if execution failed
+         */
         public Object execute(String statement) {
             try {
                 return _execute(statement);
@@ -1866,6 +2325,11 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Loads variables defined in the given statement into the binding.
+         *
+         * @param line the statement line to process
+         */
         public void loadStatementVars(String line) {
             if (!new Brackets(line).openCurly()) {
                 return;
@@ -1931,23 +2395,51 @@ public class GroovyEngine implements ScriptEngine {
             }
         }
 
+        /**
+         * Returns the map of class names to classes.
+         *
+         * @return map of class names to Class objects
+         */
         public Map<String, Class<?>> nameClass() {
             return nameClass;
         }
 
+        /**
+         * Returns the set of variable names in the binding.
+         *
+         * @return set of variable names
+         */
         @SuppressWarnings("unchecked")
         public Set<String> variables() {
             return sharedData.getVariables().keySet();
         }
 
+        /**
+         * Checks if a variable exists in the binding.
+         *
+         * @param name the variable name
+         * @return true if variable exists
+         */
         public boolean hasVariable(String name) {
             return sharedData.hasVariable(name);
         }
 
+        /**
+         * Returns the value of a variable from the binding.
+         *
+         * @param name the variable name
+         * @return the variable value or null
+         */
         public Object getVariable(String name) {
             return sharedData.hasVariable(name) ? sharedData.getVariable(name) : null;
         }
 
+        /**
+         * Generates a description for the given command line.
+         *
+         * @param line the command line to describe
+         * @return the command description
+         */
         public CmdDesc scriptDescription(CmdLine line) {
             CmdDesc out = null;
             try {
@@ -2092,22 +2584,17 @@ public class GroovyEngine implements ScriptEngine {
                             }
                         }
                         if (clazz.getCanonicalName().endsWith("[]")) {
-                            if (methodName.equals("sort") || methodName.equals("reverse")) {
-                                mainDesc.add(syntaxHighlighter.highlight(
-                                        clazz.getComponentType().getSimpleName() + "[] " + methodName + "()"));
-                            } else if (methodName.equals("first")
-                                    || methodName.equals("last")
-                                    || methodName.equals("min")
-                                    || methodName.equals("max")) {
-                                mainDesc.add(syntaxHighlighter.highlight(
-                                        clazz.getComponentType().getSimpleName() + " " + methodName + "()"));
-                            } else if (methodName.equals("size")) {
-                                mainDesc.add(syntaxHighlighter.highlight("int size()"));
-                            } else if (methodName.equals("toList")) {
-                                mainDesc.add(syntaxHighlighter.highlight("List toList()"));
-                            } else if (methodName.equals("count")) {
-                                mainDesc.add(syntaxHighlighter.highlight("int count(Object)"));
-                                mainDesc.add(syntaxHighlighter.highlight("int count(Closure)"));
+                            switch (methodName) {
+                                case "sort", "reverse" -> mainDesc.add(syntaxHighlighter.highlight(
+                                    clazz.getComponentType().getSimpleName() + "[] " + methodName + "()"));
+                                case "first", "last", "min", "max" -> mainDesc.add(syntaxHighlighter.highlight(
+                                    clazz.getComponentType().getSimpleName() + " " + methodName + "()"));
+                                case "size" -> mainDesc.add(syntaxHighlighter.highlight("int size()"));
+                                case "toList" -> mainDesc.add(syntaxHighlighter.highlight("List toList()"));
+                                case "count" -> {
+                                    mainDesc.add(syntaxHighlighter.highlight("int count(Object)"));
+                                    mainDesc.add(syntaxHighlighter.highlight("int count(Closure)"));
+                                }
                             }
                         }
                     }
@@ -2324,10 +2811,16 @@ public class GroovyEngine implements ScriptEngine {
         Map<String, Object> cache = new HashMap<>();
         Set<String> marked = new HashSet<>();
 
+        /**
+         * Constructs a new ObjectCloner.
+         */
         public ObjectCloner() {}
 
         /**
-         * Shallow copy of the object using java Cloneable clone() method.
+         * Creates a shallow copy of the object using Java's Cloneable clone() method.
+         *
+         * @param obj the object to clone
+         * @return a copy of the object
          */
         public Object clone(Object obj) {
             if (obj == null
@@ -2355,10 +2848,16 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Marks the current state of the cache for later purging.
+         */
         public void markCache() {
             marked = new HashSet<>(cache.keySet());
         }
 
+        /**
+         * Purges cache entries created since the last mark.
+         */
         public void purgeCache() {
             for (String k : marked) {
                 cache.remove(k);
@@ -2388,6 +2887,11 @@ public class GroovyEngine implements ScriptEngine {
         int rounds = 0;
         int curlies = 0;
 
+        /**
+         * Constructs a Brackets tracker for the given line.
+         *
+         * @param line the line to track brackets for
+         */
         public Brackets(String line) {
             int pos = -1;
             char prevChar = ' ';
@@ -2446,6 +2950,12 @@ public class GroovyEngine implements ScriptEngine {
             }
         }
 
+        /**
+         * Finds the index of the opening parenthesis matching the closing one at line end.
+         *
+         * @param line the line to search
+         * @return index of opening parenthesis or -1 if not found
+         */
         public static int indexOfOpeningRound(String line) {
             int out = -1;
             if (!line.endsWith(")")) {
@@ -2490,55 +3000,120 @@ public class GroovyEngine implements ScriptEngine {
             return out;
         }
 
+        /**
+         * Checks if there are unclosed round parentheses.
+         *
+         * @return true if round parentheses are open
+         */
         public boolean openRound() {
             return round > 0;
         }
 
+        /**
+         * Checks if there are unclosed curly braces.
+         *
+         * @return true if curly braces are open
+         */
         public boolean openCurly() {
             return curly > 0;
         }
 
+        /**
+         * Checks if there are unclosed square brackets.
+         *
+         * @return true if square brackets are open
+         */
         public boolean openSquare() {
             return square > 0;
         }
 
+        /**
+         * Returns the total number of round parentheses pairs closed.
+         *
+         * @return count of closed parentheses pairs
+         */
         public int numberOfRounds() {
             return rounds;
         }
 
+        /**
+         * Returns the index of the last opening round parenthesis.
+         *
+         * @return index or -1 if none
+         */
         public int lastOpenRound() {
             return !roundOpen.isEmpty() ? roundOpen.getLast() : -1;
         }
 
+        /**
+         * Returns the index of the last closing round parenthesis.
+         *
+         * @return index or -1 if none
+         */
         public int lastCloseRound() {
             return lastRoundClose;
         }
 
+        /**
+         * Returns the index of the last opening curly brace.
+         *
+         * @return index or -1 if none
+         */
         public int lastOpenCurly() {
             return !curlyOpen.isEmpty() ? curlyOpen.getLast() : -1;
         }
 
+        /**
+         * Returns the index of the last closing curly brace.
+         *
+         * @return index or -1 if none
+         */
         public int lastCloseCurly() {
             return lastCurlyClose;
         }
 
+        /**
+         * Returns the index of the last comma in the current parenthesis level.
+         *
+         * @return index or -1 if none
+         */
         public int lastComma() {
             int last = lastOpenRound();
             return lastComma.getOrDefault(last, -1);
         }
 
+        /**
+         * Returns the index of the last semicolon.
+         *
+         * @return index or -1 if none
+         */
         public int lastSemicolon() {
             return lastSemicolon;
         }
 
+        /**
+         * Returns the index of the last delimiter.
+         *
+         * @return index or -1 if none
+         */
         public int lastDelim() {
             return lastDelim;
         }
 
+        /**
+         * Checks if a quote is currently open.
+         *
+         * @return true if quote is open
+         */
         public boolean openQuote() {
             return quoteId != -1;
         }
 
+        /**
+         * Returns a string representation of bracket state.
+         *
+         * @return string describing bracket positions
+         */
         public String toString() {
             return "rounds: " + rounds + "\n"
                     + "curlies: " + curlies + "\n"

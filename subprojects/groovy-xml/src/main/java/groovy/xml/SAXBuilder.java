@@ -36,20 +36,45 @@ public class SAXBuilder extends BuilderSupport {
     private final ContentHandler handler;
     private Attributes emptyAttributes = new AttributesImpl();
 
+    /**
+     * Creates a builder that forwards markup events to the supplied SAX content handler.
+     *
+     * @param handler the content handler receiving generated SAX events
+     */
     public SAXBuilder(ContentHandler handler) {
         this.handler = handler;
     }
 
+    /**
+     * Builder lifecycle callback invoked after a child node has been created.
+     * This implementation is a no-op because parent relationships are expressed through SAX events.
+     *
+     * @param parent the parent node marker
+     * @param child the child node marker
+     */
     @Override
     protected void setParent(Object parent, Object child) {
     }
 
+    /**
+     * Builder lifecycle callback that starts an element with no attributes or body text.
+     *
+     * @param name the node name
+     * @return the node marker used for subsequent callbacks
+     */
     @Override
     protected Object createNode(Object name) {
         doStartElement(name, emptyAttributes);
         return name;
     }
 
+    /**
+     * Builder lifecycle callback that starts an element and immediately emits text content.
+     *
+     * @param name the node name
+     * @param value the text content to emit
+     * @return the node marker used for subsequent callbacks
+     */
     @Override
     protected Object createNode(Object name, Object value) {
         doStartElement(name, emptyAttributes);
@@ -66,6 +91,14 @@ public class SAXBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Builder lifecycle callback that starts an element, emits attributes and optionally emits text content.
+     *
+     * @param name the node name
+     * @param attributeMap the attributes to expose through the SAX event
+     * @param text the optional text content to emit after the start element
+     * @return the node marker used for subsequent callbacks
+     */
     @Override
     protected Object createNode(Object name, Map attributeMap, Object text) {
         AttributesImpl attributes = new AttributesImpl();
@@ -89,6 +122,13 @@ public class SAXBuilder extends BuilderSupport {
         return name;
     }
 
+    /**
+     * Emits a SAX {@code startElement} event for the supplied node name.
+     * Subclasses may override to customize how start-element events are generated.
+     *
+     * @param name the node name
+     * @param attributes the attributes to include with the start-element event
+     */
     protected void doStartElement(Object name, Attributes attributes) {
         Tuple3<String, String, String> nameInfo = getNameInfo(name);
         String uri = nameInfo.getV1();
@@ -102,6 +142,12 @@ public class SAXBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Builder lifecycle callback invoked when the current node is complete.
+     *
+     * @param parent the parent node marker
+     * @param name the completed node name
+     */
     @Override
     protected void nodeCompleted(Object parent, Object name) {
         Tuple3<String, String, String> nameInfo = getNameInfo(name);
@@ -116,12 +162,23 @@ public class SAXBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Handles checked {@link SAXException}s raised while emitting SAX events.
+     * Subclasses may override to translate them differently.
+     *
+     * @param e the SAX exception to handle
+     * @throws RuntimeException by default, wrapping {@code e}
+     */
     protected void handleException(SAXException e) {
         throw new RuntimeException(e);
     }
 
-    /* (non-Javadoc)
-     * @see groovy.util.BuilderSupport#createNode(java.lang.Object, java.util.Map, java.lang.Object)
+    /**
+     * Builder lifecycle callback that starts an element and emits attributes without body text.
+     *
+     * @param name the node name
+     * @param attributes the attributes to expose through the SAX event
+     * @return the node marker used for subsequent callbacks
      */
     @Override
     protected Object createNode(Object name, Map attributes) {

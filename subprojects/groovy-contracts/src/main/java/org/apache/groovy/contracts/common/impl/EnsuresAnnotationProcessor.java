@@ -32,6 +32,16 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
  */
 public class EnsuresAnnotationProcessor extends AnnotationProcessor {
 
+    /**
+     * Adds the supplied postcondition to the contract model for the given method or constructor.
+     *
+     * @param processingContextInformation the current processing context
+     * @param contract the mutable contract model
+     * @param classNode the declaring class
+     * @param methodNode the annotated method or constructor
+     * @param blockStatement the original postcondition block
+     * @param booleanExpression the normalized postcondition expression
+     */
     @Override
     public void process(ProcessingContextInformation processingContextInformation, Contract contract, ClassNode classNode, MethodNode methodNode, BlockStatement blockStatement, BooleanExpression booleanExpression) {
         if (!processingContextInformation.isPostconditionsEnabled()) return;

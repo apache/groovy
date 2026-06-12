@@ -23,22 +23,67 @@ import java.math.BigDecimal;
 import static org.apache.groovy.json.internal.Exceptions.die;
 import static org.apache.groovy.json.internal.Exceptions.handle;
 
+/**
+ * Low-level character scanning utilities used while parsing JSON values.
+ */
 public class CharScanner {
 
+    /**
+     * Comma character code.
+     */
     protected static final int COMMA = ',';
+    /**
+     * Closing curly brace character code.
+     */
     protected static final int CLOSED_CURLY = '}';
+    /**
+     * Closing bracket character code.
+     */
     protected static final int CLOSED_BRACKET = ']';
+    /**
+     * Lowercase exponent marker.
+     */
     protected static final int LETTER_E = 'e';
+    /**
+     * Uppercase exponent marker.
+     */
     protected static final int LETTER_BIG_E = 'E';
+    /**
+     * Decimal point character code.
+     */
     protected static final int DECIMAL_POINT = '.';
+    /**
+     * Character code for {@code '0'}.
+     */
     protected static final int ALPHA_0 = '0';
+    /**
+     * Character code for {@code '9'}.
+     */
     protected static final int ALPHA_9 = '9';
+    /**
+     * Minus sign character code.
+     */
     protected static final int MINUS = '-';
+    /**
+     * Plus sign character code.
+     */
     protected static final int PLUS = '+';
 
+    /**
+     * String form of {@link Long#MIN_VALUE}.
+     */
     static final String MIN_LONG_STR_NO_SIGN = String.valueOf(Long.MIN_VALUE);
+    /**
+     * String form of {@link Long#MAX_VALUE}.
+     */
     static final String MAX_LONG_STR = String.valueOf(Long.MAX_VALUE);
+    /**
+     * String form of {@link Integer#MIN_VALUE}.
+     */
     static final String MIN_INT_STR_NO_SIGN = String.valueOf(Integer.MIN_VALUE);
+    /**
+     * String form of {@link Integer#MAX_VALUE}.
+     */
     static final String MAX_INT_STR = String.valueOf(Integer.MAX_VALUE);
 
     private static double[] powersOf10 = {
@@ -63,14 +108,32 @@ public class CharScanner {
             1000000000000000000.0,
     };
 
+    /**
+     * Tests whether the supplied code point is an ASCII digit.
+     *
+     * @param c the character code to test
+     * @return {@code true} if the code point is between {@code '0'} and {@code '9'}
+     */
     public static boolean isDigit(int c) {
         return c >= ALPHA_0 && c <= ALPHA_9;
     }
 
+    /**
+     * Tests whether the supplied code point can appear in a decimal number.
+     *
+     * @param c the character code to test
+     * @return {@code true} for digits and decimal punctuation
+     */
     public static boolean isDecimalDigit(int c) {
         return isDigit(c) || isDecimalChar(c);
     }
 
+    /**
+     * Tests whether the supplied code point is decimal punctuation.
+     *
+     * @param currentChar the character code to test
+     * @return {@code true} for sign, exponent, or decimal point characters
+     */
     public static boolean isDecimalChar(int currentChar) {
         return switch (currentChar) {
             case MINUS, PLUS, LETTER_E, LETTER_BIG_E, DECIMAL_POINT -> true;
@@ -78,6 +141,13 @@ public class CharScanner {
         };
     }
 
+    /**
+     * Tests whether a character range contains decimal punctuation.
+     *
+     * @param chars the character array to inspect
+     * @param negative whether the first character is a sign and should be skipped
+     * @return {@code true} if a decimal marker or exponent marker is present
+     */
     public static boolean hasDecimalChar(char[] chars, boolean negative) {
         int index = 0;
 
@@ -96,10 +166,24 @@ public class CharScanner {
         return false;
     }
 
+    /**
+     * Tests whether the supplied digits fit in a {@code long}.
+     *
+     * @param digitChars the digit characters to test
+     * @return {@code true} if the value is within the {@code long} range
+     */
     public static boolean isLong(char[] digitChars) {
         return isLong(digitChars, 0, digitChars.length);
     }
 
+    /**
+     * Tests whether the supplied digit range fits in a {@code long}.
+     *
+     * @param digitChars the digit characters to test
+     * @param offset the inclusive range start
+     * @param len the number of characters to compare
+     * @return {@code true} if the value is within the {@code long} range
+     */
     public static boolean isLong(char[] digitChars, int offset, int len) {
         String cmpStr = digitChars[offset] == '-' ? MIN_LONG_STR_NO_SIGN : MAX_LONG_STR;
         int cmpLen = cmpStr.length();
@@ -115,10 +199,24 @@ public class CharScanner {
         return true;
     }
 
+    /**
+     * Tests whether the supplied digits fit in an {@code int}.
+     *
+     * @param digitChars the digit characters to test
+     * @return {@code true} if the value is within the {@code int} range
+     */
     public static boolean isInteger(char[] digitChars) {
         return isInteger(digitChars, 0, digitChars.length);
     }
 
+    /**
+     * Tests whether the supplied digit range fits in an {@code int}.
+     *
+     * @param digitChars the digit characters to test
+     * @param offset the inclusive range start
+     * @param len the number of characters to compare
+     * @return {@code true} if the value is within the {@code int} range
+     */
     public static boolean isInteger(char[] digitChars, int offset, int len) {
         String cmpStr = (digitChars[offset] == '-') ? MIN_INT_STR_NO_SIGN : MAX_INT_STR;
         int cmpLen = cmpStr.length();
@@ -134,10 +232,24 @@ public class CharScanner {
         return true;
     }
 
+    /**
+     * Parses an {@code int} from the supplied digit characters.
+     *
+     * @param digitChars the digit characters to parse
+     * @return the parsed value
+     */
     public static int parseInt(char[] digitChars) {
         return parseIntFromTo(digitChars, 0, digitChars.length);
     }
 
+    /**
+     * Parses an {@code int} from a character range.
+     *
+     * @param digitChars the digit characters to parse
+     * @param offset the inclusive range start
+     * @param to the exclusive range end
+     * @return the parsed value
+     */
     public static int parseIntFromTo(char[] digitChars, int offset, int to) {
         try {
             int num;
@@ -184,6 +296,14 @@ public class CharScanner {
         }
     }
 
+    /**
+     * Parses an {@code int} from a character range while ignoring decimal points.
+     *
+     * @param digitChars the digit characters to parse
+     * @param offset the inclusive range start
+     * @param to the exclusive range end
+     * @return the parsed value
+     */
     public static int parseIntFromToIgnoreDot(char[] digitChars, int offset, int to) {
         int num;
         boolean negative = false;
@@ -209,6 +329,14 @@ public class CharScanner {
         return negative ? num * -1 : num;
     }
 
+    /**
+     * Parses a {@code long} from a character range while ignoring decimal points.
+     *
+     * @param digitChars the digit characters to parse
+     * @param offset the inclusive range start
+     * @param to the exclusive range end
+     * @return the parsed value
+     */
     public static long parseLongFromToIgnoreDot(char[] digitChars, int offset, int to) {
         long num;
         boolean negative = false;
@@ -234,6 +362,14 @@ public class CharScanner {
         return negative ? num * -1 : num;
     }
 
+    /**
+     * Parses a {@code long} from a character range.
+     *
+     * @param digitChars the digit characters to parse
+     * @param offset the inclusive range start
+     * @param to the exclusive range end
+     * @return the parsed value
+     */
     public static long parseLongFromTo(char[] digitChars, int offset, int to) {
         long num;
         boolean negative = false;
@@ -260,26 +396,67 @@ public class CharScanner {
         return negative ? num * -1 : num;
     }
 
+    /**
+     * Parses a {@code long} from the supplied digit characters.
+     *
+     * @param digitChars the digit characters to parse
+     * @return the parsed value
+     */
     public static long parseLong(char[] digitChars) {
         return parseLongFromTo(digitChars, 0, digitChars.length);
     }
 
+    /**
+     * Parses a JSON number from the supplied character array.
+     *
+     * @param buffer the character array containing the number
+     * @return the parsed {@link Number}
+     */
     public static Number parseJsonNumber(char[] buffer) {
         return parseJsonNumber(buffer, 0, buffer.length);
     }
 
+    /**
+     * Parses a JSON number from a character range.
+     *
+     * @param buffer the character array containing the number
+     * @param from the inclusive range start
+     * @param to the exclusive range end
+     * @return the parsed {@link Number}
+     */
     public static Number parseJsonNumber(char[] buffer, int from, int to) {
         return parseJsonNumber(buffer, from, to, null);
     }
 
+    /**
+     * Tests whether the supplied code point is a numeric digit.
+     *
+     * @param c the character code to test
+     * @return {@code true} if the code point is between {@code '0'} and {@code '9'}
+     */
     public static boolean isNumberDigit(int c) {
         return c >= ALPHA_0 && c <= ALPHA_9;
     }
 
+    /**
+     * Tests whether the supplied code point terminates a JSON number token.
+     *
+     * @param c the character code to test
+     * @return {@code true} if the code point is a structural delimiter
+     */
     protected static boolean isDelimiter(int c) {
         return c == COMMA || c == CLOSED_CURLY || c == CLOSED_BRACKET;
     }
 
+    /**
+     * Parses a JSON number and optionally reports the stopping index.
+     *
+     * @param buffer the character array containing the number
+     * @param from the inclusive range start
+     * @param max the exclusive scan limit
+     * @param size optional single-element output array receiving the stopping index
+     * @return the parsed {@link Number}
+     */
     public static Number parseJsonNumber(char[] buffer, int from, int max, int[] size) {
         Number value = null;
         boolean simple = true;
@@ -338,14 +515,36 @@ public class CharScanner {
         return value;
     }
 
+    /**
+     * Parses a {@link BigDecimal} from the supplied characters.
+     *
+     * @param buffer the character array to parse
+     * @return the parsed decimal value
+     */
     public static BigDecimal parseBigDecimal(char[] buffer) {
         return new BigDecimal(buffer);
     }
 
+    /**
+     * Parses a {@code float} from a character range.
+     *
+     * @param buffer the character array to parse
+     * @param from the inclusive range start
+     * @param to the exclusive range end
+     * @return the parsed value
+     */
     public static float parseFloat(char[] buffer, int from, int to) {
         return (float) parseDouble(buffer, from, to);
     }
 
+    /**
+     * Parses a {@code double} from a character range.
+     *
+     * @param buffer the character array to parse
+     * @param from the inclusive range start
+     * @param to the exclusive range end
+     * @return the parsed value
+     */
     public static double parseDouble(char[] buffer, int from, int to) {
         double value;
         boolean simple = true;
@@ -410,6 +609,14 @@ public class CharScanner {
         return value;
     }
 
+    /**
+     * Advances past ASCII whitespace.
+     *
+     * @param array the character array to scan
+     * @param index the index to start from
+     * @param length the exclusive scan limit
+     * @return the first index whose character is greater than space, or {@code length}
+     */
     public static int skipWhiteSpace(char[] array, int index, final int length) {
         int c;
         for (; index < length; index++) {
@@ -421,6 +628,14 @@ public class CharScanner {
         return index;
     }
 
+    /**
+     * Copies a contiguous JSON number token into a new array.
+     *
+     * @param array the source character array
+     * @param idx the index at which the number starts
+     * @param len the exclusive scan limit
+     * @return a new array containing the number token
+     */
     public static char[] readNumber(char[] array, int idx, final int len) {
         final int startIndex = idx;
 
@@ -436,6 +651,15 @@ public class CharScanner {
         return ArrayUtils.copyRange(array, startIndex, idx);
     }
 
+    /**
+     * Builds a human-readable parse error description for the current character position.
+     *
+     * @param message the high-level error message
+     * @param array the source character array
+     * @param index the failing index
+     * @param ch the current character code
+     * @return the formatted diagnostic text
+     */
     public static String errorDetails(String message, char[] array, int index, int ch) {
         CharBuf buf = CharBuf.create(255);
 
@@ -486,6 +710,12 @@ public class CharScanner {
         return buf.toString();
     }
 
+    /**
+     * Returns a debug string for a character code.
+     *
+     * @param c the character code to describe
+     * @return a printable character description
+     */
     public static String debugCharDescription(int c) {
         String charString;
         if (c == ' ') {

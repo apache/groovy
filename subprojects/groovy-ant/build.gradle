@@ -16,11 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.apache.groovy.gradle.TargetJavaHomeSupport
+
 plugins {
     id 'org.apache.groovy-library'
 }
 
+configurations {
+    // Resolves an external jar used only by the GROOVY-9197 joint-compilation test.
+    // Kept off the test classpath on purpose: the test verifies that a class which is
+    // NOT visible to Groovy itself can still be referenced when supplied explicitly.
+    externalJarForJointCompilationTest
+}
+
 dependencies {
+    externalJarForJointCompilationTest("org.apache.commons:commons-lang3:${versions.commonsLang3}") {
+        transitive = false
+    }
+
     api rootProject  // FileNameFinder implements IFileNameFinder...
     api("org.apache.ant:ant:${versions.ant}") {  // AntBuilder has Project constructor...
         transitive = false
@@ -38,4 +51,19 @@ dependencies {
     compileOnly "org.ow2.asm:asm-util:${versions.asm}" // VerifyClass
     testImplementation projects.groovyTest
     testImplementation projects.groovyXml
+}
+
+tasks.withType(Test).configureEach {
+    // Supply the external jar (resolved, not checked in) to the GROOVY-9197 Ant test.
+    doFirst {
+        systemProperty 'groovy.ant.test.externalJar',
+            configurations.externalJarForJointCompilationTest.singleFile.absolutePath
+    }
+
+    Integer feature = TargetJavaHomeSupport.featureVersionFromReleaseFile(TargetJavaHomeSupport.targetJavaHome(project))
+    boolean testJdkPre24 = feature != null ? feature < 24 : JavaVersion.current() < JavaVersion.VERSION_24
+    if (testJdkPre24) {
+        // Setting isn't allowed for Java 24+ but hushes security manager warnings from Ant for JDK17-23
+        jvmArgs '-Djava.security.manager=allow'
+    }
 }

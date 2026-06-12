@@ -34,23 +34,47 @@ import java.util.function.Predicate;
 final class MacroMethodsCache extends AbstractExtensionMethodCache {
     private static final ClassNode MACRO_ANNOTATION_CLASS_NODE = ClassHelper.make(Macro.class);
 
+    /**
+     * Shared macro methods cache.
+     */
     public static final MacroMethodsCache INSTANCE = new MacroMethodsCache();
 
     private MacroMethodsCache() {}
 
+    /**
+     * Adds extra extension method containers to scan.
+     *
+     * @param instanceExtClasses instance extension classes
+     * @param staticExtClasses static extension classes
+     */
     @Override
     protected void addAdditionalClassesToScan(Set<Class> instanceExtClasses, Set<Class> staticExtClasses) {}
 
+    /**
+     * Returns the system property that disables macro extension lookup.
+     *
+     * @return the disable property name
+     */
     @Override
     protected String getDisablePropertyName() {
         return "groovy.macro.disable";
     }
 
+    /**
+     * Returns the filter used to discard macro-annotated methods from normal extension lookup.
+     *
+     * @return the method filter
+     */
     @Override
     protected Predicate<MethodNode> getMethodFilter() {
         return m -> m.getAnnotations(MACRO_ANNOTATION_CLASS_NODE).isEmpty();
     }
 
+    /**
+     * Returns the mapper used to index macro methods by name.
+     *
+     * @return the method-name mapper
+     */
     @Override
     protected Function<MethodNode, String> getMethodMapper() {
         return m -> m.getName();

@@ -136,7 +136,7 @@ public class LineColumnReader extends BufferedReader {
      */
     @Override
     public int read(char[] chars, int startOffset, int length) throws IOException {
-        for (int i = startOffset; i <= startOffset + length; i++) {
+        for (int i = startOffset; i < startOffset + length; i++) {
             int readInt = read();
             if (readInt == -1) return i - startOffset;
             chars[i] = (char)readInt;
@@ -192,7 +192,7 @@ public class LineColumnReader extends BufferedReader {
      */
     @Override
     public int read(char[] chars) throws IOException {
-        return read(chars, 0, chars.length - 1);
+        return read(chars, 0, chars.length);
     }
 
     /**
@@ -217,34 +217,74 @@ public class LineColumnReader extends BufferedReader {
         super.close();
     }
 
+    /**
+     * Returns the current column number.
+     *
+     * @return the current column number
+     */
     public long getColumn() {
         return column;
     }
 
+    /**
+     * Sets the current column number.
+     *
+     * @param column the current column number
+     */
     public void setColumn(long column) {
         this.column = column;
     }
 
+    /**
+     * Returns the marked column number.
+     *
+     * @return the marked column number
+     */
     public long getColumnMark() {
         return columnMark;
     }
 
+    /**
+     * Sets the marked column number.
+     *
+     * @param columnMark the marked column number
+     */
     public void setColumnMark(long columnMark) {
         this.columnMark = columnMark;
     }
 
+    /**
+     * Returns the current line number.
+     *
+     * @return the current line number
+     */
     public long getLine() {
         return line;
     }
 
+    /**
+     * Sets the current line number.
+     *
+     * @param line the current line number
+     */
     public void setLine(long line) {
         this.line = line;
     }
 
+    /**
+     * Returns the marked line number.
+     *
+     * @return the marked line number
+     */
     public long getLineMark() {
         return lineMark;
     }
 
+    /**
+     * Sets the marked line number.
+     *
+     * @param lineMark the marked line number
+     */
     public void setLineMark(long lineMark) {
         this.lineMark = lineMark;
     }

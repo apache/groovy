@@ -35,6 +35,9 @@ import static org.apache.groovy.json.internal.CharScanner.parseLongFromTo;
 import static org.apache.groovy.json.internal.Exceptions.die;
 import static org.apache.groovy.json.internal.Exceptions.sputs;
 
+/**
+ * Overlay-backed numeric {@link Value} that parses JSON numbers on demand.
+ */
 public class NumberValue extends java.lang.Number implements Value {
 
     private char[] buffer;
@@ -44,14 +47,31 @@ public class NumberValue extends java.lang.Number implements Value {
     private final Type type;
     private Object value;
 
+    /**
+     * Creates an uninitialized numeric wrapper for the supplied token type.
+     *
+     * @param type numeric token type
+     */
     public NumberValue(Type type) {
         this.type = type;
     }
 
+    /**
+     * Creates an uninitialized numeric wrapper with no preset token type.
+     */
     public NumberValue() {
         this.type = null;
     }
 
+    /**
+     * Creates a numeric overlay over a character buffer slice.
+     *
+     * @param chop whether to copy the slice immediately
+     * @param type numeric token type
+     * @param startIndex slice start
+     * @param endIndex slice end
+     * @param buffer backing buffer
+     */
     public NumberValue(boolean chop, Type type, int startIndex, int endIndex, char[] buffer) {
         this.type = type;
 
@@ -77,6 +97,11 @@ public class NumberValue extends java.lang.Number implements Value {
 
     }
 
+    /**
+     * Returns the current numeric slice as text.
+     *
+     * @return the raw numeric token text
+     */
     @Override
     public String toString() {
         if (startIndex == 0 && endIndex == buffer.length) {
@@ -86,16 +111,30 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public final Object toValue() {
         return value != null ? value : (value = doToValue());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public <T extends Enum> T toEnum(Class<T> cls) {
         return toEnum(cls, intValue());
     }
 
+    /**
+     * Resolves an enum constant from its ordinal.
+     *
+     * @param cls enum type
+     * @param value ordinal value
+     * @param <T> enum type
+     * @return the matching enum constant
+     */
     public static <T extends Enum> T toEnum(Class<T> cls, int value) {
         T[] enumConstants = cls.getEnumConstants();
         for (T e : enumConstants) {
@@ -107,6 +146,9 @@ public class NumberValue extends java.lang.Number implements Value {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isContainer() {
         return false;
@@ -127,6 +169,12 @@ public class NumberValue extends java.lang.Number implements Value {
         return null;
     }
 
+    /**
+     * Compares the overlay state and cached value.
+     *
+     * @param o other object
+     * @return {@code true} when the overlays match
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -142,6 +190,11 @@ public class NumberValue extends java.lang.Number implements Value {
 
     }
 
+    /**
+     * Returns a hash code for the overlay state and cached value.
+     *
+     * @return hash code for this numeric overlay
+     */
     @Override
     public int hashCode() {
         int result = type != null ? type.hashCode() : 0;
@@ -152,6 +205,9 @@ public class NumberValue extends java.lang.Number implements Value {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public BigDecimal bigDecimalValue() {
         try {
@@ -161,31 +217,49 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public BigInteger bigIntegerValue() {
         return new BigInteger(toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String stringValue() {
         return toString();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String stringValueEncoded() {
         return toString();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Date dateValue() {
         return new Date(Dates.utc(longValue()));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int intValue() {
         return parseIntFromTo(buffer, startIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long longValue() {
         if (isInteger(buffer, startIndex, endIndex - startIndex)) {
@@ -195,31 +269,49 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public byte byteValue() {
         return (byte) intValue();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public short shortValue() {
         return (short) intValue();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public double doubleValue() {
         return parseDouble(this.buffer, startIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean booleanValue() {
         return parseBoolean(toString());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public float floatValue() {
         return parseFloat(this.buffer, startIndex, endIndex);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public final void chop() {
         if (!chopped) {
@@ -230,6 +322,9 @@ public class NumberValue extends java.lang.Number implements Value {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public char charValue() {
         return buffer[startIndex];

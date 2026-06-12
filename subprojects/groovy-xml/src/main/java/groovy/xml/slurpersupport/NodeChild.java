@@ -56,6 +56,7 @@ public class NodeChild extends GPathResult {
         this(node, parent, "*", namespaceTagHints);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult parent() {
         if (node.parent() != null)
@@ -64,11 +65,13 @@ public class NodeChild extends GPathResult {
             return this;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
         return 1;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String text() {
         return this.node.text();
@@ -101,16 +104,19 @@ public class NodeChild extends GPathResult {
         throw new GroovyRuntimeException("parents() not implemented yet");
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator iterator() {
         return createIterator(this);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator nodeIterator() {
         return createIterator(this.node);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object getAt(final int index) {
         if (index == 0) {
@@ -128,11 +134,13 @@ public class NodeChild extends GPathResult {
         return this.node.attributes();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator childNodes() {
         return this.node.childNodes();
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult find(final Closure closure) {
         if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{this.node}))) {
@@ -142,31 +150,37 @@ public class NodeChild extends GPathResult {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult findAll(final Closure closure) {
         return find(closure);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void build(final GroovyObject builder) {
         this.node.build(builder, this.namespaceMap, this.namespaceTagHints);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Writer writeTo(final Writer out) throws IOException {
         return this.node.writeTo(out);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void replaceNode(final Closure newValue) {
         this.node.replaceNode(newValue, this);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void replaceBody(final Object newValue) {
         this.node.replaceBody(newValue);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void appendNode(final Object newValue) {
         this.node.appendNode(newValue, this);

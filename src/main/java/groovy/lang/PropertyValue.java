@@ -18,6 +18,9 @@
  */
 package groovy.lang;
 
+/**
+ * A mutable view of a bean property value.
+ */
 public class PropertyValue {
     // the owner of the property
     private final Object bean;
@@ -25,23 +28,49 @@ public class PropertyValue {
     // the description of the property
     private final MetaProperty mp;
 
+    /**
+     * Creates a property value view.
+     *
+     * @param bean the bean owning the property
+     * @param mp the property metadata
+     */
     public PropertyValue(Object bean, MetaProperty mp) {
         this.bean = bean;
         this.mp = mp;
     }
 
+    /**
+     * Returns the property name.
+     *
+     * @return the property name
+     */
     public String getName() {
         return mp.getName();
     }
 
+    /**
+     * Returns the property type.
+     *
+     * @return the property type
+     */
     public Class getType() {
         return mp.getType();
     }
 
+    /**
+     * Returns the current property value.
+     *
+     * @return the property value
+     */
     public Object getValue() {
         return mp.getProperty(bean);
     }
 
+    /**
+     * Sets the property value.
+     *
+     * @param value the new property value
+     */
     public void setValue(Object value) {
         mp.setProperty(bean, value);
     }

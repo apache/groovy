@@ -19,6 +19,7 @@
 package org.codehaus.groovy.util;
 
 import java.io.Reader;
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -34,7 +35,7 @@ import java.io.Serializable;
  * equivalent directly.
  */
 public class CharSequenceReader extends Reader implements Serializable {
-    private static final long serialVersionUID = -6661279371843310693L;
+    @Serial private static final long serialVersionUID = -6661279371843310693L;
     private final CharSequence charSequence;
     private int idx;
     private int mark;

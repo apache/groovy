@@ -45,6 +45,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Binds directly to a bean property and can act as a source, target, or trigger binding.
+ *
  * @since Groovy 1.1
  */
 public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBinding {
@@ -107,21 +109,53 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         }
     }
 
+    /**
+     * The bound bean instance.
+     */
     Object bean;
+    /**
+     * The property name on the bound bean.
+     */
     String propertyName;
+    /**
+     * Whether equal values should still be treated as updates.
+     */
     boolean nonChangeCheck;
+    /**
+     * The threading strategy used when applying target updates.
+     */
     UpdateStrategy updateStrategy;
     private final Object[] lock = EMPTY_OBJECT_ARRAY;
     private PropertyAccessor propertyAccessor;
 
+    /**
+     * Creates a property binding with the default update strategy for the bean type.
+     *
+     * @param bean the bean that owns the property
+     * @param propertyName the property name
+     */
     public PropertyBinding(Object bean, String propertyName) {
         this(bean, propertyName, (UpdateStrategy) null);
     }
 
+    /**
+     * Creates a property binding using a named update strategy.
+     *
+     * @param bean the bean that owns the property
+     * @param propertyName the property name
+     * @param updateStrategy the named update strategy, or {@code null}
+     */
     public PropertyBinding(Object bean, String propertyName, String updateStrategy) {
         this(bean, propertyName, UpdateStrategy.of(updateStrategy));
     }
 
+    /**
+     * Creates a property binding using an explicit update strategy.
+     *
+     * @param bean the bean that owns the property
+     * @param propertyName the property name
+     * @param updateStrategy the update strategy, or {@code null} for the default
+     */
     public PropertyBinding(Object bean, String propertyName, UpdateStrategy updateStrategy) {
         this.bean = bean;
         this.propertyName = propertyName;
@@ -167,6 +201,11 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         }
     }
 
+    /**
+     * Returns the threading strategy used when applying target updates.
+     *
+     * @return the update strategy
+     */
     public UpdateStrategy getUpdateStrategy() {
         return updateStrategy;
     }
@@ -180,6 +219,11 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         return UpdateStrategy.SAME;
     }
 
+    /**
+     * Applies a new value to the bound property using the configured update strategy.
+     *
+     * @param newValue the new property value
+     */
     @Override
     public void updateTargetValue(final Object newValue) {
         Runnable runnable = new Runnable() {
@@ -250,40 +294,88 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         }
     }
 
+    /**
+     * Returns whether value-equality checks should suppress redundant updates.
+     *
+     * @return {@code true} when redundant updates should be suppressed
+     */
     public boolean isNonChangeCheck() {
         synchronized (lock) {
             return nonChangeCheck;
         }
     }
 
+    /**
+     * Enables or disables suppression of redundant equal-value updates.
+     *
+     * @param nonChangeCheck {@code true} to suppress redundant equal-value updates
+     */
     public void setNonChangeCheck(boolean nonChangeCheck) {
         synchronized (lock) {
             this.nonChangeCheck = nonChangeCheck;
         }
     }
 
+    /**
+     * Reads the current value of the bound property from the bean.
+     *
+     * @return the current property value
+     */
     @Override
     public Object getSourceValue() {
         return propertyAccessor().read(bean, propertyName);
     }
 
+    /**
+     * Creates a property-change-aware full binding rooted at this property.
+     *
+     * @param source the source binding
+     * @param target the target binding
+     * @return the created full binding
+     */
     @Override
     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
         return new PropertyFullBinding(source, target);
     }
 
+    /**
+     * Full binding implementation that listens for property-change events on the bound bean.
+     */
     class PropertyFullBinding extends AbstractFullBinding implements PropertyChangeListener {
 
+        /**
+         * The bean currently observed for property changes.
+         */
         Object boundBean;
+        /**
+         * The property currently observed for changes.
+         */
         Object boundProperty;
+        /**
+         * Indicates whether this full binding is currently bound.
+         */
         boolean bound;
+        /**
+         * Indicates whether the bean supports property-specific listeners.
+         */
         boolean boundToProperty;
 
+        /**
+         * Creates a property-aware full binding.
+         *
+         * @param source the source binding
+         * @param target the target binding
+         */
         PropertyFullBinding(SourceBinding source, TargetBinding target) {
             setSourceBinding(source);
             setTargetBinding(target);
         }
 
+        /**
+         * Responds to observed property changes by pushing an updated value to the target.
+         *
+         * @param event the property change event
+         */
         @Override
         public void propertyChange(PropertyChangeEvent event) {
             if (boundToProperty || event.getPropertyName().equals(boundProperty)) {
@@ -291,6 +383,9 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             }
         }
 
+        /**
+         * Starts listening for property changes on the current bean.
+         */
         @Override
         public void bind() {
             if (!bound) {
@@ -311,6 +406,9 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             }
         }
 
+        /**
+         * Removes any property-change listeners installed by this binding.
+         */
         @Override
         public void unbind() {
             if (bound) {
@@ -333,6 +431,9 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
             }
         }
 
+        /**
+         * Rebinds property-change listeners when the binding is currently active.
+         */
         @Override
         public void rebind() {
             if (bound) {
@@ -342,26 +443,78 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
         }
     }
 
+    /**
+     * Returns the bean that owns the bound property.
+     *
+     * @return the current bean
+     */
     public Object getBean() {
         return bean;
     }
 
+    /**
+     * Replaces the bean that owns the bound property.
+     *
+     * @param bean the new bean
+     */
     public void setBean(Object bean) {
         this.bean = bean;
         setupPropertyReaderAndWriter();
     }
 
+    /**
+     * Returns the name of the bound property.
+     *
+     * @return the property name
+     */
     public String getPropertyName() {
         return propertyName;
     }
 
+    /**
+     * Replaces the name of the bound property.
+     *
+     * @param propertyName the new property name
+     */
     public void setPropertyName(String propertyName) {
         this.propertyName = propertyName;
     }
 
+    /**
+     * Defines the thread on which target updates should run.
+     */
     public enum UpdateStrategy {
-        MIXED, ASYNC, SYNC, SAME, OUTSIDE, DEFER;
+        /**
+         * Chooses a strategy dynamically based on the current execution context.
+         */
+        MIXED,
+        /**
+         * Always updates asynchronously.
+         */
+        ASYNC,
+        /**
+         * Always updates synchronously on the event-dispatch thread.
+         */
+        SYNC,
+        /**
+         * Updates on the calling thread.
+         */
+        SAME,
+        /**
+         * Updates synchronously off the event-dispatch thread.
+         */
+        OUTSIDE,
+        /**
+         * Defers updates until the event queue processes them.
+         */
+        DEFER;
 
+        /**
+         * Resolves an update strategy name.
+         *
+         * @param str the strategy name
+         * @return the matching strategy, or {@code null} when the name is not recognized
+         */
         public static UpdateStrategy of(String str) {
             if ("mixed".equalsIgnoreCase(str)) {
                 return MIXED;

@@ -22,14 +22,11 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -37,7 +34,6 @@ import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -59,20 +55,59 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.*;
-import static org.objectweb.asm.Opcodes.*;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ConditionValue;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constantBooleanValue;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isEmptyStatement;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mayReachLoopCondition;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThroughToNextSwitchCase;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.IADD;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.ICONST_M1;
+import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNULL;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.MONITORENTER;
+import static org.objectweb.asm.Opcodes.MONITOREXIT;
+import static org.objectweb.asm.Opcodes.NOP;
+import static org.objectweb.asm.Opcodes.RETURN;
 
+/**
+ * Generates bytecode for Groovy statements by visiting AST statement nodes
+ * and emitting corresponding JVM instructions via the {@link WriterController}.
+ * Handles control flow (loops, branches, try/catch), synchronization, assertions,
+ * and expression statements.
+ */
 public class StatementWriter {
 
     private static final MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
     private static final MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
 
+    /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
 
+    /**
+     * Creates a statement writer backed by the given controller.
+     *
+     * @param controller the writer controller for the current compilation
+     */
     public StatementWriter(final WriterController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Emits bytecode labels for any statement labels attached to {@code statement}.
+     * Called before emitting the body of every statement so that named labels
+     * ({@code break foo} / {@code continue foo}) resolve correctly.
+     *
+     * @param statement the statement whose labels should be emitted
+     */
     protected void writeStatementLabel(final Statement statement) {
         List<String> labels = statement.getStatementLabels();
         if (labels != null) {
@@ -84,6 +119,14 @@ public class StatementWriter {
         }
     }
 
+    /**
+     * Generates bytecode for a block statement by visiting each contained statement.
+     * Pushes the block's variable scope, emits the statements, and pops afterward.
+     * Named labels on the block create a breakable region so that {@code break label}
+     * within the block jumps to the end of it.
+     *
+     * @param block the block statement to compile
+     */
     public void writeBlockStatement(final BlockStatement block) {
         writeStatementLabel(block);
 
@@ -107,6 +150,13 @@ public class StatementWriter {
         operandStack.popDownTo(mark);
     }
 
+    /**
+     * Generates bytecode for a for statement.
+     * Delegates to {@link #writeForLoopWithClosureList} for C-style loops (using a
+     * {@link ClosureListExpression}), or to {@link #writeForInLoop} for for-in loops.
+     *
+     * @param statement the for statement to compile
+     */
     public void writeForStatement(final ForStatement statement) {
         if (statement.getCollectionExpression() instanceof ClosureListExpression) {
             writeForLoopWithClosureList(statement);
@@ -115,6 +165,13 @@ public class StatementWriter {
         }
     }
 
+    /**
+     * Generates bytecode for a for-in loop by calling {@code iterator()} on the
+     * collection expression and delegating loop control to
+     * {@link #writeForInLoopControlAndBlock}.
+     *
+     * @param statement the for-in statement to compile
+     */
     protected void writeForInLoop(final ForStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitForLoop");
         writeStatementLabel(statement);
@@ -132,21 +189,27 @@ public class StatementWriter {
         compileStack.pop();
     }
 
+    /**
+     * Emits the loop-control structure and body for a for-in loop.
+     * Assumes the iterator object is already on the operand stack.
+     * Declares loop variables, emits the {@code hasNext}/{@code next} check-and-advance,
+     * generates the loop body, and handles index-variable increment when present.
+     *
+     * @param statement the for-in statement whose control and body should be emitted
+     */
     protected void writeForInLoopControlAndBlock(ForStatement statement) {
         CompileStack compileStack = controller.getCompileStack();
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
         // declare the loop index and value variables
-        BytecodeVariable indexVariable = Optional.ofNullable(statement.getIndexVariable()).map(iv -> {
-            mv.visitInsn(ICONST_M1); // initialize to -1 so increment can pair with next()
-            return compileStack.defineVariable(iv, true);
-        }).orElse(null);
+        BytecodeVariable indexVariable = defineLoopIndexVariable(statement);
         BytecodeVariable valueVariable = compileStack.defineVariable(statement.getValueVariable(), false);
 
         // get the iterator and generate the loop control
         int iterator = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
         Label breakLabel = compileStack.getBreakLabel(), continueLabel = compileStack.getContinueLabel();
+        boolean bodyMayReachContinue = mayReachLoopCondition(statement);
 
         mv.visitVarInsn(ALOAD, iterator);
         mv.visitJumpInsn(IFNULL, breakLabel);
@@ -178,20 +241,54 @@ public class StatementWriter {
 
         // generate the loop body
         statement.getLoopBlock().visit(controller.getAcg());
-        mv.visitJumpInsn(GOTO, continueLabel);
+        writeLoopBackEdge(continueLabel, bodyMayReachContinue);
 
         mv.visitLabel(breakLabel);
         compileStack.removeVar(iterator);
     }
 
+    protected final BytecodeVariable defineLoopIndexVariable(final ForStatement statement) {
+        CompileStack compileStack = controller.getCompileStack();
+        return Optional.ofNullable(statement.getIndexVariable()).map(iv -> {
+            controller.getMethodVisitor().visitInsn(ICONST_M1); // initialize to -1 so increment can pair with next()
+            return compileStack.defineVariable(iv, true);
+        }).orElse(null);
+    }
+
+    protected final void writeLoopBackEdge(final Label continueLabel, final boolean bodyMayReachContinue) {
+        if (bodyMayReachContinue) {
+            controller.getMethodVisitor().visitJumpInsn(GOTO, continueLabel);
+        }
+    }
+
+    /**
+     * Emits the {@link java.util.Iterator#hasNext()} call via the given visitor.
+     * Overrideable so subclasses can substitute a specialized or inlined variant.
+     *
+     * @param mv the method visitor to write to
+     */
     protected void writeIteratorHasNext(final MethodVisitor mv) {
         iteratorHasNextMethod.call(mv);
     }
 
+    /**
+     * Emits the {@link java.util.Iterator#next()} call via the given visitor.
+     * Overrideable so subclasses can substitute a specialized or inlined variant.
+     *
+     * @param mv the method visitor to write to
+     */
     protected void writeIteratorNext(final MethodVisitor mv) {
         iteratorNextMethod.call(mv);
     }
 
+    /**
+     * Generates bytecode for a C-style {@code for(init; cond; incr)} loop.
+     * The collection expression is a {@link ClosureListExpression} whose middle
+     * element is the boolean condition, lower elements are initializers, and
+     * upper elements are incrementors.
+     *
+     * @param statement the for statement with a {@link ClosureListExpression} collection
+     */
     protected void writeForLoopWithClosureList(final ForStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitForLoop");
         writeStatementLabel(statement);
@@ -218,30 +315,25 @@ public class StatementWriter {
 
         Label cond = new Label();
         mv.visitLabel(cond);
-        // visit condition leave boolean on stack
-        {
-            int mark = controller.getOperandStack().getStackLength();
-            Expression condExpr = expressions.get(condIndex);
-            condExpr.visit(controller.getAcg());
-            controller.getOperandStack().castToBool(mark, true);
+        ConditionValue conditionValue = visitConditionOfLoopStatement(expressions.get(condIndex), breakLabel, mv);
+        boolean bodyMayReachContinue = mayReachLoopCondition(statement);
+        if (conditionValue != ConditionValue.ALWAYS_FALSE) {
+            // Generate the loop body
+            statement.getLoopBlock().visit(controller.getAcg());
+
+            if (bodyMayReachContinue) {
+                // visit increment
+                mv.visitLabel(continueLabel);
+                // fix for being on the wrong line when debugging for loop
+                controller.getAcg().onLineNumber(statement, "increment condition");
+                for (int i = condIndex + 1; i < size; i += 1) {
+                    visitExpressionOfLoopStatement(expressions.get(i));
+                }
+
+                // jump to test the condition again
+                writeLoopBackEdge(cond, true);
+            }
         }
-        // jump if we don't want to continue
-        // note: ifeq tests for ==0, a boolean is 0 if it is false
-        controller.getOperandStack().jump(IFEQ, breakLabel);
-
-        // Generate the loop body
-        statement.getLoopBlock().visit(controller.getAcg());
-
-        // visit increment
-        mv.visitLabel(continueLabel);
-        // fix for being on the wrong line when debugging for loop
-        controller.getAcg().onLineNumber(statement, "increment condition");
-        for (int i = condIndex + 1; i < size; i += 1) {
-            visitExpressionOfLoopStatement(expressions.get(i));
-        }
-
-        // jump to test the condition again
-        mv.visitJumpInsn(GOTO, cond);
 
         // loop end
         mv.visitLabel(breakLabel);
@@ -265,29 +357,28 @@ public class StatementWriter {
         }
     }
 
-    private void visitConditionOfLoopingStatement(final BooleanExpression expression, final Label breakLabel, final MethodVisitor mv) {
-        Expression expr = expression;
-        boolean reverse = false;
-        do { // undo arbitrary nesting of (Boolean|Not)Expressions
-            if (expr instanceof NotExpression) reverse = !reverse;
-            expr = ((BooleanExpression) expr).getExpression();
-        } while (expr instanceof BooleanExpression);
-
-        // optimize constant boolean condition
-        if (expr instanceof ConstantExpression && ((ConstantExpression) expr).getValue() instanceof Boolean) {
-            if (((ConstantExpression) expr).isFalseExpression() && !reverse) {
-                mv.visitJumpInsn(GOTO, breakLabel); // unconditional exit
-                return;
-            } else {
-                // unconditional loop
-                return;
-            }
+    private ConditionValue visitConditionOfLoopStatement(final Expression expression, final Label breakLabel, final MethodVisitor mv) {
+        ConditionValue conditionValue = constantBooleanValue(expression);
+        if (conditionValue == ConditionValue.ALWAYS_FALSE) {
+            mv.visitJumpInsn(GOTO, breakLabel); // unconditional exit
+            return conditionValue;
+        }
+        if (conditionValue == ConditionValue.ALWAYS_TRUE) {
+            return conditionValue; // unconditional loop
         }
 
+        int mark = controller.getOperandStack().getStackLength();
         expression.visit(controller.getAcg());
+        controller.getOperandStack().castToBool(mark, true);
         controller.getOperandStack().jump(IFEQ, breakLabel);
+        return ConditionValue.UNKNOWN;
     }
 
+    /**
+     * Generates bytecode for a while loop.
+     *
+     * @param statement the while statement to compile
+     */
     public void writeWhileLoop(final WhileStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitWhileLoop");
         writeStatementLabel(statement);
@@ -296,19 +387,25 @@ public class StatementWriter {
         compileStack.pushLoop(statement.getStatementLabels());
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
+        boolean bodyMayReachContinue = mayReachLoopCondition(statement);
 
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitLabel(continueLabel);
 
-        visitConditionOfLoopingStatement(statement.getBooleanExpression(), breakLabel, mv);
-        statement.getLoopBlock().visit(controller.getAcg());
-
-        mv.visitJumpInsn(GOTO, continueLabel);
+        if (visitConditionOfLoopStatement(statement.getBooleanExpression(), breakLabel, mv) != ConditionValue.ALWAYS_FALSE) {
+            statement.getLoopBlock().visit(controller.getAcg());
+            writeLoopBackEdge(continueLabel, bodyMayReachContinue);
+        }
         mv.visitLabel(breakLabel);
 
         compileStack.pop();
     }
 
+    /**
+     * Generates bytecode for a do-while loop.
+     *
+     * @param statement the do-while statement to compile
+     */
     public void writeDoWhileLoop(final DoWhileStatement statement) {
         writeStatementLabel(statement);
 
@@ -322,15 +419,22 @@ public class StatementWriter {
         mv.visitLabel(blockLabel);
 
         statement.getLoopBlock().visit(controller.getAcg());
-        mv.visitLabel(continueLabel); // GROOVY-11739: continue jumps to condition
-        visitConditionOfLoopingStatement(statement.getBooleanExpression(), breakLabel, mv);
-
-        mv.visitJumpInsn(GOTO, blockLabel);
+        if (mayReachLoopCondition(statement)) {
+            mv.visitLabel(continueLabel); // GROOVY-11739: continue jumps to condition
+            if (visitConditionOfLoopStatement(statement.getBooleanExpression(), breakLabel, mv) != ConditionValue.ALWAYS_FALSE) {
+                mv.visitJumpInsn(GOTO, blockLabel);
+            }
+        }
         mv.visitLabel(breakLabel);
 
         compileStack.pop();
     }
 
+    /**
+     * Generates bytecode for an if/else statement.
+     *
+     * @param statement the if statement to compile
+     */
     public void writeIfElse(final IfStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitIfElse");
         writeStatementLabel(statement);
@@ -345,13 +449,23 @@ public class StatementWriter {
         if (statement.getElseBlock().isEmpty()) {
             mv.visitLabel(elsePath);
         } else {
-            mv.visitJumpInsn(GOTO, exitPath);
+            if (maybeFallsThrough(statement.getIfBlock())) {
+                mv.visitJumpInsn(GOTO, exitPath);
+            }
             mv.visitLabel(elsePath);
             statement.getElseBlock().visit(controller.getAcg());
         }
         mv.visitLabel(exitPath);
     }
 
+    /**
+     * Generates bytecode for a try/catch/finally statement.
+     * Handles exception table registration, finally-block inlining at every
+     * exit path, and a catch-all rethrow for exceptions not handled by
+     * any {@code catch} clause.
+     *
+     * @param statement the try/catch/finally statement to compile
+     */
     public void writeTryCatchFinally(final TryCatchStatement statement) {
         writeStatementLabel(statement);
 
@@ -442,14 +556,10 @@ public class StatementWriter {
         final CompileStack compileStack = controller.getCompileStack();
 
         recorder.excludedStatement = () -> {
-            if (finallyStatement == null || finallyStatement instanceof EmptyStatement) return;
-
-            final VariableScope originalScope = compileStack.getScope();
-            compileStack.pop();
-            compileStack.pushBlockRecorderVisit(recorder);
-            finallyStatement.visit(controller.getAcg());
-            compileStack.popBlockRecorderVisit(recorder);
-            compileStack.pushVariableScope(originalScope);
+            if (isEmptyStatement(finallyStatement)) return;
+            // GROOVY-4721, GROOVY-12062: emit the finally with the try-block locals
+            // hidden, then restore the try scope (and its variables) afterwards.
+            compileStack.visitExcludedFinally(recorder, () -> finallyStatement.visit(controller.getAcg()));
         };
 
         compileStack.pushBlockRecorder(recorder);
@@ -469,6 +579,13 @@ public class StatementWriter {
         br.closeRange(label);
     }
 
+    /**
+     * Generates bytecode for a switch statement.
+     * Each {@code case} expression is compared using Groovy's {@code isCase} operator,
+     * so non-integer switch expressions are supported.
+     *
+     * @param statement the switch statement to compile
+     */
     public void writeSwitch(final SwitchStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitSwitch");
         writeStatementLabel(statement);
@@ -479,7 +596,7 @@ public class StatementWriter {
 
         // switch does not have a continue label; use enclosing continue label
         CompileStack compileStack = controller.getCompileStack();
-        Label breakLabel = compileStack.pushSwitch();
+        Label breakLabel = compileStack.pushSwitch(statement.getStatementLabels());
 
         int switchVariableIndex = compileStack.defineTemporaryVariable("switch", exprType, true);
 
@@ -492,24 +609,26 @@ public class StatementWriter {
 
         int i = 0;
         for (Iterator<CaseStatement> iter = caseStatements.iterator(); iter.hasNext(); i += 1) {
-            writeCaseStatement(iter.next(), switchVariableIndex, labels[i], labels[i + 1]);
+            writeCaseStatement(iter.next(), statement, switchVariableIndex, labels[i], labels[i + 1]);
         }
 
         statement.getDefaultStatement().visit(controller.getAcg());
 
-        controller.getMethodVisitor().visitLabel(breakLabel);
+        if (maybeFallsThrough(statement) || statement.getStatementLabels() != null) {
+            controller.getMethodVisitor().visitLabel(breakLabel);
+        }
         compileStack.removeVar(switchVariableIndex);
         compileStack.pop();
     }
 
-    private void writeCaseStatement(final CaseStatement statement, final int switchVariableIndex, final Label thisLabel, final Label nextLabel) {
-        controller.getAcg().onLineNumber(statement, "visitCaseStatement");
+    private void writeCaseStatement(final CaseStatement caseStatement, final SwitchStatement switchStatement, final int switchVariableIndex, final Label thisLabel, final Label nextLabel) {
+        controller.getAcg().onLineNumber(caseStatement, "visitCaseStatement");
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
         mv.visitVarInsn(ALOAD, switchVariableIndex);
 
-        statement.getExpression().visit(controller.getAcg());
+        caseStatement.getExpression().visit(controller.getAcg());
         operandStack.box();
         controller.getBinaryExpressionHelper().getIsCaseMethod().call(mv);
         operandStack.replace(ClassHelper.boolean_TYPE);
@@ -518,16 +637,22 @@ public class StatementWriter {
 
         mv.visitLabel(thisLabel);
 
-        statement.getCode().visit(controller.getAcg());
+        caseStatement.getCode().visit(controller.getAcg());
 
         // now if we don't finish with a break we need to jump past the next comparison
-        if (nextLabel != null) {
+        if (nextLabel != null && maybeFallsThroughToNextSwitchCase(caseStatement.getCode(), switchStatement)) {
             mv.visitJumpInsn(GOTO, nextLabel);
         }
 
         mv.visitLabel(l0);
     }
 
+    /**
+     * Generates bytecode for a break statement, applying any intervening
+     * finally blocks before the jump.
+     *
+     * @param statement the break statement to compile
+     */
     public void writeBreak(final BreakStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitBreakStatement");
         writeStatementLabel(statement);
@@ -537,6 +662,12 @@ public class StatementWriter {
         controller.getMethodVisitor().visitJumpInsn(GOTO, label);
     }
 
+    /**
+     * Generates bytecode for a continue statement, applying any intervening
+     * finally blocks before the jump.
+     *
+     * @param statement the continue statement to compile
+     */
     public void writeContinue(final ContinueStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitContinueStatement");
         writeStatementLabel(statement);
@@ -546,6 +677,14 @@ public class StatementWriter {
         controller.getMethodVisitor().visitJumpInsn(GOTO, label);
     }
 
+    /**
+     * Generates bytecode for a synchronized statement.
+     * Stores the monitor object in a local variable, emits
+     * {@code MONITORENTER}/{@code MONITOREXIT} guards, and registers
+     * a catch-all exception handler that exits the monitor before rethrowing.
+     *
+     * @param statement the synchronized statement to compile
+     */
     public void writeSynchronized(final SynchronizedStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitSynchronizedStatement");
         writeStatementLabel(statement);
@@ -580,22 +719,38 @@ public class StatementWriter {
         compileStack.writeExceptionTable(fb, catchAll, null);
         compileStack.pop(); //pop fb
 
-        finallyPart.run();
-        mv.visitJumpInsn(GOTO, synchronizedEnd);
+        boolean fallthrough = maybeFallsThrough(statement.getCode());
+        if (fallthrough) {
+            finallyPart.run();
+            mv.visitJumpInsn(GOTO, synchronizedEnd);
+        }
         mv.visitLabel(catchAll);
         finallyPart.run();
         mv.visitInsn(ATHROW);
 
-        mv.visitLabel(synchronizedEnd);
+        if (fallthrough) {
+            mv.visitLabel(synchronizedEnd);
+        }
         compileStack.removeVar(index);
     }
 
+    /**
+     * Generates bytecode for an assert statement.
+     *
+     * @param statement the assert statement to compile
+     */
     public void writeAssert(final AssertStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitAssertStatement");
         writeStatementLabel(statement);
         controller.getAssertionWriter().writeAssertStatement(statement);
     }
 
+    /**
+     * Generates bytecode for a throw statement.
+     * Casts the expression to {@code Throwable} and emits {@code ATHROW}.
+     *
+     * @param statement the throw statement to compile
+     */
     public void writeThrow(final ThrowStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitThrowStatement");
         writeStatementLabel(statement);
@@ -610,6 +765,14 @@ public class StatementWriter {
         controller.getOperandStack().remove(1);
     }
 
+    /**
+     * Generates bytecode for a return statement.
+     * For void methods emits {@code RETURN} after applying any finally blocks.
+     * For value-returning methods evaluates the expression, casts it to the
+     * declared return type, and emits the appropriate typed return instruction.
+     *
+     * @param statement the return statement to compile
+     */
     public void writeReturn(final ReturnStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitReturnStatement");
         writeStatementLabel(statement);
@@ -648,6 +811,14 @@ public class StatementWriter {
         }
     }
 
+    /**
+     * Generates bytecode for an expression statement.
+     * Evaluates the expression and discards any value left on the operand stack.
+     * Marks method-call and binary expressions so that unused return values
+     * are elided rather than boxed.
+     *
+     * @param statement the expression statement to compile
+     */
     public void writeExpressionStatement(final ExpressionStatement statement) {
         Expression expression = statement.getExpression();
 

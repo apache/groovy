@@ -29,7 +29,7 @@ import javax.xml.transform.stream.StreamResult
 class StreamingSAXBuilderTest {
 
     @Test
-    void testDefaultSerialization() {
+    void defaultSerialization() {
         def handler = TransformerFactory.newInstance().newTransformerHandler()
         def outstream = new ByteArrayOutputStream()
         handler.setResult(new StreamResult(outstream))
@@ -48,7 +48,7 @@ class StreamingSAXBuilderTest {
     }
 
     @Test
-    void testDefaultSerializationNamespaces() {
+    void defaultSerializationNamespaces() {
         def handler = TransformerFactory.newInstance().newTransformerHandler()
         def outstream = new ByteArrayOutputStream()
         handler.setResult(new StreamResult(outstream))
@@ -68,8 +68,30 @@ class StreamingSAXBuilderTest {
         assert xmlDiff.similar(), xmlDiff.toString()
     }
 
+    // GROOVY-9698
     @Test
-    void testCustomHandler() {
+    void siblingsInheritNamespacesWithoutRedeclaration() {
+        def handler = TransformerFactory.newInstance().newTransformerHandler()
+        def outstream = new ByteArrayOutputStream()
+        handler.setResult(new StreamResult(outstream))
+
+        def doc = new StreamingSAXBuilder().bind {
+            mkp.declareNamespace("" : "uri:urn1")
+            mkp.declareNamespace("x" : "uri:urn2")
+            outer {
+                'x:inner'('hello')
+                'x:inner'('hello again')
+            }
+        }
+
+        doc(handler)
+        def output = outstream.toString()
+        assert !output.replaceFirst(/xmlns="uri:urn1"/, '').contains('xmlns="uri:urn1"')
+        assert !output.replaceFirst(/xmlns:x="uri:urn2"/, '').contains('xmlns:x="uri:urn2"')
+    }
+
+    @Test
+    void customHandler() {
         def visited = []
         def handler = [
                 startDocument: {->

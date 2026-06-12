@@ -61,10 +61,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 /**
  * A Command line to execute groovy.
  */
 public class GroovyMain {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyMain.class.getName());
 
     // arguments to the script
     private List<String> args;
@@ -115,12 +119,26 @@ public class GroovyMain {
     }
 
     // package-level visibility for testing purposes (just usage/errors at this stage)
+    /**
+     * Processes command-line arguments using a single output stream.
+     *
+     * @param args the command-line arguments
+     * @param out the output stream used for both normal and error output
+     * @deprecated use {@link #processArgs(String[], PrintStream, PrintStream)}
+     */
     @Deprecated
     static void processArgs(String[] args, final PrintStream out) {
         processArgs(args, out, out);
     }
 
     // package-level visibility for testing purposes (just usage/errors at this stage)
+    /**
+     * Processes command-line arguments.
+     *
+     * @param args the command-line arguments
+     * @param out the output stream for normal output
+     * @param err the output stream for error output
+     */
     static void processArgs(String[] args, final PrintStream out, final PrintStream err) {
         GroovyCommand groovyCommand = new GroovyCommand();
 
@@ -151,7 +169,15 @@ public class GroovyMain {
         }
     }
 
+    /**
+     * Supplies version text for the command-line interface.
+     */
     public static class VersionProvider implements IVersionProvider {
+        /**
+         * Returns the CLI version lines.
+         *
+         * @return the version lines
+         */
         @Override
         public String[] getVersion() {
             return new String[] {
@@ -233,6 +259,9 @@ public class GroovyMain {
         @Option(names = {"--type-checked"}, description = "Use TypeChecked")
         private boolean typeChecked;
 
+        /**
+         * Unmatched command-line arguments.
+         */
         @Unmatched
         List<String> arguments = new ArrayList<>();
 
@@ -330,6 +359,13 @@ public class GroovyMain {
         }
     }
 
+    /**
+     * Evaluates configuration scripts against the supplied compiler configuration.
+     *
+     * @param scripts the configuration script paths
+     * @param conf the configuration to customize
+     * @throws IOException if a script cannot be read
+     */
     public static void processConfigScripts(List<String> scripts, CompilerConfiguration conf) throws IOException {
         if (scripts.isEmpty()) return;
 
@@ -340,6 +376,12 @@ public class GroovyMain {
         }
     }
 
+    /**
+     * Evaluates inline configuration script text against the supplied compiler configuration.
+     *
+     * @param scriptText the configuration script text
+     * @param conf the configuration to customize
+     */
     public static void processConfigScriptText(String scriptText, CompilerConfiguration conf) {
         if (scriptText.trim().isEmpty()) return;
 
@@ -348,6 +390,12 @@ public class GroovyMain {
         shell.evaluate(scriptText);
     }
 
+    /**
+     * Builds a configuration script that applies the supplied transformations.
+     *
+     * @param transforms the transformation declarations
+     * @return the generated configuration script text
+     */
     public static String buildConfigScriptText(List<String> transforms) {
         StringBuilder script = new StringBuilder();
         script.append("withConfig(configuration) {").append("\n");
@@ -390,13 +438,13 @@ public class GroovyMain {
             }
             return true;
         } catch (CompilationFailedException e) {
-            System.err.println(e);
+            LOGGER.log(ERROR, e.toString());
             return false;
         } catch (Throwable e) {
             if (e instanceof InvokerInvocationException iie) {
                 e = iie.getCause();
             }
-            System.err.println("Caught: " + e);
+            LOGGER.log(ERROR, "Caught: {0}", e);
             if (!debug) {
                 StackTraceUtils.deepSanitize(e);
             }
@@ -511,13 +559,29 @@ public class GroovyMain {
     // GROOVY-6771
     private static void setupContextClassLoader(GroovyShell shell) {
         final Thread current = Thread.currentThread();
+        /**
+         * Privileged action that updates the thread context class loader.
+         */
         class DoSetContext implements PrivilegedAction<Object> {
+            /**
+             * Context class loader to install.
+             */
             ClassLoader classLoader;
 
+            /**
+             * Creates the context-switch action.
+             *
+             * @param loader the class loader to install
+             */
             DoSetContext(ClassLoader loader) {
                 classLoader = loader;
             }
 
+            /**
+             * Sets the current thread context class loader.
+             *
+             * @return {@code null}
+             */
             @Override
             public Object run() {
                 current.setContextClassLoader(classLoader);
@@ -525,12 +589,7 @@ public class GroovyMain {
             }
         }
 
-        doPrivileged(new DoSetContext(shell.getClassLoader()));
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
+        new DoSetContext(shell.getClassLoader()).run();
     }
 
     /**

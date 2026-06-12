@@ -79,9 +79,32 @@ import java.util.stream.Stream;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf;
 
 /**
- * Helper for {@link ClassNode} and classes handling them.  Contains a set of
- * pre-defined instances for the most used types and some code for cached node
- * creation and basic handling.
+ * Helper for {@link ClassNode} creation and type management. Contains cached instances for
+ * all commonly used Groovy and Java types, plus factory methods for creating ClassNodes efficiently.
+ *
+ * <p>Provides:
+ * <ul>
+ *   <li>Predefined {@link ClassNode} constants for primitive types, wrapper types, and common classes</li>
+ *   <li>Caching mechanisms to avoid creating duplicate ClassNode instances for the same class</li>
+ *   <li>Factory methods for constructing ClassNodes from Java {@link Class} or String names</li>
+ *   <li>Type utility methods for wrapper/unwrapper conversions and type comparisons</li>
+ *   <li>Dynamic type representation for Groovy's dynamic typing system</li>
+ * </ul>
+ *
+ * <p><strong>Performance Note:</strong> ClassNodes are cached by reference for all predefined types.
+ * Using {@code make(Class)} or {@code make(String)} returns cached instances when available,
+ * providing O(1) lookup. Use {@code makeWithoutCaching()} only when a unique instance is needed.
+ *
+ * <p><strong>Type Categories:</strong>
+ * <ul>
+ *   <li><strong>Cached types:</strong> Common Java types (Object, String, Number, etc.) and all primitive types.
+ *       These are pre-created once and reused for performance.</li>
+ *   <li><strong>Uncached types:</strong> Collection types (Map, List, Set) created without caching.</li>
+ * </ul>
+ *
+ * @see ClassNode for the AST representation of classes
+ * @see Parameter for method parameters using ClassNode
+ * @see MethodNode for methods using ClassNode for return and parameter types
  */
 public class ClassHelper {
 
@@ -213,12 +236,27 @@ public class ClassHelper {
 
     public static final String OBJECT = "java.lang.Object";
 
+    /**
+     * Provides the dynamic type representation, used by Groovy for dynamic typing when type information is unknown.
+     * Returns a ClassNode marked with metadata indicating it represents a dynamic type.
+     *
+     * @return a ClassNode representing the dynamic type (Object with metadata flag)
+     * @see #DYNAMIC_TYPE
+     */
     public static ClassNode dynamicType() {
         ClassNode node = OBJECT_TYPE.getPlainNodeReference();
         node.putNodeMetaData(DYNAMIC_TYPE_METADATA, Boolean.TRUE);
         return node;
     }
 
+    /**
+     * Creates a cached {@link ClassNode} for the given Java class. Cached instances are reused across
+     * the compilation unit, reducing memory overhead. If the cache does not contain an entry, a new
+     * ClassNode is created, cached, and returned.
+     *
+     * @param c the Java class to create a ClassNode for
+     * @return a cached ClassNode for the given class
+     */
     public static ClassNode makeCached(Class c) {
         ClassNode classNode;
         final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
@@ -231,13 +269,13 @@ public class ClassHelper {
     }
 
     /**
-     * Creates an array of ClassNodes using an array of classes.
-     * For each of the given classes a new ClassNode will be
-     * created
+     * Creates an array of ClassNodes using an array of Java classes, using caching where available.
+     * Each class is converted to a ClassNode via {@link #make(Class)}.
      *
-     * @param classes an array of classes used to create the ClassNodes
-     * @return an array of ClassNodes
+     * @param classes the Java classes to convert to ClassNodes
+     * @return an array of ClassNodes corresponding to the input classes, preserving order
      * @see #make(Class)
+     * @see #make(Class, boolean)
      */
     public static ClassNode[] make(Class[] classes) {
         ClassNode[] cns = new ClassNode[classes.length];
@@ -248,17 +286,27 @@ public class ClassHelper {
     }
 
     /**
-     * Creates a ClassNode using a given class.
-     * A new ClassNode object is only created if the class
-     * is not one of the predefined ones
+     * Creates a ClassNode for the given Java class, using caching when available.
+     * Predefined types (like Integer, String, etc.) return cached instances.
+     * For first-time requests of non-predefined types, a new ClassNode is created via {@link #makeWithoutCaching(Class)}.
      *
-     * @param c class used to create the ClassNode
-     * @return ClassNode instance created from the given class
+     * @param c the Java class to create a ClassNode for
+     * @return a ClassNode representing the given class
+     * @see #makeWithoutCaching(Class)
+     * @see #make(String)
      */
     public static ClassNode make(Class c) {
         return make(c, true);
     }
 
+    /**
+     * Creates a ClassNode for the given Java class, optionally including generic type parameters.
+     * Predefined types return cached instances; others are created uncached.
+     *
+     * @param c the Java class to create a ClassNode for
+     * @param includeGenerics whether to include generic type parameters from the class definition
+     * @return a ClassNode representing the given class
+     */
     public static ClassNode make(Class c, boolean includeGenerics) {
         ClassNode cached = classToTypeMap.get(c);
         if (cached != null) return cached;
@@ -269,10 +317,26 @@ public class ClassHelper {
         return makeWithoutCaching(c, includeGenerics);
     }
 
+    /**
+     * Creates a new ClassNode for the given Java class without caching.
+     * Each call creates a unique ClassNode instance, suitable for cases requiring independent instances.
+     *
+     * @param c the Java class to create a ClassNode for
+     * @return a new ClassNode representing the given class (not cached)
+     * @see #make(Class)
+     */
     public static ClassNode makeWithoutCaching(Class c) {
         return makeWithoutCaching(c, true);
     }
 
+    /**
+     * Creates a new ClassNode for the given Java class without caching, optionally including generic types.
+     * Always creates a unique instance, even for predefined types.
+     *
+     * @param c the Java class to create a ClassNode for
+     * @param includeGenerics whether to include generic type parameters from the class
+     * @return a new ClassNode representing the given class (not cached)
+     */
     public static ClassNode makeWithoutCaching(Class c, boolean includeGenerics) {
         if (c.isArray()) {
             ClassNode cn = makeWithoutCaching(c.getComponentType(), includeGenerics);
@@ -290,13 +354,12 @@ public class ClassHelper {
     }
 
     /**
-     * Creates a ClassNode using a given class.
-     * Unlike make(String) this method will not use the cache
-     * to create the ClassNode. This means the ClassNode created
-     * from this method using the same name will have a different
-     * reference
+     * Creates a new ClassNode for the given class name without caching.
+     * Always creates a unique instance. The ClassNode is set up with Object as superclass.
+     * This is typically used for dynamically-created or parsed class names.
      *
-     * @param name of the class the ClassNode is representing
+     * @param name the fully-qualified or simple class name
+     * @return a new ClassNode representing the named class (not cached)
      * @see #make(String)
      */
     public static ClassNode makeWithoutCaching(String name) {
@@ -306,12 +369,14 @@ public class ClassHelper {
     }
 
     /**
-     * Creates a ClassNode using a given class.
-     * If the name is one of the predefined ClassNodes then the
-     * corresponding ClassNode instance will be returned. If the
-     * name is null or of length 0 the dynamic type is returned
+     * Creates a ClassNode for the given class name, returning cached instances for predefined types.
+     * Returns the dynamic type for null or empty names. Checks both primitive names ("int", "boolean")
+     * and fully-qualified names ("java.lang.String", "java.util.Map").
      *
-     * @param name of the class the ClassNode is representing
+     * @param name the fully-qualified or simple class name, or null/empty for dynamic type
+     * @return a ClassNode for the named class, or the dynamic type if name is null or empty
+     * @see #makeWithoutCaching(String)
+     * @see #make(Class)
      */
     public static ClassNode make(String name) {
         if (name == null || name.isEmpty()) return dynamicType();

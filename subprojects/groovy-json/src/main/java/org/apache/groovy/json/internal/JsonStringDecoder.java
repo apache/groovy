@@ -18,8 +18,19 @@
  */
 package org.apache.groovy.json.internal;
 
+/**
+ * Decodes JSON string escape sequences from character buffers.
+ */
 public class JsonStringDecoder {
 
+    /**
+     * Decodes a JSON string slice, avoiding extra work when no escapes are present.
+     *
+     * @param chars source character buffer
+     * @param start inclusive start index
+     * @param to exclusive end index
+     * @return decoded string value
+     */
     public static String decode(char[] chars, int start, int to) {
         if (!Chr.contains(chars, '\\', start, to - start)) {
             return new String(chars, start, to - start);
@@ -27,6 +38,14 @@ public class JsonStringDecoder {
         return decodeForSure(chars, start, to);
     }
 
+    /**
+     * Decodes a JSON string slice assuming escape processing may be required.
+     *
+     * @param chars source character buffer
+     * @param start inclusive start index
+     * @param to exclusive end index
+     * @return decoded string value
+     */
     public static String decodeForSure(char[] chars, int start, int to) {
         // consider wrapping in a try with resources block if CharBuf is ever refactored to have a non-empty close()
         CharBuf builder = CharBuf.create(to - start);

@@ -33,10 +33,16 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITI
  */
 public class EnumTypeCheckingExtension extends TypeCheckingExtension {
 
+    /**
+     * Creates the enum-specific type-checking extension.
+     */
     public EnumTypeCheckingExtension(final StaticTypeCheckingVisitor staticTypeCheckingVisitor) {
         super(staticTypeCheckingVisitor);
     }
 
+    /**
+     * Resolves enum constants referenced inside switch case labels.
+     */
     @Override
     public boolean handleUnresolvedVariableExpression(final VariableExpression vexp) {
         var switchStatement = this.typeCheckingVisitor.typeCheckingContext.getEnclosingSwitchStatement();

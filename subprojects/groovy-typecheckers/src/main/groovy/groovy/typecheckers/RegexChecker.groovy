@@ -18,7 +18,6 @@
  */
 package groovy.typecheckers
 
-import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -99,14 +98,18 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkC
  * https://checkerframework.org/manual/#regex-checker
  * https://homes.cs.washington.edu/~mernst/pubs/regex-types-ftfjp2012.pdf
  * https://github.com/typetools/checker-framework/tree/master/checker/src/main/java/org/checkerframework/checker/regex
+ *
+ * @since 4.0.0
  */
-@Incubating
 class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static final ClassNode MATCHER_TYPE = ClassHelper.make(Matcher)
     private static final String REGEX_GROUP_COUNT = RegexChecker.getSimpleName() + '_INFERRED_GROUP_COUNT'
     private static final String REGEX_MATCHER_RESULT_TYPE = RegexChecker.getSimpleName() + '_MATCHER_RESULT_INFERRED_TYPE'
 
+    /**
+     * Registers regex validation and matcher type-inference hooks for visited methods.
+     */
     @Override
     Object run() {
         beforeVisitMethod { MethodNode method ->
@@ -145,9 +148,12 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     super.visitMethodCallExpression(call)
                     if (call.objectExpression instanceof ClassExpression) {
                         checkPatternMethod(call, call.objectExpression.type)
+                    } else if (isString(call.receiver) && call.methodAsString == 'matches' && call.arguments.expressions) {
+                        def exp = findConstExp(call.arguments.getExpression(0), String)
+                        checkRegex(exp, call)
                     } else if (isPattern(call.receiver) && call.methodAsString == 'matcher') {
-                        def var = findTargetVariable(call.receiver)
-                        def groupCount = var?.getNodeMetaData(REGEX_GROUP_COUNT)
+                        def source = call.receiver instanceof VariableExpression ? findTargetVariable(call.receiver) : call.receiver
+                        def groupCount = source?.getNodeMetaData(REGEX_GROUP_COUNT)
                         if (groupCount != null) {
                             call.putNodeMetaData(REGEX_GROUP_COUNT, groupCount)
                         }
@@ -230,8 +236,8 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 @Override
                 void visitMethodCallExpression(MethodCallExpression call) {
                     if (isPattern(call.receiver) && call.methodAsString == 'matcher') {
-                        def var = findTargetVariable(call.receiver)
-                        def groupCount = var?.getNodeMetaData(REGEX_GROUP_COUNT)
+                        def source = call.receiver instanceof VariableExpression ? findTargetVariable(call.receiver) : call.receiver
+                        def groupCount = source?.getNodeMetaData(REGEX_GROUP_COUNT)
                         if (groupCount != null) {
                             call.putNodeMetaData(REGEX_GROUP_COUNT, groupCount)
                         }
@@ -272,6 +278,12 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         exp.type == MATCHER_TYPE
             || exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == MATCHER_TYPE
             || exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == MATCHER_TYPE
+    }
+
+    private boolean isString(Expression exp) {
+        exp.type == STRING_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == STRING_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == STRING_TYPE
     }
 
     private boolean isPattern(Expression exp) {

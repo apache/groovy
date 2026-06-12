@@ -1328,4 +1328,87 @@ final class AnnotationTest {
             assert obj.m() == 0
         '''
     }
+
+    @Test
+    void testAnnotationNotAllowedOnImport() {
+        def err = shouldFail shell, '''
+            @Deprecated
+            import java.lang.String
+
+            assert true
+        '''
+        assert err.message.contains('Annotation @java.lang.Deprecated is not allowed on element IMPORT')
+    }
+
+    @Test
+    void testAnnotationWithExtendedTargetAllowedOnImport() {
+        assertScript shell, '''
+            import groovy.lang.annotation.ExtendedElementType
+            import groovy.lang.annotation.ExtendedTarget
+
+            @Retention(SOURCE)
+            @Target([FIELD, METHOD])
+            @ExtendedTarget(ExtendedElementType.IMPORT)
+            @interface MyImportAnno {}
+
+            @MyImportAnno
+            import java.lang.String
+
+            assert true
+        '''
+    }
+
+    @Test
+    void testAnnotationWithExtendedTargetNotAllowedOnImport() {
+        def err = shouldFail shell, '''
+            import groovy.lang.annotation.ExtendedElementType
+            import groovy.lang.annotation.ExtendedTarget
+
+            @Retention(SOURCE)
+            @ExtendedTarget(ExtendedElementType.LOOP)
+            @interface LoopOnly {}
+
+            @LoopOnly
+            import java.lang.String
+
+            assert true
+        '''
+        assert err.message.contains('Annotation @LoopOnly is not allowed on element IMPORT')
+    }
+
+    @Test
+    void testAnnotationWithExtendedTargetAllowedOnLoop() {
+        assertScript shell, '''
+            import groovy.lang.annotation.ExtendedElementType
+            import groovy.lang.annotation.ExtendedTarget
+
+            @Retention(SOURCE)
+            @ExtendedTarget(ExtendedElementType.LOOP)
+            @interface MyLoopAnno {}
+
+            @MyLoopAnno
+            for (int i = 0; i < 3; i++) {}
+
+            @MyLoopAnno
+            while (false) {}
+
+            assert true
+        '''
+    }
+
+    @Test
+    void testAnnotationWithExtendedTargetNotAllowedOnLoop() {
+        def err = shouldFail shell, '''
+            import groovy.lang.annotation.ExtendedElementType
+            import groovy.lang.annotation.ExtendedTarget
+
+            @Retention(SOURCE)
+            @ExtendedTarget(ExtendedElementType.IMPORT)
+            @interface ImportOnly {}
+
+            @ImportOnly
+            for (int i = 0; i < 3; i++) {}
+        '''
+        assert err.message.contains('Annotation @ImportOnly is not allowed on element STATEMENT')
+    }
 }

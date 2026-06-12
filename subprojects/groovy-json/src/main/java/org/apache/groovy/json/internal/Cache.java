@@ -26,14 +26,41 @@ package org.apache.groovy.json.internal;
  */
 public interface Cache<KEY, VALUE> {
 
+    /**
+     * Stores a value under the supplied key.
+     *
+     * @param key the cache key
+     * @param value the cached value
+     */
     void put(KEY key, VALUE value);
 
+    /**
+     * Retrieves a value and updates cache state as needed.
+     *
+     * @param key the cache key
+     * @return the cached value, or {@code null} if absent
+     */
     VALUE get(KEY key);
 
+    /**
+     * Retrieves a value using implementation-specific silent access semantics.
+     *
+     * @param key the cache key
+     * @return the cached value, or {@code null} if absent
+     */
     VALUE getSilent(KEY key);
 
+    /**
+     * Removes the value stored for the supplied key.
+     *
+     * @param key the cache key
+     */
     void remove(KEY key);
 
+    /**
+     * Returns the current number of cached entries.
+     *
+     * @return the cache size
+     */
     int size();
 }
-

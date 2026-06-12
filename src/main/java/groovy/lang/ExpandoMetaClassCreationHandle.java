@@ -37,11 +37,12 @@ import org.codehaus.groovy.reflection.ClassInfo;
  */
 public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
+    /**
+     * Shared creation handle instance used when expando meta classes are globally enabled.
+     */
     public static final ExpandoMetaClassCreationHandle instance = new ExpandoMetaClassCreationHandle();
 
-    /* (non-Javadoc)
-     * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
-     */
+    /** {@inheritDoc} */
     @Override
     protected MetaClass createNormalMetaClass(Class theClass, MetaClassRegistry registry) {
         if(theClass != ExpandoMetaClass.class) {
@@ -62,6 +63,12 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
         GroovySystem.getMetaClassRegistry().setMetaClass(klazz,emc);
     }
 
+    /**
+     * Checks whether the supplied expando meta class has been registered as modified.
+     *
+     * @param emc the expando meta class to inspect
+     * @return {@code true} if the class info retains a modified expando instance
+     */
     public boolean hasModifiedMetaClass(ExpandoMetaClass emc) {
         return emc.getClassInfo().getModifiedExpando() != null;
     }
@@ -82,6 +89,9 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
         }
     }
 
+    /**
+     * Restores the default meta class creation handle for the Groovy runtime.
+     */
     public static void disable() {
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         synchronized (metaClassRegistry) {

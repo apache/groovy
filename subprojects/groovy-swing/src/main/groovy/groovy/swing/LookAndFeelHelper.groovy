@@ -23,15 +23,26 @@ import javax.swing.plaf.metal.DefaultMetalTheme
 import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.plaf.metal.MetalTheme
 
+/**
+ * Helper for resolving and configuring Swing look and feels.
+ */
 class LookAndFeelHelper {
 
     // protected so you can subclass and replace the singleton
+    /**
+     * Shared helper instance used by {@link #getInstance()}.
+     */
     protected static LookAndFeelHelper instance;
     private LookAndFeelHelper() {
         // linux GTK bug : http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6389282
         UIManager.getInstalledLookAndFeels()
     }
 
+    /**
+     * Returns the shared helper instance.
+     *
+     * @return the shared helper instance
+     */
     static LookAndFeelHelper getInstance() {
         return instance ?: (instance = new LookAndFeelHelper())
     }
@@ -63,6 +74,13 @@ class LookAndFeelHelper {
         napkin : 'net.sourceforge.napkinlaf.NapkinLookAndFeel'
     ]
 
+    /**
+     * Registers an alias for a look and feel implementation class.
+     *
+     * @param alias the alias name
+     * @param className the look and feel class name
+     * @return the registered class name
+     */
     String addLookAndFeelAlias(String alias, String className) {
         lafCodeNames[alias] = className
     }
@@ -92,6 +110,14 @@ class LookAndFeelHelper {
         ],
     ]
 
+    /**
+     * Registers a handler for a custom look and feel attribute.
+     *
+     * @param className the look and feel class name
+     * @param attr the attribute name
+     * @param handler the handler closure
+     * @return the registered handler
+     */
     String addLookAndFeelAttributeHandler(String className, String attr, Closure handler) {
         Map attrs = extendedAttributes[className]
         if (attrs == null) {
@@ -101,10 +127,23 @@ class LookAndFeelHelper {
         attrs[attr] = handler
     }
 
+    /**
+     * Indicates that look and feel helper nodes are always leaf nodes.
+     *
+     * @return {@code true}
+     */
     boolean isLeaf() {
         return true
     }
 
+    /**
+     * Creates or updates the current look and feel from the supplied value and attributes.
+     *
+     * @param value the requested look and feel instance, alias, or class name
+     * @param attributes additional look and feel configuration attributes
+     * @param initClosure optional initialization callback invoked with the resolved look and feel
+     * @return the configured look and feel
+     */
     LookAndFeel lookAndFeel(Object value, Map attributes, Closure initClosure) {
         if (value instanceof Closure && initClosure == null) {
             initClosure = value
@@ -152,8 +191,14 @@ class LookAndFeelHelper {
         }
     }
 
+    /**
+     * Finds the first available Nimbus look and feel implementation.
+     *
+     * @return the first available class name, or {@code null} if none are available
+     */
     static String getNimbusLAFName() {
         for (klass in [
+            'javax.swing.plaf.nimbus.NimbusLookAndFeel',
             'com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel',
             'sun.swing.plaf.nimbus.NimbusLookAndFeel',
             'org.jdesktop.swingx.plaf.nimbus.NimbusLookAndFeel'
@@ -167,6 +212,11 @@ class LookAndFeelHelper {
         return null
     }
 
+    /**
+     * Finds the first available Aqua look and feel implementation.
+     *
+     * @return the first available class name, or {@code null} if none are available
+     */
     static String getAquaLAFName() {
         for (klass in [
             'com.apple.laf.AquaLookAndFeel',
@@ -181,6 +231,11 @@ class LookAndFeelHelper {
         return null
     }
 
+    /**
+     * Finds the first available Substance look and feel implementation.
+     *
+     * @return the first available class name, or {@code null} if none are available
+     */
     static String getSubstanceLAFName() {
         for (klass in [
             'org.pushingpixels.substance.api.SubstanceLookAndFeel',

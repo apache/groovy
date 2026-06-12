@@ -25,7 +25,11 @@ dependencies {
     api "com.github.javaparser:javaparser-core:${versions.javaParser}" // GroovydocJavaVisitor extends VoidVisitorAdapter...
 
     implementation projects.groovyTemplates
-    implementation projects.groovyDocgenerator
+    // groovy-docgenerator ships groovy.ico which GroovyDocTemplateInfo references
+    // via classpath resource lookup. Only needed at runtime.
+    runtimeOnly projects.groovyDocgenerator
+    // GROOVY-11542: JEP 467 Markdown doc comment rendering (/// runs).
+    implementation "org.commonmark:commonmark:${versions.commonmark}"
 
     testImplementation projects.groovyAnt
     testImplementation projects.groovyTest
@@ -38,6 +42,21 @@ compileJava {
     }
 }
 
+// jarjar's OSGi manifest step resolves the full runtimeClasspath at action
+// time but doesn't declare it as a tracked input, so under --rerun-tasks the
+// runtimeOnly groovy-docgenerator jar can be read mid-write. Force ordering.
+tasks.named('jarjar') {
+    dependsOn configurations.runtimeClasspath
+}
+
+// Forward the MockOutputTool debug dump flag to the test JVM so
+//   ./gradlew :groovy-groovydoc:test -Dgroovydoc.mockOutputTool.dumpDir=build/mock-dump
+// mirrors in-memory test output to disk for inspection. Property is opt-in.
+tasks.named('test') {
+    def dumpDir = System.getProperty('groovydoc.mockOutputTool.dumpDir')
+    if (dumpDir) systemProperty('groovydoc.mockOutputTool.dumpDir', dumpDir)
+}
+
 plugins.withId('eclipse') {
     eclipse.classpath.file.whenMerged {
         entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-xml'] }
@@ -46,4 +65,5 @@ plugins.withId('eclipse') {
 
 tasks.named('rat') {
     excludes << '**/stylesheet.css' // MIT license as per NOTICE/LICENSE files
+    excludes << '**/prism*.js' << '**/prism*.css' // Prism, MIT license as per NOTICE/LICENSE files
 }

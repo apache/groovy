@@ -45,53 +45,71 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class CategoryBench {
+    /** Number of iterations per benchmark. */
     static final int ITERATIONS = 100_000
 
-    // Category that adds methods to String
+    /**
+     * Category that adds methods to String.
+     */
     static class StringCategory {
+        /** Reverses a string. */
         static String reverse(String self) {
             new StringBuilder(self).reverse().toString()
         }
 
+        /** Converts string to uppercase with exclamation. */
         static String shout(String self) {
             self.toUpperCase() + '!'
         }
 
+        /** Checks if a string is a palindrome. */
         static boolean isPalindrome(String self) {
             String reversed = new StringBuilder(self).reverse().toString()
             self == reversed
         }
     }
 
-    // Category that adds methods to Integer
+    /**
+     * Category that adds methods to Integer.
+     */
     static class MathCategory {
+        /** Returns double of the integer. */
         static int doubled(Integer self) {
             self * 2
         }
 
+        /** Checks if the integer is even. */
         static boolean isEven(Integer self) {
             self % 2 == 0
         }
 
+        /** Computes factorial of the integer. */
         static int factorial(Integer self) {
             (1..self).inject(1) { acc, val -> acc * val }
         }
     }
 
-    // Category that adds methods to List
+    /**
+     * Category that adds methods to List.
+     */
     static class CollectionCategory {
+        /** Returns sum of all list elements. */
         static int sumAll(List self) {
             self.sum() ?: 0
         }
 
+        /** Returns a list with all elements doubled. */
         static List doubled(List self) {
             self.collect { it * 2 }
         }
     }
 
+    /** Test string for benchmarking. */
     String testString
+    /** Test list for benchmarking. */
     List<Integer> testList
 
+    /** Sets up test data before trial. */
     @Setup(Level.Trial)
     void setup() {
         testString = "hello"

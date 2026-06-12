@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -42,11 +43,17 @@ import java.lang.annotation.Target;
  * @see CompileDynamic
  * @since 2.0.0
  */
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.TYPE,ElementType.METHOD,ElementType.CONSTRUCTOR})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.sc.StaticCompileTransformation")
 public @interface CompileStatic {
-
+    /**
+     * Controls whether static compilation is applied or skipped.
+     * Defaults to {@link TypeCheckingMode#PASS}.
+     *
+     * @return the static compilation mode
+     */
     TypeCheckingMode value() default TypeCheckingMode.PASS;
 
     /**

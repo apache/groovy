@@ -19,18 +19,29 @@
 package groovy.lang;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * An IO exception occurred trying to append to a StringWriter which should never happen.
  */
 public class StringWriterIOException extends RuntimeException {
 
-    private static final long serialVersionUID = -504499949457372681L;
+    @Serial private static final long serialVersionUID = -504499949457372681L;
 
+    /**
+     * Wraps the supplied {@link IOException}.
+     *
+     * @param e the wrapped exception
+     */
     public StringWriterIOException(IOException e) {
         super(e);
     }
 
+    /**
+     * Returns the wrapped {@link IOException}.
+     *
+     * @return the wrapped exception
+     */
     public IOException getIOException() {
         return (IOException) getCause();
     }

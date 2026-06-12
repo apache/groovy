@@ -55,15 +55,27 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
     private final SourceUnit sourceUnit;
 
+    /**
+     * Creates a new enum completion visitor.
+     *
+     * @param cu the compilation unit (currently unused but kept for API compatibility)
+     * @param su the source unit for error reporting
+     */
     public EnumCompletionVisitor(final CompilationUnit cu, final SourceUnit su) {
         sourceUnit = su;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         if (node.isEnum()
@@ -159,6 +171,9 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
         if (code == null) return name;
         final Object[] found = new Object[1];
         CodeVisitorSupport cv = new CodeVisitorSupport() {
+            /**
+             * Detects whether the candidate name is already referenced in the statement block.
+             */
             @Override
             public void visitVariableExpression(VariableExpression expression) {
                 if (expression.getName().equals(name)) found[0] = Boolean.TRUE;

@@ -19,9 +19,16 @@
 package org.apache.groovy.swing.binding;
 
 /**
+ * Receives values on the target side of a binding.
+ *
  * @since Groovy 1.1
  */
 public interface TargetBinding {
+    /**
+     * Applies a new value to the target.
+     *
+     * @param value the value to apply
+     */
     void updateTargetValue(Object value);
 
 }

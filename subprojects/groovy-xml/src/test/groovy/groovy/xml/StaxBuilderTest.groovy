@@ -32,7 +32,7 @@ import javax.xml.stream.XMLOutputFactory
 class StaxBuilderTest {
 
     @Test
-    void testJava6() {
+    void java6() {
         def factory = XMLOutputFactory.newInstance()
         def writer = new StringWriter()
         def builder = new StaxBuilder(factory.createXMLStreamWriter(writer))
@@ -48,7 +48,7 @@ class StaxBuilderTest {
     }
 
 //    @Grab('org.codehaus.jettison:jettison:1.2')
-//    void testJettison() {
+//    void jettison() {
 //        def conv = new MappedNamespaceConvention()
 //        def writer = new StringWriter()
 //        def mappedWriter = new MappedXMLStreamWriter(conv, writer)

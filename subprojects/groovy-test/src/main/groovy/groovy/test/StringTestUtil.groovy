@@ -18,7 +18,16 @@
  */
 package groovy.test
 
+/**
+ * Utility methods for string-oriented assertions used by test support code.
+ */
 class StringTestUtil {
+    /**
+     * Asserts that two multi-line strings match after trimming and normalizing line endings.
+     *
+     * @param a the expected string
+     * @param b the actual string
+     */
     static void assertMultilineStringsEqual(String a, String b) {
         def aLines = a.trim().replaceAll('\r','').split('\n')
         def bLines = b.trim().replaceAll('\r','').split('\n')

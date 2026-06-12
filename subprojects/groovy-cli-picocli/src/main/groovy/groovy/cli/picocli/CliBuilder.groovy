@@ -544,6 +544,14 @@ class CliBuilder {
         this.errorWriter = writer
     }
 
+    /**
+     * Defines an option with an explicit value type using the dynamic builder API.
+     *
+     * @param args the option attributes
+     * @param type the type used to convert option values
+     * @param description the usage text for the option
+     * @return the created typed option descriptor
+     */
     public <T> TypedOption<T> option(Map args, Class<T> type, String description) {
         def name = args.opt ?: '_'
         args.type = type
@@ -609,6 +617,9 @@ class CliBuilder {
     /**
      * Make options accessible from command line args with parser.
      * Returns null on bad command lines after displaying usage message.
+     *
+     * @param args the command line arguments to parse
+     * @return an accessor for the parsed options, or {@code null} if parsing failed
      */
     OptionAccessor parse(args) {
         CommandLine commandLine = createCommandLine()
@@ -649,8 +660,8 @@ class CliBuilder {
      * Given an interface containing members with annotations, derive
      * the options specification.
      *
-     * @param optionsClass
-     * @param args
+     * @param optionsClass the annotated interface describing the supported options
+     * @param args the command line arguments to parse
      * @return an instance containing the processed options
      */
     public <T> T parseFromSpec(Class<T> optionsClass, String[] args) {
@@ -666,8 +677,8 @@ class CliBuilder {
      * Given an instance containing members with annotations, derive
      * the options specification.
      *
-     * @param optionInstance
-     * @param args
+     * @param optionInstance the annotated instance to populate
+     * @param args the command line arguments to parse
      * @return the options instance populated with the processed options
      */
     public <T> T parseFromInstance(T optionInstance, args) {
@@ -680,7 +691,7 @@ class CliBuilder {
         if (optionAccessor) {
             optionAccessor.parseResult.commandSpec().options().each { option ->
                 if (!optionAccessor.parseResult.hasMatchedOption(option)) {
-                    boolean isFlag = option.arity().max == 0 && option.type().simpleName.toLowerCase() == 'boolean'
+                    boolean isFlag = option.arity().max == 0 && option.type().simpleName.toLowerCase(Locale.ROOT) == 'boolean'
                     if (isFlag) { option.value = false } // else default has already been applied
                 }
             }
@@ -767,7 +778,7 @@ class CliBuilder {
                 return m.invoke(target)
             }
             if (cls.primitive) {
-                if (cls.simpleName.toLowerCase() == 'boolean') {
+                if (cls.simpleName.toLowerCase(Locale.ROOT) == 'boolean') {
                     return false
                 }
                 return 0
@@ -812,7 +823,7 @@ class CliBuilder {
         builder.getter(attr.getter)
         builder.setter(attr.setter)
         builder.hasInitialValue(attr.hasInitialValue)
-        if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
+        if (arity.max == 0 && attr.type.simpleName.toLowerCase(Locale.ROOT) == 'boolean' && !attr.initialValue) {
             attr.initialValue = false
         }
         try {
@@ -844,7 +855,7 @@ class CliBuilder {
         builder.getter(attr.getter)
         builder.setter(attr.setter)
         builder.hasInitialValue(attr.hasInitialValue)
-        if (arity.max == 0 && attr.type.simpleName.toLowerCase() == 'boolean' && !attr.initialValue) {
+        if (arity.max == 0 && attr.type.simpleName.toLowerCase(Locale.ROOT) == 'boolean' && !attr.initialValue) {
             attr.initialValue = false
         }
         try {
@@ -867,8 +878,8 @@ class CliBuilder {
         if (numberOfArguments != 1 && numberOfArgumentsString) {
             throw new CliBuilderException("You can't specify both 'numberOfArguments' and 'numberOfArgumentsString' on flag '${names.long ?: names.short}'")
         }
-        def isFlag = type.simpleName.toLowerCase() == 'boolean' ||
-                     (type.simpleName.toLowerCase() == 'object' && (numberOfArguments == 0 || numberOfArgumentsString == "0"))
+        def isFlag = type.simpleName.toLowerCase(Locale.ROOT) == 'boolean' ||
+                     (type.simpleName.toLowerCase(Locale.ROOT) == 'object' && (numberOfArguments == 0 || numberOfArgumentsString == "0"))
         String arity = "0"
         if (numberOfArgumentsString) {
             String max = numberOfArgumentsString.replace('+', '*')
@@ -897,6 +908,11 @@ class CliBuilder {
     // implementation details -------------------------------------
     /**
      * Internal method: How to create an OptionSpec from the specification.
+     *
+     * @param shortname the short option name, or {@code _} for long-only options
+     * @param details the option attributes
+     * @param description the usage text for the option
+     * @return the created picocli option specification
      */
     OptionSpec option(shortname, Map details, description) {
         OptionSpec.Builder builder

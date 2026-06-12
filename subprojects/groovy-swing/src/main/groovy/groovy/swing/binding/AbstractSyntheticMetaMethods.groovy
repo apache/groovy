@@ -18,8 +18,17 @@
  */
 package groovy.swing.binding
 
+/**
+ * Installs synthetic meta-methods used by Swing binding helpers.
+ */
 class AbstractSyntheticMetaMethods {
 
+    /**
+     * Adds any missing instance methods from the supplied map to the target object's meta-class.
+     *
+     * @param o the object whose meta-class should be enhanced
+     * @param enhancedMethods method names mapped to implementation closures
+     */
     static void enhance(Object o, Map enhancedMethods) {
         Class klass = o.getClass()
         MetaClassRegistry mcr = GroovySystem.metaClassRegistry

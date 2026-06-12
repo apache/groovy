@@ -21,6 +21,8 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MethodRankHelper;
 
+import java.io.Serial;
+
 /**
  * An exception occurred if a dynamic property dispatch fails with an unknown property.
  * <p>
@@ -29,36 +31,69 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
  */
 public class MissingPropertyException extends GroovyRuntimeException {
 
+    /**
+     * Sentinel used internally when handling missing properties.
+     */
     public  static final Object MPE = new Object(); // synchronization?
 
-    private static final long serialVersionUID = -1780027060966200019L;
+    @Serial private static final long serialVersionUID = -1780027060966200019L;
 
     private final String property;
     private final Class  type;
 
+    /**
+     * Creates an exception for a missing property.
+     *
+     * @param property the missing property name
+     * @param type the target type
+     */
     public MissingPropertyException(final String property, final Class type) {
         this.property = property;
         this.type = type;
     }
 
+    /**
+     * Creates an exception for a missing property with an underlying cause.
+     *
+     * @param property the missing property name
+     * @param type the target type
+     * @param cause the underlying cause
+     */
     public MissingPropertyException(final String property, final Class type, final Throwable cause) {
         super(cause);
         this.property = property;
         this.type = type;
     }
 
+    /**
+     * Creates an exception with a custom message.
+     *
+     * @param message the detail message
+     */
     public MissingPropertyException(final String message) {
         super(message);
         this.property = null;
         this.type = null;
     }
 
+    /**
+     * Creates an exception with a custom message for a missing property.
+     *
+     * @param message the detail message
+     * @param property the missing property name
+     * @param type the target type
+     */
     public MissingPropertyException(final String message, final String property, final Class type) {
         super(message);
         this.property = property;
         this.type = type;
     }
 
+    /**
+     * Returns the detail message without any location suffix.
+     *
+     * @return the formatted detail message
+     */
     @Override
     public String getMessageWithoutLocationText() {
         String message = super.getMessageWithoutLocationText();

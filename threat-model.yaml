@@ -1,0 +1,333 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Machine-readable companion to THREAT_MODEL.md (see its section 14).
+# Lets scanning/triage tooling auto-classify findings against Groovy's
+# security scope. THREAT_MODEL.md is authoritative; this file mirrors it.
+# Section anchors (e.g. "THREAT_MODEL.md#3") are given for every entry.
+
+schema: groovy-threat-model/v1
+project: Apache Groovy
+document: THREAT_MODEL.md
+status: draft-for-pmc-review
+applies_to: ["3.0.x", "4.0.x", "5.0.x", "6.0.x-alpha"]
+
+# The single decisive rule. See THREAT_MODEL.md#1 and #4.
+core_principle: >-
+  Groovy is a general-purpose programming and scripting language. Running
+  the code it is given (filesystem, network, process, reflection) is the
+  product, not a vulnerability. The trust boundary is the source, scripts,
+  templates, and objects the embedding application chooses to compile,
+  evaluate, or deserialize. Groovy is not a sandbox.
+core_principle_provenance: maintainer   # THREAT_MODEL.md#1 / #4
+
+provenance_tags:
+  documented: backed by shipped docs/javadoc/source verified in-repo
+  inferred:   reasoned position, not yet confirmed by the PMC
+  maintainer: confirmed by the PMC through approval of this document
+
+roles:           # THREAT_MODEL.md#2
+  - id: developer
+    trust: trusted
+    note: authors source/scripts/templates/classpath/AST-transforms; full JVM authority by design
+  - id: build-operator
+    trust: trusted
+    note: controls what is compiled and the build environment
+  - id: cli-user
+    trust: trusted-local
+    note: runs groovy/groovyc/groovysh/groovyConsole with own privileges on own files
+  - id: end-user
+    trust: untrusted
+    note: supplies DATA to an app built with Groovy; supplies CODE only if the developer chose to evaluate it
+
+# Narrow, default-on conveniences. A default-config violation is VALID.
+# THREAT_MODEL.md#8
+properties:
+  - id: P1
+    title: Parameterized SQL for the GString form
+    cwe: CWE-89
+    condition: groovy.sql.Sql GString/bind APIs used (not a hand-concatenated String)
+    violation: a GString placeholder reaching the driver as literal SQL
+    severity_if_violated: High
+    provenance: documented
+  - id: P2
+    title: Hardened XML parsing by default
+    cwe: [CWE-611, CWE-776]
+    condition: allowDocTypeDeclaration left at default false (XmlParser/XmlSlurper/XmlUtil/FactorySupport)
+    violation: default-configured parsing resolving an external entity or expanding a DTD bomb
+    severity_if_violated: High
+    provenance: documented
+  - id: P3
+    title: Data-only structured-data parsing (JSON, YAML, TOML, CSV)
+    cwe: CWE-502
+    condition: untyped parse() used (all JsonParserType variants; YAML/TOML/CSV via Jackson untyped binding, YAML uses YamlConverter not SnakeYAML Yaml.load); parseAs(Class,..) binds a caller-supplied type with no default typing
+    violation: a document causing instantiation of a class it names
+    severity_if_violated: Critical
+    scope_note: type-safety guarantee only, not resource-exhaustion; DoS robustness is addressed separately and now depth-bounded by default for all of them, incl. a JsonSlurper nesting-depth cap from 6.0.0 (groovy.json.maxNestingDepth, GROOVY-12064), THREAT_MODEL.md#6; TomlSlurper/CsvSlurper are @Incubating
+    provenance: documented   # verified in groovy-json, groovy-yaml YamlConverter, groovy-toml, groovy-csv
+  - id: P4
+    title: Owner-only temporary artifacts
+    cwe: [CWE-377, CWE-378]
+    condition: Groovy-created temp dirs via NIO Files.createTempDirectory
+    violation: a Groovy-created temp artifact being world-readable/writable
+    severity_if_violated: "Medium (local)"
+    provenance: documented   # CVE-2020-17521 fix class
+  - id: P5
+    title: Coordinated security maintenance
+    condition: supported branches per .github/SECURITY.md
+    provenance: documented
+
+# Looks like security, is not. THREAT_MODEL.md#9
+false_friends:
+  - SecureASTCustomizer        # grammar/AST filter, explicitly not a complete solution; bypassable
+  - "@ThreadInterrupt"         # cooperative runaway-script guard, not a malice boundary
+  - "@TimedInterrupt"
+  - "@ConditionInterrupt"
+  - "@CompileStatic"           # correctness/perf, not security
+  - "@TypeChecked"
+  - groovy.sql.Sql-non-GString # only GString/bind forms parameterize (P1)
+  - groovysh / groovyConsole   # run with user's full privileges; not sandboxed
+
+not_provided:                  # THREAT_MODEL.md#9
+  - a sandbox / isolation of executed code
+  - protection against malicious source, scripts, templates, or serialized objects
+  - SecurityManager-based confinement (deprecated/removed in the JDK)
+  - defense against app-built command/SQL/URL/path/option injection, ReDoS, algorithmic-complexity (hash-flooding) DoS, or unbounded-input DoS
+
+# Trust assumptions about the host/environment. THREAT_MODEL.md#5
+environment_assumptions:
+  - id: jvm-trusted
+    note: the hosting JVM/JDK is trusted and adequately patched; Groovy inherits its security posture (incl. SecurityManager removal)
+    provenance: documented
+  - id: memory-safety
+    note: Groovy inherits the JVM's memory safety; memory-corruption classes (buffer overflow, use-after-free, native type confusion) are out of model — a JDK/JVM bug, not Groovy's
+    provenance: documented
+  - id: release-integrity
+    note: official releases are GPG-signed/checksummed (ASF process); the build pins deps via Gradle dependency verification (gradle/verification-metadata.xml) and publishes a CycloneDX SBOM per module; jar tampering is a supply-chain compromise, out of model (adversary-not-in-scope; see adversary.cannot_be_assumed_to)
+    provenance: documented
+  - id: trusted-config
+    note: classpath, CompilerConfiguration, AST transforms, extension modules, groovy.* properties reflect operator intent, not an attacker's
+    provenance: inferred
+  - id: cli-not-a-privilege-boundary
+    note: CLI tools run with the user's own privileges; not a boundary between users on a host
+    provenance: inferred
+
+# THREAT_MODEL.md#7 — bounded adversary (closed capability list).
+adversary:
+  in_scope:
+    - data supplier: bytes to a parser; values bound as data (SQL params, template bindings not template text); oversized/deeply-nested/adversarial data
+    - local user on a shared host: reads files subject to OS permissions
+  capabilities_are_a_closed_list: a finding needing a capability not listed is OUT-OF-MODEL (adversary-not-in-scope)
+  cannot_be_assumed_to:
+    - supply code/scripts/templates/serialized objects the app evaluates or deserializes
+    - alter classpath, AST transforms, extension modules, Grape config, CompilerConfiguration, or groovy.* properties
+    - replace or tamper with the Groovy artifacts themselves (supply-chain)
+    - attack the JVM/JDK or third-party dependencies rather than Groovy itself
+
+# Every report resolves to exactly one. THREAT_MODEL.md#13
+dispositions:
+  - id: VALID
+    meaning: violates a provided property (properties[]) in a default configuration
+    handling: private report per .github/SECURITY.md; fix + advisory
+  - id: VALID-HARDENING
+    meaning: >-
+      by design and not a CVE, but we choose to improve secure-by-default
+      behavior anyway — defense-in-depth on a reported issue, or a proactive
+      hardening recognized as good practice
+    handling: handled in the open, normal priority; not embargoed
+  - id: "OUT-OF-MODEL: executes-supplied-code"
+    meaning: relies on the app compiling/evaluating attacker-influenced code or templates
+    handling: close citing THREAT_MODEL.md#3
+  - id: "OUT-OF-MODEL: untrusted-deserialization"
+    meaning: relies on the app deserializing attacker-controlled bytes
+    handling: close citing THREAT_MODEL.md#3 / #11
+  - id: "OUT-OF-MODEL: trusted-input"
+    meaning: relies on attacker control of classpath, config, AST transforms, or groovy.* properties
+    handling: close citing THREAT_MODEL.md#3
+  - id: "OUT-OF-MODEL: downstream-responsibility"
+    meaning: app-built SQL/command/URL/path from untrusted input
+    handling: close citing THREAT_MODEL.md#10
+  - id: "OUT-OF-MODEL: equivalent-harm"
+    meaning: a new path to an effect the actor could already reach legitimately
+    handling: close citing THREAT_MODEL.md#3
+  - id: "OUT-OF-MODEL: adversary-not-in-scope"
+    meaning: requires a capability outside the section-7 closed list (already-privileged actor, supply-chain tampering)
+    handling: close citing THREAT_MODEL.md#7
+  - id: "BY-DESIGN: property-disclaimed"
+    meaning: targets a not_provided / false_friend item (e.g. SecureASTCustomizer bypass)
+    handling: close citing THREAT_MODEL.md#9
+  - id: KNOWN-NON-FINDING
+    meaning: matches known_non_findings[]
+    handling: close citing the matched row
+  - id: MODEL-GAP
+    meaning: a legitimate in-model scenario this model does not yet cover
+    handling: update the model, then re-triage
+
+# THREAT_MODEL.md#13 — batched scan reports (one document, many findings).
+batch_handling:
+  rule: assign exactly one disposition per candidate finding
+  enters_private_flow: [VALID, VALID-HARDENING]
+  embargo_sensitive: [VALID]            # VALID-HARDENING is handled in the open
+  everything_else: closed in-batch with a pointer to the cited section; not an advisory
+
+# Genuine vulns in explicitly-unstable surface stay VALID and can still get a
+# CVE, but are handled at reduced priority. THREAT_MODEL.md#8 / #13.
+stability_qualifier:
+  applies_to:
+    - "@Incubating APIs (any release stream)"
+    - pre-release / alpha / beta builds
+  effect: >-
+    a VALID or VALID-HARDENING finding confined to this surface keeps its
+    disposition but is best-effort, reduced-priority, and not embargoed-urgent;
+    it might be handled in the open in some cases. We do not wash our hands of
+    it — it can still warrant a CVE.
+  lifted_when: the same vulnerability also reaches stable, non-incubating surface in a supported release
+  mirrors: .github/SECURITY.md pre-release "(**)" footnote and the @Incubating note
+
+# Patterns a scanner WILL flag in a language implementation; expected,
+# not vulnerabilities unless a concrete in-model data->code/object
+# boundary crossing is shown. THREAT_MODEL.md#11a
+known_non_findings:
+  - pattern: GroovyClassLoader / parseClass / defineClass / bytecode generation
+    disposition: KNOWN-NON-FINDING
+    rationale: the compiler doing its job
+  - pattern: reflection, MetaClass, invokeMethod/getProperty/setProperty/methodMissing, MethodHandle/invokedynamic
+    disposition: KNOWN-NON-FINDING
+    rationale: core Meta-Object Protocol
+  - pattern: ProcessGroovyMethods / String.execute() / Runtime.exec wrappers
+    disposition: "OUT-OF-MODEL: downstream-responsibility"
+    rationale: intended GDK API; injection needs app-supplied untrusted input
+  - pattern: runtime types (e.g. Closure and friends) implementing Serializable, readObject/readResolve
+    disposition: "OUT-OF-MODEL: untrusted-deserialization"
+    rationale: requires deserializing attacker bytes; apply the capability-vs-data test in serialization_policy (THREAT_MODEL.md#11c) — capability primitives are VALID-HARDENING, arbitrary-graph DoS stays out of model
+  - pattern: ObjectInputStream use in Groovy's own helpers
+    disposition: "OUT-OF-MODEL: untrusted-deserialization"
+    rationale: same as above
+  - pattern: AST transforms executing code at compile time (local & global)
+    disposition: KNOWN-NON-FINDING
+    rationale: by design; compile time is trusted
+  - pattern: Eval / GroovyShell inside Groovy tools, tests, groovysh, groovyConsole
+    disposition: "BY-DESIGN: property-disclaimed"
+    rationale: evaluating code is the product
+  - pattern: "@Grab / Grape fetching and loading artifacts"
+    disposition: "OUT-OF-MODEL"
+    rationale: declared dependency resolution
+  - pattern: temp-file/dir creation
+    disposition: KNOWN-NON-FINDING
+    rationale: NIO owner-only since CVE-2020-17521 (P4)
+  - pattern: regex (ReDoS), BigInteger/BigDecimal parsing, hash-collision flooding of untrusted map keys
+    disposition: "OUT-OF-MODEL: downstream-responsibility"
+    rationale: DoS bounded by developer-chosen input
+  - pattern: deep recursion / unbounded input in Groovy's OWN data parsers (JsonSlurper, XmlSlurper/XmlParser, groovy-yaml/-toml/-csv)
+    disposition: VALID-HARDENING
+    stance_status: maintainer
+    rationale: >-
+      robustness of code meant to consume untrusted input; see THREAT_MODEL.md#6. Nesting depth now bounded by
+      default in all of them — XML mitigated by P2 (secure processing); YAML/TOML/CSV bounded by Jackson
+      StreamReadConstraints; JsonSlurper enforces a Groovy-level nesting-depth cap (default 1000, matching
+      StreamReadConstraints; groovy.json.maxNestingDepth / setMaxNestingDepth; GROOVY-12064, 6.0.0). Language
+      parser excluded (parses trusted source only). No parser-robustness items remain open (see open_items).
+  - pattern: dynamic proxy / runtime class generation (Proxy, ProxyGenerator)
+    disposition: KNOWN-NON-FINDING
+    rationale: core runtime mechanism
+  - pattern: SecureASTCustomizer bypass demonstrations
+    disposition: "BY-DESIGN: property-disclaimed"
+    rationale: it is not a sandbox
+    stance_status: maintainer; the underlying not-a-boundary fact is documented (its javadoc)
+  - pattern: Groovy tool/compiler/test output echoing attacker-controlled text, or a dependency emitting agent-targeted text (prompt injection via tool output)
+    disposition: "OUT-OF-MODEL: downstream-responsibility"
+    rationale: output is faithful, not sanitized for a downstream sink (shell/browser/SQL/LLM agent); consumer treats it as data; see AGENTS.md data-never-instruction rule
+
+# THREAT_MODEL.md#11b — default-downgrade rules for an automated scanner.
+# Downgrade a candidate to out-of-model by default unless its 'unless' also holds.
+scanner_calibration:
+  downgrade_by_default:
+    - depends_on: evaluating or compiling supplied code/templates
+      unless: a Groovy component itself feeds untrusted DATA to an evaluator unrequested
+    - depends_on: deserializing untrusted bytes
+      unless: a default-config violation of a properties[] entry
+    - depends_on: equivalent-harm (a new path to authority the actor already holds)
+      unless: the path crosses a trust boundary the actor did not already hold
+    - depends_on: malformed-input / DoS against developer-chosen input
+      unless: the target is one of Groovy's own untrusted-input parsers (VALID-HARDENING)
+    - depends_on: a malicious dependency, classpath, or groovy.* property
+      unless: reachability through Groovy's own default-configured code
+    - depends_on: a PoC the section-7 adversary cannot stage
+      unless: the capability is within the section-7 closed list
+  ambiguous: surface as MODEL-GAP for a human; never silently drop
+
+# THREAT_MODEL.md#11c — how serialization findings are dispositioned.
+# maintainer-ratified (PMC approval of this document). Baseline: deserializing
+# untrusted bytes is the app's risk (out_of_scope) and no per-class change makes
+# it safe. Test = capability vs. data.
+serialization_policy:
+  status: maintainer
+  buckets:
+    - id: capability-primitive
+      when: a deserialization path grants a capability beyond reconstructing declared state (method dispatch, class-resolution-by-name, proxy invocation, code exec) AND gating it does not break "restore my data"
+      disposition: VALID-HARDENING
+      note: gate it; precedent MethodClosure.ALLOW_RESOLVE (default false) instead of removing Serializable
+    - id: legitimate-data-serialization
+      when: round-tripping declared state of POGOs, value types (ranges, tuples, GString), or deliberate closure serialization across a TRUSTED boundary (distributed-compute/caching, both ends owned)
+      disposition: not-a-finding
+      note: do not break; no blanket Serializable removal from Closure; if hardened prefer opt-in/transient-by-default for owner/thisObject/delegate (today non-transient) with a rehydration path — an implementation choice, not a scope question
+    - id: arbitrary-graph-no-primitive
+      when: DoS/RCE from an arbitrary object graph without naming a specific capability primitive to remove
+      disposition: "OUT-OF-MODEL: untrusted-deserialization"
+      note: per-class hardening is whack-a-mole
+  hinge: bucket capability-primitive vs arbitrary-graph-no-primitive — does the report name a primitive to gate, or just exploit that graphs deserialize? only the former carries a hardening obligation
+
+out_of_scope:                  # THREAT_MODEL.md#3
+  - executing — or merely compiling/parsing/statically analyzing — supplied source, scripts, or templates (compile-time metaprogramming/AST transforms run during groovyc, JSR-223 compile, IDE indexing)
+  - deserializing untrusted data
+  - absence of a sandbox
+  - SecureASTCustomizer / AST-filter bypasses
+  - "@Grab / Grape dependency resolution"
+  - trusted-input surfaces (classpath, AST transforms, groovy.* properties, ~/.groovy)
+  - vulnerabilities in the JDK or third-party dependencies (assessed for reachability — a CVE in a part of a dependency Groovy does not use may not affect Groovy)
+  - embedding-application misuse (hand-built SQL/command strings)
+  - equivalent-harm (a new path to authority the actor already holds)
+  - prompt injection aimed at AI agents via dependency/build/test output (supply-chain + agent-toolchain; mitigated by dependency pinning + AGENTS.md data-never-instruction rule)
+
+# THREAT_MODEL.md#3 preamble — out_of_scope is the DEFAULT disposition, not a verdict.
+out_of_scope_note: >-
+  Each report is still assessed for surprising behavior that would catch out a
+  developer following Groovy's documented secure practices, and can be promoted
+  to VALID (rarely a CVE), VALID-HARDENING, or MODEL-GAP. When in doubt, report.
+
+misuse_patterns:               # THREAT_MODEL.md#11
+  - untrusted input to Eval/GroovyShell.evaluate/GroovyClassLoader.parseClass/GroovyScriptEngine/JSR-223
+  - rendering an attacker-controlled template (SimpleTemplateEngine/GStringTemplateEngine/StreamingTemplateEngine/MarkupTemplateEngine/XmlTemplateEngine)
+  - ObjectInputStream.readObject on untrusted bytes containing Groovy types (crafted graph -> resource exhaustion or historical gadget-chain RCE)
+  - hand-concatenating untrusted values into a SQL String instead of GString/bind forms
+  - building a command line from untrusted input and calling .execute()
+  - option/argument injection — an untrusted value passed as its own argv element (even via the safer String[]/List form) read by the target program as a flag; validate or use a "--" end-of-options separator
+  - relying on SecureASTCustomizer or @ThreadInterrupt as a sandbox
+  - enabling @Grab resolution while running untrusted scripts
+  - parsing untrusted XML after setting allowDocTypeDeclaration = true
+
+# No open items. The former parser-DoS-bounds item was resolved by GROOVY-12064
+# (6.0.0): JsonSlurper's nesting-depth cap, captured in properties[P3].scope_note,
+# known_non_findings (deep-recursion row), and THREAT_MODEL.md#6.
+open_items: []
+
+contacts:
+  primary: paulk@apache.org
+  backup: blackdrag@apache.org
+  report_to:
+    - security@apache.org
+    - private@groovy.apache.org

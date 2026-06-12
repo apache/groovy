@@ -50,14 +50,28 @@ import static org.objectweb.asm.Opcodes.IFNONNULL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.POP;
 
+/**
+ * Applies boolean-expression optimizations used by the static compiler.
+ */
 class BooleanExpressionTransformer {
 
     private final StaticCompilationTransformer transformer;
 
+    /**
+     * Creates a boolean-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param transformer the shared transformer context
+     */
     BooleanExpressionTransformer(final StaticCompilationTransformer transformer) {
         this.transformer = transformer;
     }
 
+    /**
+     * Rewrites a boolean expression into a form better suited for static bytecode generation.
+     *
+     * @param boolX the boolean expression to transform
+     * @return the transformed expression
+     */
     Expression transformBooleanExpression(final BooleanExpression boolX) {
         Expression expr = boolX;
         boolean reverse = false;

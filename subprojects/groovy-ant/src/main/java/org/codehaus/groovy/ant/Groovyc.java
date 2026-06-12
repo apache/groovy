@@ -29,7 +29,10 @@ import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.taskdefs.Execute;
 import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.taskdefs.MatchingTask;
+import org.apache.tools.ant.types.Commandline;
+import org.apache.tools.ant.types.Environment;
 import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.PropertySet;
 import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
@@ -51,16 +54,18 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Compiles Groovy source files using Ant.
@@ -175,6 +180,8 @@ import java.util.StringTokenizer;
  */
 public class Groovyc extends MatchingTask {
 
+    private static final System.Logger LOGGER = System.getLogger(Groovyc.class.getName());
+
     private static final File[] EMPTY_FILE_ARRAY = {};
 
     private final LoggingHelper log = new LoggingHelper(this);
@@ -196,8 +203,19 @@ public class Groovyc extends MatchingTask {
     private String scriptExtension = "*.groovy";
     private String targetBytecode;
 
+    /**
+     * Whether compilation failures should abort the Ant build.
+     */
     protected boolean failOnError = true;
+
+    /**
+     * Whether the task should log every file passed to the compiler.
+     */
     protected boolean listFiles;
+
+    /**
+     * Files selected for compilation in the current execution.
+     */
     protected File[] compileList = EMPTY_FILE_ARRAY;
 
     private String updatedProperty;
@@ -205,6 +223,9 @@ public class Groovyc extends MatchingTask {
     private boolean taskSuccess = true;
     private boolean includeDestClasses = true;
 
+    /**
+     * Compiler configuration produced for the current compilation run.
+     */
     protected CompilerConfiguration configuration;
     private Javac javac;
     private boolean jointCompilation;
@@ -215,6 +236,12 @@ public class Groovyc extends MatchingTask {
     private boolean forceLookupUnnamedFiles;
     private String scriptBaseClass;
     private String configscript;
+
+    // GROOVY-11995: forked-mode JVM args / system properties
+    private final Commandline jvmArgs = new Commandline();
+    private final Environment sysProperties = new Environment();
+    private final List<PropertySet> sysPropertySets = new ArrayList<>(0);
+    private boolean inheritAll;
 
     private Set<String> scriptExtensions = new LinkedHashSet<>();
 
@@ -686,6 +713,56 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * Adds a JVM argument to be passed to the forked compiler. Only takes effect
+     * when {@code fork} is true. Use a nested {@code <jvmarg>} element, e.g.
+     * {@code <jvmarg value="--add-opens=java.base/java.lang=ALL-UNNAMED"/>}.
+     *
+     * @return a new {@code Commandline.Argument} that can be configured by Ant
+     * @since 6.0.0
+     */
+    public Commandline.Argument createJvmarg() {
+        return jvmArgs.createArgument();
+    }
+
+    /**
+     * Adds a system property to be passed to the forked compiler as
+     * {@code -Dkey=value}. Only takes effect when {@code fork} is true.
+     *
+     * @param sysp the system property
+     * @since 6.0.0
+     */
+    public void addSysproperty(Environment.Variable sysp) {
+        sysProperties.addVariable(sysp);
+    }
+
+    /**
+     * Adds a set of system properties (Ant {@code <syspropertyset>}) to be
+     * passed to the forked compiler. Only takes effect when {@code fork} is true.
+     *
+     * @param sysp the property set
+     * @since 6.0.0
+     */
+    public void addSyspropertyset(PropertySet sysp) {
+        sysPropertySets.add(sysp);
+    }
+
+    /**
+     * If true, pass all properties from the parent Ant project to the forked JVM
+     * as system properties so they can be read via {@code System.getProperty(name)}.
+     * Only takes effect when {@code fork} is true. Defaults to false.
+     * <p>
+     * For fine-grained control, use a nested {@code <sysproperty>} or
+     * {@code <syspropertyset>} instead. Both may be combined; explicit nested
+     * entries take precedence on name collision.
+     *
+     * @param inheritAll true to inherit all Ant properties into the forked JVM
+     * @since 6.0.0
+     */
+    public void setInheritAll(boolean inheritAll) {
+        this.inheritAll = inheritAll;
+    }
+
+    /**
      * Enable compiler to report stack trace information if a problem occurs
      * during compilation. Default is false.
      */
@@ -915,6 +992,11 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    /**
+     * Appends newly discovered files to the current compile list.
+     *
+     * @param newFiles the files to add
+     */
     protected void addToCompileList(File[] newFiles) {
         if (newFiles.length > 0) {
             File[] newCompileList = new File[compileList.length + newFiles.length];
@@ -933,6 +1015,11 @@ public class Groovyc extends MatchingTask {
         return compileList.clone();
     }
 
+    /**
+     * Validates the user-supplied task parameters.
+     *
+     * @throws BuildException if required attributes are missing or invalid
+     */
     protected void checkParameters() throws BuildException {
         if (src == null || src.isEmpty()) {
             throw new BuildException("srcdir attribute must be set!", getLocation());
@@ -1065,7 +1152,8 @@ public class Groovyc extends MatchingTask {
         return jointOptions;
     }
 
-    private void doForkCommandLineList(List<String> commandLineList, Path classpath, String separator) {
+    // package-private (was private) so tests can verify GROOVY-11995 wiring end-to-end
+    void doForkCommandLineList(List<String> commandLineList, Path classpath, String separator) {
         if (forkedExecutable != null && !forkedExecutable.isEmpty()) {
             commandLineList.add(forkedExecutable);
         } else {
@@ -1114,6 +1202,39 @@ public class Groovyc extends MatchingTask {
             if (tmpExtension.startsWith("*."))
                 tmpExtension = tmpExtension.substring(1);
             commandLineList.add("-Dgroovy.default.scriptExtension=" + tmpExtension);
+        }
+        // GROOVY-11995: user-supplied JVM args / system properties
+        String[] userJvmArgs = jvmArgs.getArguments();
+        for (String arg : userJvmArgs) {
+            if ("-classpath".equals(arg) || "-cp".equals(arg) || "--class-path".equals(arg)
+                    || arg.startsWith("--class-path=")) {
+                throw new BuildException("Setting the JVM classpath via <jvmarg> is not supported "
+                        + "(would override the forked compiler's bootstrap classpath). Use the "
+                        + "<classpath> nested element instead.", getLocation());
+            }
+        }
+        Collections.addAll(commandLineList, userJvmArgs);
+        Set<String> sysPropertyNames = new HashSet<>();
+        for (Environment.Variable v : sysProperties.getVariablesVector()) {
+            sysPropertyNames.add(v.getKey());
+            commandLineList.add("-D" + v.getKey() + "=" + v.getValue());
+        }
+        for (PropertySet ps : sysPropertySets) {
+            for (Map.Entry<Object, Object> entry : ps.getProperties().entrySet()) {
+                String key = entry.getKey().toString();
+                if (sysPropertyNames.add(key)) {
+                    commandLineList.add("-D" + key + "=" + entry.getValue());
+                }
+            }
+        }
+        if (inheritAll) {
+            for (Map.Entry<String, Object> entry : getProject().getProperties().entrySet()) {
+                Object value = entry.getValue();
+                if (value == null) continue;
+                if (sysPropertyNames.add(entry.getKey())) {
+                    commandLineList.add("-D" + entry.getKey() + "=" + value);
+                }
+            }
         }
 
         commandLineList.add(FileSystemCompilerFacade.class.getName());
@@ -1311,6 +1432,9 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    /**
+     * Compiles the files accumulated in {@link #compileList}.
+     */
     protected void compile() {
         if (compileList.length == 0) return;
 
@@ -1344,7 +1468,7 @@ public class Groovyc extends MatchingTask {
                 try {
                     FileSystemCompiler.deleteRecursive(temporaryFile);
                 } catch (Throwable t) {
-                    System.err.println("error: could not delete temp files - " + temporaryFile.getPath());
+                    LOGGER.log(WARNING, "Could not delete temp files - {0}", temporaryFile.getPath());
                 }
             }
         }
@@ -1358,6 +1482,12 @@ public class Groovyc extends MatchingTask {
         return makeCompileUnit(buildClassLoaderFor());
     }
 
+    /**
+     * Creates the compilation unit to use for the current run.
+     *
+     * @param loader the class loader that should back compilation
+     * @return the configured compilation unit
+     */
     protected CompilationUnit makeCompileUnit(GroovyClassLoader loader) {
         Map<String, Object> options = configuration.getJointCompilationOptions();
         if (options != null) {
@@ -1381,6 +1511,11 @@ public class Groovyc extends MatchingTask {
         }
     }
 
+    /**
+     * Builds the class loader used for in-process compilation.
+     *
+     * @return the class loader for compilation
+     */
     protected GroovyClassLoader buildClassLoaderFor() {
         if (fork) {
             throw new GroovyBugError("Cannot use Groovyc#buildClassLoaderFor() for forked compilation");
@@ -1422,9 +1557,7 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
-        GroovyClassLoader groovyLoader = java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () ->
-                new GroovyClassLoader(loader, configuration));
+        GroovyClassLoader groovyLoader = new GroovyClassLoader(loader, configuration);
 
         if (!forceLookupUnnamedFiles) {
             // in normal case we don't need to do script lookups

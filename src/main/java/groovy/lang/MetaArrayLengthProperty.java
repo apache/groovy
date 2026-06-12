@@ -26,20 +26,26 @@ import java.lang.reflect.Modifier;
  */
 public class MetaArrayLengthProperty extends MetaProperty {
 
+    /**
+     * Creates the synthetic {@code length} property exposed for Java arrays.
+     */
     public MetaArrayLengthProperty() {
         super("length", int.class);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getModifiers() {
         return Modifier.FINAL | Modifier.PUBLIC;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object getProperty(final Object object) {
         return Array.getLength(object);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setProperty(final Object object, final Object newValue) {
         throw new ReadOnlyPropertyException("length", object.getClass());

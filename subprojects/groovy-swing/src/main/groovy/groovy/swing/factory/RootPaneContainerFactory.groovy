@@ -23,11 +23,27 @@ import java.awt.*
 
 import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
+/**
+ * Base factory for Swing top-level containers backed by a root pane.
+ */
 abstract class RootPaneContainerFactory extends AbstractFactory {
 
+    /**
+     * Builder context key for the default button attribute name.
+     */
     public static final String DELEGATE_PROPERTY_DEFAULT_BUTTON = "_delegateProperty:defaultButton"
+    /**
+     * Default child attribute name for the default button marker.
+     */
     public static final String DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON = "defaultButton"
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return
@@ -48,6 +64,13 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Initializes common root pane container state and delegates.
+     *
+     * @param builder the factory builder
+     * @param container the window being configured
+     * @param attributes the node attributes
+     */
     public void handleRootPaneTasks(FactoryBuilderSupport builder, Window container, Map attributes) {
         builder.context[DELEGATE_PROPERTY_DEFAULT_BUTTON] = attributes.remove("defaultButtonProperty") ?: DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON
 
@@ -77,6 +100,13 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
         builder.addDisposalClosure(container.&dispose)
     }
 
+    /**
+     * Finalizes a node after its children have been processed.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param node the current node
+     */
     public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if (node instanceof Window) {
             def containingWindows = builder.containingWindows

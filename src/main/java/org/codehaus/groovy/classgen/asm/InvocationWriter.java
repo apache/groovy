@@ -87,15 +87,26 @@ import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.SWAP;
 
+/**
+ * Handles method and constructor invocations, generating appropriate bytecode.
+ */
 public class InvocationWriter {
 
     // method invocation
+    /** Multi-adapter for {@code invokeMethodOnCurrent} call-site variants. */
     public static final MethodCallerMultiAdapter invokeMethodOnCurrent = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethodOnCurrent", true, false);
+    /** Multi-adapter for {@code invokeMethodOnSuper} call-site variants. */
     public static final MethodCallerMultiAdapter invokeMethodOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethodOnSuper", true, false);
+    /** Multi-adapter for generic {@code invokeMethod} call-site variants. */
     public static final MethodCallerMultiAdapter invokeMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethod", true, false);
+    /** Multi-adapter for {@code invokeStaticMethod} call-site variants. */
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
+    /**
+     * @deprecated Use direct closure invocation instead
+     */
     @Deprecated(since = "5.0.0")
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
+    /** Method caller for casting an array of arguments to a varargs array. */
     public static final MethodCaller castToVargsArray    = MethodCaller.newStatic(DefaultTypeTransformation.class, "castToVargsArray");
 
     // type conversion
@@ -110,14 +121,33 @@ public class InvocationWriter {
 
     private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "")});
 
+    /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
 
+    /** The expression currently being compiled as a call, used for optimizations. */
     protected Expression currentCall;
 
+    /**
+     * Creates an invocation writer with the given controller.
+     *
+     * @param controller the writer controller
+     */
     public InvocationWriter(final WriterController controller) {
         this.controller = controller;
     }
 
+    /**
+     * Generates bytecode for a method call.
+     *
+     * @param origin the original expression
+     * @param receiver the receiver expression
+     * @param message the method name expression
+     * @param arguments the arguments expression
+     * @param adapter the method caller adapter
+     * @param safe whether to use safe navigation
+     * @param spreadSafe whether to use spread-safe navigation
+     * @param implicitThis whether the receiver is implicit 'this'
+     */
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
         var oldCall = currentCall;
         currentCall = origin instanceof MethodCall ? origin : null;
@@ -136,6 +166,20 @@ public class InvocationWriter {
         currentCall = oldCall;
     }
 
+    /**
+     * Generates bytecode for a method invocation, choosing among direct call,
+     * call-site caching, and uncached (ScriptBytecodeAdapter) strategies.
+     *
+     * @param origin     the original expression triggering this call
+     * @param sender     the class from which the call is dispatched
+     * @param receiver   the receiver expression
+     * @param message    the method name expression
+     * @param arguments  the arguments expression
+     * @param adapter    the multi-adapter selecting the correct runtime method
+     * @param safe       whether to use safe navigation ({@code ?.})
+     * @param spreadSafe whether to use spread-safe navigation ({@code *?.})
+     * @param implicitThis whether the receiver is implicit {@code this}
+     */
     protected void makeCall(final Expression origin, final ClassExpression sender, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
         boolean containsSpreadExpression = AsmClassGenerator.containsSpreadExpression(arguments);
         // direct invocation path
@@ -146,6 +190,16 @@ public class InvocationWriter {
                 makeUncachedCall(origin, sender, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis, containsSpreadExpression);
     }
 
+    /**
+     * Emits a direct (INVOKE*) bytecode call to {@code target} when static type
+     * information is available. Returns {@code false} if a direct call cannot be made.
+     *
+     * @param target       the resolved method node to call directly
+     * @param implicitThis whether the receiver is implicit {@code this}
+     * @param receiver     the receiver expression (may be {@code null})
+     * @param args         the argument tuple
+     * @return {@code true} if the call was emitted, {@code false} otherwise
+     */
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null || target instanceof ExtensionMethodNode) return false;
 
@@ -278,6 +332,9 @@ public class InvocationWriter {
     private static boolean isThis(final Expression expression) {
         boolean[] isThis = new boolean[1];
         expression.visit(new org.codehaus.groovy.ast.GroovyCodeVisitorAdapter() {
+            /**
+             * Tracks whether the visited variable expression is {@code this}.
+             */
             @Override
             public void visitVariableExpression(final VariableExpression vexp) {
                 isThis[0] = vexp.isThisExpression();
@@ -292,6 +349,12 @@ public class InvocationWriter {
         return type.isArray();
     }
 
+    /**
+     * Evaluates and loads each argument expression, handling varargs packing.
+     *
+     * @param arguments  the argument expressions to evaluate
+     * @param parameters the declared parameters of the target method
+     */
     protected void loadArguments(final List<Expression> arguments, final Parameter[] parameters) {
         if (parameters.length == 0) return;
         int nthParameter = parameters.length - 1;
@@ -332,6 +395,20 @@ public class InvocationWriter {
         }
     }
 
+    /**
+     * Attempts to emit a direct (statically resolved) method call.
+     * Returns {@code false} if no direct call is possible, causing the caller to
+     * fall through to the cached or uncached path.
+     *
+     * @param origin                    the original call expression
+     * @param receiver                  the receiver expression
+     * @param message                   the method name expression
+     * @param arguments                 the arguments expression
+     * @param adapter                   the method caller adapter
+     * @param implicitThis              whether the receiver is implicit {@code this}
+     * @param containsSpreadExpression  whether any argument uses spread ({@code *})
+     * @return {@code true} if the call was emitted directly
+     */
     protected boolean makeDirectCall(Expression origin, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean implicitThis, boolean containsSpreadExpression) {
         if (makeClassForNameCall(origin, receiver, message, arguments)) return true;
         if (controller.optimizeForInt && controller.isFastPath() // optimization path
@@ -356,6 +433,23 @@ public class InvocationWriter {
         return false;
     }
 
+    /**
+     * Attempts to emit a call-site-cached invocation (or invokedynamic).
+     * Returns {@code false} if the call cannot be cached, causing the caller to
+     * fall through to the uncached path.
+     *
+     * @param origin                    the original call expression
+     * @param sender                    the class from which the call is dispatched
+     * @param receiver                  the receiver expression
+     * @param message                   the method name expression
+     * @param arguments                 the arguments expression
+     * @param adapter                   the method caller adapter
+     * @param safe                      whether to use safe navigation
+     * @param spreadSafe                whether to use spread-safe navigation
+     * @param implicitThis              whether the receiver is implicit {@code this}
+     * @param containsSpreadExpression  whether any argument uses spread
+     * @return {@code true} if a cached call was emitted
+     */
     protected boolean makeCachedCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis, boolean containsSpreadExpression) {
         // prepare call site
         if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod) && !spreadSafe) {
@@ -368,6 +462,21 @@ public class InvocationWriter {
         return false;
     }
 
+    /**
+     * Emits an uncached invocation via {@link org.codehaus.groovy.runtime.ScriptBytecodeAdapter}.
+     * Used as the fallback when neither direct nor cached dispatch is applicable.
+     *
+     * @param origin                    the original call expression
+     * @param sender                    the class from which the call is dispatched
+     * @param receiver                  the receiver expression
+     * @param message                   the method name expression
+     * @param arguments                 the arguments expression
+     * @param adapter                   the method caller adapter
+     * @param safe                      whether to use safe navigation
+     * @param spreadSafe                whether to use spread-safe navigation
+     * @param implicitThis              whether the receiver is implicit {@code this}
+     * @param containsSpreadExpression  whether any argument uses spread
+     */
     protected void makeUncachedCall(Expression origin, ClassExpression sender, Expression receiver, Expression message, Expression arguments, MethodCallerMultiAdapter adapter, boolean safe, boolean spreadSafe, boolean implicitThis, boolean containsSpreadExpression) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
@@ -459,6 +568,13 @@ public class InvocationWriter {
         return ae;
     }
 
+    /**
+     * Extracts the constant method name string from a message expression.
+     * Returns {@code null} if the expression is not a constant string.
+     *
+     * @param message the method name expression
+     * @return the method name string, or {@code null} if not determinable
+     */
     protected String getMethodName(final Expression message) {
         String methodName = null;
         if (message instanceof CastExpression msg) {
@@ -476,6 +592,11 @@ public class InvocationWriter {
         return methodName;
     }
 
+    /**
+     * Generates bytecode for a standard (non-static, non-constructor) method call expression.
+     *
+     * @param call the method call expression to compile
+     */
     public void writeInvokeMethod(MethodCallExpression call) {
         Expression receiver = call.getObjectExpression();
         // GROOVY-8466: replace "rcvr.call(args)" with "rcvr.abstractMethod(args)"
@@ -526,6 +647,11 @@ public class InvocationWriter {
         return false;
     }
 
+    /**
+     * Generates bytecode for a static method call expression.
+     *
+     * @param call the static method call expression to compile
+     */
     public void writeInvokeStaticMethod(final StaticMethodCallExpression call) {
         Expression receiver = new ClassExpression(call.getOwnerType());
         Expression messageName = new ConstantExpression(call.getMethod());
@@ -534,6 +660,12 @@ public class InvocationWriter {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Generates bytecode for a constructor call expression, choosing the
+     * appropriate strategy (direct, AIC, or normal call-site).
+     *
+     * @param call the constructor call expression to compile
+     */
     public void writeInvokeConstructor(final ConstructorCallExpression call) {
         if (writeDirectConstructorCall(call)) return;
         if (writeAICCall              (call)) return;
@@ -556,6 +688,13 @@ public class InvocationWriter {
         return true;
     }
 
+    /**
+     * Emits the {@code NEW} and {@code DUP} instructions for a constructor call and
+     * returns the internal class name of the type being constructed.
+     *
+     * @param cn the constructor node whose declaring class is being instantiated
+     * @return the JVM internal name of the class being constructed
+     */
     protected String prepareConstructorCall(final ConstructorNode cn) {
         String type = BytecodeHelper.getClassInternalName(cn.getDeclaringClass());
         MethodVisitor mv = controller.getMethodVisitor();
@@ -564,6 +703,14 @@ public class InvocationWriter {
         return type;
     }
 
+    /**
+     * Emits the {@code INVOKESPECIAL} {@code <init>} instruction and updates the operand
+     * stack after a constructor call set up by {@link #prepareConstructorCall}.
+     *
+     * @param cn              the constructor node being invoked
+     * @param ownerDescriptor the JVM internal name of the owning class
+     * @param argsToRemove    the number of argument entries to pop from the tracked stack
+     */
     protected void   finnishConstructorCall(final ConstructorNode cn, final String ownerDescriptor, final int argsToRemove) {
         String signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
         MethodVisitor mv = controller.getMethodVisitor();
@@ -573,6 +720,11 @@ public class InvocationWriter {
         controller.getOperandStack().push(cn.getDeclaringClass());
     }
 
+    /**
+     * Emits a normal (non-direct, non-AIC) constructor call via the call-site writer.
+     *
+     * @param call the constructor call expression to compile
+     */
     protected void writeNormalConstructorCall(final ConstructorCallExpression call) {
         Expression arguments = call.getArguments();
         if (arguments instanceof TupleExpression tupleExpression) {
@@ -586,6 +738,13 @@ public class InvocationWriter {
         controller.getCallSiteWriter().makeCallSite(receiver, CallSiteWriter.CONSTRUCTOR, arguments, false, false, false, false);
     }
 
+    /**
+     * Emits a constructor call for an anonymous inner class (AIC).
+     * Returns {@code false} if the call is not for an AIC.
+     *
+     * @param call the constructor call expression to compile
+     * @return {@code true} if an AIC call was emitted
+     */
     protected boolean writeAICCall(final ConstructorCallExpression call) {
         if (!call.isUsingAnonymousInnerClass()) return false;
 
@@ -629,14 +788,36 @@ public class InvocationWriter {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Delegates to {@link #makeSingleArgumentCall(Expression, String, Expression, boolean)}
+     * with {@code safe = false}.
+     *
+     * @param receiver  the receiver expression
+     * @param message   the method name
+     * @param arguments the single argument expression
+     */
     public final void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments) {
         makeSingleArgumentCall(receiver, message, arguments, false);
     }
 
+    /**
+     * Generates a single-argument method call via the call-site writer.
+     *
+     * @param receiver  the receiver expression
+     * @param message   the method name
+     * @param arguments the single argument expression
+     * @param safe      whether to use safe navigation ({@code ?.})
+     */
     public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, final boolean safe) {
         controller.getCallSiteWriter().makeSingleArgumentCall(receiver, message, arguments, safe);
     }
 
+    /**
+     * Generates bytecode for a {@code this()} or {@code super()} constructor
+     * call at the start of a constructor body.
+     *
+     * @param call the constructor call expression representing {@code this()} or {@code super()}
+     */
     public void writeSpecialConstructorCall(final ConstructorCallExpression call) {
         controller.getCompileStack().pushInSpecialConstructorCall();
 
@@ -763,7 +944,7 @@ public class InvocationWriter {
             if (controller.isConstructor()) {
                 // in this case we need one "this", so a SWAP will exchange
                 // "this" and Object[], a DUP_X1 will then copy the Object[]
-                /// to the last place in the stack:
+                // to the last place in the stack:
                 //     Object[],this -SWAP-> this,Object[]
                 //     this,Object[] -DUP_X1-> Object[],this,Object[]
                 mv.visitInsn(SWAP);
@@ -874,11 +1055,22 @@ public class InvocationWriter {
         }
     }
 
+    /**
+     * Unboxes a non-primitive value on the operand stack to a primitive {@code boolean}.
+     *
+     * @param last the type currently on top of the operand stack
+     */
     public void castNonPrimitiveToBool(final ClassNode last) {
         MethodVisitor mv = controller.getMethodVisitor();
         BytecodeHelper.unbox(mv, ClassHelper.boolean_TYPE);
     }
 
+    /**
+     * Emits a Groovy {@code as} coercion from {@code from} to {@code target}.
+     *
+     * @param from   the source type currently on the operand stack
+     * @param target the target type to coerce to
+     */
     public void coerce(final ClassNode from, final ClassNode target) {
         if (from.isDerivedFrom(target)) return;
         MethodVisitor mv = controller.getMethodVisitor();

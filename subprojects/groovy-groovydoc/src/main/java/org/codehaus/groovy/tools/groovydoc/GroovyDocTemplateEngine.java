@@ -40,10 +40,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Process Groovydoc templates.
  */
 public class GroovyDocTemplateEngine {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyDocTemplateEngine.class.getName());
     private final TemplateEngine engine;
     private final ResourceManager resourceManager;
     private final Properties properties;
@@ -54,10 +59,16 @@ public class GroovyDocTemplateEngine {
     private final Map<String, Template> classTemplates; // cache
     private final List<String> classTemplatePaths; // once per class
 
+    /**
+     * Creates a template engine with a resource manager, a single class-level template, and default properties.
+     */
     public GroovyDocTemplateEngine(GroovyDocTool tool, ResourceManager resourceManager, String classTemplate) {
         this(tool, resourceManager, new String[]{}, new String[]{}, new String[]{classTemplate}, new Properties());
     }
 
+    /**
+     * Creates a template engine with separate sets of documentation, package, and class templates.
+     */
     public GroovyDocTemplateEngine(GroovyDocTool tool, ResourceManager resourceManager,
                                    String[] docTemplates,
                                    String[] packageTemplates,
@@ -75,6 +86,12 @@ public class GroovyDocTemplateEngine {
 
     }
 
+    /**
+     * Applies the configured class template to the supplied class documentation model.
+     *
+     * @param classDoc class documentation to render
+     * @return rendered class documentation
+     */
     String applyClassTemplates(GroovyClassDoc classDoc) {
         String templatePath = classTemplatePaths.get(0); // todo (iterate)
         String templateWithBindingApplied = "";
@@ -89,8 +106,8 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).writeTo(reasonableSizeWriter()).toString();
         } catch (Exception e) {
-            System.out.println("Error processing class template for: " + classDoc.getFullPathName());
-            e.printStackTrace();
+            LOGGER.log(ERROR, "Error processing class template for: {0}", classDoc.getFullPathName());
+            LOGGER.log(ERROR, "Template error", e);
         }
         return templateWithBindingApplied;
     }
@@ -99,6 +116,13 @@ public class GroovyDocTemplateEngine {
         return new StringWriter(65536);
     }
 
+    /**
+     * Applies a package template to the supplied package documentation model.
+     *
+     * @param template template path to render
+     * @param packageDoc package documentation to render
+     * @return rendered package documentation
+     */
     String applyPackageTemplate(String template, GroovyPackageDoc packageDoc) {
         String templateWithBindingApplied = "";
         try {
@@ -112,12 +136,19 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
-            System.out.println("Error processing package template for: " + packageDoc.name());
-            e.printStackTrace();
+            LOGGER.log(ERROR, "Error processing package template for: {0}", packageDoc.name());
+            LOGGER.log(ERROR, "Template error", e);
         }
         return templateWithBindingApplied;
     }
 
+    /**
+     * Applies a root-document template to the supplied root documentation model.
+     *
+     * @param template template path to render
+     * @param rootDoc root documentation to render
+     * @return rendered root documentation
+     */
     String applyRootDocTemplate(String template, GroovyRootDoc rootDoc) {
         String templateWithBindingApplied = "";
         try {
@@ -131,24 +162,42 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
-            System.out.println("Error processing root doc template");
-            e.printStackTrace();
+            LOGGER.log(ERROR, "Error processing root doc template");
+            LOGGER.log(ERROR, "Template error", e);
         }
         return templateWithBindingApplied;
     }
 
+    /**
+     * Returns the configured class template paths.
+     *
+     * @return iterator over class template paths
+     */
     Iterator<String> classTemplatesIterator() {
         return classTemplatePaths.iterator();
     }
 
+    /**
+     * Returns the configured package template paths.
+     *
+     * @return iterator over package template paths
+     */
     Iterator<String> packageTemplatesIterator() {
         return packageTemplatePaths.iterator();
     }
 
+    /**
+     * Returns the configured top-level documentation template paths.
+     *
+     * @return iterator over documentation template paths
+     */
     Iterator<String> docTemplatesIterator() {
         return docTemplatePaths.iterator();
     }
 
+    /**
+     * Copies a binary resource (image or Prism.js bundle) from the classpath to the given destination file path.
+     */
     public void copyBinaryResource(String template, String destFileName) {
         if (resourceManager instanceof ClasspathResourceManager) {
             OutputStream outputStream = null;
@@ -157,9 +206,9 @@ public class GroovyDocTemplateEngine {
                 outputStream = Files.newOutputStream(Paths.get(destFileName));
                 IOGroovyMethods.leftShift(outputStream, inputStream);
             } catch (IOException e) {
-                System.err.println("Resource " + template + " skipped due to: " + e.getMessage());
+                LOGGER.log(WARNING, "Resource {0} skipped due to: {1}", template, e.getMessage());
             } catch (NullPointerException e) {
-                System.err.println("Resource " + template + " not found so skipped");
+                LOGGER.log(WARNING, "Resource {0} not found so skipped", template);
             } finally {
                 DefaultGroovyMethodsSupport.closeQuietly(outputStream);
             }

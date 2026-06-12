@@ -22,14 +22,19 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
@@ -114,14 +119,93 @@ public final class AssertStatementCreationUtility {
         return returnStatements;
     }
 
+    /**
+     * Rewrites the target return statement so it stores the result value, executes the assertion block,
+     * and then returns the stored result.
+     *
+     * @param statement the surrounding block to rewrite
+     * @param returnType the declared return type
+     * @param returnStatement the return statement to replace
+     * @param assertionCallStatement the assertion block to insert
+     */
     public static void injectResultVariableReturnStatementAndAssertionCallStatement(BlockStatement statement, ClassNode returnType, ReturnStatement returnStatement, BlockStatement assertionCallStatement) {
+        ensureReturnStatementInBlock(statement, returnStatement);
         final AddResultReturnStatementVisitor addResultReturnStatementVisitor = new AddResultReturnStatementVisitor(returnStatement, returnType, assertionCallStatement);
         addResultReturnStatementVisitor.visitBlockStatement(statement);
     }
 
+    /**
+     * Rewrites the target return statement so it evaluates the return expression once, executes the
+     * assertion call, and finally returns the stored value.
+     *
+     * @param statement the surrounding block to rewrite
+     * @param returnStatement the return statement to replace
+     * @param assertionCallStatement the assertion statement to insert
+     */
     public static void addAssertionCallStatementToReturnStatement(BlockStatement statement, ReturnStatement returnStatement, Statement assertionCallStatement) {
+        ensureReturnStatementInBlock(statement, returnStatement);
         final AddAssertionCallStatementToReturnStatementVisitor addAssertionCallStatementToReturnStatementVisitor = new AddAssertionCallStatementToReturnStatementVisitor(returnStatement, assertionCallStatement);
         addAssertionCallStatementToReturnStatementVisitor.visitBlockStatement(statement);
+    }
+
+    /**
+     * Ensures the target {@code returnStatement} is a direct child of a {@link BlockStatement} so the
+     * rewriting visitors below can find and replace it.
+     * <p>
+     * A single-statement {@code if}/{@code else} or loop branch (e.g. {@code if (n <= 1) return acc})
+     * holds the {@link ReturnStatement} directly rather than inside a block. The rewriters only match
+     * returns that are members of a {@link BlockStatement}, so without this normalization the
+     * postcondition (and class-invariant) assertion is silently skipped for such returns. The gap is
+     * usually masked in recursive methods by a sibling {@code return <recursiveCall>} that is a block
+     * member, but {@code @TailRecursive} converts that call into a {@code continue}, leaving only the
+     * braceless branch return (GROOVY-12079).
+     *
+     * @param root            the method body to scan
+     * @param returnStatement the return statement that must end up inside a block
+     */
+    private static void ensureReturnStatementInBlock(BlockStatement root, final ReturnStatement returnStatement) {
+        final VariableScope scope = root.getVariableScope();
+        ClassCodeVisitorSupport normalizer = new ClassCodeVisitorSupport() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return null;
+            }
+
+            private Statement wrapIfTarget(Statement branch) {
+                return branch == returnStatement ? block(new VariableScope(scope), returnStatement) : branch;
+            }
+
+            @Override
+            public void visitIfElse(IfStatement ifElse) {
+                ifElse.setIfBlock(wrapIfTarget(ifElse.getIfBlock()));
+                ifElse.setElseBlock(wrapIfTarget(ifElse.getElseBlock()));
+                super.visitIfElse(ifElse);
+            }
+
+            @Override
+            public void visitWhileLoop(WhileStatement loop) {
+                loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
+                super.visitWhileLoop(loop);
+            }
+
+            @Override
+            public void visitForLoop(ForStatement loop) {
+                loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
+                super.visitForLoop(loop);
+            }
+
+            @Override
+            public void visitDoWhileLoop(DoWhileStatement loop) {
+                loop.setLoopBlock(wrapIfTarget(loop.getLoopBlock()));
+                super.visitDoWhileLoop(loop);
+            }
+
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+                // returns inside closures belong to the closure, not the surrounding method
+            }
+        };
+        normalizer.visitBlockStatement(root);
     }
 
     /**
@@ -131,21 +215,41 @@ public final class AssertStatementCreationUtility {
 
         private final List<ReturnStatement> returnStatements = new ArrayList<>();
 
+        /**
+         * This visitor is source-independent.
+         *
+         * @return {@code null}
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;
         }
 
+        /**
+         * Records one visited return statement.
+         *
+         * @param statement the return statement to collect
+         */
         @Override
         public void visitReturnStatement(ReturnStatement statement) {
             returnStatements.add(statement);
         }
 
+        /**
+         * Skips nested closures so only returns from the surrounding method are collected.
+         *
+         * @param expression the closure expression to ignore
+         */
         @Override
         public void visitClosureExpression(ClosureExpression expression) {
             // do nothing to prevent getting return statements from closures
         }
 
+        /**
+         * Returns the collected return statements.
+         *
+         * @return the collected return statements
+         */
         public List<ReturnStatement> getReturnStatements() {
             return returnStatements;
         }
@@ -156,6 +260,11 @@ public final class AssertStatementCreationUtility {
      */
     public static class AddResultReturnStatementVisitor extends ClassCodeVisitorSupport {
 
+        /**
+         * This visitor is source-independent.
+         *
+         * @return {@code null}
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;
@@ -165,12 +274,24 @@ public final class AssertStatementCreationUtility {
         private final ClassNode returnType;
         private final BlockStatement assertionCallBlock;
 
+        /**
+         * Creates a visitor that rewrites one return statement to expose the {@code result} variable.
+         *
+         * @param returnStatement the return statement to replace
+         * @param returnType the declared return type
+         * @param assertionCallBlock the assertion block to inject before returning
+         */
         public AddResultReturnStatementVisitor(ReturnStatement returnStatement, ClassNode returnType, BlockStatement assertionCallBlock) {
             this.returnStatement = returnStatement;
             this.returnType = returnType;
             this.assertionCallBlock = assertionCallBlock;
         }
 
+        /**
+         * Rewrites the block containing the target return statement.
+         *
+         * @param block the block being visited
+         */
         @Override
         public void visitBlockStatement(BlockStatement block) {
 
@@ -197,6 +318,11 @@ public final class AssertStatementCreationUtility {
      */
     public static class AddAssertionCallStatementToReturnStatementVisitor extends ClassCodeVisitorSupport {
 
+        /**
+         * This visitor is source-independent.
+         *
+         * @return {@code null}
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;
@@ -205,11 +331,22 @@ public final class AssertStatementCreationUtility {
         private final ReturnStatement returnStatement;
         private final Statement assertionCallStatement;
 
+        /**
+         * Creates a visitor that rewrites one return statement to execute an assertion call before returning.
+         *
+         * @param returnStatement the return statement to replace
+         * @param assertionCallStatement the assertion statement to insert
+         */
         public AddAssertionCallStatementToReturnStatementVisitor(ReturnStatement returnStatement, Statement assertionCallStatement) {
             this.returnStatement = returnStatement;
             this.assertionCallStatement = assertionCallStatement;
         }
 
+        /**
+         * Rewrites the block containing the target return statement.
+         *
+         * @param block the block being visited
+         */
         @Override
         public void visitBlockStatement(BlockStatement block) {
             List<Statement> blockStatementsCopy = new ArrayList<>(block.getStatements());

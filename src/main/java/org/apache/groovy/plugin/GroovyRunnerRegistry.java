@@ -424,7 +424,7 @@ public class GroovyRunnerRegistry implements Map<String, GroovyRunner>, Iterable
             readLock.lock();
             try {
                 if ((values = cachedValues) == null) {
-                    cachedValues = values = Collections.unmodifiableList(new ArrayList<>(map.values()));
+                    cachedValues = values = List.copyOf(map.values());
                 }
             } finally {
                 readLock.unlock();

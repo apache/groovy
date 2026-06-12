@@ -729,8 +729,8 @@ For a complete list of options, please refer to gapi:org.codehaus.groovy.control
 This customizer will allow the developer of a DSL to restrict the
 *grammar* of the language, for example, to prevent users from using particular constructs.
 It is only ``secure'' in that one aspect, i.e. limiting the allowable constructs within a DSL.
-It does *not* replace a security manager which might additionally
-be needed as an orthogonal aspect of overall security.
+It does *not* replace other aspects of security which might additionally
+be needed.
 The only reason for it to exist is to limit the expressiveness of the
 language. This customizer only works at the AST (abstract syntax tree)
 level, not at runtime! It can be strange at first glance, but it makes
@@ -1057,7 +1057,7 @@ metaprogramming] section of this manual.
 It may be interesting, in some circumstances, to provide feedback about wrong code to the user as soon as possible,
 that is to say when the DSL script is compiled, rather than having to wait for the execution of the script. However,
 this is not often possible with dynamic code. Groovy actually provides a practical answer to this known as
-link:type-checking-extensions.html[type checking extensions].
+link:core-semantics.html#type-checking-extensions[type checking extensions].
 
 == Builders
 

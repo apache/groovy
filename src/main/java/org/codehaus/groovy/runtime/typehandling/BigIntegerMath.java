@@ -19,10 +19,16 @@
 package org.codehaus.groovy.runtime.typehandling;
 
 /**
- * BigInteger NumberMath operations
+ * Arbitrary-precision integer arithmetic operations.
+ * <p>
+ * Singleton instance providing NumberMath implementations for BigInteger-based operations.
+ * Supports exact integer arithmetic without overflow, with support for all bitwise operations.
  */
 public final class BigIntegerMath extends NumberMath {
 
+    /**
+     * Singleton instance of BigIntegerMath.
+     */
     public static final BigIntegerMath INSTANCE = new BigIntegerMath();
 
     private BigIntegerMath() {}

@@ -26,31 +26,37 @@ import java.io.Writer;
 
 
 /**
- * An abstract base class for nodes in the concrete syntax tree that is
- * the result of parsing.  Note that the CSTNode is inextricably linked
- * with the Token in that every CSTNode has a Token as its root.
+ * Abstract base class for nodes in the concrete syntax tree (CST) produced by parsing.
+ * Every CST node has a {@link Token} as its root element, which indicates the node's type.
+ * This class provides methods for querying node meaning, type, structure, and converting
+ * between different node representations.
  *
  * @see Token
- * @see org.codehaus.groovy.syntax.Reduction
- * @see org.codehaus.groovy.syntax.Types
+ * @see Reduction
+ * @see Types
  */
 public abstract class CSTNode {
 
     //---------------------------------------------------------------------------
     // NODE IDENTIFICATION AND MEANING
 
-
     /**
-     * Returns the meaning of this node.  If the node isEmpty(), returns
-     * the type of Token.NULL.
+     * Returns the current semantic meaning (interpretation) of this node.
+     * For nodes without a root, returns {@link Types#UNKNOWN}.
+     *
+     * @return the node's meaning type from {@link Types}
      */
     public int getMeaning() {
         return getRoot(true).getMeaning();
     }
 
     /**
-     * Sets the meaning for this node (and its root Token).  Not
-     * valid if the node isEmpty().  Returns the node, for convenience.
+     * Sets the semantic meaning (interpretation) of this node.
+     * The meaning may differ from the node's actual type and is often assigned
+     * during semantic analysis after parsing.
+     *
+     * @param meaning the new meaning type from {@link Types}
+     * @return this node for convenience chaining
      */
     public CSTNode setMeaning(int meaning) {
         getRoot().setMeaning(meaning);
@@ -58,29 +64,41 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns the actual type of the node.  If the node isEmpty(), returns
-     * the type of Token.NULL.
+     * Returns the actual syntactic type of this node as determined by the parser.
+     * For nodes without a root, returns {@link Types#UNKNOWN}.
+     *
+     * @return the node's type from {@link Types}
      */
     public int getType() {
         return getRoot(true).getType();
     }
 
     /**
-     * Returns true if the node can be coerced to the specified type.
+     * Returns {@code true} if this node can be coerced to the specified type.
+     * This is determined by the type hierarchy defined in {@link Types}.
+     *
+     * @param type the type to check against
+     * @return {@code true} if coercion is possible
      */
     public boolean canMean(int type) {
         return Types.canMean(getMeaning(), type);
     }
 
     /**
-     * Returns true if the node's meaning matches the specified type.
+     * Returns {@code true} if this node's meaning matches the specified type.
+     *
+     * @param type the type to check
+     * @return {@code true} if the node's meaning is of the specified type
      */
     public boolean isA(int type) {
         return Types.ofType(getMeaning(), type);
     }
 
     /**
-     * Returns true if the node's meaning matches any of the specified types.
+     * Returns {@code true} if this node's meaning matches any of the specified types.
+     *
+     * @param types an array of types to check
+     * @return {@code true} if the node's meaning matches at least one of the types
      */
     public boolean isOneOf(int[] types) {
         int meaning = getMeaning();
@@ -94,7 +112,10 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns true if the node's meaning matches all of the specified types.
+     * Returns {@code true} if this node's meaning matches all of the specified types.
+     *
+     * @param types an array of types to check
+     * @return {@code true} if the node's meaning matches all of the types
      */
     public boolean isAllOf(int[] types) {
         int meaning = getMeaning();
@@ -109,7 +130,10 @@ public abstract class CSTNode {
 
     /**
      * Returns the first matching meaning of the specified types.
-     * Returns Types.UNKNOWN if there are no matches.
+     * Useful for determining which of several possible meanings this node has.
+     *
+     * @param types an array of types to check
+     * @return the first matching type, or {@link Types#UNKNOWN} if no match is found
      */
     public int getMeaningAs(int[] types) {
 
@@ -126,40 +150,65 @@ public abstract class CSTNode {
     // TYPE SUGAR
 
     /**
-     * Returns true if the node matches the specified type.  Effectively
-     * a synonym for <code>isA()</code>.  Missing nodes are Token.NULL.
+     * Returns {@code true} if this node matches the specified type.
+     * Equivalent to {@link #isA(int)}. Missing nodes are represented as {@link Token#NULL}.
+     *
+     * @param type the type to match
+     * @return {@code true} if the node matches the type
      */
     boolean matches(int type) {
         return isA(type);
     }
 
     /**
-     * Returns true if the node and its first child match the specified
-     * types.  Missing nodes are Token.NULL.
+     * Returns {@code true} if this node and its first child match the specified types.
+     * Missing nodes are represented as {@link Token#NULL}.
+     *
+     * @param type the type to match for this node
+     * @param child1 the type to match for the first child
+     * @return {@code true} if the node and child match the types
      */
     boolean matches(int type, int child1) {
         return isA(type) && get(1, true).isA(child1);
     }
 
     /**
-     * Returns true if the node and its first and second child match the
-     * specified types.  Missing nodes are Token.NULL.
+     * Returns {@code true} if this node and its first two children match the specified types.
+     * Missing nodes are represented as {@link Token#NULL}.
+     *
+     * @param type the type to match for this node
+     * @param child1 the type to match for the first child
+     * @param child2 the type to match for the second child
+     * @return {@code true} if the node and children match the types
      */
     boolean matches(int type, int child1, int child2) {
         return matches(type, child1) && get(2, true).isA(child2);
     }
 
     /**
-     * Returns true if the node and its first three children match the
-     * specified types.  Missing nodes are Token.NULL.
+     * Returns {@code true} if this node and its first three children match the specified types.
+     * Missing nodes are represented as {@link Token#NULL}.
+     *
+     * @param type the type to match for this node
+     * @param child1 the type to match for the first child
+     * @param child2 the type to match for the second child
+     * @param child3 the type to match for the third child
+     * @return {@code true} if the node and children match the types
      */
     boolean matches(int type, int child1, int child2, int child3) {
         return matches(type, child1, child2) && get(3, true).isA(child3);
     }
 
     /**
-     * Returns true if the node and its first four children match the
-     * specified types.  Missing nodes have type Types.NULL.
+     * Returns {@code true} if this node and its first four children match the specified types.
+     * Missing nodes are represented as {@link Token#NULL}.
+     *
+     * @param type the type to match for this node
+     * @param child1 the type to match for the first child
+     * @param child2 the type to match for the second child
+     * @param child3 the type to match for the third child
+     * @param child4 the type to match for the fourth child
+     * @return {@code true} if the node and children match the types
      */
     boolean matches(int type, int child1, int child2, int child3, int child4) {
         return matches(type, child1, child2, child3) && get(4, true).isA(child4);
@@ -169,26 +218,34 @@ public abstract class CSTNode {
     // MEMBER ACCESS
 
     /**
-     * Returns true if the node is completely empty (no root, even).
+     * Returns {@code true} if this node is completely empty (no root element).
+     *
+     * @return {@code true} if empty, {@code false} otherwise
      */
     public boolean isEmpty() {
         return false;
     }
 
     /**
-     * Returns the number of elements in the node (including root).
+     * Returns the number of elements in this node (including the root).
+     *
+     * @return the number of elements
      */
     public abstract int size();
 
     /**
-     * Returns true if the node has any non-root elements.
+     * Returns {@code true} if this node has any children (non-root elements).
+     *
+     * @return {@code true} if the node has children
      */
     public boolean hasChildren() {
         return children() > 0;
     }
 
     /**
-     * Returns the number of non-root elements in the node.
+     * Returns the number of child elements (excluding the root).
+     *
+     * @return the number of children
      */
     public int children() {
         int size = size();
@@ -199,13 +256,20 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns the specified element, or null.
+     * Returns the element at the specified index, or {@code null} if not found.
+     *
+     * @param index the element index (0 for root)
+     * @return the element at the index, or {@code null}
      */
     public abstract CSTNode get(int index);
 
     /**
-     * Returns the specified element, or Token.NULL if
-     * safe is set and the specified element is null (or doesn't exist).
+     * Returns the element at the specified index, or {@link Token#NULL} if
+     * the element is not found and {@code safe} is {@code true}.
+     *
+     * @param index the element index
+     * @param safe if {@code true}, returns {@link Token#NULL} instead of {@code null} for missing elements
+     * @return the element at the index, {@link Token#NULL} if safe and missing, or {@code null}
      */
     public CSTNode get(int index, boolean safe) {
         CSTNode element = get(index);
@@ -218,15 +282,20 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns the root of the node.  By convention, all nodes have
-     * a Token as the first element (or root), which indicates the type
-     * of the node.  May return null if the node <code>isEmpty()</code>.
+     * Returns the root token of this node. By convention, all nodes have
+     * a {@link Token} as their root element (at index 0), which indicates
+     * the syntactic type of the node.
+     *
+     * @return the root token, or {@code null} if the node is empty
      */
     public abstract Token getRoot();
 
     /**
-     * Returns the root of the node, the Token that indicates its
-     * type.  Returns a Token.NULL if safe and the actual root is null.
+     * Returns the root token of this node, returning {@link Token#NULL} if
+     * the actual root is {@code null} and {@code safe} is {@code true}.
+     *
+     * @param safe if {@code true}, returns {@link Token#NULL} instead of {@code null}
+     * @return the root token
      */
     public Token getRoot(boolean safe) {
         Token root = getRoot();
@@ -239,9 +308,10 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns the text of the root.  Uses <code>getRoot(true)</code>
-     * to get the root, so you will only receive null in return if the
-     * root token returns it.
+     * Returns the text content of the root token.
+     * Uses {@code getRoot(true)} to ensure a non-null root.
+     *
+     * @return the text of the root token
      */
     public String getRootText() {
         Token root = getRoot(true);
@@ -249,37 +319,46 @@ public abstract class CSTNode {
     }
 
     /**
-     * Returns a description of the node.
+     * Returns a human-readable description of this node's semantic meaning.
+     *
+     * @return a description string from {@link Types}
      */
     public String getDescription() {
         return Types.getDescription(getMeaning());
     }
 
     /**
-     * Returns the starting line of the node.  Returns -1
-     * if not known.
+     * Returns the starting line number of this node in the source.
+     *
+     * @return the line number (1-based), or -1 if not known
      */
     public int getStartLine() {
         return getRoot(true).getStartLine();
     }
 
     /**
-     * Returns the starting column of the node.  Returns -1
-     * if not known.
+     * Returns the starting column number of this node in the source.
+     *
+     * @return the column number (1-based), or -1 if not known
      */
     public int getStartColumn() {
         return getRoot(true).getStartColumn();
     }
 
     /**
-     * Marks the node a complete expression.  Not all nodes support this operation!
+     * Marks this node as a complete expression.
+     * Not all node types support this operation.
+     *
+     * @throws GroovyBugError if this node type does not support marking
      */
     public void markAsExpression() {
         throw new GroovyBugError("markAsExpression() not supported for this CSTNode type");
     }
 
     /**
-     * Returns true if the node is a complete expression.
+     * Returns {@code true} if this node represents a complete expression.
+     *
+     * @return {@code true} if this is an expression
      */
     public boolean isAnExpression() {
         return isA(Types.SIMPLE_EXPRESSION);
@@ -289,16 +368,22 @@ public abstract class CSTNode {
     // OPERATIONS
 
     /**
-     * Adds an element to the node.  Returns the element for convenience.
-     * Not all nodes support this operation!
+     * Adds an element to this node.
+     * Not all node types support this operation.
+     *
+     * @param element the element to add
+     * @return the added element
+     * @throws GroovyBugError if this node type does not support adding
      */
     public CSTNode add(CSTNode element) {
         throw new GroovyBugError("add() not supported for this CSTNode type");
     }
 
     /**
-     * Adds all children of the specified node to this one.  Not all
-     * nodes support this operation!
+     * Adds all children of the specified node to this node.
+     * Skips the root element and copies only the children.
+     *
+     * @param of the source node whose children are to be copied
      */
     public void addChildrenOf(CSTNode of) {
         for (int i = 1; i < of.size(); i++) {
@@ -307,16 +392,23 @@ public abstract class CSTNode {
     }
 
     /**
-     * Sets an element node in at the specified index.  Returns the element
-     * for convenience.  Not all nodes support this operation!
+     * Sets the element at the specified index.
+     * Not all node types support this operation.
+     *
+     * @param index the element index
+     * @param element the element to set
+     * @return the set element
+     * @throws GroovyBugError if this node type does not support setting
      */
     public CSTNode set(int index, CSTNode element) {
         throw new GroovyBugError("set() not supported for this CSTNode type");
     }
 
     /**
-     * Creates a <code>Reduction</code> from this node.  Returns self if the
-     * node is already a <code>Reduction</code>.
+     * Converts this node to a {@link Reduction}.
+     * If this node is already a Reduction, returns itself.
+     *
+     * @return this node as a Reduction
      */
     public abstract Reduction asReduction();
 
@@ -324,7 +416,9 @@ public abstract class CSTNode {
     // STRING CONVERSION
 
     /**
-     * Formats the node as a <code>String</code> and returns it.
+     * Returns a formatted string representation of this node and its children.
+     *
+     * @return the formatted node tree as a string
      */
     @Override
     public String toString() {
@@ -335,16 +429,21 @@ public abstract class CSTNode {
     }
 
     /**
-     * Formats the node and writes it to the specified <code>Writer</code>.
+     * Writes a formatted representation of this node to the specified writer.
+     *
+     * @param writer the {@link PrintWriter} to write to
      */
     public void write(PrintWriter writer) {
         write(writer, "");
     }
 
     /**
-     * Formats the node and writes it to the specified <code>Writer</code>.
-     * The indent is prepended to each output line, and is increased for each
-     * recursion.
+     * Writes a formatted representation of this node to the specified writer,
+     * with indentation for readability. The indentation is increased for each
+     * level of recursion to show the tree structure.
+     *
+     * @param writer the {@link PrintWriter} to write to
+     * @param indent the indentation string to prepend to each line
      */
     protected void write(PrintWriter writer, String indent) {
         writer.print("(");

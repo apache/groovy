@@ -26,7 +26,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,15 +39,52 @@ import java.util.Map;
  */
 public class DOMBuilder extends BuilderSupport {
 
+    /**
+     * The document currently being populated by this builder.
+     */
     Document document;
+    /**
+     * The document builder used to lazily create {@link #document} when needed.
+     */
     DocumentBuilder documentBuilder;
 
+    /**
+     * Creates a non-validating, namespace-aware DOM builder.
+     *
+     * @return a new DOM builder backed by a freshly created {@link DocumentBuilder}
+     * @throws ParserConfigurationException if the parser cannot be configured
+     */
     public static DOMBuilder newInstance() throws ParserConfigurationException {
         return newInstance(false, true);
     }
 
+    /**
+     * Creates a DOM builder using the requested parser settings.
+     * The underlying parser does not allow DOCTYPE declarations.
+     *
+     * @param validating whether the parser should validate source documents
+     * @param namespaceAware whether the parser should be namespace aware
+     * @return a new DOM builder backed by a freshly created {@link DocumentBuilder}
+     * @throws ParserConfigurationException if the parser cannot be configured
+     * @see #newInstance(boolean, boolean, boolean)
+     */
     public static DOMBuilder newInstance(boolean validating, boolean namespaceAware) throws ParserConfigurationException {
-        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
+        return newInstance(validating, namespaceAware, false);
+    }
+
+    /**
+     * Creates a DOM builder using the requested parser settings, including
+     * whether DOCTYPE declarations are permitted in parsed documents.
+     *
+     * @param validating              whether the parser should validate source documents
+     * @param namespaceAware          whether the parser should be namespace aware
+     * @param allowDocTypeDeclaration whether the parser should allow DOCTYPE declarations
+     * @return a new DOM builder backed by a freshly created {@link DocumentBuilder}
+     * @throws ParserConfigurationException if the parser cannot be configured
+     * @since 6.0.0
+     */
+    public static DOMBuilder newInstance(boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException {
+        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
         return new DOMBuilder(factory.newDocumentBuilder());
@@ -108,11 +144,9 @@ public class DOMBuilder extends BuilderSupport {
      */
     public static Document parse(Reader reader, boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration)
             throws SAXException, IOException, ParserConfigurationException {
-        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
+        DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory(allowDocTypeDeclaration);
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
-        XmlUtil.setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        XmlUtil.setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
         DocumentBuilder documentBuilder = factory.newDocumentBuilder();
         return documentBuilder.parse(new InputSource(reader));
     }
@@ -133,14 +167,30 @@ public class DOMBuilder extends BuilderSupport {
         return parse(new StringReader(text));
     }
 
+    /**
+     * Creates a builder that appends newly created elements to the supplied document.
+     *
+     * @param document the target document to populate
+     */
     public DOMBuilder(Document document) {
         this.document = document;
     }
 
+    /**
+     * Creates a builder that lazily creates a backing document from the supplied document builder.
+     *
+     * @param documentBuilder the document builder used when a new document is required
+     */
     public DOMBuilder(DocumentBuilder documentBuilder) {
         this.documentBuilder = documentBuilder;
     }
 
+    /**
+     * Builder lifecycle callback that attaches a completed child node to its parent node.
+     *
+     * @param parent the parent {@link Node}
+     * @param child the child {@link Node} to append
+     */
     @Override
     protected void setParent(Object parent, Object child) {
         Node current = (Node) parent;
@@ -149,6 +199,12 @@ public class DOMBuilder extends BuilderSupport {
         current.appendChild(node);
     }
 
+    /**
+     * Builder lifecycle callback that creates an element for the supplied node name.
+     *
+     * @param name the node name, either a {@link QName} or plain element name
+     * @return the created {@link Element}
+     */
     @Override
     protected Object createNode(Object name) {
         if (document == null) {
@@ -161,6 +217,13 @@ public class DOMBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Creates the backing document used by subsequent builder callbacks.
+     * Subclasses may override to supply a custom document implementation.
+     *
+     * @return a new document ready to receive builder output
+     * @throws IllegalArgumentException if no {@link DocumentBuilder} is available
+     */
     protected Document createDocument() {
         if (documentBuilder == null) {
             throw new IllegalArgumentException("No Document or DOMImplementation available so cannot create Document");
@@ -169,6 +232,13 @@ public class DOMBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Builder lifecycle callback that creates an element and adds text content to it.
+     *
+     * @param name the node name, either a {@link QName} or plain element name
+     * @param value the text value to append
+     * @return the created {@link Element}
+     */
     @Override
     protected Object createNode(Object name, Object value) {
         Element element = (Element) createNode(name);
@@ -176,6 +246,14 @@ public class DOMBuilder extends BuilderSupport {
         return element;
     }
 
+    /**
+     * Builder lifecycle callback that creates an element, applies attributes and adds text content.
+     *
+     * @param name the node name, either a {@link QName} or plain element name
+     * @param attributes the attributes to apply to the created element
+     * @param value the text value to append
+     * @return the created {@link Element}
+     */
     @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         Element element = (Element) createNode(name, attributes);
@@ -183,6 +261,13 @@ public class DOMBuilder extends BuilderSupport {
         return element;
     }
 
+    /**
+     * Builder lifecycle callback that creates an element and applies the supplied attributes.
+     *
+     * @param name the node name, either a {@link QName} or plain element name
+     * @param attributes the attributes to apply, including namespace declarations
+     * @return the created {@link Element}
+     */
     @Override
     protected Object createNode(Object name, Map attributes) {
         Element element = (Element) createNode(name);
@@ -208,6 +293,13 @@ public class DOMBuilder extends BuilderSupport {
         return element;
     }
 
+    /**
+     * Applies namespace declaration attributes from an {@code xmlns} map to the supplied element.
+     *
+     * @param element the element receiving namespace attributes
+     * @param attributes the namespace attributes keyed by prefix or {@link QName}
+     * @throws IllegalArgumentException if an entry has a {@code null} value or an unsupported key type
+     */
     protected void appendNamespaceAttributes(Element element, Map<Object, Object> attributes) {
         for (Map.Entry entry : attributes.entrySet()) {
             Object key = entry.getKey();

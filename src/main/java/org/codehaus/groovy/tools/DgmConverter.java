@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.lang.System.Logger.Level.INFO;
+
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -55,8 +57,20 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.RETURN;
 
+/**
+ * Generates {@code GeneratedMetaMethod} adapter classes and metadata for the
+ * default Groovy methods.
+ */
 public class DgmConverter {
 
+    private static final System.Logger LOGGER = System.getLogger(DgmConverter.class.getName());
+
+    /**
+     * Generates DGM adapter classes into the target directory.
+     *
+     * @param args optional {@code --info} flag and target directory
+     * @throws IOException if generated classes or metadata cannot be written
+     */
     public static void main(String[] args) throws IOException {
         String targetDirectory = "build/classes/";
         boolean info = (args.length == 1 && "--info".equals(args[0]))
@@ -124,7 +138,7 @@ public class DgmConverter {
 
         GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
         if (info)
-            System.out.println("Saved " + cur + " dgm records to: "+targetDirectory+"/META-INF/dgminfo");
+            LOGGER.log(INFO, "Saved {0} dgm records to: {1}/META-INF/dgminfo", cur, targetDirectory);
     }
 
     private static void createConstructor(ClassWriter cw) {
@@ -235,6 +249,14 @@ public class DgmConverter {
         mv.visitEnd();
     }
 
+    /**
+     * Loads and casts the non-receiver arguments for the supplied cached
+     * method from an {@code Object[]} local variable.
+     *
+     * @param method the cached method whose parameters are being loaded
+     * @param argumentIndex the local-variable slot containing the argument array
+     * @param mv the visitor receiving the bytecode instructions
+     */
     protected static void loadParameters(CachedMethod method, int argumentIndex, MethodVisitor mv) {
         CachedClass[] parameters = method.getParameterTypes();
         int size = parameters.length - 1;

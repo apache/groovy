@@ -25,23 +25,30 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A syntax reduction, produced by the <code>Parser</code>.
+ * A syntax reduction produced by the Parser during syntactic analysis.
+ * Represents a node in the concrete syntax tree (CST) that contains a root
+ * {@link Token} and zero or more child {@link CSTNode} elements.
  *
  * @see Token
  * @see CSTNode
  * @see Types
  */
 public class Reduction extends CSTNode {
+    /** Singleton empty reduction (read-only). */
     public static final Reduction EMPTY = new Reduction();
 
     //---------------------------------------------------------------------------
     // INITIALIZATION AND SUCH
 
-    private List elements = null;    // The set of child nodes
-    private boolean marked = false;   // Used for completion marking by some parts of the parser
+    /** The list of child nodes (including root at index 0). */
+    private List elements = null;
+    /** Flag used by some parser implementations to mark expression completion. */
+    private boolean marked = false;
 
     /**
-     * Initializes the <code>Reduction</code> with the specified root.
+     * Constructs a Reduction with the specified root token.
+     *
+     * @param root the root {@link Token} of this reduction
      */
     public Reduction(Token root) {
         elements = new ArrayList();
@@ -49,15 +56,17 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Initializes the <code>Reduction</code> to empty.
+     * Constructs an empty Reduction (private; use {@link #EMPTY} or {@link #newContainer()}).
      */
     private Reduction() {
         elements = Collections.EMPTY_LIST;
     }
 
     /**
-     * Creates a new <code>Reduction</code> with <code>Token.NULL</code>
-     * as its root.
+     * Creates a new Reduction with {@link Token#NULL} as its root.
+     * Useful for creating container nodes with no specific type.
+     *
+     * @return a new Reduction with a null root token
      */
     public static Reduction newContainer() {
         return new Reduction(Token.NULL);
@@ -67,7 +76,9 @@ public class Reduction extends CSTNode {
     // MEMBER ACCESS
 
     /**
-     * Returns true if the node is completely empty (no root, even).
+     * Returns {@code true} if this reduction is completely empty (no elements, not even a root).
+     *
+     * @return {@code true} if empty
      */
     @Override
     public boolean isEmpty() {
@@ -75,7 +86,9 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Returns the number of elements in the node.
+     * Returns the number of elements in this reduction (including the root token).
+     *
+     * @return the number of elements
      */
     @Override
     public int size() {
@@ -83,7 +96,10 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Returns the specified element, or null.
+     * Returns the element at the specified index, or {@code null} if the index is out of bounds.
+     *
+     * @param index the element index (0 for root)
+     * @return the element at the index, or {@code null} if not found
      */
     @Override
     public CSTNode get(int index) {
@@ -97,9 +113,10 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Returns the root of the node, the Token that indicates its
-     * type.  Returns null if there is no root (usually only if the
-     * node is a placeholder of some kind -- see isEmpty()).
+     * Returns the root token of this reduction.
+     * The root is always at index 0 and indicates the syntactic type.
+     *
+     * @return the root token, or {@code null} if this reduction is empty
      */
     @Override
     public Token getRoot() {
@@ -111,7 +128,9 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Marks the node a complete expression.
+     * Marks this reduction as a complete expression.
+     * This flag is used by the parser to distinguish complete expressions
+     * from partial constructs.
      */
     @Override
     public void markAsExpression() {
@@ -119,7 +138,11 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Returns true if the node is a complete expression.
+     * Returns {@code true} if this node represents a complete expression.
+     * A reduction is considered an expression if it has the {@link Types#COMPLEX_EXPRESSION}
+     * meaning or has been explicitly marked as an expression.
+     *
+     * @return {@code true} if this is an expression
      */
     @Override
     public boolean isAnExpression() {
@@ -134,7 +157,10 @@ public class Reduction extends CSTNode {
     // OPERATIONS
 
     /**
-     * Adds an element to the node.
+     * Adds an element to the end of this reduction.
+     *
+     * @param element the element to add
+     * @return the added element
      */
     @Override
     public CSTNode add(CSTNode element) {
@@ -142,7 +168,14 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Sets an element in at the specified index.
+     * Sets the element at the specified index.
+     * If the index is beyond the current size, intermediate positions are filled with {@code null}.
+     * The root element (index 0) must be a {@link Token}.
+     *
+     * @param index the element index
+     * @param element the element to set
+     * @return the set element
+     * @throws GroovyBugError if trying to set a non-Token as root, or if operating on {@link #EMPTY}
      */
     @Override
     public CSTNode set(int index, CSTNode element) {
@@ -159,7 +192,6 @@ public class Reduction extends CSTNode {
 
             throw new GroovyBugError("attempt to set() a non-Token as root of a Reduction");
         }
-
 
         //
         // Fill slots with nulls, if necessary.
@@ -180,8 +212,12 @@ public class Reduction extends CSTNode {
     }
 
     /**
-     * Removes a node from the <code>Reduction</code>.  You cannot remove
-     * the root node (index 0).
+     * Removes the element at the specified index.
+     * Cannot remove the root element (index 0).
+     *
+     * @param index the element index (must be &gt; 0)
+     * @return the removed element
+     * @throws GroovyBugError if trying to remove the root element
      */
     public CSTNode remove(int index) {
         if (index < 1) {

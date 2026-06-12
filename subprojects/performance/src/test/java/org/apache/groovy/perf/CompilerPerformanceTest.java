@@ -30,8 +30,8 @@ import java.util.List;
 
 public class CompilerPerformanceTest {
     private final static String GROOVY_VERSION = GroovySystem.getVersion();
-    private final static int WARMUP = 100;
-    private final static int REPEAT = 500;
+    private final static int WARMUP = 50;
+    private final static int REPEAT = 300;
 
     public static void main(String[] args) throws Exception {
         List<File> sources = new ArrayList<>();

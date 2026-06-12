@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -815,7 +817,7 @@ final class LambdaTest {
                     this.val = v
                 }
                 String toString() {
-                    val as String
+                    this.val as String
                 }
                 def <Out> Value<Out> replace(Supplier<Out> supplier) {
                     new Value<>(supplier.get())
@@ -1886,6 +1888,1946 @@ final class LambdaTest {
 
             assert new Foo().bar('hello') == 'HELLO'
             assert this.class.classLoader.loadClass('Foo$_bar_lambda1').modifiers == 25 // public(1) + static(8) + final(16)
+        '''
+    }
+
+    // GROOVY-11905
+    @Nested
+    class NonCapturingLambdaOptimizationTest extends AbstractBytecodeTestCase {
+        @Test
+        void testNonCapturingLambdaWithFunctionInStaticMethod() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e + 1).toList()
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithFunctionInInstanceMethodWithoutThisAccess() {
+            assertScript shell,  '''
+                class C {
+                    void test() {
+                        assert [2, 3, 4] == [1, 2, 3].stream().map(e -> e + 1).toList()
+                    }
+                }
+                new C().test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithPredicate() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        assert [2, 4] == [1, 2, 3, 4].stream().filter(e -> e % 2 == 0).toList()
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithSupplier() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        Supplier<String> s = () -> 'constant'
+                        assert s.get() == 'constant'
+                        assert 'hello' == Optional.<String>empty().orElseGet(() -> 'hello')
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithBiFunction() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        BiFunction<Integer, Integer, Integer> f = (a, b) -> a + b
+                        assert f.apply(3, 4) == 7
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithComparator() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        assert [3, 2, 1] == [1, 2, 3].stream().sorted((a, b) -> b.compareTo(a)).toList()
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithPrimitiveParameterType() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        IntUnaryOperator op = (int i) -> i * 2
+                        assert op.applyAsInt(5) == 10
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithCustomFunctionalInterface() {
+            assertScript shell,  '''
+                interface Transformer<I, O> {
+                    O transform(I input)
+                }
+                class C {
+                    static void test() {
+                        Transformer<String, Integer> t = (String s) -> s.length()
+                        assert t.transform('hello') == 5
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaCallingStaticMethodOnly() {
+            assertScript shell,  '''
+                class C {
+                    static String prefix() { 'Hi ' }
+                    static void test() {
+                        assert ['Hi 1', 'Hi 2'] == [1, 2].stream().map(e -> C.prefix() + e).toList()
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testMultipleNonCapturingLambdasInSameMethod() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        Function<Integer, Integer> f = (Integer x) -> x + 1
+                        Function<Integer, String>  g = (Integer x) -> 'v' + x
+                        Predicate<Integer>         p = (Integer x) -> x > 2
+                        assert f.apply(1) == 2
+                        assert g.apply(1) == 'v1'
+                        assert p.test(3) && !p.test(1)
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaInStaticInitializerBlock() {
+            assertScript shell,  '''
+                class C {
+                    static List<Integer> result
+                    static { result = [1, 2, 3].stream().map(e -> e * 2).toList() }
+                }
+                assert C.result == [2, 4, 6]
+            '''
+
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator op
+                    static {
+                        op = (int i) -> i + 1
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$__clinit__lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: '<clinit>', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$__clinit__lambda1.doCall(I)I'
+            ])
+            assert !outerBytecode.hasSequence(['NEW C$__clinit__lambda1'])
+        }
+
+        @Test
+        void testNonCapturingLambdaInFieldInitializer() {
+            assertScript shell,  '''
+                class C {
+                    IntUnaryOperator op = (int i) -> i + 1
+                    void test() { assert op.applyAsInt(5) == 6 }
+                }
+                new C().test()
+            '''
+
+            def script = '''
+                @CompileStatic
+                class C {
+                    IntUnaryOperator op = (int i) -> i + 1
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: '<init>', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_lambda1.doCall(I)I'
+            ])
+            assert !outerBytecode.hasSequence(['NEW C$_lambda1'])
+        }
+
+        @Test
+        void testNonCapturingLambdaInInterfaceDefaultMethod() {
+            assertScript shell,  '''
+                interface Processor {
+                    default List<Integer> process(List<Integer> input) {
+                        input.stream().map(e -> e + 1).toList()
+                    }
+                }
+                class C implements Processor {}
+                assert new C().process([1, 2, 3]) == [2, 3, 4]
+            '''
+
+            def script = '''
+                @CompileStatic
+                interface Processor {
+                    default IntUnaryOperator process() {
+                        (int i) -> i + 1
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Processor\\$_process_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Processor', method: 'process', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Processor$_process_lambda1.doCall(I)I'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Processor$_process_lambda1'])
+        }
+
+        @Test
+        void testNonCapturingLambdaSingletonIdentity() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        def identities = new HashSet()
+                        for (int i = 0; i < 5; i++) {
+                            Function<Integer, Integer> f = (Integer x) -> x + 1
+                            identities.add(System.identityHashCode(f))
+                        }
+                        assert identities.size() == 1 : 'non-capturing lambda should be a singleton'
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testCapturingLambdaCreatesDistinctInstances() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        def identities = new HashSet()
+                        for (int i = 0; i < 3; i++) {
+                            int captured = i
+                            Function<Integer, Integer> f = (Integer x) -> x + captured
+                            identities.add(System.identityHashCode(f))
+                            assert f.apply(10) == 10 + i
+                        }
+                        assert identities.size() == 3 : 'capturing lambda should create different instances'
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testCapturingLocalVariable() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        String x = '#'
+                        assert ['#1', '#2'] == [1, 2].stream().map(e -> x + e).toList()
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testAccessingThis() {
+            assertScript shell,  '''
+                class C {
+                    String prefix = 'Hi '
+                    void test() {
+                        assert ['Hi 1', 'Hi 2'] == [1, 2].stream().map(e -> this.prefix + e).toList()
+                    }
+                }
+                new C().test()
+            '''
+        }
+
+        @Test
+        void testCallingInstanceMethod() {
+            assertScript shell,  '''
+                class C {
+                    String greet(int i) { "Hello $i" }
+                    void test() {
+                        assert ['Hello 1', 'Hello 2'] == [1, 2].stream().map(e -> greet(e)).toList()
+                    }
+                }
+                new C().test()
+            '''
+        }
+
+        @Test
+        void testCallingSuperMethod() {
+            assertScript shell,  '''
+                class Base {
+                    String greet(int i) { "Hello $i" }
+                }
+                class C extends Base {
+                    void test() {
+                        assert ['Hello 1', 'Hello 2'] == [1, 2].stream().map(e -> super.greet(e)).toList()
+                    }
+                }
+                new C().test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaWithThisStringLiteralRemainsSingleton() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        def identities = new HashSet()
+                        for (int i = 0; i < 5; i++) {
+                            Supplier<String> supplier = () -> 'this'
+                            identities.add(System.identityHashCode(supplier))
+                            assert supplier.get() == 'this'
+                        }
+                        assert identities.size() == 1 : 'non-capturing lambda with string literal this should still be a singleton'
+                    }
+                }
+                C.test()
+            '''
+
+            def script = '''
+                @CompileStatic
+                class C {
+                    static Supplier<String> create() {
+                        () -> 'this'
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasStrictSequence([
+                'public static doCall()Ljava/lang/Object;',
+                'L0'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW C$_create_lambda1'])
+        }
+
+        @Test
+        void testNonCapturingSerializableLambdaCanBeSerialized() {
+            assertScript shell,  '''
+                import java.io.*
+                interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+                byte[] test() {
+                    try (def out = new ByteArrayOutputStream()) {
+                        out.withObjectOutputStream {
+                            SerFunc<Integer, String> f = ((Integer i) -> 'a' + i)
+                            it.writeObject(f)
+                        }
+                        out.toByteArray()
+                    }
+                }
+                assert test().length > 0
+            '''
+        }
+
+        @Test
+        void testNonCapturingSerializableLambdaRoundTrips() {
+            assertScript shell,  '''
+                package tests.lambda
+                class C {
+                    static byte[] test() {
+                        def out = new ByteArrayOutputStream()
+                        out.withObjectOutputStream { it ->
+                            SerFunc<Integer, String> f = (Integer i) -> 'a' + i
+                            it.writeObject(f)
+                        }
+                        out.toByteArray()
+                    }
+                    static main(args) {
+                        new ByteArrayInputStream(C.test()).withObjectInputStream(C.classLoader) {
+                            SerFunc<Integer, String> f = (SerFunc<Integer, String>) it.readObject()
+                            assert f.apply(1) == 'a1'
+                        }
+                    }
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+                }
+            '''
+        }
+
+        @Test
+        void testNonCapturingSerializableLambdaSingletonIdentity() {
+            assertScript shell,  '''
+                interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+                class C {
+                    static void test() {
+                        def identities = new HashSet()
+                        for (int i = 0; i < 5; i++) {
+                            SerFunc<Integer, Integer> f = (Integer x) -> x + 1
+                            identities.add(System.identityHashCode(f))
+                        }
+                        assert identities.size() == 1 : 'non-capturing serializable lambda should be a singleton'
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testCapturingSerializableLambdaStillRoundTrips() {
+            assertScript shell,  '''
+                package tests.lambda
+                class C {
+                    byte[] test() {
+                        def out = new ByteArrayOutputStream()
+                        out.withObjectOutputStream {
+                            String s = 'a'
+                            SerFunc<Integer, String> f = (Integer i) -> s + i
+                            it.writeObject(f)
+                        }
+                        out.toByteArray()
+                    }
+                    static main(args) {
+                        new ByteArrayInputStream(C.newInstance().test()).withObjectInputStream(C.classLoader) {
+                            SerFunc<Integer, String> f = (SerFunc<Integer, String>) it.readObject()
+                            assert f.apply(1) == 'a1'
+                        }
+                    }
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+                }
+            '''
+        }
+
+        @Test
+        void testCapturingLambdaWithRunnable() {
+            assertScript shell,  '''
+                import java.util.concurrent.atomic.AtomicBoolean
+                class C {
+                    static void test() {
+                        AtomicBoolean ran = new AtomicBoolean(false)
+                        Runnable r = () -> ran.set(true)
+                        r.run()
+                        assert ran.get()
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testCapturingLambdaWithConsumer() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        def result = []
+                        Consumer<Integer> c = (Integer x) -> result.add(x * 2)
+                        c.accept(3)
+                        c.accept(5)
+                        assert result == [6, 10]
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaAccessingStaticField() {
+            assertScript shell,  '''
+                class C {
+                    static final int OFFSET = 100
+                    static void test() {
+                        assert [101, 102, 103] == [1, 2, 3].stream().map(e -> e + OFFSET).toList()
+                    }
+                }
+                C.test()
+            '''
+
+            def script = '''
+                @CompileStatic
+                class C {
+                    static final int OFFSET = 100
+                    static IntUnaryOperator create() {
+                        (int i) -> i + OFFSET
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasStrictSequence([
+                'public static doCall(I)I',
+                'L0'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(I)I'
+            ])
+            assert !outerBytecode.hasSequence(['NEW C$_create_lambda1'])
+        }
+
+        @Test
+        void testQualifiedOuterThisRemainsCapturing() {
+            assertScript shell,  '''
+                class Outer {
+                    String name = 'outer'
+                    class Inner {
+                        void test() {
+                            Function<Integer, String> f = (Integer x) -> Outer.this.name + x
+                            assert f.apply(1) == 'outer1'
+                        }
+                    }
+                    void test() { new Inner().test() }
+                }
+                new Outer().test()
+            '''
+        }
+
+        @Test
+        void testNestedNonCapturingLambdas() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        Function<List<Integer>, List<Integer>> f = (List<Integer> list) ->
+                            list.stream().map(e -> e * 2).toList()
+                        assert f.apply([1, 2, 3]) == [2, 4, 6]
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testNonCapturingLambdaInStaticMethodUsesStaticDoCall() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator create() {
+                        (int i) -> i * 2
+                    }
+                }
+            ''')
+            assert bytecode.hasStrictSequence([
+                'public static doCall(I)I',
+                'L0'
+            ])
+        }
+
+        @Test
+        void testNonCapturingLambdaInInstanceMethodWithoutThisAccessUsesCaptureFreeInvokeDynamic() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', '''
+                @CompileStatic
+                class C {
+                    IntUnaryOperator create() {
+                        (int i) -> i + 1
+                    }
+                }
+            ''')
+            assert bytecode.hasSequence([
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(I)I'
+            ])
+            assert !bytecode.hasSequence(['NEW C$_create_lambda1'])
+        }
+
+        @Test
+        void testCapturingLambdaRetainsInstanceDoCallAndCapturedReceiver() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator create() {
+                        int captured = 1
+                        IntUnaryOperator op = (int i) -> i + captured
+                        op
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall(I)I'])
+            assert !lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'NEW C$_create_lambda1',
+                'INVOKEDYNAMIC applyAsInt(LC$_create_lambda1;)Ljava/util/function/IntUnaryOperator;',
+                'C$_create_lambda1.doCall(I)I'
+            ])
+        }
+
+        @Test
+        void testSuperMethodCallRetainsInstanceDoCallAndCapturedReceiver() {
+            def script = '''
+                @CompileStatic
+                class Base {
+                    String greet(int i) { "Hello $i" }
+                }
+                @CompileStatic
+                class C extends Base {
+                    Function<Integer, String> create() {
+                        (Integer i) -> super.greet(i)
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+            assert !lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'NEW C$_create_lambda1',
+                'INVOKEDYNAMIC apply(LC$_create_lambda1;)Ljava/util/function/Function;',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            ])
+        }
+
+        @Test
+        void testNonCapturingSerializableLambdaDeserializeHelperSkipsCapturedArgLookup() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C', method: '$deserializeLambda_C$_create_lambda1$', '''
+                @CompileStatic
+                class C {
+                    static SerFunc<Integer, String> create() {
+                        (Integer i) -> 'a' + i
+                    }
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+                }
+            ''')
+            assert !bytecode.hasSequence([SERIALIZED_LAMBDA_GET_CAPTURED_ARG])
+        }
+
+        @Test
+        void testCapturingSerializableLambdaDeserializeHelperReadsCapturedArg() {
+            def bytecode = compileStaticBytecode(classNamePattern: 'C', method: '$deserializeLambda_C$_create_lambda1$', '''
+                @CompileStatic
+                class C {
+                    static SerFunc<Integer, String> create() {
+                        String prefix = 'a'
+                        SerFunc<Integer, String> f = (Integer i) -> prefix + i
+                        f
+                    }
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+                }
+            ''')
+            assert bytecode.hasSequence([SERIALIZED_LAMBDA_GET_CAPTURED_ARG])
+        }
+
+        @Test
+        void testNonCapturingLambdaCallingQualifiedStaticMethodOnlyUsesCaptureFreeInvokeDynamic() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static String prefix() { 'Hi ' }
+                    static Function<Integer, String> create() {
+                        (Integer i) -> C.prefix() + i
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC apply()Ljava/util/function/Function;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW C$_create_lambda1'])
+        }
+
+        @Test
+        void testNonCapturingComparatorLambdaUsesCaptureFreeInvokeDynamic() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static java.util.Comparator<Integer> create() {
+                        (Integer left, Integer right) -> right.compareTo(left)
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;Ljava/lang/Integer;)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC compare()Ljava/util/Comparator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;Ljava/lang/Integer;)I'
+            ])
+            assert !outerBytecode.hasSequence(['NEW C$_create_lambda1'])
+        }
+
+        @Test
+        void testNonCapturingLambdaWithCustomFunctionalInterfaceUsesCaptureFreeInvokeDynamic() {
+            def script = '''
+                interface Transformer<I, O> {
+                    O transform(I input)
+                }
+                @CompileStatic
+                class C {
+                    static Transformer<String, Integer> create() {
+                        (String s) -> s.length()
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/String;)Ljava/lang/Object;'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC transform()LTransformer;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/String;)Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW C$_create_lambda1'])
+        }
+
+        @Test
+        void testNonCapturingSerializableLambdaUsesCaptureFreeAltMetafactory() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static SerFunc<Integer, String> create() {
+                        (Integer i) -> 'a' + i
+                    }
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC apply()LC$SerFunc;',
+                'java/lang/invoke/LambdaMetafactory.altMetafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            ])
+            assert outerBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
+            assert !outerBytecode.hasSequence(['NEW C$_create_lambda1'])
+        }
+
+        @Test
+        void testNonCapturingLambdaWithExceptionInBody() {
+            assertScript shell,  '''
+                class C {
+                    static void test() {
+                        Function<String, Integer> f = (String s) -> {
+                            if (s == null) throw new IllegalArgumentException('null input')
+                            return s.length()
+                        }
+                        assert f.apply('hello') == 5
+                        try {
+                            f.apply(null)
+                            assert false : 'should have thrown'
+                        } catch (IllegalArgumentException e) {
+                            assert e.message == 'null input'
+                        }
+                    }
+                }
+                C.test()
+            '''
+        }
+
+        @Test
+        void testAccessingThisObjectRemainsCapturing() {
+            assertScript shell,  '''
+                class C {
+                    String name = 'test'
+                    void test() {
+                        Function<Integer, String> f = (Integer x) -> thisObject.name + x
+                        assert f.apply(1) == 'test1'
+                    }
+                }
+                new C().test()
+            '''
+
+            def bytecode = compileStaticBytecode(classNamePattern: 'C\\$_test_lambda1', method: 'doCall', '''
+                @CompileStatic
+                class C {
+                    String name = 'test'
+                    Function<Integer, String> test() {
+                        (Integer x) -> thisObject.name + x
+                    }
+                }
+            ''')
+            assert bytecode.hasSequence(['public doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+            assert !bytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+        }
+
+        @Test
+        void testInnerClassLambdaUsingOuterStaticMembersQualifiesStaticCalls() {
+            assertScript shell, '''
+                class Outer {
+                    static String label = 'outer'
+                    static boolean isReady() { true }
+                    static String suffix() { '!' }
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix() : 'never'
+                        }
+                    }
+                }
+
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.get() == 'OUTER!'
+                assert right.get() == 'OUTER!'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    static String label = 'outer'
+                    static boolean isReady() { true }
+                    static String suffix() { '!' }
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix() : 'never'
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Outer.isReady ()Z',
+                'INVOKESTATIC Outer.getLabel ()Ljava/lang/String;',
+                'INVOKESTATIC Outer.suffix ()Ljava/lang/String;'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testSerializableLambdasInSameClassShareSingleDeserializeDispatcher() {
+            assertScript shell, COMMON_IMPORTS + '''
+                import java.io.ByteArrayInputStream
+                import java.io.ByteArrayOutputStream
+
+                @CompileStatic
+                class C {
+                    interface SerFunc<I, O> extends Serializable, Function<I, O> {}
+
+                    static SerFunc<Integer, String> createLeft() {
+                        (Integer i) -> 'a' + i
+                    }
+
+                    static SerFunc<Integer, String> createRight() {
+                        (Integer i) -> 'b' + (i * 2)
+                    }
+
+                    static byte[] serialize(Serializable value) {
+                        def out = new ByteArrayOutputStream()
+                        out.withObjectOutputStream { it.writeObject(value) }
+                        out.toByteArray()
+                    }
+
+                    static <T> T deserialize(byte[] bytes) {
+                        new ByteArrayInputStream(bytes).withObjectInputStream(C.classLoader) {
+                            (T) it.readObject()
+                        }
+                    }
+                }
+
+                assert C.declaredMethods.count { it.name == '$deserializeLambda$' } == 1
+                C.SerFunc<Integer, String> left = C.deserialize(C.serialize(C.createLeft()))
+                C.SerFunc<Integer, String> right = C.deserialize(C.serialize(C.createRight()))
+                assert left.apply(1) == 'a1'
+                assert right.apply(2) == 'b4'
+            '''
+        }
+
+        @Test
+        void testInnerClassLambdaUsingOuterStaticBeanPropertiesStaysCaptureFree() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    static boolean isReady() { true }
+                    static String getLabel() { 'outer' }
+                    static String getSuffix() { '!' }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix : 'never'
+                        }
+                    }
+                }
+
+                def supplier = new Outer().new Inner().create()
+                assert supplier.get() == 'OUTER!'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    static boolean isReady() { true }
+                    static String getLabel() { 'outer' }
+                    static String getSuffix() { '!' }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix : 'never'
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Outer.isReady ()Z',
+                'INVOKESTATIC Outer.getLabel ()Ljava/lang/String;',
+                'INVOKESTATIC Outer.getSuffix ()Ljava/lang/String;'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaUsingInterfaceStaticMembersStaysCaptureFree() {
+            assertScript shell, COMMON_IMPORTS + '''
+                interface Labels {
+                    String LABEL = 'outer'
+                    static boolean isReady() { true }
+                    static String getSuffix() { '!' }
+                }
+
+                class Outer implements Labels {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? LABEL.toUpperCase() + suffix : 'never'
+                        }
+                    }
+                }
+
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.is(right) : 'interface static members should keep the lambda capture-free'
+                assert left.get() == 'OUTER!'
+                assert right.get() == 'OUTER!'
+            '''
+
+            def script = '''
+                @CompileStatic
+                interface Labels {
+                    String LABEL = 'outer'
+                    static boolean isReady() { true }
+                    static String getSuffix() { '!' }
+                }
+
+                @CompileStatic
+                class Outer implements Labels {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? LABEL.toUpperCase() + suffix : 'never'
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Labels.isReady ()Z',
+                'GETSTATIC Labels.LABEL :',
+                'INVOKESTATIC Labels.getSuffix ()Ljava/lang/String;'
+            ])
+            assert !lambdaBytecode.hasSequence(['CHECKCAST groovy/lang/GroovyObject'])
+            assert !lambdaBytecode.hasSequence(['INVOKEINTERFACE groovy/lang/GroovyObject.getProperty'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaUsingInheritedStaticMembersStaysCaptureFree() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Base {
+                    static boolean isReady() { true }
+                    static String getLabel() { 'outer' }
+                    static String getSuffix() { '!' }
+                }
+
+                class Outer extends Base {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix : 'never'
+                        }
+                    }
+                }
+
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.is(right) : 'inherited static members should keep the lambda capture-free'
+                assert left.get() == 'OUTER!'
+                assert right.get() == 'OUTER!'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Base {
+                    static boolean isReady() { true }
+                    static String getLabel() { 'outer' }
+                    static String getSuffix() { '!' }
+                }
+
+                @CompileStatic
+                class Outer extends Base {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix : 'never'
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Base.isReady ()Z',
+                'INVOKESTATIC Base.getLabel ()Ljava/lang/String;',
+                'INVOKESTATIC Base.getSuffix ()Ljava/lang/String;'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaUsingQualifiedOuterThisStaticMembersStaysCaptureFree() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    static String label = 'outer'
+                    static String suffix() { '!' }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> Outer.this.@label.toUpperCase() + Outer.this.suffix()
+                        }
+                    }
+                }
+
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.is(right) : 'qualified outer-this static access should stay capture-free'
+                assert left.get() == 'OUTER!'
+                assert right.get() == 'OUTER!'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    static String label = 'outer'
+                    static String suffix() { '!' }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> Outer.this.@label.toUpperCase() + Outer.this.suffix()
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'GETSTATIC Outer.label :',
+                'INVOKESTATIC Outer.suffix ()Ljava/lang/String;'
+            ])
+            assert !lambdaBytecode.hasSequence(['CHECKCAST groovy/lang/GroovyObject'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testStaticNestedClassLambdaUsingOwnStaticMethodStaysNonCapturing() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    static class Nested {
+                        static String helper() { 'nested' }
+
+                        Supplier<String> create() {
+                            () -> helper().toUpperCase()
+                        }
+                    }
+                }
+
+                def left = new Outer.Nested().create()
+                def right = new Outer.Nested().create()
+                assert left.is(right) : 'static nested-class helpers should not be mistaken for outer-instance capture'
+                assert left.get() == 'NESTED'
+                assert right.get() == 'NESTED'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    static class Nested {
+                        static String helper() { 'nested' }
+
+                        Supplier<String> create() {
+                            () -> helper().toUpperCase()
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Nested\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Outer$Nested.helper ()Ljava/lang/String;',
+                'INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;'
+            ])
+
+            def nestedBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Nested', method: 'create', script)
+            assert nestedBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Nested$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !nestedBytecode.hasSequence(['NEW Outer$Nested$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaUsingStaticallyImportedHelperMethodStaysNonCapturing() {
+            assertScript shell, COMMON_IMPORTS + '''
+                import static Helper.helper
+
+                class Helper {
+                    static String helper() { 'helper' }
+                }
+
+                class Outer {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> helper().toUpperCase()
+                        }
+                    }
+                }
+
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.is(right) : 'statically imported helper methods should not be treated as captured outer state'
+                assert left.get() == 'HELPER'
+                assert right.get() == 'HELPER'
+            '''
+
+            def script = '''
+                import static Helper.helper
+
+                @CompileStatic
+                class Helper {
+                    static String helper() { 'helper' }
+                }
+
+                @CompileStatic
+                class Outer {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> helper().toUpperCase()
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Helper.helper ()Ljava/lang/String;',
+                'INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaUsingStaticallyImportedInterfaceMethodStaysNonCapturing() {
+            assertScript shell, COMMON_IMPORTS + '''
+                import static HelperApi.helper
+
+                interface HelperApi {
+                    static String helper() { 'iface' }
+                }
+
+                class Outer implements HelperApi {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> helper().toUpperCase()
+                        }
+                    }
+                }
+
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.is(right) : 'statically imported interface methods should stay receiver-free inside inner lambdas'
+                assert left.get() == 'IFACE'
+                assert right.get() == 'IFACE'
+            '''
+
+            def script = '''
+                import static HelperApi.helper
+
+                @CompileStatic
+                interface HelperApi {
+                    static String helper() { 'iface' }
+                }
+
+                @CompileStatic
+                class Outer implements HelperApi {
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> helper().toUpperCase()
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC HelperApi.helper ()Ljava/lang/String;',
+                'INVOKEVIRTUAL java/lang/String.toUpperCase ()Ljava/lang/String;'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaMutatingImplicitStaticPropertyStaysCaptureFree() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    private static String backing = 'outer'
+                    static String getLabel() { backing }
+                    static void setLabel(String value) { backing = value }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> {
+                                label += '!'
+                                label
+                            }
+                        }
+                    }
+                }
+
+                Outer.label = 'outer'
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.is(right) : 'static property mutation should not force receiver capture'
+                assert left.get() == 'outer!'
+                Outer.label = 'outer'
+                assert right.get() == 'outer!'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    private static String backing = 'outer'
+                    static String getLabel() { backing }
+                    static void setLabel(String value) { backing = value }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> {
+                                label += '!'
+                                label
+                            }
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Outer.getLabel ()Ljava/lang/String;',
+                'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setProperty'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaMutatingQualifiedOuterThisStaticPropertyStaysCaptureFree() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    private static String backing = 'outer'
+                    static String getLabel() { backing }
+                    static void setLabel(String value) { backing = value }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> {
+                                Outer.this.label += '!'
+                                Outer.this.label
+                            }
+                        }
+                    }
+                }
+
+                Outer.label = 'outer'
+                def left = new Outer().new Inner().create()
+                def right = new Outer().new Inner().create()
+                assert left.is(right) : 'qualified outer-this static property mutation should stay capture-free'
+                assert left.get() == 'outer!'
+                Outer.label = 'outer'
+                assert right.get() == 'outer!'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    private static String backing = 'outer'
+                    static String getLabel() { backing }
+                    static void setLabel(String value) { backing = value }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> {
+                                Outer.this.label += '!'
+                                Outer.this.label
+                            }
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Outer.getLabel ()Ljava/lang/String;',
+                'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setProperty'
+            ])
+            assert !lambdaBytecode.hasSequence(['CHECKCAST groovy/lang/GroovyObject'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+            assert !outerBytecode.hasSequence(['NEW Outer$Inner$_create_lambda1'])
+        }
+
+        @Test
+        void testInnerClassLambdaReadingQualifiedOuterThisInstancePropertyRemainsCapturing() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    String name = 'outer'
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> Outer.this.name + ':' + Outer.this.name
+                        }
+                    }
+                }
+
+                def inner = new Outer().new Inner()
+                def left = inner.create()
+                def right = inner.create()
+                assert !left.is(right) : 'qualified outer-instance property access must keep the lambda capturing'
+                assert left.get() == 'outer:outer'
+                assert right.get() == 'outer:outer'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    String name = 'outer'
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> Outer.this.name + ':' + Outer.this.name
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall()Ljava/lang/Object;'])
+            assert !lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'NEW Outer$Inner$_create_lambda1',
+                'INVOKEDYNAMIC get(LOuter$Inner$_create_lambda1;)Ljava/util/function/Supplier;',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+        }
+
+        @Test
+        void testInnerClassReadingQualifiedOuterThisInstanceFieldRemainsCapturing() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    String name = 'outer'
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> Outer.this.@name + ':' + Outer.this.@name
+                        }
+                    }
+                }
+
+                def inner = new Outer().new Inner()
+                def left = inner.create()
+                def right = inner.create()
+                assert !left.is(right) : 'qualified outer-instance field access must keep the lambda capturing'
+                assert left.get() == 'outer:outer'
+                assert right.get() == 'outer:outer'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    String name = 'outer'
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> Outer.this.@name + ':' + Outer.this.@name
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall()Ljava/lang/Object;'])
+            assert !lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'NEW Outer$Inner$_create_lambda1',
+                'INVOKEDYNAMIC get(LOuter$Inner$_create_lambda1;)Ljava/util/function/Supplier;',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            ])
+        }
+
+        @Test
+        void testInnerClassLambdaUsingImplicitOuterInstancePropertyRemainsCapturing() {
+            assertScript shell, COMMON_IMPORTS + '''
+                class Outer {
+                    String name = 'outer'
+
+                    class Inner {
+                        Function<Integer, String> create() {
+                            (Integer i) -> name + i
+                        }
+                    }
+                }
+
+                def fn = new Outer().new Inner().create()
+                assert fn.apply(1) == 'outer1'
+            '''
+
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    String name = 'outer'
+
+                    class Inner {
+                        Function<Integer, String> create() {
+                            (Integer i) -> name + i
+                        }
+                    }
+                }
+            '''
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+            assert !lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assert outerBytecode.hasSequence([
+                'NEW Outer$Inner$_create_lambda1',
+                'INVOKEDYNAMIC apply(LOuter$Inner$_create_lambda1;)Ljava/util/function/Function;',
+                'Outer$Inner$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            ])
+        }
+
+        private compileStaticBytecode(final Map options = [:], final String script) {
+            compile(options, COMMON_IMPORTS + script)
+        }
+
+        private static final String COMMON_IMPORTS = '''\
+            import groovy.transform.CompileStatic
+            import java.io.Serializable
+            import java.util.function.Consumer
+            import java.util.function.Function
+            import java.util.function.IntUnaryOperator
+            import java.util.function.Supplier
+            '''.stripIndent()
+        private static final String SERIALIZED_LAMBDA_GET_CAPTURED_ARG = 'INVOKEVIRTUAL java/lang/invoke/SerializedLambda.getCapturedArg (I)Ljava/lang/Object;'
+    }
+
+    @Nested
+    class NativeLambdaBytecodeTest extends AbstractBytecodeTestCase {
+        @Test
+        void testNonCapturingLambdaUsesCaptureFreeInvokeDynamic() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator create() {
+                        (int i) -> i * 2
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCaptureFreeLambdaFactory(
+                outerBytecode,
+                'C$_create_lambda1',
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(I)I'
+            )
+        }
+
+        @Test
+        void testCapturingLambdaUsesInvokeDynamicWithCapturedLambdaInstance() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    static IntUnaryOperator create() {
+                        int offset = 1
+                        IntUnaryOperator op = (int i) -> i + offset
+                        op
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall(I)I'])
+            assert !lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCapturingLambdaFactory(
+                outerBytecode,
+                'NEW C$_create_lambda1',
+                'INVOKEDYNAMIC applyAsInt(LC$_create_lambda1;)Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_create_lambda1.doCall(I)I'
+            )
+        }
+
+        @Test
+        void testSerializableNonCapturingLambdaUsesAltMetafactoryWithoutCapturedArgLookup() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+
+                    static SerFunc<Integer, String> create() {
+                        (Integer i) -> 'v' + i
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def createBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCaptureFreeLambdaFactory(
+                createBytecode,
+                'C$_create_lambda1',
+                'INVOKEDYNAMIC apply()LC$SerFunc;',
+                'java/lang/invoke/LambdaMetafactory.altMetafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            )
+            assert createBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
+
+            def deserializeHelperBytecode = compileStaticBytecode(classNamePattern: 'C', method: '$deserializeLambda_C$_create_lambda1$', script)
+            assert !deserializeHelperBytecode.hasSequence([SERIALIZED_LAMBDA_GET_CAPTURED_ARG])
+        }
+
+        @Test
+        void testSerializableCapturingLambdaReadsCapturedArgDuringDeserialization() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    interface SerFunc<I,O> extends Serializable, Function<I,O> {}
+
+                    static SerFunc<Integer, String> create() {
+                        String prefix = 'v'
+                        SerFunc<Integer, String> fn = (Integer i) -> prefix + i
+                        fn
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_create_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+            assert !lambdaBytecode.hasSequence(['public static doCall(Ljava/lang/Integer;)Ljava/lang/Object;'])
+
+            def createBytecode = compileStaticBytecode(classNamePattern: 'C', method: 'create', script)
+            assertUsesCapturingLambdaFactory(
+                createBytecode,
+                'NEW C$_create_lambda1',
+                'INVOKEDYNAMIC apply(LC$_create_lambda1;)LC$SerFunc;',
+                'java/lang/invoke/LambdaMetafactory.altMetafactory',
+                'C$_create_lambda1.doCall(Ljava/lang/Integer;)Ljava/lang/Object;'
+            )
+            assert createBytecode.hasSequence(['CHECKCAST java/io/Serializable'])
+
+            def deserializeHelperBytecode = compileStaticBytecode(classNamePattern: 'C', method: '$deserializeLambda_C$_create_lambda1$', script)
+            assert deserializeHelperBytecode.hasSequence([SERIALIZED_LAMBDA_GET_CAPTURED_ARG])
+        }
+
+        @Test
+        void testLambdaInFieldInitializerUsesNativeFactoryFromConstructor() {
+            def script = '''
+                @CompileStatic
+                class C {
+                    IntUnaryOperator op = (int i) -> i + 1
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'C\\$_lambda1', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall(I)I'])
+
+            def initBytecode = compileStaticBytecode(classNamePattern: 'C', method: '<init>', script)
+            assertUsesCaptureFreeLambdaFactory(
+                initBytecode,
+                'C$_lambda1',
+                'INVOKEDYNAMIC applyAsInt()Ljava/util/function/IntUnaryOperator;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'C$_lambda1.doCall(I)I'
+            )
+        }
+
+        @Test
+        void testInnerClassLambdaUsingOuterStaticMembersRemainsCaptureFree() {
+            def script = '''
+                @CompileStatic
+                class Outer {
+                    static String label = 'outer'
+                    static boolean isReady() { true }
+                    static String suffix() { '!' }
+
+                    class Inner {
+                        Supplier<String> create() {
+                            () -> ready ? label.toUpperCase() + suffix() : 'never'
+                        }
+                    }
+                }
+            '''
+
+            def lambdaBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner\\$_create_lambda\\d+', method: 'doCall', script)
+            assert lambdaBytecode.hasSequence(['public static doCall()Ljava/lang/Object;'])
+            assert lambdaBytecode.hasSequence([
+                'INVOKESTATIC Outer.isReady ()Z',
+                'INVOKESTATIC Outer.getLabel ()Ljava/lang/String;',
+                'INVOKESTATIC Outer.suffix ()Ljava/lang/String;'
+            ])
+
+            def outerBytecode = compileStaticBytecode(classNamePattern: 'Outer\\$Inner', method: 'create', script)
+            assertUsesCaptureFreeLambdaFactory(
+                outerBytecode,
+                'Outer$Inner$_create_lambda1',
+                'INVOKEDYNAMIC get()Ljava/util/function/Supplier;',
+                'java/lang/invoke/LambdaMetafactory.metafactory',
+                'Outer$Inner$_create_lambda1.doCall()Ljava/lang/Object;'
+            )
+        }
+
+        private static void assertUsesCaptureFreeLambdaFactory(final bytecode, final String lambdaClassName, final String invokedynamicInstruction, final String bootstrapMethod, final String implementationTarget) {
+            assertUsesNativeLambdaFactory(bytecode, invokedynamicInstruction, bootstrapMethod, implementationTarget)
+            assert !bytecode.hasSequence(["NEW $lambdaClassName"])
+        }
+
+        private static void assertUsesCapturingLambdaFactory(final bytecode, final String allocationInstruction, final String invokedynamicInstruction, final String bootstrapMethod, final String implementationTarget) {
+            assert bytecode.hasSequence([
+                allocationInstruction,
+                invokedynamicInstruction,
+                bootstrapMethod,
+                implementationTarget
+            ])
+        }
+
+        private static void assertUsesNativeLambdaFactory(final bytecode, final String invokedynamicInstruction, final String bootstrapMethod, final String implementationTarget) {
+            assert bytecode.hasSequence([
+                invokedynamicInstruction,
+                bootstrapMethod,
+                implementationTarget
+            ])
+        }
+
+        private compileStaticBytecode(final Map options = [:], final String script) {
+            compile(options, COMMON_IMPORTS + script)
+        }
+
+        private static final String COMMON_IMPORTS = '''\
+            import groovy.transform.CompileStatic
+            import java.io.Serializable
+            import java.util.function.Function
+            import java.util.function.IntUnaryOperator
+            import java.util.function.Supplier
+            '''.stripIndent()
+        private static final String SERIALIZED_LAMBDA_GET_CAPTURED_ARG = 'INVOKEVIRTUAL java/lang/invoke/SerializedLambda.getCapturedArg (I)Ljava/lang/Object;'
+    }
+
+    @Test
+    void testLambdaWithDoubleReturnSAM() {
+        assertScript shell, '''
+            import java.util.function.DoubleUnaryOperator
+
+            DoubleUnaryOperator op = (double d) -> d * 2.0d
+            assert op.applyAsDouble(1.5d) == 3.0d
+            assert op.applyAsDouble(0.0d) == 0.0d
+        '''
+    }
+
+    @Test
+    void testLambdaWithLongReturnSAM() {
+        assertScript shell, '''
+            import java.util.function.LongUnaryOperator
+
+            LongUnaryOperator op = (long n) -> n * 2L
+            assert op.applyAsLong(3L)  == 6L
+            assert op.applyAsLong(0L)  == 0L
+        '''
+    }
+
+    @Test
+    void testLambdaWithByteReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<T> { byte apply(T t) }
+
+            ToByteFunc<Integer> f = (Integer n) -> n.byteValue()
+            assert f.apply(65)  == (byte) 65
+            assert f.apply(300) == (byte) 44
+        '''
+    }
+
+    @Test
+    void testLambdaWithCharReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToCharFunc<T> { char apply(T t) }
+
+            ToCharFunc<String> f = (String s) -> s.charAt(0)
+            assert f.apply('hello') == 'h'
+            assert f.apply('world') == 'w'
+        '''
+    }
+
+    @Test
+    void testLambdaWithFloatReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToFloatFunc<T> { float apply(T t) }
+
+            ToFloatFunc<Integer> f = (Integer n) -> n.floatValue()
+            assert f.apply(3) == 3.0f
+            assert f.apply(0) == 0.0f
+        '''
+    }
+
+    @Test
+    void testLambdaWithShortReturnSAM() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToShortFunc<T> { short apply(T t) }
+
+            ToShortFunc<Integer> f = (Integer n) -> n.shortValue()
+            assert f.apply(42)  == (short) 42
+            assert f.apply(300) == (short) 300
+        '''
+    }
+
+    @Test
+    void testLambdaWithDynamicParamAndPrimitiveSAM() {
+        assertScript shell, '''
+            import java.util.function.IntUnaryOperator
+
+            IntUnaryOperator op = i -> i + 1
+            assert op.applyAsInt(5) == 6
+            assert op.applyAsInt(0) == 1
+        '''
+    }
+
+    @Test
+    void testTwoLambdasSharingOuterVariableReuseReference() {
+        assertScript shell, '''
+            import java.util.function.IntSupplier
+
+            def sharedRefTest() {
+                int x = 42
+                IntSupplier s1 = () -> x
+                IntSupplier s2 = () -> x + 1
+                assert s1.getAsInt() == 42
+                assert s2.getAsInt() == 43
+            }
+
+            sharedRefTest()
+        '''
+    }
+
+    @Test
+    void testNonCapturingLambdaInStaticMethodUsesClassRef() {
+        assertScript shell, '''
+            class StaticLambdaHolder {
+                static Function<Integer, String> create() {
+                    (Integer i) -> 'x' + i
+                }
+            }
+
+            def fn = StaticLambdaHolder.create()
+            assert fn.apply(1) == 'x1'
+            assert fn.apply(9) == 'x9'
+        '''
+    }
+
+    @Test
+    void testLambdaCapturingInstanceFieldLoadsThis() {
+        assertScript shell, '''
+            import java.util.function.IntSupplier
+
+            class Counter {
+                int count = 7
+                IntSupplier supplier() {
+                    () -> count
+                }
+            }
+
+            def s = new Counter().supplier()
+            assert s.getAsInt() == 7
+        '''
+    }
+
+    @Test
+    void testLambdaWithWrapperParamForPrimitiveSAM() {
+        assertScript shell, '''
+            import java.util.function.IntUnaryOperator
+
+            IntUnaryOperator op = (Integer n) -> n + 10
+            assert op.applyAsInt(5)  == 15
+            assert op.applyAsInt(-3) == 7
+        '''
+    }
+
+    @Test
+    void testLambdaToByteFunctionFromMapGetBytePlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToByteFunc<K> { byte apply(K k) }
+
+            Map<String, Byte> m = [a: (byte) 42, b: (byte) 99]
+            ToByteFunc<String> f = m::get
+            assert f.apply('a') == (byte) 42
+            assert f.apply('b') == (byte) 99
+        '''
+    }
+
+    @Test
+    void testLambdaToCharFunctionFromMapGetCharPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToCharFunc<K> { char apply(K k) }
+
+            Map<String, Character> m = [p: (char) 'P', q: (char) 'Q']
+            ToCharFunc<String> f = m::get
+            assert f.apply('p') == 'P'
+            assert f.apply('q') == 'Q'
+        '''
+    }
+
+    @Test
+    void testLambdaToFloatFunctionFromMapGetFloatPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToFloatFunc<K> { float apply(K k) }
+
+            Map<String, Float> m = [x: 1.5f, y: 2.5f]
+            ToFloatFunc<String> f = m::get
+            assert f.apply('x') == 1.5f
+            assert f.apply('y') == 2.5f
+        '''
+    }
+
+    @Test
+    void testLambdaToShortFunctionFromMapGetShortPlaceholder() {
+        assertScript shell, '''
+            @FunctionalInterface interface ToShortFunc<K> { short apply(K k) }
+
+            Map<String, Short> m = [lo: (short) 1, hi: (short) 500]
+            ToShortFunc<String> f = m::get
+            assert f.apply('lo') == (short) 1
+            assert f.apply('hi') == (short) 500
+        '''
+    }
+
+    @Test
+    void testLambdaWithSupertypeExplicitParameter() {
+        assertScript shell, '''
+            List<String> results = []
+            Consumer<String> c = (Object s) -> results.add(s.toString())
+            c.accept('hello')
+            c.accept('world')
+            assert results == ['hello', 'world']
         '''
     }
 }

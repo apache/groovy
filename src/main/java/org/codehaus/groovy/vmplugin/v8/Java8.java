@@ -63,11 +63,9 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.ReflectPermission;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
 
@@ -75,13 +73,22 @@ import java.util.List;
  * Java 8 based functions.
  *
  * @since 2.5.0
+ * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
  */
+@Deprecated(since = "6.0.0", forRemoval = true)
 public class Java8 implements VMPlugin {
 
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
-    private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
 
+
+    /**
+     * Configures a type-variable definition node from its bounds.
+     *
+     * @param base the placeholder class node
+     * @param bounds the upper bounds of the type variable
+     * @return the configured generics type
+     */
     public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] bounds) {
         ClassNode redirect = base.redirect();
         base.setRedirect(null);
@@ -99,6 +106,12 @@ public class Java8 implements VMPlugin {
         return gt;
     }
 
+    /**
+     * Creates a placeholder class node that references a type variable by name.
+     *
+     * @param name the type-variable name
+     * @return the placeholder class node
+     */
     public static ClassNode configureTypeVariableReference(final String name) {
         ClassNode cn = ClassHelper.makeWithoutCaching(name);
         cn.setGenericsPlaceHolder(true);
@@ -120,21 +133,25 @@ public class Java8 implements VMPlugin {
 
     //--------------------------------------------------------------------------
 
+    /** {@inheritDoc} */
     @Override
     public Class<?>[] getPluginDefaultGroovyMethods() {
         return new Class[]{PluginDefaultGroovyMethods.class};
     }
 
+    /** {@inheritDoc} */
     @Override
     public Class<?>[] getPluginStaticGroovyMethods() {
         return MetaClassHelper.EMPTY_TYPE_ARRAY;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int getVersion() {
         return 8;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void setAdditionalClassInformation(final ClassNode cn) {
         cn.setGenericsTypes(configureTypeParameters(cn.getTypeClass().getTypeParameters()));
@@ -239,6 +256,7 @@ public class Java8 implements VMPlugin {
 
     //
 
+    /** {@inheritDoc} */
     @Override
     public void configureAnnotation(final AnnotationNode node) {
         ClassNode type = node.getClassNode();
@@ -286,6 +304,12 @@ public class Java8 implements VMPlugin {
         }
     }
 
+    /**
+     * Converts a runtime annotation instance into a Groovy AST annotation node.
+     *
+     * @param annotation the runtime annotation
+     * @return the corresponding annotation node
+     */
     protected AnnotationNode toAnnotationNode(final Annotation annotation) {
         ClassNode type = ClassHelper.make(annotation.annotationType());
         AnnotationNode node = new AnnotationNode(type);
@@ -316,6 +340,7 @@ public class Java8 implements VMPlugin {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void configureClassNode(final CompileUnit compileUnit, final ClassNode classNode) {
         try {
@@ -444,6 +469,13 @@ public class Java8 implements VMPlugin {
         classNode.setPermittedSubclasses(permittedSubclasses);
     }
 
+    /**
+     * Adds record components to the class node when supported by the runtime.
+     *
+     * @param cu the owning compile unit
+     * @param classNode the class node to update
+     * @param clazz the runtime class
+     */
     protected void makeRecordComponents(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
     }
 
@@ -479,6 +511,14 @@ public class Java8 implements VMPlugin {
         return nodes;
     }
 
+    /**
+     * Creates or reuses a class node for the supplied runtime and generic type information.
+     *
+     * @param cu the owning compile unit
+     * @param t the reflective type
+     * @param c the erased runtime class
+     * @return the resolved class node
+     */
     protected ClassNode makeClassNode(final CompileUnit cu, final Type t, final Class<?> c) {
         ClassNode back = null;
         if (cu != null) back = cu.getClass(c.getName());
@@ -506,6 +546,12 @@ public class Java8 implements VMPlugin {
         return params;
     }
 
+    /**
+     * Populates parameter names from the supplied reflective executable member.
+     *
+     * @param names the destination array for parameter names
+     * @param member the reflective member providing parameter metadata
+     */
     protected void fillParameterNames(final String[] names, final Member member) {
         try {
             java.lang.reflect.Parameter[] parameters = ((java.lang.reflect.Executable) member).getParameters();
@@ -529,17 +575,7 @@ public class Java8 implements VMPlugin {
      * @return the check result
      */
     @Override
-    @SuppressWarnings("removal") // TODO a future Groovy version should skip the permission check
     public boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> callerClass) {
-        SecurityManager sm = System.getSecurityManager();
-        try {
-            if (sm != null) {
-                sm.checkPermission(ACCESS_PERMISSION);
-            }
-        } catch (SecurityException e) {
-            return false;
-        }
-
         if (accessibleObject instanceof Constructor<?> c) {
             if (c.getDeclaringClass() == Class.class) {
                 return false; // Cannot make a java.lang.Class constructor accessible
@@ -549,11 +585,13 @@ public class Java8 implements VMPlugin {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean checkAccessible(final Class<?> callerClass, final Class<?> declaringClass, final int memberModifiers, final boolean allowIllegalAccess) {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean trySetAccessible(final AccessibleObject ao) {
         try {
@@ -566,30 +604,32 @@ public class Java8 implements VMPlugin {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod) {
         return transformMetaMethod(metaClass, metaMethod, null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, final Class<?> caller) {
         return metaMethod;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void invalidateCallSites() {
         IndyInterface.invalidateSwitchPoints();
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object getInvokeSpecialHandle(final Method method, final Object receiver) {
         final Class<?> receiverClass = receiver.getClass();
         try {
             return newLookup(receiverClass).unreflectSpecial(method, receiverClass).bindTo(receiver);
         } catch (ReflectiveOperationException e1) {
-            if (!method.isAccessible()) {
-                doPrivilegedInternal(() -> ReflectionUtils.trySetAccessible(method));
-            }
+            ReflectionUtils.trySetAccessible(method);
             final Class<?> declaringClass = method.getDeclaringClass();
             try {
                 return newLookup(declaringClass).unreflectSpecial(method, declaringClass).bindTo(receiver);
@@ -601,6 +641,7 @@ public class Java8 implements VMPlugin {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object invokeHandle(final Object handle, final Object[] arguments) throws Throwable {
         return ((MethodHandle) handle).invokeWithArguments(arguments);
@@ -608,29 +649,26 @@ public class Java8 implements VMPlugin {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Returns a private lookup for the supplied target class using the active VM plugin.
+     *
+     * @param targetClass the class to create a lookup for
+     * @return a lookup with private access to {@code targetClass}
+     */
     @Deprecated(since = "5.0.0")
+    @SuppressWarnings("removal")
     public static MethodHandles.Lookup of(final Class<?> targetClass) {
         return ((Java8) VMPluginFactory.getPlugin()).newLookup(targetClass);
     }
 
+    /**
+     * Creates a lookup capable of accessing members declared by the target class.
+     *
+     * @param targetClass the lookup target
+     * @return a lookup for the target class
+     */
     protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
         throw new IllegalStateException();
     }
 
-    @Override
-    @Deprecated(since = "4.0.2")
-    public <T> T doPrivileged(final java.security.PrivilegedAction<T> action) {
-        throw new UnsupportedOperationException("doPrivileged is no longer supported");
-    }
-
-    @Override
-    @Deprecated(since = "4.0.2")
-    public <T> T doPrivileged(final java.security.PrivilegedExceptionAction<T> action) {
-        throw new UnsupportedOperationException("doPrivileged is no longer supported");
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivilegedInternal(final java.security.PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
 }

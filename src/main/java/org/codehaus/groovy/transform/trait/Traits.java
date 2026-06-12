@@ -60,56 +60,182 @@ import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
  */
 public abstract class Traits {
 
+    /**
+     * Class node for {@link Implemented}.
+     */
     public static final ClassNode IMPLEMENTED_CLASSNODE = ClassHelper.make(Implemented.class);
+
+    /**
+     * Class node for {@link TraitBridge}.
+     */
     public static final ClassNode TRAITBRIDGE_CLASSNODE = ClassHelper.make(TraitBridge.class);
+
+    /**
+     * Runtime annotation type that marks Groovy traits.
+     */
     public static final Class<Trait> TRAIT_CLASS = Trait.class;
+
+    /**
+     * Class node for {@link Trait}.
+     */
     public static final ClassNode TRAIT_CLASSNODE = ClassHelper.make(TRAIT_CLASS);
+
+    /**
+     * Class node for {@link GeneratedGroovyProxy}.
+     */
     public static final ClassNode GENERATED_PROXY_CLASSNODE = ClassHelper.make(GeneratedGroovyProxy.class);
+
+    /**
+     * Class node for {@link SelfType}.
+     */
     public static final ClassNode SELFTYPE_CLASSNODE = ClassHelper.make(SelfType.class);
 
+    /**
+     * Display name used in diagnostics for the trait annotation.
+     */
     static final String TRAIT_TYPE_NAME = "@" + TRAIT_CLASSNODE.getNameWithoutPackage();
+
+    /**
+     * Suffix of the synthetic helper class generated for a trait.
+     */
     static final String TRAIT_HELPER = "$Trait$Helper";
+
+    /**
+     * Suffix of the synthetic helper class that manages instance trait fields.
+     */
     static final String FIELD_HELPER = "$Trait$FieldHelper";
+
+    /**
+     * Suffix of the synthetic helper class that manages static trait fields.
+     */
     static final String STATIC_FIELD_HELPER = "$Trait$StaticFieldHelper";
+
+    /**
+     * Suffix appended to synthetic direct field setter methods.
+     */
     static final String DIRECT_SETTER_SUFFIX = "$set";
+
+    /**
+     * Suffix appended to synthetic direct field getter methods.
+     */
     static final String DIRECT_GETTER_SUFFIX = "$get";
+
+    /**
+     * Name of the synthetic instance initialization method.
+     */
     static final String INIT_METHOD = "$init$";
+
+    /**
+     * Name of the synthetic static initialization method.
+     */
     static final String STATIC_INIT_METHOD = "$static$init$";
+
+    /**
+     * Synthetic parameter name for the current trait receiver.
+     */
     public static final String THIS_OBJECT = "$self";
+
+    /**
+     * Synthetic parameter name for the current static trait receiver.
+     */
     public static final String STATIC_THIS_OBJECT = "$static$self";
+
+    /**
+     * Prefix used when remapping static trait fields.
+     */
     static final String STATIC_FIELD_PREFIX = "$static";
+
+    /**
+     * Prefix used when remapping instance trait fields.
+     */
     static final String FIELD_PREFIX = "$ins";
+
+    /**
+     * Prefix fragment used for remapped public trait fields.
+     */
     static final String PUBLIC_FIELD_PREFIX = "$0";
+
+    /**
+     * Prefix fragment used for remapped private trait fields.
+     */
     static final String PRIVATE_FIELD_PREFIX = "$1";
     // TODO decide if we should support VOLATILE
 //    def hex(s) {new BigInteger(s, 16).intValue()}
 //    def optionals = [[0, 1], [0, 1], [0, 1], [0, 1]].combinations{ a, b, c, d ->
 //            (a ? hex('80') : 0) + (b ? hex('10') : 0) + (c ? hex('8') : 0) + (d ? hex('2') : hex('1'))
 //    }.sort()
+    /**
+     * Supported modifier encodings used when remapping trait field names.
+     */
     static final List<Integer> FIELD_PREFIXES = Arrays.asList(1, 2, 9, 10, 17, 18, 25, 26, 129, 130, 137, 138, 145, 146, 153, 154);
+
+    /**
+     * Modifier mask applied when computing remapped field prefixes.
+     */
     static final int FIELD_PREFIX_MASK = ACC_PRIVATE | ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_TRANSIENT;
+
+    /**
+     * Separator used in synthetic method names that dispatch to a super trait.
+     */
     static final String SUPER_TRAIT_METHOD_PREFIX = "trait$super$";
 
+    /**
+     * Returns the generated instance field helper class name for the supplied trait.
+     *
+     * @param traitNode the trait class node
+     * @return the generated field helper class name
+     */
     static String fieldHelperClassName(final ClassNode traitNode) {
         return traitNode.getName() + FIELD_HELPER;
     }
 
+    /**
+     * Returns the generated static field helper class name for the supplied trait.
+     *
+     * @param traitNode the trait class node
+     * @return the generated static field helper class name
+     */
     static String staticFieldHelperClassName(final ClassNode traitNode) {
         return traitNode.getName() + STATIC_FIELD_HELPER;
     }
 
+    /**
+     * Returns the synthetic direct getter name for a trait field.
+     *
+     * @param field the remapped trait field
+     * @return the synthetic getter name
+     */
     static String helperGetterName(final FieldNode field) {
         return remappedFieldName(unwrapOwner(field.getOwner()), field.getName()) + DIRECT_GETTER_SUFFIX;
     }
 
+    /**
+     * Returns the synthetic direct setter name for a trait field.
+     *
+     * @param field the remapped trait field
+     * @return the synthetic setter name
+     */
     static String helperSetterName(final FieldNode field) {
         return remappedFieldName(unwrapOwner(field.getOwner()), field.getName()) + DIRECT_SETTER_SUFFIX;
     }
 
+    /**
+     * Returns the generated helper class name for the supplied trait.
+     *
+     * @param traitNode the trait class node
+     * @return the generated helper class name
+     */
     static String helperClassName(final ClassNode traitNode) {
         return traitNode.getName() + TRAIT_HELPER;
     }
 
+    /**
+     * Returns the remapped backing-field name used for a trait field.
+     *
+     * @param traitNode the owning trait class node
+     * @param name the declared field name
+     * @return the remapped field name
+     */
     static String remappedFieldName(final ClassNode traitNode, final String name) {
         return traitNode.getName().replace('.','_')+"__"+name;
     }
@@ -121,18 +247,42 @@ public abstract class Traits {
         return owner;
     }
 
+    /**
+     * Returns the generated helper class for a trait.
+     *
+     * @param trait the trait class node
+     * @return the helper class node
+     */
     public static ClassNode findHelper(final ClassNode trait) {
         return findHelpers(trait).getHelper();
     }
 
+    /**
+     * Returns the generated instance field helper class for a trait.
+     *
+     * @param trait the trait class node
+     * @return the field helper class node, or {@code null} if none exists
+     */
     public static ClassNode findFieldHelper(final ClassNode trait) {
         return findHelpers(trait).getFieldHelper();
     }
 
+    /**
+     * Returns the generated static field helper class for a trait.
+     *
+     * @param trait the trait class node
+     * @return the static field helper class node, or {@code null} if none exists
+     */
     public static ClassNode findStaticFieldHelper(final ClassNode trait) {
         return findHelpers(trait).getStaticFieldHelper();
     }
 
+    /**
+     * Returns the helper classes associated with a trait.
+     *
+     * @param trait the trait class node
+     * @return the helper tuple for the trait
+     */
     static TraitHelpersTuple findHelpers(final ClassNode trait) {
         ClassNode helperClassNode = null;
         ClassNode fieldHelperClassNode = null;
@@ -233,8 +383,9 @@ public abstract class Traits {
     /**
      * Reflection API to indicate whether some method is a bridge method to the default implementation
      * of a trait.
-     * @param someMethod a method node
-     * @return null if it is not a method implemented in a trait. If it is, returns the method from the trait class.
+     *
+     * @param someMethod a method
+     * @return {@code true} if the method bridges to a trait default implementation
      */
     public static boolean isBridgeMethod(Method someMethod) {
         TraitBridge annotation = someMethod.getAnnotation(TraitBridge.class);
@@ -243,7 +394,8 @@ public abstract class Traits {
 
     /**
      * Reflection API to find the method corresponding to the default implementation of a trait, given a bridge method.
-     * @param someMethod a method node
+     *
+     * @param someMethod a method
      * @return null if it is not a method implemented in a trait. If it is, returns the method from the trait class.
      */
     public static Method getBridgeMethodTarget(Method someMethod) {
@@ -379,6 +531,13 @@ public abstract class Traits {
         return selfTypes;
     }
 
+    /**
+     * Returns the synthetic method name used to dispatch to a super-trait implementation.
+     *
+     * @param trait the trait declaring the super call
+     * @param method the original method name
+     * @return the synthetic super-trait method name
+     */
     static String getSuperTraitMethodName(ClassNode trait, String method) {
         return trait.getName().replace("_","__").replace('.','_')+SUPER_TRAIT_METHOD_PREFIX+method;
     }

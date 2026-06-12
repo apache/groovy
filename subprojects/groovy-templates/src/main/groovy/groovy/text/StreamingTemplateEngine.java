@@ -37,9 +37,9 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
+import java.io.Serial;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -261,6 +261,7 @@ public class StreamingTemplateEngine extends TemplateEngine {
         String scriptSource;
 
         private static class FinishedReadingException extends Exception {
+            @Serial
             private static final long serialVersionUID = -3786157136157691230L;
         }
 
@@ -269,6 +270,9 @@ public class StreamingTemplateEngine extends TemplateEngine {
         private static final FinishedReadingException finishedReadingException;
         //CHECKSTYLE.ON: ConstantNameCheck
 
+        /**
+         * Empty stack trace reused by the sentinel end-of-input exception.
+         */
         public static final StackTraceElement[] EMPTY_STACKTRACE = new StackTraceElement[0];
 
         static {
@@ -278,7 +282,14 @@ public class StreamingTemplateEngine extends TemplateEngine {
 
         private static final class Position {
             //CHECKSTYLE.OFF: VisibilityModifierCheck - special case, direct access for performance
+            /**
+             * One-based line number.
+             */
             public int row;
+
+            /**
+             * One-based column number.
+             */
             public int column;
             //CHECKSTYLE.ON: VisibilityModifierCheck
 
@@ -296,6 +307,11 @@ public class StreamingTemplateEngine extends TemplateEngine {
                 this.column = p.column;
             }
 
+            /**
+             * Returns this position in {@code row:column} form.
+             *
+             * @return string representation of the current position
+             */
             @Override
             public String toString() {
                 return row + ":" + column;
@@ -326,6 +342,11 @@ public class StreamingTemplateEngine extends TemplateEngine {
                 this.firstSourcePosition = new Position(firstSourcePosition);
             }
 
+            /**
+             * Returns the literal source contents collected by this section.
+             *
+             * @return the section contents
+             */
             @Override
             public String toString() {
                 return data.toString();
@@ -355,6 +376,14 @@ public class StreamingTemplateEngine extends TemplateEngine {
             currentSection.lastTargetPosition = new Position(targetPosition.row, targetPosition.column);
         }
 
+        /**
+         * Reports an execution failure using template source coordinates when possible.
+         *
+         * @param index string section index associated with the failing execution point
+         * @param sections recorded string sections for the compiled template
+         * @param e original failure
+         * @throws Throwable the sanitized template exception or the original failure when it cannot be mapped
+         */
         public void error(int index, List<StringSection> sections, Throwable e) throws Throwable {
             int i = Math.max(0, index);
             StringSection precedingSection = sections.get(i);
@@ -624,9 +653,8 @@ public class StreamingTemplateEngine extends TemplateEngine {
             return result;
         }
 
-        @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
         private GroovyClassLoader createClassLoader(ClassLoader parentLoader) {
-            return java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
+            return new GroovyClassLoader(parentLoader);
         }
 
         /**
@@ -771,11 +799,22 @@ public class StreamingTemplateEngine extends TemplateEngine {
             append(target, targetPosition, "}\"\"\";");
         }
 
+        /**
+         * Creates a writable template view using an empty binding.
+         *
+         * @return a writable template instance
+         */
         @Override
         public Writable make() {
             return make(null);
         }
 
+        /**
+         * Creates a writable template view using the supplied binding.
+         *
+         * @param map binding values made available to the template
+         * @return a writable template instance
+         */
         @Override
         public Writable make(final Map map) {
             //we don't need a template.clone here as curry calls clone under the hood

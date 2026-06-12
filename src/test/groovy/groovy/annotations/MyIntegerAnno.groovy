@@ -18,6 +18,9 @@
  */
 package groovy.annotations
 
+import groovy.lang.annotation.ExtendedElementType
+import groovy.lang.annotation.ExtendedTarget
+
 import java.lang.annotation.*
 
 import static java.lang.annotation.RetentionPolicy.*
@@ -27,6 +30,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
  * Test annotation
  */
 @Retention(RUNTIME)
+@ExtendedTarget(ExtendedElementType.IMPORT)
 @GroovyASTTransformationClass("groovy.annotations.MyIntegerAnnoTraceASTTransformation")
 @interface MyIntegerAnno {
     int value()

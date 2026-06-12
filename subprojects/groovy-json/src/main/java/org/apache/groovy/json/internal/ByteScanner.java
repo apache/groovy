@@ -20,6 +20,9 @@ package org.apache.groovy.json.internal;
 
 import static org.apache.groovy.json.internal.Exceptions.die;
 
+/**
+ * Utilities for rendering bytes as hexadecimal ASCII characters.
+ */
 public class ByteScanner {
 
     /**

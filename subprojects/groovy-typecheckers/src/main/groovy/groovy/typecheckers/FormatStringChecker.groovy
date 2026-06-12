@@ -18,7 +18,6 @@
  */
 package groovy.typecheckers
 
-import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassNode
@@ -42,9 +41,9 @@ import static org.codehaus.groovy.ast.ClassHelper.makeCached
 
 /**
  * Checks at compile-time for incorrect format strings in format methods such as {@code printf} and {@code String.format}.
- * A format method’s specification requires that:
+ * A format method's specification requires that:
  * <ul>
- • <li>The format string’s syntax is valid</li>
+ • <li>The format string's syntax is valid</li>
  • <li>The correct number of arguments is passed</li>
  • <li>Each argument has the appropriate type</li>
  * </ul>
@@ -65,14 +64,22 @@ import static org.codehaus.groovy.ast.ClassHelper.makeCached
  * https://checkerframework.org/manual/#formatter-checker
  * https://homes.cs.washington.edu/~mernst/pubs/format-string-issta2014-abstract.html
  * https://github.com/typetools/checker-framework/tree/master/checker/src/main/java/org/checkerframework/checker/formatter
+ *
+ * @since 5.0.0
  */
-@Incubating
 class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static final ClassNode LOCALE_TYPE = makeCached(Locale)
     private static final ClassNode FORMATTER_TYPE = makeCached(Formatter)
 
+    /**
+     * Pattern used to extract {@link Formatter} conversion specifiers from constant format strings.
+     */
     private String formatSpecifier = /%(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])/
+
+    /**
+     * AST patterns for formatter-style methods that this checker validates automatically.
+     */
     private List<ASTNode> formatMethods = [
         macro(CompilePhase.SEMANTIC_ANALYSIS) { String.format(a) }.withConstraints { varargPlaceholder a },
         macro { _.format(a) }.withConstraints { varargPlaceholder a },
@@ -83,6 +90,9 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
         macro { _.formatted(a) }.withConstraints{ varargPlaceholder a }
     ]
 
+    /**
+     * Registers checks for built-in formatter calls and methods annotated with {@link FormatMethod}.
+     */
     @Override
     Object run() {
         afterMethodCall { call ->

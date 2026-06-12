@@ -51,6 +51,9 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.last;
  */
 public class ReturnAdder {
 
+    /**
+     * Listener notified when a synthetic return statement is created.
+     */
     @FunctionalInterface
     public interface ReturnStatementListener {
         /**
@@ -70,17 +73,29 @@ public class ReturnAdder {
      */
     private final boolean doAdd;
 
+    /**
+     * Creates a new return adder that adds return statements to methods.
+     */
     public ReturnAdder() {
         this.listener = DEFAULT_LISTENER;
         this.doAdd = true;
     }
 
+    /**
+     * Creates a new return adder with a listener. Returns are not actually added when using
+     * a listener; instead, the listener is notified of what return statements would be added.
+     *
+     * @param listener the listener to notify of return statement additions
+     */
     public ReturnAdder(final ReturnStatementListener listener) {
         this.listener = Objects.requireNonNull(listener);
         this.doAdd = false;
     }
 
     /**
+     * Adds return statements to a method whenever an implicit return is detected.
+     *
+     * @param node the method to process
      * @deprecated Use {@link #visitMethod(MethodNode)} instead.
      */
     @Deprecated
@@ -90,6 +105,8 @@ public class ReturnAdder {
 
     /**
      * Adds return statements to given method whenever an implicit return is detected.
+     *
+     * @param node the method node to visit and add returns to
      */
     public void visitMethod(final MethodNode node) {
         if (!node.isVoidMethod()) {

@@ -37,5 +37,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Groovydoc {
+    /**
+     * Returns the runtime Groovydoc text.
+     *
+     * @return the Groovydoc content
+     */
     String value();
 }

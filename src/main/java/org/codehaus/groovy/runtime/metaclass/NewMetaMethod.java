@@ -25,9 +25,20 @@ import org.codehaus.groovy.reflection.CachedMethod;
  * Base class for NewInstanceMetaMethod and NewStaticMetaMethod
  */
 public class NewMetaMethod extends ReflectionMetaMethod {
+    /**
+     * Empty array of cached classes used as default
+     */
     protected static final CachedClass[] EMPTY_TYPE_ARRAY = {};
+    /**
+     * The parameter types from the bytecode (including the first parameter which is the class)
+     */
     protected CachedClass[] bytecodeParameterTypes ;
 
+    /**
+     * Constructs a new NewMetaMethod.
+     *
+     * @param method the cached method
+     */
     public NewMetaMethod(CachedMethod method) {
         super(method);
         bytecodeParameterTypes = method.getParameterTypes();
@@ -48,10 +59,20 @@ public class NewMetaMethod extends ReflectionMetaMethod {
         return getBytecodeParameterTypes()[0];
     }
 
+    /**
+     * Gets the bytecode parameter types (including the first parameter which is the class).
+     *
+     * @return the bytecode parameter types
+     */
     public CachedClass[] getBytecodeParameterTypes() {
         return bytecodeParameterTypes;
     }
 
+    /**
+     * Gets the owner class (the first bytecode parameter type).
+     *
+     * @return the owner class
+     */
     public CachedClass getOwnerClass() {
         return getBytecodeParameterTypes()[0];
     }

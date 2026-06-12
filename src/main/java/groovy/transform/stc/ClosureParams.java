@@ -60,7 +60,26 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ClosureParams {
+    /**
+     * Returns the hint class used to infer closure parameter types.
+     *
+     * @return the hint class
+     */
     Class<? extends ClosureSignatureHint> value();
+
+    /**
+     * Returns the conflict resolver used when multiple signatures remain applicable.
+     * Defaults to {@link ClosureSignatureConflictResolver}, meaning no custom resolution.
+     *
+     * @return the conflict resolver class
+     */
     Class<? extends ClosureSignatureConflictResolver> conflictResolutionStrategy() default ClosureSignatureConflictResolver.class;
+
+    /**
+     * Returns option strings passed to the hint and resolver.
+     * Defaults to an empty array.
+     *
+     * @return the option strings
+     */
     String[] options() default {};
 }

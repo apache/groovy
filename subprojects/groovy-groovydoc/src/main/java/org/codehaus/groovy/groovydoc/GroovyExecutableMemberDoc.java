@@ -18,13 +18,56 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes an executable member such as a method or constructor.
+ */
 public interface GroovyExecutableMemberDoc extends GroovyMemberDoc {
+    /**
+     * Returns the flat signature used in rendered output.
+     *
+     * @return the flat signature
+     */
     String flatSignature();
+    /**
+     * Indicates whether this executable is declared {@code native}.
+     *
+     * @return {@code true} if this executable is native
+     */
     boolean isNative();
+    /**
+     * Indicates whether this executable is declared {@code synchronized}.
+     *
+     * @return {@code true} if this executable is synchronized
+     */
     boolean isSynchronized();
+    /**
+     * Indicates whether the executable accepts a variable number of arguments.
+     *
+     * @return {@code true} if this executable is variadic
+     */
     boolean isVarArgs();
+    /**
+     * Returns the parameters declared by this executable.
+     *
+     * @return the declared parameters
+     */
     GroovyParameter[] parameters();
+    /**
+     * Returns the full signature used in rendered output.
+     *
+     * @return the executable signature
+     */
     String signature();
+    /**
+     * Returns the checked exceptions declared by this executable.
+     *
+     * @return the declared exceptions
+     */
     GroovyClassDoc[] thrownExceptions();
+    /**
+     * Returns the checked exception types declared by this executable.
+     *
+     * @return the declared exception types
+     */
     GroovyType[] thrownExceptionTypes();
 }

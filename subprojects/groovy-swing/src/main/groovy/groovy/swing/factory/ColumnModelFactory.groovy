@@ -23,9 +23,21 @@ import groovy.util.logging.Log
 import javax.swing.*
 import javax.swing.table.TableColumnModel
 
+/**
+ * Factory for creating table column models.
+ */
 @Log
 class ColumnModelFactory extends AbstractFactory {
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         if (value instanceof TableColumnModel) {
             return value
@@ -44,6 +56,13 @@ class ColumnModelFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Finalizes a node after its children have been processed.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param node the current node
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if (parent instanceof JTable) {
             parent.columnModel = node

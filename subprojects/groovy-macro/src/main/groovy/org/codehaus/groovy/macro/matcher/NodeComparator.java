@@ -20,6 +20,18 @@ package org.codehaus.groovy.macro.matcher;
 
 import org.codehaus.groovy.ast.ASTNode;
 
+/**
+ * Compares two AST nodes for matcher purposes.
+ *
+ * @since 2.5.0
+ */
 public interface NodeComparator {
+    /**
+     * Compares two AST nodes.
+     *
+     * @param a the first node
+     * @param b the second node
+     * @return {@code true} if the nodes are considered equal
+     */
     boolean equals(ASTNode a, ASTNode b);
 }

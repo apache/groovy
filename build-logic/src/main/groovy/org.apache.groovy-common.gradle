@@ -42,6 +42,7 @@ group = 'org.apache.groovy'
 version = sharedConfiguration.groovyVersion.get()
 
 tasks.named('rat') {
+    verbose = true
     inputDir = projectDir
     excludes = ['subprojects/**', // covered above
                 'benchmark/**', // benchmarking files excluded from src zip
@@ -52,10 +53,13 @@ tasks.named('rat') {
                 '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
                 'artifactory.properties',  // potential file on CI server
                 'gradle.properties',  // artifactory release plugin removes header when bumping version
+                'gradle/verification-keyring.keys', // PGP keyring for dependency verification
                 '**/build/**', '**/target/**', 'licenses/**', 'notices/**',
                 'out/**', '*.ipr', '**/*.iml', '*.iws', '.idea/**', // Intellij files
                 '**/style.css', // MIT license as per NOTICE/LICENSE files
                 '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files
+                '**/dashboard/vendor/**', // third-party MIT JS vendored for the gh-pages perf dashboard only; excluded from source zip
+                '**/groovy/console/ui/icons/*.svg', // Material Symbols, Apache 2.0 (see credits.txt)
                 '.classpath', '.project', '.settings/**', 'bin/**', // Eclipse files
                 'bootstrap/settings.gradle', // empty file
                 '**/hs_err_pid**.log', // sometimes left over error files

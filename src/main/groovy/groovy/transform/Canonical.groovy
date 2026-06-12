@@ -30,7 +30,7 @@ import java.lang.annotation.Target
  * which add positional constructors, equals, hashCode and a pretty print toString to your class.
  * <p>
  * You can write classes in this shortened form:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.Canonical
  * {@code @Canonical} class Customer {
  *     String first, last
@@ -84,7 +84,7 @@ import java.lang.annotation.Target
  * {@code @}{@link Immutable} annotation.
  *
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * &#64;Canonical

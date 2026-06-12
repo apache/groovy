@@ -18,16 +18,17 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 /**
- * An exception occurred if a dynamic property dispatch fails with a 
+ * An exception occurred if a dynamic property dispatch fails with a
  * field not accessible.
  */
 public class IllegalPropertyAccessException extends MissingPropertyException {
 
-    private static final long serialVersionUID = 8149534204771978786L;
+    @Serial private static final long serialVersionUID = 8149534204771978786L;
 
     private static String makeMessage(String propertyName, Class clazz, int modifiers, boolean isField) {
         String access = "private";
@@ -38,10 +39,23 @@ public class IllegalPropertyAccessException extends MissingPropertyException {
         return  "Can not access the "+access+" "+propertyType+" "+propertyName+" in class "+clazz.getName();
     }
 
+    /**
+     * Creates an exception for an inaccessible property.
+     *
+     * @param propertyName the property name
+     * @param clazz the declaring class
+     * @param modifiers the member modifiers
+     */
     public IllegalPropertyAccessException(String propertyName, Class clazz, int modifiers) {
         super(makeMessage(propertyName,clazz,modifiers,false),propertyName,clazz);
     }
 
+    /**
+     * Creates an exception for an inaccessible field-backed property.
+     *
+     * @param field the inaccessible field
+     * @param clazz the declaring class
+     */
     public IllegalPropertyAccessException(Field field, Class clazz) {
         super(makeMessage(field.getName(),clazz,field.getModifiers(),true),field.getName(),clazz);
     }

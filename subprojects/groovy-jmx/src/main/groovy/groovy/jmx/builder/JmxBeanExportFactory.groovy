@@ -37,17 +37,40 @@ package groovy.jmx.builder
  */
 class JmxBeanExportFactory extends AbstractFactory {
     // def server
+    /** Registration policy applied to exported beans. */
     def registrationPolicy
 
+    /**
+     * Creates the export container and captures its registration policy.
+     *
+     * @param builder the active builder
+     * @param nodeName the node name
+     * @param nodeArgs positional node arguments
+     * @param nodeAttribs named node attributes
+     * @return the export container
+     */
     Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
         registrationPolicy = nodeAttribs?.remove("policy") ?: nodeAttribs?.remove("regPolicy") ?: "replace"
         return []
     }
 
+    /**
+     * Consumes node attributes without additional processing.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param nodeAttribs remaining node attributes
+     * @return {@code true}
+     */
     boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map nodeAttribs) {
         return true
     }
 
+    /**
+     * Indicates that the export node may contain children.
+     *
+     * @return {@code false}
+     */
     boolean isLeaf() {
         return false
     }

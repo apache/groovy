@@ -32,7 +32,7 @@ import java.lang.annotation.Target
  * <p>
  * It allows you to write classes in this shortened form:
  *
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.RecordType}
  * class Cyclist {
  *     String firstName

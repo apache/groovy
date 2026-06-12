@@ -27,6 +27,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -115,6 +116,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     }
 
     public static class DgmMethodRecord implements Serializable {
+        @Serial
         private static final long serialVersionUID = -5639988016452884450L;
         public String className;
         public String methodName;

@@ -43,14 +43,31 @@ public class Proxy extends GroovyObjectSupport {
         return this;
     }
 
+    /**
+     * Returns the wrapped adaptee.
+     *
+     * @return the adaptee
+     */
     public Object getAdaptee() {
         return adaptee;
     }
 
+    /**
+     * Sets the wrapped adaptee.
+     *
+     * @param adaptee the adaptee to wrap
+     */
     public void setAdaptee(Object adaptee) {
         this.adaptee = adaptee;
     }
 
+    /**
+     * Invokes a proxy method or forwards the call to the adaptee.
+     *
+     * @param name the method name
+     * @param args the invocation arguments
+     * @return the invocation result
+     */
     @Override
     public Object invokeMethod(String name, Object args) {
         try {
@@ -61,6 +78,11 @@ public class Proxy extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Returns an iterator over the adaptee.
+     *
+     * @return an iterator for the adaptee
+     */
     public Iterator iterator() {
         return InvokerHelper.asIterator(adaptee);
     }

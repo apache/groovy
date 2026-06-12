@@ -19,10 +19,13 @@
 package bugs
 
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.shouldFail
 
 
 class Groovy7520Bug {
+    @Test
     void testShouldSeeConflictUsingAbstractMethod() {
         def msg = shouldFail '''
             abstract class DefinesMethod {

@@ -37,45 +37,102 @@ public class NamespaceBuilderSupport extends BuilderSupport {
     private Map<String, String> nsMap = new HashMap<String, String>();
     private BuilderSupport builder;
 
+    /**
+     * Creates a namespace-aware wrapper around the supplied builder.
+     *
+     * @param builder the builder to wrap
+     */
     public NamespaceBuilderSupport(BuilderSupport builder) {
         super(builder);
         this.builder = builder;
     }
 
+    /**
+     * Creates a namespace-aware wrapper and binds the default prefix to the supplied namespace URI.
+     *
+     * @param builder the builder to wrap
+     * @param uri the namespace URI to bind to the default prefix
+     */
     public NamespaceBuilderSupport(BuilderSupport builder, String uri) {
         this(builder, uri, "");
     }
 
+    /**
+     * Creates a namespace-aware wrapper and binds the supplied prefix to the supplied namespace URI.
+     *
+     * @param builder the builder to wrap
+     * @param uri the namespace URI to bind
+     * @param prefix the prefix to associate with {@code uri}
+     */
     public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix) {
         this(builder, uri, prefix, true);
     }
 
+    /**
+     * Creates a namespace-aware wrapper with optional automatic prefixing for unqualified method names.
+     *
+     * @param builder the builder to wrap
+     * @param uri the namespace URI to bind
+     * @param prefix the prefix to associate with {@code uri}
+     * @param autoPrefix whether the configured prefix should be applied automatically
+     */
     public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix, boolean autoPrefix) {
         this(builder);
         nsMap.put(prefix, uri);
         this.autoPrefix = autoPrefix;
     }
 
+    /**
+     * Creates a namespace-aware wrapper using the supplied prefix-to-URI mappings.
+     *
+     * @param builder the builder to wrap
+     * @param nsMap the namespace mappings to use
+     */
     public NamespaceBuilderSupport(BuilderSupport builder, Map nsMap) {
         this(builder);
         this.nsMap = nsMap;
     }
 
+    /**
+     * Associates the default prefix with the supplied namespace URI.
+     *
+     * @param namespaceURI the namespace URI to bind
+     * @return this wrapper
+     */
     public NamespaceBuilderSupport namespace(String namespaceURI) {
         nsMap.put("", namespaceURI);
         return this;
     }
 
+    /**
+     * Associates the supplied prefix with the supplied namespace URI.
+     *
+     * @param namespaceURI the namespace URI to bind
+     * @param prefix the prefix to associate with {@code namespaceURI}
+     * @return this wrapper
+     */
     public NamespaceBuilderSupport namespace(String namespaceURI, String prefix) {
         nsMap.put(prefix, namespaceURI);
         return this;
     }
 
+    /**
+     * Replaces the current namespace mappings used to resolve subsequent builder calls.
+     *
+     * @param nsMap the prefix-to-URI mappings to use
+     * @return this wrapper
+     */
     public NamespaceBuilderSupport declareNamespace(Map nsMap) {
         this.nsMap = nsMap;
         return this;
     }
 
+    /**
+     * Builder lifecycle callback that exposes the wrapped builder's current node.
+     * Subclasses may override to customize how builder state is shared.
+     *
+     * @return the wrapped builder's current node marker
+     */
     @Override
     protected Object getCurrent() {
         // TODO a better way to do this?
@@ -85,6 +142,12 @@ public class NamespaceBuilderSupport extends BuilderSupport {
             return super.getCurrent();
     }
 
+    /**
+     * Builder lifecycle callback that updates the wrapped builder's current node marker.
+     * Subclasses may override to customize how builder state is shared.
+     *
+     * @param current the new current node marker
+     */
     @Override
     protected void setCurrent(Object current) {
         // TODO a better way to do this?
@@ -94,10 +157,24 @@ public class NamespaceBuilderSupport extends BuilderSupport {
             super.setCurrent(current);
     }
 
+    /**
+     * Builder lifecycle callback invoked after a child node has been created.
+     * This implementation is a no-op because parent handling is delegated to the wrapped builder.
+     *
+     * @param parent the parent node marker
+     * @param child the child node marker
+     */
     @Override
     protected void setParent(Object parent, Object child) {
     }
 
+    /**
+     * Resolves a builder method name into a namespace-aware node name.
+     * Subclasses may override to customize method-to-{@link QName} resolution.
+     *
+     * @param methodName the method name invoked on the wrapper
+     * @return a {@link QName} when a namespace mapping is available, otherwise the original method name
+     */
     @Override
     protected Object getName(String methodName) {
         String prefix = autoPrefix ? nsMap.keySet().iterator().next() : "";
@@ -116,6 +193,10 @@ public class NamespaceBuilderSupport extends BuilderSupport {
 
     /**
      * Allow automatic detection of namespace declared in the attributes
+     *
+     * @param methodName the builder method being invoked
+     * @param args the builder arguments, including any attribute map
+     * @return the result from the wrapped builder invocation
      */
     @Override
     public Object invokeMethod(String methodName, Object args) {
@@ -145,21 +226,49 @@ public class NamespaceBuilderSupport extends BuilderSupport {
         return Collections.EMPTY_MAP;
     }
 
+    /**
+     * Builder lifecycle callback that keeps the resolved node name for the wrapped builder.
+     *
+     * @param name the resolved node name
+     * @return the same node name
+     */
     @Override
     protected Object createNode(Object name) {
         return name;
     }
 
+    /**
+     * Builder lifecycle callback that keeps the resolved node name for the wrapped builder.
+     *
+     * @param name the resolved node name
+     * @param value the node value supplied by the builder call
+     * @return the same node name
+     */
     @Override
     protected Object createNode(Object name, Object value) {
         return name;
     }
 
+    /**
+     * Builder lifecycle callback that keeps the resolved node name for the wrapped builder.
+     *
+     * @param name the resolved node name
+     * @param attributes the attributes supplied by the builder call
+     * @return the same node name
+     */
     @Override
     protected Object createNode(Object name, Map attributes) {
         return name;
     }
 
+    /**
+     * Builder lifecycle callback that keeps the resolved node name for the wrapped builder.
+     *
+     * @param name the resolved node name
+     * @param attributes the attributes supplied by the builder call
+     * @param value the node value supplied by the builder call
+     * @return the same node name
+     */
     @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         return name;

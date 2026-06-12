@@ -27,25 +27,53 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @since 4.0.0
  */
 public class FromExpression extends DataSourceExpression {
+    /**
+     * Creates a {@code from} clause.
+     *
+     * @param aliasExpr the alias expression
+     * @param dataSourceExpr the source expression
+     */
     public FromExpression(Expression aliasExpr, Expression dataSourceExpr) {
         super(aliasExpr, dataSourceExpr);
     }
 
+    /**
+     * Accepts a visitor for this clause.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {
         return visitor.visitFromExpression(this);
     }
 
+    /**
+     * Returns this clause as its own data-source expression.
+     *
+     * @return this instance
+     */
     @Override
     public DataSourceExpression getDataSourceExpression() {
         return this;
     }
 
+    /**
+     * Rejects replacing the {@code from} clause with another data source.
+     *
+     * @param dataSourceExpression the ignored replacement
+     */
     @Override
     public void setDataSourceExpression(DataSourceExpression dataSourceExpression) {
         throw new UnsupportedOperationException(FromExpression.class.getName() + " can not be set to another DataSourceExpression instance");
     }
 
+    /**
+     * Returns the textual GINQ form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String getText() {
         return "from " + aliasExpr.getText() + " in "
@@ -54,6 +82,11 @@ public class FromExpression extends DataSourceExpression {
                         : dataSourceExpr.getText());
     }
 
+    /**
+     * Returns the textual form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String toString() {
         return getText();

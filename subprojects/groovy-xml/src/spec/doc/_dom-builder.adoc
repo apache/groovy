@@ -46,3 +46,8 @@ And then processed further e.g. by using <<{xml-userguide}#_domcategory,DOMCateg
 ----
 include::../test/DOMBuilderTest.groovy[tags=dom_builder_process_result,indent=0]
 ----
+
+NOTE: `DOMBuilder.parse(...)` and `DOMBuilder.newInstance()` reject DOCTYPE
+declarations by default. The `newInstance(validating, namespaceAware,
+allowDocTypeDeclaration)` overload exposes a relax knob when DTD support is
+required. See <<{xml-userguide}#xml-security,XML security>> for details.

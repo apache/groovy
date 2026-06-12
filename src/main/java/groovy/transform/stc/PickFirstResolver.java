@@ -37,6 +37,9 @@ import java.util.List;
  * @since 2.5.0
  */
 public class PickFirstResolver extends ClosureSignatureConflictResolver {
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<ClassNode[]> resolve(List<ClassNode[]> candidates, ClassNode receiver, Expression arguments, ClosureExpression closure,
                                      MethodNode methodNode, SourceUnit sourceUnit, CompilationUnit compilationUnit, String[] options) {

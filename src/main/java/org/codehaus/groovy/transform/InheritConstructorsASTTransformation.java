@@ -70,6 +70,10 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
                     "'. " + ANNOTATION + " only allowed for classes.", cNode);
             return;
         }
+        // GEP-21 Shape C: discard any stubber-emitted placeholder constructors
+        // so the existence check below sees the true user-declared surface and
+        // we add fresh real constructors with the runtime body.
+        cNode.getDeclaredConstructors().removeIf(StubberSupport::isStub);
         boolean copyConstructorAnnotations = memberHasValue(node, "constructorAnnotations", true);
         boolean copyParameterAnnotations = memberHasValue(node, "parameterAnnotations", true);
         ClassNode sNode = cNode.getSuperClass();

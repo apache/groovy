@@ -49,16 +49,34 @@ import java.awt.event.TextEvent;
 import java.awt.event.TextListener;
 import java.util.EventListener;
 
+/**
+ * Shared find/replace dialog support for text components used by the console.
+ */
 public final class FindReplaceUtility {
 
+    /**
+     * Action command for find operations.
+     */
     public static final String FIND_ACTION_COMMAND = "Find";
 
+    /**
+     * Action command for single replace operations.
+     */
     public static final String REPLACE_ACTION_COMMAND = "Replace";
 
+    /**
+     * Action command for replace-all operations.
+     */
     public static final String REPLACE_ALL_ACTION_COMMAND = "Replace All";
 
+    /**
+     * Action command for closing the dialog.
+     */
     public static final String CLOSE_ACTION_COMMAND = "Close";
 
+    /**
+     * Shared action that repeats a find against the active text component.
+     */
     public static final Action FIND_ACTION = new FindAction();
 
     private static final JDialog FIND_REPLACE_DIALOG = new JDialog();
@@ -198,6 +216,11 @@ public final class FindReplaceUtility {
     private FindReplaceUtility() {
     }
 
+    /**
+     * Registers a listener for dialog text events.
+     *
+     * @param tl the listener to add
+     */
     public static void addTextListener(TextListener tl) {
         EVENT_LISTENER_LIST.add(TextListener.class, tl);
     }
@@ -236,12 +259,19 @@ public final class FindReplaceUtility {
     }
 
     /**
+     * Starts tracking the supplied text component for find/replace actions.
+     *
      * @param textComponent the text component to listen to
      */
     public static void registerTextComponent(JTextComponent textComponent) {
         textComponent.addFocusListener(TEXT_FOCUS_LISTENER);
     }
 
+    /**
+     * Removes a listener for dialog text events.
+     *
+     * @param tl the listener to remove
+     */
     public static void removeTextListener(TextListener tl) {
         EVENT_LISTENER_LIST.remove(TextListener.class, tl);
     }
@@ -353,11 +383,16 @@ public final class FindReplaceUtility {
 
     }
 
+    /**
+     * Shows the find dialog for the active text component.
+     */
     public static void showDialog() {
         showDialog(false);
     }
 
     /**
+     * Shows either the find or replace dialog for the active text component.
+     *
      * @param isReplace show a replace dialog rather than a find dialog if true
      */
     public static void showDialog(boolean isReplace) {
@@ -403,6 +438,8 @@ public final class FindReplaceUtility {
     }
 
     /**
+     * Stops tracking the supplied text component for find/replace actions.
+     *
      * @param textComponent the text component to stop listening to
      */
     public static void unregisterTextComponent(JTextComponent textComponent) {
@@ -557,6 +594,9 @@ public final class FindReplaceUtility {
         }
     }
 
+    /**
+     * Disposes of the shared find/replace dialog.
+     */
     public static void dispose() {
         FIND_REPLACE_DIALOG.dispose();
     }

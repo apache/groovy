@@ -18,8 +18,26 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Reports errors, warnings, and notices discovered while building documentation.
+ */
 public interface GroovyDocErrorReporter{
+    /**
+     * Reports an error message.
+     *
+     * @param arg0 the error message
+     */
     void printError(String arg0);
+    /**
+     * Reports an informational notice.
+     *
+     * @param arg0 the notice message
+     */
     void printNotice(String arg0);
+    /**
+     * Reports a warning message.
+     *
+     * @param arg0 the warning message
+     */
     void printWarning(String arg0);
 }

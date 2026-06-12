@@ -27,9 +27,18 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
  */
 public abstract class MetaProperty implements MetaMember {
 
+    /**
+     * Prefix used when deriving setter names from Groovy property names.
+     */
     public static final String PROPERTY_SET_PREFIX = "set";
 
+    /**
+     * Property name as exposed through the Groovy MOP.
+     */
     protected final String name;
+    /**
+     * Declared property type.
+     */
     protected Class type;
 
     /**

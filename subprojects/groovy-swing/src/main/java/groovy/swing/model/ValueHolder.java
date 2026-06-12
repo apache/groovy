@@ -22,8 +22,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 
 /**
- * A simple ValueModel implementation which is a holder of an object value. 
- * Used to share local variables with closures
+ * A mutable {@link ValueModel} implementation that stores a local value and optionally emits change events.
  */
 public class ValueHolder implements ValueModel {
     private Object value;
@@ -31,14 +30,27 @@ public class ValueHolder implements ValueModel {
     private PropertyChangeSupport propertyChangeSupport;
     private boolean editable = true;
 
+    /**
+     * Creates a holder with {@link Object} as its declared type.
+     */
     public ValueHolder() {
         this(Object.class);
     }
 
+    /**
+     * Creates a holder with the supplied declared type.
+     *
+     * @param type the declared value type
+     */
     public ValueHolder(Class type) {
         this.type = type;
     }
 
+    /**
+     * Creates a holder initialized with the supplied value.
+     *
+     * @param value the initial value
+     */
     public ValueHolder(Object value) {
         this.value = value;
         this.type = (value != null) ? value.getClass() : Object.class;
@@ -66,11 +78,21 @@ public class ValueHolder implements ValueModel {
     }
 
 
+    /**
+     * Returns the current stored value.
+     *
+     * @return the current value
+     */
     @Override
     public Object getValue() {
         return value;
     }
 
+    /**
+     * Updates the current value and notifies registered listeners of the change.
+     *
+     * @param value the new value
+     */
     @Override
     public void setValue(Object value) {
         Object oldValue = this.value;
@@ -80,16 +102,31 @@ public class ValueHolder implements ValueModel {
         }
     }
 
+    /**
+     * Returns the declared value type for this holder.
+     *
+     * @return the holder type
+     */
     @Override
     public Class getType() {
         return type;
     }
 
+    /**
+     * Indicates whether callers should treat this holder as writable.
+     *
+     * @return {@code true} when the holder is editable
+     */
     @Override
     public boolean isEditable() {
         return editable;
     }
 
+    /**
+     * Controls whether callers should treat this holder as writable.
+     *
+     * @param editable {@code true} to mark the holder as editable
+     */
     public void setEditable(boolean editable) {
         this.editable = editable;
     }

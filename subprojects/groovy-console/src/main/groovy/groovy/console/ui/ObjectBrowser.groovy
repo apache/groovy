@@ -53,17 +53,42 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.VOCABULARY
  */
 class ObjectBrowser {
 
+    /** Inspector backing the currently displayed object. */
     def inspector
+    /** Breadcrumb text describing the current inspection path. */
     String path
+    /** Number of path cards created so far. */
     int pathCount = 0
+    /** Tracks the currently selected inspection card. */
     def tracker
-    def swing, frame, fieldTable, methodTable, arrayTable, collectionTable, mapTable, cards, pathMenu, mb
+    /** Swing builder used to create browser UI components. */
+    def swing
+    /** Top-level browser window. */
+    def frame
+    /** Table showing property and field data. */
+    def fieldTable
+    /** Table showing methods and meta-methods. */
+    def methodTable
+    /** Table showing array contents. */
+    def arrayTable
+    /** Table showing collection contents. */
+    def collectionTable
+    /** Table showing map entries. */
+    def mapTable
+    /** Card container holding each inspected object view. */
+    def cards
+    /** Menu listing visited inspection paths. */
+    def pathMenu
+    /** Menu bar attached to the browser window. */
+    def mb
     private static final Comparator<Object> comparator = new Inspector.MemberComparatorWithValue()
 
+    /** Launches the browser against a sample string. */
     static void main(args) {
         inspect('some String')
     }
 
+    /** Opens an object browser for the supplied object. */
     static void inspect(objectUnderInspection, String path = '') {
         def browser = new ObjectBrowser(path: path ?: '')
         browser.inspector = new Inspector(objectUnderInspection)
@@ -73,6 +98,7 @@ class ObjectBrowser {
         browser.run()
     }
 
+    /** Adds another inspected object as a new card in the current window. */
     void inspectAlso(objectUnderInspection, String path = '') {
         int idx = pathCount++
         def pathId = 'path' + idx
@@ -84,6 +110,7 @@ class ObjectBrowser {
         mb.revalidate()
     }
 
+    /** Builds and shows the object browser window. */
     void run() {
         swing = new SwingBuilder()
         tracker = new CardTracker()
@@ -102,7 +129,7 @@ class ObjectBrowser {
                     menuItem { action(name: 'Usage', closure: this.&usageAction) }
                     menuItem { action(
                             name: 'About',
-                            smallIcon: imageIcon(resource: 'icons/information.png', class: this),
+                            smallIcon: Icons.menu('info'),
                             closure: this.&aboutAction)
                     }
                 }
@@ -287,13 +314,13 @@ class ObjectBrowser {
                     border: emptyBorder([5, 10, 5, 10]),
                     constraints: SOUTH) {
                 boxLayout(axis: 2)
-                button(icon: imageIcon(resource: 'icons/resultset_previous.png', class: this),
+                button(icon: Icons.load('arrow_back'),
                         margin: [5, 5, 5, 5] as Insets,
                         actionPerformed: { tracker.current--; show() },
                         enabled: bind { tracker.current > 0 })
                 label('Path:  ')
                 textField(editable: false, text: path)
-                button(icon: imageIcon(resource: 'icons/resultset_next.png', class: this),
+                button(icon: Icons.load('arrow_forward'),
                         margin: [5, 5, 5, 5] as Insets,
                         actionPerformed: { tracker.current++; show() },
                         enabled: bind { tracker.current < pathCount - 1 }
@@ -302,6 +329,7 @@ class ObjectBrowser {
         }
     }
 
+    /** Creates a mouse listener that can browse or copy the selected table row. */
     def mouseListener(int valueCol, Closure pathClosure) {
         def outer = this
         new MouseAdapter() {
@@ -328,21 +356,21 @@ class ObjectBrowser {
                                 closure: outer.&copyAction.curry(table, e),
                                 mnemonic: 'C',
                                 accelerator: shortcut('C'),
-                                smallIcon: imageIcon(resource: 'icons/page_copy.png', class: this),
+                                smallIcon: Icons.load('content_copy'),
                                 shortDescription: 'Copy'
                         ))
                         menuItem(action(
                                 name: 'Browse',
                                 enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, false, pathClosure),
-                                smallIcon: imageIcon(resource: 'icons/page_white_stack.png', class: this),
+                                smallIcon: Icons.load('read_more'),
                                 shortDescription: 'Browse'
                         ))
                         menuItem(action(
                                 name: 'Browse in new window',
                                 enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, true, pathClosure),
-                                smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
+                                smallIcon: Icons.load('open_in_new'),
                                 shortDescription: 'Browse window'
                         ))
                     }
@@ -352,6 +380,7 @@ class ObjectBrowser {
         }
     }
 
+    /** Opens the selected table value in this window or a new window. */
     void launch(table, valueCol, boolean newWindow, pathClosure) {
         def selectedRow = table.selectedRow
         if (selectedRow != -1) {
@@ -365,6 +394,7 @@ class ObjectBrowser {
         }
     }
 
+    /** Adds column sorting support to the supplied table. */
     void addSorter(table) {
         if (table != null) {
             def sorter = new TableSorter(table.model)
@@ -373,16 +403,19 @@ class ObjectBrowser {
         }
     }
 
+    /** Switches the visible inspection card to the supplied index. */
     void showAction(int idx, EventObject evt) {
         tracker.current = idx
         show()
     }
 
+    /** Shows the card for the current tracker position. */
     void show() {
         cards.layout.show(cards, 'path' + tracker.current)
         cards.revalidate()
     }
 
+    /** Displays usage help for the object browser. */
     void usageAction(EventObject evt) {
         def pane = swing.optionPane()
         // work around GROOVY-1048
@@ -396,10 +429,12 @@ class ObjectBrowser {
         dialog.show()
     }
 
+    /** Delegates popup-menu browsing to {@link #launch}. */
     void launchAction(table, valueCol, boolean newWindow, pathClosure, EventObject evt) {
         launch(table, valueCol, newWindow, pathClosure)
     }
 
+    /** Copies the tooltip text for the clicked table cell to the clipboard. */
     void copyAction(table, MouseEvent me, EventObject evt) {
         def toolTipText = table.getToolTipText(me)
         if (toolTipText) {
@@ -407,6 +442,7 @@ class ObjectBrowser {
         }
     }
 
+    /** Displays the about dialog for the object browser. */
     void aboutAction(EventObject evt) {
         def pane = swing.optionPane()
         // work around GROOVY-1048
@@ -417,6 +453,8 @@ class ObjectBrowser {
     }
 }
 
+/** Tracks the currently selected card index for the browser. */
 @Bindable class CardTracker {
+    /** Zero-based index of the visible card. */
     int current = 0
 }

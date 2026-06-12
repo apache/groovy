@@ -18,6 +18,7 @@
  */
 package groovy.namespace;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -30,7 +31,7 @@ import java.io.Serializable;
  * namespaceURI is a URI reference identifying the namespace.
  */
 public class QName implements Serializable {
-    private static final long serialVersionUID = -9029109610006696081L;
+    @Serial private static final long serialVersionUID = -9029109610006696081L;
 
     /** comment/shared empty string */
     private static final String EMPTY_STRING = "";

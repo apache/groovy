@@ -32,6 +32,7 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     private static File styleSheetFile;
+    private static List<File> addStylesheetFiles = []
     private static File overviewFile
     private static File destDir
     private static String windowTitle
@@ -45,17 +46,29 @@ class Main {
     private static Boolean noMainForScripts
     private static Boolean noTimestamp
     private static Boolean noVersionStamp
+    private static Boolean noIndex
+    private static Boolean noDeprecatedList
+    private static Boolean noHelp
+    private static String syntaxHighlighter
+    private static String theme
+    private static String preLanguage
     private static Boolean privateScope
     private static Boolean packageScope
     private static Boolean publicScope
     private static Boolean protectedScope
     private static Boolean debug = false
+    private static Boolean showInternal
     private static String[] sourcepath
     private static String javaVersion
     private static List<String> sourceFilesToDoc
     private static List<String> remainingArgs
     private static List<String> exclusions
 
+    /**
+     * Runs the {@code groovydoc} command-line entry point.
+     *
+     * @param args command-line arguments
+     */
     static void main(final String[] args) {
         IO io = new IO()
         Logger.io = io
@@ -77,6 +90,11 @@ class Main {
         cli.nomainforscripts(messages['cli.option.nomainforscripts.description'])
         cli.notimestamp(messages['cli.option.notimestamp.description'])
         cli.noversionstamp(messages['cli.option.noversionstamp.description'])
+        cli.noindex(messages['cli.option.noindex.description'])
+        cli.nodeprecatedlist(messages['cli.option.nodeprecatedlist.description'])
+        cli.nohelp(messages['cli.option.nohelp.description'])
+        cli.syntaxHighlighter(args: 1, argName: 'name', messages['cli.option.syntaxHighlighter.description'])
+        cli.theme(args: 1, argName: 'mode', messages['cli.option.theme.description'])
         cli.overview(args:1, argName: 'file', messages['cli.option.overview.description'])
         cli.public(messages['cli.option.public.description'])
         cli.protected(messages['cli.option.protected.description'])
@@ -90,8 +108,11 @@ class Main {
         cli.footer(args:1, argName: 'html', messages['cli.option.footer.description'])
         cli.exclude(args:1, argName: 'pkglist', messages['cli.option.exclude.description'])
         cli.stylesheetfile(args:1, argName: 'path', messages['cli.option.stylesheetfile.description'])
+        cli.addStylesheet(args:1, argName: 'path', messages['cli.option.addStylesheet.description'])
         cli.sourcepath(args:1, argName: 'pathlist', messages['cli.option.sourcepath.description'])
         cli.javaVersion(args: 1, argName: 'javaVersion', messages['cli.option.javaVersion.description'])
+        cli.showInternal(messages['cli.option.showInternal.description'])
+        cli.preLanguage(args: 1, argName: 'lang', messages['cli.option.preLanguage.description'])
 
         def options = cli.parse(args)
 
@@ -107,6 +128,18 @@ class Main {
 
         if (options.stylesheetfile) {
             styleSheetFile = new File(options.stylesheetfile)
+        }
+        if (options.addStylesheets) {
+            // Accept both `-addStylesheet a.css -addStylesheet b.css`
+            // (repeated flag — `options.addStylesheets` plural returns every
+            // occurrence) and comma-separated forms in a single flag
+            // (e.g. `-addStylesheet a.css,b.css`). Empty tokens dropped.
+            options.addStylesheets.each { raw ->
+                String.valueOf(raw).tokenize(',').each { p ->
+                    def trimmed = p.trim()
+                    if (trimmed) addStylesheetFiles << new File(trimmed)
+                }
+            }
         }
 
         if (options.overview) {
@@ -127,12 +160,24 @@ class Main {
             sourcepath = list.toArray()
         }
 
-        javaVersion = options.javaVersion
+        javaVersion = options.javaVersion ?: null
         author = Boolean.valueOf(options.author) ?: false
         noScripts = Boolean.valueOf(options.noscripts) ?: false
         noMainForScripts = Boolean.valueOf(options.nomainforscripts) ?: false
         noTimestamp = Boolean.valueOf(options.notimestamp) ?: false
         noVersionStamp = Boolean.valueOf(options.noversionstamp) ?: false
+        noIndex = Boolean.valueOf(options.noindex) ?: false
+        noDeprecatedList = Boolean.valueOf(options.nodeprecatedlist) ?: false
+        noHelp = Boolean.valueOf(options.nohelp) ?: false
+        syntaxHighlighter = options.syntaxHighlighter ?: 'none'
+        theme = options.theme ?: 'auto'
+        if (!(theme in ['auto', 'light', 'dark'])) {
+            System.err.println "groovydoc: Error - -theme must be one of auto, light, dark (was: $theme)."
+            cli.usage()
+            System.exit(1)
+        }
+        showInternal = Boolean.valueOf(options.showInternal) ?: false
+        preLanguage = options.preLanguage ?: ''
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
         protectedScope = Boolean.valueOf(options.protected) ?: false
@@ -148,7 +193,7 @@ class Main {
         } else if (scopeCount > 1) {
             System.err.println "groovydoc: Error - More than one of -public, -private, -package, or -protected specified."
             cli.usage()
-            return
+            System.exit(1)
         }
 
         windowTitle = options.windowtitle ?: ''
@@ -181,12 +226,27 @@ class Main {
         if (!remainingArgs) {
             System.err.println "groovydoc: Error - No packages or classes specified."
             cli.usage()
+            System.exit(1)
+        }
+        int errorCount
+        try {
+            errorCount = execute()
+        } catch (Throwable t) {
+            t.printStackTrace(System.err)
+            System.exit(1)
             return
         }
-        execute()
+        if (errorCount > 0) {
+            System.err.println "groovydoc: Error - $errorCount source file(s) failed to parse."
+            System.exit(1)
+        }
     }
 
-    static void execute() {
+    /**
+     * Builds and runs the GroovyDocTool using the static configuration set by {@link #main},
+     * writes output to {@link #destDir}, and returns the number of parse errors.
+     */
+    static int execute() {
         Properties properties = new Properties()
         properties.put("windowTitle", windowTitle)
         properties.put("docTitle", docTitle)
@@ -201,8 +261,19 @@ class Main {
         properties.put("author", author.toString())
         properties.put("processScripts", (!noScripts).toString())
         properties.put("includeMainForScripts", (!noMainForScripts).toString())
+        properties.put("showInternal", showInternal.toString())
+        // GROOVY-11941: expose additional stylesheet basenames to templates.
+        properties.put("additionalStylesheets", addStylesheetFiles*.name.join(','))
         properties.put("timestamp", (!noTimestamp).toString())
         properties.put("versionStamp", (!noVersionStamp).toString())
+        // GROOVY-11943: javadoc-parity disable flags for auxiliary top-level pages.
+        properties.put("noIndex", noIndex.toString())
+        properties.put("noDeprecatedList", noDeprecatedList.toString())
+        properties.put("noHelp", noHelp.toString())
+        // GROOVY-11938 stage 4: client-side syntax highlighter ("prism"|"none").
+        properties.put("syntaxHighlighter", syntaxHighlighter)
+        // GROOVY-11947: generator-level theme lock ("auto"|"light"|"dark").
+        properties.put("theme", theme)
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")
         String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override")
         if (phaseOverride) properties.put("phaseOverride", phaseOverride)
@@ -232,8 +303,24 @@ class Main {
                 println "Warning: Unable to copy specified stylesheet '" + styleSheetFile.absolutePath + "'. Using default stylesheet instead. Due to: " + e.message
             }
         }
+        // GROOVY-11941: copy any additional stylesheets alongside the default,
+        // preserving each file's basename.
+        addStylesheetFiles.each { f ->
+            try {
+                new File(destDir, f.name).text = f.text
+            } catch (IOException e) {
+                System.err.println "Warning: Unable to copy additional stylesheet '${f.absolutePath}': ${e.message}"
+            }
+        }
+        PreLanguageRewriter.rewriteDirectory(destDir, preLanguage)
+        return htmlTool.errorCount
     }
 
+    /**
+     * Populates {@link #sourceFilesToDoc} by resolving each entry in {@code remainingArgs}
+     * against the given {@code sourceDirs}, collecting {@code .groovy} and {@code .java}
+     * files. Entries in {@code exclusions} are skipped.
+     */
     static collectSourceFileNames(List<String> remainingArgs, String[] sourceDirs, List<String> exclusions) {
         sourceFilesToDoc = []
         remainingArgs.each { String pkgOrFile ->

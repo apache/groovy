@@ -18,7 +18,16 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code int} values that preserves the primitive constrained
+ * type.
+ */
 public class IntWrapper extends PojoWrapper {
+    /**
+     * Creates a wrapper for an int value.
+     *
+     * @param wrapped the int value to wrap
+     */
     public IntWrapper(final int wrapped) {
         super(wrapped, int.class);
     }

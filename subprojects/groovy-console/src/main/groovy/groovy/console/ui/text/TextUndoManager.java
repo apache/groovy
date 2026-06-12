@@ -41,16 +41,37 @@ public class TextUndoManager extends UndoManager {
 
     private UndoableEdit modificationMarker = editToBeUndone();
 
+    private boolean recording = true;
+
     /**
      * Creates a new instance of TextUndoManager.
      */
     public TextUndoManager() {
     }
 
+    /**
+     * Toggle recording of undoable edits. Used to suppress capture of
+     * programmatic style changes (e.g. a theme switch re-parsing the
+     * document) that shouldn't be reachable via user-initiated Undo.
+     *
+     * @since 6.0.0
+     */
+    public void setRecording(boolean recording) {
+        this.recording = recording;
+    }
+
+    /**
+     * Registers a listener for undo/redo state changes.
+     *
+     * @param pcl the listener to add
+     */
     public void addPropertyChangeListener(PropertyChangeListener pcl) {
         propChangeSupport.addPropertyChangeListener(pcl);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void die() {
         boolean undoable = canUndo();
@@ -58,6 +79,9 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void discardAllEdits() {
         boolean undoable = canUndo();
@@ -71,16 +95,31 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.UndoName, redoable, canRedo());
     }
 
+    /**
+     * Fires an undo-state property change event.
+     *
+     * @param name the property name
+     * @param oldValue the previous value
+     * @param newValue the new value
+     */
     protected void firePropertyChangeEvent(String name,
                                            boolean oldValue,
                                            boolean newValue) {
         propChangeSupport.firePropertyChange(name, oldValue, newValue);
     }
 
+    /**
+     * Indicates whether the document differs from the last reset point.
+     *
+     * @return {@code true} if undo history contains unreset edits
+     */
     public boolean hasChanged() {
         return modificationMarker != editToBeUndone();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void redo() throws javax.swing.undo.CannotRedoException {
         compoundEdit.end();
@@ -97,6 +136,9 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.UndoName, undoable, canUndo());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void redoTo(UndoableEdit edit) {
         compoundEdit.end();
@@ -114,10 +156,18 @@ public class TextUndoManager extends UndoManager {
 
     }
 
+    /**
+     * Removes a listener for undo/redo state changes.
+     *
+     * @param pcl the listener to remove
+     */
     public void removePropertyChangeListener(PropertyChangeListener pcl) {
         propChangeSupport.removePropertyChangeListener(pcl);
     }
 
+    /**
+     * Marks the current undo position as the unmodified state.
+     */
     public void reset() {
         boolean changed = modificationMarker != editToBeUndone();
         if (changed) {
@@ -125,6 +175,9 @@ public class TextUndoManager extends UndoManager {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void trimEdits(int from, int to) {
         boolean undoable = canUndo();
@@ -137,6 +190,9 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void undo() throws javax.swing.undo.CannotUndoException {
         compoundEdit.end();
@@ -155,8 +211,14 @@ public class TextUndoManager extends UndoManager {
         firePropertyChangeEvent(UndoManager.RedoName, redoable, canRedo());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void undoableEditHappened(UndoableEditEvent uee) {
+        if (!recording) {
+            return;
+        }
         UndoableEdit edit = uee.getEdit();
         boolean undoable = canUndo();
 

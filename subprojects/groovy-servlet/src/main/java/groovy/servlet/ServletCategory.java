@@ -28,66 +28,178 @@ import jakarta.servlet.jsp.PageContext;
  */
 public class ServletCategory {
 
+    /**
+     * Reads a servlet context attribute using property-style access.
+     *
+     * @param context the servlet context
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object get(ServletContext context, String key) {
         return context.getAttribute(key);
     }
 
+    /**
+     * Reads an HTTP session attribute using property-style access.
+     *
+     * @param session the HTTP session
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object get(HttpSession session, String key) {
         return session.getAttribute(key);
     }
 
+    /**
+     * Reads a request attribute using property-style access.
+     *
+     * @param request the servlet request
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object get(ServletRequest request, String key) {
         return request.getAttribute(key);
     }
 
+    /**
+     * Reads a page context attribute using property-style access.
+     *
+     * @param context the page context
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object get(PageContext context, String key) {
         return context.getAttribute(key);
     }
 
+    /**
+     * Reads a servlet context attribute using Groovy subscript syntax.
+     *
+     * @param context the servlet context
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object getAt(ServletContext context, String key) {
         return context.getAttribute(key);
     }
 
+    /**
+     * Reads an HTTP session attribute using Groovy subscript syntax.
+     *
+     * @param session the HTTP session
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object getAt(HttpSession session, String key) {
         return session.getAttribute(key);
     }
 
+    /**
+     * Reads a request attribute using Groovy subscript syntax.
+     *
+     * @param request the servlet request
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object getAt(ServletRequest request, String key) {
         return request.getAttribute(key);
     }
 
+    /**
+     * Reads a page context attribute using Groovy subscript syntax.
+     *
+     * @param context the page context
+     * @param key the attribute name
+     * @return the stored attribute value
+     */
     public static Object getAt(PageContext context, String key) {
         return context.getAttribute(key);
     }
 
+    /**
+     * Stores a servlet context attribute using property-style access.
+     *
+     * @param context the servlet context
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void set(ServletContext context, String key, Object value) {
         context.setAttribute(key, value);
     }
 
+    /**
+     * Stores an HTTP session attribute using property-style access.
+     *
+     * @param session the HTTP session
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void set(HttpSession session, String key, Object value) {
         session.setAttribute(key, value);
     }
 
+    /**
+     * Stores a request attribute using property-style access.
+     *
+     * @param request the servlet request
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void set(ServletRequest request, String key, Object value) {
         request.setAttribute(key, value);
     }
 
+    /**
+     * Stores a page context attribute using property-style access.
+     *
+     * @param context the page context
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void set(PageContext context, String key, Object value) {
         context.setAttribute(key, value);
     }
 
+    /**
+     * Stores a servlet context attribute using Groovy subscript syntax.
+     *
+     * @param context the servlet context
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void putAt(ServletContext context, String key, Object value) {
         context.setAttribute(key, value);
     }
 
+    /**
+     * Stores an HTTP session attribute using Groovy subscript syntax.
+     *
+     * @param session the HTTP session
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void putAt(HttpSession session, String key, Object value) {
         session.setAttribute(key, value);
     }
 
+    /**
+     * Stores a request attribute using Groovy subscript syntax.
+     *
+     * @param request the servlet request
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void putAt(ServletRequest request, String key, Object value) {
         request.setAttribute(key, value);
     }
 
+    /**
+     * Stores a page context attribute using Groovy subscript syntax.
+     *
+     * @param context the page context
+     * @param key the attribute name
+     * @param value the attribute value
+     */
     public static void putAt(PageContext context, String key, Object value) {
         context.setAttribute(key, value);
     }

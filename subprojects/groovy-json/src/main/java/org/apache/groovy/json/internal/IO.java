@@ -22,12 +22,23 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 
+/**
+ * Reader and writer helpers used by the JSON parser internals.
+ */
 public class IO {
 
     private static final int EOF = -1;
 
     private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
+    /**
+     * Reads all characters from a reader into a recyclable buffer and closes the reader.
+     *
+     * @param input reader supplying characters
+     * @param charBuf existing buffer to reuse, or {@code null} to allocate one
+     * @param bufSize initial buffer size when a new buffer is allocated
+     * @return buffer containing the reader contents
+     */
     public static CharBuf read(Reader input, CharBuf charBuf, final int bufSize) {
         if (charBuf == null) {
             charBuf = CharBuf.create(bufSize);
@@ -59,6 +70,13 @@ public class IO {
         return charBuf;
     }
 
+    /**
+     * Copies all characters from a reader to a writer.
+     *
+     * @param input reader supplying characters
+     * @param output writer receiving characters
+     * @return number of copied characters, or {@code -1} when the count exceeds {@link Integer#MAX_VALUE}
+     */
     public static int copy(Reader input, Writer output) {
         long count = copyLarge(input, output);
         if (count > Integer.MAX_VALUE) {
@@ -67,10 +85,25 @@ public class IO {
         return (int) count;
     }
 
+    /**
+     * Copies all characters from a reader to a writer using the default buffer size.
+     *
+     * @param reader reader supplying characters
+     * @param writer writer receiving characters
+     * @return number of copied characters
+     */
     public static long copyLarge(Reader reader, Writer writer) {
         return copyLarge(reader, writer, new char[DEFAULT_BUFFER_SIZE]);
     }
 
+    /**
+     * Copies all characters from a reader to a writer using the supplied buffer.
+     *
+     * @param reader reader supplying characters
+     * @param writer writer receiving characters
+     * @param buffer temporary buffer to reuse during copying
+     * @return number of copied characters
+     */
     public static long copyLarge(Reader reader, Writer writer, char[] buffer) {
         long count = 0;
         int n;

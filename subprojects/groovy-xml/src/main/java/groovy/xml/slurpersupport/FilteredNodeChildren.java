@@ -40,11 +40,13 @@ public class FilteredNodeChildren extends NodeChildren {
         this.closure = closure;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult pop() {
         return this.parent.parent;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.nodeIterator()) {

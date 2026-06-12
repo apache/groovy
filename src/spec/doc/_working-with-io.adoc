@@ -88,6 +88,17 @@ makes it very easy actually:
 include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_bytes,indent=0]
 ----
 
+Groovy also provides asynchronous variants for reading and writing files via the `groovy-nio` module.
+These return a `CompletableFuture`, making them composable and easy to use with async frameworks.
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=async_read,indent=0]
+----
+
+Similarly, `path.bytesAsync` returns a `CompletableFuture<byte[]>`, and
+`path.writeAsync(text)` writes content asynchronously.
+
 Working with I/O is not limited to dealing with files. In fact, a lot of operations rely on input/output streams,
 hence why Groovy adds a lot of support methods to those, as you can see in the
 http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/InputStream.html[documentation].
@@ -204,8 +215,50 @@ include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=object_in_out,indent=0]
 The previous section described how easy it was to deal with files, readers or streams in Groovy. However in domains
 like system administration or devops it is often required to communicate with external processes.
 
-Groovy provides a simple way to execute command line processes. Simply
-write the command line as a string and call the `execute()` method.
+Groovy provides `execute` and `toProcessBuilder` methods as two mechanisms to execute external processes.
+In simple cases, calls to `execute()`
+are invoked directly on a command string:
+
+[source,groovy]
+----
+"javac src/main/java/*.java".execute()
+----
+
+For more sophisticated workloads, a _named-parameter_ variant configures
+the process with options like working directory,
+environment, and stream redirection:
+
+[source,groovy]
+----
+def result = "javac src/main/java/*.java".execute(
+    dir: new File('/myproject'),
+    redirectErrorStream: true
+).waitForResult(2, TimeUnit.MINUTES)
+
+if (!result.ok) System.err.println result.out
+----
+
+The `toProcessBuilder()` method lets you piggyback directly onto
+the `ProcessBuilder` fluent API:
+
+[source,groovy]
+----
+def result = "javac src/main/java/*.java".toProcessBuilder()
+    .directory(new File('/myproject'))
+    .redirectErrorStream(true)
+    .start()
+    .waitForResult(2, TimeUnit.MINUTES)
+
+if (!result.ok) System.err.println result.out
+----
+
+The `execute()` and `start()` methods return a `java.lang.Process` instance, and
+`waitForResult()` returns a `ProcessResult` capturing stdout, stderr, and the exit code.
+The following sections cover each approach in detail.
+
+=== Simple execution
+
+Simply write the command line as a string and call the `execute()` method.
 E.g., on a *nix machine (or a Windows machine with appropriate *nix
 commands installed), you can execute this:
 
@@ -216,11 +269,7 @@ include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=process_list_files,indent
 <1> executes the `ls` command in an external process
 <2> consume the output of the command and retrieve the text
 
-The `execute()` method returns a `java.lang.Process` instance which will
-subsequently allow the in/out/err streams to be processed and the exit
-value from the process to be inspected etc.
-
-e.g. here is the same command as above but we will now process the
+Here is the same command as above but we will now process the
 resulting stream a line at a time:
 
 [source,groovy]
@@ -243,28 +292,80 @@ machine and write:
 include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows,indent=0]
 ----
 
-you will receive an `IOException` saying  _Cannot run program "dir":
+you will receive an `IOException` saying  _Cannot run program "dir":
 CreateProcess error=2, The system cannot find the file specified._
 
 This is because `dir` is built-in to the Windows shell (`cmd.exe`) and
-can’t be run as a simple executable. Instead, you will need to write:
+can't be run as a simple executable. Instead, you will need to write:
 
 [source,groovy]
-----------------------------------
+----
 include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=dir_windows_fixed,indent=0]
-----------------------------------
+----
 
-Also, because this functionality currently makes use of
-`java.lang.Process` undercover, the deficiencies of that class
-must be taken into consideration. In particular, the javadoc
-for this class says:
+=== Named parameters for execute
 
-________________________________________________________________________
+The `execute()` method accepts named parameters to configure the process.
+Supported options include `dir` (working directory), `env` (environment
+variables), `redirectErrorStream`, `inheritIO`, `outputFile`, `errorFile`,
+`inputFile`, `appendOutput`, and `appendError`.
+The file-related options (`dir`, `outputFile`, `errorFile`, `inputFile`,
+`appendOutput`, `appendError`) accept a `File`, `Path`, or `String`:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=execute_named_params,indent=0]
+----
+
+To merge stderr into stdout:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=execute_redirect_error,indent=0]
+----
+
+=== Using ProcessBuilder directly
+
+For full control over process construction, the `toProcessBuilder()` method
+creates a `java.lang.ProcessBuilder` from a command string, array, or list:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=to_process_builder,indent=0]
+----
+
+=== Capturing output, error, and exit code
+
+A common need is to capture a process's standard output, standard error,
+and exit code all at once. The `waitForResult()` method returns a
+`ProcessResult` with `out`, `err`, `exitCode`, and `ok` properties:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=waitforresult,indent=0]
+----
+
+If the process produces an error:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=waitforresult_error,indent=0]
+----
+
+A timeout variant is available that forcibly kills the process if it
+exceeds the given duration:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=waitforresult_timeout,indent=0]
+----
+
+=== Stream handling
+
 Because some native platforms only provide limited buffer size for
 standard input and output streams, failure to promptly write the input
 stream or read the output stream of the subprocess may cause the
-subprocess to block, and even deadlock
-________________________________________________________________________
+subprocess to block, and even deadlock.
 
 Because of this, Groovy provides some additional helper methods which
 make stream handling for processes easier.
@@ -273,17 +374,18 @@ Here is how to gobble all of the output (including the error stream
 output) from your process:
 
 [source,groovy]
-----------------------------------
+----
 include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=consumeoutput,indent=0]
-----------------------------------
+----
 
 There are also variations of `consumeProcessOutput` that make use of `StringBuffer`, `InputStream`,
 `OutputStream` etc... For a complete list, please read the
 http://docs.groovy-lang.org/latest/html/groovy-jdk/java/lang/Process.html[GDK API for java.lang.Process]
 
-In addition, there is a `pipeTo` command (mapped to `|`
-to allow overloading) which lets the output stream of one process be fed
-into the input stream of another process.
+=== Piping
+
+The `pipeTo` command (mapped to `|` to allow overloading) lets the output
+stream of one process be fed into the input stream of another process.
 
 Here are some examples of use:
 
@@ -297,4 +399,22 @@ include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_1,indent=0]
 .Consuming errors
 ----
 include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=pipe_example_2,indent=0]
+----
+
+For more robust piping, the `pipeline()` method uses native OS-level piping
+via `ProcessBuilder.startPipeline()`:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=pipeline,indent=0]
+----
+
+=== Asynchronous notifications
+
+The `onExit` method registers a closure to be called when the process
+terminates:
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=on_exit,indent=0]
 ----

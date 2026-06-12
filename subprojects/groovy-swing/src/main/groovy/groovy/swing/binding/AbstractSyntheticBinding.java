@@ -23,11 +23,32 @@ import org.apache.groovy.swing.binding.PropertyBinding;
 import org.apache.groovy.swing.binding.SourceBinding;
 import org.apache.groovy.swing.binding.TargetBinding;
 
+/**
+ * Base class for bindings that observe synthetic Swing properties.
+ */
 public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
+    /**
+     * Indicates whether the synthetic binding is currently active.
+     */
     boolean bound;
+    /**
+     * The synthetic property name handled by this binding.
+     */
     String propertyName;
-    Class klass;
+    /**
+     * The Swing component type supported by this binding.
+     */
+    Class<?> klass;
 
+    /**
+     * Creates a synthetic binding for the supplied property and component type.
+     *
+     * @param source the source property binding
+     * @param target the target binding
+     * @param klass the supported component type
+     * @param propertyName the synthetic property name
+     */
+    @SuppressWarnings("rawtypes")
     public AbstractSyntheticBinding(PropertyBinding source, TargetBinding target, Class klass, String propertyName) {
         this.propertyName = propertyName;
         this.klass = klass;
@@ -36,6 +57,9 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         setTargetBinding(target);
     }
 
+    /**
+     * Installs the synthetic listeners if this binding is not already active.
+     */
     @Override
     public void bind() {
         if (!bound) {
@@ -53,6 +77,9 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         }
     }
 
+    /**
+     * Removes the synthetic listeners if this binding is currently active.
+     */
     @Override
     public void unbind() {
         if (bound) {
@@ -62,9 +89,18 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         }
     }
 
+    /**
+     * Hooks the synthetic listeners required by this binding.
+     */
     protected abstract void syntheticBind();
+    /**
+     * Removes any synthetic listeners installed by this binding.
+     */
     protected abstract void syntheticUnbind();
 
+    /**
+     * Reinstalls the synthetic listeners when the binding is already active.
+     */
     @Override
     public void rebind() {
         if (bound) {
@@ -73,6 +109,11 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         }
     }
 
+    /**
+     * Validates and stores the source binding for this synthetic property.
+     *
+     * @param source the source binding to validate
+     */
     @Override
     public void setSourceBinding(SourceBinding source) {
         if (!(source instanceof PropertyBinding)) {
@@ -89,6 +130,11 @@ public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
         super.setSourceBinding(source);
     }
 
+    /**
+     * Stores the target binding that receives propagated updates.
+     *
+     * @param target the target binding
+     */
     @Override
     public void setTargetBinding(TargetBinding target) {
         super.setTargetBinding(target);

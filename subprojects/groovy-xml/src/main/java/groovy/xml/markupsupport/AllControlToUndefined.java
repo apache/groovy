@@ -20,7 +20,11 @@ package groovy.xml.markupsupport;
 
 import java.util.Optional;
 
+/**
+ * Replaces XML-disallowed control characters and Unicode noncharacters with {@code U+FFFD}.
+ */
 public class AllControlToUndefined extends StandardControlToUndefined {
+    /** {@inheritDoc} */
     @Override
     public Optional<String> apply(Character ch) {
         if (Character.isISOControl(ch) || isNonCharacter(ch)) {

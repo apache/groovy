@@ -18,15 +18,53 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes a method in the Groovydoc model.
+ */
 public interface GroovyMethodDoc extends GroovyExecutableMemberDoc {
+    /**
+     * Indicates whether this method is declared abstract.
+     *
+     * @return {@code true} if this method is abstract
+     */
     boolean isAbstract();
+    /**
+     * Returns the class in which the overridden method is declared.
+     *
+     * @return the overridden method's declaring class, or {@code null} if none exists
+     */
     GroovyClassDoc overriddenClass();
+    /**
+     * Returns the method that this method overrides.
+     *
+     * @return the overridden method, or {@code null} if none exists
+     */
     GroovyMethodDoc overriddenMethod();
+    /**
+     * Returns the type that declares the method overridden by this method.
+     *
+     * @return the overridden type, or {@code null} if none exists
+     */
     GroovyType overriddenType();
+    /**
+     * Indicates whether this method overrides the supplied method.
+     *
+     * @param arg0 the candidate method
+     * @return {@code true} if this method overrides {@code arg0}
+     */
     boolean overrides(GroovyMethodDoc arg0);
+    /**
+     * Returns the declared return type of this method.
+     *
+     * @return the return type
+     */
     GroovyType returnType();
 
     //---- additional
-
+    /**
+     * Updates the declared return type of this method.
+     *
+     * @param o the return type to associate with this method
+     */
     void setReturnType(GroovyType o);
 }

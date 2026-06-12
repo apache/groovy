@@ -70,7 +70,23 @@ import static org.codehaus.groovy.vmplugin.v8.PluginDefaultGroovyMethods.orOptio
  * </ul>
  */
 public class MarkupBuilder extends BuilderSupport {
-    public enum CharFilter { XML_STRICT, XML_ALL, NONE }
+    /**
+     * Identifiers for built-in character filtering strategies.
+     */
+    public enum CharFilter {
+        /**
+         * Apply the standard XML escaping rules.
+         */
+        XML_STRICT,
+        /**
+         * Apply the most comprehensive predefined XML escaping rules.
+         */
+        XML_ALL,
+        /**
+         * Disable any additional predefined character filtering.
+         */
+        NONE
+    }
 
     private IndentPrinter out;
     private boolean nospace;
@@ -83,10 +99,20 @@ public class MarkupBuilder extends BuilderSupport {
     private boolean escapeAttributes = true;
     private List<Function<Character, Optional<String>>> additionalFilters = null;
 
+    /**
+     * Returns extra character replacement filters consulted after the default XML escaping rules.
+     *
+     * @return the additional escaping filters, or {@code null} if none are configured
+     */
     public List<Function<Character, Optional<String>>> getAdditionalFilters() {
         return additionalFilters;
     }
 
+    /**
+     * Sets extra character replacement filters consulted after the default XML escaping rules.
+     *
+     * @param additionalFilters the additional escaping filters to apply
+     */
     public void setAdditionalFilters(List<Function<Character, Optional<String>>> additionalFilters) {
         this.additionalFilters = additionalFilters;
     }
@@ -242,10 +268,23 @@ public class MarkupBuilder extends BuilderSupport {
         this.expandEmptyElements = expandEmptyElements;
     }
 
+    /**
+     * Returns the printer used to emit markup.
+     * Subclasses may override to provide a custom output sink.
+     *
+     * @return the printer backing this builder
+     */
     protected IndentPrinter getPrinter() {
         return this.out;
     }
 
+    /**
+     * Builder lifecycle callback invoked after a child node has been created.
+     * This implementation is a no-op because markup is streamed directly to the printer.
+     *
+     * @param parent the current parent node marker
+     * @param child the newly created child node marker
+     */
     @Override
     protected void setParent(Object parent, Object child) {
     }
@@ -285,6 +324,12 @@ public class MarkupBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Writes character data for the current node.
+     *
+     * @param value the text to emit
+     * @param escaping whether element content escaping should be applied
+     */
     void yield(String value, boolean escaping) {
         if (state == 1) {
             state = 2;
@@ -296,6 +341,12 @@ public class MarkupBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Builder lifecycle callback that starts an element with no attributes or body text.
+     *
+     * @param name the node name requested by the builder
+     * @return the normalized node name used for subsequent callbacks
+     */
     @Override
     protected Object createNode(Object name) {
         Object theName = getName(name);
@@ -304,6 +355,13 @@ public class MarkupBuilder extends BuilderSupport {
         return theName;
     }
 
+    /**
+     * Builder lifecycle callback that starts an element and writes an immediate text body.
+     *
+     * @param name the node name requested by the builder
+     * @param value the text body to emit, or {@code null} to leave the element empty
+     * @return the normalized node name used for subsequent callbacks
+     */
     @Override
     protected Object createNode(Object name, Object value) {
         Object theName = getName(name);
@@ -318,6 +376,14 @@ public class MarkupBuilder extends BuilderSupport {
         }
     }
 
+    /**
+     * Builder lifecycle callback that starts an element, emits attributes and optionally writes text.
+     *
+     * @param name the node name requested by the builder
+     * @param attributes the attributes to emit
+     * @param value the optional text body to emit
+     * @return the normalized node name used for subsequent callbacks
+     */
     @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         Object theName = getName(name);
@@ -348,21 +414,47 @@ public class MarkupBuilder extends BuilderSupport {
         return theName;
     }
 
+    /**
+     * Builder lifecycle callback that starts an element and emits attributes without body text.
+     *
+     * @param name the node name requested by the builder
+     * @param attributes the attributes to emit
+     * @return the normalized node name used for subsequent callbacks
+     */
     @Override
     protected Object createNode(Object name, Map attributes) {
         return createNode(name, attributes, null);
     }
 
+    /**
+     * Builder lifecycle callback invoked when the current node is complete.
+     *
+     * @param parent the parent node marker
+     * @param node the completed node marker
+     */
     @Override
     protected void nodeCompleted(Object parent, Object node) {
         toState(3, node);
         out.flush();
     }
 
+    /**
+     * Writes raw markup fragments or names to the output stream.
+     * Subclasses may override to customize low-level emission.
+     *
+     * @param node the value to print
+     */
     protected void print(Object node) {
         out.print(node == null ? "null" : node.toString());
     }
 
+    /**
+     * Resolves a builder method name to the element name that should be emitted.
+     * Subclasses may override to translate method names into alternate node names.
+     *
+     * @param methodName the method name invoked on the builder
+     * @return the node name to use for output
+     */
     @Override
     protected Object getName(String methodName) {
         return super.getName(methodName);
@@ -427,6 +519,9 @@ public class MarkupBuilder extends BuilderSupport {
         return StringGroovyMethods.collectReplacements(value, transforms);
     }
 
+    /**
+     * Default character replacement function used for XML content and attribute escaping.
+     */
     public static class DefaultXmlEscapingFunction implements Function<Character, Optional<String>> {
         private final boolean isAttrValue;
 
@@ -434,11 +529,23 @@ public class MarkupBuilder extends BuilderSupport {
         private final Function<Character, Optional<String>> attrFilter = new StandardXmlAttributeFilter();
         private final Function<Character, Optional<String>> quoteFilter;
 
+        /**
+         * Creates an escaping function for either element content or attribute values.
+         *
+         * @param isAttrValue whether the text being escaped is an attribute value
+         * @param useDoubleQuotes whether attributes are quoted with double quotes
+         */
         public DefaultXmlEscapingFunction(boolean isAttrValue, boolean useDoubleQuotes) {
             this.isAttrValue = isAttrValue;
             this.quoteFilter = useDoubleQuotes ? new DoubleQuoteFilter() : new SingleQuoteFilter();
         }
 
+        /**
+         * Escapes a single character when required by XML output rules.
+         *
+         * @param ch the character to inspect
+         * @return an escaped replacement, or {@link Optional#empty()} if no replacement is needed
+         */
         @Override
         public Optional<String> apply(Character ch) {
             return orOptional(stdFilter.apply(ch),
@@ -463,6 +570,8 @@ public class MarkupBuilder extends BuilderSupport {
                         break;
                     case 3:
                         throw new Error();
+                    default:
+                        break;
                 }
                 break;
             case 1:
@@ -491,6 +600,8 @@ public class MarkupBuilder extends BuilderSupport {
                             }
                         }
                         break;
+                    default:
+                        break;
                 }
                 break;
             case 2:
@@ -509,6 +620,8 @@ public class MarkupBuilder extends BuilderSupport {
                         out.print("</");
                         print(name);
                         out.print(">");
+                        break;
+                    default:
                         break;
                 }
                 break;
@@ -537,7 +650,11 @@ public class MarkupBuilder extends BuilderSupport {
                         print(name);
                         out.print(">");
                         break;
+                    default:
+                        break;
                 }
+                break;
+            default:
                 break;
         }
         state = next;

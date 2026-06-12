@@ -53,30 +53,27 @@ final class ClosureVariableBug {
     }
 
     protected Integer callClosure(collection) {
-        Integer x
-        /** @todo
         Integer x = 0
-        */
         collection.each { x = it }
         return x
     }
 
     @Test
     void testLocalVariableWithPrimitiveType() {
-        assertScript """
+        assertScript '''
             int x
             1.times { x=2 }
             assert x==2
-        """
-        assertScript """
+        '''
+        assertScript '''
             long x
             1.times { x=2 }
             assert x==2
-        """
-        assertScript """
+        '''
+        assertScript '''
             double x
             1.times { x=2 }
             assert x==2
-        """
+        '''
     }
 }

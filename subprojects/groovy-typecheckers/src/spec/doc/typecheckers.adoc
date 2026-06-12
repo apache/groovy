@@ -21,7 +21,9 @@
 ifndef::reldir_typecheckers[]
 :reldir_typecheckers: .
 endif::[]
+:icons: font
 
+[[built-in-auxiliary-type-checkers]]
 = Built-in auxiliary type checkers
 
 == Introduction
@@ -30,17 +32,188 @@ Groovy's static nature includes an extensible type-checking mechanism.
 This mechanism allows users to selectively strengthen or weaken type checking
 as needed to cater for scenarios where the standard type checking isn't sufficient.
 
-In addition to allowing you to write your own customer checkers,
-Groovy offers a handful of useful built-in type checkers.
-These provide additional checks for specific scenarios.
+This chapter catalogues the type-checking extensions that ship with Groovy.
+For the API used to write your own, see the
+link:core-semantics.html#type-checking-extensions[Type checking extensions] chapter.
 
-In the examples which follow, we'll explicitly show declaring
-the type checker we want to use.
-As usual, Groovy's compiler customization mechanisms would allow you to
-simplify application of such checkers, e.g. make it apply globally
-using a compiler configuration script, as just one example.
+Groovy offers a suite of built-in type checkers that provide additional
+compile-time verification for specific concerns:
+
+[cols="3,10",options="header"]
+|===
+| Checker | What it does
+
+| <<Checking Regular Expressions,RegexChecker>>
+a| Validates regex patterns at compile time -- no more `PatternSyntaxException` at runtime
+
+[listing,subs="+quotes,macros"]
+----
+assert 'Apple' =~ /(a\|A).*/    [.green]#// icon:check[] okay#
+assert 'apple' =~ /(a\|A.*/     [.red]#// icon:times[] compile error: unclosed group#
+----
+
+| <<Checking Format Strings,FormatStringChecker>>
+a| Validates `printf`/`format` specifiers against argument types -- catches mismatches at compile time
+
+[listing,subs="+quotes,macros"]
+----
+String.format('%d: %s', 42, 'ok')  [.green]#// icon:check[] okay#
+String.format('%d: %s', 'x', 42)   [.red]#// icon:times[] IllegalFormatConversion: d != String#
+----
+
+| <<Checking Null Safety (Incubating),NullChecker>>
+a| Detects potential null dereferences using annotations and optional flow analysis
+
+[listing,subs="+quotes,macros"]
+----
+if (name != null) name.size()   [.green]#// icon:check[] null guard#
+name?.size()                    [.green]#// icon:check[] safe navigation#
+name.size()                     [.red]#// icon:times[] potential null dereference#
+----
+
+| <<Checking @Modifies Frame Conditions (Incubating),ModifiesChecker>>
+a| Verifies methods only modify declared fields -- humans and AI know what changed and what didn't
+
+[listing,subs="+quotes,macros"]
+----
+@Modifies({ this.balance })
+void deposit(n) { balance += n }   [.green]#// icon:check[] balance is declared#
+
+@Modifies({ })
+void withdraw(n) { balance -= n }  [.red]#// icon:times[] balance not in @Modifies#
+----
+
+| <<Checking @Pure Purity (Incubating),PurityChecker>>
+a| Enforces that `@Pure` methods have no side effects, with configurable strictness
+
+[listing,subs="+quotes,macros"]
+----
+@Pure int twice() { value * 2 }  [.green]#// icon:check[] reads only#
+@Pure int bad()   { count++ }    [.red]#// icon:times[] field mutation#
+----
+
+| <<Checking @Associative/@Reducer Combiners (Incubating),CombinerChecker>>
+a| Verifies a combiner passed to a parallel reduction carries the associativity contract those methods silently require
+
+[listing,subs="+quotes,macros"]
+----
+list.injectParallel(0, Maths.&add)        [.green]#// icon:check[] @Associative method#
+list.injectParallel(0) { a, b -> a - b }  [.red]#// icon:times[] non-associative: undefined result#
+----
+
+| <<Checking the DO Macro (Incubating),MonadicChecker>>
+a| Teaches `@CompileStatic`/`@TypeChecked` about the `DO` macro's desugared output so monadic comprehensions over `Optional`, `Stream`, `Awaitable`, and `@Monadic` types type-check correctly
+
+[listing,subs="+quotes,macros"]
+----
+@CompileStatic(extensions = 'groovy.typecheckers.MonadicChecker')
+def m = DO { x <- Optional.of(1); yield x + 1 }
+----
+
+| <<Checking Hand-written Monadic Chains (Incubating),MonadicShapeChecker>>
+a| Lint for hand-written `flatMap`/`map` chains over the standard carriers -- catches `bind` returning a non-carrier or `map` returning the same carrier
+
+[listing,subs="+quotes,macros"]
+----
+Optional.of(1).flatMap { x -> x + 1 }       [.red]#// icon:times[] bind returned Integer, not Optional#
+Optional.of(1).map { x -> Optional.of(x) }  [.red]#// icon:times[] map returned Optional, use flatMap#
+----
+|===
+
+These checkers work with annotations from multiple libraries (JSpecify, JetBrains,
+Checker Framework, and others) -- matching by simple name so you can use whichever
+annotation library your project already depends on.
+
+[NOTE]
+====
+`RegexChecker` (since Groovy 4.0.0) and `FormatStringChecker` (since Groovy 5.0.0)
+are stable. The remaining checkers are new in Groovy 6.0.0 and remain incubating;
+their options and semantics may evolve in a subsequent 6.x release based on
+usage feedback.
+====
+
+=== Why these checkers matter
+
+In a world which seems to be having an ever-increasing focus on AI,
+here are numerous reasons you might want to make liberal use of checkers and their annotations:
+
+* The checker declarations and associated annotations, along with other Groovy annotations
+used with AST transforms, e.g. `@Invariant` from `groovy-contracts`, form a declarative
+specification of program behavior. This specification replaces "read the body" reasoning allowing humans and AI to understand system behavior at scale.
+* When an AI agent generates or modifies code, no human may fully understand the result. Type checkers act as a compile-time safety net on what those programs can do.
+* If we can treat our systems as composable black boxes each with well specified behavior we can more easily start to apply compositional reasoning to our systems.
+* Groovy's dynamic features (metaprogramming, runtime dispatch, invokeMethod) are powerful
+but can make static reasoning hard. AI models can hallucinate about what dynamic code does.
+Type checkers let teams selectively fill in the missing gaps in static reasoning,
+that AI would otherwise struggle with.
+* As AI agents increasingly write, review, and deploy code autonomously, we need machine-checkable invariants which form trust boundaries in agentic workflows.
+
+As an example, let's explore how combining some checkers and design-by-contract annotations
+allow both humans and AI to reason about method behavior
+without reading method implementations. Consider this annotated class:
+
+[source,groovy]
+----
+@Invariant({ balance >= 0 })
+class Account {
+    BigDecimal balance = 0
+    List<String> log = []
+
+    @Requires({ amount > 0 })
+    @Ensures({ balance == old.balance + amount })
+    @Modifies({ [this.balance, this.log] })
+    void deposit(BigDecimal amount) {
+        balance += amount
+        log.add("deposit $amount")
+    }
+
+    @Requires({ amount > 0 && amount <= balance })
+    @Ensures({ balance == old.balance - amount })
+    @Modifies({ [this.balance, this.log] })
+    void withdraw(BigDecimal amount) {
+        balance -= amount
+        log.add("withdraw $amount")
+    }
+
+    @Pure
+    BigDecimal available() { balance }
+}
+----
+
+When analyzing a sequence of calls:
+
+[source,groovy]
+----
+account.deposit(100)
+account.withdraw(30)
+def bal = account.available()
+----
+
+*With annotations*, each call is a self-contained specification -- 3 linear reasoning steps:
+
+1. `deposit(100)`: `@Requires` met (100 > 0), `@Ensures` gives `balance == old + 100`,
+   `@Modifies` proves only `balance` and `log` changed
+2. `withdraw(30)`: `@Requires` met (30 > 0, 30 <= 100), `@Ensures` gives `balance == 100 - 30 = 70`,
+   `@Modifies` proves `withdraw` didn't undo the deposit
+3. `available()`: `@Pure` proves no side effects -- just returns `balance` (70)
+
+This is human and AI reasoning that scales!
+
+*Without annotations*, the analyzer must read every method body, verify what each one
+modifies (2 fields × 3 calls = 6 "did this change?" questions), re-verify earlier state
+after later calls, and check whether `available()` has hidden side effects. This grows
+as _O(fields × calls × call_depth)_.
+
+=== Using the checkers
+
+In the examples which follow, we explicitly show declaring the type checker to use.
+Groovy's compiler customization mechanisms allow you to simplify application of
+such checkers, e.g. make it apply globally using a compiler configuration script,
+as just one example.
 
 == Checking Regular Expressions
+
+_Stable since Groovy 4.0.0._
 
 A regular expression (regex) defines a search pattern for text. The pattern can be as simple as a single character, a fixed string, or a complex expression containing special characters describing a pattern.
 The JDK has special regex classes and Groovy adds some special syntactic sugar and functionality
@@ -199,6 +372,8 @@ Over-and-above these examples, detected errors include:
 * Unmatched closing ')'
 
 == Checking Format Strings
+
+_Stable since Groovy 5.0.0._
 
 The `format` methods in `java.util.Formatter`, and other similar methods,
 support formatted printing in the style of C's `printf` method with a
@@ -368,3 +543,933 @@ The complete list of errors detected include:
 * illegal format conversions
 * format flags conversion mismatches
 * missing arguments
+
+== Checking Null Safety (Incubating)
+
+Null pointer dereferences are one of the most common sources of runtime errors.
+The `NullChecker` performs compile-time null-safety analysis, detecting potential
+null dereferences and null-safety violations before code is executed.
+
+Languages like Kotlin and Swift distinguish nullable and non-nullable types throughout
+the type system, eliminating null errors by construction. Groovy takes a more pragmatic
+approach: flow analysis can catch many null issues without annotations (in `strict` mode),
+and `@Nullable`/`@NonNull` annotations provide additional precision where needed.
+This lets you adopt null safety incrementally -- annotate the critical boundaries first,
+and let flow analysis handle the rest.
+
+Two modes are provided:
+
+* `NullChecker` — *Annotation-based*: Checks code annotated with `@Nullable` and
+  `@NonNull` (or equivalent) annotations.
+* `NullChecker(strict: true)` — *Annotation-based + flow-sensitive*: Includes all checks from
+  `NullChecker` plus flow-sensitive tracking through assignments and control flow,
+  detecting potential null dereferences even in unannotated code.
+
+For code bases with a mix of strictness requirements, apply `NullChecker` to relaxed
+code and `NullChecker(strict: true)` to strict code via per-class or per-method `@TypeChecked` annotations.
+
+=== Typical usage
+
+Here is an example showing a method that safely handles a `@Nullable` parameter:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=intro_example,indent=0]
+----
+
+The checker verifies that `text` is only dereferenced inside the null guard.
+Without the `if (text != null)` guard, the checker would report a compile-time error.
+
+=== Supported annotations
+
+The checker recognizes nullability annotations by their simple name, so annotations from
+any package are supported. The following annotation names are recognized:
+
+|===
+| Nullable | `@Nullable`, `@CheckForNull`, `@MonotonicNonNull`
+| Non-null | `@NonNull`, `@NotNull`, `@Nonnull`
+| Non-null by default (class-level) | `@NonNullByDefault`, `@NullMarked`, `@ParametersAreNonnullByDefault`
+| Opt-out (class-level) | `@NullUnmarked`
+|===
+
+The annotation classes must be on the compile classpath so the Groovy compiler can resolve them.
+Since the checker matches by simple name, you are free to choose any annotation library:
+
+* https://jspecify.dev/[JSpecify]: `@Nullable` / `@NullMarked` / `@NullUnmarked`
+* `javax.annotation.Nullable` / `javax.annotation.Nonnull` (JSR-305)
+* `org.jetbrains.annotations.Nullable` / `org.jetbrains.annotations.NotNull`
+* `edu.umd.cs.findbugs.annotations.Nullable` / `edu.umd.cs.findbugs.annotations.NonNull`
+* `org.checkerframework.checker.nullness.qual.Nullable` / `org.checkerframework.checker.nullness.qual.NonNull`
+
+If you prefer not to add an external dependency, you can define your own minimal annotations:
+
+[source,groovy]
+----
+import java.lang.annotation.*
+
+@Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+@Retention(RetentionPolicy.CLASS)
+@interface Nullable {}
+
+@Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+@Retention(RetentionPolicy.CLASS)
+@interface NonNull {}
+----
+
+The following class-level annotations are also recognized:
+
+* `@NullMarked` (https://jspecify.dev/[JSpecify]) — when applied to a class, all parameters,
+  return types, and fields are treated as `@NonNull` unless explicitly annotated `@Nullable`.
+  Use `@NullUnmarked` on a nested class to opt out of this default.
+* `@NonNullByDefault` (SpotBugs, Eclipse JDT) — same semantics as `@NullMarked`.
+* `@ParametersAreNonnullByDefault` (JSR-305) — when applied to a class, all non-primitive
+  parameters are treated as `@NonNull` unless explicitly annotated `@Nullable`.
+* `@groovy.transform.NullCheck` — when applied to a method or class, all non-primitive
+  parameters are treated as effectively `@NonNull` (unless explicitly annotated `@Nullable`).
+  This provides compile-time null checking complementing the runtime checks that `@NullCheck` generates.
+
+=== Null-safe access patterns
+
+The checker recognizes several patterns for safely working with nullable values.
+
+*Safe navigation* using the `?.` operator:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=safe_navigation,indent=0]
+----
+
+*Null guards* using `if (x != null)`:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=null_guard,indent=0]
+----
+
+*Early exit* using `if (x == null) return` or `throw`:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=early_return,indent=0]
+----
+
+*Ternary and elvis expressions*: in flow-sensitive mode (`NullChecker(strict: true)`), the checker
+examines both branches of ternary (`condition ? a : b`) and elvis (`x ?: fallback`) expressions.
+If either branch can be null, the result is treated as nullable. The elvis assignment
+`x ?= nonNullValue` clears any nullable state on `x`.
+
+=== Errors detected
+
+Here are some examples of the kinds of errors detected.
+
+* Dereferencing a `@Nullable` variable without a null check:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_dereference,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_dereference_message,indent=0]
+----
+
+* Passing `null` to a `@NonNull` parameter:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=null_to_nonnull,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=null_to_nonnull_message,indent=0]
+----
+
+* Returning `null` from a `@NonNull` method:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=null_return,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=null_return_message,indent=0]
+----
+
+* Assigning `null` to a `@NonNull` field:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_assign,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_assign_message,indent=0]
+----
+
+* Dereferencing the return value of a `@Nullable` method:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_return_deref,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_return_deref_message,indent=0]
+----
+
+=== @MonotonicNonNull and @Lazy
+
+The `@MonotonicNonNull` annotation is useful for lazy initialization patterns.
+A field annotated with `@MonotonicNonNull` starts as `null` but once assigned
+a non-null value, it must remain non-null. The checker treats such fields as
+nullable (requiring null checks before use) but prevents re-assignment to `null`
+after initialization:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=monotonic_nonnull,indent=0]
+----
+
+Re-assigning `null` to a `@MonotonicNonNull` field after it has been set is an error:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=monotonic_reassign,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=monotonic_reassign_message,indent=0]
+----
+
+Groovy's `@Lazy` annotation is recognized as an implicit `@MonotonicNonNull`. A `@Lazy` field
+starts as `null` internally but once its generated getter initializes it, it stays non-null —
+exactly the monotonic non-null contract. Since `@Lazy` generates a getter that handles
+initialization automatically, property access to a `@Lazy` field is always safe and will not
+trigger null dereference warnings. The monotonic guarantee means the checker will also prevent
+re-assignment to `null` on the backing field after initialization.
+
+=== Integration with @NullCheck
+
+Groovy's `@NullCheck` annotation generates runtime null checks for method parameters.
+When the null checkers see `@NullCheck` on a method or class, they treat all non-primitive
+parameters as effectively `@NonNull`, catching violations at compile time before they would
+fail at runtime:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullcheck_integration,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nullcheck_integration_message,indent=0]
+----
+
+Parameters explicitly annotated `@Nullable` override the `@NullCheck` behavior
+for the purpose of the null checkers (though `@NullCheck` will still generate
+a runtime check for those parameters).
+
+=== Integration with @NonNullByDefault
+
+Class-level `@NonNullByDefault` (from SpotBugs, Eclipse JDT, or your own definition) makes
+all parameters, return types, and fields in a class effectively `@NonNull`. Members explicitly
+annotated `@Nullable` override this default. Similarly, `@ParametersAreNonnullByDefault`
+(JSR-305) applies only to parameters.
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_by_default,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_by_default_message,indent=0]
+----
+
+=== Integration with @Requires and @Ensures
+
+When `groovy-contracts` is on the classpath, `NullChecker` recognises null-safety
+facts expressed through Design-by-Contract annotations. Top-level `x != null`
+conjuncts inside a `@Requires` closure mark the corresponding parameter as
+effectively `@NonNull`; a `result != null` conjunct inside an `@Ensures` closure
+marks the method return the same way. Both orderings (`x != null` and
+`null != x`) are recognised. Disjunctions (`||`) are deliberately not used for
+inference, since they do not establish non-nullness of any individual operand.
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=requires_integration,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=requires_integration_message,indent=0]
+----
+
+The same applies on the return side with `@Ensures`:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=ensures_integration,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=ensures_integration_message,indent=0]
+----
+
+This coexists with explicit `@NonNull` annotations: a method marked `@NonNull`
+that also carries any `@Ensures` postcondition, or that lives in a class with
+an `@Invariant` class invariant, still has its literal `return null` statements
+flagged. Without this coordination, the `groovy-contracts` AST transform would
+rewrite the return statement before the type-checking pass runs, hiding the
+literal from the checker. The runtime postcondition continues to guard non-literal
+cases.
+
+=== Flow-sensitive mode with strict option
+
+`NullChecker` only flags issues involving annotated code. `NullChecker(strict: true)` adds
+flow-sensitive tracking, detecting potential null dereferences in unannotated code
+by tracking nullability through variable assignments and control flow:
+
+With `NullChecker(strict: true)`, the following code would be flagged:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=flow_sensitive,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=flow_sensitive_message,indent=0]
+----
+
+Reassigning a non-null value clears the nullable state:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=flow_reassign,indent=0]
+----
+
+The complete list of errors detected include:
+
+* assigning `null` to a `@NonNull` field or variable (including implicit `@NonNull` from `@NonNullByDefault`)
+* passing `null` or a `@Nullable` value to a `@NonNull` parameter (including implicit `@NonNull` from `@NullCheck`, `@NonNullByDefault`, or `@ParametersAreNonnullByDefault`)
+* returning `null` or a `@Nullable` value from a `@NonNull` method (including implicit `@NonNull` from `@NonNullByDefault`)
+* dereferencing a `@Nullable` variable without a null check or safe navigation
+* dereferencing the return value of a `@Nullable` method without a null check
+* re-assigning `null` to a `@MonotonicNonNull` or `@Lazy` field after initialization
+* dereferencing a variable known to be null through flow analysis (`strict` mode only)
+
+NOTE: For complementary null-related checks such as detecting broken null-check logic,
+unnecessary null guards before `instanceof`, or `Boolean` methods returning `null`,
+consider using https://codenarc.org/[CodeNarc]'s null-related rules alongside these type checkers.
+
+== Checking @Modifies Frame Conditions (Incubating)
+
+The `ModifiesChecker` verifies that method bodies comply with their `@Modifies` frame
+condition declarations from the `groovy-contracts` module. It checks that methods only
+modify the fields and parameters they declare, helping both humans and AI reason about
+what a method changes -- and crucially, what it does not.
+
+Frame conditions are a well-established concept in formal verification. Dafny's `modifies`
+clause and JML's `assignable` clause serve the same purpose -- declaring what a method may
+change so that everything else is known to be preserved. Groovy's `@Modifies` brings this
+idea to the JDK ecosystem in a pragmatic, opt-in form. For projects already using JetBrains
+annotations, the checker also recognises `@Contract(mutates = "...")` which expresses
+similar semantics.
+
+This checker is opt-in and only activates for methods annotated with `@Modifies`:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.ModifiesChecker')
+class InventoryItem {
+    int quantity = 0
+    int reserved = 0
+
+    @Modifies({ [this.quantity, this.reserved] })
+    void restock(int amount) {
+        quantity += amount       // OK: quantity is declared
+        reserved = 0             // OK: reserved is declared
+    }
+}
+----
+
+=== What the checker verifies
+
+==== Direct field assignments
+
+Assignments to fields (via `this.field = ...`, `field = ...`, `field++`, `field += ...`)
+must target fields listed in `@Modifies`. Local variable assignments are always allowed.
+
+[source,groovy]
+----
+@Modifies({ this.count })
+void increment() {
+    count++            // OK: count is declared
+    def temp = count   // OK: local variable
+}
+
+@Modifies({ this.count })
+void broken() {
+    other = 5          // ERROR: 'other' not declared in @Modifies
+}
+----
+
+==== Method calls on `this`
+
+When a method calls another method on `this`, the checker verifies compatibility:
+
+* If the callee has `@Modifies`, its frame must be a subset of the caller's frame.
+* If the callee is annotated `@Pure`, the call is always safe.
+* If the callee's name is in a known-safe list (e.g., `toString`, `hashCode`), the call is allowed.
+* Otherwise, a warning is produced.
+
+[source,groovy]
+----
+@Modifies({ [this.items, this.count] })
+void addItem(String item) {
+    doAdd(item)                  // OK if doAdd has compatible @Modifies
+    def n = currentCount()       // OK if currentCount() is @Pure
+}
+----
+
+==== Method calls on parameters and variables
+
+When a method calls a method on a variable or parameter:
+
+* If the receiver is in the `@Modifies` set, any call is allowed (the contract declares
+  the caller may modify it).
+* If the receiver is *not* in the `@Modifies` set, the checker determines whether the
+  call is non-mutating using a layered approach:
+  1. *Immutable receiver type*: calls on `String`, `Integer`, `BigDecimal`, `LocalDate`, etc.
+     are always safe.
+  2. *`@Pure` method*: if the called method is annotated `@Pure`, it is safe.
+  3. *Known-safe method name*: a curated whitelist of non-mutating method names including
+     `size`, `get`, `contains`, `isEmpty`, `toString`, `iterator`, `stream`, `toList`, etc.
+  4. *Unknown*: a warning is produced suggesting the method may modify the receiver.
+
+[source,groovy]
+----
+@Modifies({ this.count })
+void countItems(List items) {
+    count = items.size()         // OK: size() is known-safe
+    count = items.toString().length()  // OK: String is immutable
+}
+
+@Modifies({ list1 })
+void process(List list1, List list2) {
+    list1.add('x')               // OK: list1 is in @Modifies
+    list2.size()                  // OK: size() is known-safe
+    list2.clear()                 // WARNING: clear() may modify list2
+}
+----
+
+=== Supported annotations from other libraries
+
+The `ModifiesChecker` recognises purity and frame condition annotations from multiple
+libraries by simple name:
+
+[cols="2,2,3",options="header"]
+|===
+| Annotation | Library | Semantics
+
+| `@Pure`
+| Groovy, Checker Framework, Xtext
+| Implies `@Modifies({})` -- no field mutations
+
+| `@SideEffectFree`
+| Checker Framework
+| Implies `@Modifies({})` -- no field mutations
+
+| `@Contract(pure = true)`
+| JetBrains Annotations
+| Implies `@Modifies({})` -- works with CLASS retention
+
+| `@Contract(mutates = "...")`
+| JetBrains Annotations
+| Parsed as a frame condition on callees (see below)
+|===
+
+==== @Contract(mutates) support
+
+When a callee has `@Contract(mutates = "...")`, the checker parses the mutates string
+to determine what the callee modifies:
+
+* `mutates = ""` -- callee mutates nothing (equivalent to `@Pure`)
+* `mutates = "this"` -- callee mutates its receiver
+* `mutates = "param1"` -- callee mutates its first parameter
+* `mutates = "this,param1"` -- callee mutates both
+
+The checker maps `param1`, `param2`, etc. to the actual arguments at the call site
+and warns if a mutated argument is not in the caller's `@Modifies` set:
+
+[source,groovy]
+----
+@Modifies({ this.items })
+void process() {
+    addToList(items, 'x')   // OK: items is in @Modifies
+    addToList(other, 'x')   // WARNING: other is not in @Modifies
+}
+
+@Contract(mutates = "param1")
+static void addToList(List list, String item) { list.add(item) }
+----
+
+=== Interaction with other contract annotations
+
+The `ModifiesChecker` works alongside the other design-by-contract annotations to provide
+a complete specification for modular reasoning:
+
+* `@Requires` declares what must be true before a call
+* `@Ensures` declares what is guaranteed after a call
+* `@Modifies` declares what may change (and implicitly, what does not)
+* `@Pure` declares a method has no side effects
+
+Together, these annotations allow analysis of method call sequences without reading
+method bodies -- each method becomes a self-contained specification.
+
+== Checking @Pure Purity (Incubating)
+
+The `PurityChecker` verifies that `@Pure` methods have no side effects. By default, strict
+purity is enforced. The `allows` option declares which effect categories are tolerated.
+
+Languages like Haskell enforce purity through the type system -- all side effects must be
+expressed via IO and State monads, making impure code structurally impossible. Frege (a
+Haskell dialect for the JVM) takes the same approach. This is powerful but requires
+incorporating these patterns into your application's type hierarchies, which can be
+impractical when integrating with JDK libraries that don't follow these conventions.
+
+Groovy's `PurityChecker` provides an opt-in way to achieve similar levels of reasoning about
+method purity while staying pragmatic about the JDK ecosystem. The `allows` option
+acknowledges that real-world "pure" methods sometimes log or emit metrics -- effects that
+don't affect program correctness but would violate strict Haskell-style purity.
+
+=== Basic usage
+
+[source,groovy]
+----
+// Strict: no side effects at all
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker')
+class Calculator {
+    @Pure
+    int add(int a, int b) { a + b }              // OK: no effects
+
+    @Pure
+    int broken() { count++; return count }         // ERROR: field mutation
+}
+----
+
+=== Effect categories
+
+The `allows` option accepts a `|`-separated list of effect categories:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker(allows: "LOGGING|METRICS")')
+----
+
+[cols="1,3,3",options="header"]
+|===
+| Category | What it allows | Examples
+
+| `LOGGING`
+| Calls to logging frameworks and `println`/`print`
+| `log.debug(...)`, `println(...)`, `System.out.println(...)`
+
+| `METRICS`
+| Calls to metrics instruments
+| Micrometer counters/timers, OpenTelemetry metrics
+
+| `IO`
+| File, network, database, and console I/O
+| `new File(...)`, `Files.readAllLines(...)`, JDBC calls
+
+| `NONDETERMINISM`
+| Time-dependent, random, and environment-dependent calls
+| `System.nanoTime()`, `Math.random()`, `new Date()`, `UUID.randomUUID()`
+|===
+
+=== Supported annotations
+
+The checker recognises purity annotations from multiple libraries by simple name:
+
+[cols="2,2,3",options="header"]
+|===
+| Annotation | Library | Semantics
+
+| `@Pure`
+| Groovy, Checker Framework, Xtext
+| Strict purity (side-effect-free + deterministic)
+
+| `@SideEffectFree`
+| Checker Framework
+| No mutations, but non-determinism is implicitly allowed
+
+| `@Contract(pure = true)`
+| JetBrains Annotations
+| Strict purity (works with CLASS retention)
+
+| `@Memoized`
+| Groovy
+| Effectively pure (checked for side effects)
+|===
+
+Annotations are matched by simple name, so `@Pure` from any package is recognised. The
+`@Contract` annotation is checked for its `pure` attribute being `true`.
+
+=== How calls are classified
+
+The checker uses a layered approach to determine if a call is pure:
+
+1. *Callee has `@Pure`, `@SideEffectFree`, or `@Contract(pure = true)`* -- the call is pure
+2. *Callee has `@Memoized`* -- the call is effectively pure
+3. *Receiver type is immutable* (String, Integer, BigDecimal, etc.) -- all calls are pure
+4. *Method is in the known-pure list* (`size`, `get`, `contains`, `isEmpty`, `toString`, etc.) -- pure
+5. *Call matches an effect category* -- error unless that category is in `allows`
+6. *None of the above* -- warning: purity cannot be verified
+
+=== Reasoning guarantees
+
+The `allows` declaration is machine-readable, enabling both humans and AI to derive
+precise guarantees about `@Pure` methods:
+
+[cols="3,1,1,1,1,1",options="header"]
+|===
+| Property | strict | +LOGGING | +METRICS | +IO | +NONDETERMINISM
+
+| No field mutations
+| Yes | Yes | Yes | Yes | Yes
+
+| Can carry forward state across call
+| Yes | Yes | Yes | Yes | Yes
+
+| Deterministic (same inputs -> same output)
+| Yes | Yes | Yes | Yes | *No*
+
+| Can cache/memoize result
+| Yes | Yes | Yes | Yes | *No*
+
+| Can reorder call freely
+| Yes | Yes | Yes | *No* | Yes
+
+| Can eliminate dead call
+| Yes | *No* | *No* | *No* | Yes
+
+| No observable output
+| Yes | *No* | *No* | *No* | Yes
+|===
+
+Each column represents a different `allows` configuration. For example, a `@Pure` method
+under `PurityChecker(allows: "LOGGING")` is guaranteed to have no field mutations, be
+deterministic, and be safely reorderable -- but may produce log output, so dead call
+elimination would lose that output.
+
+=== Examples
+
+*Strict purity (default):*
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker')
+class MathUtils {
+    @Pure
+    int square(int x) { x * x }                             // OK
+
+    @Pure
+    long timestamp() { System.nanoTime() }                   // ERROR: non-deterministic
+
+    @Pure
+    int logged(int x) { println("x=$x"); x * 2 }            // ERROR: logging
+}
+----
+
+*Allowing logging:*
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker(allows: "LOGGING")')
+class Service {
+    @Pure
+    int compute(int x) {
+        println("computing $x")          // OK: logging allowed
+        return x * x
+    }
+
+    @Pure
+    long getTime() { System.nanoTime() } // ERROR: non-deterministic (not allowed)
+}
+----
+
+*Allowing logging and non-determinism:*
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker(allows: "LOGGING|NONDETERMINISM")')
+class Diagnostics {
+    @Pure
+    String snapshot(Map state) {
+        println("snapshot at ${System.nanoTime()}")   // OK: both allowed
+        return state.toString()
+    }
+}
+----
+
+=== What the checker detects
+
+The checker flags:
+
+* Direct field assignments on `this` (`this.x = ...`, `x++` where `x` is a field)
+* Property assignments on parameters and local variables (`param.x = 1`)
+* Calls to methods not known to be pure
+* Calls matching effect categories (logging, metrics, I/O, non-determinism) unless allowed
+* Construction of non-deterministic or I/O types
+
+The checker does *not* currently detect:
+
+* Mutation through aliases (`def ref = this.list; ref.clear()`)
+* Deep heap mutation (`this.items.get(0).setName("x")`)
+* Mutation via chained property access (`a.b.c = 1`)
+* Side effects within closures passed to higher-order methods
+
+These limitations are acceptable for an opt-in checker -- the common cases are caught,
+and unverifiable calls produce warnings.
+
+=== Relationship to @Modifies and ModifiesChecker
+
+`@Pure` implies `@Modifies({})` -- a method with no field mutations. The `ModifiesChecker`
+recognises `@Pure` and verifies the no-mutation guarantee. The `PurityChecker` goes further,
+verifying additional purity properties (no impure calls, no I/O, etc.).
+
+Both checkers can be used independently or together:
+
+[source,groovy]
+----
+// Just frame conditions
+@TypeChecked(extensions = 'groovy.typecheckers.ModifiesChecker')
+
+// Just purity
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker')
+
+// Both -- ModifiesChecker handles @Modifies, PurityChecker handles @Pure
+@TypeChecked(extensions = ['groovy.typecheckers.ModifiesChecker',
+                           'groovy.typecheckers.PurityChecker'])
+----
+
+== Checking @Associative/@Reducer Combiners (Incubating)
+
+The parallel `Collection` reductions split, reorder, and recombine their input.
+That is only correct when the combining function is *associative* --
+`combine(a, combine(b, c))` must equal `combine(combine(a, b), c)` -- and, for
+the seeded `injectParallel`, when the seed is an *identity* for the combiner.
+A non-associative combiner (subtraction, division, exponentiation) compiles
+and runs, but produces a different, non-deterministic result depending on how
+the work was partitioned. This is among the hardest bug classes to detect by
+testing alone. (Note: associativity is distinct from commutativity --
+concatenation, for example, is associative but not commutative, and is a
+perfectly valid parallel combiner over an ordered source; this checker is
+about associativity and identity, not encounter order.)
+
+`@Associative` and `@Reducer` (in `groovy.transform`) let a combiner *declare*
+the contract; `CombinerChecker` verifies, at compile time, that combiners
+reaching `sumParallel`/`injectParallel` carry it.
+
+[source,groovy]
+----
+import groovy.transform.Associative
+import groovy.transform.Reducer
+
+class Maths {
+    @Associative              static int add(int a, int b) { a + b }
+    @Reducer(zero = '0')      static int plus(int a, int b) { a + b }
+}
+----
+
+=== Modes
+
+Associativity is undecidable in general, so the checker is deliberately
+conservative and false-positive averse (a type-checking extension has only an
+error channel).
+
+`default` (lenient):: flags only high-confidence problems -- a non-associative
+operator (`-`, `/`, `%`, `**`) applied directly to the two combiner parameters, and a
+`injectParallel` seed that contradicts a `@Reducer`'s declared `zero()`. An
+ordinary associative inline closure such as `{ a, b -> a + b }` is never
+flagged.
+`strict`:: additionally requires the combiner to be a method reference to an
+`@Associative`/`@Reducer` method; inline closures and un-annotated references
+are rejected.
+
+[source,groovy]
+----
+// lenient (default)
+@TypeChecked(extensions = 'groovy.typecheckers.CombinerChecker')
+
+// strict -- only declared, verifiable combiners allowed
+@TypeChecked(extensions = "groovy.typecheckers.CombinerChecker(mode: 'strict')")
+----
+
+=== Examples
+
+[listing,subs="+quotes,macros"]
+----
+[1,2,3].injectParallel(0, Maths.&add)       [.green]#// icon:check[] declared @Associative#
+[1,2,3].injectParallel(0) { a,b -> a + b }  [.green]#// icon:check[] lenient: associative#
+[1,2,3].injectParallel(0) { a,b -> a - b }  [.red]#// icon:times[] non-associative#
+[1,2,3].injectParallel(5, Maths.&plus)      [.red]#// icon:times[] seed != @Reducer zero '0'#
+----
+
+=== Recognising Monoid/Semigroup carriers
+
+Groovy deliberately ships no `Monoid`/`Semigroup` of its own, but a combiner
+sourced from such a type in an external library (Functional Java, Palatable
+Lambda, Purefun, ...) already *carries* the associativity contract -- a
+`Semigroup` is an associative operation; a `Monoid` is that plus an identity.
+The checker therefore accepts a method-reference (or thin delegating closure)
+whose owner is such a carrier, with the same trust level as `@Associative`
+(an asserted contract, not a proof). Carriers are matched by simple type name
+(`Monoid`/`Semigroup` by default, extensible via the `monoids`/`semigroups`
+options) so there is no dependency on any library.
+
+[listing,subs="+quotes,macros"]
+----
+def m = new IntSum()   // implements Monoid
+[1,2,3].injectParallel(m.zero(), m.&append)  [.green]#// icon:check[] Monoid carries identity#
+[1,2,3].sumParallel(s.&append) // s: Semigroup [.green]#// icon:check[] associative; no seed needed#
+[1,2,3].injectParallel(0, s.&append)         [.red]#// icon:times[] Semigroup has no identity#
+----
+
+This last case is a high-confidence positive the type distinction makes
+possible: a seeded `injectParallel` needs an identity, which a `Semigroup`
+categorically lacks -- only a `Monoid` provides one.
+
+=== JDK stream reductions
+
+Beyond Groovy's parallel `Collection` methods, the checker also covers
+`java.util.stream.{Stream,IntStream,LongStream,DoubleStream}#reduce` (the
+same way `RegexChecker` covers `java.util.regex` types). All combiner shapes,
+the identity check, and Monoid/Semigroup carrier recognition apply unchanged;
+the three overloads map onto the existing model -- `reduce(op)` is unseeded,
+`reduce(id, op)` and `reduce(id, acc, combiner)` are seeded (the last
+argument, i.e. the merge operator, is the associativity-critical one).
+
+Because these resolve to a real interface method, recognition is gated on the
+receiver type (`java.util.stream.*`) rather than name alone, keeping the
+generic name `reduce` from causing false positives. Note that `Stream.reduce`
+is contractually required to be associative *even for sequential streams*, so
+flagging is spec-correct independently of `.parallel()` -- unlike Groovy's
+sequential `inject`, which is a deterministic left fold and is deliberately
+never flagged.
+
+[listing,subs="+quotes,macros"]
+----
+[1,2,3].stream().reduce(0) { a,b -> a + b }  [.green]#// icon:check[] associative#
+[1,2,3].stream().reduce(0) { a,b -> a - b }  [.red]#// icon:times[] non-associative#
+[1,2,3].stream().reduce(0, s.&append) // Semigroup [.red]#// icon:times[] no identity#
+----
+
+=== Limitations
+
+This is a safety net, not a guarantee:
+
+* It runs only under `@TypeChecked`/`@CompileStatic`; dynamic code is
+  unchecked.
+* Associativity cannot be proven, only asserted (via the annotations) or
+  ruled out for obvious cases. The annotations are intended to be backed by
+  tests (for example auto-derived property-based tests).
+* An inline lambda has no declaration site for the annotation; the declarable
+  contract is available only for named, referenced combiner methods.
+* The inline-closure check is purely syntactic: it matches the operator token
+  ({{-}}, {{/}}, {{%}}, {{**}}) and assumes operators carry their conventional
+  meaning. Groovy lets operators be overloaded (and Groovy 6 adds {{+=}} via
+  {{plusEqual}}), which breaks that assumption both ways: a denylisted operator
+  could be overloaded to something associative (a possible false positive),
+  and -- the converse -- a normally-associative operator such as {{+}} or
+  {{*}} could be overloaded to be non-associative. The latter is poor style
+  and is an explicit *non-goal*: the checker does not attempt to detect it.
+  The check deliberately stays minimal and errs toward silence; the
+  declaration paths (`@Associative`/`@Reducer`, Monoid/Semigroup carriers) are
+  the reliable, overloading-immune way to assert the contract.
+
+=== Relationship to @Pure and @Memoized
+
+A parallel combiner should normally also be side-effect-free; pairing this
+checker with `<<Checking @Pure Purity (Incubating),PurityChecker>>` (which
+already treats `@Memoized` methods as purity-obligated) gives both guarantees.
+
+== Checking the DO Macro (Incubating)
+
+_New in Groovy 6.0.0._
+
+The `MonadicChecker` type-checking extension supports the `DO` macro for
+monadic comprehensions, teaching `@CompileStatic` / `@TypeChecked` how to
+look through the macro's desugared output (a runtime-dispatched
+`Comprehensions.bind` / `Comprehensions.map` chain). Without it, generator
+bound names erase to `Object` and the body fails to type-check.
+
+[source,groovy]
+----
+@CompileStatic(extensions = 'groovy.typecheckers.MonadicChecker')
+def addOne = DO { x <- Optional.of(1); yield x + 1 }
+----
+
+The checker also rejects a non-participating carrier with a compile error
+naming the missing shape (the carrier must be in the registry allow-list,
+expose structural `flatMap` / `map`, or be annotated with `@Monadic`).
+
+The macro itself, its desugaring strategy, the participating-carrier rules,
+and the `@Monadic` annotation are documented in the
+link:core-async-await.html#monadic-comprehensions[Monadic Comprehensions] chapter. This section
+covers only the type-checking surface.
+
+== Checking Hand-written Monadic Chains (Incubating)
+
+_New in Groovy 6.0.0._
+
+The `MonadicShapeChecker` is a lint for monadic chains you write by hand
+(without the `DO` macro) over the standard carriers (`Optional`, `Stream`,
+`Awaitable`). It catches the two classic shape mistakes:
+
+* `bind` (a.k.a. `flatMap`) closure returning a non-carrier value
+* `map` closure returning the same carrier, where `flatMap` was meant
+
+Activate via:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.MonadicShapeChecker')
+----
+
+The checker has a `strict` option that tightens what it flags; in lenient
+(default) mode only high-confidence violations are reported. The sister
+`MonadicChecker` (above) covers the `DO`-macro path; this checker covers
+the hand-written path.

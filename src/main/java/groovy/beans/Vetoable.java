@@ -108,6 +108,9 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD, ElementType.TYPE})
-@GroovyASTTransformationClass("groovy.beans.VetoableASTTransformation")
+@GroovyASTTransformationClass({
+        "groovy.beans.VetoableASTStubber",
+        "groovy.beans.VetoableASTTransformation"
+})
 public @interface Vetoable {
 }

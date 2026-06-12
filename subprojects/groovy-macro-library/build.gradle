@@ -24,6 +24,7 @@ dependencies {
     implementation rootProject
     implementation projects.groovyMacro
     testImplementation projects.groovyTest
+    testImplementation projects.groovyTypecheckers // MonadicChecker @CompileStatic tests
 }
 
 groovyLibrary {

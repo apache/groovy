@@ -1,0 +1,66 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+plugins {
+    id 'org.apache.groovy-library'
+}
+
+// This module has no source code of its own. Its jar is extracted from
+// the Groovy core jar, containing only the pure-Java concurrent API.
+// Java users can depend on this module without the Groovy runtime.
+sourceSets {
+    main.java.srcDirs = []
+    main.groovy.srcDirs = []
+    test.java.srcDirs = []
+    test.groovy.srcDirs = []
+}
+
+// Break circular dependency: this module doesn't need the Groovy compiler
+configurations.groovyCompilerClasspath.dependencies.clear()
+
+// The jar is built by filtering core's jarjar output
+tasks.named('jar') {
+    dependsOn rootProject.tasks.named('jarjar')
+    from(zipTree(rootProject.tasks.named('jarjar').flatMap { it.outputFile })) {
+        include 'groovy/concurrent/**'
+        include 'org/apache/groovy/runtime/async/**'
+        include 'org/apache/groovy/util/concurrent/ThreadHelper*'
+        // Exclude Groovy-dependent classes
+        exclude '**/AsyncClosureUtils*'
+        exclude '**/Dataflows*'
+    }
+    manifest {
+        attributes 'Automatic-Module-Name': 'org.apache.groovy.concurrent.java'
+    }
+}
+
+groovyLibrary {
+    optionalModule()
+    withoutBinaryCompatibilityChecks()
+}
+
+// Declare capability for mutual exclusion with Groovy core on library variants.
+afterEvaluate {
+    def capabilityVersion = sharedConfiguration.groovyVersion.get()
+    ['groovyApiElements', 'groovyRuntimeElements'].each { configName ->
+        configurations.findByName(configName)?.outgoing {
+            capability("org.apache.groovy:groovy-concurrent-api:${capabilityVersion}")
+        }
+    }
+}

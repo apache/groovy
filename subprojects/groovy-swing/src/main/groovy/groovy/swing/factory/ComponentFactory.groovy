@@ -23,16 +23,37 @@ import java.awt.*
 
 import static groovy.swing.factory.LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
 
+/**
+ * Factory for creating Swing components and adding child components.
+ */
 class ComponentFactory extends BeanFactory {
 
+    /**
+     * Creates a new factory for creating Swing components and adding child components
+     *
+     * @param beanClass the bean type created by this factory
+     */
     public ComponentFactory(Class beanClass) {
         super(beanClass)
     }
 
+    /**
+     * Creates a new factory for creating Swing components and adding child components
+     *
+     * @param beanClass the bean type created by this factory
+     * @param leaf whether created nodes are leaf nodes
+     */
     public ComponentFactory(Class beanClass, boolean leaf) {
         super(beanClass, leaf)
     }
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return

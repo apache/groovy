@@ -27,6 +27,18 @@ import java.util.Map;
  * A template is a block of text with an associated binding that can be output to a writer or evaluated to a string.
  */
 public interface Template {
+    /**
+     * Creates a writable view of this template using an empty binding.
+     *
+     * @return a writable object that renders this template
+     */
     Writable make();
+
+    /**
+     * Creates a writable view of this template using the supplied binding.
+     *
+     * @param binding values available to template expressions; may be {@code null} if the implementation permits it
+     * @return a writable object that renders this template with the given binding
+     */
     Writable make(Map binding);
 }

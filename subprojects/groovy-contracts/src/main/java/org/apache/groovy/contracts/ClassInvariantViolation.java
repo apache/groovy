@@ -25,33 +25,71 @@ package org.apache.groovy.contracts;
  */
 public class ClassInvariantViolation extends AssertionViolation {
 
+    /**
+     * Creates a class-invariant violation without an explicit detail message.
+     */
     public ClassInvariantViolation() {
     }
 
+    /**
+     * Creates a class-invariant violation with an object-valued detail.
+     *
+     * @param o the detail object
+     */
     public ClassInvariantViolation(Object o) {
         super(o);
     }
 
+    /**
+     * Creates a class-invariant violation with a boolean detail.
+     *
+     * @param b the detail value
+     */
     public ClassInvariantViolation(boolean b) {
         super(b);
     }
 
+    /**
+     * Creates a class-invariant violation with a character detail.
+     *
+     * @param c the detail value
+     */
     public ClassInvariantViolation(char c) {
         super(c);
     }
 
+    /**
+     * Creates a class-invariant violation with an integer detail.
+     *
+     * @param i the detail value
+     */
     public ClassInvariantViolation(int i) {
         super(i);
     }
 
+    /**
+     * Creates a class-invariant violation with a long detail.
+     *
+     * @param l the detail value
+     */
     public ClassInvariantViolation(long l) {
         super(l);
     }
 
+    /**
+     * Creates a class-invariant violation with a floating-point detail.
+     *
+     * @param v the detail value
+     */
     public ClassInvariantViolation(float v) {
         super(v);
     }
 
+    /**
+     * Creates a class-invariant violation with a double-precision detail.
+     *
+     * @param v the detail value
+     */
     public ClassInvariantViolation(double v) {
         super(v);
     }

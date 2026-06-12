@@ -27,17 +27,17 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.asciidoctor:asciidoctor-gradle-jvm:5.0.0-alpha.1'
-    implementation 'org.asciidoctor:asciidoctor-gradle-jvm-pdf:5.0.0-alpha.1'
+    implementation 'org.asciidoctor:asciidoctor-gradle-jvm:4.0.5'
+    implementation 'org.asciidoctor:asciidoctor-gradle-jvm-pdf:4.0.5'
     implementation 'org.jfrog.buildinfo:build-info-extractor-gradle:6.0.4'
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.1'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:6.4.2'
     implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.2'
     implementation 'org.cyclonedx:cyclonedx-gradle-plugin:3.0.2'
-    implementation "com.fasterxml.jackson:jackson-bom:2.21.1" // later version for cyclonedx
-    implementation "org.slf4j:slf4j-api:2.0.17" // later version for cyclonedx
+    implementation "com.fasterxml.jackson:jackson-bom:2.22.0" // later version for cyclonedx
+    implementation "org.slf4j:slf4j-api:2.0.18" // later version for cyclonedx
     implementation "org.apache.commons:commons-lang3:3.20.0" // later version for cyclonedx
-    implementation 'org.apache.maven:maven-core:3.9.14'
+    implementation 'org.apache.maven:maven-core:3.9.16'
 }
 
 tasks.withType(Jar).configureEach {

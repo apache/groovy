@@ -47,4 +47,52 @@ public class GrapeUtilTest extends TestCase {
         assert ivyParts.size() == 4;
     }
 
+    public void testMavenShorthand_groupModuleVersion(){
+        Map<String, Object> parts = GrapeUtil.getIvyParts("com.example:foo:1.2.3");
+        assert "com.example".equals(parts.get("group"));
+        assert "foo".equals(parts.get("module"));
+        assert "1.2.3".equals(parts.get("version"));
+    }
+
+    public void testMavenShorthand_versionDefaultsToWildcard(){
+        Map<String, Object> parts = GrapeUtil.getIvyParts("com.example:foo");
+        assert "com.example".equals(parts.get("group"));
+        assert "foo".equals(parts.get("module"));
+        assert "*".equals(parts.get("version"));
+    }
+
+    public void testMavenShorthand_withClassifierAndExt(){
+        Map<String, Object> parts = GrapeUtil.getIvyParts("com.example:foo:1.2.3:jdk15@zip");
+        assert "com.example".equals(parts.get("group"));
+        assert "foo".equals(parts.get("module"));
+        assert "1.2.3".equals(parts.get("version"));
+        assert "jdk15".equals(parts.get("classifier"));
+        assert "zip".equals(parts.get("ext"));
+    }
+
+    public void testIvyShorthand_groupModuleVersion(){
+        Map<String, Object> parts = GrapeUtil.getIvyParts("com.example#foo;1.2.3");
+        assert "com.example".equals(parts.get("group"));
+        assert "foo".equals(parts.get("module"));
+        assert "1.2.3".equals(parts.get("version"));
+    }
+
+    public void testIvyShorthand_dottedAndHyphenatedNames(){
+        Map<String, Object> parts = GrapeUtil.getIvyParts("org.apache.commons#commons-lang3;3.9");
+        assert "org.apache.commons".equals(parts.get("group"));
+        assert "commons-lang3".equals(parts.get("module"));
+        assert "3.9".equals(parts.get("version"));
+    }
+
+    public void testIvyShorthand_versionRange(){
+        Map<String, Object> parts = GrapeUtil.getIvyParts("com.example#foo;[1.0,2.0)");
+        assert "com.example".equals(parts.get("group"));
+        assert "foo".equals(parts.get("module"));
+        assert "[1.0,2.0)".equals(parts.get("version"));
+    }
+
+    public void testNullInput_returnsEmpty(){
+        Map<String, Object> parts = GrapeUtil.getIvyParts(null);
+        assert parts.isEmpty();
+    }
 }

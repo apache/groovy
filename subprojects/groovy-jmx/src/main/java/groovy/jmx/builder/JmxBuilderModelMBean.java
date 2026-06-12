@@ -48,18 +48,45 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
     private final List<String> methodListeners = new ArrayList<String>(0);
     private Object managedObject;
 
+    /**
+     * Creates a model MBean for the supplied managed resource.
+     *
+     * @param objectRef the resource to expose
+     * @throws MBeanException if the resource cannot be registered
+     * @throws RuntimeOperationsException if the supplied resource is invalid
+     * @throws InstanceNotFoundException if the resource cannot be found
+     * @throws InvalidTargetObjectTypeException if the resource type is unsupported
+     */
     public JmxBuilderModelMBean(Object objectRef) throws MBeanException, RuntimeOperationsException, InstanceNotFoundException, InvalidTargetObjectTypeException {
         super.setManagedResource(objectRef, "ObjectReference");
     }
 
+    /**
+     * Creates an empty model MBean.
+     *
+     * @throws MBeanException if initialization fails
+     * @throws RuntimeOperationsException if the MBean cannot be initialized
+     */
     public JmxBuilderModelMBean() throws MBeanException, RuntimeOperationsException {
         super();
     }
 
+    /**
+     * Creates a model MBean backed by the supplied metadata.
+     *
+     * @param mbi the model MBean metadata
+     * @throws MBeanException if initialization fails
+     * @throws RuntimeOperationsException if the MBean cannot be initialized
+     */
     public JmxBuilderModelMBean(ModelMBeanInfo mbi) throws MBeanException, RuntimeOperationsException {
         super(mbi);
     }
 
+    /**
+     * Updates the managed resource exposed by this model MBean.
+     *
+     * @param obj the resource to expose
+     */
     public synchronized void setManagedResource(Object obj) {
         managedObject = obj;
         try {
@@ -137,6 +164,16 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         }
     }
 
+    /**
+     * Invokes the named operation and emits any configured call notifications.
+     *
+     * @param opName the operation name
+     * @param opArgs the invocation arguments
+     * @param signature the argument signature
+     * @return the invocation result
+     * @throws MBeanException if the invocation fails
+     * @throws ReflectionException if the method cannot be resolved
+     */
     @Override
     public Object invoke(String opName, Object[] opArgs, String[] signature) throws MBeanException, ReflectionException {
         Object result = super.invoke(opName, opArgs, signature);
@@ -146,6 +183,12 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         return result;
     }
 
+    /**
+     * Handles notifications received by this model MBean.
+     *
+     * @param note the received notification
+     * @param handback the handback object supplied at registration time
+     */
     @Override
     public void handleNotification(Notification note, Object handback) {
         //System.out.println("Received note!");
@@ -164,6 +207,11 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
     private static final class NumberSequencer {
         private static final AtomicLong NUM = new AtomicLong(0);
 
+        /**
+         * Returns the next notification sequence number.
+         *
+         * @return the next sequence number
+         */
         public static long getNextSequence() {
             return NUM.incrementAndGet();
         }
@@ -193,6 +241,12 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         private AttributeChangedListener() {
         }
 
+        /**
+         * Dispatches an attribute-change notification to the configured callback closure.
+         *
+         * @param notification the attribute-change notification to process
+         * @param handback the listener descriptor containing callback metadata
+         */
         @Override
         public void handleNotification(Notification notification, Object handback) {
             AttributeChangeNotification note = (AttributeChangeNotification) notification;

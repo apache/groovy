@@ -18,9 +18,19 @@
  */
 package groovy.lang;
 
-public class SpreadMapEvaluatingException extends GroovyRuntimeException {
-    private static final long serialVersionUID = 4347220269418595368L;
+import java.io.Serial;
 
+/**
+ * Thrown when evaluating a spread map expression fails.
+ */
+public class SpreadMapEvaluatingException extends GroovyRuntimeException {
+    @Serial private static final long serialVersionUID = 4347220269418595368L;
+
+    /**
+     * Creates a spread map evaluation exception.
+     *
+     * @param message the detail message
+     */
     public SpreadMapEvaluatingException(String message) {
         super(message);
     }

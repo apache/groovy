@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  * {@code @InheritConstructors} saves you typing some boilerplate code.
  * <p>
  * <em>Example usage:</em>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * class Person {
  *     String first, last
  *     Person(String first, String last) {
@@ -111,9 +111,15 @@ import java.lang.annotation.Target;
  * this AST transformation. This means that you can't override (i.e. not
  * inherit) the constructors with signatures that Groovy adds later.
  * If you get it wrong you will get a compile-time error about the duplication.</li>
+ * <li>Under joint compilation, when the super class is in the same compilation unit and its
+ * constructors come from another constructor-generating transform (e.g. {@code @TupleConstructor}),
+ * the inherited signatures appear in the stub only when the super class is declared before the
+ * subclass in source. The runtime always produces the full surface; the stub remains a strict
+ * subset when source order is reversed, and Java callers reaching for the missing signatures
+ * won't compile against the stub even though the runtime supports them.</li>
  * </ul>
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.InheritConstructors
  *
@@ -125,7 +131,7 @@ import java.lang.annotation.Target;
  * def e1 = new MyException('message')   // Other constructors are available.
  * assert 'message' == e1.message
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.InheritConstructors
 
@@ -149,7 +155,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.InheritConstructorsASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.InheritConstructorsASTStubber",
+        "org.codehaus.groovy.transform.InheritConstructorsASTTransformation"
+})
 public @interface InheritConstructors {
     /**
      * Whether to carry over annotations on the copied constructors.

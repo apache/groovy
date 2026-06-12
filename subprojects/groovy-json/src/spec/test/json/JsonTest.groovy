@@ -21,9 +21,12 @@ package json
 import groovy.json.JsonOutput
 import groovy.json.JsonParserType
 import groovy.json.JsonSlurper
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class JsonTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+class JsonTest {
 
     void testParseText() {
         // tag::parse_text[]
@@ -175,6 +178,66 @@ class JsonTest extends GroovyTestCase {
             "age": 42
         }'''.stripIndent()
         // end::pretty_print[]
+    }
+
+    // tag::typed_classes[]
+    static class ServerConfig {
+        String host
+        int port
+        boolean debug
+    }
+
+    static class AppConfig {
+        String name
+        ServerConfig server
+    }
+
+    enum Color { RED, GREEN, BLUE }
+
+    static class Item { String name; Color color }
+    // end::typed_classes[]
+
+    void testTypedCoercion() {
+        // tag::typed_coercion[]
+        def json = '{"host":"localhost","port":8080,"debug":true}'
+        def config = new JsonSlurper().parseText(json) as ServerConfig
+
+        assert config instanceof ServerConfig
+        assert config.host == 'localhost'
+        assert config.port == 8080
+        assert config.debug == true
+        // end::typed_coercion[]
+    }
+
+    void testTypedCoercionNested() {
+        // tag::typed_coercion_nested[]
+        def json = '{"name":"myapp","server":{"host":"localhost","port":9090,"debug":false}}'
+        def config = new JsonSlurper().parseText(json) as AppConfig
+
+        assert config.name == 'myapp'
+        assert config.server instanceof ServerConfig
+        assert config.server.host == 'localhost'
+        assert config.server.port == 9090
+        // end::typed_coercion_nested[]
+    }
+
+    void testTypedCoercionEnum() {
+        // tag::typed_coercion_enum[]
+        def item = new JsonSlurper().parseText('{"name":"widget","color":"GREEN"}') as Item
+        assert item.color == Color.GREEN
+        // end::typed_coercion_enum[]
+    }
+
+    void testJacksonDirectUsage() {
+        // tag::jackson_direct[]
+        // For advanced cases (typed collections, date parsing, @JsonProperty),
+        // use jackson-databind directly:
+        //
+        // @Grab('com.fasterxml.jackson.core:jackson-databind')
+        // import com.fasterxml.jackson.databind.ObjectMapper
+        //
+        // def config = new ObjectMapper().readValue(jsonString, ServerConfig)
+        // end::jackson_direct[]
     }
 
 }

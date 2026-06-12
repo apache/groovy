@@ -44,21 +44,35 @@ import java.util.UUID;
  */
 public class JsonOutput {
 
+    /** Opening bracket used for JSON arrays. */
     static final char OPEN_BRACKET = '[';
+    /** Closing bracket used for JSON arrays. */
     static final char CLOSE_BRACKET = ']';
+    /** Opening brace used for JSON objects. */
     static final char OPEN_BRACE = '{';
+    /** Closing brace used for JSON objects. */
     static final char CLOSE_BRACE = '}';
+    /** Colon separator used between JSON names and values. */
     static final char COLON = ':';
+    /** Comma separator used between JSON elements. */
     static final char COMMA = ',';
+    /** Space character used when pretty-printing JSON. */
     static final char SPACE = ' ';
+    /** New line character used when pretty-printing JSON. */
     static final char NEW_LINE = '\n';
+    /** Quote character used for JSON strings. */
     static final char QUOTE = '"';
 
+    /** Precomputed character array for an empty JSON string value. */
     static final char[] EMPTY_STRING_CHARS = Chr.array(QUOTE, QUOTE);
+    /** Precomputed character array for an empty JSON object. */
     static final char[] EMPTY_MAP_CHARS = {OPEN_BRACE, CLOSE_BRACE};
+    /** Precomputed character array for an empty JSON array. */
     static final char[] EMPTY_LIST_CHARS = {OPEN_BRACKET, CLOSE_BRACKET};
 
-    /* package-private for use in builders */
+    /**
+     * Default generator used by {@code JsonOutput} and the JSON builders.
+     */
     static final JsonGenerator DEFAULT_GENERATOR = new DefaultJsonGenerator(new JsonGenerator.Options());
 
     /**
@@ -268,14 +282,29 @@ public class JsonOutput {
     public static class JsonUnescaped {
         private final CharSequence text;
 
+        /**
+         * Creates a wrapper for raw JSON text that should not be escaped.
+         *
+         * @param text the raw JSON text
+         */
         public JsonUnescaped(CharSequence text) {
             this.text = text;
         }
 
+        /**
+         * Returns the raw JSON text.
+         *
+         * @return the unescaped JSON text
+         */
         public CharSequence getText() {
             return text;
         }
 
+        /**
+         * Returns the wrapped raw JSON text.
+         *
+         * @return the unescaped JSON text
+         */
         @Override
         public String toString() {
             return text.toString();

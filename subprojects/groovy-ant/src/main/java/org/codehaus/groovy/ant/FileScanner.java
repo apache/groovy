@@ -35,21 +35,44 @@ public class FileScanner extends Task {
 
     private final List<FileSet> filesets = new ArrayList<>();
 
+    /**
+     * Creates a scanner with no associated project.
+     */
     public FileScanner() {
     }
 
+    /**
+     * Creates a scanner bound to the supplied Ant project.
+     *
+     * @param project the owning Ant project
+     */
     public FileScanner(final Project project) {
         setProject(project);
     }
 
+    /**
+     * Returns an iterator over the files matched by the configured file sets.
+     *
+     * @return an iterator across matched files
+     */
     public Iterator<File> iterator() {
         return new FileIterator(getProject(), filesets.iterator());
     }
 
+    /**
+     * Returns an iterator over the directories matched by the configured file sets.
+     *
+     * @return an iterator across matched directories
+     */
     public Iterator<File> directories() {
         return new FileIterator(getProject(), filesets.iterator(), true);
     }
 
+    /**
+     * Indicates whether any file sets have been configured.
+     *
+     * @return {@code true} if at least one file set has been added
+     */
     public boolean hasFiles() {
         return !filesets.isEmpty();
     }
@@ -66,6 +89,8 @@ public class FileScanner extends Task {
 
     /**
      * Adds a set of files (nested fileset attribute).
+     *
+     * @param set the file set to add
      */
     public void addFileset(FileSet set) {
         filesets.add(set);

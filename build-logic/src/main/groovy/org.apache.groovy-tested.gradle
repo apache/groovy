@@ -18,6 +18,8 @@
  */
 
 import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
+import org.apache.groovy.gradle.TargetJavaHomeSupport
+import org.apache.groovy.gradle.TestResultAggregatorService
 
 // TODO: Instead of adding to the test sources, these should be a
 // separate source set so that we can run spec tests in isolation
@@ -34,28 +36,71 @@ sourceSets {
 
 dependencies {
     testCompileOnly "junit:junit:${versions.junit}"
-    testImplementation "org.junit.jupiter:junit-jupiter:${versions.junit5}"
-    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${versions.junit5}"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit5Platform}", {
+    testImplementation "org.junit.jupiter:junit-jupiter:${versions.junit6}"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${versions.junit6}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit6}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
     }
 }
 
+def aggregator = TestResultAggregatorService.register(
+    objects.newInstance(TestServices).buildEventsListenerRegistry, gradle)
+
+// Opt-in: bridge the runner's ~/.groovy/grapes (populated by actions/cache in
+// .github/workflows/groovy-build-*.yml) into each Test task's per-task grape
+// root at task start, and fold newly-resolved artifacts back at task end.
+// Without bridging, the actions/cache restore lands at a path the test JVM
+// never reads (test JVMs run with -Duser.home=<task-temp>, so $user.home/.groovy
+// resolves to <task-temp>/.groovy — not the runner's real home). Enabling
+// bridging lets tests reuse previously-cached artifacts instead of re-hitting
+// Maven Central (mitigates HTTP 429 throttling). Disabled by default locally
+// so a developer's polluted ~/.groovy/grapes doesn't leak into tests.
+// Enable on CI with: ./gradlew test -Pgroovy.grape.bridge-cache=true
+def grapeBridgeCache = (findProperty('groovy.grape.bridge-cache') ?:
+        System.properties['groovy.grape.bridge-cache']) == 'true'
+
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
-    def grapeDirectory = new File(temporaryDir, 'grape')
-    def jdk8 = ['-XX:+UseConcMarkSweepGC']
-    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
-    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en']
-    if (JavaVersion.current().isJava9Compatible()) {
-        jvmArgs(*common, *jdk9)
-        systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
-    } else {
-        jvmArgs(*common, *jdk8)
-    }
+    def grapeDirectory = new File(temporaryDir, '.groovy')
+    def options = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}",
+                   '-Duser.language=en', '-Duser.country=US']
+    jvmArgs(*options)
+    // GROOVY-12005 / 2026-05: Maven Central (Fastly) returns HTTP 404 with a
+    // 1-byte body for requests bearing the JDK URLConnection default User-Agent
+    // ("Java/<version>"), which Ivy 2.5.3's BasicURLHandler relies on. We adopt
+    // a Maven-shaped UA — Maven Resolver's HTTP transport sends this and the CDN
+    // doesn't 404 it. The Maven version string is decorative; the CDN's filter
+    // is on the bare "Java/<version>" default, not on Maven's specific version.
+    //
+    // http.agent must reach the test JVM as `-Dhttp.agent=...` on the command
+    // line: by the time GrapeIvy's matching static initializer runs (lazily on
+    // first @Grab), HttpURLConnection's userAgent static is already populated
+    // and our value would arrive too late. Using `systemProperty` rather than
+    // raw `jvmArgs` preserves the space-containing value as a single argument.
+    systemProperty 'http.agent',
+        "Apache-Maven/3.9.14 (Java ${System.getProperty('java.version')}; ${System.getProperty('os.name')} ${System.getProperty('os.version')})"
+    systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperty 'groovy.testdb.props', testdb
+    }
+    // Forward any groovy.grape.* property set on the Gradle command line (-P or -D)
+    // to the test JVM. Lets users override Grape behaviour — debug flags, future
+    // settings — without adding one-off plumbing per flag. Project properties (-P)
+    // win over system properties (-D) when both are set, matching Gradle convention.
+    def grapeProps = new LinkedHashMap<String, String>()
+    project.properties.each { k, v ->
+        if (k.toString().startsWith('groovy.grape.') && v != null) {
+            grapeProps[k.toString()] = v.toString()
+        }
+    }
+    System.properties.each { k, v ->
+        if (k.toString().startsWith('groovy.grape.') && v != null) {
+            grapeProps.putIfAbsent(k.toString(), v.toString())
+        }
+    }
+    grapeProps.each { key, value ->
+        systemProperty key, value
     }
     def headless = System.properties['java.awt.headless']
     if (headless == 'true') {
@@ -63,6 +108,12 @@ tasks.withType(Test).configureEach {
     }
     systemProperty 'apple.awt.UIElement', 'true'
     systemProperty 'javadocAssertion.src.dir', './src/main'
+    // Suppress TestLens (app.testlens:junit-platform-instrumentation) inside
+    // @ForkedJvm child JVMs to avoid false flakiness triggers.
+    // Harmless when TestLens isn't on the classpath (no entries match).
+    systemProperty 'groovy.junit6.forked.excludeClasspath', 'junit-platform-instrumentation'
+//    systemProperty 'groovy.grape.report.downloads', 'true'
+    systemProperty 'ivy.message.logger.level', '4'
 
     jvmArgumentProviders.add(new TestCommandLineArgumentProvider(
         grapeRoot: grapeDirectory,
@@ -70,15 +121,13 @@ tasks.withType(Test).configureEach {
         userHome: temporaryDir // make sure tests are isolated from real user home or tests using Grape may fail
     ))
 
-    if (rootProject.hasProperty('target.java.home')) {
-        String targetJavaHome = rootProject.property('target.java.home')?.trim()
-        if (targetJavaHome) {
-            executable = "${targetJavaHome}/bin/java"
-            println "Using ${executable} to run tests"
-        }
+    String targetJavaHome = TargetJavaHomeSupport.targetJavaHome(project)
+    if (targetJavaHome) {
+        executable = TargetJavaHomeSupport.javaExecutable(targetJavaHome)
+        TargetJavaHomeSupport.announceTestExecutableOnce(project, executable.toString())
     }
 
-    forkEvery = 50
+    forkEvery = 40
     maxParallelForks = sharedConfiguration.isRunningOnCI ? 1 : (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)
     scanForTestClasses = true
     ignoreFailures = false
@@ -93,6 +142,7 @@ tasks.withType(Test).configureEach {
     }
 
     useJUnitPlatform()
+    usesService(aggregator)
     usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle, 2))
 
     doFirst {
@@ -100,11 +150,86 @@ tasks.withType(Test).configureEach {
             // delete if it exists already to be in a clean state
             delete(grapeDirectory)
         }
+        if (grapeBridgeCache) {
+            // Copy the actions/cache-restored ~/.groovy/grapes into the test
+            // task's grape root so resolutions can hit the local filesystem
+            // resolver (`cachedGrapes` in defaultGrapeConfig.xml) instead of
+            // re-fetching from Maven Central. Exclude lock files and Maven's
+            // "lastUpdated" markers so we don't propagate orphan locks or
+            // stale negative-resolution state across runs.
+            def sharedGrapes = new File(System.getProperty('user.home'), '.groovy/grapes')
+            if (sharedGrapes.isDirectory()) {
+                fs.copy {
+                    from(sharedGrapes)
+                    into(new File(grapeDirectory, 'grapes'))
+                    exclude '**/*.lck', '**/*.lastUpdated'
+                }
+                logger.lifecycle "Bridged ~/.groovy/grapes -> ${grapeDirectory}/grapes"
+            }
+            // Also bridge ~/.m2/repository so the test JVM's localm2 Ivy resolver
+            // (configured as file:${user.home}/.m2/repository/) finds artifacts
+            // that the workflow's pre-warm step populated via `mvn dependency:get`.
+            // Tests run with -Duser.home=<task-temp>, so without this they'd see
+            // an empty localm2 and fall through to Maven Central — exactly the
+            // path that's currently being 404-throttled by Cloudflare for Java's
+            // URLConnection client.
+            def sharedM2 = new File(System.getProperty('user.home'), '.m2/repository')
+            def m2Target = new File(temporaryDir, '.m2/repository')
+            if (sharedM2.isDirectory()) {
+                fs.copy {
+                    from(sharedM2)
+                    into(m2Target)
+                    exclude '**/*.lastUpdated', '**/_remote.repositories'
+                }
+                logger.lifecycle "Bridged ~/.m2/repository -> ${m2Target}"
+            }
+        }
+        logger.debug "Grape directory: ${grapeDirectory.absolutePath}"
     }
 
     doLast {
+        if (grapeBridgeCache) {
+            // Fold newly-resolved artifacts back into the shared cache so the
+            // workflow's `actions/cache` save step persists them for next run.
+            // The forward bridge filtered locks/lastUpdated; do the same here.
+            def sharedGrapes = new File(System.getProperty('user.home'), '.groovy/grapes')
+            def testGrapes = new File(grapeDirectory, 'grapes')
+            if (testGrapes.isDirectory()) {
+                sharedGrapes.mkdirs()
+                fs.copy {
+                    from(testGrapes)
+                    into(sharedGrapes)
+                    exclude '**/*.lck', '**/*.lastUpdated'
+                }
+            }
+        }
         fs.delete {
             delete(files(".").filter { it.name.endsWith '.class' })
+        }
+    }
+
+    afterSuite { desc, result ->
+        if (!desc.parent) {
+            aggregator.get().recordSuite(result.successfulTestCount, result.failedTestCount, result.skippedTestCount)
+            if (result.resultType == TestResult.ResultType.SUCCESS) {
+                def green = '\u001B[32m'
+                def yellow = '\u001B[33m'
+                def reset = '\u001B[0m'
+                logger.lifecycle "${desc.name}: ${green}${result.successfulTestCount} passed${reset}, " +
+                    "${yellow}${result.skippedTestCount} skipped${reset} " +
+                    "(${result.testCount} tests)"
+            }
+        }
+    }
+}
+
+tasks.withType(GroovyCompile).configureEach {
+    if (name == 'compileTestGroovy') {
+        Integer feature = TargetJavaHomeSupport.featureVersionFromReleaseFile(TargetJavaHomeSupport.targetJavaHome(project))
+        if (feature != null) {
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(feature)
+            }
         }
     }
 }
@@ -145,11 +270,29 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
     }
 
     return { f ->
-        excludes.any { f.file =~ it }
+        // normalise to forward slashes so the path-fragment patterns match on Windows too
+        def path = f.file.toString().replace('\\', '/')
+        excludes.any { path =~ it }
+    }
+}
+
+// Warn (rather than silently NO-SOURCE) when the groovy/grape exclusion
+// swallows the entirety of a project's test source set.
+gradle.taskGraph.whenReady { graph ->
+    def testTask = tasks.named('test').get()
+    if (!graph.hasTask(testTask)) return
+    if (providers.systemProperty('junit.network').getOrNull()) return
+    boolean hasGrapeTests = sourceSets.test.allSource.srcDirs.any {
+        new File(it, 'groovy/grape').isDirectory()
+    }
+    if (hasGrapeTests) {
+        logger.warn("WARNING: ${testTask.path} will skip groovy/grape/* tests; set -Djunit.network=true to include them")
     }
 }
 
 interface TestServices {
     @javax.inject.Inject
     FileSystemOperations getFileSystemOperations()
+    @javax.inject.Inject
+    org.gradle.build.event.BuildEventsListenerRegistry getBuildEventsListenerRegistry()
 }

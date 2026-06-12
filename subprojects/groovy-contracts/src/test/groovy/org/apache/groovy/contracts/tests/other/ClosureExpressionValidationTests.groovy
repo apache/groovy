@@ -162,6 +162,70 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
         assertTrue msg.contains("Access to 'it' is not supported.")
     }
 
+    // GROOVY-12059: 'it' belonging to a nested closure is supported (only the contract closure's own 'it' is rejected)
+    void testNestedClosureImplicitItIsAllowed() {
+
+        assertEquals 6, evaluate("""
+            import groovy.contracts.*
+
+            class A {
+                @Requires({ ns.every { it > 0 } })
+                int total(int[] ns) { ns.sum() }
+            }
+
+            new A().total([1, 2, 3] as int[])
+        """)
+    }
+
+    // GROOVY-12059: a nested closure declaring its own parameter is supported
+    void testNestedClosureExplicitParameterIsAllowed() {
+
+        assertEquals 6, evaluate("""
+            import groovy.contracts.*
+
+            class A {
+                @Requires({ ns.every { n -> n > 0 } })
+                int total(int[] ns) { ns.sum() }
+            }
+
+            new A().total([1, 2, 3] as int[])
+        """)
+    }
+
+    // GROOVY-12059: a nested closure may reference an outer method parameter (capture must be wired up)
+    void testNestedClosureReferencingMethodParameterIsAllowed() {
+
+        assertEquals 6, evaluate("""
+            import groovy.contracts.*
+
+            class A {
+                @Requires({ ns.indices.every { ns[it] > 0 } })
+                int total(int[] ns) { ns.sum() }
+            }
+
+            new A().total([1, 2, 3] as int[])
+        """)
+    }
+
+    // GROOVY-12059: a parameter on the contract closure itself is still rejected for preconditions
+    void testTopLevelParameterPreconditionRejected() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                import groovy.contracts.*
+
+                class A {
+                    @Requires({ n -> n > 0 })
+                    int op(int n) { n }
+                }
+
+                def a = new A()
+            """
+        }
+
+        assertTrue msg.contains("Annotation does not support parameters")
+    }
+
     void testPrefixOperatorUsage() {
 
         def msg = shouldFail CompilationFailedException, {
@@ -198,5 +262,27 @@ class ClosureExpressionValidationTests extends GroovyShellTestCase {
         }
 
         assertTrue msg.contains("State changing postfix & prefix operators are not supported.")
+    }
+
+    // GROOVY-12052, GROOVY-12078: a static method has no instance state, so old may only reference a parameter
+    void testOldFieldNotSupportedInStaticPostcondition() {
+
+        def msg = shouldFail CompilationFailedException, {
+            evaluate """
+                    import groovy.contracts.*
+
+                    class A {
+
+                        private static int field = 1
+
+                        @Ensures({ old.field == result })
+                        static int op(int value) { value }
+                    }
+
+                    A.op(1)
+                """
+        }
+
+        assertTrue msg.contains("'old' in a postcondition of a static method may only reference a method parameter")
     }
 }

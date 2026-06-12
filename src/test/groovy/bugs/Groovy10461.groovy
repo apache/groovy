@@ -28,6 +28,7 @@ final class Groovy10461 {
     void testParseClassWithOptionalDependencies() {
         assertScript '''
             @GrabExclude('org.codehaus.groovy:groovy')
+            @GrabExclude('org.codehaus.groovy:groovy-all')
             @GrabExclude('org.codehaus.groovy:groovy-xml')
             @GrabExclude('org.codehaus.groovy:groovy-json')
 

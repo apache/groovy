@@ -21,16 +21,34 @@ package groovy.swing.factory
 import javax.swing.*
 import java.awt.*
 
+/**
+ * Factory for creating scroll panes.
+ */
 class ScrollPaneFactory extends groovy.swing.factory.BeanFactory {
 
+    /**
+     * Creates a new factory for creating scroll panes
+     */
     public ScrollPaneFactory() {
         this(JScrollPane)
     }
 
+    /**
+     * Creates a new factory for creating scroll panes
+     *
+     * @param klass the widget class to instantiate
+     */
     public ScrollPaneFactory(Class klass) {
         super(klass, false);
     }
 
+    /**
+     * Attaches a child node to its parent.
+     *
+     * @param factory the factory builder
+     * @param parent the parent node
+     * @param child the child node
+     */
     public void setChild(FactoryBuilderSupport factory, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;

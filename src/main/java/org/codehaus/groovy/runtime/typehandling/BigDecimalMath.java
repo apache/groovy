@@ -25,18 +25,31 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 
 /**
- * BigDecimal NumberMath operations
+ * Arbitrary-precision decimal arithmetic operations.
+ * <p>
+ * Singleton instance providing NumberMath implementations for BigDecimal-based operations.
+ * Supports exact decimal arithmetic with configurable precision and rounding.
+ * This is the default math provider for non-floating-point division operations.
  */
 public final class BigDecimalMath extends NumberMath {
 
-    // This is an arbitrary value, picked as a reasonable choice for a precision
-    // for typical user math when a non-terminating result would otherwise occur.
+    /**
+     * Extra precision added during division when a non-terminating result would otherwise occur.
+     * <p>
+     * Configurable via system property "groovy.division.extra.precision", defaults to 10.
+     */
     public static final int DIVISION_EXTRA_PRECISION = SystemUtil.getIntegerSafe("groovy.division.extra.precision", 10);
 
-    //This is an arbitrary value, picked as a reasonable choice for a rounding point
-    //for typical user math.
+    /**
+     * Minimum scale (decimal places) for division results.
+     * <p>
+     * Configurable via system property "groovy.division.min.scale", defaults to 10.
+     */
     public static final int DIVISION_MIN_SCALE = SystemUtil.getIntegerSafe("groovy.division.min.scale", 10);
 
+    /**
+     * Singleton instance of BigDecimalMath.
+     */
     public static final BigDecimalMath INSTANCE = new BigDecimalMath();
 
     private BigDecimalMath() {}

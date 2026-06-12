@@ -21,10 +21,15 @@ package org.apache.groovy.bench
 
 import groovy.transform.EqualsAndHashCode
 
+/**
+ * Test class for benchmarking generated hashCode/equals methods with null properties.
+ */
 @EqualsAndHashCode(includeFields = true)
 class GeneratedHashCode {
 
     private String field
+
+    /** Property included in generated hash-code benchmarks. */
     String property
 
 }

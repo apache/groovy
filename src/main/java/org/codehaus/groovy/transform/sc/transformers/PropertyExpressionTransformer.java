@@ -31,14 +31,28 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 
+/**
+ * Rewrites property expressions into direct field or accessor calls when metadata allows it.
+ */
 class PropertyExpressionTransformer {
 
     private final StaticCompilationTransformer scTransformer;
 
+    /**
+     * Creates a property-expression transformer backed by the owning static compilation transformer.
+     *
+     * @param scTransformer the shared transformer context
+     */
     PropertyExpressionTransformer(final StaticCompilationTransformer scTransformer) {
         this.scTransformer = scTransformer;
     }
 
+    /**
+     * Rewrites a property expression when static compilation can target a direct access path.
+     *
+     * @param pe the property expression to transform
+     * @return the transformed expression
+     */
     Expression transformPropertyExpression(final PropertyExpression pe) {
         MethodNode dmct = pe.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         // NOTE: BinaryExpressionTransformer handles the setter

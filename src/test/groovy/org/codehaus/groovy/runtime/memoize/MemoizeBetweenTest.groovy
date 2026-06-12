@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import org.junit.jupiter.api.Test
+
 import java.util.concurrent.atomic.AtomicInteger
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -28,6 +30,7 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         cl.memoizeBetween(50, 100)
     }
 
+    @Test
     void testParameters() {
         Closure cl = {}
         shouldFail(IllegalArgumentException) {
@@ -41,6 +44,7 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         }
     }
 
+    @Test
     void testZeroCache() {
         def flag = false
         Closure cl = {
@@ -55,6 +59,7 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
+    @Test
     void testLRUCache() {
         def flag = false
         Closure cl = {
@@ -84,6 +89,7 @@ class MemoizeBetweenTest extends AbstractMemoizeTestCase {
         assert flag
     }
 
+    @Test
     void testMemoizeBetweenConcurrently() {
         AtomicInteger cnt = new AtomicInteger(0)
         Closure cl = {

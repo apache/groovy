@@ -23,5 +23,10 @@ package groovy.swing.model;
  * or a ClosureModel
  */
 public interface NestedValueModel {
+    /**
+     * Returns the upstream model that supplies the backing object for this nested model.
+     *
+     * @return the source model
+     */
     ValueModel getSourceModel();
 }

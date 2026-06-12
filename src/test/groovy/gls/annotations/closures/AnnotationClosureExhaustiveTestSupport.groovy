@@ -18,6 +18,8 @@
  */
 package gls.annotations.closures
 
+import org.junit.jupiter.api.Test
+
 abstract class AnnotationClosureExhaustiveTestSupport {
     abstract Class getAnnotationClass()
 
@@ -25,18 +27,22 @@ abstract class AnnotationClosureExhaustiveTestSupport {
 
     abstract void verify(Class closureClass)
 
+    @Test
     void testWorksOnClassLevel() {
         worksOn(annotatedClass)
     }
 
+    @Test
     void testWorksOnMethodLevel() {
         worksOn(annotatedClass.getDeclaredMethod("aMethod", Object))
     }
 
+    @Test
     void testWorksOnFieldLevel() {
         worksOn(annotatedClass.getDeclaredField("aField"))
     }
 
+    @Test
     void testWorksOnPropertyLevel() {
         worksOn(annotatedClass.getDeclaredField("aProperty"))
     }

@@ -23,13 +23,22 @@ package groovy.test
  */
 class GroovyShellTestCase extends GroovyTestCase {
 
+    /**
+     * Shell instance recreated for each test and exposed through {@code @Delegate}.
+     */
     @Delegate protected GroovyShell shell
 
+    /**
+     * Creates a fresh shell before each test method runs.
+     */
     protected void setUp() {
         super.setUp()
         shell = createNewShell()
     }
 
+    /**
+     * Releases the shell after each test method completes.
+     */
     protected void tearDown() {
         shell = null
         super.tearDown()

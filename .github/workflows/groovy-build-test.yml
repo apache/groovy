@@ -20,6 +20,10 @@ on: [push, pull_request]
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
 
@@ -29,43 +33,155 @@ jobs:
       fail-fast: false
       matrix:
         java: [17, 21, 25]
-    runs-on: ubuntu-latest
+        os: [ubuntu-latest]
+        include:
+          - java: 17
+            os: windows-latest
+            env-no-color: '1'
+          - java: 17
+            os: macos-latest
+          - java: 25
+            os: ubuntu-latest
+            junit-network: '-Djunit.network=true'
+    runs-on: ${{ matrix.os }}
+    env:
+      NO_COLOR: ${{ matrix.env-no-color }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-java@v5
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v6.0.2
+      - name: "☕️ Setup JDK"
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: |
             ${{ matrix.java }}
             21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@v5
-      - name: Test with Gradle
-        run: ./gradlew test -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
+      # `setup-gradle` below caches ~/.gradle/caches but NOT ~/.groovy/grapes,
+      # which is where @Grab-resolved artifacts (used by tests like
+      # GenericsSTCTest, MethodReferenceTest, …) land. Caching it makes the
+      # build resilient to transient Maven Central / CDN outages: once an
+      # artifact has been resolved on any prior run, subsequent runs reuse
+      # it from cache and don't re-hit the network.
+      #
+      # Key strategy: per-run key + prefix restore-keys. Each run saves a
+      # fresh entry; the next run finds the most recent via prefix
+      # fallback. The cache grows with new @Grab coordinates over time and
+      # never gets invalidated by older ones being removed.
+      - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes + ~/.m2/repository)"
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          # ~/.groovy/grapes is what Grape/Ivy reads from at test time (via the
+          # bridge in org.apache.groovy-tested.gradle). ~/.m2/repository is what
+          # the pre-warm step below populates with mvn dependency:get — the bridge
+          # also copies it into the test JVM's isolated localm2 root.
+          path: |
+            ~/.groovy/grapes
+            ~/.m2/repository
+          key: ${{ runner.os }}-grape-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-grape-
+      - name: "🐘 Setup Gradle"
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+      - name: "🔍 Setup TestLens"
+        uses: testlens-app/setup-testlens@d96a555133c275a00949d2cc77b70fe9a4242ebf # v1.9.2
+      # Pre-warm the @Grab artifact cache by fetching each unique Maven-shorthand
+      # coordinate referenced in test sources via `mvn dependency:get`. Maven uses
+      # Apache HttpClient (vs Ivy's java.net.URLConnection), so it currently
+      # passes Cloudflare's WAF in front of Maven Central while Ivy gets HTTP 404.
+      # Once any run succeeds, actions/cache saves ~/.m2/repository for the next
+      # run, and the org.apache.groovy-tested.gradle bridge copies the artifacts
+      # into each test task's isolated localm2 root so tests stay off the network.
+      # Failures here are non-fatal — Ivy will retry at test time and may succeed
+      # on any individual artifact even when bursts are throttled.
+      - name: "🌡 Pre-warm @Grab artifacts via Maven"
+        shell: bash
+        run: |
+          set +e
+          coords=$(grep -rhEo "@Grab\(\s*(value\s*=\s*)?['\"][^'\"]+['\"]" src/test subprojects/*/src/test 2>/dev/null \
+            | sed -E "s/.*@Grab\(\s*(value\s*=\s*)?['\"]([^'\"]+)['\"].*/\2/" \
+            | grep -E '^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+:[a-zA-Z0-9._+-]+$' \
+            | sort -u)
+          if [ -z "$coords" ]; then
+            echo "No @Grab coords discovered — skipping pre-warm"
+            exit 0
+          fi
+          n=$(printf '%s\n' "$coords" | wc -l | tr -d ' ')
+          echo "Pre-warming $n @Grab coords via mvn dependency:get"
+          ok=0; fail=0
+          while IFS= read -r coord; do
+            if mvn -B -q dependency:get -Dartifact="$coord" -Dtransitive=true >/dev/null 2>&1; then
+              ok=$((ok+1))
+            else
+              fail=$((fail+1))
+              echo "  ⚠ $coord"
+            fi
+          done <<< "$coords"
+          echo "Pre-warm complete: $ok ok / $fail failed (failures retried by Ivy at test time)"
+          exit 0
+        timeout-minutes: 15
+      - name: "🏃Test with Gradle"
+        run: ./gradlew test ${{ matrix.junit-network }} -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}"
+        shell: bash
         timeout-minutes: 60
-      - name: Upload reports
+      - name: "🚀Upload reports"
         uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: build-reports-${{ matrix.java }}
+          name: build-reports-${{ matrix.os }}-${{ matrix.java }}
           path: '**/build/reports/'
 
   additional:
     strategy:
       fail-fast: false
       matrix:
-        java: [18, 19, 20, 22, 23, 24]
+        java: [18, 19, 20, 22, 23, 24, 26]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-java@v5
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v6.0.2
+      - name: "☕️ Setup JDK"
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: |
             ${{ matrix.java }}
             21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@v5
-      - name: Test with Gradle
-        run: ./gradlew test -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
+      # See the lts job for rationale; same prefix lets both jobs share
+      # the cache.
+      - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes + ~/.m2/repository)"
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.groovy/grapes
+            ~/.m2/repository
+          key: ${{ runner.os }}-grape-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-grape-
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+      - name: "🌡 Pre-warm @Grab artifacts via Maven"
+        shell: bash
+        run: |
+          set +e
+          coords=$(grep -rhEo "@Grab\(\s*(value\s*=\s*)?['\"][^'\"]+['\"]" src/test subprojects/*/src/test 2>/dev/null \
+            | sed -E "s/.*@Grab\(\s*(value\s*=\s*)?['\"]([^'\"]+)['\"].*/\2/" \
+            | grep -E '^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+:[a-zA-Z0-9._+-]+$' \
+            | sort -u)
+          [ -z "$coords" ] && { echo "No @Grab coords — skipping"; exit 0; }
+          n=$(printf '%s\n' "$coords" | wc -l | tr -d ' ')
+          echo "Pre-warming $n coords"
+          ok=0; fail=0
+          while IFS= read -r c; do
+            if mvn -B -q dependency:get -Dartifact="$c" -Dtransitive=true >/dev/null 2>&1; then
+              ok=$((ok+1))
+            else
+              fail=$((fail+1)); echo "  ⚠ $c"
+            fi
+          done <<< "$coords"
+          echo "Pre-warm: $ok ok / $fail failed"
+          exit 0
+        timeout-minutes: 15
+      - name: "🏃Test with Gradle"
+        run: ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
         timeout-minutes: 60

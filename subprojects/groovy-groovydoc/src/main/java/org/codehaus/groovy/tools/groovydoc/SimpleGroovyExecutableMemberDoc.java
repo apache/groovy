@@ -26,38 +26,62 @@ import org.codehaus.groovy.groovydoc.GroovyType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Base implementation for executable members such as methods and constructors.
+ */
 public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc implements GroovyExecutableMemberDoc {
     private static final GroovyParameter[] EMPTY_GROOVYPARAMETER_ARRAY = new GroovyParameter[0];
+    /**
+     * Parameters declared by this executable member.
+     */
     List<GroovyParameter> parameters;
 
+    /**
+     * Creates an executable member owned by the supplied class.
+     *
+     * @param name the executable name
+     * @param belongsToClass the declaring class
+     */
     public SimpleGroovyExecutableMemberDoc(String name, GroovyClassDoc belongsToClass) {
         super(name, belongsToClass);
         parameters = new ArrayList<>();
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyParameter[] parameters() {
         return parameters.toArray(EMPTY_GROOVYPARAMETER_ARRAY);
     }
 
+    /**
+     * Adds a parameter to this executable member.
+     *
+     * @param parameter the parameter to add
+     */
     public void add(GroovyParameter parameter) {
         parameters.add(parameter);
     }
 
-
+    /** {@inheritDoc} */
     @Override
     public String flatSignature() {/*todo*/return null;}
+    /** {@inheritDoc} */
     @Override
     public boolean isNative() {/*todo*/return false;}
+    /** {@inheritDoc} */
     @Override
     public boolean isSynchronized() {/*todo*/return false;}
+    /** {@inheritDoc} */
     @Override
     public boolean isVarArgs() {/*todo*/return false;}
 //    public GroovyParamTag[] paramTags() {/*todo*/return null;}
+    /** {@inheritDoc} */
     @Override
     public String signature() {/*todo*/return null;}
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] thrownExceptions() {/*todo*/return null;}
+    /** {@inheritDoc} */
     @Override
     public GroovyType[] thrownExceptionTypes() {/*todo*/return null;}
 //    public GroovyThrowsTag[] throwsTags() {/*todo*/return null;}

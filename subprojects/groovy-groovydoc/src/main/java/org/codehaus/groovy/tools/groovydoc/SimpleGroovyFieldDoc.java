@@ -22,39 +22,63 @@ import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
 
+/**
+ * Default {@link GroovyFieldDoc} implementation.
+ */
 public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements GroovyFieldDoc {
     private GroovyType type;
     private String constantValueExpression;
 
+    /**
+     * Creates a documented field owned by the supplied class.
+     *
+     * @param name the field name
+     * @param belongsToClass the declaring class
+     */
     public SimpleGroovyFieldDoc(String name, GroovyClassDoc belongsToClass) {
         super(name, belongsToClass);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object constantValue() {/*todo*/return null;}
 
+    /**
+     * Stores the source expression used to initialize this field's constant value.
+     *
+     * @param constantValueExpression the constant value expression
+     */
     public void setConstantValueExpression(String constantValueExpression) {
         this.constantValueExpression = constantValueExpression;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String constantValueExpression() {
         return constantValueExpression;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isTransient() {/*todo*/return false;}
 
+    /** {@inheritDoc} */
     @Override
     public boolean isVolatile() {/*todo*/return false;}
 
     //    public GroovySerialFieldTag[] serialFieldTags() {/*todo*/return null;}
 
+    /** {@inheritDoc} */
     @Override
     public GroovyType type() {
         return type;
     }
 
+    /**
+     * Sets the resolved type for this field.
+     *
+     * @param type the field type
+     */
     public void setType(GroovyType type) {
         this.type = type;
     }

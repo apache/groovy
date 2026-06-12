@@ -62,6 +62,7 @@ public class NodeChildren extends GPathResult {
         this(parent, "*", namespaceTagHints);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator childNodes() {
         return new Iterator() {
@@ -105,6 +106,7 @@ public class NodeChildren extends GPathResult {
         };
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator iterator() {
         return new Iterator() {
@@ -127,6 +129,7 @@ public class NodeChildren extends GPathResult {
         };
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator nodeIterator() {
         if ("*".equals(name)) {
@@ -160,6 +163,7 @@ public class NodeChildren extends GPathResult {
         throw new GroovyRuntimeException("parents() not implemented yet");
     }
 
+    /** {@inheritDoc} */
     @Override
     public synchronized int size() {
         if (this.size == -1) {
@@ -173,6 +177,7 @@ public class NodeChildren extends GPathResult {
         return this.size;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String text() {
         final StringBuilder buf = new StringBuilder();
@@ -183,6 +188,7 @@ public class NodeChildren extends GPathResult {
         return buf.toString();
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult find(final Closure closure) {
         for (Object node : this) {
@@ -193,11 +199,13 @@ public class NodeChildren extends GPathResult {
         return new NoChildren(this, this.name, namespaceTagHints);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult findAll(final Closure closure) {
         return new FilteredNodeChildren(this, closure, namespaceTagHints);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void build(final GroovyObject builder) {
         final Iterator iter = nodeIterator();
@@ -211,9 +219,7 @@ public class NodeChildren extends GPathResult {
         }
     }
 
-    /* (non-Javadoc)
-    * @see groovy.lang.Writable#writeTo(java.io.Writer)
-    */
+    /** {@inheritDoc} */
     @Override
     public Writer writeTo(final Writer out) throws IOException {
         final Iterator iter = nodeIterator();
@@ -223,6 +229,7 @@ public class NodeChildren extends GPathResult {
         return out;
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void replaceNode(final Closure newValue) {
         for (Object o : this) {
@@ -231,6 +238,7 @@ public class NodeChildren extends GPathResult {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void replaceBody(final Object newValue) {
         for (Object o : this) {
@@ -239,6 +247,7 @@ public class NodeChildren extends GPathResult {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     protected void appendNode(final Object newValue) {
         for (Object o : this) {

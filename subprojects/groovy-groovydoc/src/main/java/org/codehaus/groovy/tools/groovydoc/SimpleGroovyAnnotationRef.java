@@ -21,32 +21,60 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
+
+/**
+ * Default {@link GroovyAnnotationRef} implementation backed by parsed source text.
+ */
 public class SimpleGroovyAnnotationRef implements GroovyAnnotationRef {
     private GroovyClassDoc type;
     private final String desc;
     private String name;
+    /**
+     * Creates an annotation reference from its simple name and raw source description.
+     *
+     * @param name the annotation name
+     * @param desc the raw source description of the annotation
+     */
     public SimpleGroovyAnnotationRef(String name, String desc) {
         this.name = name;
         final String params = StringGroovyMethods.minus(desc, "@" + name);
         this.desc = "()".equals(params) ? "" : params;
     }
+    /**
+     * Associates the resolved annotation type with this reference.
+     *
+     * @param type the resolved annotation type
+     */
     public void setType(GroovyClassDoc type) {
         this.type = type;
     }
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc type() {
         return type;
     }
+    /**
+     * Indicates whether the annotation type has been resolved.
+     *
+     * @return {@code true} if the annotation type is available
+     */
     public boolean isTypeAvailable() {
         return type != null;
     }
+    /** {@inheritDoc} */
     @Override
     public String name() {
         return name;
     }
+    /**
+     * Replaces the annotation name used by this reference.
+     *
+     * @param name the annotation name to store
+     */
     public void setName(String name) {
         this.name = name;
     }
+    /** {@inheritDoc} */
     @Override
     public String description() {
         return desc;

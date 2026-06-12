@@ -26,7 +26,6 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.security.PrivilegedAction;
 import java.util.stream.IntStream;
 
 public final class CallSiteArray {
@@ -58,14 +57,11 @@ public final class CallSiteArray {
     }
 
     private static CallSite createCallStaticSite(CallSite callSite, final Class receiver, Object[] args) {
-        doPrivileged((PrivilegedAction<Void>) () -> {
-            try {
-                Class.forName(receiver.getName(), true, receiver.getClassLoader());
-            } catch (Exception e) {
-                // force <clinit>
-            }
-            return null;
-        });
+        try {
+            Class.forName(receiver.getName(), true, receiver.getClassLoader());
+        } catch (Exception e) {
+            // force <clinit>
+        }
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
         CallSite site =
                 metaClass instanceof MetaClassImpl
@@ -74,11 +70,6 @@ public final class CallSiteArray {
 
         replaceCallSite(callSite, site);
         return site;
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static void doPrivileged(PrivilegedAction<Void> action) {
-        java.security.AccessController.doPrivileged(action);
     }
 
     private static CallSite createCallConstructorSite(CallSite callSite, Class receiver, Object[] args) {

@@ -26,6 +26,7 @@ import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.apache.groovy.groovysh.jline.GroovyPosixCommands
 import org.apache.groovy.groovysh.jline.GroovyPosixContext
+import org.apache.groovy.groovysh.jline.GroovyPrinter
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.apache.groovy.groovysh.util.DocFinder
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -41,7 +42,6 @@ import org.jline.console.CommandMethods
 import org.jline.console.CommandRegistry
 import org.jline.console.ConsoleEngine
 import org.jline.console.Printer
-import org.jline.console.impl.DefaultPrinter
 import org.jline.console.impl.JlineCommandRegistry
 import org.jline.console.impl.SystemHighlighter
 import org.jline.keymap.KeyMap
@@ -77,14 +77,19 @@ import java.util.function.Supplier
 import static org.jline.jansi.AnsiRenderer.render
 
 /**
- * Groovy Repo modelled on JLine3 Groovy Repl demo
+ * Boots and runs the interactive {@code groovysh} console.
  */
+@SuppressWarnings('deprecation')
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
+    /** Preference key that controls whether groovysh starts in interpreter mode. */
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
 //    private static POSIX_CMDS = []
     private static GROOVY_POSIX_CMDS = ['/ls', '/wc', '/sort', '/head', '/tail', '/cat', '/grep']
 
+    /**
+     * Registers the extra console commands that augment the interactive shell.
+     */
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
         private final LineReader reader
@@ -92,6 +97,13 @@ class Main {
         private PosixCommandsRegistry posix
         private final Map<String, String[]> usage = [:]
 
+        /**
+         * Creates the auxiliary console command registry used by the shell.
+         *
+         * @param workDir initial working directory
+         * @param scriptEngine script engine backing the shell session
+         * @param reader active line reader
+         */
         ExtraConsoleCommands(Path workDir, GroovyEngine scriptEngine, LineReader reader) {
             super()
             this.scriptEngine = scriptEngine
@@ -133,6 +145,11 @@ class Main {
             registerCommands(cmds)
         }
 
+        /**
+         * Returns the current working directory tracked by the POSIX command context.
+         *
+         * @return the active working directory
+         */
         Path currentDir() {
             posix.context.currentDir
         }
@@ -145,6 +162,11 @@ class Main {
             }
         }
 
+        /**
+         * Returns the help-group name used for the extra console commands.
+         *
+         * @return the console command group name
+         */
         @Override
         String name() {
             'Console Commands'
@@ -280,8 +302,23 @@ class Main {
             }
         }
 
+        /**
+         * Returns summary text for the specified command.
+         *
+         * @param command command name to describe
+         * @return help lines for the command
+         */
+        @Override
+        List<String> commandInfo(String command) {
+            posix.commandNames.toList()
+        }
     }
 
+    /**
+     * Returns the user state directory used by groovysh for persisted files.
+     *
+     * @return the user-specific state directory
+     */
     static Path getUserStateDirectory() {
         Path.of(System.getProperty('user.home'), '.groovy').tap { groovyHome ->
             if (!groovyHome) {
@@ -296,6 +333,8 @@ class Main {
      * @param args CLI-like arguments (same as {@link #main(String[])}).
      * @param initialBindings binding variables for the GroovyEngine
      * @return process exit code (0 for success)
+     *
+     * @since 6.0.0
      */
     static int start(Map<String, ?> initialBindings = Collections.emptyMap(), String[] args = new String[0]) {
         def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
@@ -354,7 +393,7 @@ class Main {
                 }
                 name('groovysh')
             }.build()
-            if (terminal.width == 0 || terminal.height == 0) {
+            if (terminal.columns == 0 || terminal.rows == 0) {
                 terminal.size = new Size(120, 40) // hard-coded terminal size when redirecting
             }
             Thread executeThread = Thread.currentThread()
@@ -381,7 +420,7 @@ class Main {
             }
             def interpreterMode = Boolean.parseBoolean(System.getProperty("groovysh.interpreterMode", "true"))
             scriptEngine.put('GROOVYSH_OPTIONS', [interpreterMode: interpreterMode])
-            Printer printer = new DefaultPrinter(scriptEngine, configPath)
+            Printer printer = new GroovyPrinter(scriptEngine, configPath)
 
             scriptEngine.put(GroovyEngine.NANORC_VALUE, rootURL.toString())
             Path jnanorc = root.resolve('jnanorc')
@@ -436,7 +475,7 @@ class Main {
                 if (!OSUtils.IS_WINDOWS) {
                     setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
                 }
-                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *GROOVY_POSIX_CMDS, '/cd')
+                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', '/img', *GROOVY_POSIX_CMDS, '/cd')
                 addFileHighlight('/classloader', null, ['-a', '--add'])
                 addExternalHighlighterRefresh(printer::refresh)
                 addExternalHighlighterRefresh(scriptEngine::refresh)
@@ -463,7 +502,7 @@ class Main {
                 println render(messages['startup_banner.1'])
                 println render(messages['startup_banner.2'])
             }
-            println '-' * (terminal.width - 1)
+            println '-' * (terminal.columns - 1)
 // for debugging
 //            def index = 0
 //            def lines = ['/slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
@@ -532,11 +571,18 @@ class Main {
      *
      * @param args CLI-like arguments (same as {@link #main(String[])}).
      * @return process exit code (0 for success)
+     *
+     * @since 6.0.0
      */
     static int start(String[] args) {
         start([:], args)
     }
 
+    /**
+     * Launches groovysh as a standalone JVM process.
+     *
+     * @param args command-line arguments
+     */
     static void main(String[] args) {
         System.exit(start(args))
     }

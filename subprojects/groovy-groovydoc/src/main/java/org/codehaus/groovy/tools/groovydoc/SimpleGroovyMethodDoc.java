@@ -22,14 +22,24 @@ import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
 
+/**
+ * Default {@link GroovyMethodDoc} implementation.
+ */
 public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc implements GroovyMethodDoc {
     private GroovyType returnType;
     private String typeParameters;
 
+    /**
+     * Creates a documented method owned by the supplied class.
+     *
+     * @param name the method name
+     * @param belongsToClass the declaring class
+     */
     public SimpleGroovyMethodDoc(String name, GroovyClassDoc belongsToClass) {
         super(name, belongsToClass);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyType returnType() {
         return returnType;
@@ -37,35 +47,50 @@ public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc imple
 
     // TODO need returnType.qualifiedTypeName() here
 
+    /** {@inheritDoc} */
     @Override
     public void setReturnType(GroovyType returnType) {
         this.returnType = returnType;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc overriddenClass() {/*todo*/
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyMethodDoc overriddenMethod() {/*todo*/
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyType overriddenType() {/*todo*/
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean overrides(GroovyMethodDoc arg0) {/*todo*/
         return false;
     }
 
+    /**
+     * Returns the rendered type parameters for this method.
+     *
+     * @return the type parameter declaration text
+     */
     public String typeParameters() {
         return typeParameters;
     }
 
+    /**
+     * Stores the rendered type parameters for this method.
+     *
+     * @param typeParameters the type parameter declaration text
+     */
     public void setTypeParameters(String typeParameters) {
         this.typeParameters = typeParameters;
     }

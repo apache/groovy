@@ -24,28 +24,68 @@ import org.codehaus.groovy.runtime.StringGroovyMethods
 import picocli.CommandLine.Model.OptionSpec
 import picocli.CommandLine.ParseResult
 
+/**
+ * Provides typed and dynamic access to values produced by {@link CliBuilder#parse(Object)}.
+ */
 class OptionAccessor {
+    /**
+     * The underlying picocli parse result.
+     */
     ParseResult parseResult
+
+    /**
+     * Type metadata for options declared by the originating {@link CliBuilder}.
+     */
     Map<String, TypedOption> savedTypeOptions
 
+    /**
+     * Creates an accessor for the specified parse result.
+     *
+     * @param parseResult the parsed command line state
+     */
     OptionAccessor(ParseResult parseResult) {
         this.parseResult = parseResult
     }
 
+    /**
+     * Checks whether the specified typed option was matched.
+     *
+     * @param typedOption the option to inspect
+     * @return {@code true} if the option was supplied on the command line
+     */
     boolean hasOption(TypedOption typedOption) {
         parseResult.hasMatchedOption(typedOption.longOpt ?: typedOption.opt as String)
     }
 
+    /**
+     * Returns the converted default value for a named option.
+     *
+     * @param name the option name used to register the option metadata
+     * @return the converted default value, or {@code null} if none was declared
+     */
     public <T> T defaultValue(String name) {
         Class<T> type = savedTypeOptions[name]?.type
         String value = savedTypeOptions[name]?.defaultValue() ? savedTypeOptions[name].defaultValue() : null
         return (T) value ? getTypedValue(type, name, value) : null
     }
 
+    /**
+     * Returns the value of the specified typed option.
+     *
+     * @param typedOption the option to inspect
+     * @return the parsed or configured value, or {@code null} if none is available
+     */
     public <T> T getOptionValue(TypedOption<T> typedOption) {
         getOptionValue(typedOption, null)
     }
 
+    /**
+     * Returns the value of the specified typed option.
+     *
+     * @param typedOption the option to inspect
+     * @param defaultValue the fallback value to use when the option has no value
+     * @return the parsed value, configured default, or supplied fallback
+     */
     public <T> T getOptionValue(TypedOption<T> typedOption, T defaultValue) {
         String optionName = (String) typedOption.longOpt ?: typedOption.opt
         if (parseResult.hasMatchedOption(optionName)) {
@@ -56,10 +96,23 @@ class OptionAccessor {
         }
     }
 
+    /**
+     * Returns the value of the specified typed option using subscript syntax.
+     *
+     * @param typedOption the option to inspect
+     * @return the parsed or configured value, or {@code null} if none is available
+     */
     public <T> T getAt(TypedOption<T> typedOption) {
         getAt(typedOption, null)
     }
 
+    /**
+     * Returns the value of the specified typed option using subscript syntax.
+     *
+     * @param typedOption the option to inspect
+     * @param defaultValue the fallback value to use when the option has no value
+     * @return the parsed value, configured default, or supplied fallback
+     */
     public <T> T getAt(TypedOption<T> typedOption, T defaultValue) {
         getOptionValue(typedOption, defaultValue)
     }
@@ -85,6 +138,12 @@ class OptionAccessor {
         StringGroovyMethods.asType(optionValue, (Class<T>) type)
     }
 
+    /**
+     * Returns properties collected for a map-style option.
+     *
+     * @param name the option name
+     * @return the parsed properties, or {@code null} if the option was not matched
+     */
     Properties getOptionProperties(String name) {
         if (!parseResult.hasMatchedOption(name)) {
             return null
@@ -95,6 +154,13 @@ class OptionAccessor {
         result
     }
 
+    /**
+     * Provides limited Apache Commons CLI compatibility by delegating selected method calls to the underlying parse result.
+     *
+     * @param name the method name to invoke
+     * @param args the method arguments
+     * @return the delegated call result
+     */
     def invokeMethod(String name, Object args) {
         // TODO we could just declare normal methods to map commons-cli CommandLine methods to picocli ParseResult methods
         if (name == 'hasOption')      { name = 'hasMatchedOption';   args = [args[0]      ].toArray() }
@@ -102,6 +168,12 @@ class OptionAccessor {
         return InvokerHelper.getMetaClass(parseResult).invokeMethod(parseResult, name, args)
     }
 
+    /**
+     * Resolves dynamic property lookups to parsed option values, defaults, or multi-value views.
+     *
+     * @param name the property name to resolve
+     * @return the resolved value, or {@code false} when no matching option exists
+     */
     def getProperty(String name) {
         if (name == 'parseResult') { return parseResult }
         if (parseResult.hasMatchedOption(name)) {
@@ -150,6 +222,11 @@ class OptionAccessor {
         false
     }
 
+    /**
+     * Returns the remaining positional arguments.
+     *
+     * @return the unmatched positional arguments in encounter order
+     */
     List<String> arguments() {
         parseResult.hasMatchedPositional(0) ? parseResult.matchedPositional(0).stringValues() : []
     }

@@ -19,10 +19,13 @@
 package bugs
 
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.assertScript
 
 
 class Groovy5396Bug {
+    @Test
     void testClassAccessToPackageLocalPropertyInSuper() {
         assertScript """
             class GroovyBase extends AbstractBase {

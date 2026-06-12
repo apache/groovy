@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 /**
- * Helper class for internal use only.
- * This creates a Predicate by calling a {@link Closure} and converting the result to a boolean.
- * {@link BooleanReturningMethodInvoker} is used for caching.
+ * @deprecated Use {@link org.codehaus.groovy.runtime.BooleanClosureForMapPredicate} instead.
  */
+@Deprecated(since = "6.0.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class BooleanClosureForMapPredicate<K, V> implements Predicate<Map.Entry<K, V>> {
     private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;
@@ -39,21 +39,12 @@ public class BooleanClosureForMapPredicate<K, V> implements Predicate<Map.Entry<
         numberOfArguments = wrapped.getMaximumNumberOfParameters();
     }
 
-    private boolean call(Object... args) {
-        return bmi.invoke(wrapped, args);
-    }
-
-    /**
-     * If the call to the backing {@link Closure} is done on a {@link Closure}
-     * taking one argument, then we give in the {@link Map.Entry}, otherwise we will
-     * give in the key and value.
-     */
     @Override
     public boolean test(Map.Entry<K, V> entry) {
         if (numberOfArguments == 2) {
-            return call(entry.getKey(), entry.getValue());
+            return bmi.invoke(wrapped, entry.getKey(), entry.getValue());
         } else {
-            return call(entry);
+            return bmi.invoke(wrapped, entry);
         }
     }
 }

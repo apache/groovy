@@ -20,7 +20,7 @@ package groovy.jmx.builder
 
 import javax.management.MBeanServerConnection
 
-/** *
+/**
  * This is JmxBuilder's factory builder class.  It is the parent node to all other children nodes supported
  * by JmxBuilder.
  */
@@ -30,15 +30,22 @@ class JmxBuilder extends FactoryBuilderSupport {
     private String defaultNameType = JmxBuilderTools.DEFAULT_NAME_TYPE
     private String mode = "markup"
 
+    /** Creates a builder backed by the default MBean server connection. */
     JmxBuilder() {
         registerFactories()
     }
 
+    /**
+     * Creates a builder backed by the supplied MBean server connection.
+     *
+     * @param svrConnection the server connection to use
+     */
     JmxBuilder(MBeanServerConnection svrConnection) {
         this()
         server = svrConnection
     }
 
+    /** Registers the builder nodes supported by {@code JmxBuilder}. */
     protected void registerFactories() {
         registerFactory "export", new JmxBeanExportFactory()
         registerFactory "bean", new JmxBeanFactory()
@@ -59,6 +66,11 @@ class JmxBuilder extends FactoryBuilderSupport {
         registerFactory "connectorClient", newClientFactory()
     }
 
+    /**
+     * Returns the active MBean server connection, creating the default one on demand.
+     *
+     * @return the active server connection
+     */
     MBeanServerConnection getMBeanServer() {
         if (!server) {
             server = JmxBuilderTools.getMBeanServer()
@@ -66,34 +78,77 @@ class JmxBuilder extends FactoryBuilderSupport {
         return server
     }
 
+    /**
+     * Sets the default domain used when generating object names.
+     *
+     * @param domain the default JMX domain
+     */
     void setDefaultJmxNameDomain(String domain) {
         this.defaultNameDomain = domain
     }
 
+    /**
+     * Returns the default domain used when generating object names.
+     *
+     * @return the default JMX domain
+     */
     String getDefaultJmxNameDomain() {
         return this.defaultNameDomain
     }
 
+    /**
+     * Sets the default type used when generating object names.
+     *
+     * @param type the default JMX type
+     */
     void setDefaultJmxNameType(String type) {
         this.defaultNameType = type
     }
 
+    /**
+     * Returns the default type used when generating object names.
+     *
+     * @return the default JMX type
+     */
     String getDefaultJmxNameType() {
         return this.defaultNameType
     }
 
+    /**
+     * Replaces the active MBean server connection.
+     *
+     * @param svr the server connection to use
+     */
     void setMBeanServer(MBeanServerConnection svr) {
         server = svr
     }
 
+    /**
+     * Sets the builder mode.
+     *
+     * @param mode the builder mode
+     */
     void setMode(String mode) {
         this.mode = mode
     }
 
+    /**
+     * Returns the current builder mode.
+     *
+     * @return the builder mode
+     */
     String getMode() {
         return mode
     }
 
+    /**
+     * Resolves a factory for the requested node, falling back to the parent factory when needed.
+     *
+     * @param name the node name
+     * @param attributes the node attributes
+     * @param value the node value
+     * @return the resolved factory, if any
+     */
     protected Factory resolveFactory(Object name, Map attributes, Object value) {
         Factory factory = super.resolveFactory(name, attributes, value);
         if (!factory) {

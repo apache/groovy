@@ -33,13 +33,28 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 @GroovyASTTransformation(phase = CompilePhase.CONVERSION)
 public class MacroTransformation extends MethodCallTransformation implements CompilationUnitAware {
 
+    /**
+     * Compilation unit that owns the current transformation.
+     */
     protected CompilationUnit unit;
 
+    /**
+     * Stores the current compilation unit for later macro expansion.
+     *
+     * @param unit the current compilation unit
+     */
     @Override
     public void setCompilationUnit(CompilationUnit unit) {
         this.unit = unit;
     }
 
+    /**
+     * Creates the visitor that rewrites macro method calls.
+     *
+     * @param nodes the visited nodes
+     * @param sourceUnit the current source unit
+     * @return the macro-transforming visitor
+     */
     @Override
     protected GroovyCodeVisitor getTransformer(ASTNode[] nodes, final SourceUnit sourceUnit) {
         return new MacroCallTransformingVisitor(sourceUnit, unit);

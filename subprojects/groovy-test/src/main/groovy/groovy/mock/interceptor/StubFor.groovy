@@ -35,7 +35,7 @@ import java.util.regex.Pattern
  * is left to the user.
  *
  * Typical usage is as follows:
- * <<pre class="groovyTestCase">
+ * <<pre class="language-groovy groovyTestCase">
  * import groovy.mock.interceptor.StubFor
  *
  * class Person {
@@ -67,13 +67,37 @@ import java.util.regex.Pattern
  */
 class StubFor {
 
+    /**
+     * Proxy meta class used to intercept collaborator interactions.
+     */
     MockProxyMetaClass proxy
+    /**
+     * Recorded demand specification for the stubbed collaborator.
+     */
     Demand demand
+    /**
+     * Helper supporting the {@code ignore.methodName(...)} shorthand.
+     */
     Ignore ignore
+    /**
+     * Sequence-independent expectation enforcing the recorded demands.
+     */
     def expect
+    /**
+     * Per-instance expectations created for proxy-style usage.
+     */
     Map instanceExpectations = [:]
+    /**
+     * Collaborator class being stubbed.
+     */
     Class clazz
 
+    /**
+     * Creates a stub definition for the supplied collaborator class.
+     *
+     * @param clazz the collaborator class to stub
+     * @param interceptConstruction whether constructor calls should be intercepted
+     */
     StubFor(Class clazz, boolean interceptConstruction = false) {
         if (interceptConstruction && !GroovyObject.isAssignableFrom(clazz)) {
             throw new IllegalArgumentException("StubFor with constructor interception enabled is only allowed for Groovy objects but found: " + clazz.name)
@@ -93,6 +117,12 @@ class StubFor {
         proxy.use closure
     }
 
+    /**
+     * Applies this stub to a single Groovy object for the duration of the supplied closure.
+     *
+     * @param obj the object whose meta class should be replaced temporarily
+     * @param closure the work to run while the stub is active
+     */
     void use(GroovyObject obj, Closure closure) {
         proxy.use obj, closure
     }
@@ -147,6 +177,13 @@ class StubFor {
         makeProxyInstance(args, true)
     }
 
+    /**
+     * Creates a proxy-backed instance and wires it to a dedicated loose expectation.
+     *
+     * @param args optional constructor arguments
+     * @param isDelegate whether Java targets should be wrapped as delegate proxies
+     * @return the proxy-backed instance
+     */
     GroovyObject makeProxyInstance(args, boolean isDelegate) {
         def instance = MockFor.getInstance(clazz, args)
         def thisproxy = MockProxyMetaClass.make(isDelegate ? instance.getClass() : clazz)

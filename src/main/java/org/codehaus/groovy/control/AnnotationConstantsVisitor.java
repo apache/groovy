@@ -35,11 +35,22 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
     private boolean annotationDef;
     private SourceUnit sourceUnit;
 
+    /**
+     * Returns the source unit currently being visited.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * Visits an annotation definition and inlines constant values in its members.
+     *
+     * @param classNode the annotation class to inspect
+     * @param sourceUnit the owning source unit
+     */
     public void visitClass(final ClassNode classNode, final SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit;
         this.annotationDef = classNode.isAnnotationDefinition();
@@ -47,6 +58,12 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
         this.annotationDef = false;
     }
 
+    /**
+     * Rewrites annotation member bodies so constant expressions are resolved eagerly.
+     *
+     * @param node the constructor or method to inspect
+     * @param isConstructor whether {@code node} is a constructor
+     */
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         if (annotationDef) {

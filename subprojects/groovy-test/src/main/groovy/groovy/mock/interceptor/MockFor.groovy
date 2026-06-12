@@ -36,7 +36,7 @@ import java.util.regex.Pattern
  * automatically ends with a verify().
  *
  * Typical usage is as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.mock.interceptor.MockFor
  *
  * class Person {
@@ -86,18 +86,36 @@ import java.util.regex.Pattern
  */
 class MockFor {
 
+    /**
+     * Proxy meta class used to intercept collaborator interactions.
+     */
     MockProxyMetaClass proxy
+    /**
+     * Recorded demand specification for the mocked collaborator.
+     */
     Demand demand
+    /**
+     * Helper supporting the {@code ignore.methodName(...)} shorthand.
+     */
     Ignore ignore
+    /**
+     * Sequence-sensitive expectation enforcing the recorded demands.
+     */
     def expect
+    /**
+     * Per-instance expectations created for proxy-style usage.
+     */
     Map instanceExpectations = [:]
+    /**
+     * Collaborator class being mocked.
+     */
     Class clazz
 
     /**
      * The optional <code>interceptConstruction</code> flag allows mocking of
      * constructor calls. These are represented in the demand specification
      * using the class name as this example shows:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.mock.interceptor.MockFor
      * class Person {
      *   String first, last
@@ -138,6 +156,12 @@ class MockFor {
         expect.verify()
     }
 
+    /**
+     * Applies this mock to a single Groovy object for the duration of the supplied closure.
+     *
+     * @param obj the object whose meta class should be replaced temporarily
+     * @param closure the work to run while the mock is active
+     */
     void use(GroovyObject obj, Closure closure) {
         proxy.use obj, closure
         expect.verify()
@@ -157,7 +181,7 @@ class MockFor {
      * The <code>filter</code> object is invoked using the normal Groovy <code>isCase()</code> semantics.
      *
      * Here are some examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.mock.interceptor.MockFor
      * class Person {
      *   String first, last
@@ -209,7 +233,7 @@ class MockFor {
      * will be instantiated for the original class.
      *
      * Typical example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.mock.interceptor.MockFor
      *
      * class Person {
@@ -256,6 +280,13 @@ class MockFor {
         makeProxyInstance(args, true)
     }
 
+    /**
+     * Creates a proxy-backed instance and wires it to a dedicated expectation.
+     *
+     * @param args optional constructor arguments
+     * @param isDelegate whether Java targets should be wrapped as delegate proxies
+     * @return the proxy-backed instance
+     */
     GroovyObject makeProxyInstance(args, boolean isDelegate) {
         def instance = getInstance(clazz, args)
         def thisproxy = MockProxyMetaClass.make(isDelegate ? instance.getClass() : clazz)
@@ -271,6 +302,13 @@ class MockFor {
         return wrapped
     }
 
+    /**
+     * Creates a concrete instance suitable for proxy-style mocking.
+     *
+     * @param clazz the collaborator class to instantiate
+     * @param args optional constructor arguments
+     * @return the instantiated object or delegate proxy
+     */
     static GroovyObject getInstance(Class clazz, args) {
         GroovyObject instance = null
         if (clazz.isInterface()) {

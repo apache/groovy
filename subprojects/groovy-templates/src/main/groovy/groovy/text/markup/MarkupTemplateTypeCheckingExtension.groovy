@@ -57,6 +57,11 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isAssi
  */
 class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
+    /**
+     * Registers the type-checking hooks that adapt template DSL calls and optional model typing.
+     *
+     * @return {@code null}; the extension configures callbacks through side effects
+     */
     @Override
     Object run() {
         def modelTypesClassNodes = null
@@ -170,6 +175,13 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
         }
     }
 
+    /**
+     * Builds a resolved {@link ClassNode} from a textual type declaration used in template model hints.
+     *
+     * @param option textual type declaration
+     * @param ctx current type-checking context
+     * @return the resolved class node corresponding to the declaration
+     */
     @CompileStatic
     private static ClassNode buildNodeFromString(String option, TypeCheckingContext ctx) {
         ModuleNode moduleNode = ParserPlugin.buildAST("$option dummy;", ctx.compilationUnit.configuration, ctx.compilationUnit.classLoader, ctx.errorCollector)
@@ -199,12 +211,22 @@ class MarkupTemplateTypeCheckingExtension extends GroovyTypeCheckingExtensionSup
         private final Set<MethodCallExpression> callsToBeReplaced
         private final Map<BinaryExpression, MethodCallExpression> binaryExpressionsToBeReplaced
 
+        /**
+         * Creates a transformer that replaces dynamic builder calls with direct {@code methodMissing} invocations.
+         *
+         * @param unit source unit being transformed
+         * @param calls method calls that should be rewritten
+         * @param binExpressionsWithReplacements assignment expressions that should be rewritten
+         */
         BuilderMethodReplacer(SourceUnit unit, Collection<MethodCallExpression> calls, Map<BinaryExpression, MethodCallExpression> binExpressionsWithReplacements) {
             this.unit = unit
             this.callsToBeReplaced = calls as Set
             this.binaryExpressionsToBeReplaced = binExpressionsWithReplacements
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             unit

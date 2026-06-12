@@ -242,6 +242,42 @@ final class RegexCheckerTest {
     }
 
     @Test
+    void testBadRegexJavaStringMatches() {
+        // GROOVY-12081: the regex argument of String#matches is now checked
+        def err = shouldFail shell, '''
+            assert 'JOHN'.matches('[A-Z+') // unclosed character class
+        '''
+        assert err.message ==~ /(?s).*Bad regex.*: Unclosed character class.*/
+
+        // String-typed receiver via parameter
+        err = shouldFail shell, '''
+            boolean isUpper(String s) { s.matches('[A-Z+') }
+        '''
+        assert err.message ==~ /(?s).*Bad regex.*: Unclosed character class.*/
+
+        // regex supplied via a local constant variable
+        err = shouldFail shell, '''
+            def re = '[A-Z+'
+            assert 'JOHN'.matches(re)
+        '''
+        assert err.message ==~ /(?s).*Bad regex.*: Unclosed character class.*/
+    }
+
+    @Test
+    void testGoodRegexJavaStringMatches() {
+        assertScript shell, '''
+            boolean isUpper(String s) { s.matches('[A-Z]+') }
+            assert isUpper('JOHN')
+            assert !isUpper('John')
+        '''
+        // a matches(String) on a non-String receiver must not be treated as a regex
+        assertScript shell, '''
+            class Foo { boolean matches(String s) { true } }
+            assert new Foo().matches('[A-Z+')
+        '''
+    }
+
+    @Test
     void testBadRegexGroupCount() {
         def shouldFailWithGroupCountError = { String script ->
             def err = shouldFail(shell, script)
@@ -269,6 +305,29 @@ final class RegexCheckerTest {
             def m = 'barbaz' =~ /(...)(...)/
             assert m[0][3]
         '''
+    }
+
+    @Test
+    void testInlinePatternAsMatcherReceiver() {
+        // GROOVY-12080: pattern operator result used directly as a matcher() receiver
+        // used to crash the compiler ("No signature of method: findTargetVariable")
+        assertScript shell, '''
+            Matcher m = (~/(...)(...)/).matcher('foobar')
+            assert m.find()
+            assert m.group(1) == 'foo'
+            assert m.group(2) == 'bar'
+        '''
+    }
+
+    @Test
+    void testBadRegexGroupCountForInlinePattern() {
+        // GROOVY-12080: group count is now inferred for inline patterns too
+        def err = shouldFail shell, '''
+            Matcher m = (~/(...)(...)/).matcher('foobar')
+            assert m.find()
+            assert m.group(3)
+        '''
+        assert err.message =~ /Invalid group count 3 for regex with 2 groups/
     }
 
     @Test

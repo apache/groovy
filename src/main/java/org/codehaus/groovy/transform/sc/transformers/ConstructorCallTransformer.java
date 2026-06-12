@@ -51,13 +51,27 @@ import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.NEW;
 
+/**
+ * Rewrites constructor calls that have a more direct static-compilation form.
+ */
 public class ConstructorCallTransformer {
     private final StaticCompilationTransformer staticCompilationTransformer;
 
+    /**
+     * Creates a constructor-call transformer backed by the owning static compilation transformer.
+     *
+     * @param staticCompilationTransformer the shared transformer context
+     */
     public ConstructorCallTransformer(final StaticCompilationTransformer staticCompilationTransformer) {
         this.staticCompilationTransformer = staticCompilationTransformer;
     }
 
+    /**
+     * Rewrites a constructor call when the static compiler can target a more direct implementation.
+     *
+     * @param expr the constructor call expression to transform
+     * @return the transformed expression
+     */
     Expression transformConstructorCall(final ConstructorCallExpression expr) {
         ConstructorNode node = expr.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (node == null) return expr;
@@ -103,8 +117,8 @@ public class ConstructorCallTransformer {
             this.originalCall = originalCall;
             this.copyNodeMetaData(originalCall);
             this.setSourcePosition(originalCall);
-            Expression originalArgs = originalCall.getArguments();
-            this.innerClassCall = (2 == ((TupleExpression) originalArgs).getExpressions().size());
+            var originalArgs = (TupleExpression) originalCall.getArguments();
+            this.innerClassCall = (2 == originalArgs.getExpressions().size());
         }
 
         @Override
@@ -141,22 +155,23 @@ public class ConstructorCallTransformer {
             String signature = "()V";
             if (innerClassCall && ctorType.getOuterClass() != null) {
                 acg.visitVariableExpression(varX("this")); // GROOVY-11122
-                Parameter[] params = {new Parameter(ctorType.getOuterClass(), "$p$")};
+                Parameter[] params = {new Parameter(ctorType.getOuterClass(),"$p$")};
                 signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
             }
             mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             mv.visitVarInsn(ASTORE, tmpObj);
 
             int mark = operandStack.getStackLength();
+            Expression objExpression = bytecodeX(ctorType, v -> v.visitVarInsn(ALOAD, tmpObj));
 
             // process property initializers
             for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
                 Expression keyExpression = entryExpression.getKeyExpression();
+                Expression varExpression = propX(objExpression, keyExpression);
                 Expression valExpression = entryExpression.getValueExpression();
-                Expression varExpression = propX(
-                        bytecodeX(ctorType, v -> v.visitVarInsn(ALOAD, tmpObj)),
-                        keyExpression
-                );
+
+                objExpression.setSourcePosition(keyExpression); // GROOVY-11956
+
                 varExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
                         keyExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
 

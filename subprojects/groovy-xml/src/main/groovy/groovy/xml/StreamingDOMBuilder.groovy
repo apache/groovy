@@ -22,18 +22,23 @@ import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 import org.w3c.dom.Node
 
-import javax.xml.parsers.DocumentBuilderFactory
-
+/**
+ * A streaming builder that creates W3C DOM content for GPath-style XML traversal or further DOM processing.
+ */
 @SuppressWarnings('Instanceof')
 class StreamingDOMBuilder extends AbstractStreamingBuilder {
+    /** Stack of pending namespace declarations restored after each nested element finishes. */
     def pendingStack = []
+    /** Stack tracking the currently active default namespace while nested elements are created. */
     def defaultNamespaceStack = ['']
+    /** Closure backing {@code mkp.comment} for DOM comment node creation. */
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         def comment = dom.document.createComment(body)
         if (comment != null) {
             dom.element.appendChild(comment)
         }
     }
+    /** Closure backing {@code mkp.pi} for DOM processing-instruction node creation. */
     def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         attrs.each {target, instruction ->
             def pi = null
@@ -47,6 +52,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
             }
         }
     }
+    /** Closure backing text-yield operations when appending DOM nodes. */
     def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         if (body instanceof Closure) {
             def body1 = body.clone()
@@ -68,6 +74,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
             }
         }
     }
+    /** Default element-emitting closure used for ordinary DOM builder nodes. */
     def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         def attributes = []
         def nsAttributes = []
@@ -136,7 +143,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
 
         if (body != null) {
             defaultNamespaceStack.push defaultNamespace
-            pendingStack.add pendingNamespaces.clone()
+            pendingStack.push pendingNamespaces.clone()
             pendingNamespaces.clear()
 
             if (body instanceof Closure) {
@@ -174,8 +181,10 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         }
     }
 
+    /** Backing namespace-aware builder reused for each {@link #bind(Closure)} call. */
     def builder = null
 
+    /** Creates a DOM-oriented builder with the standard {@code mkp} helper tags installed. */
     StreamingDOMBuilder() {
         specialTags.putAll(['yield':noopClosure,
                             'yieldUnescaped':noopClosure,
@@ -189,6 +198,12 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         this.builder = new BaseMarkupBuilder(nsSpecificTags)
     }
 
+    /**
+     * Binds a markup closure that can append to an existing DOM node or create a fresh document.
+     *
+     * @param closure closure describing the XML to generate
+     * @return a closure that appends to a supplied DOM node or returns a new namespace-aware document
+     */
     def bind(closure) {
         def boundClosure = this.builder.bind(closure)
         return {
@@ -197,7 +212,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                 boundClosure.trigger = ['document' : document, 'element' : it]
                 return document
             }
-            def dBuilder = DocumentBuilderFactory.newInstance()
+            def dBuilder = FactorySupport.createDocumentBuilderFactory()
             dBuilder.namespaceAware = true
             def newDocument = dBuilder.newDocumentBuilder().newDocument()
             boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]

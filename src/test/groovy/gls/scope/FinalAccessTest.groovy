@@ -66,4 +66,18 @@ final class FinalAccessTest extends CompilableTestSupport {
             }
         """
     }
+
+    // GROOVY-8801
+    @Test
+    void testFinalVariable() {
+        assertScript '''
+            final Object v
+            try {
+                 v = "hello world"
+            } catch (Exception e) {
+                 throw new RuntimeException("goodbye")
+            }
+            assert 'hello world' == v
+        '''
+    }
 }

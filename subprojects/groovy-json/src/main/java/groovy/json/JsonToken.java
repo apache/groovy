@@ -97,55 +97,120 @@ public class JsonToken {
         }
     }
 
+    /**
+     * Returns a debug string containing the token text, type, and source positions.
+     *
+     * @return a string representation of this token
+     */
     @Override
     public String toString() {
         return text + " (" + type + ") [" + startLine + ":" + startColumn + "-" + endLine + ":" + endColumn + "]";
     }
 
+    /**
+     * Returns the starting line of this token.
+     *
+     * @return the starting line number
+     */
     public long getStartLine() {
         return startLine;
     }
 
+    /**
+     * Sets the starting line of this token.
+     *
+     * @param startLine the starting line number
+     */
     public void setStartLine(long startLine) {
         this.startLine = startLine;
     }
 
+    /**
+     * Returns the ending line of this token.
+     *
+     * @return the ending line number
+     */
     public long getEndLine() {
         return endLine;
     }
 
+    /**
+     * Sets the ending line of this token.
+     *
+     * @param endLine the ending line number
+     */
     public void setEndLine(long endLine) {
         this.endLine = endLine;
     }
 
+    /**
+     * Returns the starting column of this token.
+     *
+     * @return the starting column number
+     */
     public long getStartColumn() {
         return startColumn;
     }
 
+    /**
+     * Sets the starting column of this token.
+     *
+     * @param startColumn the starting column number
+     */
     public void setStartColumn(long startColumn) {
         this.startColumn = startColumn;
     }
 
+    /**
+     * Returns the ending column of this token.
+     *
+     * @return the ending column number
+     */
     public long getEndColumn() {
         return endColumn;
     }
 
+    /**
+     * Sets the ending column of this token.
+     *
+     * @param endColumn the ending column number
+     */
     public void setEndColumn(long endColumn) {
         this.endColumn = endColumn;
     }
 
+    /**
+     * Returns the token type.
+     *
+     * @return the token type
+     */
     public JsonTokenType getType() {
         return this.type;
     }
 
+    /**
+     * Sets the token type.
+     *
+     * @param type the token type
+     */
     public void setType(JsonTokenType type) {
         this.type = type;
     }
 
+    /**
+     * Sets the token text.
+     *
+     * @param text the token text
+     */
     public void setText(String text) {
         this.text = text;
     }
 
+    /**
+     * Returns the token text.
+     *
+     * @return the token text
+     */
     public String getText() {
         return this.text;
     }

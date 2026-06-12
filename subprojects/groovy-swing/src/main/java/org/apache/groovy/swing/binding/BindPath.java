@@ -49,8 +49,17 @@ public class BindPath {
      */
     String propertyName;
 
+    /**
+     * Listener registered against a property-specific listener hook.
+     */
     PropertyChangeListener localListener;
+    /**
+     * Listener registered against a global listener hook.
+     */
     PropertyChangeListener globalListener;
+    /**
+     * Synthetic binding used when the property is backed by a synthetic trigger.
+     */
     BindingUpdatable syntheticFullBinding;
 
     /**
@@ -142,7 +151,13 @@ public class BindPath {
         return newValue;
     }
 
+    /**
+     * Signature used for property-specific {@code addPropertyChangeListener} lookups.
+     */
     static final Class[] NAME_PARAMS = {String.class, PropertyChangeListener.class};
+    /**
+     * Signature used for global {@code addPropertyChangeListener} lookups.
+     */
     static final Class[] GLOBAL_PARAMS = {PropertyChangeListener.class};
 
     /**
@@ -204,6 +219,11 @@ public class BindPath {
         }
     }
 
+    /**
+     * Refreshes the synthetic trigger bindings that apply to this path segment.
+     *
+     * @param synthetics all known synthetic trigger bindings
+     */
     public synchronized void updateLocalSyntheticProperties(Map<String, TriggerBinding> synthetics) {
         localSynthetics = null;
         String endName = "#" + propertyName;
@@ -217,10 +237,21 @@ public class BindPath {
         }
     }
 
+    /**
+     * Returns the synthetic trigger bindings relevant to this path segment.
+     *
+     * @return the local synthetic binding map, or {@code null}
+     */
     synchronized Map<String, TriggerBinding> getLocalSynthetics() {
         return localSynthetics;
     }
 
+    /**
+     * Resolves the synthetic trigger binding that matches the supplied object and property.
+     *
+     * @param newObject the current object for this path segment
+     * @return the matching trigger binding, or {@code null}
+     */
     public TriggerBinding getSyntheticTriggerBinding(Object newObject) {
         final Map<String, TriggerBinding> localSynthetics = getLocalSynthetics();
         if (localSynthetics == null) {

@@ -38,6 +38,15 @@ public class BatchingPreparedStatementWrapper extends BatchingStatementWrapper {
     private final List<Tuple> indexPropList;
     private final Sql sql;
 
+    /**
+     * Creates a batching wrapper for a prepared statement.
+     *
+     * @param delegate the prepared statement to wrap
+     * @param indexPropList indexed-property descriptors for named-parameter batches, or {@code null}
+     * @param batchSize the automatic execution threshold; {@code 0} disables automatic partitioning
+     * @param log the logger to use for batch diagnostics
+     * @param sql the owning {@link Sql} instance used to bind parameters
+     */
     public BatchingPreparedStatementWrapper(PreparedStatement delegate, List<Tuple> indexPropList, int batchSize, Logger log, Sql sql) {
         super(delegate, batchSize, log);
         this.delegate = delegate;
@@ -45,10 +54,25 @@ public class BatchingPreparedStatementWrapper extends BatchingStatementWrapper {
         this.sql = sql;
     }
 
+    /**
+     * Adds one parameter set to the batch using varargs-style arguments.
+     *
+     * @param parameters the parameter values for a single batch entry
+     * @throws SQLException if the batch entry cannot be added
+     */
     public void addBatch(Object[] parameters) throws SQLException {
         addBatch(Arrays.asList(parameters));
     }
 
+    /**
+     * Adds one parameter set to the batch.
+     * <p>
+     * When the associated SQL uses named or named-ordinal parameters, the
+     * supplied values are first flattened into JDBC positional order.
+     *
+     * @param parameters the parameter values for a single batch entry
+     * @throws SQLException if the parameters cannot be bound or the batch entry cannot be added
+     */
     public void addBatch(List<Object> parameters) throws SQLException {
         if (indexPropList != null) {
             sql.setParameters(sql.getUpdatedParams(parameters, indexPropList), delegate);

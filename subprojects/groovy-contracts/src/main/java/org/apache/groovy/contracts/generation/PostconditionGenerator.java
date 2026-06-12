@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -35,16 +36,24 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.io.ReaderSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 
 /**
@@ -55,6 +64,11 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 public class PostconditionGenerator extends BaseGenerator {
     private static final String METHOD_PROCESSED = "org.apache.groovy.contracts.POSTCONDITION_PROCESSED";
 
+    /**
+     * Creates a generator for postcondition support code.
+     *
+     * @param source the reader source backing the current source unit
+     */
     public PostconditionGenerator(final ReaderSource source) {
         super(source);
     }
@@ -118,40 +132,112 @@ public class PostconditionGenerator extends BaseGenerator {
 
     private void addPostcondition(MethodNode method, BlockStatement postconditionBlockStatement) {
         if (Boolean.TRUE.equals(method.getNodeMetaData(METHOD_PROCESSED))) return;
+        // GROOVY-12084: normalize a non-block body (e.g. a @Synchronized method whose body was wrapped
+        // in a SynchronizedStatement at CANONICALIZATION) before weaving, so the cast below is safe;
+        // covers both the explicit and the inherited (default) postcondition paths that reach here
+        ensureBlockBody(method);
         final BlockStatement block = (BlockStatement) method.getCode();
 
-        final List<Statement> statements = block.getStatements();
-        if (!statements.isEmpty()) {
-            Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
+        Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
 
-            if (!isPrimitiveVoid(method.getReturnType())) {
-                // if return type is not void, then a "result" variable is provided in the postcondition expression
-                List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
+        if (!isPrimitiveVoid(method.getReturnType())) {
+            // if return type is not void, then a "result" variable is provided in the postcondition expression
+            List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
 
-                for (ReturnStatement returnStatement : returnStatements) {
-                    BlockStatement localPostconditionBlockStatement = block(new VariableScope(), postconditionBlockStatement.getStatements());
-
-                    Expression result = localVarX("result", method.getReturnType());
-                    localPostconditionBlockStatement.getStatements().add(0, declS(result, returnStatement.getExpression()));
-                    AssertStatementCreationUtility.injectResultVariableReturnStatementAndAssertionCallStatement(block, method.getReturnType().redirect(), returnStatement, localPostconditionBlockStatement);
-                }
-                setOldVariablesIfEnabled(block, contractsEnabled);
-
-            } else if (method instanceof ConstructorNode) {
-                block.addStatements(postconditionBlockStatement.getStatements());
-            } else {
-                setOldVariablesIfEnabled(block, contractsEnabled);
-                block.addStatements(postconditionBlockStatement.getStatements());
+            // GROOVY-12082: a method that falls off the end (e.g. an empty body) implicitly returns the
+            // default for its return type; synthesize that return so the result-based postcondition is
+            // still evaluated (reference types yield null, primitives yield 0/false to match Groovy)
+            if (returnStatements.isEmpty()) {
+                ReturnStatement implicitReturn = new ReturnStatement(defaultReturnValueExpression(method.getReturnType()));
+                block.addStatement(implicitReturn);
+                returnStatements = List.of(implicitReturn);
             }
-            method.putNodeMetaData(METHOD_PROCESSED, true);
+
+            for (ReturnStatement returnStatement : returnStatements) {
+                BlockStatement localPostconditionBlockStatement = block(new VariableScope(), postconditionBlockStatement.getStatements());
+
+                Expression result = localVarX("result", method.getReturnType());
+                localPostconditionBlockStatement.getStatements().add(0, declS(result, returnStatement.getExpression()));
+                AssertStatementCreationUtility.injectResultVariableReturnStatementAndAssertionCallStatement(block, method.getReturnType().redirect(), returnStatement, localPostconditionBlockStatement);
+            }
+            setOldVariablesIfEnabled(block, contractsEnabled, method);
+
+        } else if (method instanceof ConstructorNode) {
+            block.addStatements(postconditionBlockStatement.getStatements());
+        } else {
+            // GROOVY-12082: void (non-constructor) methods get their postcondition appended even when
+            // the body is empty, mirroring how preconditions and class invariants are always woven
+            setOldVariablesIfEnabled(block, contractsEnabled, method);
+            block.addStatements(postconditionBlockStatement.getStatements());
         }
+        method.putNodeMetaData(METHOD_PROCESSED, true);
     }
 
-    private void setOldVariablesIfEnabled(BlockStatement block, Expression contractsEnabled) {
-        // Assign the return statement expression to a local variable: Map old
+    /**
+     * Returns the constant a method implicitly yields when it falls off the end of its body, matching
+     * Groovy's runtime semantics: the default value of the (primitive) return type, or {@code null} for
+     * reference types. Used by {@link #addPostcondition} (GROOVY-12082) to bind {@code result} for an
+     * empty-bodied (or returnless) non-void method so its postcondition can still be evaluated.
+     *
+     * @param returnType the method's declared return type
+     * @return the implicit default-return expression for that type
+     */
+    private static Expression defaultReturnValueExpression(final ClassNode returnType) {
+        if (!ClassHelper.isPrimitiveType(returnType)) return constX(null);
+        if (returnType.equals(ClassHelper.boolean_TYPE)) return constX(Boolean.FALSE);
+        if (returnType.equals(ClassHelper.long_TYPE)) return constX(0L);
+        if (returnType.equals(ClassHelper.float_TYPE)) return constX(0.0f);
+        if (returnType.equals(ClassHelper.double_TYPE)) return constX(0.0d);
+        // byte, short, int and char all default to a zero integer constant
+        return constX(0);
+    }
+
+    private void setOldVariablesIfEnabled(BlockStatement block, Expression contractsEnabled, MethodNode method) {
         final Expression oldVariableExpression = localVarX("old", new ClassNode(Map.class));
-        Statement oldVariableStatement = assignS(oldVariableExpression, callThisX(OldVariableGenerationUtility.OLD_VARIABLES_METHOD));
+        if (method.isStatic()) {
+            // static methods have no instance state to snapshot; the synthetic old-variables method is an
+            // instance method, so 'old' starts as an empty map. GROOVY-12078: it is still populated with
+            // the entry values of any parameters referenced via old.<name> (field references stay rejected)
+            block.getStatements().add(0, declS(oldVariableExpression, mapX()));
+            List<Statement> parameterSnapshots = parameterSnapshotStatements(method);
+            if (!parameterSnapshots.isEmpty()) {
+                block.getStatements().add(1, ifS(boolX(contractsEnabled), block(new VariableScope(), parameterSnapshots)));
+            }
+            return;
+        }
+        // Snapshot instance field state into a local variable: Map old = $_gc_computeOldVariables()
+        final List<Statement> oldSetup = new ArrayList<>();
+        oldSetup.add(assignS(oldVariableExpression, callThisX(OldVariableGenerationUtility.OLD_VARIABLES_METHOD)));
+        // GROOVY-12078: also snapshot the entry values of parameters referenced via old.<name>, so a
+        // postcondition can compare against an argument that the method body reassigns
+        oldSetup.addAll(parameterSnapshotStatements(method));
+
         block.getStatements().add(0, declS(oldVariableExpression, ConstantExpression.NULL));
-        block.getStatements().add(1, ifS(boolX(contractsEnabled), block(oldVariableStatement)));
+        block.getStatements().add(1, ifS(boolX(contractsEnabled), block(new VariableScope(), oldSetup)));
+    }
+
+    /**
+     * Builds {@code old.put('name', name)} statements for each method parameter referenced via
+     * {@code old.<name>} in the postcondition. Parameters are snapshotted after the field state so a
+     * parameter shadowing a field name wins, mirroring lexical scoping. {@code final} (and {@code val})
+     * parameters are snapshotted too: {@code final} prevents reassignment but not in-place mutation, so
+     * {@code old.<name>} must still capture the entry state.
+     *
+     * @param method the method whose postcondition is being generated
+     * @return the list of snapshot statements (possibly empty)
+     */
+    private static List<Statement> parameterSnapshotStatements(final MethodNode method) {
+        final Set<String> oldReferences = method.getNodeMetaData(AnnotationClosureVisitor.OLD_REFERENCES_KEY);
+        if (oldReferences == null || oldReferences.isEmpty()) return List.of();
+
+        final List<Statement> statements = new ArrayList<>();
+        for (Parameter parameter : method.getParameters()) {
+            if (!oldReferences.contains(parameter.getName())) continue;
+            // old.put('name', name) - snapshotExpression defensively copies a mutable cloneable value,
+            // but stores an immutable (or otherwise uncopyable) value by reference
+            Expression snapshot = OldVariableGenerationUtility.snapshotExpression(parameter.getType(), varX(parameter));
+            statements.add(stmt(callX(varX("old"), "put", args(constX(parameter.getName()), snapshot))));
+        }
+        return statements;
     }
 }

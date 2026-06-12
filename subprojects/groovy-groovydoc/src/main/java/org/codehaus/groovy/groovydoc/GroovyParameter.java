@@ -18,14 +18,42 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes a parameter declared by a documented executable member.
+ */
 public interface GroovyParameter {
+    /**
+     * Returns the annotations declared on this parameter.
+     *
+     * @return the parameter annotations
+     */
     GroovyAnnotationRef[] annotations();
 
+    /**
+     * Returns the parameter name.
+     *
+     * @return the parameter name
+     */
     String name();
 
+    /**
+     * Returns the resolved parameter type.
+     *
+     * @return the parameter type, or {@code null} if it is unavailable
+     */
     GroovyType type();
 
+    /**
+     * Returns the parameter type name as declared in source.
+     *
+     * @return the declared type name
+     */
     String typeName();
 
+    /**
+     * Returns the default value expression declared for this parameter.
+     *
+     * @return the default value expression, or {@code null} if none is declared
+     */
     String defaultValue();
 }

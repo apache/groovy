@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the {@code /methods} command.
  */
 class MethodsTest extends SystemTestSupport {
+    @Test
     void testImport() {
         system.execute('/methods')
         assert !printer.output.join().contains('twice')
@@ -31,5 +34,14 @@ class MethodsTest extends SystemTestSupport {
         assert engine.methodNames.contains('twice')
         system.execute('/methods -d twice')
         assert !engine.methodNames.contains('twice')
+    }
+
+    @Test
+    void testDeleteNonexistentMethodIsHarmless() {
+        // /methods -d on an unknown method should not throw; the engine's
+        // method registry stays stable.
+        def before = engine.methodNames.toSet()
+        system.execute('/methods -d noSuchMethodEverDefined')
+        assert engine.methodNames.toSet() == before
     }
 }

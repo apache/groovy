@@ -19,6 +19,7 @@
 
 -->
 <class name="${classDoc.name()}">
+  <% def isDocumented = { !(it.respondsTo('isHidden') && it.isHidden()) } %>
   <containingPackage name="${classDoc.containingPackage().name()}">${classDoc.containingPackage().nameWithDots()}</containingPackage>
   <extends>${classDoc.superclass()?.name()}</extends>
   <interfaces><% for (interfaceDoc in classDoc.interfaces()) { %>
@@ -26,7 +27,7 @@
 <% } %>
   </interfaces>
   <comment>${classDoc.commentText()}</comment>
-  <constructors><% for (constructor in classDoc.constructors()) { %>
+  <constructors><% for (constructor in classDoc.constructors().findAll(isDocumented)) { %>
     <constructor modifiers="${constructor.isPublic()?'public ':''}" name="${constructor.name()}">
       <parameters><% for (parameter in constructor.parameters()) { %>
         <parameter type="${parameter.isTypeAvailable()?parameter.type().qualifiedTypeName():parameter.typeName()}" name="${parameter.name()}" /><% } %>
@@ -36,7 +37,7 @@
 <% } %>
   </constructors>
 
-  <methods><% for (method in classDoc.methods()) { %>
+  <methods><% for (method in classDoc.methods().findAll(isDocumented)) { %>
     <method modifiers="${method.isPublic()?'public ':''}${method.isStatic()?'static ':''}" returns="${method.returnType().qualifiedTypeName()}" name="${method.name()}">
       <parameters><% for (parameter in method.parameters()) { %>
         <parameter type="${parameter.isTypeAvailable()?parameter.type().qualifiedTypeName():parameter.typeName()}" name="${parameter.name()}" /><% } %>
@@ -46,14 +47,14 @@
 <% } %>
   </methods>
 
-  <properties><% for (property in classDoc.properties()) { %>
+  <properties><% for (property in classDoc.properties().findAll(isDocumented)) { %>
     <property modifiers="${property.isPublic()?'public ':''}${property.isStatic()?'static ':''}" type="${property.type().qualifiedTypeName()}" name="${property.name()}">
       <comment>${property.commentText()}</comment>
     </property>
 <% } %>
   </properties>
 
-  <fields><% for (field in classDoc.fields()) { %>
+  <fields><% for (field in classDoc.fields().findAll(isDocumented)) { %>
     <field modifiers="${field.isPublic()?'public ':''}${field.isStatic()?'static ':''}" type="${field.type().qualifiedTypeName()}" name="${field.name()}">
       <comment>${field.commentText()}</comment>
     </field>

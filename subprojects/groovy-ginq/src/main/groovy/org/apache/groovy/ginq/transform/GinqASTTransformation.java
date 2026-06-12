@@ -60,6 +60,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class GinqASTTransformation extends AbstractASTTransformation {
+    /**
+     * Rewrites annotated methods by replacing their bodies with transformed GINQ queries.
+     *
+     * @param nodes the transformation nodes
+     * @param sourceUnit the source unit being transformed
+     */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit sourceUnit) {
         init(nodes, sourceUnit);
@@ -114,6 +120,7 @@ public class GinqASTTransformation extends AbstractASTTransformation {
                     .collect(Collectors.toList()));
     }
 
+    @SuppressWarnings("unchecked")
     private static Object getDefaultOptionValue(String optionName) {
         try {
             return GQ_CLASS_NODE.getTypeClass().getMethod(optionName).getDefaultValue();

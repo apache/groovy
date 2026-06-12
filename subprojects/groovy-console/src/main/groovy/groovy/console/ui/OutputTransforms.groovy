@@ -35,11 +35,20 @@ import java.awt.Transparency
 import java.awt.Window
 import java.awt.image.BufferedImage
 
+/**
+ * Provides the transformation pipeline used to render console results.
+ */
 @CompileStatic
 class OutputTransforms {
 
+    /** Lazily loaded output transforms composed from user and built-in transforms. */
     @Lazy static List<Closure> localTransforms = loadOutputTransforms()
 
+    /**
+     * Loads user-defined and built-in output transforms.
+     *
+     * @return transforms applied to console results
+     */
     static List<Closure> loadOutputTransforms() {
         def transforms = []
 
@@ -97,6 +106,13 @@ class OutputTransforms {
         return (List<Closure>) transforms
     }
 
+    /**
+     * Applies the configured transforms until one returns a non-null value.
+     *
+     * @param base original result value
+     * @param transforms transforms to apply
+     * @return the transformed value, or the original value when no transform matches
+     */
     static transformResult(base, List<Closure> transforms = localTransforms) {
         for (Closure c : transforms) {
             def result = c(base as Object)

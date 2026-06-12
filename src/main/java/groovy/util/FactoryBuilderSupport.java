@@ -59,17 +59,29 @@ import static org.apache.groovy.util.BeanUtils.capitalize;
  * multiple threads.
  */
 public abstract class FactoryBuilderSupport extends Binding {
+    /** Context key for the factory creating the current node. */
     public static final String CURRENT_FACTORY = "_CURRENT_FACTORY_";
+    /** Context key for the factory that created the parent node. */
     public static final String PARENT_FACTORY = "_PARENT_FACTORY_";
+    /** Context key for the parent node. */
     public static final String PARENT_NODE = "_PARENT_NODE_";
+    /** Context key for the current node. */
     public static final String CURRENT_NODE = "_CURRENT_NODE_";
+    /** Context key for the parent node context. */
     public static final String PARENT_CONTEXT = "_PARENT_CONTEXT_";
+    /** Context key for the parent node name. */
     public static final String PARENT_NAME = "_PARENT_NAME_";
+    /** Context key for the current node name. */
     public static final String CURRENT_NAME = "_CURRENT_NAME_";
+    /** Context key for a nested closure owner. */
     public static final String OWNER = "owner";
+    /** Context key for the builder of the parent node. */
     public static final String PARENT_BUILDER = "_PARENT_BUILDER_";
+    /** Context key for the builder of the current node. */
     public static final String CURRENT_BUILDER = "_CURRENT_BUILDER_";
+    /** Context key for the builder used to create child nodes. */
     public static final String CHILD_BUILDER = "_CHILD_BUILDER_";
+    /** Binding key for the currently executing script class name. */
     public static final String SCRIPT_CLASS_NAME = "_SCRIPT_CLASS_NAME_";
     private static final Logger LOG = Logger.getLogger(FactoryBuilderSupport.class.getName());
     private static final Comparator<Method> METHOD_COMPARATOR = Comparator.comparing(Method::getName).thenComparingInt(o -> o.getParameterTypes().length);
@@ -133,29 +145,49 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     private final ThreadLocal<LinkedList<Map<String, Object>>> contexts = new ThreadLocal<LinkedList<Map<String, Object>>>();
+    /** Delegates that can preprocess node attributes. */
     protected LinkedList<Closure> attributeDelegates = new LinkedList<Closure>(); //
     private final List<Closure> disposalClosures = new ArrayList<Closure>(); // because of reverse iteration use ArrayList
     private final Map<String, Factory> factories = new HashMap<String, Factory>();
     private Closure nameMappingClosure;
     private final ThreadLocal<FactoryBuilderSupport> localProxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
     private FactoryBuilderSupport globalProxyBuilder;
+    /** Delegates invoked before a factory creates a node. */
     protected LinkedList<Closure> preInstantiateDelegates = new LinkedList<Closure>();
+    /** Delegates invoked after a factory creates a node. */
     protected LinkedList<Closure> postInstantiateDelegates = new LinkedList<Closure>();
+    /** Delegates invoked after a node and its children are complete. */
     protected LinkedList<Closure> postNodeCompletionDelegates = new LinkedList<Closure>();
+    /** Fallback invoked when a builder method cannot be resolved. */
     protected Closure methodMissingDelegate;
+    /** Fallback invoked when a builder property cannot be resolved. */
     protected Closure propertyMissingDelegate;
+    /** Explicit property accessors exposed by the builder. */
     protected Map<String, Closure[]> explicitProperties = new HashMap<String, Closure[]>();
+    /** Explicit methods exposed by the builder. */
     protected Map<String, Closure> explicitMethods = new HashMap<String, Closure>();
+    /** Registered names grouped by registration phase. */
     protected Map<String, Set<String>> registrationGroup = new HashMap<String, Set<String>>();
+    /** Name of the registration group currently being populated. */
     protected String registrationGroupName = ""; // use binding to store?
 
+    /** Tracks whether auto-registration is currently in progress. */
     protected boolean autoRegistrationRunning = false;
+    /** Tracks whether auto-registration has completed. */
     protected boolean autoRegistrationComplete = false;
 
+    /**
+     * Creates a builder without performing automatic node registration.
+     */
     public FactoryBuilderSupport() {
         this(false);
     }
 
+    /**
+     * Creates a builder and optionally performs automatic node registration.
+     *
+     * @param init {@code true} to invoke {@link #autoRegisterNodes()}
+     */
     public FactoryBuilderSupport(boolean init) {
         globalProxyBuilder = this;
         registrationGroup.put(registrationGroupName, new TreeSet<String>());
@@ -251,6 +283,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         super.setVariable(name, value);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Map getVariables() {
         return getProxyBuilder().doGetVariables();
@@ -361,10 +394,21 @@ public abstract class FactoryBuilderSupport extends Binding {
         return Collections.unmodifiableMap(explicitProperties);
     }
 
+    /**
+     * Returns the available registration group names.
+     *
+     * @return an unmodifiable view of the registration groups
+     */
     public Set<String> getRegistrationGroups() {
         return Collections.unmodifiableSet(registrationGroup.keySet());
     }
 
+    /**
+     * Returns the names registered in the supplied group.
+     *
+     * @param group the registration group name
+     * @return an unmodifiable view of the registered names
+     */
     public Set<String> getRegistrationGroupItems(String group) {
         Set<String> groupSet = registrationGroup.get(group);
         if (groupSet != null) {
@@ -374,34 +418,74 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    /**
+     * Returns the active attribute delegates.
+     *
+     * @return the attribute delegates in invocation order
+     */
     public List<Closure> getAttributeDelegates() {
         return Collections.unmodifiableList(attributeDelegates);
     }
 
+    /**
+     * Returns the active pre-instantiation delegates.
+     *
+     * @return the pre-instantiation delegates in invocation order
+     */
     public List<Closure> getPreInstantiateDelegates() {
         return Collections.unmodifiableList(preInstantiateDelegates);
     }
 
+    /**
+     * Returns the active post-instantiation delegates.
+     *
+     * @return the post-instantiation delegates in invocation order
+     */
     public List<Closure> getPostInstantiateDelegates() {
         return Collections.unmodifiableList(postInstantiateDelegates);
     }
 
+    /**
+     * Returns the active post-node-completion delegates.
+     *
+     * @return the node completion delegates in invocation order
+     */
     public List<Closure> getPostNodeCompletionDelegates() {
         return Collections.unmodifiableList(postNodeCompletionDelegates);
     }
 
+    /**
+     * Returns the method-missing fallback closure.
+     *
+     * @return the method-missing delegate, or {@code null}
+     */
     public Closure getMethodMissingDelegate() {
         return methodMissingDelegate;
     }
 
+    /**
+     * Sets the method-missing fallback closure.
+     *
+     * @param delegate the delegate to invoke for unresolved methods
+     */
     public void setMethodMissingDelegate(Closure delegate) {
         methodMissingDelegate = delegate;
     }
 
+    /**
+     * Returns the property-missing fallback closure.
+     *
+     * @return the property-missing delegate, or {@code null}
+     */
     public Closure getPropertyMissingDelegate() {
         return propertyMissingDelegate;
     }
 
+    /**
+     * Sets the property-missing fallback closure.
+     *
+     * @param delegate the delegate to invoke for unresolved properties
+     */
     public void setPropertyMissingDelegate(Closure delegate) {
         propertyMissingDelegate = delegate;
     }
@@ -473,10 +557,21 @@ public abstract class FactoryBuilderSupport extends Binding {
         return (String) getContextAttribute(PARENT_NAME);
     }
 
+    /**
+     * Returns the builder currently used for child node creation.
+     *
+     * @return the child builder from the current context
+     */
     public FactoryBuilderSupport getChildBuilder() {
         return (FactoryBuilderSupport) getContextAttribute(CHILD_BUILDER);
     }
 
+    /**
+     * Looks up a value from the current builder context.
+     *
+     * @param key the context key
+     * @return the associated value, or {@code null}
+     */
     public Object getContextAttribute(String key) {
         Map context = getContext();
         if (context != null) {
@@ -495,6 +590,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         return getProxyBuilder().invokeMethod(methodName, null);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object invokeMethod(String methodName, Object args) {
         Object name = getProxyBuilder().getName(methodName);
@@ -604,10 +700,25 @@ public abstract class FactoryBuilderSupport extends Binding {
         getProxyBuilder().postNodeCompletionDelegates.remove(delegate);
     }
 
+    /**
+     * Registers an explicit property in the current registration group.
+     *
+     * @param name the property name
+     * @param getter the optional getter closure
+     * @param setter the optional setter closure
+     */
     public void registerExplicitProperty(String name, Closure getter, Closure setter) {
         registerExplicitProperty(name, registrationGroupName, getter, setter);
     }
 
+    /**
+     * Registers an explicit property and tracks any generated accessor names.
+     *
+     * @param name the property name
+     * @param groupName the registration group name
+     * @param getter the optional getter closure
+     * @param setter the optional setter closure
+     */
     public void registerExplicitProperty(String name, String groupName, Closure getter, Closure setter) {
         // set the delegate to FBS so the closure closes over the builder
         if (getter != null) getter.setDelegate(this);
@@ -622,10 +733,23 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    /**
+     * Registers an explicit method in the current registration group.
+     *
+     * @param name the method name
+     * @param closure the implementation closure
+     */
     public void registerExplicitMethod(String name, Closure closure) {
         registerExplicitMethod(name, registrationGroupName, closure);
     }
 
+    /**
+     * Registers an explicit method and tracks it in the supplied group.
+     *
+     * @param name the method name
+     * @param groupName the registration group name
+     * @param closure the implementation closure
+     */
     public void registerExplicitMethod(String name, String groupName, Closure closure) {
         // set the delegate to FBS so the closure closes over the builder
         closure.setDelegate(this);
@@ -654,6 +778,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     public void registerBeanFactory(String theName, String groupName, final Class beanClass) {
         getProxyBuilder().registerFactory(theName, new AbstractFactory() {
+            /** {@inheritDoc} */
             @Override
             public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
                                       Map properties) throws InstantiationException, IllegalAccessException {
@@ -796,6 +921,14 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    /**
+     * Resolves and invokes an explicit builder method if one is registered.
+     *
+     * @param methodName the method name to resolve
+     * @param args the original method arguments
+     * @param result receives the explicit method result when one is invoked
+     * @return {@code true} if an explicit method handled the call
+     */
     protected boolean checkExplicitMethod(String methodName, Object args, Reference result) {
         Closure explicitMethod = resolveExplicitMethod(methodName, args);
         if (explicitMethod != null) {
@@ -819,6 +952,13 @@ public abstract class FactoryBuilderSupport extends Binding {
         return dispatchNodeCall(name, args);
     }
 
+    /**
+     * Dispatches a builder method call to node creation and nested closure handling.
+     *
+     * @param name the resolved node name
+     * @param args the original method arguments
+     * @return the created node
+     */
     protected Object dispatchNodeCall(Object name, Object args) {
         Object node;
         Closure closure = null;
@@ -950,10 +1090,20 @@ public abstract class FactoryBuilderSupport extends Binding {
         globalProxyBuilder = proxyBuilder;
     }
 
+    /**
+     * Returns the closure that maps method names to builder names.
+     *
+     * @return the name mapping closure, or {@code null}
+     */
     public Closure getNameMappingClosure() {
         return nameMappingClosure;
     }
 
+    /**
+     * Sets the closure used to map method names to builder names.
+     *
+     * @param nameMappingClosure the mapping closure to use
+     */
     public void setNameMappingClosure(Closure nameMappingClosure) {
         this.nameMappingClosure = nameMappingClosure;
     }
@@ -1156,6 +1306,12 @@ public abstract class FactoryBuilderSupport extends Binding {
         contexts.set((LinkedList<Map<String, Object>>) data.get("contexts"));
     }
 
+    /**
+     * Runs a script class using this builder as its binding.
+     *
+     * @param viewClass the script class to execute
+     * @return the script result
+     */
     public Object build(Class viewClass) {
         if (Script.class.isAssignableFrom(viewClass)) {
             Script script = InvokerHelper.createScript(viewClass, this);
@@ -1165,6 +1321,12 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    /**
+     * Runs a script instance using this builder as its binding.
+     *
+     * @param script the script to execute
+     * @return the script result
+     */
     public Object build(Script script) {
         // this used to be synchronized, but we also used to remove the
         // metaclass.  Since adding the metaclass is now a side effect, we
@@ -1186,6 +1348,13 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    /**
+     * Parses and runs an inline script using the supplied class loader.
+     *
+     * @param script the script source
+     * @param loader the class loader used to parse the script
+     * @return the script result
+     */
     public Object build(final String script, GroovyClassLoader loader) {
         return build(loader.parseClass(script));
     }
@@ -1285,14 +1454,27 @@ public abstract class FactoryBuilderSupport extends Binding {
         return getProxyBuilder().invokeMethod(name, new Object[]{attributes, result});
     }
 
+    /**
+     * Registers a closure to run when the builder is disposed.
+     *
+     * @param closure the disposal action
+     */
     public void addDisposalClosure(Closure closure) {
         disposalClosures.add(closure);
     }
 
+    /**
+     * Returns the registered disposal closures.
+     *
+     * @return the disposal closures in execution order
+     */
     public List<Closure> getDisposalClosures() {
         return Collections.unmodifiableList(disposalClosures);
     }
 
+    /**
+     * Invokes registered disposal closures in reverse registration order.
+     */
     public void dispose() {
         for (int i = disposalClosures.size() - 1; i >= 0; i--) {
             disposalClosures.get(i).call();
@@ -1300,15 +1482,26 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 }
 
+/**
+ * Meta-class wrapper that lets scripts fall back to builder dispatch.
+ */
 class FactoryInterceptorMetaClass extends DelegatingMetaClass {
 
+    /** Builder used when script method resolution falls through. */
     FactoryBuilderSupport builder;
 
+    /**
+     * Creates a meta-class wrapper for the supplied builder.
+     *
+     * @param delegate the original meta-class
+     * @param builder the builder to consult for unresolved methods
+     */
     FactoryInterceptorMetaClass(MetaClass delegate, FactoryBuilderSupport builder) {
         super(delegate);
         this.builder = builder;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         try {
@@ -1335,6 +1528,7 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         try {

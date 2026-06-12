@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes a documented package and the types it contains.
+ */
 public interface GroovyPackageDoc extends GroovyDoc {
     /**
      * All included classes and interfaces in this package.
@@ -93,7 +96,17 @@ public interface GroovyPackageDoc extends GroovyDoc {
      */
     String description();
 
+    /**
+     * Returns the package name using dot separators instead of path separators.
+     *
+     * @return the dot-separated package name
+     */
     String nameWithDots(); // not in JavaDoc API
 
+    /**
+     * Returns the relative path from this package documentation to the output root.
+     *
+     * @return the relative path to the documentation root
+     */
     String getRelativeRootPath(); // not in JavaDoc API
 }

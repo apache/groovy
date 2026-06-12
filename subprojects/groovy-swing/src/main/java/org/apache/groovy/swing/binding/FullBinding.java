@@ -21,27 +21,78 @@ package org.apache.groovy.swing.binding;
 import groovy.lang.Closure;
 
 /**
+ * Coordinates value propagation between a {@link SourceBinding} and a {@link TargetBinding}.
+ *
  * @since Groovy 1.1
  */
 public interface FullBinding extends BindingUpdatable {
-
+    /**
+     * Returns the source side of the binding.
+     *
+     * @return the source binding
+     */
     SourceBinding getSourceBinding();
 
+    /**
+     * Returns the target side of the binding.
+     *
+     * @return the target binding
+     */
     TargetBinding getTargetBinding();
 
+    /**
+     * Replaces the source side of the binding.
+     *
+     * @param source the new source binding
+     */
     void setSourceBinding(SourceBinding source);
 
+    /**
+     * Replaces the target side of the binding.
+     *
+     * @param target the new target binding
+     */
     void setTargetBinding(TargetBinding target);
 
+    /**
+     * Sets a validator invoked before propagating source values to the target.
+     *
+     * @param validator the validation closure, or {@code null}
+     */
     void setValidator(Closure validator);
 
+    /**
+     * Returns the validator used before forward propagation.
+     *
+     * @return the validator closure, or {@code null}
+     */
     Closure getValidator();
 
+    /**
+     * Sets the forward converter used before writing to the target.
+     *
+     * @param converter the forward converter, or {@code null}
+     */
     void setConverter(Closure converter);
 
+    /**
+     * Returns the forward converter used before writing to the target.
+     *
+     * @return the forward converter, or {@code null}
+     */
     Closure getConverter();
 
+    /**
+     * Sets the reverse converter used before writing back to the source.
+     *
+     * @param reverseConverter the reverse converter, or {@code null}
+     */
     void setReverseConverter(Closure reverseConverter);
 
+    /**
+     * Returns the reverse converter used during reverse updates.
+     *
+     * @return the reverse converter, or {@code null}
+     */
     Closure getReverseConverter();
 }

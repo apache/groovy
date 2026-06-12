@@ -18,8 +18,29 @@
  */
 package org.codehaus.groovy.util;
 
+/**
+ * Abstraction over reference implementations that keep a cleanup handler alongside the referent.
+ *
+ * @param <T> the referent type
+ * @param <V> the handler type
+ */
 public interface Reference<T,V extends Finalizable> {
+    /**
+     * Returns the current referent.
+     *
+     * @return the referent, or {@code null} if it is no longer available
+     */
     T get();
+
+    /**
+     * Clears the current referent.
+     */
     void clear();
+
+    /**
+     * Returns the handler that should be notified when the reference is processed.
+     *
+     * @return the associated handler
+     */
     V getHandler();
 }

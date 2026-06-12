@@ -203,6 +203,30 @@ final class SortableTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
+    void testSortableWithTraitProperty() {
+        assertScript '''
+            import groovy.transform.Sortable
+
+            trait Prioritized {
+                Integer priority
+            }
+
+            @Sortable
+            class Task implements Prioritized {
+                String label
+            }
+
+            def tasks = [
+                new Task(label: 'same', priority: 2),
+                new Task(label: 'same', priority: 1)
+            ]
+
+            assert tasks.sort()*.priority == [1, 2]
+            assert tasks.sort(false, Task.comparatorByPriority())*.priority == [1, 2]
+        '''
+    }
+
     // GROOVY-9711
     @Sortable
     class SortableBase {

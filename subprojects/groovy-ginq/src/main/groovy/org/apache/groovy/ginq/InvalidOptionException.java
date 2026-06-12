@@ -20,14 +20,21 @@ package org.apache.groovy.ginq;
 
 import org.codehaus.groovy.GroovyException;
 
+import java.io.Serial;
+
 /**
  * Represents invalid options, e.g. unsupported options
  *
  * @since 4.0.0
  */
 public class InvalidOptionException extends GroovyException {
-    private static final long serialVersionUID = -8644282992572200089L;
+    @Serial private static final long serialVersionUID = -8644282992572200089L;
 
+    /**
+     * Creates an invalid-option exception with the supplied message.
+     *
+     * @param message the validation failure message
+     */
     public InvalidOptionException(String message) {
         super(message);
     }

@@ -20,7 +20,6 @@ package org.codehaus.groovy.transform;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.transform.CompilationUnitAware;
-import groovy.transform.RecordBase;
 import groovy.transform.builder.Builder;
 import groovy.transform.builder.DefaultStrategy;
 import org.codehaus.groovy.ast.ASTNode;
@@ -58,9 +57,17 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
     private static final Class<?> MY_CLASS = Builder.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
+    /**
+     * String representation of the @Builder annotation for error reporting.
+     */
     public static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode RECORD_TYPE = make(RecordBase.class, false);
+    /**
+     * Empty array of ClassNode for use in method signatures.
+     */
     public static final ClassNode[] NO_EXCEPTIONS = ClassNode.EMPTY_ARRAY;
+    /**
+     * Empty array of Parameter for use in method signatures.
+     */
     public static final Parameter[] NO_PARAMS = Parameter.EMPTY_ARRAY;
 
     @Override
@@ -84,10 +91,10 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
         if (parent instanceof ClassNode || parent instanceof MethodNode) {
             if (parent instanceof ClassNode cn) {
-                if (!checkNotInterface((ClassNode) parent, MY_TYPE_NAME)) {
+                if (!checkNotInterface(cn, MY_TYPE_NAME)) {
                     return;
                 }
-                if (hasAnnotation(cn, RECORD_TYPE)) {
+                if (hasAnnotation(cn, RecordTypeASTTransformation.MY_TYPE)) {
                     // we'll later create a tuple constructor and move the builder annotation
                     // to it but let's create a mock constructor node for now
                     int size = cn.getProperties().size();
@@ -106,14 +113,35 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             final GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
             final BuilderStrategy strategy = createBuilderStrategy(anno, classLoader);
             if (strategy == null) return;
+
+            // GEP-21 Shape C: discard any stubber-emitted placeholders before
+            // the strategy runs — covers the inner builder class added to the
+            // module, the placeholder methods on it, and the static factory
+            // on the buildee. Use removeMethod() rather than removeIf() on
+            // method lists, since ClassNode keeps a parallel name->methods map.
+            if (parent instanceof ClassNode buildee) {
+                buildee.getModule().getClasses().removeIf(StubberSupport::isStub);
+                java.util.List<MethodNode> stubs = new java.util.ArrayList<>();
+                for (MethodNode m : buildee.getMethods()) {
+                    if (StubberSupport.isStub(m)) stubs.add(m);
+                }
+                stubs.forEach(buildee::removeMethod);
+            }
+
             strategy.build(this, parent, anno);
         }
     }
 
+    /**
+     * Strategy interface for builder code generation.
+     */
     public interface BuilderStrategy {
         void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno);
     }
 
+    /**
+     * Base class for builder generation strategies.
+     */
     public abstract static class AbstractBuilderStrategy implements BuilderStrategy {
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes) {
             return getPropertyInfoFromClassNode(cNode, includes, excludes, false);
@@ -122,7 +150,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
             List<PropertyInfo> props = new ArrayList<>();
             for (FieldNode fNode : getInstancePropertyFields(cNode)) {
-                if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
+                if (shouldSkip(fNode, excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
             return props;
@@ -223,12 +251,12 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             List<PropertyInfo> props = new ArrayList<>();
             List<String> seen = new ArrayList<>();
             for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, false, false, allProperties)) {
-                if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
+                if (shouldSkip(pNode, excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(pNode.getName(), pNode.getType()));
                 seen.add(pNode.getName());
             }
             for (FieldNode fNode : getFields(transform, anno, cNode)) {
-                if (seen.contains(fNode.getName()) || shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
+                if (seen.contains(fNode.getName()) || shouldSkip(fNode, excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
             return props;
@@ -241,7 +269,16 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             return getPropertyInfoFromClassNode(transform, anno, buildee, includes, excludes, allNames, allProperties);
         }
 
+        /**
+         * Holds information about a builder property.
+         */
         protected static class PropertyInfo {
+            /**
+             * Creates a new property information holder.
+             *
+             * @param name the property name
+             * @param type the property class type
+             */
             public PropertyInfo(String name, ClassNode type) {
                 this.name = name;
                 this.type = type;
@@ -250,18 +287,38 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             private String name;
             private ClassNode type;
 
+            /**
+             * Gets the property name.
+             *
+             * @return the property name
+             */
             public String getName() {
                 return name;
             }
 
+            /**
+             * Gets the property type.
+             *
+             * @return the property ClassNode
+             */
             public ClassNode getType() {
                 return type;
             }
 
+            /**
+             * Sets the property name.
+             *
+             * @param name the property name
+             */
             public void setName(String name) {
                 this.name = name;
             }
 
+            /**
+             * Sets the property type.
+             *
+             * @param type the property ClassNode
+             */
             public void setType(ClassNode type) {
                 this.type = type;
             }

@@ -50,6 +50,13 @@ public abstract class BinaryExpressionWriter {
     private final WriterController controller;
     private MethodCaller arraySet, arrayGet;
 
+    /**
+     * Creates a primitive-operation writer.
+     *
+     * @param controller the active writer controller
+     * @param arraySet the helper used for array stores
+     * @param arrayGet the helper used for array loads
+     */
     public BinaryExpressionWriter(WriterController controller, MethodCaller arraySet, MethodCaller arrayGet) {
         this.controller = controller;
         this.arraySet = arraySet;
@@ -64,6 +71,9 @@ public abstract class BinaryExpressionWriter {
         return controller;
     }
 
+    /**
+     * Jump opcodes used for primitive comparison results.
+     */
     protected static final int[] stdCompareCodes = {
         IFEQ,      // COMPARE_NOT_EQUAL            120
         IFNE,      // COMPARE_IDENTICAL            121
@@ -75,6 +85,9 @@ public abstract class BinaryExpressionWriter {
         IFLT,      // COMPARE_GREATER_THAN_EQUAL   127
     };
 
+    /**
+     * @return the ASM compare opcode used by this primitive type
+     */
     protected abstract int getCompareCode();
 
     /**
@@ -106,9 +119,27 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * Duplicates the two operands already on the operand stack.
+     *
+     * @param mv the current method visitor
+     */
     protected abstract void doubleTwoOperands(MethodVisitor mv);
+
+    /**
+     * Removes the two operands already on the operand stack.
+     *
+     * @param mv the current method visitor
+     */
     protected abstract void removeTwoOperands(MethodVisitor mv);
 
+    /**
+     * Writes a spaceship comparison for the current primitive type.
+     *
+     * @param type the token type
+     * @param simulate whether to probe support without emitting bytecode
+     * @return {@code true} if the operation is supported
+     */
     protected boolean writeSpaceship(int type, boolean simulate) {
         if (type != COMPARE_TO) return false;
         /*
@@ -196,9 +227,26 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * @return the result type for normal arithmetic operations
+     */
     protected abstract ClassNode getNormalOpResultType();
+
+    /**
+     * Returns the arithmetic opcode for the supplied token.
+     *
+     * @param type the normalized token index
+     * @return the ASM opcode
+     */
     protected abstract int getStandardOperationBytecode(int type);
 
+    /**
+     * Writes a standard arithmetic operator for the current primitive type.
+     *
+     * @param type the token type
+     * @param simulate whether to probe support without emitting bytecode
+     * @return {@code true} if the operation is supported
+     */
     protected boolean writeStdOperators(int type, boolean simulate) {
         type = type-PLUS;
         if (type<0 || type>5 || type == 3 /*DIV*/) return false;
@@ -211,6 +259,12 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * Writes a division operation for the current primitive type.
+     *
+     * @param simulate whether to probe support without emitting bytecode
+     * @return {@code true} if division is supported
+     */
     protected boolean writeDivision(boolean simulate) {
         if (!supportsDivision()) return false;
         if (!simulate) {
@@ -221,12 +275,24 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * @return whether this primitive helper supports division bytecode directly
+     */
     protected boolean supportsDivision() {
         return false;
     }
 
+    /**
+     * @return the result type for division operations
+     */
     protected abstract ClassNode getDevisionOpResultType();
 
+    /**
+     * Returns the bitwise opcode for the supplied token.
+     *
+     * @param type the normalized token index
+     * @return the ASM opcode
+     */
     protected abstract int getBitwiseOperationBytecode(int type);
 
     /**
@@ -247,6 +313,12 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * Returns the shift opcode for the supplied token.
+     *
+     * @param type the normalized token index
+     * @return the ASM opcode
+     */
     protected abstract int getShiftOperationBytecode(int type);
 
     /**
@@ -268,6 +340,13 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * Attempts to write the supplied binary operation.
+     *
+     * @param operation the token type
+     * @param simulate whether to probe support without emitting bytecode
+     * @return {@code true} if the operation is supported
+     */
     public boolean write(int operation, boolean simulate) {
         return  writeStdCompare(operation, simulate)         ||
                 writeSpaceship(operation, simulate)          ||
@@ -276,23 +355,45 @@ public abstract class BinaryExpressionWriter {
                 writeShiftOp(operation, simulate);
     }
 
+    /**
+     * @return the helper used for primitive array loads
+     */
     protected MethodCaller getArrayGetCaller() {
         return arrayGet;
     }
 
+    /**
+     * @return the result type produced by {@link #getArrayGetCaller()}
+     */
     protected ClassNode getArrayGetResultType(){
         return getNormalOpResultType();
     }
 
+    /**
+     * @return the helper used for primitive array stores
+     */
     protected MethodCaller getArraySetCaller() {
         return arraySet;
     }
 
+    /**
+     * Replaces the helpers used for primitive array access.
+     *
+     * @param arraySet the array-store helper
+     * @param arrayGet the array-load helper
+     */
     public void setArraySetAndGet(MethodCaller arraySet, MethodCaller arrayGet) {
         this.arraySet = arraySet;
         this.arrayGet = arrayGet;
     }
 
+    /**
+     * Attempts to write an array-read operation.
+     *
+     * @param operation the token type
+     * @param simulate whether to probe support without emitting bytecode
+     * @return {@code true} if the operation is an array read
+     */
     public boolean arrayGet(int operation, boolean simulate) {
         if (operation!=LEFT_SQUARE_BRACKET) return false;
 
@@ -302,6 +403,12 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * Writes an array-store operation.
+     *
+     * @param simulate whether to probe support without emitting bytecode
+     * @return always {@code true}
+     */
     public boolean arraySet(boolean simulate) {        
         if (!simulate) {
             getArraySetCaller().call(controller.getMethodVisitor());
@@ -309,6 +416,13 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * Attempts to write a postfix or prefix increment/decrement operation.
+     *
+     * @param operation the token type
+     * @param simulate whether to probe support without emitting bytecode
+     * @return {@code true} if the operation is supported
+     */
     public boolean writePostOrPrefixMethod(int operation, boolean simulate) {
         if (operation!=PLUS_PLUS && operation!=MINUS_MINUS) return false;
         if (!simulate) {
@@ -322,6 +436,17 @@ public abstract class BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * Emits a prefix/postfix increment.
+     *
+     * @param mv the current method visitor
+     */
     protected abstract void writePlusPlus(MethodVisitor mv);
+
+    /**
+     * Emits a prefix/postfix decrement.
+     *
+     * @param mv the current method visitor
+     */
     protected abstract void writeMinusMinus(MethodVisitor mv);
 }

@@ -21,18 +21,12 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.builder.AstStringCompiler;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
@@ -46,24 +40,23 @@ import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GENERATED_LAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.SERIALIZABLE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.SERIALIZEDLAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
+import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_GENERATED_CONSTRUCTOR;
+import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_PRELOADED_RECEIVER;
+import static org.codehaus.groovy.classgen.asm.sc.StaticTypesFunctionalInterfaceMetadataKey.LAMBDA_SHARED_VARIABLES;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.CLOSURE_ARGUMENTS;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -72,6 +65,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.H_INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
@@ -83,99 +77,149 @@ import static org.objectweb.asm.Opcodes.NEW;
  */
 public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFunctionalInterfaceWriter {
 
-    private static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
-    private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
-    private static final String DO_CALL = "doCall";
-
-    private final Map<Expression, ClassNode> lambdaClassNodes = new HashMap<>();
-    private final StaticTypesClosureWriter staticTypesClosureWriter;
-
+    /**
+     * Creates a lambda writer for statically compiled code generation.
+     */
     public StaticTypesLambdaWriter(final WriterController controller) {
         super(controller);
         this.staticTypesClosureWriter = new StaticTypesClosureWriter(controller);
+        this.lambdaAnalyzer = new StaticTypesLambdaAnalyzer(controller.getSourceUnit());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void writeLambda(final LambdaExpression expression) {
         // functional interface target is required for native lambda generation
-        ClassNode  functionalType = expression.getNodeMetaData(PARAMETER_TYPE);
-        MethodNode abstractMethod = ClassHelper.findSAM(functionalType);
-        if (abstractMethod == null || !functionalType.isInterface()) {
+        ClassNode functionalType = expression.getNodeMetaData(PARAMETER_TYPE);
+        MethodNode abstractMethod = resolveFunctionalInterfaceMethod(functionalType);
+        if (abstractMethod == null) {
             // generate bytecode for closure
             super.writeLambda(expression);
             return;
         }
 
+        boolean serializable = makeSerializableIfNeeded(expression, functionalType);
+        // GROOVY-11998: gather intersection-cast marker interfaces, filtering out
+        // Serializable (already conveyed via FLAG_SERIALIZABLE) and any interface
+        // already implemented by the SAM target.
+        ClassNode[] markers = collectLambdaMarkers(expression, functionalType);
+        GeneratedLambda generatedLambda = getOrAddGeneratedLambda(expression, abstractMethod);
+
+        ensureDeserializeLambdaSupport(expression, functionalType, abstractMethod, generatedLambda, serializable);
+        if (generatedLambda.isCapturing() && !isPreloadedLambdaReceiver(generatedLambda)) {
+            loadLambdaReceiver(generatedLambda);
+        }
+
+        writeLambdaFactoryInvocation(functionalType.redirect(), abstractMethod, generatedLambda, serializable, markers);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ClassNode[] collectLambdaMarkers(final LambdaExpression expression, final ClassNode functionalType) {
+        Object md = expression.getNodeMetaData(LAMBDA_MARKERS);
+        if (!(md instanceof java.util.List)) return ClassNode.EMPTY_ARRAY;
+        java.util.List<ClassNode> raw = (java.util.List<ClassNode>) md;
+        java.util.List<ClassNode> out = new java.util.ArrayList<>(raw.size());
+        for (ClassNode m : raw) {
+            if (m == null || !m.isInterface()) continue;
+            if (m.equals(SERIALIZABLE_TYPE) || SERIALIZABLE_TYPE.equals(m.redirect())) continue;
+            if (functionalType != null && functionalType.implementsInterface(m)) continue;
+            out.add(m);
+        }
+        return out.toArray(ClassNode.EMPTY_ARRAY);
+    }
+
+    private static MethodNode resolveFunctionalInterfaceMethod(final ClassNode functionalType) {
+        if (functionalType == null || !functionalType.isInterface()) {
+            return null;
+        }
+        return ClassHelper.findSAM(functionalType);
+    }
+
+    private boolean makeSerializableIfNeeded(final LambdaExpression expression, final ClassNode functionalType) {
         if (!expression.isSerializable() && functionalType.implementsInterface(SERIALIZABLE_TYPE)) {
             expression.setSerializable(true);
         }
+        return expression.isSerializable();
+    }
 
-        ClassNode lambdaClass = getOrAddLambdaClass(expression, abstractMethod);
-        MethodNode lambdaMethod = lambdaClass.getMethods(DO_CALL).get(0);
-
-        boolean canDeserialize = controller.getClassNode().hasMethod(createDeserializeLambdaMethodName(lambdaClass), createDeserializeLambdaMethodParams());
-        if (!canDeserialize) {
-            if (expression.isSerializable()) {
-                addDeserializeLambdaMethodForEachLambdaExpression(expression, lambdaClass);
-                addDeserializeLambdaMethod();
-            }
-            newGroovyLambdaWrapperAndLoad(lambdaClass, expression, isAccessingInstanceMembersOfEnclosingClass(lambdaMethod));
+    private void ensureDeserializeLambdaSupport(final LambdaExpression expression, final ClassNode functionalType, final MethodNode abstractMethod, final GeneratedLambda generatedLambda, final boolean serializable) {
+        if (!serializable || hasDeserializeLambdaMethod(generatedLambda.lambdaClass)) {
+            return;
         }
 
-        MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitInvokeDynamicInsn(
-                abstractMethod.getName(),
-                createAbstractMethodDesc(functionalType.redirect(), lambdaClass),
-                createBootstrapMethod(controller.getClassNode().isInterface(), expression.isSerializable()),
-                createBootstrapMethodArguments(createMethodDescriptor(abstractMethod), H_INVOKEVIRTUAL, lambdaClass, lambdaMethod, lambdaMethod.getParameters(), expression.isSerializable())
+        String samMethodDescriptor = createMethodDescriptor(abstractMethod);
+        MethodNode helperMethod = addDeserializeLambdaMethodForLambdaExpression(expression, generatedLambda);
+        addDeserializeDispatcherEntry(controller, createDeserializeMethodParameters(), createSerializedLambdaFingerprint(
+                samMethodDescriptor,
+                controller.getClassNode(),
+                generatedLambda.getImplMethodKind(),
+                generatedLambda.lambdaClass,
+                generatedLambda.lambdaMethod,
+                generatedLambda.lambdaMethod.getParameters(),
+                functionalType,
+                abstractMethod,
+                generatedLambda.isCapturing() ? 1 : 0
+        ), helperMethod);
+    }
+
+    private void writeLambdaFactoryInvocation(final ClassNode functionalType, final MethodNode abstractMethod, final GeneratedLambda generatedLambda, final boolean serializable, final ClassNode[] markers) {
+        writeFunctionalInterfaceIndy(
+            controller.getMethodVisitor(),
+            abstractMethod.getName(),
+            createLambdaFactoryMethodDescriptor(functionalType, generatedLambda),
+            createMethodDescriptor(abstractMethod),
+            generatedLambda.getImplMethodKind(),
+            generatedLambda.lambdaClass,
+            generatedLambda.lambdaMethod,
+            generatedLambda.lambdaMethod.getParameters(),
+            serializable,
+            markers
         );
-        if (expression.isSerializable()) {
-            mv.visitTypeInsn(CHECKCAST, "java/io/Serializable");
+
+        if (generatedLambda.nonCapturing()) {
+            controller.getOperandStack().push(functionalType);
+        } else {
+            controller.getOperandStack().replace(functionalType, 1);
         }
-
-        controller.getOperandStack().replace(functionalType.redirect(), 1);
     }
 
-    private static Parameter[] createDeserializeLambdaMethodParams() {
-        return new Parameter[]{new Parameter(SERIALIZEDLAMBDA_TYPE, "serializedLambda")};
+    private boolean hasDeserializeLambdaMethod(final ClassNode lambdaClass) {
+        return controller.getClassNode().hasMethod(createDeserializeLambdaMethodName(lambdaClass), createDeserializeMethodParameters());
     }
 
-    private static boolean isAccessingInstanceMembersOfEnclosingClass(final MethodNode lambdaMethod) {
-        boolean[] result = new boolean[1];
+    private static MethodNode getLambdaMethod(final ClassNode lambdaClass) {
+        List<MethodNode> lambdaMethods = lambdaClass.getMethods(DO_CALL);
+        if (lambdaMethods.isEmpty()) {
+            throw new GroovyBugError("Failed to find the synthetic lambda method in " + lambdaClass.getName());
+        }
+        return lambdaMethods.get(0);
+    }
 
-        lambdaMethod.getCode().visit(new CodeVisitorSupport() {
-            @Override
-            public void visitConstantExpression(final ConstantExpression expression) {
-                if ("this".equals(expression.getValue())) { // as in Type.this.name
-                    result[0] = true;
-                }
+    private static ConstructorNode getGeneratedConstructor(final ClassNode lambdaClass) {
+        for (ConstructorNode constructorNode : lambdaClass.getDeclaredConstructors()) {
+            if (Boolean.TRUE.equals(constructorNode.getNodeMetaData(LAMBDA_GENERATED_CONSTRUCTOR))) {
+                return constructorNode;
             }
-            @Override
-            public void visitVariableExpression(final VariableExpression expression) {
-                if ("this".equals(expression.getName()) || "thisObject".equals(expression.getName())) {
-                    result[0] = true;
-                } else {
-                    var owner = expression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
-                    if (owner != null && lambdaMethod.getDeclaringClass().getOuterClasses().contains(owner)) {
-                        result[0] = true;
-                    }
-                }
-            }
-        });
-
-        return result[0];
+        }
+        throw new GroovyBugError("Failed to find the generated constructor in " + lambdaClass.getName());
     }
 
-    private void newGroovyLambdaWrapperAndLoad(final ClassNode lambdaClass, final LambdaExpression expression, final boolean accessingInstanceMembers) {
+    private boolean isPreloadedLambdaReceiver(final GeneratedLambda generatedLambda) {
+        MethodNode enclosingMethod = controller.getMethodNode();
+        return enclosingMethod != null
+            && enclosingMethod.getNodeMetaData(LAMBDA_PRELOADED_RECEIVER) == generatedLambda.lambdaClass;
+    }
+
+    private void loadLambdaReceiver(final GeneratedLambda generatedLambda) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        String lambdaClassInternalName = BytecodeHelper.getClassInternalName(lambdaClass);
+        String lambdaClassInternalName = BytecodeHelper.getClassInternalName(generatedLambda.lambdaClass);
         mv.visitTypeInsn(NEW, lambdaClassInternalName);
         mv.visitInsn(DUP);
 
-        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !accessingInstanceMembers) {
+        if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall() || !generatedLambda.accessingInstanceMembers) {
             classX(controller.getThisType()).visit(controller.getAcg());
         } else {
             loadThis();
@@ -183,23 +227,15 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
         operandStack.dup();
 
-        loadSharedVariables(expression);
+        loadSharedVariables(generatedLambda.sharedVariables);
 
-        Optional<ConstructorNode> generatedConstructor = lambdaClass.getDeclaredConstructors().stream()
-                .filter(ctor -> Boolean.TRUE.equals(ctor.getNodeMetaData(IS_GENERATED_CONSTRUCTOR))).findFirst();
-        if (generatedConstructor.isEmpty()) {
-            throw new GroovyBugError("Failed to find the generated constructor");
-        }
-
-        Parameter[] lambdaClassConstructorParameters = generatedConstructor.get().getParameters();
-        mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", BytecodeHelper.getMethodDescriptor(VOID_TYPE, lambdaClassConstructorParameters), lambdaClass.isInterface());
+        Parameter[] lambdaClassConstructorParameters = generatedLambda.constructor.getParameters();
+        mv.visitMethodInsn(INVOKESPECIAL, lambdaClassInternalName, "<init>", createMethodDescriptor(VOID_TYPE, lambdaClassConstructorParameters), generatedLambda.lambdaClass.isInterface());
 
         operandStack.replace(CLOSURE_TYPE, lambdaClassConstructorParameters.length);
     }
 
-    private void loadSharedVariables(final LambdaExpression expression) {
-        Parameter[] lambdaSharedVariableParameters = expression.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
-
+    private void loadSharedVariables(final Parameter[] lambdaSharedVariableParameters) {
         for (Parameter parameter : lambdaSharedVariableParameters) {
             loadReference(parameter.getName(), controller);
             if (parameter.getNodeMetaData(UseExistingReference.class) == null) {
@@ -208,28 +244,41 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
     }
 
-    private String createAbstractMethodDesc(final ClassNode functionalInterface, final ClassNode lambdaClass) {
-        List<Parameter> lambdaSharedVariables = new LinkedList<>();
-        prependParameter(lambdaSharedVariables, "__lambda_this", lambdaClass);
-        return BytecodeHelper.getMethodDescriptor(functionalInterface, lambdaSharedVariables.toArray(Parameter.EMPTY_ARRAY));
+    private String createLambdaFactoryMethodDescriptor(final ClassNode functionalInterface, final GeneratedLambda generatedLambda) {
+        return createFunctionalInterfaceFactoryDescriptor(functionalInterface,
+            generatedLambda.nonCapturing()
+                ? Parameter.EMPTY_ARRAY
+                : new Parameter[]{createCapturedReceiverParameter(generatedLambda.lambdaClass, "__lambda_this")});
     }
 
-    private ClassNode getOrAddLambdaClass(final LambdaExpression expression, final MethodNode abstractMethod) {
-        return lambdaClassNodes.computeIfAbsent(expression, expr -> {
-            ClassNode lambdaClass = createLambdaClass((LambdaExpression) expr, ACC_FINAL | ACC_PUBLIC | ACC_STATIC, abstractMethod);
+    private GeneratedLambda getOrAddGeneratedLambda(final LambdaExpression expression, final MethodNode abstractMethod) {
+        return generatedLambdas.computeIfAbsent(expression, expr -> {
+            ClassNode lambdaClass = createLambdaClass(expr, ACC_FINAL | ACC_PUBLIC | ACC_STATIC, abstractMethod);
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(GENERATED_LAMBDA_TYPE);
             lambdaClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
             lambdaClass.putNodeMetaData(WriterControllerFactory.class, (WriterControllerFactory) x -> controller);
-            return lambdaClass;
+            MethodNode lambdaMethod = getLambdaMethod(lambdaClass);
+            return new GeneratedLambda(
+                lambdaClass,
+                lambdaMethod,
+                getGeneratedConstructor(lambdaClass),
+                getStoredLambdaSharedVariables(expr),
+                !requiresLambdaInstance(lambdaMethod),
+                lambdaAnalyzer.accessesInstanceMembers(lambdaMethod)
+            );
         });
     }
 
+    /** {@inheritDoc} */
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         return staticTypesClosureWriter.createClosureClass(expression, modifiers);
     }
 
+    /**
+     * Creates the synthetic inner class that backs a statically compiled lambda expression.
+     */
     protected ClassNode createLambdaClass(final LambdaExpression expression, final int modifiers, final MethodNode abstractMethod) {
         ClassNode enclosingClass = controller.getClassNode();
         ClassNode outermostClass = controller.getOutermostClass();
@@ -243,7 +292,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
             lambdaClass.setScriptBody(true);
         }
         if (controller.isStaticMethod()
-                || enclosingClass.isStaticClass()) {
+            || enclosingClass.isStaticClass()) {
             lambdaClass.setStaticClass(true);
         }
         if (expression.isSerializable()) {
@@ -252,11 +301,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
         MethodNode syntheticLambdaMethodNode = addSyntheticLambdaMethodNode(expression, lambdaClass, abstractMethod);
 
-        Parameter[] localVariableParameters = expression.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
+        Parameter[] localVariableParameters = getStoredLambdaSharedVariables(expression);
         addFieldsForLocalVariables(lambdaClass, localVariableParameters);
 
         ConstructorNode constructorNode = addConstructor(expression, localVariableParameters, lambdaClass, createBlockStatementForConstructor(expression, outermostClass, enclosingClass));
-        constructorNode.putNodeMetaData(IS_GENERATED_CONSTRUCTOR, Boolean.TRUE);
+        constructorNode.putNodeMetaData(LAMBDA_GENERATED_CONSTRUCTOR, Boolean.TRUE);
 
         syntheticLambdaMethodNode.getCode().visit(new CorrectAccessedVariableVisitor(lambdaClass));
 
@@ -277,14 +326,18 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         expression.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
 
         MethodNode doCallMethod = lambdaClass.addMethod(
-                DO_CALL,
-                ACC_PUBLIC,
-                abstractMethod.getReturnType(),
-                parametersWithExactType.clone(),
-                ClassNode.EMPTY_ARRAY,
-                expression.getCode()
+            DO_CALL,
+            ACC_PUBLIC,
+            abstractMethod.getReturnType(),
+            parametersWithExactType.clone(),
+            ClassNode.EMPTY_ARRAY,
+            expression.getCode()
         );
         doCallMethod.setSourcePosition(expression);
+        if (lambdaAnalyzer.isNonCapturing(doCallMethod, localVariableParameters)) {
+            lambdaAnalyzer.qualifyOuterStaticMemberReferences(doCallMethod);
+            doCallMethod.setModifiers(doCallMethod.getModifiers() | ACC_STATIC);
+        }
         return doCallMethod;
     }
 
@@ -300,63 +353,85 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         return lambdaParameters;
     }
 
-    private void addDeserializeLambdaMethod() {
-        ClassNode enclosingClass = controller.getClassNode();
-        Parameter[] parameters = createDeserializeLambdaMethodParams();
-        if (enclosingClass.hasMethod("$deserializeLambda$", parameters)) {
-            return;
-        }
-
-        Statement code = block(
-                declS(localVarX("enclosingClass", OBJECT_TYPE), classX(enclosingClass)),
-                ((BlockStatement) new AstStringCompiler().compile(
-                        "return enclosingClass" +
-                                ".getDeclaredMethod(\"\\$deserializeLambda_${serializedLambda.getImplClass().replace('/', '$')}\\$\", serializedLambda.getClass())" +
-                                ".invoke(null, serializedLambda)"
-                ).get(0)).getStatements().get(0)
-        );
-
-        enclosingClass.addSyntheticMethod(
-                "$deserializeLambda$",
-                ACC_PRIVATE | ACC_STATIC,
-                OBJECT_TYPE,
-                parameters,
-                ClassNode.EMPTY_ARRAY,
-                code);
+    private static boolean requiresLambdaInstance(final MethodNode lambdaMethod) {
+        return 0 == (lambdaMethod.getModifiers() & ACC_STATIC);
     }
 
-    private void addDeserializeLambdaMethodForEachLambdaExpression(final LambdaExpression expression, final ClassNode lambdaClass) {
+    private MethodNode addDeserializeLambdaMethodForLambdaExpression(final LambdaExpression expression, final GeneratedLambda generatedLambda) {
         ClassNode enclosingClass = controller.getClassNode();
-        Statement code = block(
+        Statement code;
+        if (generatedLambda.nonCapturing()) {
+            code = block(returnS(expression));
+        } else {
+            code = block(
                 new BytecodeSequence(new BytecodeInstruction() {
+                    /**
+                     * Restores the captured lambda receiver from the serialized form.
+                     */
                     @Override
                     public void visit(final MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitInsn(ICONST_0);
                         mv.visitMethodInsn(
-                                INVOKEVIRTUAL,
-                                "java/lang/invoke/SerializedLambda",
-                                "getCapturedArg",
-                                "(I)Ljava/lang/Object;",
-                                false);
-                        mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(lambdaClass));
+                            INVOKEVIRTUAL,
+                            "java/lang/invoke/SerializedLambda",
+                            "getCapturedArg",
+                            "(I)Ljava/lang/Object;",
+                            false);
+                        mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(generatedLambda.lambdaClass));
                         OperandStack operandStack = controller.getOperandStack();
-                        operandStack.push(lambdaClass);
+                        operandStack.push(generatedLambda.lambdaClass);
                     }
                 }),
                 returnS(expression)
-        );
+            );
+        }
 
-        enclosingClass.addSyntheticMethod(
-                createDeserializeLambdaMethodName(lambdaClass),
-                ACC_PUBLIC | ACC_STATIC,
-                OBJECT_TYPE,
-                createDeserializeLambdaMethodParams(),
-                ClassNode.EMPTY_ARRAY,
-                code);
+        MethodNode deserializeLambdaMethod = enclosingClass.addSyntheticMethod(
+            createDeserializeLambdaMethodName(generatedLambda.lambdaClass),
+            ACC_PRIVATE | ACC_STATIC,
+            OBJECT_TYPE,
+            createDeserializeMethodParameters(),
+            ClassNode.EMPTY_ARRAY,
+            code);
+        if (generatedLambda.isCapturing()) {
+            // The deserialize helper preloads the captured receiver before it reuses the original lambda expression.
+            deserializeLambdaMethod.putNodeMetaData(LAMBDA_PRELOADED_RECEIVER, generatedLambda.lambdaClass);
+        }
+        return deserializeLambdaMethod;
     }
 
     private static String createDeserializeLambdaMethodName(final ClassNode lambdaClass) {
         return "$deserializeLambda_" + lambdaClass.getName().replace('.', '$') + "$";
     }
+
+    private static Parameter[] getStoredLambdaSharedVariables(final LambdaExpression expression) {
+        Parameter[] sharedVariables = expression.getNodeMetaData(LAMBDA_SHARED_VARIABLES);
+        if (sharedVariables == null) {
+            throw new GroovyBugError("Failed to find shared variables for lambda expression");
+        }
+        return sharedVariables;
+    }
+
+    /**
+     * Cached lambda generation result reused across the emitted indy call and
+     * any synthetic deserialization helpers for the same expression.
+     */
+    private record GeneratedLambda(ClassNode lambdaClass, MethodNode lambdaMethod, ConstructorNode constructor,
+                                   Parameter[] sharedVariables, boolean nonCapturing,
+                                   boolean accessingInstanceMembers) {
+
+        private boolean isCapturing() {
+            return !nonCapturing;
+        }
+
+        private int getImplMethodKind() {
+            return nonCapturing ? H_INVOKESTATIC : H_INVOKEVIRTUAL;
+        }
+    }
+
+    private static final String DO_CALL = "doCall";
+    private final Map<LambdaExpression, GeneratedLambda> generatedLambdas = new HashMap<>();
+    private final StaticTypesClosureWriter staticTypesClosureWriter;
+    private final StaticTypesLambdaAnalyzer lambdaAnalyzer;
 }

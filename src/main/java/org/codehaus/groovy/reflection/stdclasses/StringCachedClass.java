@@ -22,19 +22,41 @@ import groovy.lang.GString;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 
+/**
+ * Provides optimized reflection caching for {@link java.lang.String}.
+ * Coerces {@link GString} arguments to {@link String} for type-safe method invocation.
+ */
 public class StringCachedClass extends CachedClass {
     private static final Class STRING_CLASS = String.class;
     private static final Class GSTRING_CLASS = GString.class;
 
+    /**
+     * Constructs a cached class representation for {@link String}.
+     *
+     * @param classInfo the class information associated with {@link String}
+     */
     public StringCachedClass(ClassInfo classInfo) {
         super(STRING_CLASS, classInfo);
     }
 
+    /**
+     * Checks if the given argument is directly assignable to {@link String}.
+     *
+     * @param argument the argument to check
+     * @return {@code true} if the argument is an instance of {@link String}, {@code false} otherwise
+     */
     @Override
     public boolean isDirectlyAssignable(Object argument) {
         return argument instanceof String;
     }
 
+    /**
+     * Determines if the given class can be transformed to {@link String}.
+     * Accepts {@code null}, {@link String}, and {@link GString} subtypes.
+     *
+     * @param classToTransformFrom the source class to check
+     * @return {@code true} if the class can be transformed to {@link String}, {@code false} otherwise
+     */
     @Override
     public boolean isAssignableFrom(Class classToTransformFrom) {
         return  classToTransformFrom == null
@@ -42,6 +64,13 @@ public class StringCachedClass extends CachedClass {
               || GSTRING_CLASS.isAssignableFrom(classToTransformFrom);
     }
 
+    /**
+     * Coerces the given argument to {@link String}.
+     * Converts {@link GString} arguments to {@link String} by calling {@code toString()}.
+     *
+     * @param argument the argument to coerce
+     * @return the argument as a {@link String}, or the original argument if not a {@link GString}
+     */
     @Override
     public Object coerceArgument(Object argument) {
         return argument instanceof GString ? argument.toString() : argument;

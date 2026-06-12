@@ -27,12 +27,27 @@ import org.codehaus.groovy.control.ResolveVisitor;
 
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 
+/**
+ * Resolve visitor variant used during joint compilation to revisit special
+ * constructor calls and track missing imports for Java sources.
+ */
 public class JavaAwareResolveVisitor extends ResolveVisitor {
 
+    /**
+     * Creates a resolve visitor for the supplied compilation unit.
+     *
+     * @param cu the compilation unit being resolved
+     */
     public JavaAwareResolveVisitor(final CompilationUnit cu) {
         super(cu);
     }
 
+    /**
+     * Resolves a constructor and then revisits any leading special constructor
+     * call expression.
+     *
+     * @param node the constructor being visited
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         super.visitConstructor(node);
@@ -42,11 +57,24 @@ public class JavaAwareResolveVisitor extends ResolveVisitor {
             cce.visit(this);
     }
 
+    /**
+     * Suppresses class-code-container traversal so normal resolution logic can
+     * handle the statements.
+     *
+     * @param stmt the statement container being considered
+     */
     @Override
     protected void visitClassCodeContainer(final Statement stmt) {
         // do nothing here; leave it to the normal resolving
     }
 
+    /**
+     * Marks the source unit when a type resolution error indicates imports may
+     * need to be reconsidered.
+     *
+     * @param error the error message
+     * @param node the node that triggered the error
+     */
     @Override
     public void addError(final String error, final ASTNode node) {
         if (error.startsWith("unable to resolve")) // GROOVY-11806

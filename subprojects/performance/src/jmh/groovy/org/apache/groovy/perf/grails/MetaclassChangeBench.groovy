@@ -49,29 +49,47 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class MetaclassChangeBench {
+    /** Number of iterations per benchmark. */
     static final int ITERATIONS = 100_000
 
-    // Helper classes for benchmarks - each represents a different
-    // component that might have its metaclass modified
+    /**
+     * Service class for metaclass modification testing.
+     */
     static class ServiceA {
+        /** Value for computations. */
         int value = 42
+        /** Computes double of the value. */
         int compute() { value * 2 }
     }
 
+    /**
+     * Second service class for metaclass modification testing.
+     */
     static class ServiceB {
+        /** Name for testing. */
         String name = "test"
+        /** Returns length of name. */
         int nameLength() { name.length() }
     }
 
+    /**
+     * Third service class for metaclass modification testing.
+     */
     static class ServiceC {
+        /** Items for testing. */
         List items = [1, 2, 3]
+        /** Returns item count. */
         int itemCount() { items.size() }
     }
 
+    /** ServiceA instance for benchmarking. */
     ServiceA serviceA
+    /** ServiceB instance for benchmarking. */
     ServiceB serviceB
+    /** ServiceC instance for benchmarking. */
     ServiceC serviceC
 
+    /** Sets up fresh service instances before each iteration. */
     @Setup(Level.Iteration)
     void setup() {
         // Reset metaclasses to avoid accumulation across iterations

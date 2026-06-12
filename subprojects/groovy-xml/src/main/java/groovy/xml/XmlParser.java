@@ -20,6 +20,7 @@ package groovy.xml;
 
 import groovy.namespace.QName;
 import groovy.util.Node;
+import org.apache.groovy.xml.util.JacksonHelper;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
@@ -32,7 +33,6 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -48,7 +48,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static groovy.xml.XmlUtil.setFeatureQuietly;
 
 /**
  * A helper class for parsing XML into a tree of Node instances for a
@@ -58,9 +57,11 @@ import static groovy.xml.XmlUtil.setFeatureQuietly;
  * the XML into a Node for each element in the XML with attributes
  * and child Nodes and Strings. This simple model is sufficient for
  * most simple use cases of processing XML.
+ * Parsing is eager: each parse operation consumes the SAX event stream and
+ * builds a complete {@link Node} tree before returning.
  * <p>
  * Example usage:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.xml.XmlParser
  * def xml = '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;'
  * def rootNode = new XmlParser().parseText(xml)
@@ -75,21 +76,28 @@ public class XmlParser implements ContentHandler {
     private StringBuilder bodyText = new StringBuilder();
     private final List<Node> stack = new ArrayList<Node>();
     private Locator locator;
-    private final XMLReader reader;
+    private XMLReader reader;
     private Node parent;
 
     private boolean trimWhitespace = false;
     private boolean keepIgnorableWhitespace = false;
-    private boolean namespaceAware;
+    private boolean namespaceAware = true;
+    private boolean validating = false;
+    private boolean allowDocTypeDeclaration = false;
 
     /**
      * Creates a non-validating and namespace-aware <code>XmlParser</code> which does not allow DOCTYPE declarations in documents.
+     * <p>
+     * Parser options can be configured via setters before the first parse call:
+     * <pre>
+     * // Using Groovy named parameters:
+     * def parser = new XmlParser(namespaceAware: false, trimWhitespace: true)
+     * </pre>
      *
      * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.
      */
     public XmlParser() throws ParserConfigurationException, SAXException {
-        this(false, true);
     }
 
     /**
@@ -114,21 +122,52 @@ public class XmlParser implements ContentHandler {
      * @throws SAXException for SAX errors.
      */
     public XmlParser(boolean validating, boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException, SAXException {
-        SAXParserFactory factory = FactorySupport.createSaxParserFactory();
-        factory.setNamespaceAware(namespaceAware);
+        this.validating = validating;
         this.namespaceAware = namespaceAware;
-        factory.setValidating(validating);
-        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
-        reader = factory.newSAXParser().getXMLReader();
+        this.allowDocTypeDeclaration = allowDocTypeDeclaration;
     }
 
+    /**
+     * Creates a parser backed by the supplied SAX reader.
+     *
+     * @param reader the XML reader whose features, properties, and handlers will be used
+     */
     public XmlParser(XMLReader reader) {
         this.reader = reader;
     }
 
+    /**
+     * Creates a parser backed by the supplied SAX parser.
+     *
+     * @param parser the SAX parser providing the {@link XMLReader} used for parsing
+     * @throws SAXException if the parser cannot provide an XML reader
+     */
     public XmlParser(SAXParser parser) throws SAXException {
         reader = parser.getXMLReader();
+    }
+
+    private void initReader() throws ParserConfigurationException, SAXException {
+        SAXParserFactory factory = FactorySupport.createSaxParserFactory(allowDocTypeDeclaration);
+        factory.setNamespaceAware(namespaceAware);
+        factory.setValidating(validating);
+        reader = factory.newSAXParser().getXMLReader();
+    }
+
+    private XMLReader ensureReader() {
+        try {
+            if (reader == null) {
+                initReader();
+            }
+            return reader;
+        } catch (ParserConfigurationException | SAXException e) {
+            throw new RuntimeException("Failed to initialize XML reader", e);
+        }
+    }
+
+    private void checkNotInitialized(String property) {
+        if (reader != null) {
+            throw new IllegalStateException(property + " must be set before parsing");
+        }
     }
 
     /**
@@ -180,10 +219,12 @@ public class XmlParser implements ContentHandler {
      *                      supplied by the application.
      */
     public Node parse(File file) throws IOException, SAXException {
-        InputSource input = new InputSource(Files.newInputStream(file.toPath()));
-        input.setSystemId("file://" + file.getAbsolutePath());
-        getXMLReader().parse(input);
-        return parent;
+        try (InputStream stream = Files.newInputStream(file.toPath())) {
+            InputSource input = new InputSource(stream);
+            input.setSystemId("file://" + file.getAbsolutePath());
+            getXMLReader().parse(input);
+            return parent;
+        }
     }
 
     /**
@@ -199,10 +240,12 @@ public class XmlParser implements ContentHandler {
      *                      supplied by the application.
      */
     public Node parse(Path path) throws IOException, SAXException {
-        InputSource input = new InputSource(Files.newInputStream(path));
-        input.setSystemId("file://" + path.toAbsolutePath());
-        getXMLReader().parse(input);
-        return parent;
+        try (InputStream stream = Files.newInputStream(path)) {
+            InputSource input = new InputSource(stream);
+            input.setSystemId("file://" + path.toAbsolutePath());
+            getXMLReader().parse(input);
+            return parent;
+        }
     }
 
     /**
@@ -294,6 +337,104 @@ public class XmlParser implements ContentHandler {
     }
 
     /**
+     * Parse the content of the specified XML text into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     * Supports {@code @JsonProperty} and {@code @JsonFormat} annotations.
+     *
+     * @param type the target type
+     * @param text the XML text to parse
+     * @param <T>  the target type
+     * @return a typed object
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseTextAs(Class<T> type, String text) {
+        return parseAs(type, new StringReader(text));
+    }
+
+    /**
+     * Parse XML from a reader into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type   the target type
+     * @param reader the reader of XML
+     * @param <T>    the target type
+     * @return a typed object
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Reader reader) {
+        try {
+            Node root = parse(reader);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (IOException | SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse XML from an input stream into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type   the target type
+     * @param stream the input stream of XML
+     * @param <T>    the target type
+     * @return a typed object
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, InputStream stream) {
+        try {
+            Node root = parse(stream);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (IOException | SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse XML from a file into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type the target type
+     * @param file the XML file
+     * @param <T>  the target type
+     * @return a typed object
+     * @throws IOException if the file cannot be read
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, File file) throws IOException {
+        try {
+            Node root = parse(file);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse XML from a path into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type the target type
+     * @param path the path to the XML file
+     * @param <T>  the target type
+     * @return a typed object
+     * @throws IOException if the file cannot be read
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Path path) throws IOException {
+        try {
+            Node root = parse(path);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
+    }
+
+    /**
      * Determine if namespace handling is enabled.
      *
      * @return true if namespace handling is enabled
@@ -304,98 +445,198 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Enable and/or disable namespace handling.
+     * Must be set before the first parse call.
      *
      * @param namespaceAware the new desired value
+     * @throws IllegalStateException if called after parsing has started
      */
     public void setNamespaceAware(boolean namespaceAware) {
+        checkNotInitialized("namespaceAware");
         this.namespaceAware = namespaceAware;
+    }
+
+    /**
+     * Determine if the parser validates documents.
+     *
+     * @return true if validation is enabled
+     * @since 6.0.0
+     */
+    public boolean isValidating() {
+        return validating;
+    }
+
+    /**
+     * Enable and/or disable validation.
+     * Must be set before the first parse call.
+     *
+     * @param validating the new desired value
+     * @throws IllegalStateException if called after parsing has started
+     * @since 6.0.0
+     */
+    public void setValidating(boolean validating) {
+        checkNotInitialized("validating");
+        this.validating = validating;
+    }
+
+    /**
+     * Determine if DOCTYPE declarations are allowed.
+     *
+     * @return true if DOCTYPE declarations are allowed
+     * @since 6.0.0
+     */
+    public boolean isAllowDocTypeDeclaration() {
+        return allowDocTypeDeclaration;
+    }
+
+    /**
+     * Enable and/or disable DOCTYPE declaration support.
+     * Must be set before the first parse call.
+     *
+     * @param allowDocTypeDeclaration the new desired value
+     * @throws IllegalStateException if called after parsing has started
+     * @since 6.0.0
+     */
+    public void setAllowDocTypeDeclaration(boolean allowDocTypeDeclaration) {
+        checkNotInitialized("allowDocTypeDeclaration");
+        this.allowDocTypeDeclaration = allowDocTypeDeclaration;
     }
 
     // Delegated XMLReader methods
     //------------------------------------------------------------------------
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#getDTDHandler()
+    /**
+     * Returns the SAX DTD handler configured on the underlying reader.
+     *
+     * @return the configured DTD handler, or {@code null} if none has been set
      */
     public DTDHandler getDTDHandler() {
-        return this.reader.getDTDHandler();
+        return ensureReader().getDTDHandler();
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#getEntityResolver()
+    /**
+     * Returns the SAX entity resolver configured on the underlying reader.
+     *
+     * @return the configured entity resolver, or {@code null} if none has been set
      */
     public EntityResolver getEntityResolver() {
-        return this.reader.getEntityResolver();
+        return ensureReader().getEntityResolver();
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#getErrorHandler()
+    /**
+     * Returns the SAX error handler configured on the underlying reader.
+     *
+     * @return the configured error handler, or {@code null} if none has been set
      */
     public ErrorHandler getErrorHandler() {
-        return this.reader.getErrorHandler();
+        return ensureReader().getErrorHandler();
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#getFeature(java.lang.String)
+    /**
+     * Looks up a SAX feature on the underlying reader.
+     *
+     * @param uri the fully qualified SAX feature URI
+     * @return {@code true} if the feature is enabled
+     * @throws SAXNotRecognizedException if the feature name is not recognized
+     * @throws SAXNotSupportedException if the feature is recognized but not supported
      */
     public boolean getFeature(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
-        return this.reader.getFeature(uri);
+        return ensureReader().getFeature(uri);
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#getProperty(java.lang.String)
+    /**
+     * Looks up a SAX property on the underlying reader.
+     *
+     * @param uri the fully qualified SAX property URI
+     * @return the current value of the property
+     * @throws SAXNotRecognizedException if the property name is not recognized
+     * @throws SAXNotSupportedException if the property is recognized but not supported
      */
     public Object getProperty(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
-        return this.reader.getProperty(uri);
+        return ensureReader().getProperty(uri);
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#setDTDHandler(org.xml.sax.DTDHandler)
+    /**
+     * Sets the SAX DTD handler on the underlying reader.
+     *
+     * @param dtdHandler the DTD handler to receive notation and unparsed entity callbacks
      */
     public void setDTDHandler(final DTDHandler dtdHandler) {
-        this.reader.setDTDHandler(dtdHandler);
+        ensureReader().setDTDHandler(dtdHandler);
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#setEntityResolver(org.xml.sax.EntityResolver)
+    /**
+     * Sets the SAX entity resolver on the underlying reader.
+     *
+     * @param entityResolver the resolver to use for external entities
      */
     public void setEntityResolver(final EntityResolver entityResolver) {
-        this.reader.setEntityResolver(entityResolver);
+        ensureReader().setEntityResolver(entityResolver);
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#setErrorHandler(org.xml.sax.ErrorHandler)
+    /**
+     * Sets the SAX error handler on the underlying reader.
+     *
+     * @param errorHandler the handler to receive parser warnings and errors
      */
     public void setErrorHandler(final ErrorHandler errorHandler) {
-        this.reader.setErrorHandler(errorHandler);
+        ensureReader().setErrorHandler(errorHandler);
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#setFeature(java.lang.String, boolean)
+    /**
+     * Enables or disables a SAX feature on the underlying reader.
+     *
+     * @param uri the fully qualified SAX feature URI
+     * @param value the value to apply
+     * @throws SAXNotRecognizedException if the feature name is not recognized
+     * @throws SAXNotSupportedException if the feature is recognized but not supported
      */
     public void setFeature(final String uri, final boolean value) throws SAXNotRecognizedException, SAXNotSupportedException {
-        this.reader.setFeature(uri, value);
+        ensureReader().setFeature(uri, value);
     }
 
-    /* (non-Javadoc)
-     * @see org.xml.sax.XMLReader#setProperty(java.lang.String, java.lang.Object)
+    /**
+     * Sets a SAX property on the underlying reader.
+     *
+     * @param uri the fully qualified SAX property URI
+     * @param value the value to apply
+     * @throws SAXNotRecognizedException if the property name is not recognized
+     * @throws SAXNotSupportedException if the property is recognized but not supported
      */
     public void setProperty(final String uri, final Object value) throws SAXNotRecognizedException, SAXNotSupportedException {
-        reader.setProperty(uri, value);
+        ensureReader().setProperty(uri, value);
     }
 
     // ContentHandler interface
     //-------------------------------------------------------------------------
+    /**
+     * Resets the current root node before SAX events for a new document begin.
+     *
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void startDocument() throws SAXException {
         parent = null;
     }
 
+    /**
+     * Completes the current parse and clears the internal element stack.
+     *
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void endDocument() throws SAXException {
         stack.clear();
     }
 
+    /**
+     * Creates a new {@link Node} for the current element and pushes it onto the parse stack.
+     *
+     * @param namespaceURI the namespace URI, or an empty string if namespaces are unavailable
+     * @param localName the local element name
+     * @param qName the qualified element name as reported by SAX
+     * @param list the element attributes
+     * @throws SAXException if node creation fails
+     */
     @Override
     public void startElement(String namespaceURI, String localName, String qName, Attributes list)
             throws SAXException {
@@ -414,6 +655,14 @@ public class XmlParser implements ContentHandler {
         stack.add(parent);
     }
 
+    /**
+     * Flushes buffered text and pops the current element when its end tag is seen.
+     *
+     * @param namespaceURI the namespace URI, or an empty string if namespaces are unavailable
+     * @param localName the local element name
+     * @param qName the qualified element name as reported by SAX
+     * @throws SAXException if text handling fails
+     */
     @Override
     public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         addTextToNode();
@@ -426,48 +675,115 @@ public class XmlParser implements ContentHandler {
         }
     }
 
+    /**
+     * Buffers character data until the enclosing element boundary is reached.
+     *
+     * @param buffer the character buffer supplied by SAX
+     * @param start the start offset in the buffer
+     * @param length the number of characters to read
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void characters(char[] buffer, int start, int length) throws SAXException {
         bodyText.append(buffer, start, length);
     }
 
+    /**
+     * Receives namespace prefix mapping notifications.
+     * The default implementation does not retain separate prefix state.
+     *
+     * @param prefix the declared prefix
+     * @param namespaceURI the namespace URI bound to the prefix
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void startPrefixMapping(String prefix, String namespaceURI) throws SAXException {
     }
 
+    /**
+     * Receives namespace prefix scope end notifications.
+     * The default implementation performs no action.
+     *
+     * @param prefix the prefix leaving scope
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void endPrefixMapping(String prefix) throws SAXException {
     }
 
+    /**
+     * Receives ignorable whitespace and optionally preserves it as text content.
+     *
+     * @param buffer the character buffer supplied by SAX
+     * @param start the start offset in the buffer
+     * @param len the number of characters to read
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void ignorableWhitespace(char[] buffer, int start, int len) throws SAXException {
         if (keepIgnorableWhitespace) characters(buffer, start, len);
     }
 
+    /**
+     * Receives processing instruction callbacks.
+     * The default implementation ignores processing instructions.
+     *
+     * @param target the processing instruction target
+     * @param data the processing instruction data
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void processingInstruction(String target, String data) throws SAXException {
     }
 
+    /**
+     * Returns the document locator last provided by SAX.
+     *
+     * @return the current locator, or {@code null} if parsing has not started
+     */
     public Locator getDocumentLocator() {
         return locator;
     }
 
+    /**
+     * Stores the locator supplied by SAX for later diagnostics or subclass use.
+     *
+     * @param locator the document locator for the current parse
+     */
     @Override
     public void setDocumentLocator(Locator locator) {
         this.locator = locator;
     }
 
+    /**
+     * Receives skipped entity notifications.
+     * The default implementation performs no action.
+     *
+     * @param name the skipped entity name
+     * @throws SAXException if the SAX pipeline reports an error
+     */
     @Override
     public void skippedEntity(String name) throws SAXException {
     }
 
     // Implementation methods
     //-------------------------------------------------------------------------
+    /**
+     * Returns the configured XML reader after registering this parser as its content handler.
+     * Subclasses may override to customize reader preparation before parsing begins.
+     *
+     * @return the XML reader used for subsequent parse operations
+     */
     protected XMLReader getXMLReader() {
-        reader.setContentHandler(this);
-        return reader;
+        XMLReader r = ensureReader();
+        r.setContentHandler(this);
+        return r;
     }
 
+    /**
+     * Transfers buffered character data into the current node when an element boundary is reached.
+     * Subclasses may override to customize text normalization or whitespace preservation during parsing.
+     */
     protected void addTextToNode() {
         if (parent == null) {
             // TODO store this on root node? reset bodyText?

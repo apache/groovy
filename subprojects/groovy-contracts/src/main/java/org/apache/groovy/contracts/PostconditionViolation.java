@@ -25,33 +25,71 @@ package org.apache.groovy.contracts;
  */
 public class PostconditionViolation extends AssertionViolation {
 
+    /**
+     * Creates a postcondition violation without an explicit detail message.
+     */
     public PostconditionViolation() {
     }
 
+    /**
+     * Creates a postcondition violation with an object-valued detail.
+     *
+     * @param o the detail object
+     */
     public PostconditionViolation(Object o) {
         super(o);
     }
 
+    /**
+     * Creates a postcondition violation with a boolean detail.
+     *
+     * @param b the detail value
+     */
     public PostconditionViolation(boolean b) {
         super(b);
     }
 
+    /**
+     * Creates a postcondition violation with a character detail.
+     *
+     * @param c the detail value
+     */
     public PostconditionViolation(char c) {
         super(c);
     }
 
+    /**
+     * Creates a postcondition violation with an integer detail.
+     *
+     * @param i the detail value
+     */
     public PostconditionViolation(int i) {
         super(i);
     }
 
+    /**
+     * Creates a postcondition violation with a long detail.
+     *
+     * @param l the detail value
+     */
     public PostconditionViolation(long l) {
         super(l);
     }
 
+    /**
+     * Creates a postcondition violation with a floating-point detail.
+     *
+     * @param v the detail value
+     */
     public PostconditionViolation(float v) {
         super(v);
     }
 
+    /**
+     * Creates a postcondition violation with a double-precision detail.
+     *
+     * @param v the detail value
+     */
     public PostconditionViolation(double v) {
         super(v);
     }

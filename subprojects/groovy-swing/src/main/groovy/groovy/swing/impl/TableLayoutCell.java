@@ -27,6 +27,9 @@ import java.util.logging.Logger;
  */
 public class TableLayoutCell {
 
+    /**
+     * Logger used to report invalid cell usage.
+     */
     protected static final Logger LOG = Logger.getLogger(TableLayoutCell.class.getName());
 
     private TableLayoutRow parent;
@@ -35,10 +38,20 @@ public class TableLayoutCell {
     private String align;
     private String valign;
 
+    /**
+     * Returns the number of columns spanned by this cell.
+     *
+     * @return the column span
+     */
     public int getColspan() {
         return colspan;
     }
 
+    /**
+     * Returns the number of rows spanned by this cell.
+     *
+     * @return the row span
+     */
     public int getRowspan() {
         return rowspan;
     }
@@ -49,10 +62,20 @@ public class TableLayoutCell {
     private boolean rowfill;
 
 
+    /**
+     * Creates a table cell associated with the supplied row.
+     *
+     * @param parent the owning row
+     */
     public TableLayoutCell(TableLayoutRow parent) {
         this.parent = parent;
     }
 
+    /**
+     * Adds the component rendered by this table cell and registers the cell with its parent row.
+     *
+     * @param component the component to render in the cell
+     */
     public void addComponent(Component component)  {
         if (this.component != null) {
             LOG.log(Level.WARNING, "This td cell already has a component: " + component);
@@ -61,6 +84,11 @@ public class TableLayoutCell {
         parent.addCell(this);
     }
 
+    /**
+     * Returns the component currently rendered by this cell.
+     *
+     * @return the cell component, or {@code null}
+     */
     public Component getComponent() {
         return component;
     }
@@ -144,6 +172,11 @@ public class TableLayoutCell {
     // Implementation methods
     //-------------------------------------------------------------------------
 
+    /**
+     * Creates the grid bag constraints that represent this cell in the table layout.
+     *
+     * @return the constraints for this cell
+     */
     protected GridBagConstraints createConstraints() {
         GridBagConstraints answer = new GridBagConstraints();
         answer.anchor = getAnchor();

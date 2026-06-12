@@ -15,7 +15,7 @@
 
 syntax "Groovy" "\.(groovy|gradle)$"
 
-TYPE:        "\<(boolean|byte|char|def|double|float|int|it|long|new|short|this|transient|var|void)\>"
+TYPE:        "\<(boolean|byte|char|def|double|float|int|it|long|new|short|this|transient|val|var|void)\>"
 KEYWORD:     "\<(case|catch|default|do|else|finally|for|if|return|switch|throw|try|while)\>"
 KEYWORD:     "\<(abstract|class|extends|final|implements|import|instanceof|interface|native|non-sealed|package)\>"
 KEYWORD:     "\<(permits|private|protected|public|record|sealed|static|strictfp|super|synchronized|throws|trait|volatile)\>"

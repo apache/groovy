@@ -22,6 +22,9 @@ package groovy.lang.groovydoc;
  * Represents Groovydoc Holder
  */
 public interface GroovydocHolder<T> {
+    /**
+     * Metadata key used to store the original doc comment text.
+     */
     String DOC_COMMENT = "_DOC_COMMENT"; // keys for meta data
     /**
      * Get the groovydoc

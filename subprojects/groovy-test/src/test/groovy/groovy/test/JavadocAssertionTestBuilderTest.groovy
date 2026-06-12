@@ -50,6 +50,80 @@ class JavadocAssertionTestBuilderTest {
     }
 
     @Test
+    void testCombinedClassesAreRecognised() {
+        Class test = builder.buildTest("SomeClass.java",
+                '/** <pre class="language-groovy groovyTestCase"> assert 1 + 1 == 2 </pre> */ public class SomeClass { }')
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine1()
+    }
+
+    @Test
+    void testSimilarClassNameIsNotMatched() {
+        Class test = builder.buildTest("SomeClass.java",
+                '/** <pre class="notAGroovyTestCaseAtAll"> assert false </pre> */ public class SomeClass { }')
+        assert test == null
+    }
+
+    @Test
+    void testSnippetTagWithGroovyTestCaseIdIsRecognised() {
+        // {@snippet} body is verbatim per JEP 413, so no HTML-entity escaping.
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" id="groovyTestCase" :
+                   | * assert "a<b>c".size() == 5
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    @Test
+    void testSnippetTagAssertionsAreExecuted() {
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" id="groovyTestCase" :
+                   | * assert false
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        shouldFail(AssertionError) {
+            test.newInstance().testAssertionFromSomeClassLine2()
+        }
+    }
+
+    @Test
+    void testSnippetTagWithBalancedBracesInBody() {
+        // Brace-balanced body — closures and GStrings contribute {/} pairs that
+        // must balance for the tag parser to find the correct closing brace.
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" id="groovyTestCase" :
+                   | * def items = [1, 2, 3]
+                   | * def sum = items.inject(0) { acc, x -> acc + x }
+                   | * assert sum == 6
+                   | * assert "${sum}" == "6"
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    @Test
+    void testSnippetTagWithoutGroovyTestCaseIdIsIgnored() {
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" :
+                   | * assert false
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        // No groovyTestCase marker — snippet is a plain example, not a test.
+        assert test == null
+    }
+
+    @Test
     void testLineNumbering() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert true </pre>
@@ -133,6 +207,79 @@ class JavadocAssertionTestBuilderTest {
         shouldFail(MultipleCompilationErrorsException) {
             test.newInstance().testAssertionFromSomeClassLine2()
         }
+    }
+
+    // Stage A — /// Markdown doc comment with the existing HTML-wrapper convention.
+    @Test
+    void testTripleSlashCommentWithHtmlWrapper() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// <pre class="groovyTestCase"> assert 1 + 1 == 2 </pre>
+            class SomeClass { }
+        ''')
+        assert test != null
+        assert test.methods.findAll { it.name =~ /test.*/ }.size() == 1
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    // Stage A — /// Markdown doc comment spanning multiple lines with a HTML wrapper.
+    @Test
+    void testTripleSlashCommentMultilineHtmlWrapper() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// <pre class="groovyTestCase">
+            /// assert 2 + 2 == 4
+            /// assert "x".size() == 1
+            /// </pre>
+            class SomeClass { }
+        ''')
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    // Stage B — fenced Markdown code block inside a /// run. The infostring
+    // `groovy groovyTestCase` uses the first word as the language (keeps syntax
+    // highlighting working) and the second as the test marker.
+    @Test
+    void testFencedCodeBlockAssertion() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// Some intro prose.
+            ///
+            /// ```groovy groovyTestCase
+            /// assert 2 + 2 == 4
+            /// ```
+            ///
+            /// More prose.
+            class SomeClass { }
+        ''')
+        assert test != null
+        assert test.methods.findAll { it.name =~ /test.*/ }.size() == 1
+        test.newInstance().testAssertionFromSomeClassLine4()
+    }
+
+    // Stage B — fenced block assertion that fails still fails.
+    @Test
+    void testFencedCodeBlockFailingAssertion() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// ```groovy groovyTestCase
+            /// assert false
+            /// ```
+            class SomeClass { }
+        ''')
+        shouldFail(AssertionError) {
+            test.newInstance().testAssertionFromSomeClassLine2()
+        }
+    }
+
+    // Stage B — a fenced block whose infostring is just `groovy` (no
+    // groovyTestCase marker) must NOT be turned into a test.
+    @Test
+    void testFencedCodeBlockWithoutMarkerIgnored() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// ```groovy
+            /// assert false
+            /// ```
+            class SomeClass { }
+        ''')
+        assert test == null
     }
 
     @Test

@@ -44,7 +44,7 @@ class Groovy593_Bug {
 </chars>"""
 
     @Test
-    void testBug() {
+    void bug() {
         // XML characters to test with
         chars.chars {
             ampersand(a: "&", "&")

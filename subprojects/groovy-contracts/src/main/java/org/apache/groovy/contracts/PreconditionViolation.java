@@ -25,33 +25,71 @@ package org.apache.groovy.contracts;
  */
 public class PreconditionViolation extends AssertionViolation {
 
+    /**
+     * Creates a precondition violation without an explicit detail message.
+     */
     public PreconditionViolation() {
     }
 
+    /**
+     * Creates a precondition violation with an object-valued detail.
+     *
+     * @param o the detail object
+     */
     public PreconditionViolation(Object o) {
         super(o);
     }
 
+    /**
+     * Creates a precondition violation with a boolean detail.
+     *
+     * @param b the detail value
+     */
     public PreconditionViolation(boolean b) {
         super(b);
     }
 
+    /**
+     * Creates a precondition violation with a character detail.
+     *
+     * @param c the detail value
+     */
     public PreconditionViolation(char c) {
         super(c);
     }
 
+    /**
+     * Creates a precondition violation with an integer detail.
+     *
+     * @param i the detail value
+     */
     public PreconditionViolation(int i) {
         super(i);
     }
 
+    /**
+     * Creates a precondition violation with a long detail.
+     *
+     * @param l the detail value
+     */
     public PreconditionViolation(long l) {
         super(l);
     }
 
+    /**
+     * Creates a precondition violation with a floating-point detail.
+     *
+     * @param v the detail value
+     */
     public PreconditionViolation(float v) {
         super(v);
     }
 
+    /**
+     * Creates a precondition violation with a double-precision detail.
+     *
+     * @param v the detail value
+     */
     public PreconditionViolation(double v) {
         super(v);
     }

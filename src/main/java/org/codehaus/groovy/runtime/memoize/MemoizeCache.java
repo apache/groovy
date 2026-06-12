@@ -74,7 +74,10 @@ public interface MemoizeCache<K, V> {
     @FunctionalInterface
     interface ValueProvider<K, V> {
         /**
-         * Provide the created value
+         * Creates a value for the supplied key.
+         *
+         * @param key the key being resolved
+         * @return the created value
          */
         V provide(K key);
     }

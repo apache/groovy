@@ -30,15 +30,22 @@ public class LongArrayIterator implements Iterator<Long> {
     private final long[] array;
     private int index;
 
+    /**
+     * Creates an iterator that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public LongArrayIterator(final long[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return array.length > index;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Long next() {
         try {
@@ -48,6 +55,7 @@ public class LongArrayIterator implements Iterator<Long> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException("Remove not supported for arrays");

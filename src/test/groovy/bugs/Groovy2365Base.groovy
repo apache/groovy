@@ -18,43 +18,33 @@
  */
 package bugs
 
-
 abstract class Groovy2365Base {
 
-    protected String createData () {
-
+    protected String createData() {
         File dir = File.createTempDir("groovy-src-", "-src")
+        assert dir != null
         dir.deleteOnExit()
-        assertNotNull dir
 
         def fileList =  [
-          "Util.groovy" : """
+            'Util.groovy': '''
+                class Util {
+                    static String NAME = 'Util accessed'
+                }
+            ''',
 
-          class Util {
-            static String NAME = "Util accessed"
-          }
-    """,
+            'Script1.groovy': '''import Util
+                println "Script1 ${Util.NAME}"
+            ''',
 
-         "Script1.groovy" : """
-         import Util
+            'Script2.groovy' : '''import Util
+                println "Script2 ${Util.NAME}"
+            '''
+        ].collect { name, text ->
+            File file = new File(dir, name)
+            file.write(text)
+            file
+        }
 
-         println "Script1 \${Util.NAME}"
-    """,
-
-    "Script2.groovy" : """
-                import Util
-import org.junit.jupiter.api.Test
-
-                println "Script2 \${Util.NAME}"
-           """
-                ].collect {
-            name, text ->
-              File file = new File(dir, name)
-              file.write text
-              file
-         }
-
-         return dir.absolutePath
+        dir.absolutePath
     }
-
 }

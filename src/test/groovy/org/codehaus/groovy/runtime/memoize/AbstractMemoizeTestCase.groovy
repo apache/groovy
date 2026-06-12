@@ -19,6 +19,8 @@
 package org.codehaus.groovy.runtime.memoize
 
 
+import org.junit.jupiter.api.Test
+
 import static org.junit.jupiter.api.Assertions.assertEquals
 
 
@@ -30,6 +32,7 @@ abstract class AbstractMemoizeTestCase {
         super()
     }
 
+    @Test
     void testCorrectness() {
         Closure cl = { it * 2 }
         Closure mem = buildMemoizeClosure(cl)
@@ -39,6 +42,7 @@ abstract class AbstractMemoizeTestCase {
 
     abstract Closure buildMemoizeClosure(Closure cl)
 
+    @Test
     void testNullParams() {
         Closure cl = { 2 }
         Closure mem = cl.memoize()
@@ -47,6 +51,7 @@ abstract class AbstractMemoizeTestCase {
         assert 2 == mem(null)
     }
 
+    @Test
     void testNullResult() {
         Closure cl = { counter++; if (it == 5) return null else return 2 }
         Closure mem = cl.memoize()
@@ -60,6 +65,7 @@ abstract class AbstractMemoizeTestCase {
         assert counter == 2
     }
 
+    @Test
     void testNoParams() {
         Closure cl = { -> 2 }
         Closure mem = cl.memoize()
@@ -67,6 +73,7 @@ abstract class AbstractMemoizeTestCase {
         assert 2 == mem()
     }
 
+    @Test
     void testCaching() {
         def flag = false
         Closure cl = {
@@ -93,6 +100,7 @@ abstract class AbstractMemoizeTestCase {
         assert !flag
     }
 
+    @Test
     void testComplexParameter() {
         def callFlag = []
 

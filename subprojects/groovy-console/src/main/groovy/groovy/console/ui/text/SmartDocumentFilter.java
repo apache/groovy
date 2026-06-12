@@ -44,11 +44,20 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import groovy.console.ui.ThemeManager;
 
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ABSTRACT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.AS;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.AT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DOT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ASSERT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.ASYNC;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.AWAIT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BREAK;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BuiltInPrimitiveType;
@@ -60,6 +69,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.CONST;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CONTINUE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DEF;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DEFAULT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DEFER;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DO;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ELSE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ENUM;
@@ -110,6 +120,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.TRAIT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.TRANSIENT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.TRY;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.UNEXPECTED_CHAR;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.VAL;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.VAR;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.VOID;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.VOLATILE;
@@ -123,8 +134,12 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.YIELD;
  * @since 3.0.0
  */
 public class SmartDocumentFilter extends DocumentFilter {
-    public static final List<Integer> HIGHLIGHTED_TOKEN_TYPE_LIST = Arrays.asList(AS, DEF, IN, TRAIT, THREADSAFE,
-            VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
+    /**
+     * Token types rendered with the reserved-word style.
+     */
+    public static final List<Integer> HIGHLIGHTED_TOKEN_TYPE_LIST =
+        Arrays.asList(AS, ASYNC, AWAIT, DEF, DEFER, IN, TRAIT, THREADSAFE,
+            VAL, VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
             ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
             NATIVE, NEW, NON_SEALED, NOT_IN, NOT_INSTANCEOF, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC,
             RECORD, RETURN, SEALED, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,
@@ -134,6 +149,11 @@ public class SmartDocumentFilter extends DocumentFilter {
     private final StyleContext styleContext;
     private final Style defaultStyle;
 
+    /**
+     * Creates a filter that styles the supplied document.
+     *
+     * @param styledDocument the document to tokenize and highlight
+     */
     public SmartDocumentFilter(DefaultStyledDocument styledDocument) {
         this.styledDocument = styledDocument;
 
@@ -144,6 +164,9 @@ public class SmartDocumentFilter extends DocumentFilter {
         initStyles();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void insertString(DocumentFilter.FilterBypass fb, int offset,
                              String text, AttributeSet attrs) throws BadLocationException {
@@ -154,6 +177,9 @@ public class SmartDocumentFilter extends DocumentFilter {
         parseDocument();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void remove(DocumentFilter.FilterBypass fb, int offset, int length)
             throws BadLocationException {
@@ -162,6 +188,9 @@ public class SmartDocumentFilter extends DocumentFilter {
         parseDocument();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void replace(DocumentFilter.FilterBypass fb, int offset,
                         int length, String text, AttributeSet attrs)
@@ -216,12 +245,9 @@ public class SmartDocumentFilter extends DocumentFilter {
             this.setRenderRange(null);
         }
 
+        boolean inAnnotation = false;
         for (Token token : tokenListToRender) {
             int tokenType = token.getType();
-
-//                if (token instanceof CommonToken) {
-//                    System.out.println(((CommonToken) token).toString(lexer));
-//                }
 
             if (EOF == tokenType) {
                 continue;
@@ -231,9 +257,22 @@ public class SmartDocumentFilter extends DocumentFilter {
             int tokenStopIndex = token.getStopIndex();
             int tokenLength = tokenStopIndex - tokenStartIndex + 1;
 
+            // color annotation names (identifier/dot tokens after @) with annotation style
+            // handles @ToString, @groovy.transform.CompileStatic, etc.
+            boolean isAnnotationPart = inAnnotation
+                    && (tokenType == Identifier || tokenType == CapitalizedIdentifier || tokenType == DOT);
+            if (tokenType == AT) {
+                inAnnotation = true;
+            } else if (isAnnotationPart) {
+                // stay in annotation for dotted names
+                inAnnotation = (tokenType == DOT);
+            } else {
+                inAnnotation = false;
+            }
+
             styledDocument.setCharacterAttributes(tokenStartIndex,
                     tokenLength,
-                    findStyleByTokenType(tokenType),
+                    isAnnotationPart ? findStyleByTokenType(AT) : findStyleByTokenType(tokenType),
                     true);
 
             if (GStringBegin == tokenType || GStringPart == tokenType) {
@@ -366,59 +405,140 @@ public class SmartDocumentFilter extends DocumentFilter {
     }
 
     private void initStyles() {
-        Style comment = createDefaultStyleByTokenType(NL);
-        StyleConstants.setForeground(comment, Color.LIGHT_GRAY.darker().darker());
-        StyleConstants.setItalic(comment, true);
-
-        // gstrings, e.g. "${xxx}", /xxx/
+        // create styles (ensures they exist in the StyleContext)
+        createDefaultStyleByTokenType(NL);
         for (int t : Arrays.asList(GStringBegin, GStringPart, GStringEnd)) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setForeground(style, Color.MAGENTA.darker().darker());
+            createDefaultStyleByTokenType(t);
         }
-
-        // strings, e.g. 'xxx'
-        Style stringLiteral = createDefaultStyleByTokenType(StringLiteral);
-        StyleConstants.setForeground(stringLiteral, Color.GREEN.darker().darker());
-
-        // numbers, e.g. 123, 1.23
+        createDefaultStyleByTokenType(StringLiteral);
         for (int t : Arrays.asList(IntegerLiteral, FloatingPointLiteral)) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setForeground(style, Color.RED.darker());
+            createDefaultStyleByTokenType(t);
         }
-
-        // reserved keywords, null literals, boolean literals
         for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setBold(style, true);
-            StyleConstants.setForeground(style, Color.BLUE.darker().darker());
+            createDefaultStyleByTokenType(t);
         }
-
-        // commas, semicolons
         for (int t : Arrays.asList(COMMA, SEMI)) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setForeground(style, Color.BLUE.darker());
+            createDefaultStyleByTokenType(t);
+        }
+        createDefaultStyleByTokenType(AT);
+        createDefaultStyleByTokenType(UNEXPECTED_CHAR);
+
+        // apply theme colors
+        updateStyles();
+    }
+
+    /**
+     * Forces a full re-parse and re-render of the document with current styles.
+     * Clears the incremental-render cache first so every token is restyled,
+     * not just the ones that differ from the last parse.
+     *
+     * @since 6.0.0
+     */
+    public void reparseDocument() {
+        this.latestTokenList = Collections.emptyList();
+        try {
+            parseDocument();
+        } catch (BadLocationException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Updates all SmartDocumentFilter styles with current theme colors.
+     * Attribute values are sourced from ThemeManager so custom .theme files
+     * feed both this (ANTLR-token-driven) path and the regex-driven GroovyFilter
+     * path from one place. Called at init time and on theme switch.
+     *
+     * @since 6.0.0
+     */
+    public static void updateStyles() {
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+
+        applyThemeStyle(sc.getStyle(String.valueOf(NL)), "comment");
+
+        for (int t : Arrays.asList(GStringBegin, GStringPart, GStringEnd)) {
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "quotes");
+        }
+        applyThemeStyle(sc.getStyle(String.valueOf(StringLiteral)), "single_quotes");
+
+        for (int t : Arrays.asList(IntegerLiteral, FloatingPointLiteral)) {
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "digit");
         }
 
-        // unexpected char, e.g. `
-        Style unexpectedChar = createDefaultStyleByTokenType(UNEXPECTED_CHAR);
-        StyleConstants.setForeground(unexpectedChar, Color.CYAN.darker());
+        for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "reserved_word");
+        }
+
+        // commas and semicolons reuse the "operation" theme key — closest semantic match
+        for (int t : Arrays.asList(COMMA, SEMI)) {
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "operation");
+        }
+
+        applyThemeStyle(sc.getStyle(String.valueOf(AT)), "annotation");
+
+        // unexpected-char is a lexer-error indicator, not semantic syntax — stay hardcoded
+        Style unexpectedChar = sc.getStyle(String.valueOf(UNEXPECTED_CHAR));
+        if (unexpectedChar != null) {
+            StyleConstants.setForeground(unexpectedChar,
+                    ThemeManager.isDark() ? Color.CYAN : Color.CYAN.darker());
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void applyThemeStyle(Style style, String themeKey) {
+        if (style == null) return;
+        // clear managed attributes so the previous theme's values don't linger
+        style.removeAttribute(StyleConstants.Foreground);
+        style.removeAttribute(StyleConstants.Background);
+        style.removeAttribute(StyleConstants.Bold);
+        style.removeAttribute(StyleConstants.Italic);
+        style.removeAttribute(StyleConstants.Underline);
+        Map attrs = ThemeManager.getStyleAttrs(themeKey);
+        Object fg = attrs.get("foreground");
+        if (fg instanceof Color)  StyleConstants.setForeground(style, (Color) fg);
+        Object bg = attrs.get("background");
+        if (bg instanceof Color)  StyleConstants.setBackground(style, (Color) bg);
+        if (Boolean.TRUE.equals(attrs.get("bold")))      StyleConstants.setBold(style, true);
+        if (Boolean.TRUE.equals(attrs.get("italic")))    StyleConstants.setItalic(style, true);
+        if (Boolean.TRUE.equals(attrs.get("underline"))) StyleConstants.setUnderline(style, true);
     }
 
     private volatile boolean latest = false;
     private volatile List<Token> latestTokenList = Collections.emptyList();
     private volatile Tuple2<Integer, Integer> renderRange;
 
+    /**
+     * Indicates whether the cached token list reflects the current document text.
+     *
+     * @return {@code true} if the latest parse completed successfully
+     */
     public boolean isLatest() {
         return latest;
     }
 
+    /**
+     * Returns the tokens produced by the most recent successful parse.
+     *
+     * @return the latest token list
+     */
     public List<Token> getLatestTokenList() {
         return latestTokenList;
     }
 
+    /**
+     * Limits rendering to the supplied character range for the next parse.
+     *
+     * @param renderRange the inclusive start and stop offsets to re-render, or {@code null} for all text
+     */
     public void setRenderRange(Tuple2<Integer, Integer> renderRange) {
         this.renderRange = renderRange;
     }
+
+    /**
+     * Returns the character range scheduled for selective re-rendering.
+     *
+     * @return the current render range, or {@code null} if the whole document will be rendered
+     */
     public Tuple2<Integer, Integer> getRenderRange() {
         return renderRange;
     }

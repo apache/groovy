@@ -21,8 +21,8 @@ package groovy.contracts;
 import org.apache.groovy.contracts.annotations.meta.AnnotationProcessorImplementation;
 import org.apache.groovy.contracts.annotations.meta.Precondition;
 import org.apache.groovy.contracts.common.impl.RequiresAnnotationProcessor;
-import org.apache.groovy.lang.annotation.Incubating;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -53,13 +53,20 @@ import java.lang.annotation.Target;
  *   }
  * </pre>
  * </p>
+ *
+ * @since 4.0.0
  */
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
-@Incubating
 @Precondition
 @AnnotationProcessorImplementation(RequiresAnnotationProcessor.class)
 @Repeatable(RequiresConditions.class)
 public @interface Requires {
+    /**
+     * Returns the closure class that evaluates the precondition expression.
+     *
+     * @return the generated closure class backing the precondition
+     */
     Class value();
 }

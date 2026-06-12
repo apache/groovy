@@ -20,6 +20,7 @@ package groovy.transform;
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -63,7 +64,7 @@ import java.lang.annotation.Target;
  * The type of delegate parameters must be compatible with Groovy's {@code as} cast operation from a {@code Map}.
  *
  * Here is an example using implicit named parameters.
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @NamedVariant}
@@ -74,7 +75,7 @@ import java.lang.annotation.Target;
  * assert makeSense(dollars: 2, cents: 50) == 250
  * </pre>
  * Here is an example using a delegate parameter.
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @ToString(includeNames=true)}
@@ -101,15 +102,26 @@ import java.lang.annotation.Target;
  * The generated method/constructor retains the visibility and return type of the original method/constructor
  * but the {@link VisibilityOptions} annotation can be added to customize the visibility. You could have the
  * annotated method/constructor private for instance but have the generated one be public.
+ * <p>
+ * Joint compilation note: the variant exposed to Java callers in the same compilation unit is the
+ * simple all-Map form ({@code returnType methodName(Map namedArgs)}, or {@code ClassName(Map)} for
+ * constructors). Mixed configurations using {@code @NamedParam} or {@code @NamedDelegate} alongside
+ * positional parameters produce a richer positional-plus-Map signature at runtime; the stub form is a
+ * strict subset. Java callers using the all-Map form compile and run; callers needing the
+ * positional-plus-Map form should call from Groovy or supply a hand-written delegating method.
  *
  * @see VisibilityOptions
  * @see NamedParam
  * @see NamedDelegate
  * @since 2.5.0
  */
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.NamedVariantASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.NamedVariantASTStubber",
+        "org.codehaus.groovy.transform.NamedVariantASTTransformation"
+})
 public @interface NamedVariant {
     /**
      * If specified, must match the optional "id" attribute in an applicable {@code VisibilityOptions} annotation.

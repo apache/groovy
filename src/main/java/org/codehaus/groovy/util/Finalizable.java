@@ -18,6 +18,12 @@
  */
 package org.codehaus.groovy.util;
 
+/**
+ * Callback for objects that need cleanup when an associated reference is processed.
+ */
 public interface Finalizable {
+    /**
+     * Performs any cleanup required after the associated reference has been cleared.
+     */
     void finalizeReference();
 }

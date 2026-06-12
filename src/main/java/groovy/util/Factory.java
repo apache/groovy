@@ -22,6 +22,9 @@ import groovy.lang.Closure;
 
 import java.util.Map;
 
+/**
+ * Defines lifecycle hooks used by {@link FactoryBuilderSupport} when creating nodes.
+ */
 public interface Factory {
     /**
      *
@@ -80,7 +83,21 @@ public interface Factory {
      */
     void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node );
 
+    /**
+     * Connects a child node to its parent.
+     *
+     * @param builder the FactoryBuilder
+     * @param parent the parent node, or {@code null} for the root
+     * @param child the child node
+     */
     void setParent( FactoryBuilderSupport builder, Object parent, Object child );
 
+    /**
+     * Notifies the parent that a child node was created.
+     *
+     * @param builder the FactoryBuilder
+     * @param parent the parent node, or {@code null} for the root
+     * @param child the child node
+     */
     void setChild( FactoryBuilderSupport builder, Object parent, Object child );
 }

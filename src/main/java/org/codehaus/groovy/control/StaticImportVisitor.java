@@ -90,6 +90,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private boolean inPropertyExpression;
     private boolean inSpecialConstructorCall;
 
+    /**
+     * Creates a visitor that rewrites references resolved through static imports.
+     *
+     * @param classNode the class currently being transformed
+     * @param sourceUnit the source unit containing the class
+     */
     public StaticImportVisitor(final ClassNode classNode, final SourceUnit sourceUnit) {
         this.currentClass = classNode;
         this.sourceUnit = sourceUnit;
@@ -105,6 +111,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         visitClass(classNode);
     }
 
+    /**
+     * Tracks the current method while transforming static-import references.
+     *
+     * @param node the method or constructor being visited
+     * @param isConstructor whether {@code node} is a constructor
+     */
     @Override
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         this.currentMethod = node;
@@ -112,6 +124,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         this.currentMethod = null;
     }
 
+    /**
+     * Marks annotation traversal so imported constants can be inlined safely.
+     *
+     * @param node the annotated node whose annotations are being visited
+     */
     @Override
     public void visitAnnotations(AnnotatedNode node) {
         boolean oldInAnnotation = inAnnotation;
@@ -120,6 +137,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         inAnnotation = oldInAnnotation;
     }
 
+    /**
+     * Rewrites expressions that may target statically imported members.
+     *
+     * @param exp the expression to transform
+     * @return the transformed expression
+     */
     @Override
     public Expression transform(Expression exp) {
         if (exp == null) return null;
@@ -196,6 +219,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return me;
     }
 
+    /**
+     * Rewrites binary expressions that may reference statically imported members.
+     *
+     * @param be the binary expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformBinaryExpression(BinaryExpression be) {
         int type = be.getOperation().getType();
         boolean oldInLeftExpression;
@@ -220,6 +249,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return be;
     }
 
+    /**
+     * Rewrites variable expressions that resolve to statically imported fields or accessors.
+     *
+     * @param ve the variable expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformVariableExpression(VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
         if (v instanceof DynamicVariable) {
@@ -244,6 +279,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return ve;
     }
 
+    /**
+     * Rewrites implicit-this calls that resolve to statically imported methods or properties.
+     *
+     * @param mce the method call to transform
+     * @return the transformed expression
+     */
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
         Expression object = transform(mce.getObjectExpression());
         Expression method = transform(mce.getMethod());
@@ -317,6 +358,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return result;
     }
 
+    /**
+     * Rewrites named-argument constructor calls that use statically imported members.
+     *
+     * @param cce the constructor call to transform
+     * @return the transformed expression
+     */
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
         inSpecialConstructorCall = cce.isSpecialCall();
         Expression expression = cce.getArguments();
@@ -334,6 +381,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return ret;
     }
 
+    /**
+     * Rewrites default parameter expressions inside closures.
+     *
+     * @param ce the closure expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformClosureExpression(ClosureExpression ce) {
         boolean oldInClosure = inClosure;
         inClosure = true;
@@ -348,6 +401,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return ce;
     }
 
+    /**
+     * Rewrites property expressions that may resolve through static imports.
+     *
+     * @param pe the property expression to transform
+     * @return the transformed expression
+     */
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         if (currentMethod != null && currentMethod.isStatic()
                 && isSuperExpression(pe.getObjectExpression())) {
@@ -621,6 +680,11 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return name.startsWith("is") ? "is" : name.substring(0, 3);
     }
 
+    /**
+     * Returns the source unit currently being transformed.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;

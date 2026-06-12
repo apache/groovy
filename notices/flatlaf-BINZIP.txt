@@ -1,0 +1,2 @@
+This product bundles the FlatLaf and FlatLaf Extras jars (formdev.com)
+which are available under the terms of the Apache License 2.0

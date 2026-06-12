@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class LoopsBench {
+    /** Number of loop iterations used by each benchmark invocation. */
     static final int LOOP_COUNT = 1_000_000
 
     /**
@@ -84,6 +85,11 @@ class LoopsBench {
         }
     }
 
+    /**
+     * Helper method for method call benchmarks.
+     * @param o the object to convert
+     * @return the string representation
+     */
     static String doSomething(Object o) {
         o.toString()
     }

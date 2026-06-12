@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy3422 {
+
     @Test
     void testStaticClosureProperty() {
         assertScript '''

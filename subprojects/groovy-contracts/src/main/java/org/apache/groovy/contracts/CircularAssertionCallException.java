@@ -25,17 +25,36 @@ package org.apache.groovy.contracts;
  */
 public class CircularAssertionCallException extends RuntimeException {
 
+    /**
+     * Creates an exception without additional detail.
+     */
     public CircularAssertionCallException() {
     }
 
+    /**
+     * Creates an exception with a descriptive message.
+     *
+     * @param s the detail message
+     */
     public CircularAssertionCallException(String s) {
         super(s);
     }
 
+    /**
+     * Creates an exception with a descriptive message and the underlying cause.
+     *
+     * @param s the detail message
+     * @param throwable the root cause
+     */
     public CircularAssertionCallException(String s, Throwable throwable) {
         super(s, throwable);
     }
 
+    /**
+     * Creates an exception that wraps the underlying cause.
+     *
+     * @param throwable the root cause
+     */
     public CircularAssertionCallException(Throwable throwable) {
         super(throwable);
     }

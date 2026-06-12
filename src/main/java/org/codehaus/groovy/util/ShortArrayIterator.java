@@ -30,15 +30,22 @@ public class ShortArrayIterator implements Iterator<Short> {
     private final short[] array;
     private int index;
 
+    /**
+     * Creates an iterator that traverses the supplied array in index order.
+     *
+     * @param array the backing array to iterate
+     */
     public ShortArrayIterator(final short[] array) {
         this.array = array;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasNext() {
         return array.length > index;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Short next() {
         try {
@@ -48,6 +55,7 @@ public class ShortArrayIterator implements Iterator<Short> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void remove() {
         throw new UnsupportedOperationException("Remove not supported for arrays");

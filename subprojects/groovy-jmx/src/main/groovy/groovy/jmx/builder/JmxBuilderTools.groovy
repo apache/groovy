@@ -30,69 +30,124 @@ import java.lang.management.ManagementFactory
  * This is a utility class used as a helper for JmxBuilder.
  */
 class JmxBuilderTools {
+    /** Default domain used for generated JMX object names. */
     static String DEFAULT_DOMAIN = "jmx.builder"
+    /** Default type used for generated JMX object names. */
     static String DEFAULT_NAME_TYPE = "ExportedObject"
+    /** Canonical builder node name for attributes. */
     static String NODE_NAME_ATTRIBUTES = "attributes"
+    /** Short builder node name for attributes. */
     static String NODE_NAME_ATTRIBS = "attribs"
+    /** Canonical builder node name for constructors. */
     static String NODE_NAME_CONSTRUCTORS = "constructors"
+    /** Short builder node name for constructors. */
     static String NODE_NAME_CTORS = "ctors"
+    /** Canonical builder node name for operations. */
     static String NODE_NAME_OPERATIONS = "operations"
+    /** Short builder node name for operations. */
     static String NODE_NAME_OPS = "ops"
 
+    /** Descriptor key for an attribute description. */
     static String ATTRIB_KEY_DESCRIPTION = "description"
+    /** Short descriptor key for an attribute description. */
     static String ATTRIB_KEY_DESC = "desc"
+    /** Descriptor key for an attribute type. */
     static String ATTRIB_KEY_TYPE = "type"
+    /** Descriptor key for an attribute default value. */
     static String ATTRIB_KEY_DEFAULT = "defaultValue"
 
+    /** Embedded JMX descriptor property name. */
     static String JMX_KEY = "jmx"
 
+    /** Descriptor key that stores a nested descriptor map. */
     static String DESC_KEY = "descriptor"
+    /** Descriptor key for the managed resource reference. */
     static String DESC_KEY_MBEAN_RESOURCE = "resource"
+    /** Descriptor value identifying an object reference resource. */
     static String DESC_KEY_MBEAN_RESOURCE_TYPE = "ObjectReference"
+    /** Descriptor key for attribute metadata. */
     static String DESC_KEY_MBEAN_ATTRIBS = "attributes"
+    /** Descriptor key for operation metadata. */
     static String DESC_KEY_MBEAN_OPS = "operations"
+    /** Descriptor key for constructor metadata. */
     static String DESC_KEY_MBEAN_CTORS = "constructors"
+    /** Descriptor key for notification metadata. */
     static String DESC_KEY_MBEAN_NOTES = "notifications"
 
+    /** Descriptor key for a logical name. */
     static String DESC_KEY_NAME = "name"
+    /** Descriptor key for an {@link javax.management.ObjectName}. */
     static String DESC_KEY_JMX_NAME = "jmxName"
+    /** Descriptor key for a display name. */
     static String DESC_KEY_DISPLAY_NAME = "displayName"
+    /** Descriptor key for the descriptor type. */
     static String DESC_KEY_TYPE = "descriptorType"
+    /** Descriptor key for a getter method name. */
     static String DESC_KEY_GETMETHOD = "getMethod"
+    /** Descriptor key for a setter method name. */
     static String DESC_KEY_SETMETHOD = "setMethod"
 
+    /** Descriptor key for an event type. */
     static String DESC_KEY_EVENT_TYPE = "eventType"
+    /** Descriptor key for an event name. */
     static String DESC_KEY_EVENT_NAME = "eventName"
+    /** Descriptor key for an event source. */
     static String DESC_KEY_EVENT_SOURCE = "eventSource"
+    /** Descriptor key for an event message. */
     static String DESC_KEY_EVENT_MESSAGE = "messageText"
 
+    /** Descriptor value for attribute metadata. */
     static String DESC_VAL_TYPE_ATTRIB = "attribute"
+    /** Descriptor value for getter metadata. */
     static String DESC_VAL_TYPE_GETTER = "getter"
+    /** Descriptor value for setter metadata. */
     static String DESC_VAL_TYPE_SETTER = "setter"
+    /** Descriptor value for operation metadata. */
     static String DESC_VAL_TYPE_OP = "operation"
+    /** Descriptor value for notification metadata. */
     static String DESC_VAL_TYPE_NOTIFICATION = "notification"
+    /** Descriptor value for constructor metadata. */
     static String DESC_VAL_TYPE_CTOR = "constructor"
+    /** Descriptor value for MBean metadata. */
     static String DESC_VAL_TYPE_MBEAN = "mbean"
+    /** Descriptor key for a member role. */
     static String DESC_KEY_ROLE = "role"
+    /** Descriptor key for readability. */
     static String DESC_KEY_READABLE = "readable"
+    /** Descriptor key for writability. */
     static String DESC_KEY_WRITABLE = "writable"
+    /** Descriptor key for a signature list. */
     static String DESC_KEY_SIGNATURE = "signature"
 
+    /** Event packet key for callback contexts. */
     static String EVENT_KEY_CONTEXTS = "eventContexts"
+    /** Event packet key for a callback closure. */
     static String EVENT_KEY_CALLBACK = "eventCallback"
+    /** Event packet key for a callback result. */
     static String EVENT_KEY_CALLBACK_RESULT = "eventCallbackResult"
+    /** Event packet key for a target method name. */
     static String EVENT_KEY_METHOD = "eventMethod"
+    /** Event packet key for a target method result. */
     static String EVENT_KEY_METHOD_RESULT = "eventMethodResult"
+    /** Event packet key indicating attribute handling. */
     static String EVENT_KEY_ISATTRIB = "eventIsAttrib"
+    /** Event packet key for an event name. */
     static String EVENT_KEY_NAME = "eventName"
+    /** Event packet key for an event message. */
     static String EVENT_KEY_MESSAGE = "eventMessage"
+    /** Event packet key for an event type. */
     static String EVENT_KEY_TYPE = "eventType"
+    /** Event packet key for the originating node type. */
     static String EVENT_KEY_NODE_TYPE = "eventNodeType"
+    /** Event node type value for broadcasters. */
     static String EVENT_VAL_NODETYPE_BROADCASTER = "broadcaster"
+    /** Event node type value for listeners. */
     static String EVENT_VAL_NODETYPE_LISTENER = "listener"
+    /** Event packet key for registered listeners. */
     static String EVENT_KEY_TARGETS = "eventListeners"
 
 
+    /** Maps primitive type names to their JVM primitive classes. */
     static Map PRIMITIVE_TYPES = [
             "char"   : java.lang.Integer.TYPE,
             "byte"   : java.lang.Byte.TYPE,
@@ -103,6 +158,7 @@ class JmxBuilderTools {
             "double" : java.lang.Double.TYPE,
             "boolean": java.lang.Boolean.TYPE
     ]
+    /** Maps supported type aliases to concrete Java classes. */
     static Map TYPE_MAP = [
             "object"              : java.lang.Object.class,
             "Object"              : java.lang.Object.class,
@@ -167,8 +223,7 @@ class JmxBuilderTools {
      */
     static String capitalize(String value) {
         if (!value) return null
-        if (value.length() == 1) return value.toUpperCase()
-        return (value.length() > 1) ? value[0].toUpperCase() + value[1..-1] : value.toUpperCase()
+        value.capitalize()
     }
 
     /**
@@ -178,8 +233,7 @@ class JmxBuilderTools {
      */
     static String uncapitalize(String value) {
         if (!value) return null
-        if (value.length() == 1) return value.toLowerCase()
-        return (value.length() > 1) ? value[0].toLowerCase() + value[1..-1] : value.toLowerCase()
+        value.uncapitalize()
     }
 
     /**
@@ -274,6 +328,13 @@ class JmxBuilderTools {
         return result
     }
 
+    /**
+     * Registers an MBean described by the supplied metadata map.
+     *
+     * @param regPolicy the registration policy to apply
+     * @param metaMap the normalized bean metadata
+     * @return the exported bean facade, or {@code null} when registration is ignored
+     */
     static GroovyMBean registerMBeanFromMap(String regPolicy, Map metaMap) {
         // get modelmbean info from meta map
         def info = JmxBeanInfoManager.getModelMBeanInfoFromMap(metaMap)

@@ -41,10 +41,27 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public class AstHelper {
     private AstHelper() { }
 
+    /**
+     * Creates a local variable declaration for the supplied value.
+     *
+     * @param variableName the declared variable name
+     * @param variableType the declared variable type
+     * @param value the initial value expression
+     * @return a declaration statement for the new local variable
+     */
     public static ExpressionStatement createVariableDefinition(String variableName, ClassNode variableType, Expression value) {
         return createVariableDefinition(variableName, variableType, value, false);
     }
 
+    /**
+     * Creates a local variable declaration for the supplied value.
+     *
+     * @param variableName the declared variable name
+     * @param variableType the declared variable type
+     * @param value the initial value expression
+     * @param variableShouldBeFinal whether the declared variable should be {@code final}
+     * @return a declaration statement for the new local variable
+     */
     public static ExpressionStatement createVariableDefinition(String variableName, ClassNode variableType, Expression value, boolean variableShouldBeFinal) {
         VariableExpression newVariable = localVarX(variableName, variableType);
         if (variableShouldBeFinal)
@@ -52,10 +69,24 @@ public class AstHelper {
         return (ExpressionStatement) declS(newVariable, value);
     }
 
+    /**
+     * Creates an alias variable that references another variable.
+     *
+     * @param aliasName the alias variable name
+     * @param variableType the alias variable type
+     * @param variableName the referenced variable name
+     * @return a declaration statement for the alias variable
+     */
     public static ExpressionStatement createVariableAlias(String aliasName, ClassNode variableType, String variableName) {
         return createVariableDefinition(aliasName, variableType, varX(variableName, variableType));
     }
 
+    /**
+     * Creates a variable reference from a name/type specification map.
+     *
+     * @param variableSpec a map containing {@code name} and {@code type} entries
+     * @return a variable expression for the supplied specification
+     */
     public static VariableExpression createVariableReference(Map<String, ?> variableSpec) {
         return varX((String) variableSpec.get("name"), (ClassNode) variableSpec.get("type"));
     }

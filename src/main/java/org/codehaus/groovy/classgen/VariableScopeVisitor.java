@@ -104,16 +104,30 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * Creates a new variable scope visitor with optional recursion into inner classes.
+     *
+     * @param source the source unit being processed
+     * @param recurseInnerClasses whether to recurse into inner classes
+     */
     public VariableScopeVisitor(SourceUnit source, boolean recurseInnerClasses) {
         this.source = source;
         this.currentScope = new VariableScope();
         this.recurseInnerClasses = recurseInnerClasses;
     }
 
+    /**
+     * Creates a new variable scope visitor that does not recurse into inner classes.
+     *
+     * @param source the source unit being processed
+     */
     public VariableScopeVisitor(SourceUnit source) {
         this(source, false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
@@ -433,6 +447,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.setClassScope(node);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         // AIC are already done, doing them here again will lead to wrong scopes
@@ -464,6 +481,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitField(final FieldNode node) {
         pushState(node.isStatic());
@@ -472,6 +492,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitProperty(final PropertyNode node) {
         pushState(node.isStatic());
@@ -479,12 +502,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void visitAnnotation(final AnnotationNode node) {
         visitTypeReference(node.getClassNode());
         super.visitAnnotation(node);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         pushState(node.isStatic());
@@ -517,6 +546,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     // statements:
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitAssertStatement(final AssertStatement statement) {
         pushState();
@@ -524,6 +556,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBlockStatement(final BlockStatement statement) {
         pushState();
@@ -532,6 +567,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitCatchStatement(final CatchStatement statement) {
         pushState();
@@ -542,6 +580,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitDoWhileLoop(final DoWhileStatement statement) {
         pushState();
@@ -553,6 +594,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitExpressionStatement(final ExpressionStatement statement) {
         boolean declaresVariable = statement.getExpression() instanceof DeclarationExpression;
@@ -561,6 +605,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (!declaresVariable) popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitForLoop(final ForStatement statement) {
         pushState();
@@ -575,6 +622,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitIfElse(final IfStatement statement) {
         pushState();
@@ -589,6 +639,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitReturnStatement(final ReturnStatement statement) {
         pushState();
@@ -596,6 +649,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitSwitch(final SwitchStatement statement) {
         pushState();
@@ -603,6 +659,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitWhileLoop(final WhileStatement statement) {
         pushState();
@@ -612,12 +671,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     // expressions:
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitArrayExpression(final ArrayExpression expression) {
         visitTypeReference(expression.getType());
         super.visitArrayExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         super.visitBinaryExpression(expression);
@@ -627,18 +692,27 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitCastExpression(final CastExpression expression) {
         visitTypeReference(expression.getType());
         super.visitCastExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClassExpression(final ClassExpression expression) {
         visitTypeReference(expression.getType());
         super.visitClassExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
         pushState();
@@ -661,6 +735,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstantExpression(final ConstantExpression expression) {
         if (expression instanceof AnnotationConstantExpression) {
@@ -669,6 +746,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         super.visitConstantExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
         if (!expression.isSpecialCall()) visitTypeReference(expression.getType());
@@ -715,6 +795,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         popState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         pushState(); // GROOVY-11229
@@ -733,6 +816,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
         String name = expression.getFieldName();
@@ -741,6 +827,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (variable != null) checkVariableContextAccess(variable, expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethodCallExpression(final MethodCallExpression expression) {
         String methodName = expression.getMethodAsString();
@@ -769,6 +858,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         super.visitMethodCallExpression(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
         expression.getObjectExpression().visit(this);
@@ -776,6 +868,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         checkPropertyOnExplicitThis(expression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
         var variable = findVariableDeclaration(expression.getName());

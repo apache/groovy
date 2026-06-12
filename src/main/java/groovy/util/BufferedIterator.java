@@ -26,5 +26,10 @@ import java.util.Iterator;
  * @since 2.5.0
  */
 public interface BufferedIterator<T> extends Iterator<T> {
+    /**
+     * Returns the next element without advancing the iterator.
+     *
+     * @return the next element
+     */
     T head();
 }

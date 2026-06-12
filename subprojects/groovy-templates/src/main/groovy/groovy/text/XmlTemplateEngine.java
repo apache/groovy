@@ -124,15 +124,32 @@ public class XmlTemplateEngine extends TemplateEngine {
 
     private static class GspPrinter extends XmlNodePrinter {
 
+        /**
+         * Creates a printer using a {@link PrintWriter} and indentation string.
+         *
+         * @param out target writer
+         * @param indent indentation sequence
+         */
         GspPrinter(PrintWriter out, String indent) {
             this(new IndentPrinter(out, indent));
         }
 
+        /**
+         * Creates a printer using the supplied {@link IndentPrinter}.
+         *
+         * @param out indent printer used to emit XML template script text
+         */
         GspPrinter(IndentPrinter out) {
             super(out, "\\\"");
             setQuote("'");
         }
 
+        /**
+         * Emits Groovy Server Pages helper tags as template script statements or expressions.
+         *
+         * @param tag local GSP tag name
+         * @param text tag body text
+         */
         protected void printGroovyTag(String tag, String text) {
             if ("scriptlet".equals(tag)) {
                 out.print(text);
@@ -150,6 +167,9 @@ public class XmlTemplateEngine extends TemplateEngine {
             throw new RuntimeException("Unsupported 'gsp:' tag named \"" + tag + "\".");
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected void printName(Node node, NamespaceContext ctx, boolean begin, boolean preserve) {
             if (node == null || node.name() == null) {
@@ -171,6 +191,9 @@ public class XmlTemplateEngine extends TemplateEngine {
             printLineEnd();
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected void printSimpleItem(Object value) {
             this.printLineBegin();
@@ -219,12 +242,18 @@ public class XmlTemplateEngine extends TemplateEngine {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected void printLineBegin() {
             out.print("out.print(\"\"\"");
             if (!isPreserveWhitespace()) out.printIndent();
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected void printLineEnd(String comment) {
             if (!isPreserveWhitespace()) out.print("\\n");
@@ -236,6 +265,9 @@ public class XmlTemplateEngine extends TemplateEngine {
             out.print("\n");
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         protected boolean printSpecialNode(Node node) {
             Object name = node.name();
@@ -258,15 +290,31 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         private final Script script;
 
+        /**
+         * Creates a compiled XML template wrapper around the supplied script.
+         *
+         * @param script generated Groovy script backing this template
+         */
         XmlTemplate(Script script) {
             this.script = script;
         }
 
+        /**
+         * Creates a writable view using an empty binding.
+         *
+         * @return a writable XML template
+         */
         @Override
         public Writable make() {
             return make(new HashMap());
         }
 
+        /**
+         * Creates a writable view using the supplied binding.
+         *
+         * @param map binding values made available to the template
+         * @return a writable XML template
+         */
         @Override
         public Writable make(Map map) {
             if (map == null) {
@@ -282,12 +330,24 @@ public class XmlTemplateEngine extends TemplateEngine {
         private final Script script;
         private WeakReference result;
 
+        /**
+         * Creates a writable XML renderer backed by the supplied script and binding.
+         *
+         * @param script generated Groovy script backing this writable
+         * @param binding binding values visible during rendering
+         */
         XmlWritable(Script script, Binding binding) {
             this.script = script;
             this.binding = binding;
             this.result = new WeakReference<>(null);
         }
 
+        /**
+         * Renders the template into the supplied writer.
+         *
+         * @param out target writer
+         * @return the supplied writer
+         */
         @Override
         public Writer writeTo(Writer out) {
             Script scriptObject = InvokerHelper.createScript(script.getClass(), binding);
@@ -298,6 +358,11 @@ public class XmlTemplateEngine extends TemplateEngine {
             return out;
         }
 
+        /**
+         * Renders the template to a string, reusing a cached value while it remains strongly reachable.
+         *
+         * @return rendered XML output
+         */
         @Override
         public String toString() {
             Object o = result.get();
@@ -310,32 +375,70 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
     }
 
+    /**
+     * Default indentation sequence used for pretty-printed XML output.
+     */
     public static final String DEFAULT_INDENTATION = "  ";
 
     private final GroovyShell groovyShell;
     private final XmlParser xmlParser;
     private String indentation;
 
+    /**
+     * Creates an XML template engine using the default indentation and with XML validation disabled.
+     *
+     * @throws SAXException if the underlying parser cannot be configured
+     * @throws ParserConfigurationException if the XML parser cannot be created
+     */
     public XmlTemplateEngine() throws SAXException, ParserConfigurationException {
         this(DEFAULT_INDENTATION, false);
     }
 
+    /**
+     * Creates an XML template engine with custom indentation and validation settings.
+     *
+     * @param indentation indentation string used when rendering nested XML nodes
+     * @param validating {@code true} to enable XML validation while parsing templates
+     * @throws SAXException if the underlying parser cannot be configured
+     * @throws ParserConfigurationException if the XML parser cannot be created
+     */
     public XmlTemplateEngine(String indentation, boolean validating) throws SAXException, ParserConfigurationException {
         this(new XmlParser(validating, true), new GroovyShell());
         this.xmlParser.setTrimWhitespace(true);
         setIndentation(indentation);
     }
 
+    /**
+     * Creates an XML template engine backed by the supplied parser and a {@link GroovyShell} built from the parent loader.
+     *
+     * @param xmlParser parser used to read template XML
+     * @param parentLoader class loader used to compile generated template scripts
+     */
     public XmlTemplateEngine(XmlParser xmlParser, ClassLoader parentLoader) {
         this(xmlParser, new GroovyShell(parentLoader));
     }
 
+    /**
+     * Creates an XML template engine backed by the supplied parser and shell.
+     *
+     * @param xmlParser parser used to read template XML
+     * @param groovyShell shell used to compile generated template scripts
+     */
     public XmlTemplateEngine(XmlParser xmlParser, GroovyShell groovyShell) {
         this.groovyShell = groovyShell;
         this.xmlParser = xmlParser;
         setIndentation(DEFAULT_INDENTATION);
     }
 
+    /**
+     * Parses XML template source from the supplied reader and compiles it into a template.
+     *
+     * @param reader XML template source
+     * @return a compiled XML template
+     * @throws CompilationFailedException if Groovy fails to compile the generated template script
+     * @throws ClassNotFoundException if the generated template class cannot be instantiated
+     * @throws IOException if reading the XML template fails
+     */
     @Override
     public Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
         Node root ;
@@ -366,10 +469,20 @@ public class XmlTemplateEngine extends TemplateEngine {
         return new XmlTemplate(script);
     }
 
+    /**
+     * Returns the indentation string used for pretty-printed XML output.
+     *
+     * @return the indentation sequence, never {@code null}
+     */
     public String getIndentation() {
         return indentation;
     }
 
+    /**
+     * Sets the indentation string used for pretty-printed XML output.
+     *
+     * @param indentation indentation sequence to use; {@code null} restores {@link #DEFAULT_INDENTATION}
+     */
     public void setIndentation(String indentation) {
         if (indentation == null) {
             indentation = DEFAULT_INDENTATION;
@@ -377,6 +490,11 @@ public class XmlTemplateEngine extends TemplateEngine {
         this.indentation = indentation;
     }
 
+    /**
+     * Returns a concise engine name for diagnostics.
+     *
+     * @return the literal engine name
+     */
     @Override
     public String toString() {
         return "XmlTemplateEngine";

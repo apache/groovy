@@ -63,10 +63,20 @@ public class ReleaseInfo {
         }
     }
 
+    /**
+     * Returns Groovy's implementation version from the bundled release metadata.
+     *
+     * @return the implementation version, or an empty string if unavailable
+     */
     public static String getVersion() {
         return get(KEY_IMPLEMENTATION_VERSION);
     }
 
+    /**
+     * Returns all loaded release metadata properties.
+     *
+     * @return the loaded release information
+     */
     public static Properties getAllProperties() {
         return RELEASE_INFO;
     }

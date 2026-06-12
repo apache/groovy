@@ -27,20 +27,42 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @since 4.0.0
  */
 public class WhereExpression extends FilterExpression {
+    /**
+     * Creates a {@code where} clause.
+     *
+     * @param filterExpr the filter condition
+     */
     public WhereExpression(Expression filterExpr) {
         super(filterExpr);
     }
 
+    /**
+     * Accepts a visitor for this clause.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {
         return visitor.visitWhereExpression(this);
     }
 
+    /**
+     * Returns the textual GINQ form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String getText() {
         return "where " + filterExpr.getText();
     }
 
+    /**
+     * Returns the textual form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String toString() {
         return getText();

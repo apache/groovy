@@ -140,6 +140,21 @@ class GroovyFilterTests {
     }
 
     @Test
+    void testAnnotation() {
+
+        assert '@X' ==~ GroovyFilter.ANNOTATION
+        assert '@ToString' ==~ GroovyFilter.ANNOTATION
+        assert '@CompileStatic' ==~ GroovyFilter.ANNOTATION
+        assert '@groovy.transform.CompileStatic' ==~ GroovyFilter.ANNOTATION
+        assert '@a.b.C' ==~ GroovyFilter.ANNOTATION
+        assert '@java.lang.SuppressWarnings' ==~ GroovyFilter.ANNOTATION
+        assert !('@' ==~ GroovyFilter.ANNOTATION)
+        assert !('@1bad' ==~ GroovyFilter.ANNOTATION)
+        assert !('@.foo' ==~ GroovyFilter.ANNOTATION)
+        assert !('@foo.' ==~ GroovyFilter.ANNOTATION)
+    }
+
+    @Test
     void testSlashyQuotes() {
         assert '/foo/' ==~ GroovyFilter.SLASHY_QUOTES
         assert '/foo\\//' ==~ GroovyFilter.SLASHY_QUOTES

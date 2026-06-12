@@ -81,8 +81,14 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractHttpServlet extends HttpServlet implements ResourceConnector {
 
+    /**
+     * Init parameter defining the regular expression used to rewrite resource names.
+     */
     public static final String INIT_PARAM_RESOURCE_NAME_REGEX = "resource.name.regex";
 
+    /**
+     * Init parameter defining the numeric {@link Pattern} compile flags for the resource name regex.
+     */
     public static final String INIT_PARAM_RESOURCE_NAME_REGEX_FLAGS = "resource.name.regex.flags";
 
     /**
@@ -95,8 +101,10 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      */
     public static final String INC_PATH_INFO = "javax.servlet.include.path_info";
 
-    /* *** Not used, yet. See comments in getScriptUri(HttpServletRequest). ***
-     * Servlet API include key name: request_uri
+    /**
+     * Servlet API include key name for the original request URI.
+     * <p>
+     * Currently retained for completeness; see the notes in {@link #getScriptUri(HttpServletRequest)}.
      */
     public static final String INC_REQUEST_URI = "javax.servlet.include.request_uri";
 
@@ -166,6 +174,9 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         this.logGROOVY861 = false;
     }
 
+    /**
+     * Computes the servlet context base URL once and caches it in {@link #namePrefix}.
+     */
     protected void generateNamePrefixOnce () {
         URI uri = null;
 
@@ -190,6 +201,13 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         namePrefix = "";
     }
 
+    /**
+     * Removes the cached servlet context prefix from a resource name when present.
+     *
+     * @param name the resource name to normalize
+     * @return the resource name without the servlet context prefix
+     * @throws ResourceException if resource normalization fails downstream
+     */
     protected String removeNamePrefix(String name) throws ResourceException {
         if (namePrefix == null) {
             generateNamePrefixOnce();
@@ -302,6 +320,12 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         return applyResourceNameMatcher(uri);
     }
 
+    /**
+     * Applies the configured resource name rewrite pattern to the supplied URI.
+     *
+     * @param uri the request-relative URI to rewrite
+     * @return the rewritten URI, or the original value when no rewrite applies
+     */
     protected String applyResourceNameMatcher (String uri) {
         if (resourceNamePattern != null) {// mangle resource name with the compiled pattern.
             Matcher matcher = resourceNamePattern.matcher(uri);

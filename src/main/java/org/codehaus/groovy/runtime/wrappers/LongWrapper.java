@@ -18,7 +18,16 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code long} values that preserves the primitive constrained
+ * type.
+ */
 public class LongWrapper extends PojoWrapper {
+    /**
+     * Creates a wrapper for a long value.
+     *
+     * @param wrapped the long value to wrap
+     */
     public LongWrapper(final long wrapped) {
         super(wrapped, long.class);
     }

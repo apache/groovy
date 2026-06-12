@@ -1073,6 +1073,16 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11874
+    @Test
+    void testMapGetAt() {
+        assertScript '''
+            String name = null
+            def map = [:]
+            map[name]
+        '''
+    }
+
     // GROOVY-6266
     @Test
     void testMapGenerics() {

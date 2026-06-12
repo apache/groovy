@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class ToStringBug {
+final class ToStringBug {
 
     @Test
     void testBug() {
@@ -31,7 +28,8 @@ class ToStringBug {
         assert value != null
     }
 
+    @Override
     String toString() {
-        return super.toString() + "[hey]"
+        return super.toString() + '[hey]'
     }
 }

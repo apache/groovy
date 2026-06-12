@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * constructor will contain additional code needed for immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @TupleConstructor}
@@ -112,7 +112,10 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.MapConstructorASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.MapConstructorASTStubber",
+        "org.codehaus.groovy.transform.MapConstructorASTTransformation"
+})
 public @interface MapConstructor {
     /**
      * List of field and/or property names to exclude from the constructor.

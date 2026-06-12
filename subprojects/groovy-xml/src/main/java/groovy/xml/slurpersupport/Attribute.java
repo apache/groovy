@@ -46,6 +46,9 @@ public class Attribute extends GPathResult {
         this.value = value;
     }
 
+    /**
+     * Returns this attribute name without the leading {@code @} used in GPath selectors.
+     */
     @Override
     public String name() {
         // this name contains @name we need to return name
@@ -97,11 +100,13 @@ public class Attribute extends GPathResult {
         throw new GroovyRuntimeException("can't call childNodes() in the attribute " + this.name);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator iterator() {
         return nodeIterator();
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult find(final Closure closure) {
         if (DefaultTypeTransformation.castToBoolean(closure.call(new Object[]{this}))) {
@@ -111,22 +116,26 @@ public class Attribute extends GPathResult {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public GPathResult findAll(final Closure closure) {
         return find(closure);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator nodeIterator() {
         return createIterator(this);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Writer writeTo(final Writer out) throws IOException {
         out.write(this.value);
         return out;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void build(final GroovyObject builder) {
         builder.getProperty("mkp");

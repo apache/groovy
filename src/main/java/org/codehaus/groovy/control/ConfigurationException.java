@@ -20,13 +20,18 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.GroovyExceptionInterface;
 
+import java.io.Serial;
+
 /**
  * Thrown when configuration data is invalid.
  */
 public class ConfigurationException extends RuntimeException implements GroovyExceptionInterface {
-    private static final long serialVersionUID = -3844401402301111613L;
+    @Serial private static final long serialVersionUID = -3844401402301111613L;
 
-    protected Exception cause;   // The phase in which the failures occurred
+    /**
+     * Underlying configuration failure, if one is available.
+     */
+    protected Exception cause;
 
     /**
      * Initializes the exception from a cause exception.

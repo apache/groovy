@@ -33,7 +33,15 @@ import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Supplies synthetic binding definitions for {@link JTable}.
+ */
 public class JTableProperties {
+    /**
+     * Returns the synthetic trigger bindings exposed for {@link JTable}.
+     *
+     * @return the synthetic trigger binding map
+     */
     public static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JTable.class.getName() + "#elements",
@@ -46,13 +54,28 @@ public class JTableProperties {
     }
 }
 
+/**
+ * Tracks the synthetic {@code elements} property on a {@link JTable}.
+ */
 class JTableElementsBinding extends AbstractSyntheticBinding implements TableModelListener, PropertyChangeListener {
+    /**
+     * The currently bound table instance.
+     */
     JTable boundTable;
 
+    /**
+     * Creates an elements binding for a table.
+     *
+     * @param propertyBinding the source property binding
+     * @param target the target binding
+     */
     JTableElementsBinding(PropertyBinding propertyBinding, TargetBinding target) {
         super(propertyBinding, target, JTable.class, "elements");
     }
 
+    /**
+     * Starts listening to the bound table model.
+     */
     @Override
     protected void syntheticBind() {
         boundTable = (JTable) ((PropertyBinding)sourceBinding).getBean();
@@ -60,17 +83,30 @@ class JTableElementsBinding extends AbstractSyntheticBinding implements TableMod
         boundTable.getModel().addTableModelListener(this);
     }
 
+    /**
+     * Stops listening to the bound table model.
+     */
     @Override
     protected void syntheticUnbind() {
         boundTable.removePropertyChangeListener("model", this);
         boundTable.getModel().removeTableModelListener(this);
     }
 
+    /**
+     * Refreshes the binding after the table model contents change.
+     *
+     * @param e the table-model event
+     */
     @Override
     public void tableChanged(TableModelEvent e) {
         update();
     }
 
+    /**
+     * Refreshes the binding after the table model instance changes.
+     *
+     * @param event the model change event
+     */
     @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
@@ -79,13 +115,29 @@ class JTableElementsBinding extends AbstractSyntheticBinding implements TableMod
     }
 }
 
+/**
+ * Tracks the synthetic selected-element properties on a {@link JTable}.
+ */
 class JTableSelectedElementBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ListSelectionListener {
+    /**
+     * The currently bound table instance.
+     */
     JTable boundTable;
 
+    /**
+     * Creates a selected-element binding for a table.
+     *
+     * @param source the source property binding
+     * @param target the target binding
+     * @param propertyName the synthetic property name to observe
+     */
     protected JTableSelectedElementBinding(PropertyBinding source, TargetBinding target, String propertyName) {
         super(source, target, JTable.class, propertyName);
     }
 
+    /**
+     * Starts listening to the bound table selection model.
+     */
     @Override
     public synchronized void syntheticBind() {
         boundTable = (JTable) ((PropertyBinding)sourceBinding).getBean();
@@ -93,6 +145,9 @@ class JTableSelectedElementBinding extends AbstractSyntheticBinding implements P
         boundTable.getSelectionModel().addListSelectionListener(this);
     }
 
+    /**
+     * Stops listening to the bound table selection model and clears the cached reference.
+     */
     @Override
     public synchronized void syntheticUnbind() {
         boundTable.removePropertyChangeListener("selectionModel", this);
@@ -100,6 +155,11 @@ class JTableSelectedElementBinding extends AbstractSyntheticBinding implements P
         boundTable = null;
     }
 
+    /**
+     * Refreshes the binding after the table selection model instance changes.
+     *
+     * @param event the selection-model change event
+     */
     @Override
     public void propertyChange(PropertyChangeEvent event) {
         update();
@@ -107,6 +167,11 @@ class JTableSelectedElementBinding extends AbstractSyntheticBinding implements P
         ((ListSelectionModel) event.getNewValue()).addListSelectionListener(this);
     }
 
+    /**
+     * Refreshes the binding after the table selection changes.
+     *
+     * @param e the selection event
+     */
     @Override
     public void valueChanged(ListSelectionEvent e) {
         update();

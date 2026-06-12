@@ -40,37 +40,77 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class MethodInvocationBench {
+    /** Number of loop iterations used by each benchmark invocation. */
     static final int ITERATIONS = 1_000_000
 
-    // Simple fields for method tests
+    /** Instance field for method tests. */
     int instanceField = 42
+
+    /** Static field for method tests. */
     static int staticField = 100
 
-    // Simple instance method
+    /**
+     * Simple instance method.
+     * @return the instance field value
+     */
     int simpleMethod() {
         instanceField
     }
 
-    // Method with parameters
+    /**
+     * Method with parameters.
+     * @param a first operand
+     * @param b second operand
+     * @return the sum
+     */
     int methodWithParams(int a, int b) {
         a + b
     }
 
-    // Method with object parameter
+    /**
+     * Method with object parameter.
+     * @param obj the object to convert
+     * @return the string representation
+     */
     String methodWithObject(Object obj) {
         obj.toString()
     }
 
-    // Overloaded methods to test dispatch
+    /**
+     * Overloaded method for String.
+     * @param s the string value
+     * @return a formatted result
+     */
     String overloaded(String s) { "String: $s" }
+
+    /**
+     * Overloaded method for Integer.
+     * @param i the integer value
+     * @return a formatted result
+     */
     String overloaded(Integer i) { "Integer: $i" }
+
+    /**
+     * Overloaded method for Object (catch-all).
+     * @param o the object value
+     * @return a formatted result
+     */
     String overloaded(Object o) { "Object: $o" }
 
-    // Static methods
+    /**
+     * Static method.
+     * @return the static field value
+     */
     static int staticMethod() {
         staticField
     }
 
+    /**
+     * Static method with parameters.
+     * @param a first operand
+     * @param b second operand
+     * @return the sum
+     */
     static int staticMethodWithParams(int a, int b) {
         a + b
     }

@@ -35,12 +35,21 @@ import javax.management.remote.JMXServiceURL
  * )
  * </pre>
  *
- * @see <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/management/remote/JMXConnector.html">JMXConnector</a>
+ * @see javax.management.remote.JMXConnector
  */
 class JmxClientConnectorFactory extends AbstractFactory {
 
-    private static final List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
+    private static final List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "jmxmp"]
 
+    /**
+     * Creates a client connector for the supplied connection settings.
+     *
+     * @param builder the active builder
+     * @param nodeName the node name
+     * @param nodeArgs positional node arguments
+     * @param nodeAttribs named node attributes
+     * @return the configured connector
+     */
     Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeArgs, Map nodeAttribs) {
         if (nodeArgs) {
             throw new JmxBuilderException("Node '${nodeName}' only supports named attributes.")

@@ -30,6 +30,12 @@ import org.codehaus.groovy.ast.MethodNode;
  */
 public class PostconditionLifecycle extends BaseLifecycle {
 
+    /**
+     * Ensures the helper method for computing {@code old} values exists before postconditions are injected.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the class being prepared
+     */
     @Override
     public void beforeProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode) {
         if (classNode.isInterface()) return;
@@ -37,11 +43,25 @@ public class PostconditionLifecycle extends BaseLifecycle {
         postconditionGenerator.addOldVariablesMethod(classNode);
     }
 
+    /**
+     * Adds inherited default postconditions to the supplied constructor when needed.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param constructorNode the constructor to update
+     */
     @Override
     public void afterProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode) {
         generatePostcondition(processingContextInformation, classNode, constructorNode);
     }
 
+    /**
+     * Adds inherited default postconditions to the supplied method when needed.
+     *
+     * @param processingContextInformation the current processing context
+     * @param classNode the declaring class
+     * @param methodNode the method to update
+     */
     @Override
     public void afterProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode) {
         generatePostcondition(processingContextInformation, classNode, methodNode);

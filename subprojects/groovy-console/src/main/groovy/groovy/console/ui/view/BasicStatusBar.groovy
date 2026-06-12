@@ -22,14 +22,17 @@ import javax.swing.SwingConstants
 import java.awt.BorderLayout
 import java.awt.GridBagConstraints
 
+/** Status bar panel shown at the bottom of the console window. */
 statusPanel = panel(constraints: BorderLayout.SOUTH) {
     gridBagLayout()
     separator(gridwidth: GridBagConstraints.REMAINDER, fill: GridBagConstraints.HORIZONTAL)
+    /** Label displaying the current console status message. */
     status = label("Welcome to Groovy ${GroovySystem.version}.",
             weightx: 1.0,
             anchor: GridBagConstraints.WEST,
             fill: GridBagConstraints.HORIZONTAL,
             insets: [1, 3, 1, 3])
     separator(orientation: SwingConstants.VERTICAL, fill: GridBagConstraints.VERTICAL)
+    /** Label displaying the current caret line and column. */
     rowNumAndColNum = label('1:1', insets: [1, 3, 1, 3])
 }

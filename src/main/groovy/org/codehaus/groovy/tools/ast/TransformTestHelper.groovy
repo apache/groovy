@@ -87,11 +87,24 @@ class TestHarnessClassLoader extends GroovyClassLoader {
     private final ASTTransformation transform
     private final CompilePhase phase
 
+    /**
+     * Creates a class loader that injects the supplied transform at the requested phase.
+     *
+     * @param transform the transform to install
+     * @param phase the phase at which the transform should run
+     */
     TestHarnessClassLoader(ASTTransformation transform, CompilePhase phase) {
         this.transform = transform
         this.phase = phase
     }
 
+    /**
+     * Creates a compilation unit and wires in the test harness operation.
+     *
+     * @param config the compiler configuration to use
+     * @param codeSource the code source associated with the compilation
+     * @return the configured compilation unit
+     */
     protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource codeSource) {
         CompilationUnit cu = super.createCompilationUnit(config, codeSource)
         cu.addPhaseOperation(new TestHarnessOperation(transform), phase.phaseNumber)
@@ -107,10 +120,22 @@ class TestHarnessOperation implements CompilationUnit.IPrimaryClassNodeOperation
 
     private final ASTTransformation transform
 
+    /**
+     * Creates an operation that runs the supplied transform for each primary class node.
+     *
+     * @param transform the transform to invoke
+     */
     TestHarnessOperation(ASTTransformation transform) {
         this.transform = transform
     }
 
+    /**
+     * Applies the configured transform to the current source unit.
+     *
+     * @param source the source unit being compiled
+     * @param ignoredContext the generator context, ignored by this helper
+     * @param ignoredNode the primary class node, ignored by this helper
+     */
     @Override
     void call(SourceUnit source, GeneratorContext ignoredContext, ClassNode ignoredNode) {
         this.transform.visit(null, source)

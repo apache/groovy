@@ -20,11 +20,14 @@ package org.codehaus.groovy.tools.stubgenerator
 
 import com.thoughtworks.qdox.JavaProjectBuilder
 import com.thoughtworks.qdox.model.JavaClass
+import groovy.test.GroovyTestCase
+import junit.framework.TestCase
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import static groovy.io.FileType.FILES
 import static org.junit.jupiter.api.Assertions.fail
@@ -66,8 +69,8 @@ abstract class StubTestCase {
     protected GroovyClassLoader loader
     protected CompilerConfiguration config
 
-    protected boolean debug = false;
-    protected boolean delete = true;
+    protected boolean debug = false
+    protected boolean delete = true
 
     /**
      * Prepares the target and stub directories.
@@ -139,6 +142,7 @@ abstract class StubTestCase {
      * Sole JUnit test method which will delegate to the <code>verifyStubs()</code> method
      * in the subclasses of <code>StubTestCase</code>.
      */
+    @Test
     void testRun() {
         init()
         configure()
@@ -230,7 +234,7 @@ abstract class StubTestCase {
         loader = new GroovyClassLoader(this.class.classLoader).tap {
             addURL(this.class.location)
             addURL(GroovyTestCase.location)
-            addURL(junit.framework.TestCase.location)
+            addURL(TestCase.location)
         }
         def cu = new JavaAwareCompilationUnit(config, loader)
         cu.addSources(sources as File[])

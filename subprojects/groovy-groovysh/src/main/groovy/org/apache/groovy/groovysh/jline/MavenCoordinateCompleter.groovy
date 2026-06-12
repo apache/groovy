@@ -23,12 +23,21 @@ import org.jline.reader.Candidate
 import org.jline.reader.LineReader
 import org.jline.reader.ParsedLine
 
+/**
+ * Completes Maven-style coordinates from the local Maven and Grape caches.
+ */
 class MavenCoordinateCompleter implements Completer {
 
     private File mavenRepo = new File(System.getProperty('user.home'), '.m2/repository')
     private File grapeRepo = new File(System.getProperty('user.home'), '.groovy/grapes')
 
-
+    /**
+     * Adds completion candidates for a partial Maven coordinate.
+     *
+     * @param reader active line reader
+     * @param line parsed command line
+     * @param candidates candidate list to populate
+     */
     @Override
     void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
         def word = line.word()

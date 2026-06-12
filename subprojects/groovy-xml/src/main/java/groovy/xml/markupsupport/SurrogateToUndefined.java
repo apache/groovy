@@ -22,9 +22,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Convert surrogate chars to XML undefined character.
+ * Replaces surrogate characters that cannot be emitted directly with {@code U+FFFD}.
  */
 public class SurrogateToUndefined implements Function<Character, Optional<String>> {
+    /** {@inheritDoc} */
     @Override
     public Optional<String> apply(Character ch) {
         if (Character.isSurrogate(ch)) {

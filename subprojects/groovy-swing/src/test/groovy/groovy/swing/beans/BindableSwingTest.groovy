@@ -18,28 +18,68 @@
  */
 package groovy.swing.beans
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-import static groovy.swing.GroovySwingTestCase.testInEDT
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.util.HeadlessTestSupport.isHeadless
+import static org.junit.jupiter.api.Assumptions.assumeFalse
 
 final class BindableSwingTest {
+
+    @BeforeEach
+    void setUp() {
+        assumeFalse(isHeadless())
+    }
 
     // GROOVY-8339, GROOVY-10070
     @Test
     void testExtendsComponent() {
-        testInEDT {
-            new GroovyShell().evaluate '''
-                class BindableTestBean extends javax.swing.JPanel {
-                    @groovy.beans.Bindable String testValue
+        assertScript '''
+            class BindableTestBean extends javax.swing.JPanel {
+                @groovy.beans.Bindable String testValue
+            }
+
+            changed = false
+
+            def bean = new BindableTestBean(testValue: 'foo')
+            bean.propertyChange = {changed = true}
+            bean.testValue = 'bar'
+            assert changed
+        '''
+    }
+
+    // GROOVY-11876
+    @Test
+    void testBindableProperties() {
+        assertScript '''
+            import groovy.beans.Bindable
+            import groovy.swing.SwingBuilder
+
+            class Main {
+                @Bindable
+                static class Bean {
+                    String foo = 'bar'
                 }
 
-                changed = false
+                static def  bean1 = new Bean()
+                static Bean bean2 = new Bean()
 
-                def bean = new BindableTestBean(testValue: 'foo')
-                bean.propertyChange = {changed = true}
-                bean.testValue = 'bar'
-                assert changed
-            '''
-        }
+                static main(args) {
+                    new SwingBuilder().edt {
+                        def label1 = label(text: bind { bean1.foo })
+                        def label2 = label(text: bind { bean2.foo })
+
+                        assert label1.text == 'bar'
+                        bean1.foo = 'baz'
+                        assert label1.text == 'baz'
+
+                        assert label2.text == 'bar'
+                        bean2.foo = 'baz'
+                        assert label2.text == 'baz'
+                    }
+                }
+            }
+        '''
     }
 }

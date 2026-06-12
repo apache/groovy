@@ -19,13 +19,25 @@
 package org.apache.groovy.groovysh.jline
 
 import org.jline.builtins.ConfigurationPath
+import org.jline.console.impl.SystemRegistryImpl
 import org.jline.reader.Parser
 import org.jline.terminal.Terminal
 
 import java.nio.file.Path
 import java.util.function.Supplier
 
+/**
+ * Specializes the JLine system registry for groovysh pipeline syntax and assignments.
+ */
 class GroovySystemRegistry extends SystemRegistryImpl {
+    /**
+     * Creates the system registry used by groovysh.
+     *
+     * @param parser command parser
+     * @param terminal active terminal
+     * @param workDir supplier for the current working directory
+     * @param configPath configuration lookup path
+     */
     GroovySystemRegistry(Parser parser, Terminal terminal, Supplier<Path> workDir, ConfigurationPath configPath) {
         super(parser, terminal, workDir, configPath)
         rename(Pipe.AND, '|&&')
@@ -34,6 +46,13 @@ class GroovySystemRegistry extends SystemRegistryImpl {
         rename(Pipe.APPEND, '|>>')
     }
 
+    /**
+     * Executes a shell line after normalizing groovysh-specific syntax.
+     *
+     * @param line command line to execute
+     * @return the command result
+     * @throws Exception if command execution fails
+     */
     @Override
     Object execute(String line) throws Exception {
         line = line.startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
@@ -49,6 +68,12 @@ class GroovySystemRegistry extends SystemRegistryImpl {
         super.execute(line)
     }
 
+    /**
+     * Determines whether the token should be handled as a command or script name.
+     *
+     * @param command token to inspect
+     * @return {@code true} if the token maps to a command or script
+     */
     @Override
     boolean isCommandOrScript(String command) {
         return command.startsWith("/!") || super.isCommandOrScript(command)

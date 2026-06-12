@@ -42,6 +42,7 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.Opcodes;
 
+import java.io.Serial;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -61,12 +62,16 @@ import java.util.concurrent.Callable;
  */
 public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
 
+    /** Shared type-checking context exposed to extension helpers. */
     protected final TypeCheckingContext context;
     /** @see {@link #log(String)} */ protected boolean debug;
     /** @see {@link #setHandled(boolean)} */ protected boolean handled;
     private final Set<MethodNode> generatedMethods = new LinkedHashSet<>();
     private final LinkedList<TypeCheckingScope> scopeData = new LinkedList<>();
 
+    /**
+     * Creates an extension helper bound to the supplied visitor.
+     */
     public AbstractTypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         super(typeCheckingVisitor);
         this.context = typeCheckingVisitor.typeCheckingContext;
@@ -74,16 +79,25 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Marks whether the current event was handled by the extension.
+     */
     public void setHandled(final boolean handled) {
         this.handled = handled;
     }
 
+    /**
+     * Pushes a new extension scope onto the scope stack.
+     */
     public TypeCheckingScope newScope() {
         TypeCheckingScope scope = new TypeCheckingScope(scopeData.peek());
         scopeData.addFirst(scope);
         return scope;
     }
 
+    /**
+     * Pushes a new scope and executes the supplied callback against it.
+     */
     public TypeCheckingScope newScope(Closure code) {
         TypeCheckingScope scope = newScope();
         Closure callback = code.rehydrate(scope, this, this);
@@ -91,14 +105,23 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return scope;
     }
 
+    /**
+     * Pops and returns the current scope.
+     */
     public TypeCheckingScope scopeExit() {
         return scopeData.removeFirst();
     }
 
+    /**
+     * Returns the current scope, or {@code null} if none is active.
+     */
     public TypeCheckingScope getCurrentScope() {
         return scopeData.peek();
     }
 
+    /**
+     * Executes the supplied callback against the current scope and then pops it.
+     */
     public TypeCheckingScope scopeExit(Closure code) {
         TypeCheckingScope scope = scopeData.peek();
         Closure copy = code.rehydrate(scope, this, this);
@@ -106,18 +129,30 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return scopeExit();
     }
 
+    /**
+     * Indicates whether the supplied method node was created by this extension.
+     */
     public boolean isGenerated(MethodNode node) {
         return generatedMethods.contains(node);
     }
 
+    /**
+     * Wraps the supplied method node in a singleton list.
+     */
     public List<MethodNode> unique(MethodNode node) {
         return Collections.singletonList(node);
     }
 
+    /**
+     * Creates a synthetic public method with the supplied return type.
+     */
     public MethodNode newMethod(final String name, final Class returnType) {
         return newMethod(name, ClassHelper.make(returnType));
     }
 
+    /**
+     * Creates a synthetic public method with the supplied return type.
+     */
     public MethodNode newMethod(final String name, final ClassNode returnType) {
         MethodNode node = new MethodNode(name,
                 Opcodes.ACC_PUBLIC,
@@ -129,6 +164,9 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return node;
     }
 
+    /**
+     * Creates a synthetic public method whose return type is resolved lazily.
+     */
     public MethodNode newMethod(final String name,
                                 final Callable<ClassNode> returnType) {
         MethodNode node = new MethodNode(name,
@@ -150,38 +188,65 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return node;
     }
 
+    /**
+     * Sets closure delegation metadata with {@link Closure#OWNER_FIRST}.
+     */
     public void delegatesTo(ClassNode type) {
         delegatesTo(type, Closure.OWNER_FIRST);
     }
 
+    /**
+     * Sets closure delegation metadata for the supplied type and strategy.
+     */
     public void delegatesTo(ClassNode type, int strategy) {
         delegatesTo(type, strategy, typeCheckingVisitor.typeCheckingContext.delegationMetadata);
     }
 
+    /**
+     * Sets closure delegation metadata for the supplied type, strategy, and parent metadata.
+     */
     public void delegatesTo(ClassNode type, int strategy, DelegationMetadata parent) {
         typeCheckingVisitor.typeCheckingContext.delegationMetadata = new DelegationMetadata(type, strategy, parent);
     }
 
+    /**
+     * Checks whether the node is annotated with the supplied annotation type.
+     */
     public boolean isAnnotatedBy(ASTNode node, Class annotation) {
         return isAnnotatedBy(node, ClassHelper.make(annotation));
     }
 
+    /**
+     * Checks whether the node is annotated with the supplied annotation node.
+     */
     public boolean isAnnotatedBy(ASTNode node, ClassNode annotation) {
         return node instanceof AnnotatedNode && !((AnnotatedNode)node).getAnnotations(annotation).isEmpty();
     }
 
+    /**
+     * Indicates whether the variable resolves dynamically.
+     */
     public boolean isDynamic(VariableExpression var) {
         return var.getAccessedVariable() instanceof DynamicVariable;
     }
 
+    /**
+     * Indicates whether the supplied method node models an extension method.
+     */
     public boolean isExtensionMethod(MethodNode node) {
         return node instanceof ExtensionMethodNode;
     }
 
+    /**
+     * Returns the normalized argument list for the supplied method call.
+     */
     public ArgumentListExpression getArguments(MethodCall call) {
         return InvocationWriter.makeArgumentList(call.getArguments());
     }
 
+    /**
+     * Invokes the supplied closure and reports any failure to the source unit.
+     */
     protected Object safeCall(Closure closure, Object... args) {
         try {
             return closure.call(args);
@@ -191,10 +256,16 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         }
     }
 
+    /**
+     * Indicates whether the supplied object is a method call expression.
+     */
     public boolean isMethodCall(Object o) {
         return o instanceof MethodCallExpression;
     }
 
+    /**
+     * Checks whether the supplied argument types exactly match the given classes.
+     */
     public boolean argTypesMatches(ClassNode[] argTypes, Class... classes) {
         if (classes == null) return argTypes == null || argTypes.length == 0;
         if (argTypes.length != classes.length) return false;
@@ -217,12 +288,18 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return match;
     }
 
+    /**
+     * Checks whether a method call argument list exactly matches the given classes.
+     */
     public boolean argTypesMatches(MethodCall call, Class... classes) {
         ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
         ClassNode[] argumentTypes = typeCheckingVisitor.getArgumentTypes(argumentListExpression);
         return argTypesMatches(argumentTypes, classes);
     }
 
+    /**
+     * Checks whether the leading argument types match the given classes.
+     */
     public boolean firstArgTypesMatches(ClassNode[] argTypes, Class... classes) {
         if (classes == null) return argTypes == null || argTypes.length == 0;
         if (argTypes.length<classes.length) return false;
@@ -233,23 +310,35 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         return match;
     }
 
+    /**
+     * Checks whether a method call starts with arguments matching the given classes.
+     */
     public boolean firstArgTypesMatches(MethodCall call, Class... classes) {
         ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
         ClassNode[] argumentTypes = typeCheckingVisitor.getArgumentTypes(argumentListExpression);
         return firstArgTypesMatches(argumentTypes, classes);
     }
 
+    /**
+     * Checks whether the argument at the supplied index matches the given class.
+     */
     public boolean argTypeMatches(ClassNode[] argTypes, int index, Class clazz) {
         if (index >= argTypes.length) return false;
         return matchWithOrWithoutBoxing(argTypes[index], clazz);
     }
 
+    /**
+     * Checks whether a method call argument at the supplied index matches the given class.
+     */
     public boolean argTypeMatches(MethodCall call, int index, Class clazz) {
         ArgumentListExpression argumentListExpression = InvocationWriter.makeArgumentList(call.getArguments());
         ClassNode[] argumentTypes = typeCheckingVisitor.getArgumentTypes(argumentListExpression);
         return argTypeMatches(argumentTypes, index, clazz);
     }
 
+    /**
+     * Executes the supplied closure with the type checker as delegate.
+     */
     public <R> R withTypeChecker(@DelegatesTo(value = StaticTypeCheckingVisitor.class, strategy = Closure.DELEGATE_FIRST)
             @ClosureParams(value = SimpleType.class, options = "org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor") final Closure<R> code) {
         return DefaultGroovyMethods.with(typeCheckingVisitor, code);
@@ -330,106 +419,182 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
         }
     }
 
+    /**
+     * Logs a type-checking extension message.
+     */
     public void log(final String message) {
         java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GroovyTypeCheckingExtensionSupport.class.getName());
         logger.info(message);
     }
 
+    /**
+     * Returns the current enclosing binary expression.
+     */
     public BinaryExpression getEnclosingBinaryExpression() {
         return context.getEnclosingBinaryExpression();
     }
 
+    /**
+     * Pushes an enclosing binary expression onto the context stack.
+     */
     public void pushEnclosingBinaryExpression(final BinaryExpression binaryExpression) {
         context.pushEnclosingBinaryExpression(binaryExpression);
     }
 
+    /**
+     * Pushes an enclosing closure expression onto the context stack.
+     */
     public void pushEnclosingClosureExpression(final ClosureExpression closureExpression) {
         context.pushEnclosingClosureExpression(closureExpression);
     }
 
+    /**
+     * Returns the current enclosing method call.
+     */
     public Expression getEnclosingMethodCall() {
         return context.getEnclosingMethodCall();
     }
 
+    /**
+     * Pops the current enclosing method call.
+     */
     public Expression popEnclosingMethodCall() {
         return context.popEnclosingMethodCall();
     }
 
+    /**
+     * Pops the current enclosing method.
+     */
     public MethodNode popEnclosingMethod() {
         return context.popEnclosingMethod();
     }
 
+    /**
+     * Returns the current enclosing class node.
+     */
     public ClassNode getEnclosingClassNode() {
         return context.getEnclosingClassNode();
     }
 
+    /**
+     * Returns the enclosing method stack.
+     */
     public List<MethodNode> getEnclosingMethods() {
         return context.getEnclosingMethods();
     }
 
+    /**
+     * Returns the current enclosing method.
+     */
     public MethodNode getEnclosingMethod() {
         return context.getEnclosingMethod();
     }
 
+    /**
+     * Pops the temporary type-information stack.
+     */
     public void popTemporaryTypeInfo() {
         context.popTemporaryTypeInfo();
     }
 
+    /**
+     * Pushes an enclosing class node onto the context stack.
+     */
     public void pushEnclosingClassNode(final ClassNode classNode) {
         context.pushEnclosingClassNode(classNode);
     }
 
+    /**
+     * Pops the current enclosing binary expression.
+     */
     public BinaryExpression popEnclosingBinaryExpression() {
         return context.popEnclosingBinaryExpression();
     }
 
+    /**
+     * Returns the enclosing class stack.
+     */
     public List<ClassNode> getEnclosingClassNodes() {
         return context.getEnclosingClassNodes();
     }
 
+    /**
+     * Returns the enclosing closure stack.
+     */
     public List<TypeCheckingContext.EnclosingClosure> getEnclosingClosureStack() {
         return context.getEnclosingClosureStack();
     }
 
+    /**
+     * Pops the current enclosing class node.
+     */
     public ClassNode popEnclosingClassNode() {
         return context.popEnclosingClassNode();
     }
 
+    /**
+     * Pushes an enclosing method onto the context stack.
+     */
     public void pushEnclosingMethod(final MethodNode methodNode) {
         context.pushEnclosingMethod(methodNode);
     }
 
+    /**
+     * Returns the generated methods created by this extension.
+     */
     public Set<MethodNode> getGeneratedMethods() {
         return generatedMethods;
     }
 
+    /**
+     * Returns the enclosing binary-expression stack.
+     */
     public List<BinaryExpression> getEnclosingBinaryExpressionStack() {
         return context.getEnclosingBinaryExpressionStack();
     }
 
+    /**
+     * Returns the current enclosing closure metadata.
+     */
     public TypeCheckingContext.EnclosingClosure getEnclosingClosure() {
         return context.getEnclosingClosure();
     }
 
+    /**
+     * Returns the enclosing method-call stack.
+     */
     public List<Expression> getEnclosingMethodCalls() {
         return context.getEnclosingMethodCalls();
     }
 
+    /**
+     * Pushes an enclosing method call onto the context stack.
+     */
     public void pushEnclosingMethodCall(final Expression call) {
         context.pushEnclosingMethodCall(call);
     }
 
+    /**
+     * Pops the current enclosing closure metadata.
+     */
     public TypeCheckingContext.EnclosingClosure popEnclosingClosure() {
         return context.popEnclosingClosure();
     }
 
+    /**
+     * Pushes a new temporary type-information frame.
+     */
     public void pushTemporaryTypeInfo() {
         context.pushTemporaryTypeInfo();
     }
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Map-backed scope used to share data across extension callbacks.
+     */
     public static class TypeCheckingScope extends LinkedHashMap<String, Object> {
+        @Serial
         private static final long serialVersionUID = 7607331333917615144L;
         private final AbstractTypeCheckingExtension.TypeCheckingScope parent;
 
@@ -437,6 +602,9 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
             this.parent = parentScope;
         }
 
+        /**
+         * Returns the parent scope, or {@code null} for the root scope.
+         */
         public AbstractTypeCheckingExtension.TypeCheckingScope getParent() {
             return parent;
         }

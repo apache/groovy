@@ -16,20 +16,33 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-/**
- * A factory class for text nodes for use in the AST tree made by ASTBrowser
- */
 package groovy.console
 
 import groovy.console.ui.AstBrowserNodeMaker
 import groovy.transform.CompileStatic
 
+/**
+ * Factory for the text nodes displayed by ASTBrowser.
+ */
 @CompileStatic
 class TextTreeNodeMaker implements AstBrowserNodeMaker<TextNode> {
+    /**
+     * Creates a text node without additional metadata.
+     *
+     * @param userObject value displayed for the node
+     * @return the created text node
+     */
     TextNode makeNode(Object userObject) {
         new TextNode(userObject)
     }
 
+    /**
+     * Creates a text node with additional metadata.
+     *
+     * @param userObject value displayed for the node
+     * @param properties metadata associated with the node
+     * @return the created text node
+     */
     TextNode makeNodeWithProperties(Object userObject, List<List<?>> properties) {
         new TextNode(userObject, properties)
     }

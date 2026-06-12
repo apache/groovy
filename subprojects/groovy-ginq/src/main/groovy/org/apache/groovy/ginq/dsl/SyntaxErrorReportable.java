@@ -28,8 +28,18 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @since 4.0.0
  */
 public interface SyntaxErrorReportable {
+    /**
+     * Returns the source unit collecting syntax errors.
+     *
+     * @return the source unit used for reporting
+     */
     SourceUnit getSourceUnit();
 
+    /**
+     * Adds the supplied GINQ syntax error to the current source unit.
+     *
+     * @param ginqSyntaxError the error to report
+     */
     default void collectSyntaxError(GinqSyntaxError ginqSyntaxError) {
         SourceUnit sourceUnit = getSourceUnit();
 

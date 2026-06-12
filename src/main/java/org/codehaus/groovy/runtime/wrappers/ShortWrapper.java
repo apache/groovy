@@ -18,9 +18,17 @@
  */
 package org.codehaus.groovy.runtime.wrappers;
 
+/**
+ * Wrapper for {@code short} values that preserves the primitive constrained
+ * type.
+ */
 public class ShortWrapper extends PojoWrapper {
-  public ShortWrapper(final short wrapped) {
-    super(wrapped, short.class);
-  }
-
+    /**
+     * Creates a wrapper for a short value.
+     *
+     * @param wrapped the short value to wrap
+     */
+    public ShortWrapper(final short wrapped) {
+        super(wrapped, short.class);
+    }
 }

@@ -51,6 +51,14 @@ import java.util.List;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class AstBuilderTransformation extends MethodCallTransformation {
 
+    /**
+     * Creates the visitor that rewrites {@code AstBuilder} closure invocations into string-based
+     * builder calls.
+     *
+     * @param nodes the AST nodes being transformed
+     * @param sourceUnit the source unit currently under compilation
+     * @return the visitor that performs the rewrite
+     */
     @Override
     protected GroovyCodeVisitor getTransformer(ASTNode[] nodes, SourceUnit sourceUnit) {
         // todo : are there other import types that can be specified?
@@ -179,5 +187,4 @@ public class AstBuilderTransformation extends MethodCallTransformation {
         }
     }
 }
-
 

@@ -27,31 +27,58 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
+/**
+ * Default {@link GroovyPackageDoc} implementation.
+ */
 public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPackageDoc {
     private static final char FS = '/';
     private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
+    /**
+     * Classes indexed by their names within this package.
+     */
     final Map<String, GroovyClassDoc> classDocs;
     private String description = "";
     private String summary = "";
 
+    /**
+     * Creates a documented package with the supplied name.
+     *
+     * @param name the package name
+     */
     public SimpleGroovyPackageDoc(String name) {
         super(name);
         classDocs = new TreeMap<String, GroovyClassDoc>();
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] allClasses() {
         return classDocs.values().toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /**
+     * Sets the package description text.
+     *
+     * @param description the package description
+     */
     public void setDescription(String description) {
         this.description = description;
     }
 
+    /**
+     * Sets the package summary text.
+     *
+     * @param summary the package summary
+     */
     public void setSummary(String summary) {
         this.summary = summary;
     }
 
+    /**
+     * Adds all supplied classes to this package and back-links them to the package.
+     *
+     * @param classes the classes to add
+     */
     public void putAll(Map<String, GroovyClassDoc> classes) {
         // 2 way relationship for visible classes:
         // add reference to classes inside this package
@@ -64,17 +91,20 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public String nameWithDots() {
         return name().replace(FS, '.');
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] allClasses(boolean arg0) {
         List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
         return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] enums() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
@@ -86,6 +116,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] errors() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
@@ -97,6 +128,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] exceptions() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
@@ -108,11 +140,13 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc findClass(String arg0) {/*todo*/
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] interfaces() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
@@ -124,6 +158,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] ordinaryClasses() {
         List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
@@ -135,16 +170,19 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return result.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String description() {
         return description;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String summary() {
         return summary;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getRelativeRootPath() {
         StringTokenizer tokenizer = new StringTokenizer(name(), "" + FS);

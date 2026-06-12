@@ -25,7 +25,9 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -50,16 +52,19 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.AnnotationNode.ANNOTATION_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.CONSTRUCTOR_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.FIELD_TARGET;
+import static org.codehaus.groovy.ast.AnnotationNode.IMPORT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.LOCAL_VARIABLE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PACKAGE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.RECORD_COMPONENT_TARGET;
+import static org.codehaus.groovy.ast.AnnotationNode.STATEMENT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
@@ -80,22 +85,37 @@ import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
  */
 public class ExtendedVerifier extends ClassCodeVisitorSupport {
 
+    /**
+     * @deprecated This constant is no longer used and will be removed in a future version.
+     */
     @Deprecated(forRemoval = true, since = "5.0.0")
     public static final String JVM_ERROR_MESSAGE = "Please make sure you are running on a JVM >= 1.5";
 
     private ClassNode currentClass;
     private final SourceUnit source;
     private final Map<String, Boolean> repeatableCache = new HashMap<>();
+    private final Set<ModuleNode> visitedModules = new HashSet<>();
 
+    /**
+     * Creates a new extended verifier.
+     *
+     * @param sourceUnit the source unit being verified
+     */
     public ExtendedVerifier(final SourceUnit sourceUnit) {
         this.source = sourceUnit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return this.source;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitClass(final ClassNode node) {
         AnnotationConstantsVisitor acv = new AnnotationConstantsVisitor();
@@ -104,6 +124,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         PackageNode packageNode = node.getPackage();
         if (packageNode != null) {
             visitAnnotations(packageNode, PACKAGE_TARGET);
+        }
+        ModuleNode module = node.getModule();
+        if (module != null && visitedModules.add(module)) {
+            visitImportAnnotations(module);
         }
         if (node.isAnnotationDefinition()) {
             visitAnnotations(node, ANNOTATION_TARGET);
@@ -125,6 +149,9 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         node.visitContents(this);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitField(final FieldNode node) {
         visitAnnotations(node, FIELD_TARGET);
@@ -138,10 +165,16 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         extractTypeUseAnnotations(node.getAnnotations(), node.getType(), FIELD_TARGET);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitProperty(final PropertyNode node) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
         visitAnnotations(expression, LOCAL_VARIABLE_TARGET);
@@ -155,6 +188,9 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         expression.getRightExpression().visit(this);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructorCallExpression(final ConstructorCallExpression expression) {
         if (!expression.isSpecialCall()) {
@@ -201,6 +237,9 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitConstructor(final ConstructorNode node) {
         visitAnnotations(node, CONSTRUCTOR_TARGET);
@@ -211,6 +250,9 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         extractTypeUseAnnotations(node.getAnnotations(), node.getReturnType(), CONSTRUCTOR_TARGET);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void visitMethod(final MethodNode node) {
         visitAnnotations(node, METHOD_TARGET);
@@ -218,6 +260,35 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         visitConstructorOrMethod(node);
         if (!isPrimitiveVoid(node.getReturnType())) {
             extractTypeUseAnnotations(node.getAnnotations(), node.getReturnType(), METHOD_TARGET);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void visitStatementAnnotations(final Statement statement) {
+        for (AnnotationNode annotation : statement.getStatementAnnotations()) {
+            ErrorCollector errorCollector = new ErrorCollector(source.getConfiguration());
+            AnnotationVisitor visitor = new AnnotationVisitor(source, errorCollector);
+            AnnotationNode visited = visitor.visit(annotation);
+            source.getErrorCollector().addCollectorContents(errorCollector);
+
+            if (!visited.isTargetAllowed(STATEMENT_TARGET)) {
+                addError("Annotation @" + visited.getClassNode().getName() + " is not allowed on element "
+                        + AnnotationNode.targetToName(STATEMENT_TARGET), visited);
+            }
+        }
+    }
+
+    private void visitImportAnnotations(final ModuleNode module) {
+        List<ImportNode> allImports = new ArrayList<>();
+        allImports.addAll(module.getImports());
+        allImports.addAll(module.getStarImports());
+        allImports.addAll(module.getStaticImports().values());
+        allImports.addAll(module.getStaticStarImports().values());
+        for (ImportNode importNode : allImports) {
+            visitAnnotations(importNode, IMPORT_TARGET);
         }
     }
 
@@ -277,6 +348,12 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
+    /**
+     * Visits the annotations attached to the supplied node for the given target kind.
+     *
+     * @param node the annotated node to inspect
+     * @param target the annotation target mask being validated
+     */
     protected void visitAnnotations(final AnnotatedNode node, final int target) {
         visitAnnotations(node, node.getAnnotations(), target);
     }

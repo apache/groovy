@@ -20,14 +20,34 @@ package groovy.swing.factory
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
+/**
+ * Factory for creating widgets that accept a text value argument.
+ */
 class TextArgWidgetFactory extends AbstractFactory {
 
+    /**
+     * Widget class instantiated by this factory.
+     */
     final Class klass
 
+    /**
+     * Creates a new factory for creating widgets that accept a text value argument
+     *
+     * @param klass the widget class to instantiate
+     */
     TextArgWidgetFactory(Class klass) {
         this.klass = klass
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value instanceof GString) value = value as String
         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, klass)) {

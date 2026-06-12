@@ -1,0 +1,303 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package org.apache.groovy.runtime.async;
+
+import groovy.concurrent.AsyncScope;
+import groovy.concurrent.Awaitable;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+/**
+ * Default implementation of {@link AsyncScope} providing structured
+ * concurrency with configurable failure policy.
+ * <p>
+ * A dedicated lock guards the child task list and the closed flag jointly,
+ * ensuring that {@link #async(Supplier)} and {@link #close()} cannot race.
+ * Child futures are registered under the lock <em>before</em> task submission
+ * (register-before-submit protocol), guaranteeing every child is joined or
+ * cancelled by {@link #close()}.
+ *
+ * @see AsyncScope
+ * @since 6.0.0
+ */
+public final class DefaultAsyncScope implements AsyncScope {
+
+    private static final ScopedLocal<AsyncScope> CURRENT_SCOPE = ScopedLocal.newInstance();
+
+    private static final int PRUNE_THRESHOLD = 64;
+
+    private final Object lock = new Object();
+    private final List<CompletableFuture<?>> children = new ArrayList<>();
+    private final List<DefaultAsyncScope> childScopes = new ArrayList<>();
+    private boolean closed;
+    private final Executor executor;
+    private final boolean failFast;
+    private final AsyncScope parent;
+
+    public DefaultAsyncScope(Executor executor, boolean failFast) {
+        Objects.requireNonNull(executor, "executor must not be null");
+        this.executor = executor;
+        this.failFast = failFast;
+        this.parent = current();
+        if (parent instanceof DefaultAsyncScope parentScope) {
+            parentScope.registerChildScope(this);
+        }
+    }
+
+    public DefaultAsyncScope(Executor executor) {
+        this(executor, true);
+    }
+
+    public DefaultAsyncScope() {
+        this(AsyncSupport.getExecutor(), true);
+    }
+
+    // ---- Static operations ----------------------------------------------
+
+    /**
+     * Returns the current scope, or {@code null} when no scope is bound.
+     */
+    public static AsyncScope current() {
+        return CURRENT_SCOPE.orElse(null);
+    }
+
+    /**
+     * Executes the supplier with the given scope as current,
+     * restoring the previous binding afterwards.
+     */
+    public static <T> T withCurrent(AsyncScope scope, Supplier<T> supplier) {
+        Objects.requireNonNull(supplier, "supplier must not be null");
+        return CURRENT_SCOPE.where(scope, supplier);
+    }
+
+    // ---- Instance methods -----------------------------------------------
+
+    @Override
+    public AsyncScope getParent() {
+        return parent;
+    }
+
+    @Override
+    public <T> Awaitable<T> async(Supplier<T> supplier) {
+        Objects.requireNonNull(supplier, "supplier must not be null");
+        return launchChild(supplier);
+    }
+
+    @Override
+    public int getChildCount() {
+        synchronized (lock) {
+            return children.size();
+        }
+    }
+
+    @Override
+    public void cancelAll() {
+        List<CompletableFuture<?>> taskSnapshot;
+        List<DefaultAsyncScope> scopeSnapshot;
+        synchronized (lock) {
+            taskSnapshot = new ArrayList<>(children);
+            scopeSnapshot = new ArrayList<>(childScopes);
+        }
+        for (CompletableFuture<?> child : taskSnapshot) {
+            child.cancel(true);
+        }
+        for (DefaultAsyncScope child : scopeSnapshot) {
+            child.cancelAll();
+        }
+    }
+
+    @Override
+    public void close() {
+        List<CompletableFuture<?>> snapshot;
+        synchronized (lock) {
+            if (closed) return;
+            closed = true;
+            snapshot = new ArrayList<>(children);
+        }
+        Throwable firstError = null;
+        for (CompletableFuture<?> child : snapshot) {
+            try {
+                child.join();
+            } catch (CancellationException ignored) {
+                // Cancelled tasks are silently ignored
+            } catch (CompletionException e) {
+                Throwable cause = AsyncSupport.unwrap(e);
+                if (cause instanceof CancellationException) {
+                    continue;
+                }
+                if (firstError == null) {
+                    firstError = cause;
+                } else {
+                    firstError.addSuppressed(cause);
+                }
+            } catch (Exception e) {
+                if (firstError == null) {
+                    firstError = e;
+                } else {
+                    firstError.addSuppressed(e);
+                }
+            }
+        }
+        // Deregister from parent
+        if (parent instanceof DefaultAsyncScope parentScope) {
+            parentScope.deregisterChildScope(this);
+        }
+        if (firstError != null) {
+            if (firstError instanceof RuntimeException re) throw re;
+            if (firstError instanceof Error err) throw err;
+            throw new RuntimeException(firstError);
+        }
+    }
+
+    // ---- Internal -------------------------------------------------------
+
+    /**
+     * Core child-launch logic using register-before-submit protocol.
+     * The CF is created and registered under the lock before work is
+     * submitted, guaranteeing close() will always join it.
+     */
+    private <T> Awaitable<T> launchChild(Supplier<T> task) {
+        CompletableFuture<T> cf = new CompletableFuture<>();
+
+        synchronized (lock) {
+            if (closed) {
+                cf.cancel(true);
+                throw new IllegalStateException(
+                        "AsyncScope is closed — cannot launch new tasks");
+            }
+            pruneCompleted();
+            children.add(cf);
+            if (failFast) {
+                cf.whenComplete((v, err) -> {
+                    if (err != null) {
+                        synchronized (lock) {
+                            if (!closed) cancelAllLocked();
+                        }
+                    }
+                });
+            }
+        }
+
+        try {
+            executor.execute(() -> {
+                try {
+                    T result = withCurrent(this, task);
+                    cf.complete(result);
+                } catch (Throwable t) {
+                    cf.completeExceptionally(t);
+                }
+            });
+        } catch (RuntimeException | Error e) {
+            synchronized (lock) {
+                children.remove(cf);
+            }
+            cf.completeExceptionally(e);
+            throw e;
+        }
+
+        return GroovyPromise.of(cf);
+    }
+
+    private void cancelAllLocked() {
+        for (CompletableFuture<?> child : children) {
+            child.cancel(true);
+        }
+    }
+
+    private void pruneCompleted() {
+        if (children.size() >= PRUNE_THRESHOLD) {
+            children.removeIf(CompletableFuture::isDone);
+        }
+    }
+
+    // ---- Child scope management -----------------------------------------
+
+    void registerChildScope(DefaultAsyncScope child) {
+        synchronized (lock) {
+            if (!closed) {
+                childScopes.add(child);
+            }
+        }
+    }
+
+    void deregisterChildScope(DefaultAsyncScope child) {
+        synchronized (lock) {
+            childScopes.remove(child);
+        }
+    }
+
+    // ---- Timeout support ------------------------------------------------
+
+    /**
+     * Creates a scope with a timeout. If the body does not complete within
+     * the duration, all children are cancelled and {@link TimeoutException}
+     * is thrown.
+     */
+    public static <T> T withScopeTimeout(Executor executor, Duration timeout,
+                                          Function<AsyncScope, T> body) throws TimeoutException {
+        Objects.requireNonNull(timeout, "timeout must not be null");
+        Objects.requireNonNull(body, "body must not be null");
+        var timedOut = new AtomicBoolean(false);
+        Thread bodyThread = Thread.currentThread();
+        try (DefaultAsyncScope scope = new DefaultAsyncScope(executor)) {
+            ScheduledFuture<?> timer = AsyncSupport.getScheduler().schedule(() -> {
+                timedOut.set(true);
+                scope.cancelAll();
+                bodyThread.interrupt();
+            }, timeout.toMillis(), TimeUnit.MILLISECONDS);
+            try {
+                return withCurrent(scope, () -> body.apply(scope));
+            } catch (Exception e) {
+                if (timedOut.get()) {
+                    // Clear the interrupt flag set by the timeout
+                    Thread.interrupted();
+                    TimeoutException te = new TimeoutException("Scope timed out after " + timeout);
+                    te.initCause(e);
+                    throw te;
+                }
+                throw e;
+            } finally {
+                // Always cancel the timer — even if the body threw an Error
+                timer.cancel(false);
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        synchronized (lock) {
+            return "AsyncScope[children=" + children.size()
+                    + ", closed=" + closed
+                    + ", failFast=" + failFast + "]";
+        }
+    }
+}

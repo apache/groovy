@@ -19,10 +19,17 @@
 package org.codehaus.groovy.runtime.typehandling;
 
 /**
- * Integer NumberMath operations
+ * 32-bit integer (int) arithmetic operations.
+ * <p>
+ * Singleton instance providing NumberMath implementations for int-based operations.
+ * Supports all standard operations: addition, subtraction, multiplication, integer division,
+ * comparison, and bitwise operations.
  */
 public final class IntegerMath extends NumberMath {
 
+    /**
+     * Singleton instance of IntegerMath.
+     */
     public static final IntegerMath INSTANCE = new IntegerMath();
 
     private IntegerMath() {}

@@ -23,6 +23,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+/**
+ * Utilities for opening URL streams with Groovy-specific defaults.
+ */
 public class URLStreams {
     private URLStreams() {
 

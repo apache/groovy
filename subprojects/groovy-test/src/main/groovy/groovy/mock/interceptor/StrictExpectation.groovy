@@ -27,10 +27,24 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods
  *  @see LooseExpectation
  */
 class StrictExpectation {
+    /**
+     * Demand definition being matched.
+     */
     Demand fDemand  = null
+    /**
+     * Index of the next demand expected to match.
+     */
     int fCallSpecIdx = 0
+    /**
+     * Per-demand invocation counters used during verification.
+     */
     List fCalls      = []
 
+    /**
+     * Creates a strict expectation backed by the supplied demand definition.
+     *
+     * @param demand the recorded demand specification
+     */
     StrictExpectation(Demand demand) {
         fDemand = demand
     }

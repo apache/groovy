@@ -52,9 +52,20 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private int index;
     private final List<FieldNode> missingFields = new LinkedList<FieldNode>();
 
+    /**
+     * Creates an optimizer visitor.
+     *
+     * @param cu the owning compilation unit
+     */
     public OptimizerVisitor(CompilationUnit cu) {
     }
 
+    /**
+     * Applies optimizer rewrites to the supplied class.
+     *
+     * @param node the class to optimize
+     * @param source the source unit containing the class
+     */
     public void visitClass(ClassNode node, SourceUnit source) {
         this.currentClass = node;
         this.source = source;
@@ -129,6 +140,12 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+    /**
+     * Rewrites constant expressions that can be cached in synthetic fields.
+     *
+     * @param exp the expression to transform
+     * @return the transformed expression
+     */
     @Override
     public Expression transform(Expression exp) {
         if (exp == null) return null;
@@ -138,11 +155,21 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         return exp.transformExpression(this);
     }
 
+    /**
+     * Returns the source unit currently being optimized.
+     *
+     * @return the active source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return source;
     }
 
+    /**
+     * Leaves closure bodies untouched so constant caching does not leak into closure classes.
+     *
+     * @param expression the closure expression being skipped
+     */
     @Override
     public void visitClosureExpression(ClosureExpression expression) {
         /*

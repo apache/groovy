@@ -30,6 +30,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+/**
+ * Default {@link GroovyRootDoc} implementation used to collect packages, classes, and lookup caches.
+ */
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
     private static final Pattern EQUIVALENT_PACKAGE_IMPORT = Pattern.compile("[^/]+$");
     private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
@@ -44,7 +47,14 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     private final ClassNamedCache classNamedCache;
 
     private String description = "";
+    /** GROOVY-11938: snippet-file resolution needs access to source dirs at render time. */
+    private String[] sourcepaths = new String[0];
 
+    /**
+     * Creates a root documentation model with the supplied name.
+     *
+     * @param name the root document name
+     */
     public SimpleGroovyRootDoc(String name) {
         super(name);
         packageDocs = new LinkedHashMap<>();
@@ -53,6 +63,29 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         classNamedCache = new ClassNamedCache(classDocs);
     }
 
+    /**
+     * Returns the source paths used to build this root document.
+     *
+     * @return the configured source paths
+     *
+     * @since 6.0.0
+     */
+    public String[] getSourcepaths() {
+        return sourcepaths;
+    }
+
+    /**
+     * Stores the source paths used to build this root document.
+     *
+     * @param sourcepaths the source paths to retain
+     *
+     * @since 6.0.0
+     */
+    public void setSourcepaths(String[] sourcepaths) {
+        this.sourcepaths = sourcepaths == null ? new String[0] : java.util.Arrays.copyOf(sourcepaths, sourcepaths.length);
+    }
+
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc classNamed(GroovyClassDoc groovyClassDoc, String name) {
         GroovyClassDoc doc = classDocs.get(name);
@@ -62,22 +95,44 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         return classNamedCache.search(groovyClassDoc, name);
     }
 
+    /**
+     * Resolves a class using its exact internal name.
+     *
+     * @param name the exact class name to resolve
+     * @return the matching class documentation, or {@code null} if none exists
+     */
     public GroovyClassDoc classNamedExact(String name) {
         return classDocs.get(name);
     }
 
+    /**
+     * Sets the root description text.
+     *
+     * @param description the root description
+     */
     public void setDescription(String description) {
         this.description = description;
     }
 
+    /**
+     * Returns the root description text.
+     *
+     * @return the configured description
+     */
     public String description() {
         return description;
     }
 
+    /**
+     * Returns the first-sentence summary derived from {@link #description()}.
+     *
+     * @return the first-sentence summary
+     */
     public String summary() {
         return SimpleGroovyDoc.calculateFirstSentence(description);
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] classes() {
         if (classDocValues == null) {
@@ -87,31 +142,46 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         return classDocValues.toArray(EMPTY_GROOVYCLASSDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String[][] options() {/*todo*/
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyPackageDoc packageNamed(String packageName) {
         return packageDocs.get(packageName);
     }
 
+    /**
+     * Adds all supplied classes to this root document.
+     *
+     * @param classes the classes to add
+     */
     public void putAllClasses(Map<String, GroovyClassDoc> classes) {
         classDocs.putAll(classes);
         classDocValues = null;
     }
 
+    /**
+     * Adds a package to this root document.
+     *
+     * @param packageName the package name key
+     * @param packageDoc the package documentation object
+     */
     public void put(String packageName, GroovyPackageDoc packageDoc) {
         packageDocs.put(packageName, packageDoc);
         packageDocValues = null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyClassDoc[] specifiedClasses() {/*todo*/
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public GroovyPackageDoc[] specifiedPackages() {
         if (packageDocValues == null) {
@@ -121,6 +191,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         return packageDocValues.toArray(EMPTY_GROOVYPACKAGEDOC_ARRAY);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Map<String, GroovyClassDoc> getVisibleClasses(List importedClassesAndPackages) {
         Map<String, GroovyClassDoc> visibleClasses = new LinkedHashMap<>();
@@ -145,24 +216,31 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         return eq;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Map<String, GroovyClassDoc> getResolvedClasses() {
         return cachedResolvedClasses;
     }
 
     // GroovyDocErrorReporter interface
+    /** {@inheritDoc} */
     @Override
     public void printError(String arg0) {/*todo*/}
 
     //    public void printError(GroovySourcePosition arg0, String arg1) {/*todo*/}
+    /** {@inheritDoc} */
     @Override
     public void printNotice(String arg0) {/*todo*/}
 
     //    public void printNotice(GroovySourcePosition arg0, String arg1) {/*todo*/}
+    /** {@inheritDoc} */
     @Override
     public void printWarning(String arg0) {/*todo*/}
 //    public void printWarning(GroovySourcePosition arg0, String arg1) {/*todo*/}
 
+    /**
+     * Resolves deferred type references across all collected classes.
+     */
     public void resolve() {
         //resolve class names at the end of adding all files to the tree
         for (GroovyClassDoc groovyClassDoc : classDocs.values()) {

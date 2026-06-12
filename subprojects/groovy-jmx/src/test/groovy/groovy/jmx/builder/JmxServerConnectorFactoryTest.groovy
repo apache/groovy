@@ -21,12 +21,14 @@ package groovy.jmx.builder
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
 import javax.management.remote.JMXConnector
 import javax.management.remote.JMXConnectorFactory
 import javax.management.remote.JMXServiceURL
 import javax.management.remote.rmi.RMIConnectorServer
 
+@ExtendWith(CgroupV2NpeMitigationExtension)
 class JmxServerConnectorFactoryTest {
     def builder
     int defaultPort = 10995

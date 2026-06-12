@@ -18,8 +18,16 @@
  */
 package org.codehaus.groovy.groovydoc;
 
+/**
+ * Describes a type reference used throughout the Groovydoc model.
+ */
 public interface GroovyType {
 
+    /**
+     * Indicates whether this type is a Java primitive type.
+     *
+     * @return {@code true} if this type is primitive
+     */
     boolean isPrimitive();
 
     /**

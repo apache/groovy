@@ -19,10 +19,19 @@
 package org.apache.groovy.swing.binding;
 
 /**
+ * Creates a {@link FullBinding} that reacts to changes from a triggering source.
+ *
  * @since Groovy 1.1
  */
 public interface TriggerBinding {
 
+    /**
+     * Creates a concrete binding that propagates values from the supplied source to the target.
+     *
+     * @param source the source binding to observe
+     * @param target the target binding to update
+     * @return the created full binding
+     */
     FullBinding createBinding(SourceBinding source, TargetBinding target);
 
 }

@@ -1,0 +1,109 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Processing Markdown
+
+Groovy has an optional `groovy-markdown` module which provides support for
+parsing https://commonmark.org/[CommonMark] Markdown. The classes are found
+in the `groovy.markdown` package.
+
+[[markdown_markdownslurper]]
+== MarkdownSlurper
+
+`MarkdownSlurper` parses Markdown text into a `MarkdownDocument` backed by
+nested lists and maps. Each node is a `Map` with a `type` key plus
+type-specific fields:
+
+[source,groovy]
+----
+include::../test/groovy/markdown/MarkdownSlurperTest.groovy[tags=parse_heading,indent=0]
+----
+
+The raw structure supports all standard Groovy list/map operations. The
+document also exposes convenience properties — `headings`, `codeBlocks`,
+`links`, `tables` — that recursively walk the tree.
+
+=== Extracting code blocks
+
+A common pattern when consuming LLM output is to pull fenced code blocks
+by language:
+
+[source,groovy]
+----
+include::../test/groovy/markdown/MarkdownSlurperTest.groovy[tags=code_blocks,indent=0]
+----
+
+`codeBlocks` walks the entire tree, so blocks nested inside block quotes
+or list items are included.
+
+=== Links
+
+[source,groovy]
+----
+include::../test/groovy/markdown/MarkdownSlurperTest.groovy[tags=links,indent=0]
+----
+
+=== Sections
+
+`section(headingText)` returns the nodes between the given heading and the
+next heading of equal or higher level — useful for parsing structured
+agent replies:
+
+[source,groovy]
+----
+include::../test/groovy/markdown/MarkdownSlurperTest.groovy[tags=section,indent=0]
+----
+
+=== Tables (optional)
+
+GFM-style tables are supported when the
+`org.commonmark:commonmark-ext-gfm-tables` jar is on the classpath. Call
+`enableTables(true)` on the slurper:
+
+[source,groovy]
+----
+include::../test/groovy/markdown/MarkdownSlurperTest.groovy[tags=tables,indent=0]
+----
+
+Each row is returned as a `Map` keyed by header.
+
+=== Node types
+
+[cols="1,3"]
+|===
+| type | fields
+
+| `heading` | `level`, `text`, `children`
+| `paragraph` | `children`
+| `code_block` | `lang`, `text`
+| `list` | `ordered`, `items` (`start` for ordered lists)
+| `list_item` | `text`, `children`
+| `block_quote` | `children`
+| `link` | `href`, `title`, `text`, `children`
+| `image` | `src`, `title`, `alt`
+| `text` | `value`
+| `inline_code` | `text`
+| `emphasis`, `strong` | `children`
+| `html_block`, `html_inline` | `text`
+| `thematic_break` | (no fields)
+| `hard_line_break`, `soft_line_break` | (no fields)
+| `table` | `headers`, `alignments`, `rows`
+|===

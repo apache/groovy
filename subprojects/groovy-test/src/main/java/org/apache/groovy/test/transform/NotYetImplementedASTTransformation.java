@@ -54,6 +54,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 @GroovyASTTransformation
 public class NotYetImplementedASTTransformation extends AbstractASTTransformation {
 
+    /**
+     * Rewrites the annotated method so that unexpected success becomes a failure and any thrown
+     * exception is treated as the expected outcome.
+     *
+     * @param nodes the annotation and annotated method nodes
+     * @param source the source unit currently being transformed
+     */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         init(nodes, source);

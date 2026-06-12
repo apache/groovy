@@ -176,8 +176,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             A test(Object o) {
                 if (o instanceof A) {
-                    def v = o
-                    return v
+                    def a = o
+                    return a
                 } else {
                     new A()
                 }
@@ -268,6 +268,26 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             def string = test('two')
             assert string == '"two"'
+        '''
+
+        assertScript '''
+            abstract class Foo {
+                abstract boolean isBaz()
+            }
+            class Bar extends Foo {
+                final boolean baz = false
+            }
+            class Baz extends Foo {
+                final boolean baz = true
+            }
+            void test(Foo foo) {
+                if (foo instanceof Bar || foo.isBaz()) {
+                    foo.toString()
+                }
+            }
+            test(new Bar())
+            test(new Baz())
+            test(new Foo(){ boolean isBaz() { false } })
         '''
     }
 
@@ -401,6 +421,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             assert test(42) == 42
         '''
+
         shouldFailWithMessages '''
             void test(Integer i) {
                 if (i instanceof Long) {
@@ -408,6 +429,190 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Incompatible instanceof types: java.lang.Integer and java.lang.Long'
+    }
+
+    // GROOVY-7971: nested && within || — method calls on narrowed types within
+    // each && branch should work; the || produces a union for the body
+    @Test
+    void testInstanceOf18() {
+        assertScript '''
+            int test(Object x) {
+                if (x instanceof String && x.length() > 0 || x instanceof List && x.size() > 0) {
+                    return 1
+                }
+                return 0
+            }
+            assert test('hello') == 1
+            assert test([1, 2, 3]) == 1
+            assert test('') == 0
+            assert test([]) == 0
+            assert test(42) == 0
+        '''
+    }
+
+    // GROOVY-7971: ternary with || instanceof in condition
+    @Test
+    void testInstanceOf19() {
+        assertScript '''
+            String test(Object x) {
+                (x instanceof String || x instanceof Integer) ? x.toString() : 'other'
+            }
+            assert test('hi') == 'hi'
+            assert test(42) == '42'
+            assert test(3.14) == 'other'
+        '''
+    }
+
+    // GROOVY-7971: negated || instanceof
+    @Test
+    void testInstanceOf20() {
+        assertScript '''
+            void test(Object x) {
+                if (!(x instanceof String || x instanceof Integer)) {
+                    assert x != null
+                }
+            }
+            test('hello')
+            test(42)
+            test(3.14)
+        '''
+    }
+
+    // GROOVY-7971: chained || with 3+ instanceof checks
+    @Test
+    void testInstanceOf21() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer || x instanceof List) {
+                    assert "$x" != null // should be String|Integer|List
+                }
+            }
+            test('hello')
+            test(42)
+            test([1, 2])
+        '''
+    }
+
+    // GROOVY-7971: RHS of || should not see LHS instanceof narrowing
+    @Test
+    void testInstanceOf22() {
+        assertScript '''
+            void test(Number n) {
+                if (n instanceof Integer || n.doubleValue() > 0) {
+                    assert "$n" != null // n should be Integer|Number
+                }
+            }
+            test(42)
+            test(1.5)
+        '''
+    }
+
+    // GROOVY-7971: closure shared variable with || instanceof
+    @Test
+    void testInstanceOf23() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer) {
+                    def c = { -> x.toString() }
+                    assert c() != null
+                }
+            }
+            test('hello')
+            test(42)
+        '''
+    }
+
+    // GROOVY-11888: method resolution on union type — toString() is on Object
+    // and should be found via (String|List) union
+    @Test
+    void testInstanceOf24() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof List) {
+                    assert x.toString() != null
+                }
+            }
+            test('hello')
+            test([1, 2])
+        '''
+    }
+
+    // GROOVY-11889: negated || instanceof — re-check instanceof in else branch
+    @Test
+    void testInstanceOf25() {
+        assertScript '''
+            void test(Object x) {
+                if (!(x instanceof String || x instanceof Integer)) {
+                    assert x != null
+                } else {
+                    assert x instanceof String || x instanceof Integer
+                }
+            }
+            test('hello')
+            test(42)
+            test(3.14)
+        '''
+    }
+
+    // GROOVY-11888: method resolution on union type — intValue() is on Number
+    // and should be found via (Integer|Number) union
+    @Test
+    void testInstanceOf26() {
+        assertScript '''
+            void test(Number n) {
+                if (n instanceof Integer || n.intValue() > 0) {
+                    assert n.intValue() >= 0
+                }
+            }
+            test(42)
+            test(1.5)
+        '''
+    }
+
+    // GROOVY-11889: instanceof interface check on union type
+    @Test
+    void testInstanceOf27() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer) {
+                    if (x instanceof Serializable) {
+                        assert true
+                    }
+                }
+            }
+            test('hello')
+            test(42)
+        '''
+    }
+
+    // GROOVY-11889: union containing interface delegate
+    @Test
+    void testInstanceOf28() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof Serializable || x instanceof String) {
+                    if (x instanceof String) {
+                        assert true
+                    }
+                }
+            }
+            test('hello')
+        '''
+    }
+
+    // GROOVY-11889: incompatible instanceof on union type should produce error
+    @Test
+    void testInstanceOf29() {
+        shouldFailWithMessages '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer) {
+                    if (x instanceof Long) {
+                        // unreachable - neither String nor Integer is related to Long
+                    }
+                }
+            }
+        ''',
+        'Incompatible instanceof types'
     }
 
     // GROOVY-5226
@@ -476,7 +681,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             def test(o) {
                 o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
             }
-
             assert test(new A()) == 1
             assert test(new B()) == 2
             assert test(new C()) == 3
@@ -827,6 +1031,141 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11983: !instanceof inside && must not produce a positive smart-cast in the else branch
+    @Test
+    void testNotInstanceof7() {
+        for (test in ['!(x instanceof String)', 'x !instanceof String']) {
+            // if/else form: a non-String x with cond=false lands in the else; if x were
+            // smart-cast to String, the body would emit a checkcast and throw CCE
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int f(Object x, boolean cond) {
+                        if (cond && $test) {
+                            return 1
+                        } else {
+                            return x.hashCode()
+                        }
+                    }
+                }
+                assert T.f(42, false) == Integer.valueOf(42).hashCode()
+                assert T.f('s', false) == 's'.hashCode()
+                assert T.f('s', true)  == 's'.hashCode()
+                assert T.f(42, true)   == 1
+            """
+            // ternary form
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int g(Object x, boolean cond) {
+                        return (cond && $test) ? 1 : x.hashCode()
+                    }
+                }
+                assert T.g(42, false) == Integer.valueOf(42).hashCode()
+                assert T.g('s', false) == 's'.hashCode()
+            """
+            // early-return surrounding-scope form
+            assertScript """
+                @groovy.transform.CompileStatic
+                class T {
+                    static int h(Object x, boolean cond) {
+                        if (cond && $test) return 1
+                        return x.hashCode()
+                    }
+                }
+                assert T.h(42, false) == Integer.valueOf(42).hashCode()
+                assert T.h('s', false) == 's'.hashCode()
+            """
+        }
+    }
+
+    // GROOVY-11983: bitwise & / ^ between booleans, and bitwise | wrapping a logical-and,
+    // must also disable the else-branch instanceof inversion
+    @Test
+    void testNotInstanceof8() {
+        // bitwise-AND: same unsoundness as logical-AND
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int f(Object x, boolean cond) {
+                    if (cond & !(x instanceof String)) return 1
+                    return x.hashCode()
+                }
+            }
+            assert T.f(42, false) == Integer.valueOf(42).hashCode()
+            assert T.f('s', false) == 's'.hashCode()
+            assert T.f('s', true) == 's'.hashCode()
+            assert T.f(42, true) == 1
+        '''
+        // bitwise-XOR: same unsoundness
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int g(Object x, boolean cond) {
+                    if (cond ^ (x instanceof String)) return 1
+                    return x.hashCode()
+                }
+            }
+            assert T.g(42, false) == Integer.valueOf(42).hashCode()
+            assert T.g('s', true) == 's'.hashCode()
+        '''
+        // bitwise-OR wrapping a logical-AND: still must disqualify
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int h(Object x, boolean a, boolean b) {
+                    if (a | (b && !(x instanceof String))) return 1
+                    return x.hashCode()
+                }
+            }
+            assert T.h(42, false, false) == Integer.valueOf(42).hashCode()
+            assert T.h('s', false, false) == 's'.hashCode()
+            assert T.h(42, true, false) == 1
+        '''
+    }
+
+    // GROOVY-11983: a leading NotExpression is always invertible — even when its operand
+    // contains an AND-like operator. The else of `if (!E)` fires when E is true, and
+    // visitNotExpression has already sign-flipped the tti once, so the else-branch
+    // inversion flips it back, yielding entries that are sound for E being true.
+    @Test
+    void testNotInstanceof9() {
+        // !(cond && (x instanceof T)): in the else, cond && (x instanceof T) holds —
+        // so x IS T. The else branch should permit a method call exclusive to T.
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int f(Object x, boolean cond) {
+                    if (!(cond && (x instanceof String))) {
+                        return -1
+                    } else {
+                        return x.length() // x must be smart-cast to String
+                    }
+                }
+            }
+            assert T.f('hello', true) == 5
+            assert T.f('hello', false) == -1
+            assert T.f(42, true) == -1
+        '''
+        // !(cond && !(x instanceof T)): in the else, cond is true AND x is NOT T.
+        // No checkcast should be emitted on x in the else branch.
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class T {
+                static int g(Object x, boolean cond) {
+                    if (!(cond && !(x instanceof String))) {
+                        return -1
+                    } else {
+                        return x.hashCode() // x is some non-String Object — no smart-cast
+                    }
+                }
+            }
+            assert T.g('s', true) == -1
+            assert T.g(42, true) == Integer.valueOf(42).hashCode()
+            assert T.g(42, false) == -1
+        '''
+    }
+
     // GROOVY-10217
     @Test
     void testInstanceOfThenSubscriptOperator() {
@@ -1136,6 +1475,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 method.set(classNode.methods.find { it.name == 'method' })
             }
         })
+
         assertScript '''
             void method() {
                 def o
@@ -1143,12 +1483,10 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 'String'
             }
         '''
-
-        def inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
-        assert inft instanceof WideningCategories.LowestUpperBoundClassNode
-        [Comparable, Serializable].each {
-            assert ClassHelper.make(it) in inft.interfaces
-        }
+        ClassNode type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type instanceof WideningCategories.LowestUpperBoundClassNode
+        assert ClassHelper.make(Comparable  ) in type.interfaces
+        assert ClassHelper.make(Serializable) in type.interfaces
 
         assertScript '''
             void method() {
@@ -1157,7 +1495,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.int_TYPE
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type == ClassHelper.int_TYPE
 
         assertScript '''
             void method() {
@@ -1166,8 +1505,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
-        assert inft  == ClassHelper.long_TYPE
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type  == ClassHelper.long_TYPE
 
         assertScript '''
             void method() {
@@ -1176,7 +1515,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = new LinkedHashSet()
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type == ClassHelper.make(HashSet)
     }
 
     @Test

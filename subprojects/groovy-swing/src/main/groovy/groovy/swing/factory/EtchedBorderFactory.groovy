@@ -21,14 +21,34 @@ package groovy.swing.factory
 import javax.swing.*
 import java.awt.*
 
+/**
+ * Factory for creating etched borders.
+ */
 class EtchedBorderFactory extends SwingBorderFactory {
 
+    /**
+     * Etch type used when creating borders.
+     */
     final int type;
 
+    /**
+     * Creates a new factory for creating etched borders
+     *
+     * @param newType the border type constant
+     */
     public EtchedBorderFactory(int newType) {
         type = newType;
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         builder.context.applyBorderToParent = attributes.remove('parent')
         // no if-else-if chain so that we can have one attribute failure block

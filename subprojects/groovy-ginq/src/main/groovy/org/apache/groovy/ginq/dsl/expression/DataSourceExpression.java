@@ -26,20 +26,45 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @since 4.0.0
  */
 public abstract class DataSourceExpression extends AbstractGinqExpression implements DataSourceHolder {
+    /** Alias expression bound to the data source. */
     protected final Expression aliasExpr;
+    /** Expression yielding the data source. */
     protected Expression dataSourceExpr;
 
+    /**
+     * Creates a data-source expression.
+     *
+     * @param aliasExpr the alias expression
+     * @param dataSourceExpr the source expression
+     */
     public DataSourceExpression(Expression aliasExpr, Expression dataSourceExpr) {
         this.aliasExpr = aliasExpr;
         this.dataSourceExpr = dataSourceExpr;
     }
 
+    /**
+     * Returns the alias expression.
+     *
+     * @return the alias expression
+     */
     public Expression getAliasExpr() {
         return aliasExpr;
     }
+
+    /**
+     * Returns the data-source expression.
+     *
+     * @return the data-source expression
+     */
     public Expression getDataSourceExpr() {
         return dataSourceExpr;
     }
+
+    /**
+     * Replaces the data-source expression.
+     *
+     * @param dataSourceExpr the new data-source expression
+     */
     public void setDataSourceExpr(Expression dataSourceExpr) {
         this.dataSourceExpr = dataSourceExpr;
     }

@@ -27,15 +27,18 @@
 package org.apache.groovy.groovysh.jline;
 
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
+import org.jline.builtins.ConfigurationPath;
 import org.jline.builtins.Less;
 import org.jline.builtins.Options;
-import org.jline.builtins.PosixCommands;
+import org.jline.builtins.PosixCommands.Context;
 import org.jline.builtins.Source;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.InputStreamReader;
 import org.jline.utils.OSUtils;
+
+import static org.jline.builtins.PosixCommands.*;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -80,11 +83,24 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// The following file is expected to be deleted if/when the following issues have been merged in JLine3:
-// https://github.com/jline/jline3/pull/1436
-// also some desired fixes have been merged only on master (v4) which is not yet released
-public class GroovyPosixCommands extends PosixCommands {
+/**
+ * Groovy-aware implementations of groovysh POSIX-style commands.
+ */
+public class GroovyPosixCommands {
 
+    private static Options parseOptions(Context context, String[] usage, Object[] argv) {
+        String[] tokens = Arrays.stream(argv).map(String::valueOf).toArray(String[]::new);
+        String[] args = tokens.length > 0 ? Arrays.copyOfRange(tokens, 1, tokens.length) : tokens;
+        return Options.compile(usage).parse(args);
+    }
+
+    /**
+     * Writes the supplied files, variables, or standard input to the current output stream.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if an input cannot be resolved or read
+     */
     public static void cat(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/cat - concatenate and print FILES or VARIABLES",
@@ -121,6 +137,13 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    /**
+     * Counts lines, words, characters, or bytes for the selected inputs.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if an input cannot be processed
+     */
     public static void wc(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/wc - word, line, character, and byte count",
@@ -227,6 +250,13 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    /**
+     * Prints the beginning of each requested input.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if an input cannot be read
+     */
     public static void head(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/head - display first lines of files or variables",
@@ -302,6 +332,13 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    /**
+     * Prints the end of each requested input.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if an input cannot be read
+     */
     public static void tail(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/tail - display last lines of files or variables",
@@ -374,6 +411,13 @@ public class GroovyPosixCommands extends PosixCommands {
     }
 
     // from jline master (v4), remove once it is released, and we move to that version, and jline PR#1436 is merged
+    /**
+     * Lists directory entries using the current groovysh working directory.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if the listing cannot be produced
+     */
     public static void ls(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/ls - list files",
@@ -408,11 +452,23 @@ public class GroovyPosixCommands extends PosixCommands {
         Map<String, String> colors =
             colored ? (colorMap != null ? colorMap : getLsColorMap(DEFAULT_LS_COLORS)) : Collections.emptyMap();
 
+        /**
+         * Represents one path selected for listing output.
+         */
         class PathEntry implements Comparable<PathEntry> {
+            /** Absolute path resolved for the entry. */
             final Path abs;
+            /** Path shown to the user, relative to the requested root when possible. */
             final Path path;
+            /** File attributes used for sorting and formatting. */
             final Map<String, Object> attributes;
 
+            /**
+             * Creates a display entry for a resolved path.
+             *
+             * @param abs absolute path to inspect
+             * @param root root path used to compute relative display names
+             */
             public PathEntry(Path abs, Path root) {
                 this.abs = abs;
                 try {
@@ -425,6 +481,12 @@ public class GroovyPosixCommands extends PosixCommands {
                 this.attributes = readAttributes(abs);
             }
 
+            /**
+             * Orders entries using the active {@code ls} sort options.
+             *
+             * @param o entry to compare against
+             * @return sort order for this entry
+             */
             @Override
             public int compareTo(PathEntry o) {
                 int c = doCompare(o);
@@ -452,10 +514,20 @@ public class GroovyPosixCommands extends PosixCommands {
                 return path.toString().compareTo(o.path.toString());
             }
 
+            /**
+             * Returns whether this entry should be rendered as a non-directory item.
+             *
+             * @return {@code true} when the entry is not a directory
+             */
             boolean isNotDirectory() {
                 return is("isRegularFile") || is("isSymbolicLink") || is("isOther");
             }
 
+            /**
+             * Returns whether this entry is a directory.
+             *
+             * @return {@code true} when the entry is a directory
+             */
             boolean isDirectory() {
                 return is("isDirectory");
             }
@@ -465,6 +537,11 @@ public class GroovyPosixCommands extends PosixCommands {
                 return d instanceof Boolean && (Boolean) d;
             }
 
+            /**
+             * Formats the entry name for standard listing output.
+             *
+             * @return formatted entry name
+             */
             String display() {
                 String type;
                 String suffix;
@@ -495,6 +572,11 @@ public class GroovyPosixCommands extends PosixCommands {
                 return applyStyle(path.toString(), colors, type) + (addSuffix ? suffix : "") + link;
             }
 
+            /**
+             * Formats the entry for long-listing output.
+             *
+             * @return formatted long-listing entry
+             */
             String longDisplay() {
                 String username = Objects.toString(attributes.get("owner"), "owner");
                 String group = Objects.toString(attributes.get("group"), "group");
@@ -538,6 +620,12 @@ public class GroovyPosixCommands extends PosixCommands {
                 }
             }
 
+            /**
+             * Formats a file timestamp for long listings.
+             *
+             * @param time file timestamp
+             * @return formatted timestamp text
+             */
             protected String toString(FileTime time) {
                 long millis = (time != null) ? time.toMillis() : -1L;
                 if (millis < 0L) {
@@ -554,6 +642,12 @@ public class GroovyPosixCommands extends PosixCommands {
                 }
             }
 
+            /**
+             * Reads the available file attributes for the supplied path.
+             *
+             * @param path the path whose attributes should be collected
+             * @return a case-insensitive map containing the discovered attributes
+             */
             protected Map<String, Object> readAttributes(Path path) {
                 Map<String, Object> attrs = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 for (String view : path.getFileSystem().supportedFileAttributeViews()) {
@@ -650,7 +744,7 @@ public class GroovyPosixCommands extends PosixCommands {
 
     private static void toColumn(Context context, PrintStream out, Stream<String> ansi, boolean horizontal) {
         Terminal terminal = context.terminal();
-        int width = context.isTty() ? terminal.getWidth() : 80;
+        int width = context.isTty() ? terminal.getColumns() : 80;
         List<AttributedString> strings = ansi.map(AttributedString::fromAnsi).collect(Collectors.toList());
         if (!strings.isEmpty()) {
             int max = strings.stream()
@@ -693,6 +787,13 @@ public class GroovyPosixCommands extends PosixCommands {
     private static final String[] SIZE_UNITS = {"B", "K", "M", "G", "T", "P"};
     private static final long SIZE_THRESHOLD = 1000L;
 
+    /**
+     * Searches the selected inputs for lines matching the supplied pattern.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if the search cannot be completed
+     */
     public static void grep(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/grep -  search for PATTERN in each FILE or VARIABLE or standard input.",
@@ -939,6 +1040,13 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    /**
+     * Sorts the requested inputs and writes the ordered lines to the current output.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if an input cannot be read or sorted
+     */
     public static void sort(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/sort -  writes sorted standard input to standard output.",
@@ -986,6 +1094,13 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    /**
+     * Displays the requested inputs in the less viewer, or streams them when not interactive.
+     *
+     * @param context command execution context
+     * @param argv command name and arguments
+     * @throws Exception if the viewer cannot be initialized or an input cannot be opened
+     */
     public static void less(Context context, String[] argv) throws Exception {
         Options opt = parseOptions(context, Less.usage(), argv);
 
@@ -1022,7 +1137,10 @@ public class GroovyPosixCommands extends PosixCommands {
             return;
         }
 
-        Less less = new Less(context.terminal(), context.currentDir(), opt);
+        ConfigurationPath cfg = (context instanceof GroovyPosixContext)
+                ? ((GroovyPosixContext) context).getConfigPath()
+                : null;
+        Less less = new Less(context.terminal(), context.currentDir(), opt, cfg);
         less.run(sources);
     }
 
@@ -1101,7 +1219,7 @@ public class GroovyPosixCommands extends PosixCommands {
     private static final LinkOption[] NO_FOLLOW_OPTIONS = new LinkOption[] {LinkOption.NOFOLLOW_LINKS};
     private static final LinkOption[] EMPTY_LINK_OPTIONS = new LinkOption[0];
     private static final List<String> WINDOWS_EXECUTABLE_EXTENSIONS =
-        Collections.unmodifiableList(Arrays.asList(".bat", ".exe", ".cmd"));
+        List.of(".bat", ".exe", ".cmd");
 
     private static boolean isWindowsExecutable(String fileName) {
         if ((fileName == null) || (fileName.length() <= 0)) {

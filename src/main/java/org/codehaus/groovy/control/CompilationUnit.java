@@ -58,6 +58,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serial;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -359,25 +360,54 @@ public class CompilationUnit extends ProcessingUnit {
         }
     }
 
+    /**
+     * Adds a Groovy class operation to the output phase.
+     *
+     * @param op the operation to run for generated classes
+     */
     public void addPhaseOperation(final IGroovyClassOperation op) {
         phaseOperations[Phases.OUTPUT].addFirst(op);
     }
 
+    /**
+     * Adds a source-unit operation to the supplied phase.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     public void addPhaseOperation(final ISourceUnitOperation op, final int phase) {
         validatePhase(phase);
         phaseOperations[phase].add(op);
     }
 
+    /**
+     * Adds a primary-class operation to the supplied phase.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     public void addPhaseOperation(final IPrimaryClassNodeOperation op, final int phase) {
         validatePhase(phase);
         phaseOperations[phase].add(op);
     }
 
+    /**
+     * Adds a primary-class operation at the front of the supplied phase queue.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     public void addFirstPhaseOperation(final IPrimaryClassNodeOperation op, final int phase) {
         validatePhase(phase);
         phaseOperations[phase].addFirst(op);
     }
 
+    /**
+     * Adds a source-unit operation that becomes active only after the current phase queue drains.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     public void addNewPhaseOperation(final ISourceUnitOperation op, final int phase) {
         validatePhase(phase);
         newPhaseOperations[phase].add(op);
@@ -447,18 +477,38 @@ public class CompilationUnit extends ProcessingUnit {
         return astTransformationsContext;
     }
 
+    /**
+     * Returns the resolver used for on-demand class lookup.
+     *
+     * @return the active class-node resolver
+     */
     public ClassNodeResolver getClassNodeResolver() {
         return classNodeResolver;
     }
 
+    /**
+     * Replaces the resolver used for on-demand class lookup.
+     *
+     * @param classNodeResolver the resolver to install
+     */
     public void setClassNodeResolver(final ClassNodeResolver classNodeResolver) {
         this.classNodeResolver = classNodeResolver;
     }
 
+    /**
+     * Returns the queued Java compilation units used for joint compilation.
+     *
+     * @return the tracked Java compilation units
+     */
     public Set<javax.tools.JavaFileObject> getJavaCompilationUnitSet() {
         return javaCompilationUnitSet;
     }
 
+    /**
+     * Adds Java compilation units to the joint-compilation set.
+     *
+     * @param javaCompilationUnitSet the Java units to add
+     */
     public void addJavaCompilationUnits(final Set<javax.tools.JavaFileObject> javaCompilationUnitSet) {
         this.javaCompilationUnitSet.addAll(javaCompilationUnitSet);
     }
@@ -513,6 +563,13 @@ public class CompilationUnit extends ProcessingUnit {
         return addSource(new SourceUnit(name, source, getConfiguration(), getClassLoader(), getErrorCollector()));
     }
 
+    /**
+     * Adds an in-memory script source to this compilation unit.
+     *
+     * @param name the source name
+     * @param scriptText the script text
+     * @return the created source unit
+     */
     public SourceUnit addSource(final String name, final String scriptText) {
         return addSource(new SourceUnit(name, scriptText, getConfiguration(), getClassLoader(), getErrorCollector()));
     }
@@ -575,9 +632,21 @@ public class CompilationUnit extends ProcessingUnit {
      */
     @FunctionalInterface
     public interface ClassgenCallback {
+        /**
+         * Called after bytecode has been generated for a class.
+         *
+         * @param writer the ASM visitor used to emit the class
+         * @param node the generated class node
+         * @throws CompilationFailedException if callback processing fails
+         */
         void call(ClassVisitor writer, ClassNode node) throws CompilationFailedException;
     }
 
+    /**
+     * Returns the callback invoked after class generation.
+     *
+     * @return the class-generation callback, or {@code null}
+     */
     public ClassgenCallback getClassgenCallback() {
         return classgenCallback;
     }
@@ -598,9 +667,21 @@ public class CompilationUnit extends ProcessingUnit {
      */
     @FunctionalInterface
     public interface ProgressCallback {
+        /**
+         * Called after a compilation phase finishes for a processing unit.
+         *
+         * @param context the processing unit that advanced
+         * @param phase the phase that just completed
+         * @throws CompilationFailedException if callback processing fails
+         */
         void call(ProcessingUnit context, int phase) throws CompilationFailedException;
     }
 
+    /**
+     * Returns the callback invoked after each phase transition.
+     *
+     * @return the progress callback, or {@code null}
+     */
     public ProgressCallback getProgressCallback() {
         return progressCallback;
     }
@@ -806,6 +887,11 @@ public class CompilationUnit extends ProcessingUnit {
         }
     };
 
+    /**
+     * Creates the ASM class visitor used for bytecode generation.
+     *
+     * @return the class visitor used to emit bytecode
+     */
     protected ClassVisitor createClassVisitor() {
         return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES) {
             private ClassNode getClassNode(String name) {
@@ -864,8 +950,17 @@ public class CompilationUnit extends ProcessingUnit {
         void doPhaseOperation(CompilationUnit unit);
     }
 
+    /**
+     * Performs an operation for each source unit in the compilation.
+     */
     @FunctionalInterface
     public interface ISourceUnitOperation extends PhaseOperation {
+        /**
+         * Performs the operation for one source unit.
+         *
+         * @param source the source unit to process
+         * @throws CompilationFailedException if processing fails
+         */
         void call(SourceUnit source) throws CompilationFailedException;
 
         /**
@@ -898,8 +993,19 @@ public class CompilationUnit extends ProcessingUnit {
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR PRIMARY ClassNode OPERATIONS
 
+    /**
+     * Performs an operation for each primary class node in the compilation.
+     */
     @FunctionalInterface
     public interface IPrimaryClassNodeOperation extends PhaseOperation {
+        /**
+         * Performs the operation for one primary class node.
+         *
+         * @param source the source unit owning the class
+         * @param context the current generator context
+         * @param classNode the class node to process
+         * @throws CompilationFailedException if processing fails
+         */
         void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException;
 
         /**
@@ -963,15 +1069,35 @@ public class CompilationUnit extends ProcessingUnit {
             unit.getErrorCollector().failIfErrors();
         }
 
+        /**
+         * Indicates whether primary classes should be sorted before visiting.
+         *
+         * @return {@code true} if sorted input is required
+         */
         default boolean needSortedInput() {
             return false;
         }
     }
 
+    /**
+     * Performs an operation for each generated {@link GroovyClass}.
+     */
     @FunctionalInterface
     public interface IGroovyClassOperation extends PhaseOperation {
+        /**
+         * Performs the operation for one generated class.
+         *
+         * @param groovyClass the generated class to process
+         * @throws CompilationFailedException if processing fails
+         */
         void call(GroovyClass groovyClass) throws CompilationFailedException;
 
+        /**
+         * Applies this operation to all generated classes in the compilation unit.
+         *
+         * @param unit the compilation unit supplying generated classes
+         * @throws CompilationFailedException if processing fails
+         */
         @Override
         default void doPhaseOperation(final CompilationUnit unit) throws CompilationFailedException {
             if (unit.phase != Phases.OUTPUT && !(unit.phase == Phases.CLASS_GENERATION && unit.phaseComplete)) {
@@ -1037,6 +1163,7 @@ public class CompilationUnit extends ProcessingUnit {
     private static boolean hasInnerClassWithClosure(final ClassNode cn) {
         for (var it = cn.getInnerClasses(); it.hasNext(); ) {
             class ClosureFound extends RuntimeException {
+                @Serial
                 private static final long serialVersionUID = 1;
                 @Override public Throwable fillInStackTrace() {
                     return this;
@@ -1073,49 +1200,99 @@ public class CompilationUnit extends ProcessingUnit {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Adapts a deprecated groovy-class operation to the current API.
+     *
+     * @param op the operation to add
+     */
     @Deprecated
     public void addPhaseOperation(final GroovyClassOperation op) {
         addPhaseOperation((IGroovyClassOperation) op);
     }
 
+    /**
+     * Adapts a deprecated source-unit operation to the current API.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     @Deprecated
     public void addPhaseOperation(final SourceUnitOperation op, final int phase) {
         addPhaseOperation((ISourceUnitOperation) op, phase);
     }
 
+    /**
+     * Adapts a deprecated primary-class operation to the current API.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     @Deprecated
     public void addPhaseOperation(final PrimaryClassNodeOperation op, final int phase) {
         addPhaseOperation((IPrimaryClassNodeOperation) op, phase);
     }
 
+    /**
+     * Adapts a deprecated primary-class operation to the front of a phase queue.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     @Deprecated
     public void addFirstPhaseOperation(final PrimaryClassNodeOperation op, final int phase) {
         addFirstPhaseOperation((IPrimaryClassNodeOperation) op, phase);
     }
 
+    /**
+     * Adapts a deprecated source-unit operation to the delayed phase queue.
+     *
+     * @param op the operation to add
+     * @param phase the phase in which to run it
+     */
     @Deprecated
     public void addNewPhaseOperation(final SourceUnitOperation op, final int phase) {
         addNewPhaseOperation((ISourceUnitOperation) op, phase);
     }
 
+    /**
+     * Applies a deprecated source-unit operation to all source units.
+     *
+     * @param op the operation to run
+     * @throws CompilationFailedException if processing fails
+     */
     @Deprecated
     public void applyToSourceUnits(final SourceUnitOperation op) throws CompilationFailedException {
         op.doPhaseOperation(this);
     }
 
+    /**
+     * Applies a deprecated primary-class operation to all primary class nodes.
+     *
+     * @param op the operation to run
+     * @throws CompilationFailedException if processing fails
+     */
     @Deprecated
     public void applyToPrimaryClassNodes(final PrimaryClassNodeOperation op) throws CompilationFailedException {
         op.doPhaseOperation(this);
     }
 
+    /**
+     * Compatibility base type for deprecated source-unit operations.
+     */
     @Deprecated
     public abstract static class SourceUnitOperation implements ISourceUnitOperation {
     }
 
+    /**
+     * Compatibility base type for deprecated Groovy-class operations.
+     */
     @Deprecated
     public abstract static class GroovyClassOperation implements IGroovyClassOperation {
     }
 
+    /**
+     * Compatibility base type for deprecated primary-class operations.
+     */
     @Deprecated
     public abstract static class PrimaryClassNodeOperation implements IPrimaryClassNodeOperation {
     }

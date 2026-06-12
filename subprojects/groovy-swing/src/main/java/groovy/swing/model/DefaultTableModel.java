@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A default table model made up of PropertyModels on a Value model.
+ * A table model built from row and column {@link ValueModel} instances.
  */
 public class DefaultTableModel extends AbstractTableModel {
 
@@ -37,10 +37,21 @@ public class DefaultTableModel extends AbstractTableModel {
     private ValueModel rowsModel;
     private MyTableColumnModel columnModel = new MyTableColumnModel();
 
+    /**
+     * Creates a table model with its own row holder.
+     *
+     * @param rowsModel the model that supplies the row collection
+     */
     public DefaultTableModel(ValueModel rowsModel) {
         this(rowsModel, new ValueHolder());
     }
 
+    /**
+     * Creates a table model with explicit row and rows models.
+     *
+     * @param rowsModel the model that supplies the row collection
+     * @param rowModel the model reused for exposing the current row
+     */
     public DefaultTableModel(ValueModel rowsModel, ValueModel rowModel) {
         this.rowModel = rowModel;
         this.rowsModel = rowsModel;
@@ -49,10 +60,16 @@ public class DefaultTableModel extends AbstractTableModel {
     /**
      * @return the column definitions.
      */
+    @SuppressWarnings("rawtypes")
     public List getColumnList() {
         return columnModel.getColumnList();
     }
 
+    /**
+     * Returns the Swing column model maintained by this table model.
+     *
+     * @return the column model
+     */
     public TableColumnModel getColumnModel() {
         return columnModel;
     }
@@ -78,10 +95,25 @@ public class DefaultTableModel extends AbstractTableModel {
         return addColumn(headerValue, new ClosureModel(rowModel, readClosure, writeClosure, type));
     }
 
+    /**
+     * Adds a column whose header value is also used as its identifier.
+     *
+     * @param headerValue the header value and identifier
+     * @param columnValueModel the value model used by the column
+     * @return the created column
+     */
     public DefaultTableColumn addColumn(Object headerValue, ValueModel columnValueModel) {
         return addColumn(headerValue, headerValue, columnValueModel);
     }
 
+    /**
+     * Adds a column definition with an explicit identifier.
+     *
+     * @param headerValue the header value
+     * @param identifier the column identifier
+     * @param columnValueModel the value model used by the column
+     * @return the created column
+     */
     public DefaultTableColumn addColumn(Object headerValue, Object identifier, ValueModel columnValueModel) {
         DefaultTableColumn answer = new DefaultTableColumn(headerValue, identifier, columnValueModel);
         addColumn(answer);
@@ -103,16 +135,32 @@ public class DefaultTableModel extends AbstractTableModel {
         columnModel.removeColumn(column);
     }
 
+    /**
+     * Returns the number of rows currently exposed by the rows model.
+     *
+     * @return the current row count
+     */
     @Override
     public int getRowCount() {
         return getRows().size();
     }
 
+    /**
+     * Returns the number of configured columns.
+     *
+     * @return the current column count
+     */
     @Override
     public int getColumnCount() {
         return columnModel.getColumnCount();
     }
 
+    /**
+     * Returns the header text for the supplied column.
+     *
+     * @param columnIndex the column index
+     * @return the column header text, or {@code null} when unavailable
+     */
     @Override
     public String getColumnName(int columnIndex) {
         String answer = null;
@@ -126,16 +174,38 @@ public class DefaultTableModel extends AbstractTableModel {
         return answer;
     }
 
+    /**
+     * Returns the declared value type for the supplied column.
+     *
+     * @param columnIndex the column index
+     * @return the column value type
+     */
+    @SuppressWarnings("rawtypes")
     @Override
     public Class getColumnClass(int columnIndex) {
         return getColumnModel(columnIndex).getType();
     }
 
+    /**
+     * Indicates whether the supplied cell can be edited through its column model.
+     *
+     * @param rowIndex the row index
+     * @param columnIndex the column index
+     * @return {@code true} when the column model is editable
+     */
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return getColumnModel(columnIndex).isEditable();
     }
 
+    /**
+     * Reads the value for the supplied row and column.
+     *
+     * @param rowIndex the row index
+     * @param columnIndex the column index
+     * @return the cell value, or {@code null} when the coordinates are invalid
+     */
+    @SuppressWarnings("rawtypes")
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         List rows = getRows();
@@ -155,6 +225,14 @@ public class DefaultTableModel extends AbstractTableModel {
         return column.getValue(row, rowIndex, columnIndex);
     }
 
+    /**
+     * Writes a value to the supplied row and column when both coordinates are valid.
+     *
+     * @param value the new cell value
+     * @param rowIndex the row index
+     * @param columnIndex the column index
+     */
+    @SuppressWarnings("rawtypes")
     @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
         List rows = getRows();
@@ -173,11 +251,23 @@ public class DefaultTableModel extends AbstractTableModel {
         column.setValue(row, value, rowIndex, columnIndex);
     }
 
+    /**
+     * Returns the value model used by the supplied column.
+     *
+     * @param columnIndex the column index
+     * @return the column value model
+     */
     protected ValueModel getColumnModel(int columnIndex) {
         DefaultTableColumn column = (DefaultTableColumn) columnModel.getColumn(columnIndex);
         return column.getValueModel();
     }
 
+    @SuppressWarnings("rawtypes")
+    /**
+     * Returns the current rows as a list.
+     *
+     * @return the current row collection as a list, never {@code null}
+     */
     protected List getRows() {
         Object value = rowsModel.getValue();
         if (value == null) {
@@ -186,35 +276,68 @@ public class DefaultTableModel extends AbstractTableModel {
         return InvokerHelper.asList(value);
     }
 
+    /**
+     * Column model implementation that keeps model indexes aligned with the current column order.
+     */
     protected static class MyTableColumnModel extends DefaultTableColumnModel {
+        /**
+         * Returns the live list of table columns.
+         *
+         * @return the backing column list
+         */
+        @SuppressWarnings("rawtypes")
         public List getColumnList() {
             return tableColumns;
         }
 
+        /**
+         * Removes a column and then renumbers the remaining model indexes.
+         *
+         * @param column the column to remove
+         */
         @Override
         public void removeColumn(TableColumn column) {
             super.removeColumn(column);
             renumberTableColumns();
         }
 
+        /**
+         * Moves a column and then renumbers the model indexes to match the new order.
+         *
+         * @param columnIndex the source column index
+         * @param newIndex the destination column index
+         */
         @Override
         public void moveColumn(int columnIndex, int newIndex) {
             super.moveColumn(columnIndex, newIndex);
             renumberTableColumns();
         }
 
+        /**
+         * Reassigns model indexes to match the current column order.
+         */
         public void renumberTableColumns() {
             for (int i = tableColumns.size() - 1; i >= 0; i--) {
-                ((DefaultTableColumn)tableColumns.get(i)).setModelIndex(i);
+                tableColumns.get(i).setModelIndex(i);
             }
         }
 
     }
 
+    /**
+     * Returns the value model representing the current row object.
+     *
+     * @return the current row model
+     */
     public ValueModel getRowModel() {
         return rowModel;
     }
 
+    /**
+     * Returns the model that supplies the backing row collection.
+     *
+     * @return the rows model
+     */
     public ValueModel getRowsModel() {
         return rowsModel;
     }

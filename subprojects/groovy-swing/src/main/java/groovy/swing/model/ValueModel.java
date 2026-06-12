@@ -19,11 +19,34 @@
 package groovy.swing.model;
 
 /**
- * Represents a model of a value
+ * Represents a typed value that can participate in Swing data binding.
  */
 public interface ValueModel {
+    /**
+     * Returns the current value exposed by this model.
+     *
+     * @return the current value, or {@code null}
+     */
     Object getValue();
+
+    /**
+     * Updates the current value exposed by this model.
+     *
+     * @param value the new value
+     */
     void setValue(Object value);
+
+    /**
+     * Returns the declared value type for this model.
+     *
+     * @return the model type
+     */
     Class getType();
+
+    /**
+     * Indicates whether {@link #setValue(Object)} is expected to succeed.
+     *
+     * @return {@code true} when the model can be written to
+     */
     boolean isEditable();
 }

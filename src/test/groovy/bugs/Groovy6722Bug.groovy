@@ -19,10 +19,13 @@
 package bugs
 
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.assertScript
 
 
 class Groovy6722Bug {
+    @Test
     void testThatCompilerRecognizesCovariantArray() {
         assertScript '''
 abstract class Top<Elem,Result> {

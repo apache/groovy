@@ -34,14 +34,28 @@ import groovy.lang.ProxyMetaClass;
 
 public class MockProxyMetaClass extends ProxyMetaClass {
 
+    /**
+     * Indicates whether constructor invocations should be intercepted.
+     */
     public final boolean interceptConstruction;
     private boolean fallingThrough;
 
+    /**
+     * Marker closure used to signal that a call should be delegated to the adaptee meta class.
+     */
     static class FallThroughMarker extends Closure {
+        /**
+         * Creates a marker closure with the supplied owner.
+         *
+         * @param owner the closure owner
+         */
         FallThroughMarker(Object owner) {
             super(owner);
         }
     }
+    /**
+     * Shared marker instance signalling that interception should fall through to the adaptee.
+     */
     static final FallThroughMarker FALL_THROUGH_MARKER = new FallThroughMarker(new Object());
 
     /**
@@ -75,6 +89,14 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return new MockProxyMetaClass(metaRegistry, theClass, meta, interceptConstruction);
     }
 
+    /**
+     * Intercepts an instance method invocation and delegates to the adaptee when requested.
+     *
+     * @param object the receiver of the method call
+     * @param methodName the method name
+     * @param arguments the invocation arguments
+     * @return the interceptor result or the adaptee result when falling through
+     */
     @Override
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
         if (null == interceptor && !fallingThrough) {
@@ -96,6 +118,17 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return result;
     }
 
+    /**
+     * Intercepts an instance method invocation with sender metadata and delegates when requested.
+     *
+     * @param sender the sender class
+     * @param object the receiver of the method call
+     * @param methodName the method name
+     * @param arguments the invocation arguments
+     * @param isCallToSuper whether the call targets a superclass implementation
+     * @param fromInsideClass whether the call originates from inside the declaring class
+     * @return the interceptor result or the adaptee result when falling through
+     */
     @Override
     public Object invokeMethod(final Class sender, final Object object, final String methodName, final Object[] arguments, final boolean isCallToSuper, final boolean fromInsideClass) {
         if (null == interceptor && !fallingThrough) {
@@ -117,6 +150,14 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return result;
     }
 
+    /**
+     * Intercepts a static method invocation and delegates to the adaptee when requested.
+     *
+     * @param object the static receiver
+     * @param methodName the method name
+     * @param arguments the invocation arguments
+     * @return the interceptor result or the adaptee result when falling through
+     */
     @Override
     public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
         if (null == interceptor && !fallingThrough) {
@@ -138,6 +179,16 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return result;
     }
 
+    /**
+     * Intercepts a property read and delegates to the adaptee when no custom value is supplied.
+     *
+     * @param aClass the dispatch class
+     * @param object the receiver of the property access
+     * @param property the property name
+     * @param b implementation-specific flag forwarded to the adaptee
+     * @param b1 implementation-specific flag forwarded to the adaptee
+     * @return the intercepted or delegated property value
+     */
     @Override
     public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
         if (null == interceptor && !fallingThrough) {
@@ -159,6 +210,16 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return result;
     }
 
+    /**
+     * Intercepts a property write and delegates to the adaptee when no custom handling is supplied.
+     *
+     * @param aClass the dispatch class
+     * @param object the receiver of the property access
+     * @param property the property name
+     * @param newValue the value to assign
+     * @param b implementation-specific flag forwarded to the adaptee
+     * @param b1 implementation-specific flag forwarded to the adaptee
+     */
     @Override
     public void setProperty(Class aClass, Object object, String property, Object newValue, boolean b, boolean b1) {
         if (null == interceptor && !fallingThrough) {
@@ -186,6 +247,12 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     /**
      * Unlike general impl in superclass, ctors are not intercepted but relayed
      * unless interceptConstruction is set.
+     */
+    /**
+     * Intercepts or delegates constructor invocation depending on {@link #interceptConstruction}.
+     *
+     * @param arguments the constructor arguments
+     * @return the constructed instance or interceptor-supplied replacement
      */
     @Override
     public Object invokeConstructor(final Object[] arguments) {

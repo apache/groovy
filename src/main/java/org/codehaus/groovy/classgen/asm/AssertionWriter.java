@@ -48,6 +48,9 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 
+/**
+ * Emits bytecode for Groovy {@code assert} statements.
+ */
 public class AssertionWriter {
 
     private static final ClassNode STRING_BUILDER_TYPE = ClassHelper.make(StringBuilder.class);
@@ -62,10 +65,20 @@ public class AssertionWriter {
     private AssertionTracker assertionTracker;
     private AssertionTracker disabledTracker;
 
+    /**
+     * Creates an assertion writer for the supplied controller.
+     *
+     * @param wc the active writer controller
+     */
     public AssertionWriter(final WriterController wc) {
         this.controller = wc;
     }
 
+    /**
+     * Emits bytecode for an {@code assert} statement.
+     *
+     * @param statement the assertion statement
+     */
     public void writeAssertStatement(final AssertStatement statement) {
         AssertionTracker oldTracker = assertionTracker;
         assertionTracker = null;
@@ -231,6 +244,9 @@ public class AssertionWriter {
 
     //--------------------------------------------------------------------------
 
+    /**
+     * Temporarily disables power-assert value tracking.
+     */
     public void disableTracker() {
         if (assertionTracker != null) {
             disabledTracker = assertionTracker;
@@ -238,6 +254,9 @@ public class AssertionWriter {
         }
     }
 
+    /**
+     * Restores power-assert value tracking after a previous disable.
+     */
     public void reenableTracker() {
         if (disabledTracker != null) {
             assertionTracker = disabledTracker;
@@ -245,11 +264,21 @@ public class AssertionWriter {
         }
     }
 
+    /**
+     * Records the current stack value for the supplied token position.
+     *
+     * @param token the token whose source position should be recorded
+     */
     public void record(final Token token) {
         if (assertionTracker != null)
             record(assertionTracker.sourceText.getNormalizedColumn(token.getStartLine(), token.getStartColumn()));
     }
 
+    /**
+     * Records the current stack value for the supplied expression position.
+     *
+     * @param expression the expression whose source position should be recorded
+     */
     public void record(final Expression expression) {
         if (assertionTracker != null)
             record(assertionTracker.sourceText.getNormalizedColumn(expression.getLineNumber(), expression.getColumnNumber()));

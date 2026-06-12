@@ -47,7 +47,7 @@ public class Iterators {
      * from the previous one. Since the iterator produces infinite elements, you should have some means
      * to stop requesting elements external to this iterator.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Iterators.iterate(0, n -> n + 2).take(5).toList() == [0, 2, 4, 6, 8]
      * assert Iterators.iterate('a', String::next).take(6).join() == 'abcdef'
      * </pre>
@@ -73,11 +73,13 @@ public class Iterators {
             this.advance = advance;
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean hasNext() {
             return true;
         }
 
+        /** {@inheritDoc} */
         @Override
         public T next() {
             if (first) {
@@ -88,6 +90,7 @@ public class Iterators {
             return next;
         }
 
+        /** {@inheritDoc} */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -99,7 +102,7 @@ public class Iterators {
      * Since the iterator produces infinite elements, you should have some means
      * to stop requesting elements external to this iterator.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.function.Supplier
      * var r = new Random()
      * assert Iterators.generate({ r.nextInt(10) } as Supplier).take(3).collect() ==~ /\[\d, \d, \d\]/
@@ -121,16 +124,19 @@ public class Iterators {
             this.next = next;
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean hasNext() {
             return true;
         }
 
+        /** {@inheritDoc} */
         @Override
         public T next() {
             return next.get();
         }
 
+        /** {@inheritDoc} */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
@@ -144,7 +150,7 @@ public class Iterators {
      * By necessity, elements from the iterators are cached, so you should
      * use {@link Iterables#combine(Map)} if you have existing iterables as this will be more efficient.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Iterators.combine(x: (1..2).iterator(), y: ('a'..'c').iterator()).collect().toString()
      *     == '[[x:1, y:a], [x:1, y:b], [x:1, y:c], [x:2, y:a], [x:2, y:b], [x:2, y:c]]'
      * assert Iterators.combine(x: (1..3).iterator(), y: ('a'..'b').iterator()).collect().toString()
@@ -165,7 +171,7 @@ public class Iterators {
      * By necessity, elements from the iterators are cached, so you should
      * use {@link Iterables#combine(Map)} if you have existing iterables as this will be more efficient.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Iterators.combine(
      *     even: Iterators.iterate(0, n {@code ->} n + 2),
      *     odd: Iterators.iterate(1, n {@code ->} n + 2), false)
@@ -247,6 +253,7 @@ public class Iterators {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean hasNext() {
             if (!loaded) {
@@ -256,6 +263,7 @@ public class Iterators {
             return !exhausted;
         }
 
+        /** {@inheritDoc} */
         @Override
         public Map<K, T> next() {
             if (!hasNext()) {
@@ -362,11 +370,13 @@ public class Iterators {
             }
         }
 
+        /** {@inheritDoc} */
         @Override
         public boolean hasNext() {
             return nextItem != null;
         }
 
+        /** {@inheritDoc} */
         @Override
         public Map<K, T> next() {
             if (!hasNext()) {

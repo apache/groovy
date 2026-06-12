@@ -28,14 +28,29 @@ public class Postcondition extends Assertion<Postcondition> {
 
     private boolean isPartOfConstructor = false;
 
+    /**
+     * Creates a postcondition that defaults to {@code true}.
+     */
     public Postcondition() {
     }
 
+    /**
+     * Creates a postcondition from the supplied source block and boolean expression.
+     *
+     * @param blockStatement the original postcondition block
+     * @param booleanExpression the normalized postcondition expression
+     * @param isPartOfConstructor whether the postcondition belongs to a constructor
+     */
     public Postcondition(BlockStatement blockStatement, BooleanExpression booleanExpression, boolean isPartOfConstructor) {
         super(blockStatement, booleanExpression);
         this.isPartOfConstructor = isPartOfConstructor;
     }
 
+    /**
+     * Indicates whether this postcondition was declared for a constructor.
+     *
+     * @return {@code true} if the postcondition belongs to a constructor
+     */
     public boolean isPartOfConstructor() {
         return isPartOfConstructor;
     }

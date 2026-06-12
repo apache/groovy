@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 import groovy.lang.Tuple2;
 import org.apache.groovy.util.ReversedList;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
@@ -41,6 +42,15 @@ import static org.codehaus.groovy.runtime.typehandling.NumberMath.toBigDecimal;
  */
 class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection<T> implements Window<T> {
 
+    /**
+     * Creates a window for the current record.
+     *
+     * @param currentRecord the current record and row index
+     * @param index the current zero-based row index
+     * @param value the current order value
+     * @param list the window contents
+     * @param order the order rule backing the window
+     */
     WindowImpl(Tuple2<T, Long> currentRecord, int index, U value, List<T> list, Order<? super T, ? extends U> order) {
         super(list);
         this.currentRecord = currentRecord;
@@ -51,6 +61,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         this.list = list;
     }
 
+    /**
+     * Returns the current row number inside the partition.
+     *
+     * @return the current row number
+     */
     @Override
     public long rowNumber() {
         return index;
@@ -100,6 +115,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return extractor.apply(list.get((int) index));
     }
 
+    /**
+     * Returns the rank of the current row.
+     *
+     * @return the rank, or {@code null} when no ordering exists
+     */
     @Override
     public Long rank() {
         if (null == order) {
@@ -117,6 +137,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     }
 
 
+    /**
+     * Returns the dense rank of the current row.
+     *
+     * @return the dense rank, or {@code null} when no ordering exists
+     */
     @Override
     public Long denseRank() {
         if (null == order) {
@@ -134,6 +159,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return result;
     }
 
+    /**
+     * Returns the percent rank of the current row.
+     *
+     * @return the percent rank, or {@code null} when no ordering exists
+     */
     @Override
     public BigDecimal percentRank() {
         if (null == order) {
@@ -153,6 +183,11 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return toBigDecimal(r - 1).divide(toBigDecimal(size - 1), 16, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Returns the cumulative distribution of the current row.
+     *
+     * @return the cumulative distribution, or {@code null} when no ordering exists
+     */
     @Override
     public BigDecimal cumeDist() {
         if (null == order) {
@@ -164,6 +199,12 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return toBigDecimal(cnt).divide(toBigDecimal(list.size()), 16, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Assigns the current row to a bucket.
+     *
+     * @param bucketCnt the number of buckets
+     * @return the bucket number
+     */
     @Override
     public long ntile(long bucketCnt) {
         return bucketCnt * rowNumber() / list.size();
@@ -181,6 +222,17 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return null == upper || Long.MAX_VALUE == upper ? size - 1 : index + upper;
     }
 
+    /**
+     * Resolves valid row bounds for the supplied window definition.
+     *
+     * @param windowDefinition the window definition
+     * @param index the current row index
+     * @param value the current order value
+     * @param listWithIndex the partition values with indexes
+     * @param <T> the row type
+     * @param <U> the order value type
+     * @return the effective row bounds, or {@code null} if none apply
+     */
     static <T, U extends Comparable<? super U>> RowBound getValidRowBound(WindowDefinition<T, U> windowDefinition, int index, U value, List<Tuple2<T, Long>> listWithIndex) {
         int size = listWithIndex.size();
         long firstIndex = 0;
@@ -269,12 +321,28 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
         return valueIndex;
     }
 
+    /**
+     * Converts row orders into tuple-based orders.
+     *
+     * @param orderList the row orders
+     * @param <T> the row type
+     * @param <U> the order value type
+     * @return the tuple-based orders
+     */
     static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(List<Queryable.Order<? super T, ? extends U>> orderList) {
         return orderList.stream()
                 .map(order -> new Order<Tuple2<T, Long>, U>(t -> order.getKeyExtractor().apply(t.getV1()), order.isAsc(), order.isNullsLast()))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Converts the orders of a window definition into tuple-based orders.
+     *
+     * @param windowDefinition the window definition
+     * @param <T> the row type
+     * @param <U> the order value type
+     * @return the tuple-based orders
+     */
     static <T, U extends Comparable<? super U>> List<Order<Tuple2<T, Long>, U>> composeOrders(WindowDefinition<T, U> windowDefinition) {
         return composeOrders(windowDefinition.orderBy());
     }
@@ -287,5 +355,5 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     private final List<T> list;
     private static final BigDecimal MIN_VALUE = toBigDecimal(Long.MIN_VALUE);
     private static final BigDecimal MAX_VALUE = toBigDecimal(Long.MAX_VALUE);
-    private static final long serialVersionUID = -3458969297047398621L;
+    @Serial private static final long serialVersionUID = -3458969297047398621L;
 }

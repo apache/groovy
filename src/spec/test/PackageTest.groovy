@@ -162,4 +162,48 @@ final class PackageTest {
             // end::alias_import[]
         '''
     }
+
+    @Test
+    void testModuleImport() {
+        assertScript '''
+            // tag::module_import[]
+            import module java.sql
+
+            assert Connection.name == 'java.sql.Connection'
+            assert DriverManager.name == 'java.sql.DriverManager'
+            // end::module_import[]
+        '''
+    }
+
+    @Test
+    void testModuleImportTransitive() {
+        assertScript '''
+            // tag::module_import_transitive[]
+            import module java.sql
+
+            // Direct exports of java.sql
+            assert Connection.name == 'java.sql.Connection'
+
+            // From java.xml (requires transitive)
+            assert Source.name == 'javax.xml.transform.Source'
+
+            // From java.logging (requires transitive)
+            assert Logger.name == 'java.util.logging.Logger'
+            // end::module_import_transitive[]
+        '''
+    }
+
+    @Test
+    void testModuleImportWithExplicit() {
+        assertScript '''
+            // tag::module_import_with_explicit[]
+            import module java.desktop
+            import java.util.List
+
+            // The explicit single-type import wins over the
+            // module-expanded java.awt.List
+            assert List.name == 'java.util.List'
+            // end::module_import_with_explicit[]
+        '''
+    }
 }

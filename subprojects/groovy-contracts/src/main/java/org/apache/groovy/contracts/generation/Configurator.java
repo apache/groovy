@@ -29,12 +29,34 @@ import java.util.Map;
  */
 public final class Configurator {
 
+    /**
+     * JVM argument prefix that disables assertions.
+     */
     public static final String DISABLED_ASSERTIONS = "-da";
+
+    /**
+     * JVM argument prefix that enables assertions.
+     */
     public static final String ENABLED_ASSERTIONS = "-ea";
 
+    /**
+     * Separator between assertion flags and package or class names.
+     */
     public static final String PACKAGE_PREFIX = ":";
+
+    /**
+     * JVM argument prefix that enables assertions for a package or class.
+     */
     public static final String ENABLE_PACKAGE_ASSERTIONS = ENABLED_ASSERTIONS + PACKAGE_PREFIX;
+
+    /**
+     * JVM argument prefix that disables assertions for a package or class.
+     */
     public static final String DISABLE_PACKAGE_ASSERTIONS = DISABLED_ASSERTIONS + PACKAGE_PREFIX;
+
+    /**
+     * Suffix used by the JVM to denote package-wide assertion configuration.
+     */
     public static final String PACKAGE_POSTFIX = "...";
 
     private static Map<String, Boolean> assertionConfiguration;

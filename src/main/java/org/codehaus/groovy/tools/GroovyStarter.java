@@ -18,20 +18,35 @@
  */
 package org.codehaus.groovy.tools;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.logging.LogManager;
+
+import static java.lang.System.Logger.Level.ERROR;
 
 /**
  * Helper class to initialize the Groovy runtime.
  */
 public class GroovyStarter {
 
+    // Logger is in a holder class so it is not initialized until after
+    // configuration (including logging properties) has been loaded.
+    private static class LogHolder {
+        static final System.Logger LOGGER = System.getLogger(GroovyStarter.class.getName());
+    }
+
     static void printUsage() {
         System.out.println("possible programs are 'groovyc','groovy','console', and 'groovysh'");
         System.exit(1);
     }
 
+    /**
+     * Bootstraps the requested Groovy launcher from command-line arguments.
+     *
+     * @param args launcher arguments
+     */
     public static void main(String[] args) {
         try {
             rootLoader(args);
@@ -40,6 +55,11 @@ public class GroovyStarter {
         }
     }
 
+    /**
+     * Configures the root loader and invokes the selected main class.
+     *
+     * @param args starter arguments
+     */
     public static void rootLoader(String[] args) {
         String conf = System.getProperty("groovy.starter.conf",null);
         final LoaderConfiguration lc = new LoaderConfiguration();
@@ -98,10 +118,25 @@ public class GroovyStarter {
             try {
                 lc.configure(new FileInputStream(conf));
             } catch (Exception e) {
-                System.err.println("exception while configuring main class loader:");
+                LogHolder.LOGGER.log(ERROR, "Exception while configuring main class loader");
                 exit(e);
             }
         }
+
+        // Auto-discover user logging configuration from ~/.groovy/logging.properties
+        // if no explicit logging config was set via -D or groovy-starter.conf.
+        // This must happen before any logger in LogHolder is accessed.
+        if (System.getProperty("java.util.logging.config.file") == null) {
+            File loggingConfig = new File(System.getProperty("user.home"), ".groovy/logging.properties");
+            if (loggingConfig.isFile()) {
+                System.setProperty("java.util.logging.config.file", loggingConfig.getAbsolutePath());
+                try {
+                    LogManager.getLogManager().readConfiguration();
+                } catch (Exception ignore) {
+                }
+            }
+        }
+
         // create loader and execute main class
         ClassLoader loader = getLoader(lc);
         Method m = null;
@@ -118,9 +153,8 @@ public class GroovyStarter {
         }
     }
 
-    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
     private static ClassLoader getLoader(LoaderConfiguration lc) {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<ClassLoader>) () -> new RootLoader(lc));
+        return new RootLoader(lc);
     }
 
     private static void exit(Exception e) {
@@ -129,7 +163,7 @@ public class GroovyStarter {
     }
 
     private static void exit(String text) {
-        System.err.println(text);
+        LogHolder.LOGGER.log(ERROR, text);
         System.exit(1);
     }
 }

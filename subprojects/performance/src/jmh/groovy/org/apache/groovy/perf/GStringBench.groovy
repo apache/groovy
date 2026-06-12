@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class GStringBench {
+    /** Number of loop iterations used by each benchmark invocation. */
     static final int ITERATIONS = 1_000_000
 
     /**

@@ -46,7 +46,19 @@ import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
 import static org.codehaus.groovy.control.ResolveVisitor.EMPTY_STRING_ARRAY;
 
 /**
- * A utility class responsible for decompiling JVM class files and producing {@link ClassStub} objects reflecting their structure.
+ * Utility class responsible for decompiling JVM class files into {@link ClassStub} objects that reflect their bytecode structure.
+ * Uses ASM to parse compiled bytecode and extract class metadata including fields, methods, constructors, and annotations
+ * without requiring access to source code.
+ *
+ * <p>Parsed stubs are cached using soft references indexed by {@link URI}, enabling efficient reuse across multiple
+ * compilations in the same JVM and in test scenarios. The cache occasionally allows misses when multiple threads
+ * simultaneously load the same class, but this is acceptable as it avoids serious memory issues.
+ *
+ * <p>The decompiler skips synthetic class initializers ({@code <clinit>}) and frame debug information during parsing.
+ *
+ * @see ClassStub
+ * @see DecompiledClassNode
+ * @see AsmReferenceResolver
  */
 public abstract class AsmDecompiler {
 
@@ -62,9 +74,10 @@ public abstract class AsmDecompiler {
      * Loads the URL contents and parses them with ASM, producing a {@link ClassStub} object representing the structure of
      * the corresponding class file. Stubs are cached and reused if queried several times with equal URLs.
      *
-     * @param url a URL from a class loader, most likely a file system file or a JAR entry.
-     * @return the class stub
+     * @param url a URL from a class loader, most likely a file system file or a JAR entry
+     * @return the class stub containing all extracted bytecode metadata
      * @throws IOException if reading from this URL is impossible
+     * @throws GroovyRuntimeException if the URL cannot be converted to a valid URI
      */
     public static ClassStub parseClass(final URL url) throws IOException {
         URI uri;
@@ -90,6 +103,12 @@ public abstract class AsmDecompiler {
     }
 
     private static AnnotationReader readAnnotationMembers(final AnnotationStub stub) {
+        /**
+         * Creates an {@link AnnotationReader} that populates an annotation stub's member map with attribute values.
+         *
+         * @param stub the {@link AnnotationStub} to populate
+         * @return an {@link AnnotationReader} that collects annotation attribute values
+         */
         return new AnnotationReader() {
             @Override
             void visitAttribute(final String name, final Object value) {
@@ -98,25 +117,56 @@ public abstract class AsmDecompiler {
         };
     }
 
+    /**
+     * Converts an internal JVM class name (e.g., "java/lang/String") to a fully qualified class name (e.g., "java.lang.String").
+     *
+     * @param name the internal JVM class name
+     * @return the fully qualified class name with dots instead of slashes
+     */
     static String fromInternalName(final String name) {
         return name.replace('/', '.');
     }
 
-    //--------------------------------------------------------------------------
-
+    /**
+     * ASM visitor for decompiling class files into {@link ClassStub} objects.
+     * Extracts class metadata, inner class information, methods, fields, annotations, record components,
+     * and permitted subclasses from bytecode.
+     */
     private static class DecompilingVisitor extends ClassVisitor {
 
         private ClassStub result;
 
+        /**
+         * Creates a decompiling visitor with the current ASM API version.
+         */
         public DecompilingVisitor() {
             super(ASM_API_VERSION);
         }
 
+        /**
+         * Visits the class declaration, extracting its name, access flags, generics signature, superclass, and interfaces.
+         *
+         * @param version the Java class file format version
+         * @param access the class access flags
+         * @param name the fully qualified internal class name
+         * @param signature the generic signature or {@code null}
+         * @param superName the internal superclass name
+         * @param interfaceNames the internal interface names
+         */
         @Override
         public void visit(final int version, final int access, final String name, final String signature, final String superName, final String[] interfaceNames) {
             result = new ClassStub(fromInternalName(name), access, signature, superName, interfaceNames);
         }
 
+        /**
+         * Visits INNERCLASS attributes to capture correct access modifiers for inner classes.
+         * Inner class access flags may differ from top-level flags (e.g., private, protected, static modifiers).
+         *
+         * @param name the fully qualified internal name of the inner class
+         * @param outerName the fully qualified internal name of the outer class
+         * @param innerName the simple name of the inner class
+         * @param access the access modifiers from the INNERCLASS attribute
+         */
         @Override
         public void visitInnerClass(final String name, final String outerName, final String innerName, final int access) {
             /*
@@ -143,6 +193,18 @@ public abstract class AsmDecompiler {
             }
         }
 
+        /**
+         * Visits method metadata including access flags, descriptor, signature, and exceptions.
+         * Skips static class initializers ({@code <clinit>}).
+         * Records method annotations and parameter metadata.
+         *
+         * @param access the method access flags
+         * @param name the method name
+         * @param desc the method descriptor
+         * @param signature the generic signature or {@code null}
+         * @param exceptions the exception types this method throws
+         * @return a method visitor to collect parameter and annotation data, or {@code null} to skip
+         */
         @Override
         public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions) {
             if ("<clinit>".equals(name)) return null;
@@ -183,16 +245,36 @@ public abstract class AsmDecompiler {
             };
         }
 
+        /**
+         * Visits class-level annotations.
+         *
+         * @param desc the annotation type descriptor
+         * @param visible {@code true} for runtime-visible annotations
+         * @return an annotation visitor to collect member values
+         */
         @Override
         public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
             return readAnnotationMembers(result.addAnnotation(desc));
         }
 
+        /**
+         * Visits permitted subclasses declared in a sealed class.
+         *
+         * @param permittedSubclass the fully qualified internal name of a permitted subclass
+         */
         @Override
         public void visitPermittedSubclass(final String permittedSubclass) {
             result.permittedSubclasses.add(permittedSubclass);
         }
 
+        /**
+         * Visits record component metadata for record classes.
+         *
+         * @param name the component name
+         * @param descriptor the component type descriptor
+         * @param signature the generic signature or {@code null}
+         * @return a record component visitor to collect annotations
+         */
         @Override
         public RecordComponentVisitor visitRecordComponent(
                 final String name, final String descriptor, final String signature) {
@@ -213,6 +295,17 @@ public abstract class AsmDecompiler {
             };
         }
 
+        /**
+         * Visits field metadata including access flags, descriptor, signature, and constant values.
+         * Records field annotations.
+         *
+         * @param access the field access flags
+         * @param name the field name
+         * @param desc the field type descriptor
+         * @param signature the generic signature or {@code null}
+         * @param value the constant value or {@code null}
+         * @return a field visitor to collect annotations
+         */
         @Override
         public FieldVisitor visitField(final int access, final String name, final String desc, final String signature, final Object value) {
             FieldStub stub = new FieldStub(name, access, desc, signature, value);
@@ -227,26 +320,59 @@ public abstract class AsmDecompiler {
         }
     }
 
-    //--------------------------------------------------------------------------
-
+    /**
+     * Base visitor class for collecting annotation attribute values from bytecode.
+     * Handles type conversions, enum constants, nested annotations, and array attributes.
+     * Delegates collected values to subclass implementation via {@code visitAttribute()}.
+     */
     private abstract static class AnnotationReader extends AnnotationVisitor {
 
+        /**
+         * Creates an annotation reader with the current ASM API version.
+         */
         public AnnotationReader() {
             super(ASM_API_VERSION);
         }
 
+        /**
+         * Processes a single annotation attribute value.
+         * Subclasses override to handle collected values.
+         *
+         * @param name the attribute name
+         * @param value the attribute value, or a wrapper for type values
+         */
         abstract void visitAttribute(String name, Object value);
 
+        /**
+         * Visits a scalar attribute value, converting ASM Type objects to {@link TypeWrapper} instances.
+         *
+         * @param name the attribute name
+         * @param value the attribute value or ASM {@link Type} object
+         */
         @Override
         public void visit(final String name, final Object value) {
             visitAttribute(name, value instanceof Type ? new TypeWrapper(((Type) value).getDescriptor()) : value);
         }
 
+        /**
+         * Visits an enum constant attribute value.
+         *
+         * @param name the attribute name
+         * @param desc the enum type descriptor
+         * @param value the enum constant name
+         */
         @Override
         public void visitEnum(final String name, final String desc, final String value) {
             visitAttribute(name, new EnumConstantWrapper(desc, value));
         }
 
+        /**
+         * Visits a nested annotation attribute value.
+         *
+         * @param name the attribute name
+         * @param desc the annotation type descriptor
+         * @return an annotation reader for the nested annotation
+         */
         @Override
         public AnnotationVisitor visitAnnotation(final String name, final String desc) {
             AnnotationStub stub = new AnnotationStub(desc);
@@ -254,6 +380,12 @@ public abstract class AsmDecompiler {
             return readAnnotationMembers(stub);
         }
 
+        /**
+         * Visits an array attribute value, collecting elements in a list.
+         *
+         * @param name the attribute name
+         * @return an annotation reader that appends elements to a list
+         */
         @Override
         public AnnotationVisitor visitArray(final String name) {
             List<Object> list = new ArrayList<>();

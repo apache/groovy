@@ -33,5 +33,10 @@ import java.lang.annotation.RetentionPolicy;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AnnotationProcessorImplementation {
+    /**
+     * Returns the processor type responsible for interpreting the annotated contract annotation.
+     *
+     * @return the annotation processor implementation
+     */
     Class<? extends AnnotationProcessor> value();
 }

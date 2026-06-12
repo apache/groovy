@@ -564,9 +564,9 @@ class ImportantHash implements Serializable {
     def getAt(key) { map[key] }
 }
 class StoreTransaction implements Transaction {
-    private val
-    StoreTransaction(val) { this.val = val }
-    void executeOn(prevayler, Date ignored) { prevayler.putAt(val,val*2) }
+    private v
+    StoreTransaction(val) { this.v = val }
+    void executeOn(prevayler, Date ignored) { prevayler.putAt(v,v*2) }
 }
 def save(n){ store.execute(new StoreTransaction(n)) }
 store = PrevaylerFactory.createPrevayler(new ImportantHash(), "pleac11")

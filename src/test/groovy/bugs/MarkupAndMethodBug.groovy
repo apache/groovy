@@ -20,12 +20,10 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
 /**
  * Mixes variables, closures and method calls in markup
- *
  */
-class MarkupAndMethodBug {
+final class MarkupAndMethodBug {
 
     @Test
     void testBug() {
@@ -34,7 +32,7 @@ class MarkupAndMethodBug {
         assert name == 'James'
     }
 
-    protected def createTree() {
+    protected createTree() {
         def builder = NodeBuilder.newInstance()
 
         def root = builder.people() {
@@ -46,7 +44,7 @@ class MarkupAndMethodBug {
         return root
     }
 
-    protected def getTestName() {
-        "James"
+    protected getTestName() {
+        'James'
     }
 }

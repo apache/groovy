@@ -23,10 +23,20 @@ package org.apache.groovy.contracts.util;
  */
 public class Validate {
 
+    /**
+     * Asserts that the supplied object reference is not {@code null}.
+     *
+     * @param obj the reference to validate
+     */
     public static void notNull(Object obj) {
         if (obj == null) throw new AssertionError("obj must not be null");
     }
 
+    /**
+     * Asserts that the supplied expression evaluates to {@code true}.
+     *
+     * @param expression the boolean expression to validate
+     */
     public static void isTrue(boolean expression) {
         if (!expression) throw new AssertionError("expression must be true");
     }

@@ -21,18 +21,36 @@ package groovy.swing.factory
 import javax.swing.*
 import java.awt.*
 
+/**
+ * Factory for creating {@link GridBagLayout} nodes and collecting matching constraints.
+ */
 public class GridBagFactory extends LayoutFactory {
 
+    /**
+     * Creates a factory for {@link GridBagLayout} nodes.
+     */
     public GridBagFactory() {
         super(GridBagLayout, true)
     }
 
+    /**
+     * Copies {@link GridBagConstraints} constants into the builder context.
+     *
+     * @param context the builder context
+     */
     public void addLayoutProperties(context) {
         addLayoutProperties(context, GridBagConstraints)
     }
 
 
 
+    /**
+     * Collects {@link GridBagConstraints} values from child attributes when the current parent uses a {@link GridBagLayout}.
+     *
+     * @param builder the factory builder
+     * @param node the current node
+     * @param attributes the node attributes
+     */
     public static void processGridBagConstraintsAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
         // if we are not a component, don't do anything
         if (!(node instanceof Component)) {

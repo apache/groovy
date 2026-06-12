@@ -422,6 +422,13 @@ class JmxMetaMapBuilder {
         return ops
     }
 
+    /**
+     * Builds an operation meta map from the supplied descriptor collection.
+     *
+     * @param object the object being profiled
+     * @param descCollection the operation descriptor collection
+     * @return the normalized operation metadata
+     */
     static Map buildOperationMapFrom(object, descCollection) {
         def map = [:]
 
@@ -610,7 +617,9 @@ class JmxMetaMapBuilder {
 
     /**
      * Creates a fully-normalized meta map for a given collection of listeners.
-     * @param - collection of descriptors to normalize
+     *
+     * @param descCollection collection of descriptors to normalize
+     * @return the normalized listener metadata
      * @see JmxMetaMapBuilder#createListenerMap(Object)
      */
     static buildListenerMapFrom(descCollection) {

@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
  * </p>
  *
  * Example usage:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.SourceURI} def sourceURI
  *
  * assert sourceURI instanceof java.net.URI
@@ -51,5 +51,11 @@ import java.lang.annotation.Target;
 @Target({ElementType.LOCAL_VARIABLE, ElementType.FIELD})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.SourceURIASTTransformation")
 public @interface SourceURI {
+    /**
+     * Indicates whether relative source URIs should be preserved.
+     * Defaults to {@code false}, which converts relative URIs to absolute ones when possible.
+     *
+     * @return {@code true} to allow relative URIs
+     */
     boolean allowRelative() default false;
 }

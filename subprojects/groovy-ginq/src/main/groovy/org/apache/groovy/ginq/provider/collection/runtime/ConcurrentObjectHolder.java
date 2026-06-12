@@ -30,10 +30,20 @@ class ConcurrentObjectHolder<T> {
     private volatile T object;
     private final Supplier<T> supplier;
 
+    /**
+     * Creates a holder that lazily initializes its object from the given supplier.
+     *
+     * @param supplier the supplier used to create the object
+     */
     ConcurrentObjectHolder(Supplier<T> supplier) {
         this.supplier = supplier;
     }
 
+    /**
+     * Returns the cached object, creating it on first access.
+     *
+     * @return the cached object
+     */
     public T getObject() {
         if (null != object) return object;
 

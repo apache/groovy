@@ -35,9 +35,16 @@ import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 
 /**
+ * Declares synthetic bindable properties for {@link JList} contents and selection state.
+ *
  * @since Groovy 1.7.5
  */
 class JListProperties {
+    /**
+     * Returns trigger bindings keyed by synthetic {@code JList} property name.
+     *
+     * @return the synthetic trigger bindings supported for {@code JList}
+     */
     static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>()
 
@@ -92,78 +99,157 @@ class JListProperties {
     }
 }
 
+/**
+ * Tracks changes to the bound list model and propagates updates for the synthetic {@code elements} property.
+ */
 class JListElementsBinding extends AbstractSyntheticBinding implements ListDataListener, PropertyChangeListener {
+    /**
+     * List currently supplying element events for this binding.
+     */
     JList boundList
 
+    /**
+     * Creates a binding for the synthetic {@code elements} property.
+     *
+     * @param propertyBinding the source property binding
+     * @param target the target binding to update
+     */
     JListElementsBinding(PropertyBinding propertyBinding, TargetBinding target) {
         super(propertyBinding, target, JList.class, "elements")
     }
 
+    /**
+     * Starts listening to the list model and model replacement events.
+     */
     protected void syntheticBind() {
         boundList = (JList) ((PropertyBinding) sourceBinding).getBean()
         boundList.addPropertyChangeListener("model", this)
         boundList.getModel().addListDataListener(this)
     }
 
+    /**
+     * Stops listening to the list model and model replacement events.
+     */
     protected void syntheticUnbind() {
         boundList.removePropertyChangeListener("model", this)
         boundList.getModel().removeListDataListener(this)
     }
 
+    /**
+     * Rebinds listeners when the list model instance changes.
+     *
+     * @param event the model property change event
+     */
     void propertyChange(PropertyChangeEvent event) {
         update()
         ((ListModel) event.getOldValue()).removeListDataListener(this)
         ((ListModel) event.getNewValue()).addListDataListener(this)
     }
 
+    /**
+     * Updates the target when items are inserted into the model.
+     *
+     * @param e the list data event
+     */
     void intervalAdded(ListDataEvent e) {
         update()
     }
 
+    /**
+     * Updates the target when items are removed from the model.
+     *
+     * @param e the list data event
+     */
     void intervalRemoved(ListDataEvent e) {
         update()
     }
 
+    /**
+     * Updates the target when existing model items change.
+     *
+     * @param e the list data event
+     */
     void contentsChanged(ListDataEvent e) {
         update()
     }
 }
 
+/**
+ * Tracks selection-related synthetic {@link JList} properties and forwards updates to a target binding.
+ */
 class JListSelectedElementBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ListSelectionListener {
     private JList boundList
 
+    /**
+     * Returns the list currently bound to this synthetic selection binding.
+     *
+     * @return the bound list, or {@code null} when unbound
+     */
     @Synchronized JList getBoundList() {
         return boundList
     }
 
+    /**
+     * Sets the list currently bound to this synthetic selection binding.
+     *
+     * @param boundList the bound list
+     */
     @Synchronized void setBoundList(JList boundList) {
         this.boundList = boundList
     }
 
+    /**
+     * Creates a binding for a synthetic selection-related property.
+     *
+     * @param source the source property binding
+     * @param target the target binding to update
+     * @param propertyName the synthetic property name to expose
+     */
     protected JListSelectedElementBinding(PropertyBinding source, TargetBinding target, String propertyName) {
         super(source, target, JList.class, propertyName)
     }
 
+    /**
+     * Starts listening to selection model replacement and selection changes.
+     */
     @Synchronized void syntheticBind() {
         boundList = (JList) ((PropertyBinding) sourceBinding).getBean()
         boundList.addPropertyChangeListener("selectionModel", this)
         boundList.addListSelectionListener(this)
     }
 
+    /**
+     * Stops listening to selection model replacement and selection changes.
+     */
     @Synchronized void syntheticUnbind() {
         boundList.removePropertyChangeListener("selectionModel", this)
         boundList.removeListSelectionListener(this)
         boundList = null
     }
 
+    /**
+     * Sets the target binding to receive synthetic selection updates.
+     *
+     * @param target the target binding
+     */
     void setTargetBinding(TargetBinding target) {
         super.setTargetBinding(target)
     }
 
+    /**
+     * Updates the target when the list selection model instance changes.
+     *
+     * @param event the property change event
+     */
     void propertyChange(PropertyChangeEvent event) {
         update()
     }
 
+    /**
+     * Updates the target when the list selection changes.
+     *
+     * @param e the selection event
+     */
     void valueChanged(ListSelectionEvent e) {
         update()
     }

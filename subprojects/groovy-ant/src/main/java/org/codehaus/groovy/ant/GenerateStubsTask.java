@@ -30,6 +30,9 @@ import java.io.File;
  * Generates Java stubs from Groovy sources.
  */
 public class GenerateStubsTask extends CompileTaskSupport {
+    /**
+     * Generates Java stubs for the configured source roots.
+     */
     @Override
     protected void compile() {
         GroovyClassLoader gcl = createClassLoader();

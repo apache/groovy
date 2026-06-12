@@ -31,40 +31,36 @@ import java.util.Map;
 public class VMPluginFactory {
 
     private static final Map<Integer,String> PLUGIN_MAP = Maps.of(
-        // NOTE: Declare the vm plugin entries in *descending* order!
-        16, "org.codehaus.groovy.vmplugin.v16.Java16",
-        10, "org.codehaus.groovy.vmplugin.v10.Java10"
+        17, "org.codehaus.groovy.vmplugin.v17.Java17"
     );
 
     private static final VMPlugin PLUGIN = createPlugin();
 
     private static VMPlugin createPlugin() {
-        return doPrivileged(() -> {
-            ClassLoader loader = VMPluginFactory.class.getClassLoader();
-            int specVer = Runtime.version().feature();
-            for (Map.Entry<Integer,String> entry : PLUGIN_MAP.entrySet()) {
-                if (specVer >= entry.getKey()) {
-                    String fullName = entry.getValue();
-                    try {
-                        return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
-                    } catch (Throwable t) {
-                        var log = java.util.logging.Logger.getLogger(VMPluginFactory.class.getName());
-                        if (log.isLoggable(java.util.logging.Level.FINE)) {
-                            log.fine("Trying to create VM plugin `" + fullName + "`, but failed:\n" + DefaultGroovyMethods.asString(t));
-                        }
-                        return null;
+        ClassLoader loader = VMPluginFactory.class.getClassLoader();
+        int specVer = Runtime.version().feature();
+        for (Map.Entry<Integer,String> entry : PLUGIN_MAP.entrySet()) {
+            if (specVer >= entry.getKey()) {
+                String fullName = entry.getValue();
+                try {
+                    return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
+                } catch (Throwable t) {
+                    var log = java.util.logging.Logger.getLogger(VMPluginFactory.class.getName());
+                    if (log.isLoggable(java.util.logging.Level.FINE)) {
+                        log.fine("Trying to create VM plugin `" + fullName + "`, but failed:\n" + DefaultGroovyMethods.asString(t));
                     }
+                    return null;
                 }
             }
-            return null;
-        });
+        }
+        return null;
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
-
+    /**
+     * Returns the VM plugin selected for the current runtime.
+     *
+     * @return the active VM plugin, or {@code null} if initialization failed
+     */
     public static VMPlugin getPlugin() {
         return PLUGIN;
     }

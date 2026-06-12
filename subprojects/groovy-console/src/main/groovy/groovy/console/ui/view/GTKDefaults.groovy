@@ -45,6 +45,7 @@ try {
     ps.isAttributeValueSupported(orient, docFlav, attrset)
 } catch (NullPointerException npe) {
     //print will bomb out... replace with disabled print action
+    /** Disabled print action used when native printing support is unavailable. */
     printAction = action(
         name: 'Print...',
         closure: controller.&print,

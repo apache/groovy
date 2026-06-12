@@ -24,16 +24,45 @@ import java.lang.reflect.InvocationTargetException
 import java.util.logging.Level
 import java.util.logging.Logger
 
+/**
+ * Factory for creating widgets from actions, icons, text, or an existing instance.
+ */
 class RichActionWidgetFactory extends AbstractFactory {
+    /**
+     * Parameter types used to locate the action constructor.
+     */
     static final Class[] ACTION_ARGS = [Action]
+    /**
+     * Parameter types used to locate the icon constructor.
+     */
     static final Class[] ICON_ARGS = [Icon]
+    /**
+     * Parameter types used to locate the text constructor.
+     */
     static final Class[] STRING_ARGS = [String]
 
+    /**
+     * Cached constructor that accepts an {@link Action}.
+     */
     final Constructor actionCtor
+    /**
+     * Cached constructor that accepts an {@link Icon}.
+     */
     final Constructor iconCtor
+    /**
+     * Cached constructor that accepts a {@link String}.
+     */
     final Constructor stringCtor
+    /**
+     * Widget class instantiated by this factory.
+     */
     final Class klass
 
+    /**
+     * Creates a new factory for creating widgets from actions, icons, text, or an existing instance
+     *
+     * @param klass the widget class to instantiate
+     */
     RichActionWidgetFactory(Class klass) {
         try {
             actionCtor = klass.getConstructor(ACTION_ARGS)
@@ -47,6 +76,15 @@ class RichActionWidgetFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         try {
             if (value instanceof GString) value = value as String

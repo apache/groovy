@@ -20,7 +20,16 @@ package org.codehaus.groovy.tools.javac;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
+/**
+ * Factory creating the default {@link JavacJavaCompiler} implementation.
+ */
 public class JavacCompilerFactory implements JavaCompilerFactory {
+    /**
+     * Creates a javac-backed compiler for the supplied configuration.
+     *
+     * @param config the compiler configuration
+     * @return a javac-backed compiler
+     */
     @Override
     public JavaCompiler createCompiler(CompilerConfiguration config) {
         return new JavacJavaCompiler(config);

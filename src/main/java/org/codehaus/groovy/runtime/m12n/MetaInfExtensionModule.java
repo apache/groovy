@@ -42,11 +42,21 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
     private final List<Class> instanceExtensionClasses;
     private final List<Class> staticExtensionClasses;
 
+    /**
+     * Returns the list of classes that define new instance methods for this module.
+     *
+     * @return the list of instance method extension classes
+     */
     @Override
     public List<Class> getInstanceMethodsExtensionClasses() {
         return instanceExtensionClasses;
     }
 
+    /**
+     * Returns the list of classes that define new static methods for this module.
+     *
+     * @return the list of static method extension classes
+     */
     @Override
     public List<Class> getStaticMethodsExtensionClasses() {
         return staticExtensionClasses;
@@ -60,9 +70,26 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
 
     //-----------------------------------------------------------------------
 
+    /**
+     * Property key in META-INF configuration file for specifying instance method extension classes.
+     */
     public static final String MODULE_INSTANCE_CLASSES_KEY = "extensionClasses";
+    
+    /**
+     * Property key in META-INF configuration file for specifying static method extension classes.
+     */
     public static final String MODULE_STATIC_CLASSES_KEY   = "staticExtensionClasses";
 
+    /**
+     * Creates a new MetaInfExtensionModule from the given properties and class loader.
+     * The properties should contain the module name and version, as well as class names
+     * for instance and static extension methods.
+     *
+     * @param properties the module metadata properties
+     * @param loader the class loader to use for loading extension classes
+     * @return a new MetaInfExtensionModule configured with the properties
+     * @throws GroovyRuntimeException if required properties (name or version) are missing
+     */
     public static MetaInfExtensionModule newModule(final Properties properties, final ClassLoader loader) {
         String name = properties.getProperty(PropertiesModuleFactory.MODULE_NAME_KEY);
         if (name == null) {

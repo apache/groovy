@@ -34,15 +34,15 @@ dependencies {
     implementation projects.groovyJson
     implementation projects.groovyNio
     testImplementation projects.groovyTest
+    testImplementation projects.groovyCsv         // for /slurp .csv default coverage
+    testImplementation projects.groovyMarkdown    // for /slurp .md default coverage
+    testImplementation projects.groovyTestJunit6  // for @ForkedJvm in CSV fallback tests
     implementation "net.java.dev.jna:jna:${versions.jna}"
     implementation "org.jline:jansi:${versions.jline}"
+    implementation "org.jline:jline-builtins:${versions.jline}"
     implementation "org.jline:jline-reader:${versions.jline}"
     implementation "org.jline:jline-console:${versions.jline}"
     implementation "org.jline:jline-terminal-jni:${versions.jline}"
-    implementation("org.jline:jline-terminal-jansi:${versions.jline}") {
-        exclude(group: 'org.fusesource.jansi', module: 'jansi')
-    }
-    implementation "org.jline:jline-terminal-jna:${versions.jline}"
     implementation("org.jline:jline-terminal:${versions.jline}") {
 //        exclude(group: 'junit', module: 'junit')
     }
@@ -54,11 +54,20 @@ plugins.withId('eclipse') {
     }
 }
 
+// Forward -Djunit.network from the Gradle invocation to the test JVM so that
+// @EnabledIfSystemProperty in network-gated tests (e.g. SlurpCsvFallbackTest)
+// can see it.
+tasks.named('test') {
+    def network = System.getProperty('junit.network')
+    if (network) {
+        systemProperty 'junit.network', network
+    }
+}
+
 tasks.named('rat') {
     excludes << '**/jline/GroovyEngine.java' // BSD license as per NOTICE/LICENSE files
     excludes << '**/jline/ObjectInspector.groovy' // BSD license as per NOTICE/LICENSE files
     excludes << '**/jline/Utils.groovy' // BSD license as per NOTICE/LICENSE files
     excludes << '**/jline/JrtJavaBasePackages.java' // BSD license as per NOTICE/LICENSE files
-    excludes << '**/jline/SystemRegistryImpl.java' // BSD license as per NOTICE/LICENSE files
     excludes << '**/jline/PackageHelper.java' // BSD license as per NOTICE/LICENSE files
 }

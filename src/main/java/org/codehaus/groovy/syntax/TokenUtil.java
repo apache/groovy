@@ -21,13 +21,21 @@ package org.codehaus.groovy.syntax;
 import java.util.Optional;
 
 /**
- * Utility methods for working with Tokens.
+ * Utility methods for working with tokens and operators.
+ * Provides helper functions for operator type manipulation and conversion.
  */
 public class TokenUtil {
 
     private TokenUtil() {
     }
 
+    /**
+     * Converts an increment or decrement operator to its corresponding assignment operator.
+     * For example, {@code ++} becomes {@code +=}, and {@code --} becomes {@code -=}.
+     *
+     * @param op the operator type (e.g., {@code Types.PLUS_PLUS}, {@code Types.PREFIX_PLUS_PLUS})
+     * @return an {@link Optional} containing the assignment operator token, or empty if not applicable
+     */
     public static Optional<Token> asAssignment(int op) {
         return switch (op) {
             case Types.PLUS_PLUS, Types.PREFIX_PLUS_PLUS, Types.POSTFIX_PLUS_PLUS ->
@@ -39,12 +47,12 @@ public class TokenUtil {
     }
 
     /**
-     * Removes the assignment portion of a given token.  If the given token
-     * is not an operator with assignment, the given token is returned.
+     * Removes the assignment portion of an assignment operator, returning the base operator.
+     * For example, {@code +=} becomes {@code +}, {@code -=} becomes {@code -}.
+     * If the operator is not an assignment operator, returns it unchanged.
      *
-     * @param op token for which to remove assignment
-     * @return token without assignment, or the original token
-     *          if it was not an assignment operator
+     * @param op the operator type from {@link Types}
+     * @return the base operator type without assignment, or the original type if not an assignment operator
      */
     public static int removeAssignment(int op) {
         return switch (op) {

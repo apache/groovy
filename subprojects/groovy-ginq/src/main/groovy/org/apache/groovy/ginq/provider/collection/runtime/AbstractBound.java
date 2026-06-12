@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -28,7 +29,7 @@ import java.io.Serializable;
  * @since 4.0.0
  */
 abstract class AbstractBound<T1, T2> implements Serializable {
-    private static final long serialVersionUID = 6028167393745578578L;
+    @Serial private static final long serialVersionUID = 6028167393745578578L;
     private final T1 lower;
     private final T2 upper;
 

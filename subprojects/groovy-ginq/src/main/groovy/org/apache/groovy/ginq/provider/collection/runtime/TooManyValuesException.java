@@ -20,14 +20,21 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.GroovyRuntimeException;
 
+import java.io.Serial;
+
 /**
  * Thrown when too many values returned by sub-query in the {@code select} clause
  *
  * @since 4.0.0
  */
 public class TooManyValuesException extends GroovyRuntimeException {
-    private static final long serialVersionUID = -2479599910868287387L;
+    @Serial private static final long serialVersionUID = -2479599910868287387L;
 
+    /**
+     * Creates an exception for a sub-query that returned too many values.
+     *
+     * @param msg the error message
+     */
     public TooManyValuesException(String msg) {
         super(msg);
     }

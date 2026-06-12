@@ -89,8 +89,16 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         @Override protected ClassNode getArrayGetResultType() { return short_TYPE; }
     }
 
+    /**
+     * Per-type helpers used to emit primitive binary operations.
+     */
     protected BinaryExpressionWriter[] binExpWriter = initializeDelegateHelpers();
 
+    /**
+     * Creates the helper table used for primitive binary-expression dispatch.
+     *
+     * @return the helper table indexed by {@link #typeMap}
+     */
     protected BinaryExpressionWriter[] initializeDelegateHelpers() {
         return new BinaryExpressionWriter[]{
                 /* 0: dummy  */ new BinaryObjectExpressionHelper(controller),
@@ -105,6 +113,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         };
     }
 
+    /**
+     * Maps primitive operand types to helper indexes.
+     */
     public static final Map<ClassNode,Integer> typeMap = Maps.of(
         int_TYPE,     1,
         long_TYPE,    2,
@@ -115,8 +126,17 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         float_TYPE,   7,
         boolean_TYPE, 8
     );
+
+    /**
+     * Human-readable names for the indexes used by {@link #typeMap}.
+     */
     public static final String[] typeMapKeyNames = {"dummy", "int", "long", "double", "char", "byte", "short", "float", "boolean"};
 
+    /**
+     * Creates a dispatcher that routes primitive binary expressions to type-specific helpers.
+     *
+     * @param wc the active writer controller
+     */
     public BinaryExpressionMultiTypeDispatcher(final WriterController wc) {
         super(wc);
     }
@@ -129,17 +149,36 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return 0;
     }
 
+    /**
+     * Returns the helper index for the supplied operand type.
+     *
+     * @param type the operand type
+     * @return the helper index, or {@code 0} when no primitive specialization applies
+     */
     protected int getOperandType(final ClassNode type) {
         Integer ret = typeMap.get(type);
         if (ret == null) return 0;
         return ret;
     }
 
+    /**
+     * Delegates to {@link #doPrimitiveCompare(ClassNode, ClassNode, BinaryExpression)}.
+     *
+     * @deprecated Use {@link #doPrimitiveCompare(ClassNode, ClassNode, BinaryExpression)} instead
+     */
     @Deprecated
     protected boolean doPrimtiveCompare(final ClassNode leftType, final ClassNode rightType, final BinaryExpression binExp) {
         return doPrimitiveCompare(leftType, rightType, binExp);
     }
 
+    /**
+     * Attempts primitive comparison bytecode generation for the supplied operands.
+     *
+     * @param leftType the left operand type
+     * @param rightType the right operand type
+     * @param binExp the comparison expression
+     * @return {@code true} if a primitive-specialized implementation handled the comparison
+     */
     protected boolean doPrimitiveCompare(final ClassNode leftType, final ClassNode rightType, final BinaryExpression binExp) {
         Expression leftExp = binExp.getLeftExpression();
         Expression rightExp = binExp.getRightExpression();
@@ -161,6 +200,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void evaluateCompareExpression(final MethodCaller compareMethod, final BinaryExpression binExp) {
         ClassNode current =  controller.getClassNode();
@@ -176,6 +218,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void evaluateBinaryExpression(final String message, final BinaryExpression binExp) {
         final Expression lhsExp = binExp.getLeftExpression();
@@ -325,11 +370,26 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression binExp) {
         if (doAssignmentToArray(binExp)) return;
         if (doAssignmentToLocalVariable(method, binExp)) return;
         super.evaluateBinaryExpressionWithAssignment(method, binExp);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void evaluateCompoundAssign(final String assignName, final String baseName, final BinaryExpression binExp) {
+        // GEP-15: keep the primitive-int/long/float/double fast paths for int i += j etc.;
+        // they cannot have a *Assign override anyway since primitives are excluded.
+        if (doAssignmentToArray(binExp)) return;
+        if (doAssignmentToLocalVariable(baseName, binExp)) return;
+        super.evaluateCompoundAssign(assignName, baseName, binExp);
     }
 
     private boolean doAssignmentToLocalVariable(final String method, final BinaryExpression binExp) {
@@ -352,6 +412,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void assignToArray(final Expression orig, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
         ClassNode arrayType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
@@ -385,6 +448,9 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void writePostOrPrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
         ClassNode type = controller.getTypeChooser().resolveType(orig, controller.getClassNode());

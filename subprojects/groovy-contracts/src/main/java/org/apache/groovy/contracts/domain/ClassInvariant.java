@@ -30,11 +30,23 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
  */
 public class ClassInvariant extends Assertion<ClassInvariant> {
 
+    /**
+     * Shared invariant instance representing an unconstrained class invariant.
+     */
     public static final ClassInvariant DEFAULT = new ClassInvariant(block(), boolX(constX(true)));
 
+    /**
+     * Creates a class invariant that defaults to {@code true}.
+     */
     public ClassInvariant() {
     }
 
+    /**
+     * Creates a class invariant from the supplied source block and boolean expression.
+     *
+     * @param blockStatement the original invariant block
+     * @param booleanExpression the normalized invariant expression
+     */
     public ClassInvariant(BlockStatement blockStatement, BooleanExpression booleanExpression) {
         super(blockStatement, booleanExpression);
     }

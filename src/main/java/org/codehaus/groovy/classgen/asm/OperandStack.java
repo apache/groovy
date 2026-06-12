@@ -36,6 +36,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
@@ -86,19 +88,38 @@ import static org.objectweb.asm.Opcodes.POP;
 import static org.objectweb.asm.Opcodes.POP2;
 import static org.objectweb.asm.Opcodes.SWAP;
 
+/**
+ * Tracks the JVM operand stack during bytecode generation, maintaining a
+ * parallel list of {@link org.codehaus.groovy.ast.ClassNode} type descriptors for each slot.
+ * Used to emit correct pop/cast/box instructions and to verify stack discipline.
+ */
 public class OperandStack {
+
+    private static final System.Logger LOGGER = System.getLogger(OperandStack.class.getName());
 
     private final List<ClassNode> stack = new ArrayList<>();
     private final WriterController controller;
 
+    /**
+     * Creates an operand stack tracker backed by the given controller.
+     *
+     * @param controller the writer controller for the current compilation
+     */
     public OperandStack(final WriterController controller) {
         this.controller = controller;
     }
 
+    /** Returns the number of tracked entries on the operand stack. */
     public int getStackLength() {
         return stack.size();
     }
 
+    /**
+     * Pops all stack entries above {@code elements}, emitting the appropriate
+     * {@code POP} or {@code POP2} instruction for each popped value.
+     *
+     * @param elements the target stack depth to reduce to
+     */
     public void popDownTo(final int elements) {
         int last = stack.size();
         MethodVisitor mv = controller.getMethodVisitor();
@@ -172,12 +193,26 @@ public class OperandStack {
         popDownTo(stack.size() - 1);
     }
 
+    /**
+     * Emits a conditional jump instruction and returns the newly created target label.
+     * The boolean operand is removed from the tracked stack.
+     *
+     * @param ifIns the branch opcode (e.g. {@code IFEQ}, {@code IFNE})
+     * @return the label that the jump will branch to
+     */
     public Label jump(final int ifIns) {
         Label label = new Label();
         jump(ifIns,label);
         return label;
     }
 
+    /**
+     * Emits a conditional jump to the given label.
+     * The boolean operand is removed from the tracked stack.
+     *
+     * @param ifIns the branch opcode (e.g. {@code IFEQ}, {@code IFNE})
+     * @param label the branch target
+     */
     public void jump(final int ifIns, final Label label) {
         controller.getMethodVisitor().visitJumpInsn(ifIns, label);
         // remove the boolean from the operand stack tracker
@@ -198,6 +233,12 @@ public class OperandStack {
         }
     }
 
+    /**
+     * Boxes the top operand if it is a primitive type, emitting the appropriate
+     * wrapper-creation bytecode, and returns the resulting (possibly wrapped) type.
+     *
+     * @return the type of the top operand after boxing
+     */
     public ClassNode box() {
         MethodVisitor mv = controller.getMethodVisitor();
         int size = stack.size();
@@ -281,7 +322,7 @@ public class OperandStack {
         try {
             if (size == 0) throw new ArrayIndexOutOfBoundsException("size==0");
         } catch (ArrayIndexOutOfBoundsException ai) {
-            System.err.println("index problem in " + controller.getSourceUnit().getName());
+            LOGGER.log(ERROR, "Index problem in {0}", controller.getSourceUnit().getName());
             throw ai;
         }
 
@@ -303,10 +344,20 @@ public class OperandStack {
         doConvertAndCast(targetType, false);
     }
 
+    /**
+     * Performs a Groovy cast of the top operand to the declared origin type of {@code v}.
+     *
+     * @param v the variable whose origin type is the cast target
+     */
     public void doGroovyCast(final Variable v) {
         doConvertAndCast(v.getOriginType(), false);
     }
 
+    /**
+     * Performs an {@code as}-coercion of the top operand to {@code targetType}.
+     *
+     * @param targetType the target type
+     */
     public void doAsType(final ClassNode targetType) {
         doConvertAndCast(targetType,true);
     }
@@ -575,6 +626,13 @@ public class OperandStack {
         }
     }
 
+    /**
+     * Pushes the name expression as a {@code String} onto the operand stack.
+     * Constant string expressions are pushed as LDC literals; other expressions
+     * are cast to {@code String} via the Groovy runtime.
+     *
+     * @param name the expression representing the method or property name
+     */
     public void pushDynamicName(final Expression name) {
         if (name instanceof ConstantExpression ce) {
             Object value = ce.getValue();
@@ -586,6 +644,15 @@ public class OperandStack {
         new CastExpression(ClassHelper.STRING_TYPE, name).visit(controller.getAcg());
     }
 
+    /**
+     * Either loads or stores a local variable depending on the current LHS flag.
+     * If in LHS context, stores the top of the operand stack into {@code variable};
+     * otherwise loads the variable's value onto the stack.
+     *
+     * @param variable              the bytecode variable to load or store
+     * @param useReferenceDirectly  if {@code true}, loads the {@link groovy.lang.Reference}
+     *                              wrapper directly rather than unboxing it
+     */
     public void loadOrStoreVariable(final BytecodeVariable variable, final boolean useReferenceDirectly) {
         CompileStack compileStack = controller.getCompileStack();
         if (compileStack.isLHS()) {
@@ -610,6 +677,13 @@ public class OperandStack {
         }
     }
 
+    /**
+     * Stores the top operand stack value into {@code variable}, casting to the variable's
+     * declared type. Handles both plain variables and {@link groovy.lang.Reference}-wrapped
+     * closure-shared variables.
+     *
+     * @param variable the bytecode variable slot to store into
+     */
     public void storeVar(final BytecodeVariable variable) {
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode type = variable.getType();
@@ -634,23 +708,38 @@ public class OperandStack {
         remove(1); // remove RHS value from operand stack
     }
 
+    /**
+     * Emits a load instruction for the given type from the specified local variable slot
+     * and pushes the type onto the tracked stack.
+     *
+     * @param type the type of the value to load
+     * @param idx  the local variable slot index
+     */
     public void load(final ClassNode type, final int idx) {
         MethodVisitor mv = controller.getMethodVisitor();
         BytecodeHelper.load(mv, type, idx);
         push(type);
     }
 
+    /**
+     * Pushes an integer literal ({@code 0} or {@code 1}) representing a boolean value
+     * and tracks it as {@code boolean} on the operand stack.
+     *
+     * @param value the boolean value to push
+     */
     public void pushBool(final boolean value) {
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitInsn(value ? ICONST_1 : ICONST_0);
         push(ClassHelper.boolean_TYPE);
     }
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "OperandStack(size=" + stack.size() + ":" + stack.toString() + ")";
     }
 
+    /** Returns the type of the top element on the tracked operand stack without removing it. */
     public ClassNode getTopOperand() {
         int size = ensureStackNotEmpty(stack);
         return stack.get(size - 1);

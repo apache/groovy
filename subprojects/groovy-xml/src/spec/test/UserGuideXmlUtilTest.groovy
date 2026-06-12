@@ -18,12 +18,12 @@
  */
 package groovy.xml
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for the Groovy Xml user guide related to XmlUtil.
  */
-class UserGuideXmlUtilTest extends GroovyTestCase {
+class UserGuideXmlUtilTest {
 
     // tag::responseBookXml[]
     def xml = """
@@ -40,6 +40,7 @@ class UserGuideXmlUtilTest extends GroovyTestCase {
     """
     // end::responseBookXml[]
 
+    @Test
     void testGettingANode() {
         // tag::testGettingANode[]
         def response = new XmlParser().parseText(xml)
@@ -49,6 +50,26 @@ class UserGuideXmlUtilTest extends GroovyTestCase {
         assert nodeAsText ==
                 XmlUtil.serialize('<?xml version="1.0" encoding="UTF-8"?><author id="1">Miguel de Cervantes</author>')
         // end::testGettingANode[]
+    }
+
+    @Test
+    void testSerializeOptions() {
+        // tag::testSerializeOptions[]
+        def response = new XmlParser().parseText(xml)
+
+        // Custom encoding
+        def latin1 = XmlUtil.serialize(response, new SerializeOptions(encoding: 'ISO-8859-1'))
+        assert latin1.contains('encoding="ISO-8859-1"')
+
+        // Custom indent (4 spaces instead of default 2)
+        def wideIndent = XmlUtil.serialize(response, new SerializeOptions(indent: 4))
+        assert wideIndent.contains('    <value>')
+
+        // Multiple options
+        def custom = XmlUtil.serialize(response, new SerializeOptions(encoding: 'ISO-8859-1', indent: 4))
+        assert custom.contains('encoding="ISO-8859-1"')
+        assert custom.contains('    <value>')
+        // end::testSerializeOptions[]
     }
 
 }

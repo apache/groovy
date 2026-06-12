@@ -22,19 +22,38 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 
+/**
+ * AST visitor used by {@link DataSet} to derive an SQL {@code ORDER BY} clause
+ * from a simple sort closure.
+ */
 public class SqlOrderByVisitor extends CodeVisitorSupport {
 
     private final StringBuffer buffer = new StringBuffer();
 
+    /**
+     * Returns the SQL {@code ORDER BY} fragment built so far.
+     *
+     * @return the derived order-by fragment
+     */
     public String getOrderBy() {
         return buffer.toString();
     }
 
+    /**
+     * Visits the closure return expression that defines the sort key.
+     *
+     * @param statement the return statement to visit
+     */
     @Override
     public void visitReturnStatement(ReturnStatement statement) {
         statement.getExpression().visit(this);
     }
 
+    /**
+     * Appends the referenced property name as the next order-by term.
+     *
+     * @param expression the property expression to visit
+     */
     @Override
     public void visitPropertyExpression(PropertyExpression expression) {
         buffer.append(expression.getPropertyAsString());

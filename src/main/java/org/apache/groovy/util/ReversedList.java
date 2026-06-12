@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.util;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.List;
@@ -29,18 +30,25 @@ import java.util.RandomAccess;
  * @since 4.0.0
  */
 public class ReversedList<E> extends AbstractList<E> implements RandomAccess, Serializable {
-    private static final long serialVersionUID = -1640781973848935560L;
+    @Serial private static final long serialVersionUID = -1640781973848935560L;
     private final List<E> delegate;
 
+    /**
+     * Creates a reversed view of the supplied list.
+     *
+     * @param list the list to expose in reverse order
+     */
     public ReversedList(List<E> list) {
         this.delegate = list;
     }
 
+    /** {@inheritDoc} */
     @Override
     public E get(int index) {
         return delegate.get(delegate.size() - 1 - index);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int size() {
         return delegate.size();

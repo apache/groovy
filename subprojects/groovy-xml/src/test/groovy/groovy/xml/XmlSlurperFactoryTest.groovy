@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 
 class XmlSlurperFactoryTest {
     @Test
-    void testCreateParser() {
+    void createParser() {
         def xml = '<root><old/></root>'
         def slurper = XmlSlurperFactory.newSlurper(true, true)
         def root = slurper.parseText(xml)

@@ -38,62 +38,102 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 class MetaclassVariationBench {
+    /** Number of iterations per benchmark. */
     static final int ITERATIONS = 100_000
+    /** Number of domain instances per test. */
     static final int INSTANCE_COUNT = 20
 
-    // Simulates a GORM domain class
+    /**
+     * Simulates a GORM domain class.
+     */
     static class DomainEntity {
+        /** Entity ID. */
         Long id
+        /** Entity name. */
         String name
+        /** Email address. */
         String email
+        /** Active status. */
         boolean active = true
+        /** Version for optimistic locking. */
         int version = 0
 
+        /** Returns full name or 'Unknown'. */
         String getFullName() { name ?: 'Unknown' }
+        /** Returns active status. */
         boolean isActive() { active }
+        /** Returns version number. */
         int getVersion() { version }
 
+        /** Saves the entity. */
         DomainEntity save() {
             version++
             if (id == null) id = System.nanoTime()
             this
         }
 
+        /** Converts to map representation. */
         Map toMap() {
             [id: id, name: name, email: email, active: active, version: version]
         }
     }
 
-    // Additional domain class types
+    /**
+     * Second domain class type for multi-type testing.
+     */
     static class DomainTypeB {
+        /** Label field. */
         String label = "dept"
+        /** Count field. */
         int count = 5
+        /** Returns the count. */
         int getCount() { count }
     }
 
+    /**
+     * Third domain class type for multi-type testing.
+     */
     static class DomainTypeC {
+        /** Status field. */
         String status = "ACTIVE"
+        /** Budget field. */
         BigDecimal budget = 100000.0
+        /** Returns the status. */
         String getStatus() { status }
     }
 
+    /**
+     * Fourth domain class type for multi-type testing.
+     */
     static class DomainTypeD {
+        /** Priority level. */
         int priority = 5
+        /** Assignee name. */
         String assignee = "unassigned"
+        /** Returns the priority. */
         int getPriority() { priority }
     }
 
-    // Unrelated type for cross-type invalidation
+    /**
+     * Unrelated type for cross-type invalidation.
+     */
     static class ServiceType {
+        /** Configuration value. */
         String config = "default"
     }
 
+    /** Instances sharing default class metaclass. */
     List<DomainEntity> sharedMetaclassInstances
+    /** Instances with per-instance ExpandoMetaClass. */
     List<DomainEntity> perInstanceMetaclassInstances
+    /** DomainTypeB instance for benchmarking. */
     DomainTypeB typeB
+    /** DomainTypeC instance for benchmarking. */
     DomainTypeC typeC
+    /** DomainTypeD instance for benchmarking. */
     DomainTypeD typeD
 
+    /** Sets up domain instances with different metaclass configurations. */
     @Setup(Level.Iteration)
     void setup() {
         GroovySystem.metaClassRegistry.removeMetaClass(DomainEntity)

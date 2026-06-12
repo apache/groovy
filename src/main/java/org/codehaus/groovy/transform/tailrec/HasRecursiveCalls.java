@@ -32,6 +32,7 @@ public class HasRecursiveCalls extends CodeVisitorSupport {
     private MethodNode method;
     private boolean hasRecursiveCalls = false;
 
+    /** {@inheritDoc} */
     @Override
     public void visitMethodCallExpression(MethodCallExpression call) {
         if (isRecursive(call)) {
@@ -41,6 +42,7 @@ public class HasRecursiveCalls extends CodeVisitorSupport {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
         if (isRecursive(call)) {
@@ -50,6 +52,12 @@ public class HasRecursiveCalls extends CodeVisitorSupport {
         }
     }
 
+    /**
+     * Tests whether the supplied method contains at least one recursive call.
+     *
+     * @param method the method to inspect
+     * @return {@code true} if the method contains a recursive call; {@code false} otherwise
+     */
     public synchronized boolean test(MethodNode method) {
         hasRecursiveCalls = false;
         this.method = method;

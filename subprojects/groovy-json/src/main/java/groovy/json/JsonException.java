@@ -25,18 +25,37 @@ package groovy.json;
  * @since 1.8.0
  */
 public class JsonException extends RuntimeException {
+    /**
+     * Creates a {@code JsonException} with no detail message.
+     */
     public JsonException() {
         super();
     }
 
+    /**
+     * Creates a {@code JsonException} with the supplied detail message.
+     *
+     * @param s the detail message
+     */
     public JsonException(String s) {
         super(s);
     }
 
+    /**
+     * Creates a {@code JsonException} with the supplied detail message and cause.
+     *
+     * @param s the detail message
+     * @param throwable the cause
+     */
     public JsonException(String s, Throwable throwable) {
         super(s, throwable);
     }
 
+    /**
+     * Creates a {@code JsonException} with the supplied cause.
+     *
+     * @param throwable the cause
+     */
     public JsonException(Throwable throwable) {
         super(throwable);
     }

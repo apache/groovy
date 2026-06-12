@@ -50,6 +50,9 @@ import static org.objectweb.asm.Opcodes.IUSHR;
 import static org.objectweb.asm.Opcodes.IXOR;
 import static org.objectweb.asm.Opcodes.POP2;
 
+/**
+ * Emits optimized bytecode for integer binary operations.
+ */
 public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
 
     private static final MethodCaller intArrayGet = MethodCaller.newStatic(BytecodeInterface8.class, "intArrayGet");
@@ -124,6 +127,11 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
     public static final int BITWISE_NEGATION            = REGEX_PATTERN;    // ~
     */
 
+    /**
+     * Creates an integer-specialized binary expression helper.
+     *
+     * @param wc the active writer controller
+     */
     public BinaryIntExpressionHelper(WriterController wc) {
         this(wc, intArraySet, intArrayGet);
     }
@@ -246,58 +254,91 @@ public class BinaryIntExpressionHelper extends BinaryExpressionWriter {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void doubleTwoOperands(MethodVisitor mv) {
         mv.visitInsn(DUP2);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getBitwiseOperationBytecode(int type) {
         return bitOp[type];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getCompareCode() {
         return -1;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ClassNode getNormalOpResultType() {
         return ClassHelper.int_TYPE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getShiftOperationBytecode(int type) {
         return shiftOp[type];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected int getStandardOperationBytecode(int type) {
         return stdOperations[type];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void removeTwoOperands(MethodVisitor mv) {
         mv.visitInsn(POP2);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void writeMinusMinus(MethodVisitor mv) {
         mv.visitInsn(ICONST_1);
         mv.visitInsn(ISUB);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void writePlusPlus(MethodVisitor mv) {
         mv.visitInsn(ICONST_1);
         mv.visitInsn(IADD);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected ClassNode getDevisionOpResultType() {
         return ClassHelper.int_TYPE;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected boolean supportsDivision() {
         return true;

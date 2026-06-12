@@ -45,19 +45,42 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
  */
 public abstract class BaseVisitor extends ClassCodeVisitorSupport {
 
+    /**
+     * Local variable name used by generated code to guard contract execution.
+     */
     public static final String GCONTRACTS_ENABLED_VAR = "$GCONTRACTS_ENABLED";
 
+    /**
+     * Source unit currently being visited.
+     */
     protected final SourceUnit sourceUnit;
 
+    /**
+     * Returns the source unit associated with this visitor.
+     *
+     * @return the current source unit
+     */
     @Override
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
     }
 
+    /**
+     * Creates a visitor bound to the supplied source unit.
+     *
+     * @param sourceUnit the source unit currently being transformed
+     * @param source the reader source backing the source unit
+     */
     public BaseVisitor(final SourceUnit sourceUnit, final ReaderSource source) {
         this.sourceUnit = sourceUnit;
     }
 
+    /**
+     * Creates a boolean expression that invokes the generated closure backing the supplied annotation.
+     *
+     * @param annotation the contract annotation whose closure should be executed
+     * @return a boolean expression that evaluates the generated closure
+     */
     public static BooleanExpression asConditionExecution(final AnnotationNode annotation) {
         var conditionClass = annotation.getMember("value").getType();
         var createInstance = ctorX(conditionClass, args(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION));
@@ -68,6 +91,12 @@ public abstract class BaseVisitor extends ClassCodeVisitorSupport {
         return asBoolean;
     }
 
+    /**
+     * Returns the original closure expression stored on the annotation, if it has not yet been replaced.
+     *
+     * @param annotation the annotation to inspect
+     * @return the original closure expression, or {@code null} if it has already been rewritten
+     */
     protected static ClosureExpression getOriginalCondition(final AnnotationNode annotation) {
         Expression value = annotation.getMember("value");
         if (value instanceof ClosureExpression) {
@@ -76,6 +105,12 @@ public abstract class BaseVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
+    /**
+     * Returns the rewritten annotation value once the original closure has been replaced.
+     *
+     * @param annotation the annotation to inspect
+     * @return the replacement expression, or {@code null} while the original closure is still present
+     */
     protected static /*???*/Expression getReplacedCondition(final AnnotationNode annotation) {
         Expression value = annotation.getMember("value");
         if (!(value instanceof ClosureExpression)) {
@@ -84,6 +119,12 @@ public abstract class BaseVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
+    /**
+     * Replaces the annotation value with the generated expression used by later transformation phases.
+     *
+     * @param node the annotation to update
+     * @param expr the replacement expression
+     */
     protected static void replaceCondition(final AnnotationNode node, final Expression expr) {
         node.setMember("value", Objects.requireNonNull(expr));
     }

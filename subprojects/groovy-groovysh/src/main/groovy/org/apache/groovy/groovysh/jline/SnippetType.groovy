@@ -18,6 +18,16 @@
  */
 package org.apache.groovy.groovysh.jline
 
+/**
+ * Classifies the kinds of Groovy source fragments tracked by the shell buffer.
+ */
 enum SnippetType {
-    IMPORT, VARIABLE, METHOD, TYPE
+    /** Import statement snippet. */
+    IMPORT,
+    /** Variable declaration or assignment snippet. */
+    VARIABLE,
+    /** Method declaration snippet. */
+    METHOD,
+    /** Type declaration snippet. */
+    TYPE
 }

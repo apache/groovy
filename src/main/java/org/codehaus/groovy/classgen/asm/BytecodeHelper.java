@@ -189,6 +189,12 @@ public class BytecodeHelper {
         return desc.replace('/', '.');
     }
 
+    /**
+     * Returns the JVM descriptor for the supplied runtime class.
+     *
+     * @param c the runtime class
+     * @return the ASM type descriptor
+     */
     public static String getTypeDescription(Class c) {
         return Type.getDescriptor(c);
     }
@@ -235,6 +241,12 @@ public class BytecodeHelper {
         return answer;
     }
 
+    /**
+     * Pushes an integer constant onto the operand stack.
+     *
+     * @param mv the current method visitor
+     * @param value the constant value
+     */
     public static void pushConstant(MethodVisitor mv, int value) {
         switch (value) {
           case 0:
@@ -324,6 +336,12 @@ public class BytecodeHelper {
         return type.isArray() ? hasGenerics(type.getComponentType()) : type.getGenericsTypes() != null;
     }
 
+    /**
+     * Builds the generic signature for a method when one is required.
+     *
+     * @param node the method node
+     * @return the generic signature, or {@code null} if none is needed
+     */
     public static String getGenericsMethodSignature(MethodNode node) {
         GenericsType[] generics = node.getGenericsTypes();
         Parameter[] param = node.getParameters();
@@ -362,6 +380,12 @@ public class BytecodeHelper {
         return false;
     }
 
+    /**
+     * Builds the generic signature for a parameterized type reference.
+     *
+     * @param node the type node
+     * @return the generic type signature, or {@code null} if none is needed
+     */
     public static String getTypeGenericsSignature(ClassNode node) {
         if (!usesGenericsInTypeSignature(node)) return null;
         StringBuilder ret = new StringBuilder(100);
@@ -379,6 +403,12 @@ public class BytecodeHelper {
         return false;
     }
 
+    /**
+     * Builds the generic signature for a class declaration.
+     *
+     * @param node the class node
+     * @return the generic class signature, or {@code null} if none is needed
+     */
     public static String getGenericsSignature(ClassNode node) {
         if (!usesGenericsInClassSignature(node)) return null;
         GenericsType[] genericsTypes = node.getGenericsTypes();
@@ -406,6 +436,12 @@ public class BytecodeHelper {
         ret.append('>');
     }
 
+    /**
+     * Builds the generic bounds signature for a placeholder or parameterized type.
+     *
+     * @param type the type node
+     * @return the bounds signature, or {@code null} if none is needed
+     */
     public static String getGenericsBounds(ClassNode type) {
         GenericsType[] genericsTypes = type.getGenericsTypes();
         if (genericsTypes == null) return null;
@@ -476,6 +512,17 @@ public class BytecodeHelper {
         ret.append(end);
     }
 
+    /**
+     * Generates bytecode for casting a value to the specified type.
+     *
+     * @param mv   the MethodVisitor used to generate bytecode instructions
+     * @param type the target Class type for the cast operation (must not be null)
+     *
+     * @see #doCast(MethodVisitor, ClassNode)
+     * @see #unbox(MethodVisitor, Class)
+     *
+     * @since 6.0.0
+     */
     public static void doCast(final MethodVisitor mv, final Class<?> type) {
         if (type.isPrimitive() && type != Void.TYPE) {
             unbox(mv, type);
@@ -486,6 +533,15 @@ public class BytecodeHelper {
         }
     }
 
+    /**
+     * Generates bytecode for casting a value to the specified type.
+     *
+     * @param mv   the MethodVisitor used to generate bytecode instructions
+     * @param type the target ClassNode type for the cast operation (must not be null)
+     *
+     * @see #doCast(MethodVisitor, Class)
+     * @see #unbox(MethodVisitor, ClassNode)
+     */
     public static void doCast(final MethodVisitor mv, final ClassNode type) {
         if (isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             unbox(mv, type);
@@ -707,14 +763,34 @@ public class BytecodeHelper {
         mv.visitLabel(trueLabel);
     }
 
+    /**
+     * Emits the appropriate return instruction for the supplied type.
+     *
+     * @param mv the current method visitor
+     * @param type the value type being returned
+     */
     public static void doReturn(MethodVisitor mv, ClassNode type) {
         new ReturnVarHandler(mv, type).handle();
     }
 
+    /**
+     * Emits the appropriate load instruction for the supplied local variable.
+     *
+     * @param mv the current method visitor
+     * @param type the local variable type
+     * @param idx the local variable index
+     */
     public static void load(MethodVisitor mv, ClassNode type, int idx) {
         new LoadVarHandler(mv, type, idx).handle();
     }
 
+    /**
+     * Emits the appropriate store instruction for the supplied local variable.
+     *
+     * @param mv the current method visitor
+     * @param type the local variable type
+     * @param idx the local variable index
+     */
     public static void store(MethodVisitor mv, ClassNode type, int idx) {
         new StoreVarHandler(mv, type, idx).handle();
     }

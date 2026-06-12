@@ -104,7 +104,15 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
             body.addStatement(stmt(writeObject));
         }
         ClassNode[] exceptions = {make(IOException.class)};
-        addGeneratedMethod(cNode, "writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(out), exceptions, body);
+        // GEP-21 Shape C: replace the stubber's placeholder body if present.
+        Parameter[] writeParams = params(out);
+        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod("writeExternal", writeParams);
+        if (StubberSupport.isStub(existing)) {
+            existing.setCode(body);
+            StubberSupport.clearStub(existing);
+        } else {
+            addGeneratedMethod(cNode, "writeExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, writeParams, exceptions, body);
+        }
     }
 
     private static void createReadExternal(ClassNode cNode, List<String> excludes, List<FieldNode> list) {
@@ -118,7 +126,15 @@ public class ExternalizeMethodsASTTransformation extends AbstractASTTransformati
             readObject.setImplicitThis(false);
             body.addStatement(assignS(varX(fNode), "Object".equals(suffix) ? castX(GenericsUtils.nonGeneric(fNode.getType()), readObject) : readObject));
         }
-        addGeneratedMethod(cNode, "readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, params(oin), ClassNode.EMPTY_ARRAY, body);
+        // GEP-21 Shape C: replace the stubber's placeholder body if present.
+        Parameter[] readParams = params(oin);
+        org.codehaus.groovy.ast.MethodNode existing = cNode.getDeclaredMethod("readExternal", readParams);
+        if (StubberSupport.isStub(existing)) {
+            existing.setCode(body);
+            StubberSupport.clearStub(existing);
+        } else {
+            addGeneratedMethod(cNode, "readExternal", ACC_PUBLIC, ClassHelper.VOID_TYPE, readParams, ClassNode.EMPTY_ARRAY, body);
+        }
     }
 
     private static String suffixForField(FieldNode fNode) {

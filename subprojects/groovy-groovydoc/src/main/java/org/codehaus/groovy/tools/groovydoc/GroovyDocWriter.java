@@ -25,8 +25,15 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 /**
  * Write GroovyDoc resources to destination.
@@ -36,25 +43,55 @@ public class GroovyDocWriter {
     private final OutputTool output;
     private final GroovyDocTemplateEngine templateEngine;
     private static final String FS = "/";
+    /**
+     * Per-package subdirectories in source whose contents are mirrored verbatim
+     * into the output. GROOVY-5986 ({@code doc-files}) is the Javadoc-inherited
+     * case; GROOVY-11938 ({@code snippet-files}, for {@code {@snippet file=...}})
+     * piggybacks on the same scanner.
+     */
+    private static final List<String> RESOURCE_DIRS = Arrays.asList("doc-files", "snippet-files");
     private final Properties properties;
+    private final String[] sourcepaths;
 
+    /**
+     * @deprecated Use {@link #GroovyDocWriter(OutputTool, GroovyDocTemplateEngine, Properties)}
+     */
     @Deprecated
     public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
         this(output, templateEngine, properties);
     }
 
+    /**
+     * Creates a writer with no source-path information (resource files will not be copied).
+     */
     public GroovyDocWriter(OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
+        this(output, templateEngine, properties, null);
+    }
+
+    /**
+     * Creates a writer with source-path information used to locate and mirror resource directories.
+     *
+     * @since 6.0.0
+     */
+    public GroovyDocWriter(OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties, String[] sourcepaths) {
         this.output = output;
         this.templateEngine = templateEngine;
         this.properties = properties;
+        this.sourcepaths = sourcepaths == null ? new String[0] : Arrays.copyOf(sourcepaths, sourcepaths.length);
     }
 
+    /**
+     * Writes HTML for every class in the root doc to the destination directory.
+     */
     public void writeClasses(GroovyRootDoc rootDoc, String destdir) throws Exception {
         for (GroovyClassDoc classDoc : rootDoc.classes()) {
             writeClassToOutput(classDoc, destdir);
         }
     }
 
+    /**
+     * Writes the HTML page for a single class doc if its visibility matches the configured scope.
+     */
     public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
         if (classDoc.isPublic() || classDoc.isProtected() && "true".equals(properties.getProperty("protectedScope")) ||
                 classDoc.isPackagePrivate() && "true".equals(properties.getProperty("packageScope")) || "true".equals(properties.getProperty("privateScope"))) {
@@ -65,11 +102,15 @@ public class GroovyDocWriter {
         }
     }
 
+    /**
+     * Writes package-level HTML pages and the {@code package-list} file to the destination directory.
+     */
     public void writePackages(GroovyRootDoc rootDoc, String destdir) throws Exception {
         for (GroovyPackageDoc packageDoc : rootDoc.specifiedPackages()) {
             if (new File(packageDoc.name()).isAbsolute()) continue;
             output.makeOutputArea(destdir + FS + packageDoc.name());
             writePackageToOutput(packageDoc, destdir);
+            copyResourceFiles(packageDoc, destdir);
         }
         StringBuilder sb = new StringBuilder();
         for (GroovyPackageDoc packageDoc : rootDoc.specifiedPackages()) {
@@ -81,6 +122,46 @@ public class GroovyDocWriter {
         output.writeToOutput(destFileName, sb.toString(), properties.getProperty("fileEncoding"));
     }
 
+    /**
+     * GROOVY-5986 / GROOVY-11938: mirror any {@code doc-files/} or
+     * {@code snippet-files/} subdirectory found under the package in any
+     * sourcepath entry into the corresponding output package. Matches
+     * Javadoc's "Miscellaneous Unprocessed Files" behaviour.
+     */
+    private void copyResourceFiles(GroovyPackageDoc packageDoc, String destdir) {
+        for (String sourcepath : sourcepaths) {
+            for (String resourceDir : RESOURCE_DIRS) {
+                Path srcDir = Paths.get(sourcepath, packageDoc.name(), resourceDir);
+                if (!Files.isDirectory(srcDir)) continue;
+                Path dstDir = Paths.get(destdir, packageDoc.name(), resourceDir);
+                copyTree(srcDir, dstDir);
+            }
+        }
+    }
+
+    private void copyTree(Path srcDir, Path dstDir) {
+        try (Stream<Path> stream = Files.walk(srcDir)) {
+            stream.forEach(srcFile -> {
+                Path rel = srcDir.relativize(srcFile);
+                Path dstFile = dstDir.resolve(rel);
+                try {
+                    if (Files.isDirectory(srcFile)) {
+                        output.makeOutputArea(dstFile.toString());
+                    } else {
+                        output.copyResource(srcFile.toString(), dstFile.toString());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to copy " + srcFile + " to " + dstFile + ": " + e.getMessage());
+                }
+            });
+        } catch (IOException e) {
+            log.warn("Failed to walk " + srcDir + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * Writes all package-level template output for a single package doc to the destination directory.
+     */
     public void writePackageToOutput(GroovyPackageDoc packageDoc, String destdir) throws Exception {
         Iterator<String> templates = templateEngine.packageTemplatesIterator();
         while (templates.hasNext()) {
@@ -92,15 +173,22 @@ public class GroovyDocWriter {
         }
     }
 
+    /**
+     * Creates the output area and writes the root-level documentation pages.
+     */
     public void writeRoot(GroovyRootDoc rootDoc, String destdir) throws Exception {
         output.makeOutputArea(destdir);
         writeRootDocToOutput(rootDoc, destdir);
     }
 
+    /**
+     * Writes each root-level template to the destination directory, skipping disabled pages and copying binary resources verbatim.
+     */
     public void writeRootDocToOutput(GroovyRootDoc rootDoc, String destdir) throws Exception {
         Iterator<String> templates = templateEngine.docTemplatesIterator();
         while (templates.hasNext()) {
             String template = templates.next();
+            if (isDisabledRootTemplate(template)) continue;
             String destFileName = destdir + FS + GroovyDocUtil.getFile(template);
             log.debug("Generating " + destFileName);
             if (hasBinaryExtension(template)) {
@@ -112,8 +200,24 @@ public class GroovyDocWriter {
         }
     }
 
+    // GROOVY-11943: javadoc-parity disable flags skip the matching top-level page.
+    private boolean isDisabledRootTemplate(String template) {
+        String name = GroovyDocUtil.getFile(template);
+        if ("true".equals(properties.getProperty("noIndex")) && "index-all.html".equals(name)) return true;
+        if ("true".equals(properties.getProperty("noDeprecatedList")) && "deprecated-list.html".equals(name)) return true;
+        if ("true".equals(properties.getProperty("noHelp")) && "help-doc.html".equals(name)) return true;
+        return false;
+    }
+
     private static boolean hasBinaryExtension(String template) {
-        return template.endsWith(".gif") || template.endsWith(".ico");
+        if (template.endsWith(".gif") || template.endsWith(".ico")) return true;
+        // GROOVY-11938 stage 4: Prism.js bundle. The minified JS/CSS files
+        // contain `$` characters which the GString template engine would
+        // otherwise try to interpret as expressions, so copy verbatim.
+        int lastSlash = template.lastIndexOf('/');
+        String name = lastSlash >= 0 ? template.substring(lastSlash + 1) : template;
+        if (name.startsWith("prism") && (name.endsWith(".js") || name.endsWith(".css"))) return true;
+        return false;
     }
 
 }

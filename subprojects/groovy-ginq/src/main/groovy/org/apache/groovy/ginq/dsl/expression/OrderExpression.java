@@ -29,24 +29,51 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class OrderExpression extends ProcessExpression {
     private final Expression ordersExpr;
 
+    /**
+     * Creates an {@code orderby} clause.
+     *
+     * @param ordersExpr the order expression
+     */
     public OrderExpression(Expression ordersExpr) {
         this.ordersExpr = ordersExpr;
     }
 
+    /**
+     * Accepts a visitor for this clause.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {
         return visitor.visitOrderExpression(this);
     }
 
+    /**
+     * Returns the order expression.
+     *
+     * @return the order expression
+     */
     public Expression getOrdersExpr() {
         return ordersExpr;
     }
 
+    /**
+     * Returns the textual GINQ form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String getText() {
         return "orderby " + ordersExpr.getText();
     }
 
+    /**
+     * Returns the textual form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String toString() {
         return getText();

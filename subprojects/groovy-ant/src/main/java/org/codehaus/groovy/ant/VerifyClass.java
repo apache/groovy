@@ -51,9 +51,17 @@ public class VerifyClass extends MatchingTask {
     private String topDir = null;
     private boolean verbose = false;
 
+    /**
+     * Creates a bytecode verification task.
+     */
     public VerifyClass() {
     }
 
+    /**
+     * Verifies every class file below the configured directory.
+     *
+     * @throws BuildException if configuration is invalid or verification fails unexpectedly
+     */
     @Override
     public void execute() throws BuildException {
         if (topDir == null) throw new BuildException("no dir attribute is set");
@@ -68,10 +76,21 @@ public class VerifyClass extends MatchingTask {
         }
     }
 
+    /**
+     * Sets the top-level directory that will be scanned for class files.
+     *
+     * @param dir the directory to verify
+     * @throws BuildException if Ant rejects the supplied value
+     */
     public void setDir(String dir) throws BuildException {
         topDir = dir;
     }
 
+    /**
+     * Controls whether failing methods are logged verbosely.
+     *
+     * @param v {@code true} to log failing method signatures
+     */
     public void setVerbose(boolean v) {
         verbose = v;
     }
@@ -104,6 +123,9 @@ public class VerifyClass extends MatchingTask {
                          Files.newInputStream(Paths.get(clazz)))) {
             ClassReader cr = new ClassReader(inputStream);
             ca = new ClassNode() {
+                /**
+                 * Intentionally left blank because verification only needs the populated class model.
+                 */
                 @Override
                 public void visitEnd() {
                     //accept(cv);

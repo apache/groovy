@@ -29,24 +29,51 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class SelectExpression extends ProcessExpression {
     private final Expression projectionExpr;
 
+    /**
+     * Creates a {@code select} clause.
+     *
+     * @param projectionExpr the projection expression
+     */
     public SelectExpression(Expression projectionExpr) {
         this.projectionExpr = projectionExpr;
     }
 
+    /**
+     * Accepts a visitor for this clause.
+     *
+     * @param visitor the visitor to accept
+     * @param <R> the visit result type
+     * @return the visit result
+     */
     @Override
     public <R> R accept(GinqAstVisitor<R> visitor) {
         return visitor.visitSelectExpression(this);
     }
 
+    /**
+     * Returns the projection expression.
+     *
+     * @return the projection expression
+     */
     public Expression getProjectionExpr() {
         return projectionExpr;
     }
 
+    /**
+     * Returns the textual GINQ form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String getText() {
         return "select " + projectionExpr.getText();
     }
 
+    /**
+     * Returns the textual form of this clause.
+     *
+     * @return the clause text
+     */
     @Override
     public String toString() {
         return getText();

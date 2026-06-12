@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.Serial;
 import java.util.List;
 
 /**
@@ -28,7 +29,7 @@ import java.util.List;
  * <code>leftShift()</code> methods on <code>Closure</code>.
  * <p>
  * Typical usages:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * def twice = { a {@code ->} a * 2 }
  * def inc = { b {@code ->} b + 1 }
  * def f = { x {@code ->} twice(inc(x)) } // longhand
@@ -57,10 +58,17 @@ import java.util.List;
  */
 public final class ComposedClosure<V> extends Closure<V> {
 
-    private static final long serialVersionUID = -4816724431590921285L;
+    @Serial private static final long serialVersionUID = -4816724431590921285L;
     private Closure first;
     private Closure<V> second;
 
+    /**
+     * Constructs a composed closure by chaining two closures.
+     * The first closure's output becomes the second closure's input.
+     *
+     * @param first the first closure to apply
+     * @param second the second closure to apply to the result of the first
+     */
     public ComposedClosure(Closure first, Closure<V> second) {
         super(first.clone());
         this.first = (Closure) getOwner();

@@ -21,7 +21,11 @@ package groovy.xml.markupsupport;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Escapes XML attribute characters that must be written as numeric entities.
+ */
 public class StandardXmlAttributeFilter implements Function<Character, Optional<String>> {
+    /** {@inheritDoc} */
     @Override
     public Optional<String> apply(Character ch) {
         String result = switch (ch) {

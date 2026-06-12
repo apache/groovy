@@ -23,10 +23,10 @@ import groovy.lang.Closure;
 import java.util.function.Predicate;
 
 /**
- * Helper class for internal use only.
- * This creates a Predicate by calling a {@link Closure} and converting the result to a boolean.
- * {@link BooleanReturningMethodInvoker} is used for caching.
+ * @deprecated Use {@link org.codehaus.groovy.runtime.BooleanClosurePredicate} instead.
  */
+@Deprecated(since = "6.0.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class BooleanClosurePredicate<T> implements Predicate<T> {
     private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;

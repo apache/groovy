@@ -20,16 +20,15 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-class TryCatchBug {
+final class TryCatchBug {
 
     @Test
     void testBug() {
         try {
-            println("Hello")
+            println('Hello')
         }
         finally {
-            println("Finally")
+            println('Finally')
         }
     }
 }

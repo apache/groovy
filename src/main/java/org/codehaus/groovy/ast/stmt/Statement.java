@@ -19,45 +19,130 @@
 package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Collections;
 
 /**
- * Base class for any statement.
+ * Base class for all statement nodes in the Groovy AST. Provides common functionality for statement
+ * labels, statement-level annotations (Groovy-specific source-retention annotations for transform processing),
+ * and visitor pattern support. All concrete statement types inherit from this class.
+ *
+ * @see org.codehaus.groovy.ast.expr.Expression
+ * @see org.codehaus.groovy.ast.GroovyCodeVisitor
+ * @see org.codehaus.groovy.ast.stmt.BlockStatement
  */
 public class Statement extends ASTNode {
 
     private List<String> statementLabels;
 
+    /**
+     * Returns the list of labels attached to this statement, or null if no labels are present.
+     * Labels enable goto-like functionality in loops via break/continue statements.
+     *
+     * @return a list of label strings, or null if no labels are attached
+     */
     public /*@Nullable*/ List<String> getStatementLabels() {
         return statementLabels;
     }
 
+    /**
+     * Returns the first label attached to this statement (added last by the parser), or null if no labels are present.
+     *
+     * @return the statement label, or null
+     * @deprecated Use {@link #getStatementLabels()} instead for access to all labels
+     */
     @Deprecated
     public /*@Nullable*/ String getStatementLabel() {
         // last label by default which is added first by APP
         return statementLabels == null ? null : statementLabels.get(0);
     }
 
-    // TODO: @Deprecated
+    /**
+     * Adds a label to this statement. If the statement did not previously have labels, a linked list is created.
+     * This method is preferred over the deprecated {@link #setStatementLabel(String)}.
+     *
+     * @param label the label to attach (never null)
+     * @throws NullPointerException if label is null
+     */
     public void setStatementLabel(final String label) {
         if (label != null) addStatementLabel(label);
     }
 
+    /**
+     * Adds a label to this statement. If the statement did not previously have labels, a linked list is created
+     * to maintain insertion order for label processing.
+     *
+     * @param label the label to attach (never null)
+     * @throws NullPointerException if label is null
+     */
     public void addStatementLabel(final String label) {
         if (statementLabels == null) statementLabels = new LinkedList<>();
         statementLabels.add(Objects.requireNonNull(label));
     }
 
+    /**
+     * Copies all labels from another statement to this statement. If the source statement
+     * has no labels, no changes are made to this statement.
+     *
+     * @param that the source {@link Statement} to copy labels from
+     */
     public void copyStatementLabels(final Statement that) {
         Optional.ofNullable(that.getStatementLabels()).ifPresent(labels -> {
             labels.forEach(this::addStatementLabel);
         });
     }
 
+    //--------------------------------------------------------------------------
+    // Statement-level annotation support (Groovy-only; stored in node metadata)
+
+    private static final Object STATEMENT_ANNOTATIONS_KEY = "_statementAnnotations_";
+
+    /**
+     * Returns the list of statement-level annotations attached to this statement.
+     * These are Groovy-only source-retention annotations that do not appear at the
+     * JVM level; they are processed by registered {@link org.codehaus.groovy.transform.ASTTransformation}s.
+     *
+     * @return an unmodifiable view of the annotations list, never {@code null}
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public List<AnnotationNode> getStatementAnnotations() {
+        List<AnnotationNode> annotations = getNodeMetaData(STATEMENT_ANNOTATIONS_KEY);
+        return annotations != null ? Collections.unmodifiableList(annotations) : Collections.emptyList();
+    }
+
+    /**
+     * Attaches a statement-level annotation to this statement. These annotations are stored
+     * in node metadata and processed by AST transformations.
+     *
+     * @param annotation the {@link AnnotationNode} to attach (never null)
+     * @throws NullPointerException if annotation is null
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public void addStatementAnnotation(final AnnotationNode annotation) {
+        List<AnnotationNode> annotations = getNodeMetaData(STATEMENT_ANNOTATIONS_KEY);
+        if (annotations == null) {
+            annotations = new ArrayList<>();
+            setNodeMetaData(STATEMENT_ANNOTATIONS_KEY, annotations);
+        }
+        annotations.add(Objects.requireNonNull(annotation));
+    }
+
+    //--------------------------------------------------------------------------
+
+    /**
+     * Returns true if this statement is empty or produces no side effects.
+     * Typically only {@link org.codehaus.groovy.ast.stmt.EmptyStatement} returns true.
+     *
+     * @return true if this statement is empty
+     */
     public boolean isEmpty() {
         return false;
     }

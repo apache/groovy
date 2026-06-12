@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,9 +30,14 @@ import java.util.Map;
  * Helper to turn a list with an even number of elements into a Map.
  */
 public class SpreadMap extends HashMap {
-    private static final long serialVersionUID = 3827653766235954251L;
+    @Serial private static final long serialVersionUID = 3827653766235954251L;
     private int hashCode;
 
+    /**
+     * Creates an immutable spread map from alternating key/value entries.
+     *
+     * @param values alternating keys and values
+     */
     public SpreadMap(Object[] values) {
         int i = 0;
         while (i < values.length) {
@@ -39,6 +45,11 @@ public class SpreadMap extends HashMap {
         }
     }
 
+    /**
+     * Creates an immutable spread map from an existing map.
+     *
+     * @param map the source map
+     */
     public SpreadMap(Map map) {
         super(map);
     }
@@ -51,24 +62,45 @@ public class SpreadMap extends HashMap {
         this(list.toArray());
     }
 
+    /**
+     * Always throws because spread maps are immutable.
+     *
+     * @param key the key to add
+     * @param value the value to add
+     * @return never returns normally
+     */
     @Override
     public Object put(Object key, Object value) {
         throw new RuntimeException("SpreadMap: " + this + " is an immutable map, and so ("
                                    + key + ": " + value + ") cannot be added.");
     }
 
+    /**
+     * Always throws because spread maps are immutable.
+     *
+     * @param key the key to remove
+     * @return never returns normally
+     */
     @Override
     public Object remove(Object key) {
         throw new RuntimeException("SpreadMap: " + this + " is an immutable map, and so the key ("
                                    + key + ") cannot be deleted.");
     }
 
+    /**
+     * Always throws because spread maps are immutable.
+     *
+     * @param t the entries to add
+     */
     @Override
     public void putAll(Map t) {
         throw new RuntimeException("SpreadMap: " + this + " is an immutable map, and so the map ("
                                    + t + ") cannot be put in this spreadMap.");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean equals(Object that) {
         if (that instanceof SpreadMap) {
@@ -77,6 +109,12 @@ public class SpreadMap extends HashMap {
         return false;
     }
 
+    /**
+     * Compares this spread map with another spread map using Groovy equality.
+     *
+     * @param that the other spread map
+     * @return {@code true} if the maps are equal
+     */
     public boolean equals(SpreadMap that) {
         if (that == null) return false;
 
@@ -93,6 +131,9 @@ public class SpreadMap extends HashMap {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int hashCode() {
         if (hashCode == 0) {

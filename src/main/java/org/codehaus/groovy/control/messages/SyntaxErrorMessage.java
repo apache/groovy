@@ -28,9 +28,21 @@ import java.io.PrintWriter;
  * A class for error messages produced by the parser system.
  */
 public class SyntaxErrorMessage extends Message {
+    /**
+     * Underlying syntax exception.
+     */
     protected SyntaxException cause;
+    /**
+     * Source unit containing the syntax error.
+     */
     protected SourceUnit source;
 
+    /**
+     * Creates a message for the supplied syntax error.
+     *
+     * @param cause the syntax exception to report
+     * @param source the source unit containing the error
+     */
     public SyntaxErrorMessage(SyntaxException cause, SourceUnit source) {
         this.cause = cause;
         this.source = source;

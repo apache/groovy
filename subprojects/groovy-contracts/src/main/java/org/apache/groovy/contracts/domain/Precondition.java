@@ -26,9 +26,18 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
  */
 public class Precondition extends Assertion<Precondition> {
 
+    /**
+     * Creates a precondition that defaults to {@code true}.
+     */
     public Precondition() {
     }
 
+    /**
+     * Creates a precondition from the supplied source block and boolean expression.
+     *
+     * @param blockStatement the original precondition block
+     * @param booleanExpression the normalized precondition expression
+     */
     public Precondition(BlockStatement blockStatement, BooleanExpression booleanExpression) {
         super(blockStatement, booleanExpression);
     }

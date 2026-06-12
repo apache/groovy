@@ -18,6 +18,7 @@
  */
 package groovy.transform;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -31,11 +32,32 @@ import java.lang.annotation.Target;
  *
  * @since 2.5.0
  */
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @Repeatable(NamedParams.class)
 public @interface NamedParam {
+    /**
+     * Returns the accepted named-argument key.
+     * Defaults to {@link Undefined#STRING}, which indicates the annotated parameter name.
+     *
+     * @return the named-argument key
+     */
     String value() default Undefined.STRING;
+
+    /**
+     * Returns the expected value type for the named argument.
+     * Defaults to {@link Object}.
+     *
+     * @return the named-argument type
+     */
     Class type() default Object.class;
+
+    /**
+     * Indicates whether the named argument must be supplied.
+     * Defaults to {@code false}.
+     *
+     * @return {@code true} if the named argument is required
+     */
     boolean required() default false;
 }

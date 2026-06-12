@@ -105,6 +105,12 @@ public final class ExpressionUtils {
         return booleanExpressions;
     }
 
+    /**
+     * Collapses the supplied boolean expressions into a single expression combined with logical AND.
+     *
+     * @param booleanExpressions the expressions to combine
+     * @return the combined expression, or {@code true} if the input is empty
+     */
     public static BooleanExpression getBooleanExpression(List<BooleanExpression> booleanExpressions) {
         if (booleanExpressions == null || booleanExpressions.isEmpty())
             return boolX(ConstantExpression.TRUE);
@@ -121,15 +127,31 @@ public final class ExpressionUtils {
         return result;
     }
 
+    /**
+     * Collects assert statements from a block without descending into nested compilation units.
+     */
     static class AssertStatementCollector extends ClassCodeVisitorSupport {
 
+        /**
+         * Collected assert statements in visitation order.
+         */
         public List<AssertStatement> assertStatements = new ArrayList<>();
 
+        /**
+         * Records one visited assert statement.
+         *
+         * @param statement the assert statement to collect
+         */
         @Override
         public void visitAssertStatement(AssertStatement statement) {
             assertStatements.add(statement);
         }
 
+        /**
+         * This collector is source-independent.
+         *
+         * @return {@code null}
+         */
         @Override
         protected SourceUnit getSourceUnit() {
             return null;

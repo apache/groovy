@@ -36,10 +36,16 @@ import java.util.logging.Logger;
  */
 public class GroovyTestCase extends TestCase {
 
+    /**
+     * Logger available to this test case and its subclasses.
+     */
     protected static Logger log = Logger.getLogger(GroovyTestCase.class.getName());
 
     private static final AtomicInteger scriptFileNameCounter = new AtomicInteger(0);
 
+    /**
+     * Prefix used when generating temporary script names for test helpers.
+     */
     public static final String TEST_SCRIPT_NAME_PREFIX = "TestScript";
 
     private boolean useAgileDoxNaming = false;
@@ -57,6 +63,11 @@ public class GroovyTestCase extends TestCase {
         }
     }
 
+    /**
+     * Returns the underlying JUnit method name before any AgileDox formatting is applied.
+     *
+     * @return the declared test method name
+     */
     public String getMethodName() {
         return super.getName();
     }
@@ -199,6 +210,11 @@ public class GroovyTestCase extends TestCase {
         GroovyAssert.assertScript(script);
     }
 
+    /**
+     * Builds a unique script name for the current test method.
+     *
+     * @return a synthetic script name suitable for shell-based assertions
+     */
     protected String getTestClassName() {
         return TEST_SCRIPT_NAME_PREFIX + getMethodName() + (scriptFileNameCounter.getAndIncrement()) + ".groovy";
     }
@@ -213,6 +229,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * see {@link groovy.test.GroovyAssert#shouldFail(Class, groovy.lang.Closure)}
      */
+    @SuppressWarnings("unchecked")
     protected String shouldFail(Class clazz, Closure code) {
         return GroovyAssert.shouldFail(clazz, code).getMessage();
     }
@@ -220,6 +237,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * see {@link groovy.test.GroovyAssert#shouldFailWithCause(Class, groovy.lang.Closure)}
      */
+    @SuppressWarnings("unchecked")
     protected String shouldFailWithCause(Class clazz, Closure code) {
         return GroovyAssert.shouldFailWithCause(clazz, code).getMessage();
     }
@@ -227,6 +245,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * see {@link groovy.test.GroovyAssert#shouldFail(Class, String)}
      */
+    @SuppressWarnings("unchecked")
     protected String shouldFail(Class clazz, String script) {
         return GroovyAssert.shouldFail(clazz, script).getMessage();
     }
@@ -263,6 +282,13 @@ public class GroovyTestCase extends TestCase {
         return notYetImplemented(this);
     }
 
+    /**
+     * Asserts that two values compare equal using Groovy's coercion-aware equality semantics.
+     *
+     * @param message the message to use if the assertion fails
+     * @param expected the expected value
+     * @param actual the actual value
+     */
     public static void assertEquals(String message, Object expected, Object actual) {
         if (expected == null && actual == null)
             return;
@@ -271,10 +297,22 @@ public class GroovyTestCase extends TestCase {
         TestCase.assertEquals(message, expected, actual);
     }
 
+    /**
+     * Asserts that two values compare equal using Groovy's coercion-aware equality semantics.
+     *
+     * @param expected the expected value
+     * @param actual the actual value
+     */
     public static void assertEquals(Object expected, Object actual) {
         assertEquals(null, expected, actual);
     }
 
+    /**
+     * Asserts that two strings compare equal using Groovy's coercion-aware equality semantics.
+     *
+     * @param expected the expected value
+     * @param actual the actual value
+     */
     public static void assertEquals(String expected, String actual) {
         assertEquals(null, expected, actual);
     }

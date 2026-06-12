@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
  * methods is code which calls through to the delegate as per the normal delegate pattern.
  * <p>
  * As an example, consider this code:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * class Event {
  *     {@code @Delegate} Date when
  *     String title, url
@@ -126,12 +126,23 @@ import java.lang.annotation.Target;
  * if you want the {@code deprecated} attribute to be used). Otherwise, the resulting class would
  * not compile anyway without manually adding in any deprecated methods in the interface.</li>
  * <li>{@code @Delegate} can work in combination with {@code @Lazy} when annotating a field (or property)</li>
+ * <li>Under joint compilation, the delegated method surface visible to Java callers honours the
+ * same {@code includes} / {@code excludes} / {@code includeTypes} / {@code excludeTypes} /
+ * {@code deprecated} / {@code allNames} filters as the runtime, and adds the delegate's
+ * interfaces (when {@code interfaces=true}) to the owner. Two cases need source order or hand
+ * declaration to be reachable from Java: (a) when the delegate type is a Groovy class in the
+ * same compilation unit and gains methods from another transform that runs after stub
+ * generation, and (b) the prefix-overload chain produced from delegate methods that have
+ * default argument values. The runtime is unaffected; the stub is a strict subset.</li>
  * </ul>
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.DelegateASTTransformation")
+@GroovyASTTransformationClass({
+        "org.codehaus.groovy.transform.DelegateASTStubber",
+        "org.codehaus.groovy.transform.DelegateASTTransformation"
+})
 public @interface Delegate {
     /**
      * @return true if owner class should implement interfaces implemented by delegate type
@@ -149,7 +160,7 @@ public @interface Delegate {
 
     /**
      * Whether to carry over annotations from the methods of the delegate
-     * to your delegating method. Currently Closure annotation members are
+     * to your delegating method. Currently, Closure annotation members are
      * not supported.
      *
      * @return true if generated delegate methods should keep method annotations

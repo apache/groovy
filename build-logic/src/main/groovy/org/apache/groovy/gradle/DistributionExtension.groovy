@@ -43,13 +43,13 @@ class DistributionExtension {
     }
 
     DistributionExtension docs(String p, String... classNames) {
-        project.tasks.named('docGDK', DocGDK).configure { docgen ->
+        project.tasks.named('generateGDKMocks', GenerateGDKMocks).configure { task ->
             docgeneratorClasses.set(docgeneratorClasses.get() +
                     classNames.collect { className ->
                         def src = project.project(p).layout.projectDirectory.file(
                                 "src/main/java/${className.replace('.', '/')}.java"
                         ).asFile
-                        docgen.inputs.file(src).withPathSensitivity(PathSensitivity.RELATIVE)
+                        task.inputs.file(src).withPathSensitivity(PathSensitivity.RELATIVE)
                         project.relativePath(src)
                     }
             )

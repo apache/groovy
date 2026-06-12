@@ -151,40 +151,40 @@ try {
 
 menuBar {
     menu(text: 'File', mnemonic: 'F') {
-        menuItem(newFileAction, icon:null)
-        menuItem(newWindowAction, icon:null)
-        menuItem(openAction, icon:null)
+        menuItem(newFileAction)
+        menuItem(newWindowAction)
+        menuItem(openAction)
         separator()
-        menuItem(saveAction, icon:null)
-        menuItem(saveAsAction, icon:null)
+        menuItem(saveAction)
+        menuItem(saveAsAction)
         separator()
-        menuItem(printAction, icon:null)
+        menuItem(printAction)
     }
 
     menu(text: 'Edit', mnemonic: 'E') {
-        menuItem(undoAction, icon:null)
-        menuItem(redoAction, icon:null)
+        menuItem(undoAction)
+        menuItem(redoAction)
         separator()
-        menuItem(cutAction, icon:null)
-        menuItem(copyAction, icon:null)
-        menuItem(pasteAction, icon:null)
+        menuItem(cutAction)
+        menuItem(copyAction)
+        menuItem(pasteAction)
         separator()
-        menuItem(findAction, icon:null)
-        menuItem(findNextAction, icon:null)
-        menuItem(findPreviousAction, icon:null)
-        menuItem(replaceAction, icon:null)
+        menuItem(findAction)
+        menuItem(findNextAction)
+        menuItem(findPreviousAction)
+        menuItem(replaceAction)
         separator()
-        menuItem(selectAllAction, icon:null)
+        menuItem(selectAllAction)
 	separator()
-	menuItem(commentAction, icon:null)
-        menuItem(selectBlockAction, icon:null)
+	menuItem(commentAction)
+        menuItem(selectBlockAction)
     }
 
     menu(text: 'View', mnemonic: 'V') {
-        menuItem(clearOutputAction, icon:null)
+        menuItem(clearOutputAction)
         separator()
-        menuItem(largerFontAction, icon:null)
-        menuItem(smallerFontAction, icon:null)
+        menuItem(largerFontAction)
+        menuItem(smallerFontAction)
         separator()
         checkBoxMenuItem(captureStdOutAction, selected: controller.captureStdOut)
         checkBoxMenuItem(captureStdErrAction, selected: controller.captureStdErr)
@@ -195,38 +195,53 @@ menuBar {
         checkBoxMenuItem(detachedOutputAction, selected: controller.detachedOutput)
         checkBoxMenuItem(autoClearOutputAction, selected: controller.autoClearOutput)
         checkBoxMenuItem(orientationVerticalAction, selected: controller.orientationVertical)
+        separator()
+        menu(text: 'Theme') {
+            buttonGroup(id: 'themeGroup')
+            lightThemeMenuItem = radioButtonMenuItem(lightThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'LIGHT')
+            darkThemeMenuItem = radioButtonMenuItem(darkThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'DARK')
+            systemThemeMenuItem = radioButtonMenuItem(systemThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'SYSTEM')
+        }
     }
 
     menu(text: 'History', mnemonic: 'I') {
-        menuItem(historyPrevAction, icon:null)
-        menuItem(historyNextAction, icon:null)
+        menuItem(historyPrevAction)
+        menuItem(historyNextAction)
     }
 
     menu(text: 'Script', mnemonic: 'S') {
-        menuItem(runAction, icon:null)
-        menuItem(runJavaAction, icon:null)
+        menuItem(runAction)
+        menuItem(runJavaAction)
         checkBoxMenuItem(loopModeAction, selected: controller.loopMode)
         checkBoxMenuItem(saveOnRunAction, selected: controller.saveOnRun)
-        menuItem(runSelectionAction, icon:null)
-        menuItem(runJavaSelectionAction, icon:null)
+        menuItem(runSelectionAction)
+        menuItem(runJavaSelectionAction)
         checkBoxMenuItem(threadInterruptAction, selected: controller.threadInterrupt)
-        menuItem(interruptAction, icon:null)
-        menuItem(compileAction, icon:null)
-        menuItem(compileJavaAction, icon:null)
+        menuItem(interruptAction)
+        menuItem(compileAction)
+        menuItem(compileJavaAction)
+        separator()
+        menuItem(setScriptArgsAction)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)
         menuItem(listClasspath)
         menuItem(clearClassloader)
         separator()
-        menuItem(inspectLastAction, icon:null)
-        menuItem(inspectVariablesAction, icon:null)
-        menuItem(inspectAstAction, icon:null)
-        menuItem(inspectCstAction, icon:null)
-        menuItem(inspectTokensAction, icon:null)
+        menuItem(inspectLastAction)
+        menuItem(inspectVariablesAction)
+        menuItem(inspectAstAction)
+        menuItem(inspectCstAction)
+        menuItem(inspectTokensAction)
     }
 }
 
+/**
+ * Tests whether the current class loader can resolve the supplied class name.
+ *
+ * @param className the fully qualified class name to resolve
+ * @return {@code true} if the class is available
+ */
 static classExists(String className) {
     try {
         MacOSXMenuBar.class.classLoader.loadClass(className)

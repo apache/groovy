@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * declared within the class and not inherited or added by transforms (but see {@link #includeGenerated()}).
  * <p>
  * Example usage:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.NullCheck
  * import static groovy.test.GroovyAssert.shouldFail
  *

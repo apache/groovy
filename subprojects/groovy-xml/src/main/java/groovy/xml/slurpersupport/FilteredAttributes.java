@@ -41,6 +41,7 @@ public class FilteredAttributes extends Attributes
         this.closure = closure;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Iterator nodeIterator() {
         return new NodeIterator(this.parent.iterator())

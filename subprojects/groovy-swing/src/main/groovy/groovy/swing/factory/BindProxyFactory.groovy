@@ -25,10 +25,24 @@ import org.apache.groovy.swing.binding.BindingProxy
  */
 class BindProxyFactory extends AbstractFactory {
 
+    /**
+     * Indicates whether nodes created by this factory accept children.
+     *
+     * @return true if child nodes are not expected
+     */
     boolean isLeaf() {
         return true
     }
 
+    /**
+     * Creates the node handled by this factory.
+     *
+     * @param builder the factory builder
+     * @param name the node name
+     * @param value the node value
+     * @param attributes the node attributes
+     * @return the created or reused node
+     */
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             throw new RuntimeException("$name requires a value argument.");
@@ -40,6 +54,13 @@ class BindProxyFactory extends AbstractFactory {
         return mb;
     }
 
+    /**
+     * Finalizes a node after its children have been processed.
+     *
+     * @param builder the factory builder
+     * @param parent the parent node
+     * @param node the current node
+     */
     void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
         if (builder.context.bind) {
             node.bind()

@@ -29,11 +29,10 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.CodeSource;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
 import java.util.Objects;
 
@@ -70,6 +69,13 @@ public class GroovyCodeSource {
 
     private URL url;
 
+    /**
+     * Creates a code source from script text with an explicit logical name and code base.
+     *
+     * @param script the Groovy source text
+     * @param name the logical script name
+     * @param codeBase the code base used to create the backing {@link CodeSource}
+     */
     public GroovyCodeSource(String script, String name, String codeBase) {
         this.name = name;
         this.scriptText = script;
@@ -100,6 +106,13 @@ public class GroovyCodeSource {
         }
     }
 
+    /**
+     * Creates a code source from a Groovy source file.
+     *
+     * @param infile the source file
+     * @param encoding the character encoding used to read the file, or {@code null} for the default handling
+     * @throws IOException if the file cannot be read
+     */
     public GroovyCodeSource(final File infile, final String encoding) throws IOException {
         // avoid files which confuse us like ones with .. in path
         final File file = new File(infile.getCanonicalPath());
@@ -122,36 +135,26 @@ public class GroovyCodeSource {
         //The calls below require access to user.dir - allow here since getName() and getCodeSource() are
         //package private and used only by the GroovyClassLoader.
         try {
-            Object[] info = doPrivileged((PrivilegedExceptionAction<Object[]>) () -> {
-                // retrieve the content of the file using the provided encoding
-                if (encoding != null) {
-                    scriptText = ResourceGroovyMethods.getText(infile, encoding);
-                } else {
-                    scriptText = ResourceGroovyMethods.getText(infile);
-                }
+            // retrieve the content of the file using the provided encoding
+            if (encoding != null) {
+                scriptText = ResourceGroovyMethods.getText(infile, encoding);
+            } else {
+                scriptText = ResourceGroovyMethods.getText(infile);
+            }
 
-                Object[] info1 = new Object[2];
-                URL url = file.toURI().toURL();
-                info1[0] = url.toExternalForm();
-                //toURI().toURL() will encode, but toURL() will not.
-                info1[1] = new CodeSource(url, (Certificate[]) null);
-                return info1;
-            });
+            Object[] info = new Object[2];
+            URL url = file.toURI().toURL();
+            info[0] = url.toExternalForm();
+            //toURI().toURL() will encode, but toURL() will not.
+            info[1] = new CodeSource(url, (Certificate[]) null);
 
             this.name = (String) info[0];
             this.codeSource = (CodeSource) info[1];
-        } catch (PrivilegedActionException pae) {
-            Throwable cause = pae.getCause();
-            if (cause instanceof IOException) {
-                throw (IOException) cause;
-            }
-            throw new RuntimeException("Could not construct CodeSource for file: " + file, cause);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not construct CodeSource for file: " + file, e);
         }
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private <T> T doPrivileged(PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
-        return java.security.AccessController.doPrivileged(action);
     }
 
     /**
@@ -162,10 +165,21 @@ public class GroovyCodeSource {
         this(infile, CharsetToolkit.getDefaultSystemCharset().name());
     }
 
+    /**
+     * Creates a code source from the Groovy source available at the supplied URI.
+     *
+     * @param uri the source URI
+     * @throws IOException if the source cannot be read
+     */
     public GroovyCodeSource(URI uri) throws IOException {
         this(uri.toURL());
     }
 
+    /**
+     * Creates a code source from the Groovy source available at the supplied URL.
+     *
+     * @param url the source URL
+     */
     public GroovyCodeSource(URL url) {
         if (url == null) {
             throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
@@ -208,30 +222,65 @@ public class GroovyCodeSource {
         return encoding;
     }
 
+    /**
+     * Returns the {@link CodeSource} associated with compiled script classes.
+     *
+     * @return the code source for this script
+     */
     public CodeSource getCodeSource() {
         return codeSource;
     }
 
+    /**
+     * Returns the Groovy source text.
+     *
+     * @return the script text
+     */
     public String getScriptText() {
         return scriptText;
     }
 
+    /**
+     * Returns the logical name used for the script.
+     *
+     * @return the script name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns the backing file when this code source was created from a file.
+     *
+     * @return the backing file, or {@code null} if this source does not originate from a file
+     */
     public File getFile() {
         return file;
     }
 
+    /**
+     * Returns the backing URL when this code source was created from a URL.
+     *
+     * @return the backing URL, or {@code null} if this source does not originate from a URL
+     */
     public URL getURL() {
         return url;
     }
 
+    /**
+     * Controls whether classes compiled from this source may be cached by {@link GroovyClassLoader}.
+     *
+     * @param b {@code true} to allow caching, {@code false} otherwise
+     */
     public void setCachable(boolean b) {
         cachable = b;
     }
 
+    /**
+     * Indicates whether classes compiled from this source may be cached.
+     *
+     * @return {@code true} if the source is cacheable
+     */
     public boolean isCachable() {
         return cachable;
     }
@@ -243,13 +292,15 @@ public class GroovyCodeSource {
             sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
         }
         try {
-            return new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[]) null);
+            String path = codeBase.startsWith("/") ? codeBase : "/" + codeBase;
+            return new CodeSource(new URI("file", "", path, null).toURL(), (java.security.cert.Certificate[]) null);
         }
-        catch (MalformedURLException e) {
+        catch (MalformedURLException | URISyntaxException e) {
             throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -258,6 +309,7 @@ public class GroovyCodeSource {
         return Objects.equals(codeSource, that.codeSource);
     }
 
+    /** {@inheritDoc} */
     @Override
     public int hashCode() {
         return Objects.hash(codeSource);

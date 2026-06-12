@@ -36,6 +36,7 @@ import java.util.Map;
  *     <li><i>staticStar</i> for "static star" imports</li>
  *     <li><i>alias</i> for imports with alias</li>
  *     <li><i>staticMember</i> for static imports of individual members</li>
+ *     <li><i>module</i> for module imports (JEP 476)</li>
  * </ul>
  *
  * For example:
@@ -47,11 +48,27 @@ import java.util.Map;
  * @since 2.1.0
  */
 public class ImportCustomizerFactory extends AbstractFactory {
+    /**
+     * Indicates that import customizer nodes accept nested closure content.
+     *
+     * @return {@code true}
+     */
     @Override
     public boolean isHandlesNodeChildren() {
         return true;
     }
 
+    /**
+     * Creates an import customizer and applies any inline import value.
+     *
+     * @param builder the active builder
+     * @param name the node name
+     * @param value the supplied node value
+     * @param attributes the node attributes
+     * @return a configured {@link ImportCustomizer}
+     * @throws InstantiationException if instantiation fails
+     * @throws IllegalAccessException if access fails
+     */
     @Override
     public Object newInstance(final FactoryBuilderSupport builder, final Object name, final Object value, final Map attributes) throws InstantiationException, IllegalAccessException {
         ImportCustomizer customizer = new ImportCustomizer();
@@ -76,6 +93,14 @@ public class ImportCustomizerFactory extends AbstractFactory {
         }
     }
 
+    /**
+     * Executes nested builder content against a helper bound to the import customizer.
+     *
+     * @param builder the active builder
+     * @param node the current node
+     * @param childContent the nested closure content
+     * @return {@code false} to continue normal processing
+     */
     @Override
     public boolean onNodeChildren(final FactoryBuilderSupport builder, final Object node, final Closure childContent) {
         if (node instanceof ImportCustomizer) {
@@ -128,6 +153,10 @@ public class ImportCustomizerFactory extends AbstractFactory {
         }
         protected void staticMember(String alias, String name, String field) {
             customizer.addStaticImport(alias, name, field);
+        }
+
+        protected void module(String... moduleNames) {
+            customizer.addModuleImports(moduleNames);
         }
 
     }
