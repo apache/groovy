@@ -132,6 +132,10 @@ public class PostconditionGenerator extends BaseGenerator {
 
     private void addPostcondition(MethodNode method, BlockStatement postconditionBlockStatement) {
         if (Boolean.TRUE.equals(method.getNodeMetaData(METHOD_PROCESSED))) return;
+        // GROOVY-12084: normalize a non-block body (e.g. a @Synchronized method whose body was wrapped
+        // in a SynchronizedStatement at CANONICALIZATION) before weaving, so the cast below is safe;
+        // covers both the explicit and the inherited (default) postcondition paths that reach here
+        ensureBlockBody(method);
         final BlockStatement block = (BlockStatement) method.getCode();
 
         Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
