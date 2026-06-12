@@ -87,6 +87,23 @@ public abstract class BaseGenerator {
     }
 
     /**
+     * Ensures the given method's body is a {@link BlockStatement} so that contract code generators can
+     * weave assertions into it. Earlier transforms (e.g. {@code @Synchronized}, which runs at
+     * CANONICALIZATION) may have replaced the body with a non-block statement such as a
+     * {@code SynchronizedStatement}; in that case the original statement is wrapped in a fresh block.
+     * A {@code null} body (e.g. an abstract method or a not-yet-populated synthetic body) is left
+     * untouched. Mirrors the body normalization the precondition path already performs (GROOVY-12066)
+     * so the post-condition and invariant generators see a consistent body shape (GROOVY-12084).
+     *
+     * @param method the method whose body should be normalized to a block
+     */
+    protected static void ensureBlockBody(final MethodNode method) {
+        if (method.getCode() != null && !(method.getCode() instanceof BlockStatement)) {
+            method.setCode(block(method.getCode()));
+        }
+    }
+
+    /**
      * @param classNode the {@link org.codehaus.groovy.ast.ClassNode} used to look up the invariant closure field
      * @return the field name of the invariant closure field of the given <tt>classNode</tt>
      */
