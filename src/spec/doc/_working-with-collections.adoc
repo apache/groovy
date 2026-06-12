@@ -346,6 +346,20 @@ Two things to take away: after the addition of `getAt(Map, String)`/`putAt(Map, 
 equivalent to `m.get('k')` in every row and both compilation modes; and `m.k` resolves to a declared
 property when one exists (use `['k']`/`get` to be sure of reading the entry).
 
+The tables above all use an explicit receiver `m`. A separate gotcha applies to an *unqualified* name read
+inside the body of a `Map` subclass -- a method, a `with(map) { ... }` block, or an anonymous-inner-class
+initializer. There the implicit receiver is the map itself, so the name is a property read on `this` and
+resolves to the *entry*, not to any binding in an enclosing scope. From Groovy 5, this self property takes
+precedence over an enclosing-class field of the same name (see https://issues.apache.org/jira/browse/GROOVY-10985[GROOVY-10985]),
+so such a reference silently yields `null` for a missing entry rather than reading the field:
+
+[source,groovy]
+--------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tag=bare_self_shadow,indent=0]
+--------------------------------------------------
+
+Qualify the outer reference (`Outer.NAME` above) to read the enclosing field.
+
 === Iterating on maps
 
 As usual in the {gdk}, idiomatic iteration on maps makes use of the `each` and `eachWithIndex` methods.

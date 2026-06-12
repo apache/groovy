@@ -619,6 +619,27 @@ final class WorkingWithCollectionsTest {
     // end::t2_class[]
 
     @Test
+    void testMapBarePropertyShadowsOuterField() {
+        assertScript '''
+            // tag::bare_self_shadow[]
+            class Outer {
+                static final String NAME = 'from-enclosing-field'
+
+                // An unqualified name in the body of a Map subclass is a property read on
+                // `this`, so it reads the (missing) entry and shadows the enclosing field:
+                static Map<String, String> shadowed  = new HashMap<String, String>() { { put('k', NAME)       } }
+
+                // Qualifying the reference resolves the enclosing field:
+                static Map<String, String> qualified = new HashMap<String, String>() { { put('k', Outer.NAME) } }
+            }
+
+            assert Outer.shadowed['k']  == null                     // 'NAME' read as a (missing) entry
+            assert Outer.qualified['k'] == 'from-enclosing-field'   // the enclosing field
+            // end::bare_self_shadow[]
+        '''
+    }
+
+    @Test
     void testMapIteration() {
         // tag::map_iteration[]
         def map = [
