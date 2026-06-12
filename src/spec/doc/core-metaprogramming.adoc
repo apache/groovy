@@ -543,6 +543,33 @@ assert f1.class.toString() == "class Foo"
 assert f2.class.toString() == "class Foo"
 ----
 
+==== MetaClass lifecycle
+
+How a metaclass is obtained for an object at runtime depends on whether the object
+is a POJO or a POGO, and whether a per-instance metaclass has been set.
+
+For **POGO** (GroovyObject) instances, the metaclass is stored directly on the instance.
+The `GroovyObject` interface includes a `metaClass` field, and the `getMetaClass()`
+implementation returns this field's value.  When you use `ExpandoMetaClass` to add
+or replace a method on a class (e.g. `Foo.metaClass.bar = { ... }`), the underlying
+metaclass instance is modified *in place* -- existing `Foo` instances continue to
+reference the same metaclass object and therefore see the new method immediately.
+If the metaclass is replaced with a different metaclass instance at the class level
+(`Foo.metaClass = newMC`), already-created instances will still hold the old metaclass
+reference; they will see the new metaclass only after setting their metaclass explicitly
+or after being re-created.
+
+For **POJO** (pure Java) instances, the metaclass is resolved from the
+`MetaClassRegistry` each time it is needed.  The instance itself does not store a
+metaclass reference.  Because of this, a class-level metaclass change in the registry
+takes effect *immediately* for all existing instances -- there is no per-instance
+reference that could become stale.
+
+Per-instance metaclasses (setting `metaClass` on an individual object) override both
+mechanisms.  When a per-instance metaclass is set, the `getMetaClass()` call on that
+specific instance returns the custom metaclass rather than the class-level one,
+independently of whether the instance is a POJO or a POGO.
+
 [[metaprogramming_emc]]
 ==== ExpandoMetaClass
 

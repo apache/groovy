@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -68,6 +69,19 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     @Override
     public CachedClass getDeclaringClass() {
         return declaringClass;
+    }
+
+    /**
+     * Returns a {@link MethodHandle} pointing directly to the underlying target method,
+     * or {@code null} if not available.
+     * <p>
+     * Generated DGM adapter classes override this to provide a pre-computed handle that
+     * avoids the boxing overhead of {@link #invoke(Object, Object[])}.
+     *
+     * @return a method handle for direct invocation, or {@code null}
+     */
+    public MethodHandle getTargetMethodHandle() {
+        return null;
     }
 
     public static class Proxy extends GeneratedMetaMethod {

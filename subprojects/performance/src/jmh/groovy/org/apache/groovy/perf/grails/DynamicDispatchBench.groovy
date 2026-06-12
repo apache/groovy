@@ -18,13 +18,11 @@
  */
 package org.apache.groovy.perf.grails
 
-import groovy.lang.GroovySystem
 
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.Blackhole
 
 import java.util.concurrent.TimeUnit
-
 /**
  * Tests the performance of Groovy's dynamic method dispatch mechanisms:
  * {@code methodMissing}, {@code propertyMissing}, {@code invokeMethod},

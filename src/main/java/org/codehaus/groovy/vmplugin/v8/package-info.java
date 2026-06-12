@@ -18,6 +18,14 @@
  */
 
 /**
- * Java 8 VM plugin. Compatibility layer for Java 8 features (lambdas, streams).
+ * Java 8 VM plugin. Compatibility layer for Java 8 features and core implementation of {@code invokedynamic} (Indy) support.
+ * <p>
+ * This package contains the runtime infrastructure for Groovy's dynamic method dispatch using the {@code invokedynamic}
+ * instruction. Key components include:
+ * <ul>
+ *   <li>{@link org.codehaus.groovy.vmplugin.v8.IndyInterface}: The entry point for bootstrap methods and call-site optimization logic.</li>
+ *   <li>{@link org.codehaus.groovy.vmplugin.v8.CacheableCallSite}: Manages the multi-level caching hierarchy (PIC, MRU, LRU) to minimize dispatch overhead.</li>
+ *   <li>{@link org.codehaus.groovy.vmplugin.v8.Selector}: Responsible for dynamic method selection, handle creation, and guard generation.</li>
+ * </ul>
  */
 package org.codehaus.groovy.vmplugin.v8;

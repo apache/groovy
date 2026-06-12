@@ -36,7 +36,7 @@ final class IndyInterfaceDeprecatedTest {
         // Prepare call site type: (IndyInterfaceDeprecatedTest) -> Object
         MethodHandles.Lookup lookup = MethodHandles.lookup()
         MethodType type = MethodType.methodType(Object, IndyInterfaceDeprecatedTest)
-        CacheableCallSite callSite = new CacheableCallSite(type, lookup)
+        CacheableCallSite callSite = new CacheableCallSite(type, lookup, IndyInterface.CallType.METHOD, false, true, false)
 
         // Provide non-null default/fallback targets (needed for guards in Selector)
         def dummyTarget = MethodHandles.dropArguments(
@@ -72,7 +72,7 @@ final class IndyInterfaceDeprecatedTest {
         // Prepare call site type: (IndyInterfaceDeprecatedTest) -> Object
         MethodHandles.Lookup lookup = MethodHandles.lookup()
         MethodType type = MethodType.methodType(Object, IndyInterfaceDeprecatedTest)
-        CacheableCallSite callSite = new CacheableCallSite(type, lookup)
+        CacheableCallSite callSite = new CacheableCallSite(type, lookup, IndyInterface.CallType.METHOD, false, true, false)
 
         // Provide non-null default/fallback targets (needed for guards in Selector)
         def dummyTarget = MethodHandles.dropArguments(

@@ -90,6 +90,26 @@ The phase enum is the right anchor for any documentation that talks
 about "when X happens during compilation". Quoting the phase names
 verbatim keeps the reference precise; paraphrasing tends to drift.
 
+## Runtime: invokedynamic (Indy)
+
+Since Groovy 2.0, dynamic method dispatch can be performed using the `invokedynamic`
+instruction. The core of this implementation lives in `org.codehaus.groovy.vmplugin.v8`.
+
+| Class | Role |
+|---|---|
+| `IndyInterface` | Bootstrap methods and optimization lifecycle management. |
+| `CacheableCallSite` | The stateful call site holding the PIC chain, MRU entry, and LRU cache. |
+| `Selector` | Logic for finding the target method/property and constructing the guarded `MethodHandle`. |
+| `MethodHandleWrapper` | Combines a `MethodHandle` with metadata like hit counts and target description. |
+
+### Caching Hierarchy
+To maximize performance, `CacheableCallSite` uses three levels of caching:
+1. **PIC Chain (Level 1)**: A bounded chain of guarded handles in the call-site target (JIT-optimized).
+2. **MRU Entry (Level 2)**: A lock-free volatile field for the most recent hit shape.
+3. **LRU Cache (Level 3)**: A synchronized, soft-referenced map for megamorphic fallback.
+
+Detailed technical documentation of this hierarchy can be found in the Javadoc of `CacheableCallSite`.
+
 ### Parser (phase 2)
 
 - Grammar lives in `src/antlr/GroovyLexer.g4` and

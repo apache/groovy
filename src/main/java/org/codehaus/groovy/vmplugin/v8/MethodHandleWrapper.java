@@ -19,9 +19,9 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaMethod;
-
 import java.lang.invoke.MethodHandle;
-import java.util.concurrent.atomic.AtomicLong;
+import java.lang.invoke.SwitchPoint;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Wrap method handles
@@ -32,8 +32,9 @@ class MethodHandleWrapper {
     private final MethodHandle cachedMethodHandle;
     private final MethodHandle targetMethodHandle;
     private final MetaMethod method;
+    private final SwitchPoint switchPoint;
     private final boolean canSetTarget;
-    private final AtomicLong latestHitCount = new AtomicLong(0);
+    private final LongAdder latestHitCount = new LongAdder();
 
     /**
      * Creates a wrapper for the cached and relink targets of a meta method.
@@ -41,12 +42,14 @@ class MethodHandleWrapper {
      * @param cachedMethodHandle the cached invocation handle
      * @param targetMethodHandle the relink target handle
      * @param method the associated meta method
+     * @param switchPoint the switch point associated with this handle
      * @param canSetTarget whether the call site target may be updated to this handle
      */
-    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, boolean canSetTarget) {
+    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, SwitchPoint switchPoint, boolean canSetTarget) {
         this.cachedMethodHandle = cachedMethodHandle;
         this.targetMethodHandle = targetMethodHandle;
         this.method = method;
+        this.switchPoint = switchPoint;
         this.canSetTarget = canSetTarget;
     }
 
@@ -88,18 +91,25 @@ class MethodHandleWrapper {
 
     /**
      * Increments the hit count for the latest inline-cache hit.
-     *
-     * @return the updated hit count
      */
-    public long incrementLatestHitCount() {
-        return latestHitCount.incrementAndGet();
+    public void incrementLatestHitCount() {
+        latestHitCount.increment();
     }
 
     /**
      * Resets the latest-hit counter.
      */
     public void resetLatestHitCount() {
-        latestHitCount.set(0);
+        latestHitCount.reset();
+    }
+
+    /**
+     * Adds the specified value to the latest-hit counter.
+     *
+     * @param value the value to add
+     */
+    public void addLatestHitCount(long value) {
+        latestHitCount.add(value);
     }
 
     /**
@@ -108,7 +118,16 @@ class MethodHandleWrapper {
      * @return the current latest-hit counter
      */
     public long getLatestHitCount() {
-        return latestHitCount.get();
+        return latestHitCount.sum();
+    }
+
+    /**
+     * Returns the switch point associated with this wrapper.
+     *
+     * @return the associated switch point
+     */
+    public SwitchPoint getSwitchPoint() {
+        return switchPoint;
     }
 
     /**
@@ -127,7 +146,7 @@ class MethodHandleWrapper {
         public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper();
 
         private NullMethodHandleWrapper() {
-            super(null, null, null, false);
+            super(null, null, null, null, false);
         }
     }
 }
