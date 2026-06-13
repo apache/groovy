@@ -14124,7 +14124,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         @Override
         public boolean hasNext() {
-            return repeatCount == FOREVER || repeatCount > 1 || parent.hasNext();
+            return FOREVER.equals(repeatCount) || repeatCount > 1 || parent.hasNext();
         }
 
         @Override
@@ -14135,7 +14135,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         @Override
         public T next() {
             if (!parent.hasNext()) {
-                if (repeatCount == FOREVER || repeatCount-- > 1) {
+                if (FOREVER.equals(repeatCount) || repeatCount-- > 1) {
                     this.repeating = true;
                     parent = queue.iterator();
                 } else {
