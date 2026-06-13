@@ -67,6 +67,30 @@ assert 1 + 2 == 4 - 2
     }
 
     @Test
+    void testFullSourceCapturedWithSupplementaryCharacters() {
+        // GROOVY-12085: AST column numbers are code-point based, but SourceText sliced
+        // the UTF-16 source line with them, dropping one trailing char per astral-plane
+        // character (e.g. emoji) appearing before the cut. Verify the captured source
+        // line is now complete in both compilation modes.
+        def captured = []
+        try {
+            assert '🥤🐝'.length() == 999
+        } catch (PowerAssertionError e) {
+            captured << e.message.readLines().first()
+        }
+        try {
+            def n = true
+            assert (n ? '🥤🐝' : 'z').length() == 999
+        } catch (PowerAssertionError e) {
+            captured << e.message.readLines().first()
+        }
+        assert captured == [
+            "assert '🥤🐝'.length() == 999",
+            "assert (n ? '🥤🐝' : 'z').length() == 999",
+        ]
+    }
+
+    @Test
     void testMethodCallExpressionWithImplicitTarget() {
         isRendered '''
 assert one(a)
