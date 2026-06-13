@@ -59,10 +59,14 @@ public class SourceText {
             if (lineText == null)
                 throw new SourceTextNotAvailableException(stat, sourceUnit, "SourceUnit.getSample() returned null");
 
+            // AST column numbers are code-point based, but lineText is a UTF-16 String;
+            // convert before slicing so supplementary characters (e.g. emoji) don't shift
+            // the cut by one UTF-16 unit each (GROOVY-12085). lineOffsets stays code-point
+            // based to match the (code-point) columns passed to getNormalizedColumn().
             if (line == stat.getLastLineNumber())
-                lineText = lineText.substring(0, stat.getLastColumnNumber() - 1);
+                lineText = lineText.substring(0, codePointToIndex(lineText, stat.getLastColumnNumber() - 1));
             if (line == stat.getLineNumber()) {
-                lineText = lineText.substring(stat.getColumnNumber() - 1);
+                lineText = lineText.substring(codePointToIndex(lineText, stat.getColumnNumber() - 1));
                 lineOffsets.add(stat.getColumnNumber() - 1);
             } else
                 lineOffsets.add(countLeadingWhitespace(lineText));
@@ -114,6 +118,20 @@ public class SourceText {
                 && node.getLastLineNumber() >= node.getLineNumber()
                 && node.getLastColumnNumber() >
                 (node.getLineNumber() == node.getLastLineNumber() ? node.getColumnNumber() : 0);
+    }
+
+    /**
+     * Translates a 0-based code-point offset into a UTF-16 {@code String} index,
+     * clamping to the bounds of {@code text}. AST column numbers are code-point
+     * based (the lexer reads a code-point stream), whereas the sampled source line
+     * is a UTF-16 {@code String}; the two differ once supplementary characters are
+     * present.
+     */
+    private static int codePointToIndex(String text, int codePointOffset) {
+        if (codePointOffset <= 0) return 0;
+        int length = text.length();
+        if (codePointOffset >= text.codePointCount(0, length)) return length;
+        return text.offsetByCodePoints(0, codePointOffset);
     }
 
     private static int countLeadingWhitespace(String lineText) {

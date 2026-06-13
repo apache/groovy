@@ -61,9 +61,14 @@ public class PositionConfigureUtils {
         }
 
         if (0 == newLineCnt) {
-            return tuple(token.getLine(), token.getCharPositionInLine() + 1 + token.getText().length());
+            // column numbers are code-point based (the lexer reads a CodePointCharStream), so
+            // measure the token text in code points too -- otherwise supplementary characters
+            // (e.g. emoji) make lastColumnNumber over-count by one UTF-16 unit each (GROOVY-12085)
+            return tuple(token.getLine(), token.getCharPositionInLine() + 1 + stopText.codePointCount(0, stopTextLength));
         } else { // e.g. GStringEnd contains newlines, we should fix the location info
-            return tuple(token.getLine() + newLineCnt, stopTextLength - stopText.lastIndexOf('\n'));
+            // measure the trailing line in code points too, so supplementary characters after
+            // the last newline don't make lastColumnNumber over-count by a UTF-16 unit each (GROOVY-12085)
+            return tuple(token.getLine() + newLineCnt, stopText.codePointCount(stopText.lastIndexOf('\n'), stopTextLength));
         }
     }
 
@@ -75,7 +80,9 @@ public class PositionConfigureUtils {
         astNode.setLineNumber(token.getLine());
         astNode.setColumnNumber(token.getCharPositionInLine() + 1);
         astNode.setLastLineNumber(token.getLine());
-        astNode.setLastColumnNumber(token.getCharPositionInLine() + 1 + token.getText().length());
+        // measure the token text in code points to keep lastColumnNumber code-point based (GROOVY-12085)
+        String text = token.getText();
+        astNode.setLastColumnNumber(token.getCharPositionInLine() + 1 + text.codePointCount(0, text.length()));
 
         return astNode;
     }
