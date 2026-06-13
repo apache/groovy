@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781252604224,
+  "lastUpdate": 1781337914852,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -1598,6 +1598,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 496.24333333333334,
             "range": "±23.51",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "7c3fe7067f8501a7fa368a5dea2273384c13be40",
+          "message": "GROOVY-12085 follow-on, align vertical bars for terms containing emojis (best effort works well for modern terminals - may still be out for some typically older terminals)",
+          "timestamp": "2026-06-13T02:13:17Z",
+          "url": "https://github.com/apache/groovy/commit/7c3fe7067f8501a7fa368a5dea2273384c13be40"
+        },
+        "date": 1781337913122,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 556.4466666666667,
+            "range": "±21.85",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 654.8633333333333,
+            "range": "±215.51",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 570.06,
+            "range": "±149.4",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 485.14333333333326,
+            "range": "±24.31",
             "unit": "ms",
             "extra": "5.0.6"
           }
