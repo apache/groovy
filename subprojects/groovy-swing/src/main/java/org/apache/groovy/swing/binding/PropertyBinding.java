@@ -226,19 +226,16 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
      */
     @Override
     public void updateTargetValue(final Object newValue) {
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                Object sourceValue = getSourceValue();
-                // if (isNonChangeCheck()) {
-                if ((sourceValue == null && newValue == null) ||
-                        DefaultTypeTransformation.compareEqual(sourceValue, newValue)) {
-                    // not a change, don't fire it
-                    return;
-                }
-                // }
-                setBeanProperty(newValue);
+        Runnable runnable = () -> {
+            Object sourceValue = getSourceValue();
+            // if (isNonChangeCheck()) {
+            if ((sourceValue == null && newValue == null) ||
+                DefaultTypeTransformation.compareEqual(sourceValue, newValue)) {
+                // not a change, don't fire it
+                return;
             }
+            // }
+            setBeanProperty(newValue);
         };
 
         switch (updateStrategy) {
