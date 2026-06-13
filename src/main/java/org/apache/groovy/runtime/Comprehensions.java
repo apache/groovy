@@ -176,12 +176,7 @@ public final class Comprehensions {
             // the user's body typically calls c.call(x), which would fail against
             // a Function wrapper. Untyped Object falls through to the asType
             // branch below, which returns the Closure unchanged.
-            return new Function<Object, Object>() {
-                @Override
-                public Object apply(Object value) {
-                    return fn.call(value);
-                }
-            };
+            return (Function<Object, Object>) fn::call;
         }
         // General SAM coercion: proxy the closure as the declared interface.
         // For pt == Object this returns the Closure unchanged.
