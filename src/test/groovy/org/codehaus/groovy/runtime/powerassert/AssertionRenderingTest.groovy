@@ -47,6 +47,29 @@ assert x == 1
     }
 
     @Test
+    void testSupplementaryCharMarkerAlignment() {
+        // GROOVY-12085 captured the full source; this verifies the value markers also
+        // line up with the source when it contains wide glyphs, on the common assumption
+        // that an emoji occupies two terminal cells (see AssertionRenderer.displayColumn).
+        isRendered '''
+assert '🥤'.length() == 9
+            |        |
+            2        false
+        ''', { ->
+            assert '🥤'.length() == 9
+        }
+
+        isRendered '''
+assert (n ? '🥤🐝' : 'z').length() == 999
+        |                 |        |
+        true              4        false
+        ''', { ->
+            def n = true
+            assert (n ? '🥤🐝' : 'z').length() == 999
+        }
+    }
+
+    @Test
     void testMultiLineAssertion() {
         isRendered '''
 assert 1 + 2 == 4 - 2

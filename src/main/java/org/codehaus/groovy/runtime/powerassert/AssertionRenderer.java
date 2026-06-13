@@ -93,28 +93,33 @@ public final class AssertionRenderer {
             String str = valueToString(value.getValue());
             if (str == null) continue; // null signals the value shouldn't be rendered
 
+            // the recorded column is a code-point column in the (normalized) source text, but
+            // markers are laid out one cell per column; translate to an estimated display column
+            // so they line up with wide glyphs such as emoji in the common case (see displayColumn)
+            final int placeColumn = displayColumn(text, startColumn);
+
             String[] strs = str.split("\r\n|\r|\n");
             int endColumn = strs.length == 1 ?
-                    startColumn + str.length() : // exclusive
+                    placeColumn + str.length() : // exclusive
                     Integer.MAX_VALUE; // multi-line strings are always placed on new lines
 
             for (int j = 1; j < lines.size(); j++)
                 if (endColumn < startColumns.get(j)) {
-                    placeString(lines.get(j), str, startColumn);
-                    startColumns.set(j, startColumn);
+                    placeString(lines.get(j), str, placeColumn);
+                    startColumns.set(j, placeColumn);
                     continue nextValue;
                 } else {
-                    placeString(lines.get(j), "|", startColumn);
+                    placeString(lines.get(j), "|", placeColumn);
                     if (j > 1) // make sure that no values are ever placed on empty line
-                        startColumns.set(j, startColumn + 1); // + 1: no whitespace required between end of value and "|"
+                        startColumns.set(j, placeColumn + 1); // + 1: no whitespace required between end of value and "|"
                 }
 
             // value could not be placed on existing lines, so place it on new line(s)
             for (String s : strs) {
                 StringBuilder newLine = new StringBuilder();
                 lines.add(newLine);
-                placeString(newLine, s, startColumn);
-                startColumns.add(startColumn);
+                placeString(newLine, s, placeColumn);
+                startColumns.add(placeColumn);
             }
         }
     }
@@ -130,6 +135,65 @@ public final class AssertionRenderer {
         while (line.length() < column)
             line.append(' ');
         line.replace(column - 1, column - 1 + str.length(), str);
+    }
+
+    /**
+     * Best-effort translation of a 1-based code-point column in {@code text} into a
+     * 1-based terminal display column, estimating the cell width of each preceding
+     * character. This lets value markers line up with assertion source containing
+     * wide glyphs (e.g. emoji and CJK) in the common case where such glyphs occupy
+     * two cells. It is necessarily approximate: actual width depends on the font and
+     * terminal, and grapheme clusters (combining marks, ZWJ sequences, regional-
+     * indicator flags, variation selectors) are not resolved. For text consisting of
+     * ordinary narrow characters this is the identity, so rendering is unchanged.
+     */
+    private static int displayColumn(String text, int column) {
+        int display = 1, index = 0, length = text.length();
+        for (int cp = 1; cp < column; cp++) {
+            if (index < length) {
+                int codePoint = text.codePointAt(index);
+                display += displayWidth(codePoint);
+                index += Character.charCount(codePoint);
+            } else {
+                display += 1; // beyond the text: treat as a single-cell position
+            }
+        }
+        return display;
+    }
+
+    /**
+     * Estimates the number of terminal cells a code point occupies: 0 for combining
+     * or formatting marks, 2 for wide (East Asian Wide/Fullwidth) characters and most
+     * emoji, and 1 otherwise. See {@link #displayColumn} for the caveats.
+     */
+    private static int displayWidth(int codePoint) {
+        switch (Character.getType(codePoint)) {
+            case Character.NON_SPACING_MARK:
+            case Character.ENCLOSING_MARK:
+            case Character.FORMAT:
+                return 0;
+            default:
+                return isWide(codePoint) ? 2 : 1;
+        }
+    }
+
+    private static boolean isWide(int cp) {
+        return (cp >= 0x1100 && cp <= 0x115F)    // Hangul Jamo
+            || cp == 0x2329 || cp == 0x232A      // angle brackets
+            || (cp >= 0x2E80 && cp <= 0x303E)    // CJK radicals .. Kangxi
+            || (cp >= 0x3041 && cp <= 0x33FF)    // Hiragana .. CJK symbols and punctuation
+            || (cp >= 0x3400 && cp <= 0x4DBF)    // CJK Unified Ideographs Extension A
+            || (cp >= 0x4E00 && cp <= 0x9FFF)    // CJK Unified Ideographs
+            || (cp >= 0xA000 && cp <= 0xA4CF)    // Yi
+            || (cp >= 0xAC00 && cp <= 0xD7A3)    // Hangul Syllables
+            || (cp >= 0xF900 && cp <= 0xFAFF)    // CJK Compatibility Ideographs
+            || (cp >= 0xFE10 && cp <= 0xFE19)    // Vertical Forms
+            || (cp >= 0xFE30 && cp <= 0xFE6F)    // CJK Compatibility Forms
+            || (cp >= 0xFF00 && cp <= 0xFF60)    // Fullwidth Forms
+            || (cp >= 0xFFE0 && cp <= 0xFFE6)    // Fullwidth signs
+            || (cp >= 0x1F000 && cp <= 0x1F1FF)  // mahjong/domino/cards/regional indicators
+            || (cp >= 0x1F300 && cp <= 0x1FAFF)  // emoji & pictographs
+            || (cp >= 0x20000 && cp <= 0x3FFFD); // CJK Unified Ideographs Extension B+
     }
 
     /**
