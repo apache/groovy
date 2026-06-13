@@ -167,14 +167,10 @@ public final class AssertionRenderer {
      * emoji, and 1 otherwise. See {@link #displayColumn} for the caveats.
      */
     private static int displayWidth(int codePoint) {
-        switch (Character.getType(codePoint)) {
-            case Character.NON_SPACING_MARK:
-            case Character.ENCLOSING_MARK:
-            case Character.FORMAT:
-                return 0;
-            default:
-                return isWide(codePoint) ? 2 : 1;
-        }
+        return switch (Character.getType(codePoint)) {
+            case Character.NON_SPACING_MARK, Character.ENCLOSING_MARK, Character.FORMAT -> 0;
+            default -> isWide(codePoint) ? 2 : 1;
+        };
     }
 
     private static boolean isWide(int cp) {
