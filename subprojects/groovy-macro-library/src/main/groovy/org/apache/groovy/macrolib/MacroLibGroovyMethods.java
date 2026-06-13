@@ -238,7 +238,7 @@ public final class MacroLibGroovyMethods {
         for (int i = 0; i < genCount; i++) {
             Expression g = exps[i];
             if (!(g instanceof BinaryExpression bin)
-                    || ((BinaryExpression) g).getOperation().getType() != Types.KEYWORD_IN) {
+                    || bin.getOperation().getType() != Types.KEYWORD_IN) {
                 return error(ctx, g, "DO generator must have the form 'name in expression'");
             }
             if (!(bin.getLeftExpression() instanceof VariableExpression)) {
