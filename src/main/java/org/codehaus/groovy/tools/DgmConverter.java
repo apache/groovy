@@ -41,11 +41,14 @@ import static java.lang.System.Logger.Level.INFO;
 
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
@@ -55,7 +58,9 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Type.getMethodType;
 
 /**
  * Generates {@code GeneratedMetaMethod} adapter classes and metadata for the
@@ -64,6 +69,8 @@ import static org.objectweb.asm.Opcodes.RETURN;
 public class DgmConverter {
 
     private static final System.Logger LOGGER = System.getLogger(DgmConverter.class.getName());
+    private static final String TARGET = "TARGET";
+    private static final String METHOD_HANDLE_CLASS_NAME = "Ljava/lang/invoke/MethodHandle;";
 
     /**
      * Generates DGM adapter classes into the target directory.
@@ -79,36 +86,29 @@ public class DgmConverter {
             targetDirectory = args[1];
             if (!targetDirectory.endsWith("/")) targetDirectory += "/";
         }
-        List<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod>();
-        for (Class aClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
+        List<CachedMethod> cachedMethodsList = new ArrayList<>();
+        for (Class<?> aClass : DefaultGroovyMethods.DGM_LIKE_CLASSES) {
             Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
         }
         final CachedMethod[] cachedMethods = cachedMethodsList.toArray(CachedMethod.EMPTY_ARRAY);
 
-        List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord>();
+        List<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<>();
 
         int cur = 0;
         for (CachedMethod method : cachedMethods) {
-            if (!method.isStatic() || !method.isPublic())
-                continue;
+            if (skipMethod(method)) continue;
 
-            if (method.getAnnotation(Deprecated.class) != null)
-                continue;
-
-            if (method.getParameterTypes().length == 0)
-                continue;
-
-            final Class returnType = method.getReturnType();
+            final Class<?> returnType = method.getReturnType();
 
             final String className = "org/codehaus/groovy/runtime/dgm$" + cur++;
 
-            GeneratedMetaMethod.DgmMethodRecord record = new GeneratedMetaMethod.DgmMethodRecord();
-            records.add(record);
+            GeneratedMetaMethod.DgmMethodRecord dgmMethodRecord = new GeneratedMetaMethod.DgmMethodRecord();
+            records.add(dgmMethodRecord);
 
-            record.methodName = method.getName();
-            record.returnType = method.getReturnType();
-            record.parameters = method.getNativeParameterTypes();
-            record.className = className;
+            dgmMethodRecord.methodName = method.getName();
+            dgmMethodRecord.returnType = method.getReturnType();
+            dgmMethodRecord.parameters = method.getNativeParameterTypes();
+            dgmMethodRecord.className = className;
 
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
             cw.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, className, null, "org/codehaus/groovy/reflection/GeneratedMetaMethod", null);
@@ -117,11 +117,15 @@ public class DgmConverter {
 
             final String methodDescriptor = BytecodeHelper.getMethodDescriptor(returnType, method.getNativeParameterTypes());
 
+            createTargetMethodHandleField(cw, method, className);
+
             createInvokeMethod(method, cw, returnType, methodDescriptor);
 
             createDoMethodInvokeMethod(method, cw, className, returnType, methodDescriptor);
 
             createIsValidMethodMethod(method, cw, className);
+
+            createGetTargetMethodHandleMethod(cw, className);
 
             cw.visitEnd();
 
@@ -139,6 +143,16 @@ public class DgmConverter {
         GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
         if (info)
             LOGGER.log(INFO, "Saved {0} dgm records to: {1}/META-INF/dgminfo", cur, targetDirectory);
+    }
+
+    private static boolean skipMethod(CachedMethod method) {
+        if (!method.isStatic() || !method.isPublic())
+            return true;
+
+        if (method.getAnnotation(Deprecated.class) != null)
+            return true;
+
+        return method.getParameterTypes().length == 0;
     }
 
     private static void createConstructor(ClassWriter cw) {
@@ -188,7 +202,10 @@ public class DgmConverter {
         }
     }
 
-    private static void createDoMethodInvokeMethod(CachedMethod method, ClassWriter cw, String className, Class returnType, String methodDescriptor) {
+    /**
+     * Generates bytecode for method invocation with argument coercion
+     */
+    private static void createDoMethodInvokeMethod(CachedMethod method, ClassWriter cw, String className, Class<?> returnType, String methodDescriptor) {
         MethodVisitor mv;
         mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "doMethodInvoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
         mv.visitCode();
@@ -207,7 +224,7 @@ public class DgmConverter {
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = method.getParameterTypes()[1].getTheClass();
+            Class<?> type = method.getParameterTypes()[1].getTheClass();
             BytecodeHelper.doCast(mv, type);
         } else {
             mv.visitVarInsn(ALOAD, 0);
@@ -216,28 +233,14 @@ public class DgmConverter {
             mv.visitVarInsn(ASTORE, 2);
             mv.visitVarInsn(ALOAD, 1);
             BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
-            loadParameters(method, 2, mv);
+            loadParameters(method, mv);
         }
-        mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor, false);
-        if (returnType == void.class) {
-            mv.visitInsn(ACONST_NULL);
-        } else if (returnType.isPrimitive()) {
-            Class<?> wrapperType = TypeUtil.autoboxType(returnType);
-            mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(wrapperType), "valueOf", "(" + BytecodeHelper.getTypeDescription(returnType) + ")" + BytecodeHelper.getTypeDescription(wrapperType), false);
-        }
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
+        writeMethodCall(method, returnType, methodDescriptor, mv);
     }
 
-    private static void createInvokeMethod(CachedMethod method, ClassWriter cw, Class returnType, String methodDescriptor) {
-        MethodVisitor mv;
-        mv = cw.visitMethod(ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(ALOAD, 1);
-        BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
-        loadParameters(method, 2, mv);
+    private static void writeMethodCall(CachedMethod method, Class<?> returnType, String methodDescriptor, MethodVisitor mv) {
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor, false);
+        // Handles primitive return types via autoboxing
         if (returnType == void.class) {
             mv.visitInsn(ACONST_NULL);
         } else if (returnType.isPrimitive()) {
@@ -250,26 +253,79 @@ public class DgmConverter {
     }
 
     /**
+     * Generates bytecode for method invocation with return handling
+     */
+    private static void createInvokeMethod(CachedMethod method, ClassWriter cw, Class<?> returnType, String methodDescriptor) {
+        MethodVisitor mv;
+        mv = cw.visitMethod(ACC_PUBLIC, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 1);
+        BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
+        loadParameters(method, mv);
+        writeMethodCall(method, returnType, methodDescriptor, mv);
+    }
+
+    /**
      * Loads and casts the non-receiver arguments for the supplied cached
      * method from an {@code Object[]} local variable.
      *
      * @param method the cached method whose parameters are being loaded
-     * @param argumentIndex the local-variable slot containing the argument array
      * @param mv the visitor receiving the bytecode instructions
      */
-    protected static void loadParameters(CachedMethod method, int argumentIndex, MethodVisitor mv) {
+    protected static void loadParameters(CachedMethod method, MethodVisitor mv) {
         CachedClass[] parameters = method.getParameterTypes();
         int size = parameters.length - 1;
         for (int i = 0; i < size; i++) {
             // unpack argument from Object[]
-            mv.visitVarInsn(ALOAD, argumentIndex);
+            mv.visitVarInsn(ALOAD, 2);
             BytecodeHelper.pushConstant(mv, i);
             mv.visitInsn(AALOAD);
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i + 1].getTheClass();
+            Class<?> type = parameters[i + 1].getTheClass();
             BytecodeHelper.doCast(mv, type);
         }
+    }
+
+    private static void createTargetMethodHandleField(ClassWriter cw, CachedMethod method, String className) {
+        // private static final java.lang.invoke.MethodHandle TARGET
+        cw.visitField(ACC_PRIVATE + ACC_STATIC + ACC_FINAL,
+            TARGET, METHOD_HANDLE_CLASS_NAME, null, null).visitEnd();
+
+        // static initializer
+        MethodVisitor mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        mv.visitCode();
+
+        // Lookup lookup = java.lang.invoke.MethodHandles.lookup()
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup",
+            "()Ljava/lang/invoke/MethodHandles$Lookup;", false);
+        // Class ownerClass = <declaring class>.class
+        String ownerInternal = BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass());
+        mv.visitLdcInsn(org.objectweb.asm.Type.getObjectType(ownerInternal));
+        // String methodName = "<method name>"
+        mv.visitLdcInsn(method.getName());
+        // MethodType methodType = MethodType.methodType(<return>, <param1>, <param2>, ...)
+        mv.visitLdcInsn(getMethodType(method.getDescriptor()));
+        // TARGET = lookup.findStatic(ownerClass, methodName, methodType)
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandles$Lookup", "findStatic",
+            "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/MethodHandle;", false);
+        mv.visitFieldInsn(PUTSTATIC, className, TARGET, METHOD_HANDLE_CLASS_NAME);
+
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    private static void createGetTargetMethodHandleMethod(ClassWriter cw, String className) {
+        MethodVisitor mv;
+        // public MethodHandle getTargetMethodHandle() { return TARGET; }
+        mv = cw.visitMethod(ACC_PUBLIC, "getTargetMethodHandle",
+            "()Ljava/lang/invoke/MethodHandle;", null, null);
+        mv.visitCode();
+        mv.visitFieldInsn(GETSTATIC, className, TARGET, METHOD_HANDLE_CLASS_NAME);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(1, 1);
+        mv.visitEnd();
     }
 }

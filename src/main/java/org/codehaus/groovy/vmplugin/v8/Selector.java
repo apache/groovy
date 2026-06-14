@@ -31,6 +31,18 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
 import groovy.transform.Internal;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -40,7 +52,6 @@ import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
-import org.codehaus.groovy.runtime.GroovyCategorySupport.CategoryMethod;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMetaMethod;
@@ -54,19 +65,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
@@ -744,83 +742,105 @@ public abstract class Selector {
 
         /**
          * Creates a MethodHandle using a before selected MetaMethod.
-         * If the MetaMethod has reflective information available, then
-         * we will use that information to create the target MethodHandle.
-         * If that is not the case we will produce a handle, which will use the
-         * MetaMethod itself for invocation.
+         * NumberNumberMetaMethod and GeneratedMetaMethod can be handled in a simplified way,
+         * ReflectionMetaMethod will be unwrapped and unreflected for a handle. If
+         * all that does not apply, we will fall back to using the MetaMethod itself.
          */
         public void setHandleForMetaMethod() {
+            isCategoryMethod = (method instanceof GroovyCategorySupport.CategoryMethod);
+            if (setHandleForSimpleCases()) return;
+
             MetaMethod metaMethod = method;
-            isCategoryMethod = (method instanceof CategoryMethod);
-
-            if (metaMethod instanceof NumberNumberMetaMethod
-                    || (method instanceof GeneratedMetaMethod && ("next".equals(name) || "previous".equals(name)))) {
-                if (LOG_ENABLED) LOG.info("meta method is number method");
-                if (IndyMath.chooseMathMethod(this, metaMethod)) {
-                    catchException = false;
-                    if (LOG_ENABLED) LOG.info("indy math successful");
-                    return;
-                }
-            }
-
-            boolean isCategoryTypeMethod = (metaMethod instanceof NewInstanceMetaMethod);
-            if (LOG_ENABLED) LOG.info("meta method is category type method: " + isCategoryTypeMethod);
-            boolean isStaticCategoryTypeMethod = (metaMethod instanceof NewStaticMetaMethod);
-            if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isCategoryTypeMethod);
-
-            if (metaMethod instanceof ReflectionMetaMethod) {
+            if (metaMethod instanceof ReflectionMetaMethod rmm) {
                 if (LOG_ENABLED) LOG.info("meta method is reflective method");
-                metaMethod = ((ReflectionMetaMethod) metaMethod).getCachedMethod();
+                metaMethod = rmm.getCachedMethod();
             }
 
             if (metaMethod instanceof CachedMethod cm) {
-                isVargs = metaMethod.isVargsMethod();
-                VMPlugin vmplugin = VMPluginFactory.getPlugin();
-                cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
-                try {
-                    var declaringClass = cm.getDeclaringClass().getTheClass();
-                    int parameterCount = cm.getParamsCount();
-                    if (parameterCount == 0 && "clone".equals(name) && declaringClass == Object.class) {
-                        var receiverClass = getCorrectedReceiver().getClass();
-                        if (receiverClass.isArray()) { // GROOVY-10733, et al.
-                            handle = MethodHandles.publicLookup().findVirtual(receiverClass, "clone", MethodType.methodType(Object.class));
-                        } else { // GROOVY-10319
-                            handle = MethodHandles.throwException(Object.class, CloneNotSupportedException.class) // prevent illegal access
-                                                                    .bindTo(new CloneNotSupportedException());
-                            handle = MethodHandles.dropArguments(handle, 0, Object.class); // discard receiver
-                        }
-                    } else if (parameterCount == 1 && "forName".equals(name) && declaringClass == Class.class) {
-                        handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
-                    } else {
-                        handle = unreflect(cm.getCachedMethod());
-                    }
-                } catch (ReflectiveOperationException e) {
-                    throw new GroovyBugError(e);
-                }
-                if (isStaticCategoryTypeMethod) {
-                    handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
-                    handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
-                } else if (!isCategoryTypeMethod && cm.isStatic()) {
-                    // drop the receiver, which might be a Class (invocation on Class)
-                    // or it might be an object (static method invocation on instance)
-                    // Object.class handles both cases at once
-                    handle = MethodHandles.dropArguments(handle, 0, Object.class);
-                }
+                setHandleForGeneralCachedMethod(cm, metaMethod);
             } else if (method != null) {
-                if (LOG_ENABLED) LOG.info("meta method is dgm helper");
-                // generic meta method invocation path
-                handle = META_METHOD_INVOKER;
-                handle = handle.bindTo(method);
-                if (spread) {
-                    args = originalArguments;
-                    skipSpreadCollector = true;
-                } else {
-                    // wrap arguments from call site in Object[]
-                    handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
-                }
-                currentType = removeWrapper(targetType);
-                if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
+                setHandleForGenericMetaMethod();
             }
+        }
+
+        private void setHandleForGenericMetaMethod() {
+            if (LOG_ENABLED) LOG.info("meta method is generic meta method");
+            // generic meta method invocation path
+            handle = META_METHOD_INVOKER;
+            handle = handle.bindTo(method);
+            if (spread) {
+                args = originalArguments;
+                skipSpreadCollector = true;
+            } else {
+                // wrap arguments from call site in Object[]
+                handle = handle.asCollector(Object[].class, targetType.parameterCount() - 1);
+            }
+            currentType = removeWrapper(targetType);
+            if (LOG_ENABLED) LOG.info("bound method name to META_METHOD_INVOKER");
+        }
+
+        private void setHandleForGeneralCachedMethod(CachedMethod cm, MetaMethod metaMethod) {
+            boolean isCategoryTypeMethod = (method instanceof NewInstanceMetaMethod);
+            if (LOG_ENABLED) LOG.info("meta method is category type method: " + isCategoryTypeMethod);
+            boolean isStaticCategoryTypeMethod = (method instanceof NewStaticMetaMethod);
+            if (LOG_ENABLED) LOG.info("meta method is static category type method: " + isStaticCategoryTypeMethod);
+
+            isVargs = metaMethod.isVargsMethod();
+            VMPlugin vmplugin = VMPluginFactory.getPlugin();
+            cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
+            setBaseHandleForCachedMethod(cm);
+            if (isStaticCategoryTypeMethod) {
+                handle = MethodHandles.insertArguments(handle, 0, SINGLE_NULL_ARRAY);
+                handle = MethodHandles.dropArguments(handle, 0, targetType.parameterType(0));
+            } else if (!isCategoryTypeMethod && cm.isStatic()) {
+                // drop the receiver, which might be a Class (invocation on Class)
+                // or it might be an object (static method invocation on instance)
+                // Object.class handles both cases at once
+                handle = MethodHandles.dropArguments(handle, 0, Object.class);
+            }
+        }
+
+        private void setBaseHandleForCachedMethod(CachedMethod cm) {
+            try {
+                var declaringClass = cm.getDeclaringClass().getTheClass();
+                int parameterCount = cm.getParamsCount();
+                if (parameterCount == 0 && "clone".equals(name) && declaringClass == Object.class) {
+                    var receiverClass = getCorrectedReceiver().getClass();
+                    if (receiverClass.isArray()) { // GROOVY-10733, et al.
+                        handle = MethodHandles.publicLookup().findVirtual(receiverClass, "clone", MethodType.methodType(Object.class));
+                    } else { // GROOVY-10319
+                        handle = MethodHandles.throwException(Object.class, CloneNotSupportedException.class) // prevent illegal access
+                                                                .bindTo(new CloneNotSupportedException());
+                        handle = MethodHandles.dropArguments(handle, 0, Object.class); // discard receiver
+                    }
+                } else if (parameterCount == 1 && "forName".equals(name) && declaringClass == Class.class) {
+                    handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
+                } else {
+                    handle = unreflect(cm.getCachedMethod());
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new GroovyBugError(e);
+            }
+        }
+
+        private boolean setHandleForSimpleCases() {
+            if (method instanceof NumberNumberMetaMethod
+                    || (method instanceof GeneratedMetaMethod && ("next".equals(name) || "previous".equals(name)))) {
+                if (LOG_ENABLED) LOG.info("meta method is number method");
+                if (IndyMath.chooseMathMethod(this, method)) {
+                    catchException = false;
+                    if (LOG_ENABLED) LOG.info("indy math successful");
+                    return true;
+                }
+            }
+            if (method instanceof GeneratedMetaMethod gmm && gmm.getTargetMethodHandle() != null) {
+                if (LOG_ENABLED) LOG.info("meta method is generated method");
+                handle = gmm.getTargetMethodHandle();
+                catchException = false;
+                isVargs = method.isVargsMethod();
+                return true;
+            }
+            return false;
         }
 
         /**
