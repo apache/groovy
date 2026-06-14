@@ -105,19 +105,22 @@ final class MonadicComprehensionsSpecTest {
         import groovy.transform.Monadic
         import java.util.function.Function
 
-        @Monadic(bind = 'chain', map = 'transform')
+        @Monadic(bind = 'chain', map = 'transform', unit = 'of')
         class Result {
             final Object value
             Result(Object value) { this.value = value }
+            static Result of(value) { new Result(value) }     // unit: not used by DO, declared for law tooling
             Result chain(Function f) { (Result) f.apply(value) }
             Result transform(Function f) { new Result(f.apply(value)) }
+            boolean equals(o) { o instanceof Result && value == o.value }   // results compare by value...
+            int hashCode() { value == null ? 0 : value.hashCode() }
         }
 
-        def r = DO(a in new Result(3),
-                   b in new Result(4)) {
-            new Result(a * b)
+        def r = DO(a in Result.of(3),
+                   b in Result.of(4)) {
+            Result.of(a * b)
         }
-        assert r.value == 12
+        assert r == new Result(12)                            // ...so == means "same wrapped value"
         // end::do_monadic[]
         '''
     }

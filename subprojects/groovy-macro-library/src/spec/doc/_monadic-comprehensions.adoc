@@ -133,7 +133,15 @@ include::../test/MonadicComprehensionsSpecTest.groovy[tags=do_monadic,indent=0]
 
 The monad laws (left identity, right identity, associativity) are not enforced
 by the compiler; as with `@Reducer`/`@Associative`, lawful behaviour is the
-participating type's responsibility.
+participating type's responsibility. Because a comprehension composes monadic
+_values_, a data-style carrier should provide structural `equals`/`hashCode`
+(Groovy's `==` dispatches to `equals`) — otherwise results compare by identity
+and laws such as right identity and functor identity silently fail to hold. This
+does not apply to effectful carriers like `Stream`, `CompletableFuture` and
+`Awaitable`, whose laws hold only up to observational equivalence. A carrier may
+optionally name its unit (`of`/`pure`) factory via `@Monadic(unit = '...')`; `DO`
+does not use it — the body lifts explicitly — but it lets law-deriving tooling
+synthesize the unit-dependent laws (left and right identity).
 
 [[monadic-static]]
 == Static type checking

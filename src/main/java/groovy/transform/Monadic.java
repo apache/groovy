@@ -36,6 +36,23 @@ import java.lang.annotation.Target;
  * with no AST transformation. The runtime dispatcher and the type checker match
  * this annotation <em>by simple name</em> ({@code Monadic}), exactly as
  * {@code groovy.typecheckers.CombinerChecker} matches {@code @Reducer}/{@code @Associative}.
+ * <p>
+ * <b>Lawful carriers and value equality.</b> A comprehension composes monadic
+ * <em>values</em>, which are only meaningful up to value equality: two carriers
+ * wrapping equal contents denote the same result. A data-style carrier should
+ * therefore provide structural {@code equals}/{@code hashCode} (Groovy's
+ * {@code ==} dispatches to {@code equals}); without them, results compare by
+ * identity and the laws &mdash; right identity and functor identity in
+ * particular &mdash; are reference-unequal and silently fail to hold. This does
+ * not apply to effectful or lazy carriers ({@code Stream},
+ * {@code CompletableFuture}, {@code Awaitable}), whose laws hold only up to
+ * observational equivalence and for which value equality is neither available
+ * nor expected.
+ * <p>
+ * As with {@link Associative} and {@link Reducer}, this annotation
+ * <em>asserts</em> that the carrier is lawful (the left/right identity and
+ * associativity laws); it does not prove it. The assertion is intended to be
+ * backed by tests.
  *
  * @since 6.0.0
  */
@@ -49,4 +66,22 @@ public @interface Monadic {
 
     /** The map method name. Empty means the structural default {@code map}. */
     String map() default "";
+
+    /**
+     * The name of the carrier's unit (a.k.a.&nbsp;{@code of}/{@code pure}/{@code return})
+     * factory: a static, single-argument method that lifts a bare value into the
+     * carrier. Empty means undeclared.
+     * <p>
+     * The {@code DO} macro does <em>not</em> use this member &mdash; its body
+     * yields the carrier explicitly, so no implicit lifting is performed. Unlike
+     * {@link #bind()} and {@link #map()}, the unit cannot be recovered
+     * structurally: it is a producer ({@code value -> carrier}), commonly a
+     * static factory (for example {@code Optional.of}), and for a multi-case
+     * carrier several factories share that shape (an {@code Either}'s
+     * {@code left}/{@code right}). Naming it lets law-deriving or law-checking
+     * tooling synthesize the unit-dependent laws (left identity, right identity);
+     * the unit-free laws (associativity, the functor laws) do not need it. This
+     * is the {@code @Monadic} analogue of {@link Reducer#zero()}.
+     */
+    String unit() default "";
 }

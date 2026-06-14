@@ -135,14 +135,30 @@ final class MonadicComprehensionsTest {
                 new Res(a + b)
             }
         }
-        assertEquals(5, ((Res) res).v)
+        assertEquals(new Res(5), res) // value equality, not identity
     }
 
     @Test
     void map_role_uses_map_name() {
         assertEquals(Optional.of(3), Comprehensions.map(Optional.of(2)) { it + 1 })
         def r = Comprehensions.map(new Res(2)) { it * 10 } // map -> 'transform'
-        assertEquals(20, ((Res) r).v)
+        assertEquals(new Res(20), r)
+    }
+
+    @Test
+    void monadic_carrier_has_value_equality() {
+        assertEquals(new Res(5), new Res(5))
+        assertEquals(new Res(5).hashCode(), new Res(5).hashCode())
+        assertTrue(new Res(1) != new Res(2))
+    }
+
+    @Test
+    void monadic_annotation_exposes_unit_member() {
+        def a = Res.getAnnotation(Monadic)
+        assertEquals('chain', a.bind())
+        assertEquals('transform', a.map())
+        assertEquals('unit', a.unit())
+        assertEquals('', Monadic.getMethod('unit').defaultValue) // undeclared by default
     }
 
     @Test
@@ -174,13 +190,19 @@ class ClosureBox {
     String toString() { "ClosureBox($v)" }
 }
 
-/** Opt-in carrier with non-conventional method names declared via @Monadic. */
-@Monadic(bind = 'chain', map = 'transform')
+/**
+ * Opt-in carrier with non-conventional method names declared via @Monadic, plus
+ * the structural equality its laws need and a declared unit factory.
+ */
+@Monadic(bind = 'chain', map = 'transform', unit = 'unit')
 class Res {
     final Object v
     Res(Object v) { this.v = v }
+    static Res unit(Object a) { new Res(a) }
     Res chain(Function f) { (Res) f.apply(v) }
     Res transform(Function f) { new Res(f.apply(v)) }
+    boolean equals(Object o) { o instanceof Res && this.v == ((Res) o).v }
+    int hashCode() { v == null ? 0 : v.hashCode() }
     String toString() { "Res($v)" }
 }
 
