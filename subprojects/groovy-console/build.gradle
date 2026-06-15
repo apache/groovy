@@ -44,7 +44,7 @@ dependencies {
 }
 
 tasks.register("console", JavaExec) {
-    jvmArgs += ["-Dgroovy.attach.groovydoc=true"]
+    jvmArgs.add("-Dgroovy.attach.groovydoc=true")
 
     mainClass = 'groovy.console.ui.Console'
     classpath = sourceSets.main.runtimeClasspath

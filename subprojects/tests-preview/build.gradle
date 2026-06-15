@@ -29,7 +29,7 @@ dependencies {
 
 tasks.withType(Test).configureEach {
     if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_14)) {
-        jvmArgs += "--enable-preview"
+        jvmArgs.add("--enable-preview")
     }
 }
 

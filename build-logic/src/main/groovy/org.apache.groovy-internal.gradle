@@ -71,14 +71,14 @@ dependencies {
 
 tasks.withType(AbstractCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.compilerArgs << '-Xlint:deprecation'
+    options.compilerArgs.add('-Xlint:deprecation')
 //    options.compilerArgs << '-Xlint:unchecked'
 //    options.compilerArgs << '-Xlint:-options'
 }
 
 tasks.withType(GroovyCompile).configureEach {
     groovyOptions.fork = true
-    groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=0", "-Dgroovy.target.bytecode=${sharedConfiguration.groovyTargetBytecodeVersion.get()}" as String]
+    groovyOptions.forkOptions.jvmArgs.addAll(["-Dgroovy.antlr4.cache.threshold=0", "-Dgroovy.target.bytecode=${sharedConfiguration.groovyTargetBytecodeVersion.get()}" as String])
     groovyOptions.forkOptions.memoryMaximumSize = sharedConfiguration.groovycMaxMemory.get()
     groovyClasspath = configurations.groovyCompilerClasspath
 

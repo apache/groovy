@@ -231,7 +231,7 @@ tasks.withType(Javadoc).configureEach {
 }
 
 tasks.named('compileTestGroovy') {
-    options.forkOptions.jvmArgs += ['-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true']
+    options.forkOptions.jvmArgs.add('-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true')
 }
 
 tasks.withType(CodeNarc).configureEach {
