@@ -44,7 +44,8 @@ dependencies {
 }
 
 tasks.register("console", JavaExec) {
-    jvmArgs += ["-Dgroovy.attach.groovydoc=true"]
+    // jvmArgs is now a ListProperty; += is not supported on lazy properties
+    jvmArgs.addAll(["-Dgroovy.attach.groovydoc=true"])
 
     mainClass = 'groovy.console.ui.Console'
     classpath = sourceSets.main.runtimeClasspath

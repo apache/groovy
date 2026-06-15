@@ -115,8 +115,10 @@ class PerformanceTestsExtension {
             je.doFirst {
                 def args = [outputFile.get().toString(), "-cp", groovyConf.asPath]
                 args.addAll(testFiles.collect { it.toString() })
-                je.setArgs(args)
-                println je.args.asList()
+                // setArgs was removed; args is now a ListProperty
+                je.args.set(args)
+                // getArgs() now returns a ListProperty; resolve it for printing
+                println je.args.get()
             }
         }
         tasks.named("performanceTests", PerformanceTestSummary) { pts ->

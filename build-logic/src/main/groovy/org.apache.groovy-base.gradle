@@ -231,7 +231,8 @@ tasks.withType(Javadoc).configureEach {
 }
 
 tasks.named('compileTestGroovy') {
-    options.forkOptions.jvmArgs += ['-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true']
+    // jvmArgs is now a ListProperty; += is not supported on lazy properties
+    options.forkOptions.jvmArgs.addAll(['-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true'])
 }
 
 tasks.withType(CodeNarc).configureEach {

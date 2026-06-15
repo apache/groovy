@@ -155,7 +155,8 @@ def generateGrammarSourceTask = tasks.named("generateGrammarSource") {
 
     final PARSER_PACKAGE_NAME = 'org.apache.groovy.parser.antlr4'
     packageName = PARSER_PACKAGE_NAME
-    arguments += ["-visitor", "-no-listener"]
+    // arguments is now a ListProperty; += is not supported on lazy properties
+    arguments.addAll(["-visitor", "-no-listener"])
 
     doLast {
         def parserFilePattern = 'Groovy*'

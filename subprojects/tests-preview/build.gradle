@@ -29,7 +29,8 @@ dependencies {
 
 tasks.withType(Test).configureEach {
     if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_14)) {
-        jvmArgs += "--enable-preview"
+        // jvmArgs is now a ListProperty; += is not supported on lazy properties
+        jvmArgs.add("--enable-preview")
     }
 }
 
