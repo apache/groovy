@@ -63,12 +63,17 @@ tasks.withType(Javadoc).configureEach {
         if (JavaVersion.current() >= JavaVersion.VERSION_21) {
             addStringOption('-link-modularity-mismatch', 'info')
         }
-        addStringOption('tag', 'apiNote:a:"API Note:"')
-        addStringOption('tag', 'implSpec:a:"Implementation Requirements:"')
-        addStringOption('tag', 'implNote:a:"Implementation Note:"')
+        // 'tag' is a multi-value Javadoc option; addStringOption sets a single String and fails
+        // against its List-typed value. Use addMultilineStringsOption to register the custom tags.
+        addMultilineStringsOption('tag').setValue([
+                'apiNote:a:"API Note:"',
+                'implSpec:a:"Implementation Requirements:"',
+                'implNote:a:"Implementation Note:"'
+        ])
         windowTitle = "Groovy ${versions.groovy}"
         docTitle = "Groovy ${versions.groovy}"
-        classpath += project.file('src/main/java') // to pick up package.html
+        // classpath is now a ConfigurableFileCollection; += with a File is unsupported, use from()
+        classpath.from(project.file('src/main/java')) // to pick up package.html
         locale = 'en_US'
         encoding = 'UTF-8'
         version = true

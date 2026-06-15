@@ -93,9 +93,12 @@ def bootstrapJar = tasks.register('bootstrapJar', Jar) {
 // The main Groovy compile tasks has a special setup because
 // it uses the "bootstrap compiler"
 tasks.withType(GroovyCompile).configureEach {
-    groovyClasspath = files(bootstrapJar, groovyClasspath)
+    // groovyClasspath/classpath are now ConfigurableFileCollections; a self-referencing
+    // assignment is unsupported. Snapshot the current files and rebuild with bootstrapJar
+    // first so the bootstrap compiler keeps precedence on the classpath.
+    groovyClasspath.setFrom(files(bootstrapJar, groovyClasspath.files))
     if (it.name == 'compileGroovy') {
-        classpath = files(bootstrapJar, classpath)
+        classpath.setFrom(files(bootstrapJar, classpath.files))
     }
     options.incremental = true
 }
@@ -160,7 +163,8 @@ def generateGrammarSourceTask = tasks.named("generateGrammarSource") {
 
     doLast {
         def parserFilePattern = 'Groovy*'
-        def outputPath = generateGrammarSource.outputDirectory.canonicalPath
+        // outputDirectory is now a DirectoryProperty; resolve it to a File before reading canonicalPath
+        def outputPath = generateGrammarSource.outputDirectory.get().asFile.canonicalPath
         def parserPackagePath = "${outputPath}/${PARSER_PACKAGE_NAME.replace('.', '/')}"
         file(parserPackagePath).mkdirs()
         copy {
