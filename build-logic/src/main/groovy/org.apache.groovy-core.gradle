@@ -159,7 +159,7 @@ def generateGrammarSourceTask = tasks.named("generateGrammarSource") {
 
     doLast {
         def parserFilePattern = 'Groovy*'
-        def outputPath = generateGrammarSource.outputDirectory.canonicalPath
+        def outputPath = generateGrammarSource.outputDirectory.get().asFile.canonicalPath
         def parserPackagePath = "${outputPath}/${PARSER_PACKAGE_NAME.replace('.', '/')}"
         file(parserPackagePath).mkdirs()
         copy {
