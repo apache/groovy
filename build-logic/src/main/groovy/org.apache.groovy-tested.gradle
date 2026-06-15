@@ -131,7 +131,9 @@ tasks.withType(Test).configureEach {
     maxParallelForks = sharedConfiguration.isRunningOnCI ? 1 : (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)
     scanForTestClasses = true
     ignoreFailures = false
-    classpath = files('src/test/groovy') + classpath
+    // classpath is now a ConfigurableFileCollection; a self-referencing assignment is not
+    // supported, so append the extra test source dir with from() instead.
+    classpath.from('src/test/groovy')
     exclude buildExcludeFilter(it.name == 'test')
     ext.resultText = ''
 

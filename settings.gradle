@@ -28,11 +28,16 @@ pluginManagement {
 
 plugins {
     // Before updating this, please check the compatibility from https://docs.gradle.com/develocity/current/miscellaneous/compatibility/ and https://develocity.apache.org/scans.
-    id "com.gradle.develocity" version "4.4.2"
-    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.4.0'
+    // Disabled for the Gradle 10 provider-api preview: the Develocity plugin's Gradle 9
+    // compatibility bridge calls GradleEnterprisePluginConfig.getDevelocityUrl(), which the
+    // preview distribution removed (NoSuchMethodError). No released Develocity version targets
+    // this snapshot, so build scans / Develocity build cache are disabled for the migration.
+//    id "com.gradle.develocity" version "4.4.2"
+//    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.4.0'
 }
 
-apply from: 'gradle/build-scans.gradle'
+// Disabled together with the Develocity plugin above (this script configures the develocity {} extension).
+//apply from: 'gradle/build-scans.gradle'
 
 dependencyResolutionManagement {
     repositories {

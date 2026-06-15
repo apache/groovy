@@ -42,7 +42,9 @@ dependencies {
 tasks.withType(Test).configureEach {
     excludes = ['**/*TestCase.class', '**/*$*.class']
 // required for DataSet tests
-    classpath = classpath + files('src/test/groovy') + files('src/spec/test')
+    // classpath is now a ConfigurableFileCollection; a self-referencing assignment is not
+    // supported, so append the extra test source dirs with from() instead.
+    classpath.from('src/test/groovy', 'src/spec/test')
 }
 
 groovyLibrary {

@@ -110,7 +110,8 @@ class PerformanceTestsExtension {
             je.group = "Performance tests"
             je.mainClass.set('org.apache.groovy.perf.CompilerPerformanceTest')
             je.classpath(groovyConf, sourceSets.getByName('test').output)
-            je.jvmArgs = ['-Xms512m', '-Xmx512m']
+            // jvmArgs is now a ListProperty; under @CompileStatic the lazy-assignment DSL does not apply, so use .set()
+            je.jvmArgs.set(['-Xms512m', '-Xmx512m'])
             je.outputs.file(outputFile)
             je.doFirst {
                 def args = [outputFile.get().toString(), "-cp", groovyConf.asPath]
