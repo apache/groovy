@@ -59,7 +59,7 @@ public class MethodNode extends AnnotatedNode {
 
     protected MethodNode() {
         this.name = null;
-        this.exceptions = null;
+        this.exceptions = ClassNode.EMPTY_ARRAY;
     }
 
     /**
@@ -77,7 +77,7 @@ public class MethodNode extends AnnotatedNode {
     public MethodNode(final String name, final int modifiers, final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
         this.name = name;
         this.modifiers = modifiers;
-        this.exceptions = exceptions;
+        this.exceptions = exceptions != null ? exceptions : ClassNode.EMPTY_ARRAY;
         this.code = code;
         setReturnType(returnType);
         setParameters(parameters);
