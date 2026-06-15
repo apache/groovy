@@ -116,7 +116,7 @@ class PerformanceTestsExtension {
                 def args = [outputFile.get().toString(), "-cp", groovyConf.asPath]
                 args.addAll(testFiles.collect { it.toString() })
                 je.setArgs(args)
-                println je.args.asList()
+                println je.args.get()
             }
         }
         tasks.named("performanceTests", PerformanceTestSummary) { pts ->
