@@ -96,4 +96,18 @@ final class MethodNodeTest {
         assert !methodNode.isDynamicReturnType()
         assert methodNode.returnType != null
     }
+
+    @Test // GROOVY-12089
+    void testExceptionsNeverNull() {
+        // a null exceptions argument must be normalized to an empty array so that
+        // getExceptions() honours its contract and callers (e.g. VariableScopeVisitor,
+        // and getter synthesis in ClassNode.getGetterMethod) never hit a NullPointerException
+        def methodNode = new MethodNode('foo', 0, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, null, null)
+        assert methodNode.exceptions != null
+        assert methodNode.exceptions.length == 0
+
+        // the no-arg constructor used by subclasses must likewise expose an empty array
+        assert new MethodNode().exceptions != null
+        assert new MethodNode().exceptions.length == 0
+    }
 }
