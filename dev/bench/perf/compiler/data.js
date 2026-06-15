@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781425202306,
+  "lastUpdate": 1781514386772,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -1698,6 +1698,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 473.2733333333333,
             "range": "±22.86",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Jochen Theodorou",
+            "username": "blackdrag",
+            "email": "blackdrag@gmx.org"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "72002909d7079f9b60b12459b203eeac234541f2",
+          "message": "Merge pull request #2597 from apache/feature/GROOVY-12068/short_paths\n\nGROOVY-12068: add fast paths on DTT for better inlining",
+          "timestamp": "2026-06-14T22:47:19Z",
+          "url": "https://github.com/apache/groovy/commit/72002909d7079f9b60b12459b203eeac234541f2"
+        },
+        "date": 1781514384947,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 564.13,
+            "range": "±21.14",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 654.9066666666666,
+            "range": "±215.51",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 589.7,
+            "range": "±150.39",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 492,
+            "range": "±23.16",
             "unit": "ms",
             "extra": "5.0.6"
           }
