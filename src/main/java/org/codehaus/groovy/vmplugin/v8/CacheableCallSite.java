@@ -43,6 +43,15 @@ import java.util.logging.Logger;
  */
 public class CacheableCallSite extends MutableCallSite {
     private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 8);
+    /**
+     * When {@code true}, stale (GC-cleared) cache entries are swept inline on the calling thread
+     * instead of being handed to the background {@code PIC-Cleaner} daemon, which is then never
+     * started. Cleanup behaviour is otherwise identical, since the caller already holds the
+     * {@code lruCache} monitor at both call sites. This is primarily useful for tests and tools
+     * such as deterministic concurrency checkers, which flag the perpetually parked daemon thread
+     * as a (false-positive) deadlock. Defaults to {@code false} (GROOVY-12092).
+     */
+    private static final boolean CLEAN_INLINE = SystemUtil.getBooleanSafe("groovy.indy.callsite.cleaner.inline");
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
     private final MethodHandles.Lookup lookup;
@@ -134,6 +143,11 @@ public class CacheableCallSite extends MutableCallSite {
     }
 
     private void removeAllStaleEntriesOfLruCache() {
+        if (CLEAN_INLINE) {
+            // both call sites already hold the lruCache monitor
+            lruCache.values().removeIf(v -> null == v.get());
+            return;
+        }
         CACHE_CLEANER_QUEUE.offer(() -> {
             synchronized (lruCache) {
                 lruCache.values().removeIf(v -> null == v.get());
@@ -214,19 +228,21 @@ public class CacheableCallSite extends MutableCallSite {
 
     private static final BlockingQueue<Runnable> CACHE_CLEANER_QUEUE = new LinkedBlockingQueue<>();
     static {
-        Thread cacheCleaner = new Thread(() -> {
-            while (true) {
-                try {
-                    CACHE_CLEANER_QUEUE.take().run();
-                } catch (Throwable ignore) {
-                    Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest(DefaultGroovyMethods.asString(ignore));
+        if (!CLEAN_INLINE) {
+            Thread cacheCleaner = new Thread(() -> {
+                while (true) {
+                    try {
+                        CACHE_CLEANER_QUEUE.take().run();
+                    } catch (Throwable ignore) {
+                        Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest(DefaultGroovyMethods.asString(ignore));
+                        }
                     }
                 }
-            }
-        }, "PIC-Cleaner");
-        cacheCleaner.setDaemon(true);
-        cacheCleaner.start();
+            }, "PIC-Cleaner");
+            cacheCleaner.setDaemon(true);
+            cacheCleaner.start();
+        }
     }
 }
