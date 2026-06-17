@@ -736,6 +736,31 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-12091
+    @CompileModesTest
+    void testTraitWithGenericProperty4(String mode) {
+        assertScript shell, """
+            $mode
+            trait Foo<T extends Serializable> {
+                T foo
+            }
+            $mode
+            class Bar implements Serializable, Foo<Bar> {
+                String name
+                Bar() {
+                    setFoo(this)
+                }
+            }
+            $mode
+            void test() {
+                def bar = new Bar(name:'Frank Grimes')
+                assert bar.name == 'Frank Grimes'
+                assert bar.foo === bar
+            }
+            test()
+        """
+    }
+
     @Test
     void testRuntimeTrait() {
         assertScript shell, '''

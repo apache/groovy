@@ -149,8 +149,8 @@ public abstract class TraitComposer {
 
                 for (int i = 1; i < nParams; i += 1) {
                     Parameter parameter = helperMethodParams[i];
-                    ClassNode originType = parameter.getOriginType();
-                    ClassNode fixedType = GenericsUtils.correctToGenericsSpecRecurse(methodGenericsSpec, originType);
+                    ClassNode paramType = parameter.getOriginType();
+                    ClassNode fixedType = GenericsUtils.correctToGenericsSpecRecurse(methodGenericsSpec, paramType);
                     Parameter newParam = new Parameter(fixedType, parameter.getName());
                     List<AnnotationNode> copied = new LinkedList<>();
                     List<AnnotationNode> notCopied = new LinkedList<>();
@@ -253,7 +253,7 @@ public abstract class TraitComposer {
                     }
                     if (getter) {
                         // add field
-                        if (helperField!=null) {
+                        if (helperField != null) {
                             List<AnnotationNode> copied = new LinkedList<>();
                             List<AnnotationNode> notCopied = new LinkedList<>();
                             GeneralUtils.copyAnnotatedNodeAnnotations(helperField, copied, notCopied);
@@ -281,8 +281,8 @@ public abstract class TraitComposer {
                     if (getter) {
                         newParams = Parameter.EMPTY_ARRAY;
                     } else {
-                        ClassNode originType = methodNode.getParameters()[0].getOriginType();
-                        ClassNode fixedType = originType.isGenericsPlaceHolder()?ClassHelper.OBJECT_TYPE:GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, originType);
+                        ClassNode paramType = methodNode.getParameters()[0].getOriginType();
+                        ClassNode fixedType = GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, paramType); // GROOVY-12091
                         newParams = new Parameter[]{new Parameter(fixedType, "val")};
                     }
 
@@ -447,7 +447,7 @@ public abstract class TraitComposer {
         for (ClassNode node : interfaces) {
             if (Traits.isTrait(node)) {
                 MethodNode method = node.getDeclaredMethod(name, forwarderParameters);
-                if (method!=null) {
+                if (method != null) {
                     // a similar method exists, we need a super bridge
                     // trait$super$foo(Class currentTrait, ...)
                     traits.add(node);
@@ -477,8 +477,8 @@ public abstract class TraitComposer {
         Parameter[] superForwarderParams = new Parameter[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            ClassNode originType = parameter.getOriginType();
-            superForwarderParams[i] = new Parameter(GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, originType), parameter.getName());
+            ClassNode paramType = parameter.getOriginType();
+            superForwarderParams[i] = new Parameter(GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, paramType), parameter.getName());
         }
         for (int i = 0; i < interfacesToGenerateForwarderFor.length; i++) {
             final ClassNode current = interfacesToGenerateForwarderFor[i];
