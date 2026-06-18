@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781685443027,
+  "lastUpdate": 1781771639896,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -1848,6 +1848,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 463.3833333333334,
             "range": "±22.55",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Eric Milles",
+            "username": "eric-milles",
+            "email": "eric.milles@thomsonreuters.com"
+          },
+          "committer": {
+            "name": "Eric Milles",
+            "username": "eric-milles",
+            "email": "eric.milles@thomsonreuters.com"
+          },
+          "id": "8f560e7046b39ce677e5eaa5f7613c1ed5c65b6b",
+          "message": "GROOVY-12091: fix type of trait property placeholder in setter method",
+          "timestamp": "2026-06-17T18:24:38Z",
+          "url": "https://github.com/apache/groovy/commit/8f560e7046b39ce677e5eaa5f7613c1ed5c65b6b"
+        },
+        "date": 1781771638671,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 559.3366666666667,
+            "range": "±22.03",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 672.31,
+            "range": "±214.47",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 592.35,
+            "range": "±145.22",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 493.97333333333336,
+            "range": "±23.96",
             "unit": "ms",
             "extra": "5.0.6"
           }
