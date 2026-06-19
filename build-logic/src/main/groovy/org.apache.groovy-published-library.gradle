@@ -890,5 +890,5 @@ cyclonedxDirectBom {
     externalReferences = [er]
 
     xmlOutput.unsetConvention()
-    jsonOutput.set(file("build/reports/cyclonedx/${project.name}.json"))
+    jsonOutput = "build/reports/cyclonedx/${project.name}.json"
 }
