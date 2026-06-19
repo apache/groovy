@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1781771639896,
+  "lastUpdate": 1781858393765,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -1898,6 +1898,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 493.97333333333336,
             "range": "±23.96",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "id": "1bb22751a4d4027eb53f42f524502e001c98561e",
+          "message": "GROOVY-12094: Bump jline to 4.2.1",
+          "timestamp": "2026-06-19T08:16:39Z",
+          "url": "https://github.com/apache/groovy/commit/1bb22751a4d4027eb53f42f524502e001c98561e"
+        },
+        "date": 1781858391286,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 548.6200000000001,
+            "range": "±25.88",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 633.4133333333333,
+            "range": "±215.62",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 550.0099999999999,
+            "range": "±142.09",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 466.5833333333333,
+            "range": "±24.86",
             "unit": "ms",
             "extra": "5.0.6"
           }
