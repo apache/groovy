@@ -39,7 +39,7 @@ import java.util.function.Function
  *                                                    — resizable icons
  *    wired to the toolbar; {@link #setSize(int)} resizes only these.
  *
- * Both families return {@link DynamicSVGIcon} proxies so the outer
+ * Both families return {@link groovy.console.ui.Icons.DynamicSVGIcon} proxies so the outer
  * reference held by Actions/components stays stable; {@link #refreshAll()}
  * forces every icon (toolbar and menu) to re-render — use after a LaF switch.
  *

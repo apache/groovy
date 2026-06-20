@@ -341,8 +341,8 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      * <pre>annotationParameters = [value: 'logger']</pre>
      *
      * Note that you cannot specify annotation closure values directly. If the annotation you want to add takes
-     * a closure as an argument, you will have to set a {@link ClosureExpression} instead. This can be done by either
-     * creating a custom {@link ClosureExpression} from code, or using the {@link org.codehaus.groovy.ast.builder.AstBuilder}.
+     * a closure as an argument, you will have to set a {@link org.codehaus.groovy.ast.expr.ClosureExpression} instead. This can be done by either
+     * creating a custom {@link org.codehaus.groovy.ast.expr.ClosureExpression} from code, or using the {@link org.codehaus.groovy.ast.builder.AstBuilder}.
      * <p>
      * Here is an example:
      * <pre>
