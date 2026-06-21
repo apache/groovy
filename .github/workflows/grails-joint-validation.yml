@@ -50,6 +50,10 @@ jobs:
         with:
           java-version: 11
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        # 'basic' uses the MIT-licensed, open-source cache provider; the default
+        # 'enhanced' provider (v6+) is proprietary (Gradle commercial Terms of Use)
+        with:
+          cache-provider: basic
       - name: Env
         run: env
 

@@ -54,6 +54,10 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        # 'basic' uses the MIT-licensed, open-source cache provider; the default
+        # 'enhanced' provider (v6+) is proprietary (Gradle commercial Terms of Use)
+        with:
+          cache-provider: basic
 
       # The gc profiler captures gc.alloc.rate.norm (bytes/op) as a JMH secondary
       # metric — the whole point of the adhoc fat-free comparison.
