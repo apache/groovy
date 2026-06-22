@@ -28,6 +28,7 @@ import java.util.Objects;
 
 import static java.lang.Boolean.parseBoolean;
 import static org.apache.groovy.json.internal.CharScanner.isInteger;
+import static org.apache.groovy.json.internal.CharScanner.isLong;
 import static org.apache.groovy.json.internal.CharScanner.parseDouble;
 import static org.apache.groovy.json.internal.CharScanner.parseFloat;
 import static org.apache.groovy.json.internal.CharScanner.parseIntFromTo;
@@ -161,8 +162,10 @@ public class NumberValue extends java.lang.Number implements Value {
             case INTEGER:
                 if (isInteger(buffer, startIndex, endIndex - startIndex)) {
                     return intValue();
-                } else {
+                } else if (isLong(buffer, startIndex, endIndex - startIndex)) {
                     return longValue();
+                } else {
+                    return bigIntegerValue();
                 }
         }
         die();
