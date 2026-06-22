@@ -742,6 +742,18 @@ class JsonSlurperTest {
     }
 
     @Test
+    void testParseIntegerBeyondLongRange() {
+        // 9999999999999999999 exceeds Long.MAX_VALUE; it must round-trip as a
+        // BigInteger rather than silently overflowing to a wrong (negative) long.
+        // The IndexOverlay/Lax/CharSource subclasses inherit this test and rerun
+        // it with their own parser.type, so all four parser types are covered.
+        def raw = parser.parseText('9999999999999999999')
+        def value = raw instanceof Value ? raw.toValue() : raw
+        assertTrue(value instanceof BigInteger)
+        assertEquals(new BigInteger('9999999999999999999'), value)
+    }
+
+    @Test
     void testParseNegativeNumber() {
         def slurper = new JsonSlurper()
         def result = slurper.parseText('{"negative":-42}')

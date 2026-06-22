@@ -19,6 +19,7 @@
 package org.apache.groovy.json.internal;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import static org.apache.groovy.json.internal.Exceptions.die;
 import static org.apache.groovy.json.internal.Exceptions.handle;
@@ -501,8 +502,10 @@ public class CharScanner {
         if (!foundDot && simple) {
             if (isInteger(buffer, from, length)) {
                 value = parseIntFromTo(buffer, from, index);
-            } else {
+            } else if (isLong(buffer, from, length)) {
                 value = parseLongFromTo(buffer, from, index);
+            } else {
+                value = new BigInteger(new String(buffer, from, length));
             }
         } else {
             value = new BigDecimal(buffer, from, length);

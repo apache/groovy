@@ -22,6 +22,7 @@ import groovy.json.JsonException;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -155,6 +156,8 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
             value = CharScanner.parseInt(chars);
         } else if (CharScanner.isLong(chars)) {
             value = CharScanner.parseLong(chars);
+        } else {
+            value = new BigInteger(new String(chars));
         }
 
         return value;
