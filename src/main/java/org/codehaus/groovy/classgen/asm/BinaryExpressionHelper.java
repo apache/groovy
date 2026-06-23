@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MultipleAssignmentMetadata;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -418,6 +419,49 @@ public class BinaryExpressionHelper {
     }
 
     /**
+     * Evaluates the given expression and stores its value in a fresh temporary
+     * variable, returning a loader for that variable. Used to evaluate the
+     * receiver and index of a subscript assignment ahead of the right-hand side
+     * (GROOVY-12097) while leaving the operand stack clean.
+     */
+    private VariableSlotLoader evaluateIntoTemporary(final Expression expression, final String name) {
+        AsmClassGenerator acg = controller.getAcg();
+        OperandStack operandStack = controller.getOperandStack();
+        CompileStack compileStack = controller.getCompileStack();
+        expression.visit(acg);
+        ClassNode type = operandStack.getTopOperand();
+        if (type.isGenericsPlaceHolder() || GenericsUtils.hasPlaceHolders(type)) {
+            type = controller.getTypeChooser().resolveType(expression, controller.getClassNode());
+        }
+        int index = compileStack.defineTemporaryVariable(name, type, true);
+        return new VariableSlotLoader(type, index, operandStack);
+    }
+
+    /**
+     * Returns {@code true} if the {@code target} binary expression occurs (by identity)
+     * somewhere within {@code container}. This detects synthetic assignments whose
+     * right-hand side reuses the left-hand side subscript node, such as the rewrites of
+     * {@code a[i] op= b} and {@code a[i] ?= b}, where the receiver and index are
+     * evaluated as part of the RHS. Only {@link BinaryExpression} nodes are matched, so
+     * {@code target} must be one (here, always the {@code LEFT_SQUARE_BRACKET} LHS).
+     */
+    private static boolean isReferencedWithin(final Expression container, final BinaryExpression target) {
+        if (container == null) return false;
+        boolean[] found = new boolean[1];
+        container.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitBinaryExpression(final BinaryExpression expression) {
+                if (expression == target) {
+                    found[0] = true;
+                } else {
+                    super.visitBinaryExpression(expression);
+                }
+            }
+        });
+        return found[0];
+    }
+
+    /**
      * Rewrites and evaluates the Elvis-assignment form.
      *
      * @param expression the Elvis-assignment expression
@@ -458,6 +502,25 @@ public class BinaryExpressionHelper {
             BytecodeVariable v = compileStack.defineVariable((Variable) leftExpression, lhsType, false);
             if (returnRightValue) operandStack.loadOrStoreVariable(v, false);
             return;
+        }
+
+        // GROOVY-12097: for a subscript assignment such as "a[i] = v", evaluate the
+        // receiver and the index before the right-hand side so that the expression
+        // keeps Java's left-to-right evaluation order. (GROOVY-2556 reversed this by
+        // hoisting the RHS evaluation ahead of the receiver and index.) We skip this
+        // when the receiver or index could be re-read while evaluating the RHS: safe
+        // subscripts (a?[i] = v) keep their short-circuit behaviour, and synthetic
+        // assignments whose RHS reuses the left-hand side -- "a[i] op= b" (compound)
+        // and "a[i] ?= b" (Elvis) -- already evaluate the receiver and index first as
+        // part of the RHS and manage their own temporaries.
+        VariableSlotLoader subscriptObject = null, subscriptIndex = null;
+        if (leftExpression instanceof BinaryExpression subscript
+                && subscript.getOperation().getType() == LEFT_SQUARE_BRACKET
+                && !subscript.isSafe()
+                && expression.getNodeMetaData("classgen.callback") == null // compound/safe rewrite already orders receiver and index
+                && !isReferencedWithin(rightExpression, subscript)) {
+            subscriptObject = evaluateIntoTemporary(subscript.getLeftExpression(), "$object");
+            subscriptIndex = evaluateIntoTemporary(subscript.getRightExpression(), "$index");
         }
 
         // evaluate RHS and store its value
@@ -542,9 +605,14 @@ public class BinaryExpressionHelper {
         // subscript assignment
         if (leftExpression instanceof BinaryExpression leftBinExpr) {
             if (leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET) {
-                assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader, leftBinExpr.isSafe());
+                Expression receiver = subscriptObject != null ? subscriptObject : leftBinExpr.getLeftExpression();
+                Expression index = subscriptIndex != null ? subscriptIndex : leftBinExpr.getRightExpression();
+                assignToArray(expression, receiver, index, rhsValueLoader, leftBinExpr.isSafe());
             }
             compileStack.removeVar(rhsValueId);
+            // remove the receiver/index temporaries in reverse order of definition (LIFO)
+            if (subscriptIndex != null) compileStack.removeVar(subscriptIndex.getIndex());
+            if (subscriptObject != null) compileStack.removeVar(subscriptObject.getIndex());
             return;
         }
 
