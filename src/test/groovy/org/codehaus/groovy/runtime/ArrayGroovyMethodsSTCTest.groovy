@@ -19,7 +19,6 @@
 package org.codehaus.groovy.runtime
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 /**
  * STC Tests for ArrayGroovyMethods
@@ -90,7 +89,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForBooleanArray() {
         assertScript '''
         boolean[] array = [false, true, false]
@@ -100,7 +99,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForByteArray() {
         assertScript '''
         byte[] array = [0, 1, 2]
@@ -110,7 +109,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForCharArray() {
         assertScript '''
         char[] array = 'abc'.chars
@@ -120,7 +119,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForShortArray() {
         assertScript '''
         short[] array = [0, 1, 2]
@@ -130,7 +129,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForIntArray() {
         assertScript '''
         int[] array = [0, 1, 2]
@@ -140,7 +139,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForLongArray() {
         assertScript '''
         long[] array = [0L, 1L, 2L]
@@ -150,7 +149,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForFloatArray() {
         assertScript '''
         float[] array = [0f, 1f, 2f]
@@ -160,7 +159,7 @@ final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @Disabled @Test
+    @Test
     void testEachForDoubleArray() {
         assertScript '''
         double[] array = [0d, 1d, 2d]
