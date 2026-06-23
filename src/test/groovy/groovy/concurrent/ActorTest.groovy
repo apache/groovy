@@ -1393,10 +1393,18 @@ final class ActorTest {
 
             actor.send('arm')
             Thread.sleep(400)              // would be ~9 ticks if uncancelled
+            // A fire travels scheduler -> executor -> mailbox -> worker before it
+            // counts, and cancel() only runs on the worker at tick 2. Any fires
+            // already past the scheduler stay in flight and still land, so the
+            // exact count is jitter-bound. The deterministic invariant is that
+            // once cancel takes effect the count stops growing.
+            def settled = ticks.get()
+            Thread.sleep(200)              // several more periods
             def n = ticks.get()
             actor.stop()
-            // Allow one in-flight tick that raced past the cancel.
-            assert n in [2, 3], "expected 2 or 3 ticks (got $n)"
+            assert n == settled, "cancel must stop further fires (grew from $settled to $n)"
+            assert n >= 2, "expected cancel to fire on at least the 2nd tick (got $n)"
+            assert n < 9, "cancel must bound fires well below the uncancelled rate (got $n)"
         '''
     }
 
