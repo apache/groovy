@@ -1707,6 +1707,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through a boolean[] passing each boolean to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * boolean[] array = [false, true, false]
+     * String result = ''
+     * array.each{ result += it.toString()[0] }
+     * assert result == 'ftf'
+     * </pre>
+     *
+     * @param self    the boolean array over which we iterate
+     * @param closure the closure applied on each boolean
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static boolean[] each(boolean[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (boolean item : self) {
+            closure.call(item);
+        }
+        return self;
+    }
+
+    /**
      * Iterates through a byte[] passing each byte to the given consumer.
      * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1, 2]
@@ -1725,6 +1748,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         Objects.requireNonNull(self);
         for (byte item : self) {
             consumer.accept(item);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a byte[] passing each byte to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * byte[] array = [0, 1, 2]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
+     * </pre>
+     *
+     * @param self    the byte array over which we iterate
+     * @param closure the closure applied on each byte
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static byte[] each(byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (byte item : self) {
+            closure.call(item);
         }
         return self;
     }
@@ -1753,6 +1799,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through a char[] passing each char to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * char[] array = ['a' as char, 'b' as char, 'c' as char]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == 'abc'
+     * </pre>
+     *
+     * @param self    the char array over which we iterate
+     * @param closure the closure applied on each char
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static char[] each(char[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (char item : self) {
+            closure.call(item);
+        }
+        return self;
+    }
+
+    /**
      * Iterates through a short[] passing each short to the given consumer.
      * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1, 2]
@@ -1771,6 +1840,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         Objects.requireNonNull(self);
         for (short item : self) {
             consumer.accept(item);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a short[] passing each short to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * short[] array = [0, 1, 2]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
+     * </pre>
+     *
+     * @param self    the short array over which we iterate
+     * @param closure the closure applied on each short
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static short[] each(short[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (short item : self) {
+            closure.call(item);
         }
         return self;
     }
@@ -1799,6 +1891,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through an int[] passing each int to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * int[] array = [0, 1, 2]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
+     * </pre>
+     *
+     * @param self    the int array over which we iterate
+     * @param closure the closure applied on each int
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static int[] each(int[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (int item : self) {
+            closure.call(item);
+        }
+        return self;
+    }
+
+    /**
      * Iterates through a long[] passing each long to the given consumer.
      * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 1L, 2L]
@@ -1817,6 +1932,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         Objects.requireNonNull(self);
         for (long item : self) {
             consumer.accept(item);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a long[] passing each long to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * long[] array = [0L, 1L, 2L]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '012'
+     * </pre>
+     *
+     * @param self    the long array over which we iterate
+     * @param closure the closure applied on each long
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static long[] each(long[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (long item : self) {
+            closure.call(item);
         }
         return self;
     }
@@ -1845,6 +1983,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through a float[] passing each float to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * float[] array = [0f, 1f, 2f]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '0.01.02.0'
+     * </pre>
+     *
+     * @param self    the float array over which we iterate
+     * @param closure the closure applied on each float
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static float[] each(float[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (float item : self) {
+            closure.call(item);
+        }
+        return self;
+    }
+
+    /**
      * Iterates through a double[] passing each double to the given consumer.
      * <pre class="language-groovy groovyTestCase">
      * double[] array = [0d, 1d, 2d]
@@ -1863,6 +2024,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         Objects.requireNonNull(self);
         for (double item : self) {
             consumer.accept(item);
+        }
+        return self;
+    }
+
+    /**
+     * Iterates through a double[] passing each double to the given closure.
+     * <pre class="language-groovy groovyTestCase">
+     * double[] array = [0d, 1d, 2d]
+     * String result = ''
+     * array.each{ result += it }
+     * assert result == '0.01.02.0'
+     * </pre>
+     *
+     * @param self    the double array over which we iterate
+     * @param closure the closure applied on each double
+     * @return the self array
+     * @since 6.0.0
+     */
+    @Incubating
+    public static double[] each(double[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        for (double item : self) {
+            closure.call(item);
         }
         return self;
     }
