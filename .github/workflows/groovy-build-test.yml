@@ -128,6 +128,29 @@ jobs:
         run: ./gradlew test ${{ matrix.junit-network }} -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_${{ runner.arch }}"
         shell: bash
         timeout-minutes: 60
+      # Ivy records a transient "not found" (e.g. an HTTP 404 from the CDN/WAF in
+      # front of Maven Central) as `...exists=false` inside ivydata-*.properties.
+      # If such a marker is saved into the cache it is restored and replayed on
+      # every later run, turning a one-off blip into a sticky `unresolved
+      # dependency` failure (e.g. the guava @Grab tests in GenericsSTCTest). Delete
+      # only those negative markers here — just before actions/cache's post-step
+      # saves ~/.groovy/grapes — so all JARs/POMs and good resolution state are
+      # preserved and a transient miss never becomes persistent. Runs on success
+      # or failure so poison written by a failing run is scrubbed too.
+      - name: "🧹 Scrub poisoned Grape negative-cache markers (exists=false) before save"
+        if: always()
+        shell: bash
+        run: |
+          dir=~/.groovy/grapes
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            echo "poisoned marker: $f"
+            grep -E 'exists=false' "$f" | sed 's/^/    /'
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
+          echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
       - name: "🚀Upload reports"
         uses: actions/upload-artifact@v7
         if: always()
@@ -193,3 +216,20 @@ jobs:
       - name: "🏃Test with Gradle"
         run: ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
         timeout-minutes: 60
+      # See the lts job for rationale: drop only Ivy's transient `exists=false`
+      # negative markers just before actions/cache saves, so a one-off resolution
+      # miss can't be cached and replayed as a sticky failure on later runs.
+      - name: "🧹 Scrub poisoned Grape negative-cache markers (exists=false) before save"
+        if: always()
+        shell: bash
+        run: |
+          dir=~/.groovy/grapes
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            echo "poisoned marker: $f"
+            grep -E 'exists=false' "$f" | sed 's/^/    /'
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
+          echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
