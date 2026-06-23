@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782118512496,
+  "lastUpdate": 1782202607590,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -1998,6 +1998,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 489.06000000000006,
             "range": "±25.63",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "4542f412672781a05bfc8742dbbdc925b4da5352",
+          "message": "scrub failed resolution - seems to be getting cached",
+          "timestamp": "2026-06-23T05:19:11Z",
+          "url": "https://github.com/apache/groovy/commit/4542f412672781a05bfc8742dbbdc925b4da5352"
+        },
+        "date": 1782202606502,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 536.4233333333334,
+            "range": "±23.04",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 656.9566666666667,
+            "range": "±219.2",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 580.3533333333332,
+            "range": "±149.47",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 477.99666666666667,
+            "range": "±20.97",
             "unit": "ms",
             "extra": "5.0.6"
           }
