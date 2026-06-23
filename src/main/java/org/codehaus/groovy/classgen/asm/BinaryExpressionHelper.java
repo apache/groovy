@@ -1059,12 +1059,23 @@ public class BinaryExpressionHelper {
         );
     }
 
+    // Holds the temporaries created for a subscript expression's receiver and index so
+    // that a read-modify-write such as a[i]++ reuses them for the getAt (read) and the
+    // putAt (write) instead of evaluating the receiver (or index) expression twice.
+    private static final class SubscriptTemps {
+        final VariableSlotLoader receiver, index;
+        SubscriptTemps(final VariableSlotLoader receiver, final VariableSlotLoader index) {
+            this.receiver = receiver;
+            this.index = index;
+        }
+    }
+
     private void evaluatePostfixMethod(final int op, final String method, final Expression expression, final Expression orig) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
 
         // load Expressions
-        VariableSlotLoader usesSubscript = loadWithSubscript(expression);
+        SubscriptTemps subscript = loadWithSubscript(expression);
 
         // save copy for later
         operandStack.dup();
@@ -1072,7 +1083,7 @@ public class BinaryExpressionHelper {
         int tempIdx = compileStack.defineTemporaryVariable("postfix_" + method, expressionType, true);
 
         // execute method
-        execMethodAndStoreForSubscriptOperator(op, method, expression, usesSubscript, orig);
+        execMethodAndStoreForSubscriptOperator(op, method, expression, subscript, orig);
 
         // remove the result of the method call
         operandStack.pop();
@@ -1080,7 +1091,7 @@ public class BinaryExpressionHelper {
         // reload saved value
         operandStack.load(expressionType, tempIdx);
         compileStack.removeVar(tempIdx);
-        if (usesSubscript != null) compileStack.removeVar(usesSubscript.getIndex());
+        removeSubscriptTemps(subscript);
     }
 
     /**
@@ -1119,36 +1130,62 @@ public class BinaryExpressionHelper {
 
     private void evaluatePrefixMethod(final int op, final String method, final Expression expression, final Expression orig) {
         // load expressions
-        VariableSlotLoader usesSubscript = loadWithSubscript(expression);
+        SubscriptTemps subscript = loadWithSubscript(expression);
 
         // execute method
-        execMethodAndStoreForSubscriptOperator(op, method, expression, usesSubscript, orig);
+        execMethodAndStoreForSubscriptOperator(op, method, expression, subscript, orig);
 
         // new value is already on stack, so nothing to do here
-        if (usesSubscript != null) controller.getCompileStack().removeVar(usesSubscript.getIndex());
+        removeSubscriptTemps(subscript);
     }
 
-    private VariableSlotLoader loadWithSubscript(final Expression expression) {
+    /**
+     * Removes the subscript receiver/index temporaries created by
+     * {@link #loadWithSubscript} in reverse order of definition (LIFO).
+     */
+    private void removeSubscriptTemps(final SubscriptTemps subscript) {
+        if (subscript != null) {
+            CompileStack compileStack = controller.getCompileStack();
+            compileStack.removeVar(subscript.index.getIndex());
+            compileStack.removeVar(subscript.receiver.getIndex());
+        }
+    }
+
+    private SubscriptTemps loadWithSubscript(final Expression expression) {
         AsmClassGenerator acg = controller.getAcg();
         // if we have a BinaryExpression, check if it is with subscription
         if (expression instanceof BinaryExpression bexp) {
             if (bexp.getOperation().getType() == LEFT_SQUARE_BRACKET) {
+                OperandStack operandStack = controller.getOperandStack();
+                CompileStack compileStack = controller.getCompileStack();
+
+                // GROOVY-12098: evaluate the receiver once (and before the index, to keep
+                // left-to-right order) and store it, so the read (getAt below) and the
+                // later write (putAt) reuse the value instead of re-evaluating the receiver.
+                Expression receiver = bexp.getLeftExpression();
+                receiver.visit(acg);
+                ClassNode receiverType = operandStack.getTopOperand();
+                if (receiverType.isGenericsPlaceHolder() || GenericsUtils.hasPlaceHolders(receiverType)) {
+                    receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+                }
+                int receiverId = compileStack.defineTemporaryVariable("$receiver", receiverType, true);
+                VariableSlotLoader receiverExpression = new VariableSlotLoader(receiverType, receiverId, operandStack);
+
                 // right expression is the subscript expression
                 // we store the result of the subscription on the stack
                 Expression subscript = bexp.getRightExpression();
                 subscript.visit(acg);
-                OperandStack operandStack = controller.getOperandStack();
                 ClassNode subscriptType = operandStack.getTopOperand();
                 if (subscriptType.isGenericsPlaceHolder() || GenericsUtils.hasPlaceHolders(subscriptType)) {
                     subscriptType = controller.getTypeChooser().resolveType(bexp, controller.getClassNode());
                 }
-                int id = controller.getCompileStack().defineTemporaryVariable("$subscript", subscriptType, true);
+                int id = compileStack.defineTemporaryVariable("$subscript", subscriptType, true);
                 VariableSlotLoader subscriptExpression = new VariableSlotLoader(subscriptType, id, operandStack);
-                BinaryExpression rewrite = binX(bexp.getLeftExpression(), bexp.getOperation(), subscriptExpression);
+                BinaryExpression rewrite = binX(receiverExpression, bexp.getOperation(), subscriptExpression);
                 rewrite.copyNodeMetaData(bexp);
                 rewrite.setSourcePosition(bexp);
                 rewrite.visit(acg);
-                return subscriptExpression;
+                return new SubscriptTemps(receiverExpression, subscriptExpression);
             }
         }
 
@@ -1157,11 +1194,11 @@ public class BinaryExpressionHelper {
         return null;
     }
 
-    private void execMethodAndStoreForSubscriptOperator(final int op, String method, final Expression expression, final VariableSlotLoader usesSubscript, final Expression orig) {
+    private void execMethodAndStoreForSubscriptOperator(final int op, String method, final Expression expression, final SubscriptTemps subscript, final Expression orig) {
         writePostOrPrefixMethod(op, method, expression, orig);
 
         // we need special code for arrays to store the result (like for a[1]++)
-        if (usesSubscript != null) {
+        if (subscript != null) {
             BinaryExpression be = (BinaryExpression) expression;
             CompileStack compileStack = controller.getCompileStack();
             OperandStack operandStack = controller.getOperandStack();
@@ -1170,7 +1207,7 @@ public class BinaryExpressionHelper {
             BytecodeExpression methodResultLoader = new VariableSlotLoader(methodResultType, resultIdx, operandStack);
 
             // execute the assignment, this will leave the right side (here the method call result) on the stack
-            assignToArray(be, be.getLeftExpression(), usesSubscript, methodResultLoader, be.isSafe());
+            assignToArray(be, subscript.receiver, subscript.index, methodResultLoader, be.isSafe());
 
             compileStack.removeVar(resultIdx);
 
