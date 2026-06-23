@@ -252,6 +252,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
+    // GROOVY-12097: receiver and index are evaluated before the right-hand side
     @Test
     void testSubscriptAssignment1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
@@ -261,11 +262,15 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
         ''').hasStrictSequence([
                 'L0',
                 'LINENUMBER 3',
-                'ICONST_1',
-                'ISTORE 2',
                 'ALOAD 1',
+                'ASTORE 2',
                 'ICONST_0',
-                'ILOAD 2',
+                'ISTORE 3',
+                'ICONST_1',
+                'ISTORE 4',
+                'ALOAD 2',
+                'ILOAD 3',
+                'ILOAD 4',
                 'INVOKESTATIC org/codehaus/groovy/runtime/BytecodeInterface8.intArraySet ([III)V',
                 'L1',
                 'LINENUMBER 4',
