@@ -423,15 +423,53 @@ public class BinaryExpressionHelper {
      * @param expression the Elvis-assignment expression
      */
     public void evaluateElvisEqual(final BinaryExpression expression) {
+        Token assign = Token.newSymbol(ASSIGN, expression.getOperation().getStartLine(), expression.getOperation().getStartColumn());
         Expression lhs = expression.getLeftExpression();
+
+        // GROOVY-12099: for a subscript Elvis-assignment such as "a[i] ?= b", evaluate the
+        // receiver and index once (left-to-right) into temporaries and reuse them for both
+        // the read (getAt, in the Elvis test) and the write (putAt), instead of evaluating
+        // each of them twice. Safe subscripts (a?[i] ?= b) keep their existing behaviour
+        // via the regular path below.
+        if (lhs instanceof BinaryExpression be && be.getOperation().getType() == LEFT_SQUARE_BRACKET && !be.isSafe()) {
+            VariableSlotLoader receiver  = storeInTemporary(be.getLeftExpression(), "$object");
+            VariableSlotLoader subscript = storeInTemporary(be.getRightExpression(), "$subscript");
+            BinaryExpression access = binX(receiver, be.getOperation(), subscript);
+            access.copyNodeMetaData(be);
+            access.setSourcePosition(be);
+
+            BinaryExpression assignment = binX(access, assign, elvisX(access, expression.getRightExpression()));
+            assignment.copyNodeMetaData(expression);
+            evaluateEqual(assignment, false);
+
+            CompileStack compileStack = controller.getCompileStack();
+            compileStack.removeVar(subscript.getIndex());
+            compileStack.removeVar(receiver.getIndex());
+            return;
+        }
+
         Expression rhs = elvisX(lhs, expression.getRightExpression());
-        BinaryExpression assignment = binX(
-                lhs,
-                Token.newSymbol(ASSIGN, expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()),
-                rhs
-        );
+        BinaryExpression assignment = binX(lhs, assign, rhs);
         assignment.copyNodeMetaData(expression);
         evaluateEqual(assignment, false);
+    }
+
+    /**
+     * Evaluates the given expression and stores its value in a fresh temporary variable,
+     * returning a loader for that variable. The loader carries the expression's type so
+     * that subsequent (static) method resolution on it works without re-evaluation.
+     */
+    private VariableSlotLoader storeInTemporary(final Expression expression, final String name) {
+        AsmClassGenerator acg = controller.getAcg();
+        OperandStack operandStack = controller.getOperandStack();
+        CompileStack compileStack = controller.getCompileStack();
+        expression.visit(acg);
+        ClassNode type = operandStack.getTopOperand();
+        if (type.isGenericsPlaceHolder() || GenericsUtils.hasPlaceHolders(type)) {
+            type = controller.getTypeChooser().resolveType(expression, controller.getClassNode());
+        }
+        int index = compileStack.defineTemporaryVariable(name, type, true);
+        return new VariableSlotLoader(type, index, operandStack);
     }
 
     /**
