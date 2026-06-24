@@ -104,6 +104,9 @@ public class MarkupBuilderHelper {
      * @param value the text within the comment.
      */
     public void comment(String value) {
+        if (value != null && value.contains("--")) {
+            throw new IllegalArgumentException("XML comment text must not contain '--': " + value);
+        }
         yieldUnescaped("<!-- " + value + " -->");
     }
 
