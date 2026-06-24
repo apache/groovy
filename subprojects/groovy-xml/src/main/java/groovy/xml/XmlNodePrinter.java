@@ -396,7 +396,7 @@ public class XmlNodePrinter {
                             out.print(prefix);
                         }
                         out.print("=" + quote);
-                        out.print(namespaceUri);
+                        printEscaped(namespaceUri, true);
                         out.print(quote);
                     }
                 }
