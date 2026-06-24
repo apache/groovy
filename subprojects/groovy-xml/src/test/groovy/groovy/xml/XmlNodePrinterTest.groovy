@@ -55,6 +55,20 @@ class XmlNodePrinterTest {
 </soap:Envelope>
 """
 
+    def namespaceWithSpecialUriInput = """\
+<foo:Envelope xmlns:foo="http://x/a?b=1&amp;c=2&lt;d">
+  <foo:Body>text</foo:Body>
+</foo:Envelope>
+"""
+
+    def namespaceWithSpecialUriOutput = """\
+<foo:Envelope xmlns:foo="http://x/a?b=1&amp;c=2&lt;d">
+  <foo:Body>
+    text
+  </foo:Body>
+</foo:Envelope>
+"""
+
     def noNamespaceInputVerbose = """\
 <Envelope>
   <Body>
@@ -202,6 +216,11 @@ class XmlNodePrinterTest {
     @Test
     void attributeWithNamespaceInput() {
         checkRoundtrip attributeWithNamespaceInput, attributeWithNamespaceInput
+    }
+
+    @Test
+    void namespaceUriWithSpecialCharsEscaped() {
+        checkRoundtrip namespaceWithSpecialUriInput, namespaceWithSpecialUriOutput
     }
 
     private checkRoundtrip(String intext, String outtext) {
