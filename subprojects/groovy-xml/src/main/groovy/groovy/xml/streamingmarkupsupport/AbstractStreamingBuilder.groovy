@@ -77,6 +77,9 @@ class AbstractStreamingBuilder {
     def toMapStringClosure = { Map instruction, checkDoubleQuotationMarks={ value -> !value.toString().contains('"') } ->
         def buf = new StringBuilder()
         instruction.each { name, value ->
+            if (name.toString().contains('?>') || value.toString().contains('?>')) {
+                throw new GroovyRuntimeException("Processing instruction data must not contain '?>': ${name}=${value}")
+            }
             if (checkDoubleQuotationMarks(value)) {
                 buf.append(" $name=\"$value\"")
             } else {
