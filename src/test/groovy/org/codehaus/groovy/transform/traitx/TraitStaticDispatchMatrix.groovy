@@ -45,6 +45,8 @@
 package org.codehaus.groovy.transform.traitx
 
 import groovy.test.GroovyAssert
+import groovy.test.NotYetImplemented
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.Test
 
 class TraitStaticDispatchMatrix {
@@ -512,5 +514,51 @@ class TraitStaticDispatchMatrix {
             externalThrows = true
         }
         assert externalThrows : "row13 inInterface=false: external V.name() should still fail (no interface static)"
+    }
+
+    // ---- Row 14 — T.this.* qualifier in trait code (proposed compile error) ----
+    // Latent bug surfaced during the GROOVY-12093 alternatives discussion.
+    // `T.this.m()` inside trait code currently produces invalid bytecode
+    // (VerifyError on 4.x: "Class not assignable to Closure"; ClassCastException
+    // at runtime on 5.x/6.x). GEP-22 § "this, super, and stackable traits"
+    // item 4 proposes rejecting the syntax at compile time. NYI until the
+    // fix lands; flips red on a build that implements the rejection.
+    @Test
+    @NotYetImplemented
+    void row14_T_this_qualifier_inTrait_shouldBeCompileError_PROPOSED() {
+        GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
+            ev '''
+                trait V {
+                    static boolean defaultNullable() { false }
+                    static seen() { V.this.defaultNullable() }
+                }
+                class Over implements V { static boolean defaultNullable() { true } }
+                Over.seen()
+            '''
+        }
+    }
+
+    // ---- Row 15 — unqualified super.m() from trait STATIC method (proposed compile error) ----
+    // Companion to row 14, same workstream. Unqualified `super.m()` inside a
+    // trait instance method walks the trait chain (spec item 2); from a trait
+    // STATIC method the chain is not walked and the call throws
+    // MissingMethodException at runtime. GEP-22 item 4 proposes rejecting
+    // the static-context use at compile time, leaving `T.super.m()` as the
+    // explicit form. NYI until the fix lands; flips red on a build that
+    // implements the rejection.
+    @Test
+    @NotYetImplemented
+    void row15_unqualified_static_super_inTrait_shouldBeCompileError_PROPOSED() {
+        GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
+            ev '''
+                trait Base { static String m() { 'Base' } }
+                trait V extends Base {
+                    static String m() { 'V' }
+                    static callSuper() { super.m() }   // unqualified, from static
+                }
+                class Impl implements V { }
+                Impl.callSuper()
+            '''
+        }
     }
 }
