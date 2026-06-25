@@ -67,6 +67,19 @@ class HexTest {
             "1g".decodeHex()
         }
 
+        // a leading sign is not a valid hexadecimal character and must be rejected
+        // (Integer.parseInt would otherwise accept it and decode a wrong byte)
+        ["-1", "+a", "-f", "+0"].each { bad ->
+            shouldFail(NumberFormatException) {
+                bad.decodeHex()
+            }
+        }
+
+        // non-ASCII digit characters are not valid hexadecimal either
+        shouldFail(NumberFormatException) {
+            "１１".decodeHex()
+        }
+
         // test to make sure a leading zero is handled correctly
         bytes = "0a".decodeHex()
         assert bytes.length == 1

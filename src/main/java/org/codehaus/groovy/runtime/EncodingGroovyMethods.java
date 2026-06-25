@@ -372,10 +372,17 @@ public class EncodingGroovyMethods {
 
         byte[] bytes = new byte[value.length() / 2];
         for (int i = 0; i < value.length(); i += 2) {
-            bytes[i / 2] = (byte) Integer.parseInt(value.substring(i, i + 2), 16);
+            bytes[i / 2] = (byte) ((hexToNibble(value.charAt(i)) << 4) | hexToNibble(value.charAt(i + 1)));
         }
 
         return bytes;
+    }
+
+    private static int hexToNibble(final char c) {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        throw new NumberFormatException("illegal hexadecimal character " + c + " in hex string");
     }
 
     /**
