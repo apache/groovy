@@ -62,4 +62,68 @@ final class MarkupBuilderInjectionTest {
         def result = smb.bind { mkp.pi('xml-stylesheet': [href: 'style.css', type: 'text/css']); root('x') }.toString()
         assertTrue(result.contains('<?xml-stylesheet') && result.contains('style.css') && result.contains('?>'))
     }
+
+    @Test
+    void streamingProcessingInstructionRejectsTerminatorInTarget() {
+        def smb = new StreamingMarkupBuilder()
+        assertThrows(GroovyRuntimeException) {
+            smb.bind { mkp.pi('x?><injected/>': [href: 'a']); root('x') }.toString()
+        }
+    }
+
+    @Test
+    void streamingProcessingInstructionRejectsTerminatorInNonMapData() {
+        def smb = new StreamingMarkupBuilder()
+        assertThrows(GroovyRuntimeException) {
+            smb.bind { mkp.pi('target': 'data?><injected/>'); root('x') }.toString()
+        }
+    }
+
+    @Test
+    void streamingProcessingInstructionKeepsPlainNonMapData() {
+        def smb = new StreamingMarkupBuilder()
+        def result = smb.bind { mkp.pi('target': 'plain data'); root('x') }.toString()
+        assertTrue(result.contains('<?target plain data?>'))
+    }
+
+    @Test
+    void streamingCommentRejectsCommentTerminator() {
+        def smb = new StreamingMarkupBuilder()
+        assertThrows(GroovyRuntimeException) {
+            smb.bind { mkp.comment('legit --> <injected/> rest'); root('x') }.toString()
+        }
+        assertThrows(GroovyRuntimeException) {
+            smb.bind { mkp.comment('a -- b'); root('x') }.toString()
+        }
+        assertThrows(GroovyRuntimeException) {
+            smb.bind { mkp.comment('ends with dash-'); root('x') }.toString()
+        }
+    }
+
+    @Test
+    void streamingCommentKeepsPlainText() {
+        def smb = new StreamingMarkupBuilder()
+        def result = smb.bind { mkp.comment('plain text'); root('x') }.toString()
+        assertTrue(result.contains('<!--plain text-->'))
+    }
+
+    @Test
+    void streamingDomProcessingInstructionRejectsTerminator() {
+        assertThrows(GroovyRuntimeException) {
+            new StreamingDOMBuilder().bind { mkp.pi('xml-stylesheet': [href: 'a?><injected/>']); root('x') }()
+        }
+        assertThrows(GroovyRuntimeException) {
+            new StreamingDOMBuilder().bind { mkp.pi('x?><injected/>': [href: 'a']); root('x') }()
+        }
+        assertThrows(GroovyRuntimeException) {
+            new StreamingDOMBuilder().bind { mkp.pi('target': 'data?><injected/>'); root('x') }()
+        }
+    }
+
+    @Test
+    void streamingDomCommentRejectsCommentTerminator() {
+        assertThrows(GroovyRuntimeException) {
+            new StreamingDOMBuilder().bind { mkp.comment('a -- b'); root('x') }()
+        }
+    }
 }

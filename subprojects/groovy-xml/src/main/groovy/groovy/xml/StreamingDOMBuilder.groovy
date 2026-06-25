@@ -33,6 +33,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
     def defaultNamespaceStack = ['']
     /** Closure backing {@code mkp.comment} for DOM comment node creation. */
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+        checkCommentText(body)
         def comment = dom.document.createComment(body)
         if (comment != null) {
             dom.element.appendChild(comment)
@@ -41,10 +42,12 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
     /** Closure backing {@code mkp.pi} for DOM processing-instruction node creation. */
     def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         attrs.each {target, instruction ->
+            checkProcessingInstruction(target)
             def pi = null
             if (instruction instanceof Map) {
                 pi = dom.document.createProcessingInstruction(target, toMapStringClosure(instruction))
             } else {
+                checkProcessingInstruction(instruction)
                 pi = dom.document.createProcessingInstruction(target, instruction)
             }
             if (pi != null) {

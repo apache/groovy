@@ -71,6 +71,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      * Invoked by calling <code>mkp.comment</code>
      */
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+        checkCommentText(body)
         out.unescaped() << '<!--'
         out.escaped() << body
         out.unescaped() << '-->'
@@ -81,6 +82,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      */
     def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         attrs.each {target, instruction ->
+            checkProcessingInstruction(target)
             out.unescaped() << '<?'
             if (instruction instanceof Map) {
                 out.unescaped() << target
@@ -89,6 +91,7 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
                     valueStr.contains('\'') || (useDoubleQuotes && !valueStr.contains('"'))
                 }
             } else {
+                checkProcessingInstruction(instruction)
                 out.unescaped() << "$target $instruction"
             }
             out.unescaped() << '?>'
