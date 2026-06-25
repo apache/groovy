@@ -89,7 +89,7 @@ java.util.logging.ConsoleHandler.level=ALL
 java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter
 java.util.logging.SimpleFormatter.format=%1$tT %4$s [%3$s] %5$s%6$s%n
 
-# Show Grape provider discovery details
+# Show Grape provider discovery details (or comment out for quieter operation)
 groovy.grape.Grape.level=FINE
 ----
 
