@@ -233,3 +233,107 @@ jobs:
             deleted=$((deleted + 1))
           done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
           echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
+
+  # Canary job: run the test suite against an upcoming, not-yet-released JDK.
+  # setup-java has no first-class EA distribution, so we download the OpenJDK
+  # EA archive ourselves and install it via `distribution: 'jdkfile'` (which
+  # extracts/caches it and sets JAVA_HOME). We capture that JAVA_HOME as the
+  # *test target*, then set up a stable LTS JDK afterwards so Gradle itself
+  # runs on a GA build. `fail-fast: false` keeps EA breakage from failing the
+  # rest of the matrix. NOTE: the EA build number bumps ~weekly, so the URL
+  # below goes stale — refresh it (and java-version) from https://jdk.java.net/27/.
+  ea:
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - jdk-url: "https://download.java.net/java/early_access/jdk27/27/GPL/openjdk-27-ea+27_linux-x64_bin.tar.gz"
+            jdk-version: "27.0.0-ea.27"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v6.0.3
+      - name: "⬇️ Download EA JDK"
+        run: wget -nv -O "$RUNNER_TEMP/java_package.tar.gz" "${{ matrix.jdk-url }}"
+      - name: "☕️ Setup EA JDK (test target)"
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: 'jdkfile'
+          jdkFile: ${{ runner.temp }}/java_package.tar.gz
+          java-version: ${{ matrix.jdk-version }}
+      - name: "📌 Capture EA JAVA_HOME"
+        shell: bash
+        run: echo "EA_JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+      - name: "☕️ Setup build JDK"
+        # Last setup-java wins, so Gradle runs on this stable LTS JDK while the
+        # tests target the EA JDK captured above via -Ptarget.java.home.
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+          check-latest: true
+      # See the lts job for rationale; same prefix lets all jobs share the cache.
+      - name: "🍇 Cache @Grab artifacts (~/.groovy/grapes + ~/.m2/repository)"
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            ~/.groovy/grapes
+            ~/.m2/repository
+          key: ${{ runner.os }}-grape-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-grape-
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        # 'basic' uses the MIT-licensed, open-source cache provider; the default
+        # 'enhanced' provider (v6+) is proprietary (Gradle commercial Terms of Use)
+        with:
+          cache-provider: basic
+      - name: "🌡 Pre-warm @Grab artifacts via Maven"
+        shell: bash
+        run: |
+          set +e
+          coords=$(grep -rhEo "@Grab\(\s*(value\s*=\s*)?['\"][^'\"]+['\"]" src/test subprojects/*/src/test 2>/dev/null \
+            | sed -E "s/.*@Grab\(\s*(value\s*=\s*)?['\"]([^'\"]+)['\"].*/\2/" \
+            | grep -E '^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+:[a-zA-Z0-9._+-]+$' \
+            | sort -u)
+          [ -z "$coords" ] && { echo "No @Grab coords — skipping"; exit 0; }
+          n=$(printf '%s\n' "$coords" | wc -l | tr -d ' ')
+          echo "Pre-warming $n coords"
+          ok=0; fail=0
+          while IFS= read -r c; do
+            if mvn -B -q dependency:get -Dartifact="$c" -Dtransitive=true >/dev/null 2>&1; then
+              ok=$((ok+1))
+            else
+              fail=$((fail+1)); echo "  ⚠ $c"
+            fi
+          done <<< "$coords"
+          echo "Pre-warm: $ok ok / $fail failed"
+          exit 0
+        timeout-minutes: 15
+      - name: "🏃Test with Gradle"
+        run: ./gradlew test -Pgroovy.grape.bridge-cache=true -Ptarget.java.home="$EA_JAVA_HOME"
+        shell: bash
+        timeout-minutes: 60
+      # See the lts job for rationale: drop only Ivy's transient `exists=false`
+      # negative markers just before actions/cache saves, so a one-off resolution
+      # miss can't be cached and replayed as a sticky failure on later runs.
+      - name: "🧹 Scrub poisoned Grape negative-cache markers (exists=false) before save"
+        if: always()
+        shell: bash
+        run: |
+          dir=~/.groovy/grapes
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            echo "poisoned marker: $f"
+            grep -E 'exists=false' "$f" | sed 's/^/    /'
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
+          echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
+      - name: "🚀Upload reports"
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: build-reports-ea
+          path: '**/build/reports/'
