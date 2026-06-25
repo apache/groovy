@@ -1191,6 +1191,22 @@ public abstract class Selector {
          */
         @Override
         public void setCallSiteTarget() {
+            buildInvokeHandle();
+            setGuards(args[0]);
+            doCallSiteTargetSet();
+        }
+
+        /**
+         * Builds the (unguarded) invocation handle into {@link #handle}: select the
+         * metaclass and target method, make a handle, and apply the vargs/coercion/
+         * wrapping/null-receiver/spreading/exception transformations. This is the
+         * portion of {@link #setCallSiteTarget()} before guard installation; it is
+         * factored out so the GEP-15 compound-assignment path can reuse Selector's
+         * real method selection while managing its own guarding and caching shell.
+         *
+         * @see #selectInvokeHandle(CacheableCallSite, Class, String, Object[])
+         */
+        void buildInvokeHandle() {
             if (!setNullForSafeNavigation() && !setInterceptor()) {
                 getMetaClass();
                 setSelectionBase();
@@ -1209,9 +1225,30 @@ public abstract class Selector {
 
                 addExceptionHandler();
             }
-            setGuards(args[0]);
-            doCallSiteTargetSet();
         }
+    }
+
+    /**
+     * GEP-15 support: builds the <em>unguarded</em> invocation handle that a normal
+     * method call site would use for {@code methodName} on the given receiver/args
+     * ({@code arguments[0]} is the receiver). The result has type
+     * {@code callSite.type()}. Guard and switch-point wrapping are intentionally
+     * omitted — the caller (compound-assignment) applies its own per-shape guard
+     * and shares the global MOP {@link IndyInterface#switchPoint}. The caller must
+     * have already established that {@code methodName} resolves for this receiver
+     * (e.g. via {@code respondsTo}); this routes the actual invocation through the
+     * same selection, coercion and wrapping path as a normal call.
+     *
+     * @param callSite a call site supplying the desired {@code (receiver,arg)->Object} type
+     * @param sender the sending class for visibility/MOP decisions
+     * @param methodName the resolved method name (the chosen {@code *Assign} or base operator)
+     * @param arguments the runtime arguments, receiver first
+     * @return the unguarded invocation handle of type {@code callSite.type()}
+     */
+    static MethodHandle selectInvokeHandle(CacheableCallSite callSite, Class<?> sender, String methodName, Object[] arguments) {
+        MethodSelector selector = new MethodSelector(callSite, sender, methodName, CallType.METHOD, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, arguments);
+        selector.buildInvokeHandle();
+        return selector.handle;
     }
 
     //--------------------------------------------------------------------------
