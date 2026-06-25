@@ -89,6 +89,32 @@ class AbstractStreamingBuilder {
         buf.toString()
     }
 
+    /**
+     * Rejects a processing-instruction target or data fragment that would prematurely
+     * close the PI. The {@code ?>} sequence ends a PI and cannot be entity-escaped, so
+     * content holding it would inject sibling markup; such content is rejected instead.
+     */
+    def checkProcessingInstruction = { part ->
+        if (part?.toString()?.contains('?>')) {
+            throw new GroovyRuntimeException("Processing instruction target/data must not contain '?>': ${part}")
+        }
+        part
+    }
+
+    /**
+     * Rejects comment text that would prematurely close the comment. Comment content
+     * cannot contain {@code --} or end with {@code -} (which would form {@code --} against
+     * the closing delimiter), and no escaping is legal inside a comment, so such text is
+     * rejected instead.
+     */
+    def checkCommentText = { text ->
+        def value = text?.toString()
+        if (value != null && (value.contains('--') || value.endsWith('-'))) {
+            throw new GroovyRuntimeException("XML comment text must not contain '--' or end with '-': ${text}")
+        }
+        text
+    }
+
     /** Registry of built-in {@code mkp} helper tags shared by concrete streaming builders. */
     def specialTags = ['declareNamespace':namespaceSetupClosure,
                            'declareAlias':aliasSetupClosure,
