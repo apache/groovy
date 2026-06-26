@@ -31,8 +31,9 @@ final class Groovy11985 {
     @Test
     void testStaticOverrideVisibleFromTraitThisCall() {
         GroovyAssert.assertScript '''
+            import groovy.transform.Virtual
             trait Validateable {
-                static boolean defaultNullable() { false }
+                @Virtual static boolean defaultNullable() { false }
                 static boolean defaultNullableSeenByTrait() { this.defaultNullable() }
             }
             class MyNullableValidateable implements Validateable {
@@ -49,8 +50,9 @@ final class Groovy11985 {
     @Test
     void testStaticOverrideVisibleFromTraitUnqualifiedCall() {
         GroovyAssert.assertScript '''
+            import groovy.transform.Virtual
             trait Validateable {
-                static boolean defaultNullable() { false }
+                @Virtual static boolean defaultNullable() { false }
                 static boolean defaultNullableUnqualified() { defaultNullable() }
             }
             class MyNullableValidateable implements Validateable {
@@ -65,8 +67,9 @@ final class Groovy11985 {
     @Test
     void testStaticOverrideVisibleFromInstanceMethod() {
         GroovyAssert.assertScript '''
+            import groovy.transform.Virtual
             trait T {
-                static String which() { 'trait' }
+                @Virtual static String which() { 'trait' }
                 String greet() { which() }
             }
             class C implements T {
@@ -82,9 +85,10 @@ final class Groovy11985 {
     void testStaticOverrideUnderCompileStatic() {
         GroovyAssert.assertScript '''
             import groovy.transform.CompileStatic
+            import groovy.transform.Virtual
             @CompileStatic
             trait Validateable {
-                static boolean defaultNullable() { false }
+                @Virtual static boolean defaultNullable() { false }
                 static boolean defaultNullableSeenByTrait() { this.defaultNullable() }
                 static boolean defaultNullableUnqualified() { defaultNullable() }
             }
@@ -117,7 +121,8 @@ final class Groovy11985 {
     @Test
     void testSuperTraitPublicStaticIsPolymorphic() {
         GroovyAssert.assertScript '''
-            trait Base { static String hello() { 'base' } }
+            import groovy.transform.Virtual
+            trait Base { @Virtual static String hello() { 'base' } }
             trait Mid extends Base { static String greet() { hello() } }
             class C implements Mid {}
             class D implements Mid { static String hello() { 'override' } }
