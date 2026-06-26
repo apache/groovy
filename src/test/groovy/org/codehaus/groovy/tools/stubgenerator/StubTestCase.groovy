@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.tools.stubgenerator
 
-import com.thoughtworks.qdox.JavaProjectBuilder
-import com.thoughtworks.qdox.model.JavaClass
 import groovy.test.GroovyTestCase
 import junit.framework.TestCase
 import org.codehaus.groovy.control.CompilationFailedException
@@ -50,9 +48,9 @@ import static org.junit.jupiter.api.Assertions.fail
  * existing tests which use this approach, e.g. <code>DuplicateMethodAdditionInStubsTest</code>.</li>
  * </ul>
  * From within the <code>verifyStubs()</code> method, you can make various assertions on the stubs.
- * QDox is used for parsing the Java sources (both the generated stub Java sources, as well as the original Java source,
+ * JavaParser is used for parsing the Java sources (both the generated stub Java sources, as well as the original Java source,
  * but not the Groovy sources).
- * The execution of the <code>verifyStubs()</code> method is done with the <code>QDoxCategory</code> applied,
+ * The execution of the <code>verifyStubs()</code> method is done with the <code>JavaParserCategory</code> applied,
  * which provides various useful shortcuts for quickly checking the structure of your stubs.
  * <p>
  * Please have a look at the existing samples to see what kind of asserts can be done.
@@ -64,7 +62,7 @@ abstract class StubTestCase {
 
     protected File sourceRootPath
 
-    protected JavaProjectBuilder qdox = new JavaProjectBuilder()
+    protected JavaParserSourceSet parsedSources = new JavaParserSourceSet()
 
     protected GroovyClassLoader loader
     protected CompilerConfiguration config
@@ -166,9 +164,9 @@ abstract class StubTestCase {
         try {
             compile(sources)
 
-            // use QDox for parsing the Java stubs and Java sources
-            qdox.addSourceTree(sourceRootPath)
-            qdox.addSourceTree(stubDir)
+            // use JavaParser for parsing the Java stubs and Java sources
+            parsedSources.addSourceTree(sourceRootPath)
+            parsedSources.addSourceTree(stubDir)
 
             if (debug) {
                 println ">>> Stubs generated"
@@ -179,8 +177,8 @@ abstract class StubTestCase {
                     }
                 }
 
-                println ">>> QDox canonical sources"
-                qdox.classes.each { JavaClass jc ->
+                println ">>> JavaParser canonical sources"
+                parsedSources.classes.each { JavaSourceClass jc ->
                     println " -> " + jc.fullyQualifiedName
                     println jc.source
                 }
@@ -191,7 +189,7 @@ abstract class StubTestCase {
             compileError = t
         } finally {
             try {
-                use (QDoxCategory) {
+                use (JavaParserCategory) {
                     verifyStubs()
                 }
             } catch (AssertionError | RuntimeException e) {
@@ -277,10 +275,10 @@ abstract class StubTestCase {
      * Method providing a useful shortcut for the subclasses, so that you can use <code>classes</code>
      * from within the <code>verifyStubs()</code> method, to access all the stubs.
      *
-     * @return an array of QDox' <code>JavaClass</code>es.
+     * @return an array of parsed Java classes.
      */
-    protected JavaClass[] getClasses() {
-        qdox.classes as JavaClass[]
+    protected JavaSourceClass[] getClasses() {
+        parsedSources.classes as JavaSourceClass[]
     }
 
     /**
@@ -335,4 +333,3 @@ abstract class StubTestCase {
         }
     }
 }
-

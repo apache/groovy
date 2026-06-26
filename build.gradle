@@ -127,7 +127,7 @@ dependencies {
     testImplementation projects.groovyDateutil
     testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
-    testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
+    testImplementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
 
@@ -147,8 +147,6 @@ dependencies {
     tools "org.codehaus.plexus:plexus-utils:4.0.3"
     // end
     tools "org.ow2.asm:asm:${versions.asm}"
-    tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
-
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
 
     testRuntimeOnly(project(':')) {

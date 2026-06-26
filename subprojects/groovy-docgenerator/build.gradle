@@ -24,7 +24,7 @@ dependencies {
     implementation rootProject
     implementation projects.groovyTemplates
     implementation projects.groovyGroovydoc
-    implementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
+    implementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
 
     testImplementation projects.groovyTest
 }
