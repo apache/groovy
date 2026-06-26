@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -119,6 +120,22 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             return transformBinaryExpression((BinaryExpression) exp);
         } else if (exp instanceof MethodCallExpression mce) {
             String obj = mce.getObjectExpression().getText();
+            // GROOVY-12104: T.this.m() inside trait code (where T is the
+            // enclosing trait) compiles successfully today but generates
+            // invalid or mis-typed bytecode that fails at runtime — Verify-
+            // Error on 4.x ("Class not assignable to Closure"), ClassCast-
+            // Exception on 5.x/6.x. T.this has no coherent meaning for
+            // traits anyway (per GEP-22 § this, super, and stackable traits
+            // item 1, this is the implementing instance, and the trait is
+            // not an enclosing scope of its implementer). Reject the
+            // qualifier at compile time pointing at the existing supported
+            // alternatives.
+            if (isTraitThisQualifier(mce.getObjectExpression())) {
+                unit.addError(new SyntaxException(
+                        "'" + traitClass.getNameWithoutPackage() + ".this' is not allowed inside trait code; use 'this." + mce.getMethodAsString() + "(...)' for normal dispatch, or '" + traitClass.getNameWithoutPackage() + ".super." + mce.getMethodAsString() + "(...)' for explicit trait-anchored dispatch",
+                        mce.getLineNumber(), mce.getColumnNumber()));
+                return mce;
+            }
             if ("super".equals(obj)) {
                 return transformSuperMethodCall(mce); // super.m(x) --> $self.Ttrait$super$m(x)
             } else if ("this".equals(obj)) {
@@ -152,6 +169,14 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             }
         } else if (exp instanceof PropertyExpression pexp) {
             String obj = pexp.getObjectExpression().getText();
+            // GROOVY-12104: T.this.field qualifier — same rejection rationale
+            // as the method-call form above. Reject at compile time.
+            if (isTraitThisQualifier(pexp.getObjectExpression())) {
+                unit.addError(new SyntaxException(
+                        "'" + traitClass.getNameWithoutPackage() + ".this' is not allowed inside trait code; use 'this." + pexp.getPropertyAsString() + "' for the field reference",
+                        pexp.getLineNumber(), pexp.getColumnNumber()));
+                return pexp;
+            }
             if (pexp.isImplicitThis() || "this".equals(obj)) {
                 String propName = pexp.getPropertyAsString();
                 if (knownFields.contains(propName)) {
@@ -258,6 +283,21 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
     private void throwSuperError(final ASTNode node) {
         unit.addError(new SyntaxException("Call to super is not allowed in a trait", node.getLineNumber(), node.getColumnNumber()));
+    }
+
+    /**
+     * Returns {@code true} if the given expression has the shape
+     * {@code <traitClass>.this} — i.e. a {@link PropertyExpression} whose
+     * object is a {@link ClassExpression} of the enclosing trait class
+     * and whose property is the literal "this". Used by GROOVY-12104's
+     * compile-time rejection of {@code T.this.*} qualifier syntax in
+     * trait code.
+     */
+    private boolean isTraitThisQualifier(final Expression exp) {
+        if (!(exp instanceof PropertyExpression pe)) return false;
+        if (!"this".equals(pe.getPropertyAsString())) return false;
+        if (!(pe.getObjectExpression() instanceof ClassExpression ce)) return false;
+        return ce.getType().equals(traitClass);
     }
 
     private Expression transformSuperMethodCall(final MethodCallExpression call) {

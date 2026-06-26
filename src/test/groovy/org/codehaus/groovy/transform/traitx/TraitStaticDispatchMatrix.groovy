@@ -516,16 +516,16 @@ class TraitStaticDispatchMatrix {
         assert externalThrows : "row13 inInterface=false: external V.name() should still fail (no interface static)"
     }
 
-    // ---- Row 14 — T.this.* qualifier in trait code (proposed compile error) ----
-    // Latent bug surfaced during the GROOVY-12093 alternatives discussion.
-    // `T.this.m()` inside trait code currently produces invalid bytecode
-    // (VerifyError on 4.x: "Class not assignable to Closure"; ClassCastException
-    // at runtime on 5.x/6.x). GEP-22 § "this, super, and stackable traits"
-    // item 4 proposes rejecting the syntax at compile time. NYI until the
-    // fix lands; flips red on a build that implements the rejection.
+    // ---- Row 14 — T.this.* qualifier in trait code (GROOVY-12104) ----
+    // `T.this.m()` inside trait code is rejected at compile time. Without
+    // the reject, the call previously generated invalid bytecode
+    // (VerifyError on 4.x: "Class not assignable to Closure";
+    // ClassCastException at runtime on 5.x/6.x). See Groovy12104.groovy
+    // for focused coverage (instance variants + field-access form +
+    // regression-guards for explicit other-class qualifiers). This row is
+    // the matrix-level anchor.
     @Test
-    @NotYetImplemented
-    void row14_T_this_qualifier_inTrait_shouldBeCompileError_PROPOSED() {
+    void row14_T_this_qualifier_inTrait_isCompileError() {
         GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
             ev '''
                 trait V {
