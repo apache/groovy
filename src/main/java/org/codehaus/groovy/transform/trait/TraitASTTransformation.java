@@ -116,8 +116,8 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
-    /** Marker annotation type for {@code @Anchored} trait static methods. */
-    private static final ClassNode ANCHORED_TYPE = ClassHelper.make(groovy.transform.Anchored.class);
+    /** Marker annotation type for {@code @Virtual} trait static methods. */
+    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(groovy.transform.Virtual.class);
 
     /**
      * Metadata key that marks trait-generated calls requiring dynamic dispatch.
@@ -268,18 +268,17 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             processField(field, initializer, staticInitializer, fieldHelper, helper, staticFieldHelper, cNode, fieldNames);
         }
 
-        // Reject misapplied @Anchored markers before we waste effort
+        // Reject misapplied @Virtual markers before we waste effort
         // processing them. Errors are registered against the source unit but
         // processing continues so that multiple violations can be reported
         // in a single compilation.
-        validateAnchoredAnnotations(cNode);
+        validateVirtualAnnotations(cNode);
 
-        // Identify @Anchored public statics whose bodies the main loop will
-        // emit on the helper. Captured up front so the main loop carries no
-        // @Anchored-specific branching and so the interface forwarders can be
-        // installed in a single post-processing step after the originals are
-        // removed from the trait interface.
-        List<MethodNode> anchoredOnInterface = collectAnchoredOnInterface(cNode);
+        // Identify public static trait methods whose bodies the main loop
+        // will emit on the helper; each gets a JVM-native interface static
+        // method promoted onto the trait interface in a post-processing
+        // step after the originals are removed from the trait interface.
+        List<MethodNode> interfaceStatics = collectInterfaceStatics(cNode);
 
         // add methods
         List<MethodNode> nonPublicAPIMethods = new ArrayList<>();
@@ -310,12 +309,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
 
         // Install a public-static method on the trait interface for each
-        // @Anchored callee identified above. The forwarder delegates to the
-        // helper so external `Trait.m()` and from-trait `T.m()` calls resolve
-        // at the JVM level. Done after the removal step so the original
-        // static method is no longer on cNode when the forwarder is added.
-        for (MethodNode anchored : anchoredOnInterface) {
-            cNode.addMethod(createAnchoredInterfaceForwarder(cNode, helper, anchored));
+        // public static trait method identified above. The forwarder
+        // delegates to the helper so external `Trait.m()` and from-trait
+        // `T.m()` calls resolve at the JVM level. Done after the removal
+        // step so the original static method is no longer on cNode when
+        // the forwarder is added.
+        for (MethodNode m : interfaceStatics) {
+            cNode.addMethod(createInterfaceStaticForwarder(cNode, helper, m));
         }
 
         // copy statements from static and instance init blocks
@@ -651,15 +651,15 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     /**
-     * Reports a compile error for any {@code @Anchored} annotation that is
+     * Reports a compile error for any {@code @Virtual} annotation that is
      * applied to something other than a public static non-abstract trait
      * method. Without this check the misapplied annotation would be silently
      * ignored, leaving the user with no signal that the marker had no effect.
      */
-    private void validateAnchoredAnnotations(final ClassNode traitClass) {
+    private void validateVirtualAnnotations(final ClassNode traitClass) {
         for (MethodNode methodNode : traitClass.getMethods()) {
-            List<AnnotationNode> annotations = methodNode.getAnnotations(ANCHORED_TYPE);
-            if (annotations.isEmpty()) continue;
+            List<AnnotationNode> virtualAnns = methodNode.getAnnotations(VIRTUAL_TYPE);
+            if (virtualAnns.isEmpty()) continue;
             String issue;
             if (!methodNode.isStatic()) {
                 issue = "is not static";
@@ -670,45 +670,36 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             } else {
                 continue; // valid
             }
-            AnnotationNode anchored = annotations.get(0);
+            AnnotationNode at = virtualAnns.get(0);
             sourceUnit.addError(new SyntaxException(
-                    "@Anchored can only be applied to public static trait methods; "
+                    "@Virtual can only be applied to public static trait methods; "
                             + traitClass.getName() + "#" + methodNode.getTypeDescriptor() + " " + issue,
-                    anchored.getLineNumber(), anchored.getColumnNumber()));
+                    at.getLineNumber(), at.getColumnNumber()));
         }
     }
 
     /**
-     * Returns the public {@code static} trait methods whose {@code @Anchored}
-     * marker requests interface promotion (i.e. {@code inInterface=true}, the
-     * default). The returned list snapshots the trait's method set so the
-     * caller can iterate the methods without being affected by later
-     * mutations to {@code traitClass.getMethods()}.
+     * Returns the public {@code static} non-abstract trait methods that
+     * should be promoted onto the generated trait interface as JVM-native
+     * interface static methods. Excludes {@code @Virtual} methods, whose
+     * dispatch path requires the helper-based dynamic-dispatch mechanism;
+     * promoting them onto the interface as direct static methods would
+     * make {@code @CompileStatic} callers bind to the trait's copy
+     * statically and bypass the virtual-dispatch path entirely.
+     *
+     * <p>The returned list snapshots the trait's method set so the caller
+     * can iterate without being affected by later mutations to
+     * {@code traitClass.getMethods()}.
      */
-    private static List<MethodNode> collectAnchoredOnInterface(final ClassNode traitClass) {
+    private static List<MethodNode> collectInterfaceStatics(final ClassNode traitClass) {
         List<MethodNode> result = new ArrayList<>();
         for (MethodNode methodNode : traitClass.getMethods()) {
             if (methodNode.isStatic() && !methodNode.isPrivate() && !methodNode.isAbstract()
-                    && isAnchoredOnInterface(methodNode)) {
+                    && methodNode.getAnnotations(VIRTUAL_TYPE).isEmpty()) {
                 result.add(methodNode);
             }
         }
         return result;
-    }
-
-    /**
-     * Returns {@code true} if the method is annotated with {@code @Anchored}
-     * and the {@code inInterface} attribute is true (the default).
-     */
-    private static boolean isAnchoredOnInterface(final MethodNode methodNode) {
-        List<AnnotationNode> anns = methodNode.getAnnotations(ANCHORED_TYPE);
-        if (anns.isEmpty()) return false;
-        Expression member = anns.get(0).getMember("inInterface");
-        if (member instanceof ConstantExpression
-                && Boolean.FALSE.equals(((ConstantExpression) member).getValue())) {
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -719,9 +710,9 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
      * preserving generics, exceptions and parameter list of the original
      * trait static. The trait class itself is passed as the synthetic
      * {@code $self} receiver expected by the helper, consistent with the
-     * declarer-bound dispatch model that {@code @Anchored} selects.
+     * declarer-bound dispatch model of trait static methods.
      */
-    private static MethodNode createAnchoredInterfaceForwarder(final ClassNode traitClass, final ClassNode helper, final MethodNode original) {
+    private static MethodNode createInterfaceStaticForwarder(final ClassNode traitClass, final ClassNode helper, final MethodNode original) {
         Parameter[] params = original.getParameters();
         Expression[] callArgs = new Expression[params.length + 1];
         callArgs[0] = classX(traitClass);

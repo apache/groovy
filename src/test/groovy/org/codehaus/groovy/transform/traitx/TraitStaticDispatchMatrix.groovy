@@ -22,25 +22,16 @@
 // 12 design rows from GEP-22-progression-analysis.html (with row 11
 // expanded to rows 11/11c/11esc covering the trait-shadows-superclass
 // quadrant + the T.super.m() escape; row 9 paired with row 9acc covering
-// the static-field non-goal and its accessor workaround), and four
-// @Anchored-marker rows characterising the GROOVY-12093 proposal.
+// the static-field non-goal and its accessor workaround).
 //
 // Run via gradle: `./gradlew :test --tests '*.TraitStaticDispatchMatrix'`
 //
-// Two kinds of test:
-//  * Matrix tests assert OBSERVED behaviour. They pass on every
-//    currently-shipping Groovy that delivers the spec behaviour and turn
-//    RED on releases that deviate (e.g. rows 1/10/12 on Groovy 5.0.0–
-//    5.0.6 / 6.0.0-alpha-1, which carry the GROOVY-8854 regression
-//    corrected by GROOVY-11985 in 5.0.7 / 6.0.0-alpha-2). That red is
-//    the intended bug-detector signal, not a defect in the test.
-//  * The four @Anchored rows (1a/7a/8a/13) assert the GROOVY-12093
-//    behaviour now delivered by `groovy.transform.Anchored` (added in
-//    this change); each references the annotation directly.
-//
-// Verdicts encoded here are PROPOSED PENDING TEAM REVIEW where the
-// underlying design point is not yet ratified (the four @Anchored rows
-// in particular).
+// Matrix tests assert OBSERVED behaviour. They pass on every
+// currently-shipping Groovy that delivers the spec behaviour and turn
+// RED on releases that deviate (e.g. rows 1/10/12 on Groovy 5.0.0–
+// 5.0.6 / 6.0.0-alpha-1, which carry the GROOVY-8854 regression
+// corrected by GROOVY-11985 in 5.0.7 / 6.0.0-alpha-2). That red is
+// the intended bug-detector signal, not a defect in the test.
 
 package org.codehaus.groovy.transform.traitx
 
@@ -141,9 +132,13 @@ class TraitStaticDispatchMatrix {
     // this row's polymorphic answer is the trait-machinery distinctive.
     @Test
     void row01_publicStatic_overrideSeenByTrait() {
+        // Per-implementer override visibility is opt-in via @Virtual.
+        // Plain `static` is declarer-bound; @Virtual makes the trait body's
+        // dispatch route through the implementing class.
         def r = ev '''
+            import groovy.transform.Virtual
             trait V {
-                static boolean defaultNullable() { false }
+                @Virtual static boolean defaultNullable() { false }
                 static boolean seenThis() { this.defaultNullable() }
                 static boolean seenUnqualified() { defaultNullable() }
             }
@@ -154,29 +149,8 @@ class TraitStaticDispatchMatrix {
         '''
         assert r.direct == true            // direct call: override always wins
         assert r.defThis == false          // row 1': no override -> trait default
-        assert r.overThis == true : "row1 this. : override must be visible to trait body, got ${r.overThis} — on 5.0.0–5.0.6 / 6.0.0-alpha-1 this is the GROOVY-8854 regression (fixed in 5.0.7 / 6.0.0-alpha-2 by GROOVY-11985)"
-        assert r.overUnq  == true : "row1 unqual: override must be visible to trait body, got ${r.overUnq}"
-    }
-
-    // ---- Row 1a — @Anchored static, trait body sees trait's own copy ----
-    // The dispatch half of the @Anchored marker. With the annotation,
-    // `this.m()`/`m()` in the trait body should dispatch to the trait's own
-    // copy regardless of any implementer override (the JVM/interface-static
-    // model — Eric's "static implies final" use case). Unmet on every
-    // shipping Groovy (annotation does not exist there); met on the spike.
-    @Test
-    void row01a_anchored_dispatchIsTraitAnchored() {
-        def r = ev '''
-            import groovy.transform.Anchored
-            trait V {
-                @Anchored
-                static boolean defaultNullable() { false }
-                static boolean seen() { this.defaultNullable() }
-            }
-            class Over implements V { static boolean defaultNullable() { true } }
-            Over.seen()
-        '''
-        assert r == false : "row1a @Anchored: trait body should always see the trait's own copy (got ${r})"
+        assert r.overThis == true : "row1 this. : @Virtual override must be visible to trait body, got ${r.overThis}"
+        assert r.overUnq  == true : "row1 unqual: @Virtual override must be visible to trait body, got ${r.overUnq}"
     }
 
     // ---- Row 2 — same as #1 but the call is inside a closure ----
@@ -259,75 +233,31 @@ class TraitStaticDispatchMatrix {
         assert r.c == 'class' && r.d == 'trait'
     }
 
-    // ---- Row 7 — T.m() trait-qualified inside trait body ----
-    // Throws MissingMethodException on every version (the trait interface
-    // carries no statics — GEP-22 § Static members, item 9). The desired
-    // "force trait default" escape this could represent is provided by
-    // @Anchored via interface promotion — see row 7a.
+    // ---- Row 7 — T.m() trait-qualified from inside trait body ----
+    // Resolves at the JVM level via the trait interface's static method
+    // (public trait statics are promoted onto the trait interface). The
+    // trait's own copy wins; any same-named static on the implementer is
+    // an independent method, not an override (declarer-bound dispatch).
     @Test
-    void row07_traitQualified_observed() {
-        def outcome
-        try {
-            outcome = ev '''
-                trait T {
-                    static String who() { 'T' }
-                    static String viaTrait() { T.who() }
-                }
-                class C implements T { static String who() { 'C' } }
-                C.viaTrait()
-            '''
-        } catch (Throwable t) {
-            outcome = "THREW:${t.class.simpleName}"
-        }
-        println "row07 observed on Groovy ${MAJOR}: ${outcome}  (T.m() from trait body throws on every version; @Anchored fixes it — see row 7a)"
-        assert outcome == 'THREW:MissingMethodException' : "row7 expected MissingMethodException: ${outcome}"
-    }
-
-    // ---- Row 7a — @Anchored: T.m() from trait body resolves via interface static ----
-    // Interface promotion side-effect. With @Anchored, the trait static is
-    // also added to the trait interface, so the "force trait default" escape
-    // T.m() actually resolves (row 7 above throws on every shipping version).
-    @Test
-    void row07a_anchored_traitQualified_resolvesViaInterfaceStatic() {
+    void row07_traitQualified_resolvesViaInterfaceStatic() {
         def r = ev '''
-            import groovy.transform.Anchored
             trait T {
-                @Anchored
                 static String who() { 'T' }
                 static String viaTrait() { T.who() }
             }
             class C implements T { static String who() { 'C' } }
             C.viaTrait()
         '''
-        assert r == 'T' : "row7a @Anchored: T.m() from trait body should resolve via interface static (got ${r})"
+        assert r == 'T' : "row7: T.m() from trait body must resolve to trait's own copy via interface static (got ${r})"
     }
 
-    // ---- Row 8 — external Impl.m() works; external T.m() unsupported ----
+    // ---- Row 8 — external Impl.m() works AND external Trait.m() works ----
+    // Public trait statics are JVM-native interface statics, so both
+    // forms of external access resolve cleanly.
     @Test
     void row08_externalAccess() {
         assert ev('trait T { static String foo() { "ok" } }\nclass C implements T {}\nC.foo()') == 'ok'
-        GroovyAssert.shouldFail {           // no statics on the trait interface
-            ev 'trait T { static String foo() { "x" } }\nT.foo()'
-        }
-    }
-
-    // ---- Row 8a — @Anchored: external Trait.m() resolves via interface static ----
-    // Interface promotion main effect. Jochen's "the static method is not added
-    // to the interface. That should be a bug." With @Anchored, external
-    // T.m() resolves to the JVM-native interface static — the row 8 "external
-    // T.m() unsupported" limitation no longer applies for marker-bearing methods.
-    @Test
-    void row08a_anchored_externalTraitDotM_works() {
-        def r = ev '''
-            import groovy.transform.Anchored
-            trait T {
-                @Anchored
-                static String foo() { 'ok' }
-            }
-            class C implements T {}
-            T.foo()
-        '''
-        assert r == 'ok' : "row8a @Anchored: external T.m() should resolve via interface static (got ${r})"
+        assert ev('trait T { static String foo() { "ok" } }\nT.foo()') == 'ok'
     }
 
     // ---- Row 9 — static FIELD override NOT seen by trait (documented non-goal) ----
@@ -384,14 +314,20 @@ class TraitStaticDispatchMatrix {
     // as row 1, same fix in 5.0.7 / 6.0.0-alpha-2 via GROOVY-11985.
     @Test
     void row10_subclassAnchorsOnDirectImplementer() {
+        // m2 needs @Virtual for A's override to be visible to T's m1
+        // (per-implementer override visibility is opt-in).
         def r = ev '''
-            trait T { static String m2() { 'T.m2' }; static String m1() { m2() } }
+            import groovy.transform.Virtual
+            trait T {
+                @Virtual static String m2() { 'T.m2' }
+                static String m1() { m2() }
+            }
             class A implements T { static String m2() { 'A.m2' } }
             class B extends A    { static String m2() { 'B.m2' } }
             [ a: A.m1(), b: B.m1(), bDirect: B.m2() ]
         '''
         assert r.bDirect == 'B.m2'
-        assert r.a == 'A.m2' : "row10 a: A's override must be visible to A.m1(), got ${r.a} — see row 1 note on the GROOVY-8854 regression"
+        assert r.a == 'A.m2' : "row10 a: A's override must be visible to A.m1() (m2 is @Virtual), got ${r.a}"
         assert r.b == 'A.m2' : "row10 b: B.m1() must anchor on A (the direct implementer), got ${r.b}"
         assert r.b != 'B.m2' : "row10 load-bearing: B's own m2 must never win — dispatch anchors on direct implementer A, not the receiver class"
     }
@@ -463,9 +399,15 @@ class TraitStaticDispatchMatrix {
     // post-fix outcome so any further change is surfaced for discussion.
     @Test
     void row12_overloadUnderCompileStatic_observed() {
+        // Overload dispatch through the implementer requires @Virtual;
+        // without it the trait's m(X1) is declarer-bound and always wins.
         def out = ev '''
+            import groovy.transform.Virtual
             @groovy.transform.CompileStatic
-            trait T { static int m(X1 x){ 2 }; static int call2(X1 x){ m(x) } }
+            trait T {
+                @Virtual static int m(X1 x){ 2 }
+                static int call2(X1 x){ m(x) }
+            }
             @groovy.transform.CompileStatic
             class A implements T { static int m(X2 x){ 1 } }
             class X1 {}
@@ -476,54 +418,13 @@ class TraitStaticDispatchMatrix {
         assert out == '21' : "row12: expected '21' (post-GROOVY-11985), got '${out}' — on 5.0.0–5.0.6 / 6.0.0-alpha-1 this returns '22' (the regression boundary)"
     }
 
-    // ---- Row 13 — @Anchored(inInterface=false) opt-out ----
-    // The narrow escape: dispatch stays trait-anchored (like row 1a) but the
-    // interface static is suppressed, so external T.m() continues to fail
-    // (the row 8 behaviour persists for this method). Useful for soft-
-    // deprecated trait-internal helpers that need to stay publicly callable
-    // via the existing Impl.m() forwarder but should not gain a fresh
-    // Java-visible interface API surface.
-    @Test
-    void row13_anchored_inInterfaceFalse_optsOutOfInterfacePromotion() {
-        // Part 1: trait-body dispatch is still trait-anchored
-        def r = ev '''
-            import groovy.transform.Anchored
-            trait V {
-                @Anchored(inInterface=false)
-                static String name() { 'trait' }
-                static String seen() { this.name() }
-            }
-            class Impl implements V { static String name() { 'impl' } }
-            Impl.seen()
-        '''
-        assert r == 'trait' : "row13 inInterface=false: dispatch should still be trait-anchored (got ${r})"
-
-        // Part 2: external V.name() must still throw — no interface static generated
-        boolean externalThrows = false
-        try {
-            ev '''
-                import groovy.transform.Anchored
-                trait V {
-                    @Anchored(inInterface=false)
-                    static String name() { 'trait' }
-                }
-                class Impl implements V {}
-                V.name()
-            '''
-        } catch (Throwable ignored) {
-            externalThrows = true
-        }
-        assert externalThrows : "row13 inInterface=false: external V.name() should still fail (no interface static)"
-    }
-
-    // ---- Row 14 — T.this.* qualifier in trait code (GROOVY-12104) ----
-    // `T.this.m()` inside trait code is rejected at compile time. Without
-    // the reject, the call previously generated invalid bytecode
-    // (VerifyError on 4.x: "Class not assignable to Closure";
-    // ClassCastException at runtime on 5.x/6.x). See Groovy12104.groovy
-    // for focused coverage (instance variants + field-access form +
-    // regression-guards for explicit other-class qualifiers). This row is
-    // the matrix-level anchor.
+    // ---- Row 14 — T.this.* qualifier in trait code (proposed compile error) ----
+    // Latent bug surfaced during the GROOVY-12093 alternatives discussion.
+    // `T.this.m()` inside trait code currently produces invalid bytecode
+    // (VerifyError on 4.x: "Class not assignable to Closure"; ClassCastException
+    // at runtime on 5.x/6.x). GEP-22 § "this, super, and stackable traits"
+    // item 4 proposes rejecting the syntax at compile time. NYI until the
+    // fix lands; flips red on a build that implements the rejection.
     @Test
     void row14_T_this_qualifier_inTrait_isCompileError() {
         GroovyAssert.shouldFail(MultipleCompilationErrorsException) {

@@ -67,7 +67,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  */
 class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
-    private static final ClassNode ANCHORED_TYPE = ClassHelper.make(groovy.transform.Anchored.class);
+    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(groovy.transform.Virtual.class);
 
     private final VariableExpression weaved;
     private final SourceUnit unit;
@@ -359,23 +359,22 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             MethodNode methodNode = findConcreteMethod(traitClass, call.getMethodAsString());
             if (methodNode != null) {
                 MethodCallExpression newCall;
-                boolean anchored = !methodNode.getAnnotations(ANCHORED_TYPE).isEmpty();
-                if (methodNode.isStatic() && !methodNode.isPrivate() && !anchored && !inClosure) {
-                    // GROOVY-11985: dispatch unqualified/this-qualified calls to
-                    // public, non-@Anchored trait statics through the
-                    // implementing class so an override declared on the
-                    // implementer is visible from trait code. Annotating the
-                    // trait static with @Anchored opts out of this override
-                    // path and keeps dispatch declarer-bound through the trait
-                    // helper (Java/interface-static flavour); the matching
-                    // interface promotion is performed in TraitASTTransformation.
+                boolean virtual = !methodNode.getAnnotations(VIRTUAL_TYPE).isEmpty();
+                if (methodNode.isStatic() && !methodNode.isPrivate() && virtual && !inClosure) {
+                    // Default dispatch for trait static methods is
+                    // declarer-bound; per-implementer override visibility
+                    // is opt-in via `@Virtual`. Annotating a public trait
+                    // static with @Virtual emits the dynamic-dispatch
+                    // path so the implementer's override (if any) is
+                    // visible from trait code.
                     Expression implClass = ClassHelper.isClassType(weaved.getOriginType()) ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
                     newCall = callX(implClass, method, transform(arguments));
                     newCall.setImplicitThis(false);
                     newCall.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, methodNode.getReturnType());
                 } else {
                     // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
-                    // Reached for: private static, @Anchored static, instance method, or any call inside a closure.
+                    // Reached for: plain (non-@Virtual) static, private static,
+                    // instance method, or any call inside a closure.
                     Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
                 }
