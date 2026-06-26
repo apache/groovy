@@ -538,17 +538,15 @@ class TraitStaticDispatchMatrix {
         }
     }
 
-    // ---- Row 15 — unqualified super.m() from trait STATIC method (proposed compile error) ----
-    // Companion to row 14, same workstream. Unqualified `super.m()` inside a
-    // trait instance method walks the trait chain (spec item 2); from a trait
-    // STATIC method the chain is not walked and the call throws
-    // MissingMethodException at runtime. GEP-22 item 4 proposes rejecting
-    // the static-context use at compile time, leaving `T.super.m()` as the
-    // explicit form. NYI until the fix lands; flips red on a build that
-    // implements the rejection.
+    // ---- Row 15 — unqualified super.m() from trait STATIC method (GROOVY-12105) ----
+    // Unqualified `super.m()` inside a trait instance method walks the trait
+    // chain (spec item 2); from a trait STATIC method the chain is not
+    // walked. GROOVY-12105 rejects the static-context use at compile time,
+    // pointing at `T.super.m()` as the explicit form. See Groovy12105.groovy
+    // for focused coverage (regression-guards for the instance-method and
+    // plain-class super-call cases). This row is the matrix-level anchor.
     @Test
-    @NotYetImplemented
-    void row15_unqualified_static_super_inTrait_shouldBeCompileError_PROPOSED() {
+    void row15_unqualified_static_super_inTrait_isCompileError() {
         GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
             ev '''
                 trait Base { static String m() { 'Base' } }

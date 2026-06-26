@@ -136,6 +136,28 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                         mce.getLineNumber(), mce.getColumnNumber()));
                 return mce;
             }
+            // GROOVY-12105: in a static trait method, the parser/resolver
+            // rewrites `super.m(...)` to a static call on the trait's
+            // declared superclass (typically Object) before we see it. Reject
+            // that pattern at compile time, pointing at `T.super.m(...)` as
+            // the supported explicit form. The discriminator is
+            // `mce.isImplicitThis()`: the rewritten super call carries
+            // `isImplicitThis=true` (because the user wrote no explicit
+            // receiver — the ClassExpression was synthesised by the
+            // resolver), while an explicit `ClassName.m()` call from
+            // user source has `isImplicitThis=false`. The synthesised
+            // ClassExpression also has no source position (line=-1), an
+            // independent signal of the same fact.
+            if (ClassHelper.isClassType(weaved.getOriginType())
+                && mce.isImplicitThis()
+                && mce.getObjectExpression() instanceof ClassExpression ce
+                && traitClass.getSuperClass() != null
+                && ce.getType().equals(traitClass.getSuperClass())) {
+                unit.addError(new SyntaxException(
+                    "'super' is not allowed in a static trait method; use '" + traitClass.getNameWithoutPackage() + ".super." + mce.getMethodAsString() + "(...)' for explicit trait-anchored dispatch",
+                    mce.getLineNumber(), mce.getColumnNumber()));
+                return mce;
+            }
             if ("super".equals(obj)) {
                 return transformSuperMethodCall(mce); // super.m(x) --> $self.Ttrait$super$m(x)
             } else if ("this".equals(obj)) {
