@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.ObjectStreamException;
 import java.io.Serial;
 import java.util.List;
 
@@ -117,5 +118,15 @@ public final class ComposedClosure<V> extends Closure<V> {
         Object temp = first.call(args);
         if (temp instanceof List && second.getParameterTypes().length > 1) temp = ((List) temp).toArray();
         return temp instanceof Object[] ? second.call((Object[]) temp) : second.call(temp);
+    }
+
+    /**
+     * Rejects a deserialized closure whose owner/delegate/thisObject references form a cycle, which would
+     * otherwise recurse indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+     */
+    @Serial
+    private Object readResolve() throws ObjectStreamException {
+        Closure.checkForReferenceCycle(this);
+        return this;
     }
 }

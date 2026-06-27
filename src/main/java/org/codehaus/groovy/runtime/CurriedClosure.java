@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.ObjectStreamException;
 import java.io.Serial;
 
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
@@ -231,5 +232,15 @@ public final class CurriedClosure<V> extends Closure<V> {
 
     private boolean isVararg() {
         return varargType != null;
+    }
+
+    /**
+     * Rejects a deserialized closure whose owner/delegate/thisObject references form a cycle, which would
+     * otherwise recurse indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+     */
+    @Serial
+    private Object readResolve() throws ObjectStreamException {
+        Closure.checkForReferenceCycle(this);
+        return this;
     }
 }

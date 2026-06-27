@@ -35,12 +35,18 @@ import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -1291,6 +1297,82 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         result.owner = owner;
         result.thisObject = thisObject;
         return result;
+    }
+
+    /**
+     * Verifies, during deserialization, that the {@code owner}/{@code delegate}/{@code thisObject}
+     * references reachable from {@code root} do not form a cycle through other closures. Such a cycle
+     * cannot arise from normal Groovy code or from the {@link #dehydrate()}/{@link #rehydrate} round-trip,
+     * but it can be forged in a hand-crafted serialized stream; invoking the resulting closure would then
+     * recurse indefinitely and exhaust the stack (a denial-of-service "gadget").
+     * <p>
+     * This is exposed as a {@code static} helper, rather than a {@code readResolve}/{@code readObject} hook
+     * on {@code Closure} itself, on purpose:
+     * <ul>
+     *   <li>a hook on {@code Closure} would have to be inheritable (i.e. {@code protected}) to reach
+     *       generated subclasses, which would force every existing subclass that declares the idiomatic
+     *       {@code private readResolve()} to widen its visibility and fail to compile;</li>
+     *   <li>a {@code readObject} hook would additionally interpose this (core-loaded) class on the stack
+     *       while a closure's fields are read, shifting {@link java.io.ObjectInputStream}'s
+     *       latest-user-defined loader away from the loader that defined the closure's captured types.</li>
+     * </ul>
+     * Groovy's own serializable gadget closures ({@link org.codehaus.groovy.runtime.CurriedClosure},
+     * {@link org.codehaus.groovy.runtime.ComposedClosure}) call this from their {@code private readResolve()}.
+     * Any other {@code Closure} subclass that participates in serialization can opt in the same way (the
+     * method is {@code protected static}, so it is reachable from subclasses but not from arbitrary code).
+     *
+     * @param root the freshly-deserialized closure to validate
+     * @throws InvalidObjectException if a closure reference cycle is detected
+     * @since 6.0.0
+     */
+    protected static void checkForReferenceCycle(final Closure<?> root) throws InvalidObjectException {
+        // Iterative depth-first search over the raw owner/delegate/thisObject fields, following only
+        // Closure-valued links. "grey" = on the current DFS path, "black" = fully explored. An edge back
+        // to a grey node is a genuine cycle; an edge to a black node is a harmless shared reference (e.g.
+        // a curried closure whose owner and delegate point at the same wrapped closure). The raw fields
+        // are read directly (not via the overridable getters, which would themselves recurse on a cyclic
+        // graph); access is permitted as this is the declaring class.
+        final Set<Closure<?>> grey = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Set<Closure<?>> black = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Deque<Object> stack = new ArrayDeque<>();
+        stack.push(root);
+        while (!stack.isEmpty()) {
+            final Object top = stack.peek();
+            if (top instanceof Marker) {
+                stack.pop();
+                final Closure<?> done = ((Marker) top).closure;
+                grey.remove(done);
+                black.add(done);
+                continue;
+            }
+            final Closure<?> node = (Closure<?>) stack.pop();
+            if (black.contains(node) || grey.contains(node)) {
+                continue; // already handled via a shared reference
+            }
+            grey.add(node);
+            stack.push(new Marker(node));
+            for (final Object link : new Object[]{node.owner, node.delegate, node.thisObject}) {
+                if (link instanceof Closure) {
+                    final Closure<?> child = (Closure<?>) link;
+                    if (grey.contains(child)) {
+                        throw new InvalidObjectException(
+                                "Closure owner/delegate/thisObject references form a cycle; refusing to deserialize");
+                    }
+                    if (!black.contains(child)) {
+                        stack.push(child);
+                    }
+                }
+            }
+        }
+    }
+
+    /** Sentinel pushed below a node's children during the {@link #checkForReferenceCycle} cycle check. */
+    private static final class Marker {
+        final Closure<?> closure;
+
+        Marker(final Closure<?> closure) {
+            this.closure = closure;
+        }
     }
 
     private static final class CallOverride {
