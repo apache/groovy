@@ -120,6 +120,37 @@ class TraitStaticDispatchMatrix {
         assert r == 'sub' : "baseline C: plain-class instance dispatch must be polymorphic everywhere, got ${r}"
     }
 
+    // ---- Baseline D — plain class INHERITED static, subtype arg, in METHOD BODY ----
+    // The control for rows 16/16b (GROOVY-12106). A child CLASS extends a parent class
+    // and its instance-method body calls an inherited `static` with an argument whose
+    // static type is a PROPER SUBTYPE of the declared parameter type, under @CompileStatic.
+    // Plain Groovy resolves this cleanly in every call form (unqualified / this. /
+    // qualified) and on every version (verified 4.0.32, 5.0.7-SNAPSHOT, 6.0.0-SNAPSHOT),
+    // compile AND runtime. Rows 16/16b show the trait-extends-trait analogue REGRESSED in
+    // the 5.x/6.x line — so that failure is a trait static-helper dispatch defect (the
+    // synthetic `java.lang.Class $self` helper receiver), NOT a general STC inherited-static
+    // or subtype-argument problem. This baseline makes that trait-vs-class contrast executable.
+    @Test
+    void baseline_D_plainClass_inheritedStatic_subtypeArg_resolves() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Parent {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            class Child extends Parent {
+                String run(SimpleArgument arg) { withDelegate({ -> }, arg) }   // unqualified, subtype arg
+            }
+            new Child().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "baseline D: plain class must resolve inherited static with a subtype argument (got ${r}); contrast trait rows 16/16b"
+    }
+
     // ============================ TRAIT MATRIX ============================
 
     // ---- Row 1 — public static, this./unqualified, impl overrides ----
@@ -459,5 +490,78 @@ class TraitStaticDispatchMatrix {
                 Impl.callSuper()
             '''
         }
+    }
+
+    // ---- Row 16 — child trait resolves an INHERITED parent-trait static (GROOVY-12106) ----
+    // Scenario: a child trait `extends` a parent trait under @CompileStatic and its
+    // body calls an inherited parent-trait `static` with an argument whose static type
+    // is a PROPER SUBTYPE of the declared parameter type (SimpleArgument for the Object
+    // parameter). This is the Grails GraphQL DSL helper shape (ExecutesClosures /
+    // Arguable). SPEC-NORMATIVE expectation: the inherited static resolves, exactly as a
+    // plain unqualified intra-trait static call would.
+    //
+    // OBSERVED: works on 4.0.x (compiles AND runs). Regressed in the 5.0.x line —
+    // STC misroutes the call to the CHILD trait's helper with a synthetic
+    // `java.lang.Class` $self first argument:
+    //   Cannot find matching method Arguable$Trait$Helper#withDelegate(java.lang.Class, Closure, SimpleArgument)
+    // instead of resolving the inherited ExecutesClosures$Trait$Helper. Still red on
+    // 5.0.6 / 5.0.7-SNAPSHOT AND on 6.0.0-SNAPSHOT (master): the recent trait-static
+    // dispatch work fixed the *qualified* `Parent.m(...)` form on master only, but the
+    // unqualified (this row) and `this.`-qualified (row 16b) forms remain broken
+    // everywhere in 5.x/6.x and are NOT covered by GROOVY-12104 (T.this.* rejection)
+    // or GROOVY-12105 (unqualified static super rejection). An exact-type (Object)
+    // argument masks the bug — which is why GROOVY-12106 was first closed
+    // "Cannot Reproduce". @NotYetImplemented until the resolution fix lands (and is
+    // backported to GROOVY_5_0_X, the line Grails 5.0.7 will consume); flips red when fixed.
+    @NotYetImplemented
+    @Test
+    void row16_childTrait_inheritedParentStatic_subtypeArg_unqualified() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            trait ExecutesClosures {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            trait Arguable extends ExecutesClosures {
+                String run(SimpleArgument arg) { withDelegate({ -> }, arg) }   // unqualified, subtype arg
+            }
+            class C implements Arguable { }
+            new C().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "row16: child trait must resolve inherited parent-trait static with a subtype argument (got ${r})"
+    }
+
+    // ---- Row 16b — same as row 16 but via `this.` (GROOVY-12106) ----
+    // `this.m(...)` is the form GROOVY-12104 steers users toward as the supported
+    // alternative to the rejected `T.this.m(...)`. For this inherited-parent-trait
+    // static case it fails identically to the unqualified form (same misrouted
+    // Helper#... receiver), so that escape hatch does not cover case (b). Same
+    // version profile and same fix/backport expectation as row 16.
+    @NotYetImplemented
+    @Test
+    void row16b_childTrait_inheritedParentStatic_subtypeArg_thisQualified() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            trait ExecutesClosures {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            trait Arguable extends ExecutesClosures {
+                String run(SimpleArgument arg) { this.withDelegate({ -> }, arg) }   // this.-qualified, subtype arg
+            }
+            class C implements Arguable { }
+            new C().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "row16b: this.-qualified inherited parent-trait static must resolve with a subtype argument (got ${r})"
     }
 }
