@@ -36,7 +36,6 @@
 package org.codehaus.groovy.transform.traitx
 
 import groovy.test.GroovyAssert
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.Test
 
@@ -500,20 +499,15 @@ class TraitStaticDispatchMatrix {
     // Arguable). SPEC-NORMATIVE expectation: the inherited static resolves, exactly as a
     // plain unqualified intra-trait static call would.
     //
-    // OBSERVED: works on 4.0.x (compiles AND runs). Regressed in the 5.0.x line —
-    // STC misroutes the call to the CHILD trait's helper with a synthetic
-    // `java.lang.Class` $self first argument:
+    // History: worked on 4.0.x (compiles AND runs); regressed in the 5.0.x line, where
+    // STC misrouted the call to the CHILD trait's helper with a synthetic `java.lang.Class`
+    // $self first argument:
     //   Cannot find matching method Arguable$Trait$Helper#withDelegate(java.lang.Class, Closure, SimpleArgument)
-    // instead of resolving the inherited ExecutesClosures$Trait$Helper. Still red on
-    // 5.0.6 / 5.0.7-SNAPSHOT AND on 6.0.0-SNAPSHOT (master): the recent trait-static
-    // dispatch work fixed the *qualified* `Parent.m(...)` form on master only, but the
-    // unqualified (this row) and `this.`-qualified (row 16b) forms remain broken
-    // everywhere in 5.x/6.x and are NOT covered by GROOVY-12104 (T.this.* rejection)
-    // or GROOVY-12105 (unqualified static super rejection). An exact-type (Object)
-    // argument masks the bug — which is why GROOVY-12106 was first closed
-    // "Cannot Reproduce". @NotYetImplemented until the resolution fix lands (and is
-    // backported to GROOVY_5_0_X, the line Grails 5.0.7 will consume); flips red when fixed.
-    @NotYetImplemented
+    // The cause was TraitTypeCheckingExtension resolving the inherited super-trait helper
+    // static by an EXACT parameter-type match, so only an exact-type (Object) argument
+    // matched — which is why GROOVY-12106 was first closed "Cannot Reproduce". Fixed by
+    // GROOVY-12106 (subtype-aware resolution); this row and row 16b lock that in. Distinct
+    // from GROOVY-12104 (T.this.* rejection) and GROOVY-12105 (unqualified static super).
     @Test
     void row16_childTrait_inheritedParentStatic_subtypeArg_unqualified() {
         def r = ev '''
@@ -542,7 +536,6 @@ class TraitStaticDispatchMatrix {
     // static case it fails identically to the unqualified form (same misrouted
     // Helper#... receiver), so that escape hatch does not cover case (b). Same
     // version profile and same fix/backport expectation as row 16.
-    @NotYetImplemented
     @Test
     void row16b_childTrait_inheritedParentStatic_subtypeArg_thisQualified() {
         def r = ev '''
