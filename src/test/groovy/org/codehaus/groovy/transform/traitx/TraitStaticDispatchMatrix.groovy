@@ -18,23 +18,25 @@
  */
 
 // Trait-static dispatch behaviour matrix — the executable companion to
-// GEP-22 § Static members. Three plain-class baseline rows (A/B/C) and
-// the 12 design rows from GEP-22-progression-analysis.html (with row 11
+// GEP-22 § Static members. Three plain-class baseline rows (A/B/C), the
+// 12 design rows from GEP-22-progression-analysis.html (with row 11
 // expanded to rows 11/11c/11esc covering the trait-shadows-superclass
 // quadrant + the T.super.m() escape; row 9 paired with row 9acc covering
 // the static-field non-goal and its accessor workaround).
 //
 // Run via gradle: `./gradlew :test --tests '*.TraitStaticDispatchMatrix'`
 //
-// Matrix tests assert OBSERVED behaviour. Rows that depend on per-
-// implementer override visibility (rows 1, 10, 12) opt in via
-// `@groovy.transform.Virtual` on the relevant trait static — plain
-// `static` is declarer-bound, `@Virtual` restores the override-via-
-// implementer path (the dispatch shape in 4.x).
+// Matrix tests assert OBSERVED behaviour. They pass on every
+// currently-shipping Groovy that delivers the spec behaviour and turn
+// RED on releases that deviate (e.g. rows 1/10/12 on Groovy 5.0.0–
+// 5.0.6 / 6.0.0-alpha-1, which carry the GROOVY-8854 regression
+// corrected by GROOVY-11985 in 5.0.7 / 6.0.0-alpha-2). That red is
+// the intended bug-detector signal, not a defect in the test.
 
 package org.codehaus.groovy.transform.traitx
 
 import groovy.test.GroovyAssert
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.Test
 
 class TraitStaticDispatchMatrix {
@@ -52,16 +54,18 @@ class TraitStaticDispatchMatrix {
     //
     // VERIFIED on 4.0.32: plain Groovy static dispatch is declarer-bound in
     // every context (method body, closure body, dynamic, @CompileStatic);
-    // only INSTANCE methods are polymorphic. Public trait statics match
-    // this baseline by default; the row 1 departure (override visible to
-    // trait body) is the OPT-IN behaviour of `@groovy.transform.Virtual`,
-    // which routes the call through the implementing class via the per-
-    // implementer $static$self mechanism.
+    // only INSTANCE methods are polymorphic. Trait row 1's "override visible
+    // to trait method body" is therefore a deliberate departure from this
+    // baseline (the per-implementer $static$self mechanism); the row 2
+    // closure carve-out keeps trait closure-context dispatch consistent
+    // with this baseline. The simplified-model RULE wording "dispatch like
+    // a plain class member" was an aspirational fiction — the empirical
+    // truth is more nuanced and the baseline below records it.
 
     // ---- Baseline A — plain class static, this.foo() in METHOD BODY ----
     // The control for trait row 1. Plain Groovy: declarer-bound ('base').
-    // Trait row 1 returns 'true' (override visible) — that requires
-    // @Virtual; without it the trait matches this baseline.
+    // Trait row 1 returns 'true' (override visible) — that's the trait
+    // distinctive, NOT a plain-class semantic.
     @Test
     void baseline_A_plainStatic_methodBody_isDeclarerBound() {
         def r = ev '''
@@ -99,8 +103,8 @@ class TraitStaticDispatchMatrix {
     // Confirms ordinary instance dispatch IS polymorphic in closure context
     // (row 6 in the trait matrix is the instance-method analogue). Only
     // static dispatch falls back to declarer-bound. Together baselines A/B/C
-    // show: row 1's override-via-implementer (when opted into with @Virtual)
-    // is a Groovy-trait distinctive — neither plain statics nor plain
+    // show: trait row 1's override-via-implementer in method body is a
+    // deliberate Groovy-trait distinctive — neither plain statics nor plain
     // instance methods give that shape in closure context unaided.
     @Test
     void baseline_C_plainInstance_closureBody_isPolymorphic() {
@@ -115,17 +119,47 @@ class TraitStaticDispatchMatrix {
         assert r == 'sub' : "baseline C: plain-class instance dispatch must be polymorphic everywhere, got ${r}"
     }
 
+    // ---- Baseline D — plain class INHERITED static, subtype arg, in METHOD BODY ----
+    // The control for rows 16/16b (GROOVY-12106). A child CLASS extends a parent class
+    // and its instance-method body calls an inherited `static` with an argument whose
+    // static type is a PROPER SUBTYPE of the declared parameter type, under @CompileStatic.
+    // Plain Groovy resolves this cleanly in every call form (unqualified / this. /
+    // qualified) and on every version (verified 4.0.32, 5.0.7-SNAPSHOT, 6.0.0-SNAPSHOT),
+    // compile AND runtime. Rows 16/16b show the trait-extends-trait analogue REGRESSED in
+    // the 5.x/6.x line — so that failure is a trait static-helper dispatch defect (the
+    // synthetic `java.lang.Class $self` helper receiver), NOT a general STC inherited-static
+    // or subtype-argument problem. This baseline makes that trait-vs-class contrast executable.
+    @Test
+    void baseline_D_plainClass_inheritedStatic_subtypeArg_resolves() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            class Parent {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            class Child extends Parent {
+                String run(SimpleArgument arg) { withDelegate({ -> }, arg) }   // unqualified, subtype arg
+            }
+            new Child().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "baseline D: plain class must resolve inherited static with a subtype argument (got ${r}); contrast trait rows 16/16b"
+    }
+
     // ============================ TRAIT MATRIX ============================
 
     // ---- Row 1 — public static, this./unqualified, impl overrides ----
     // Scenario: overridable static defaults (Grails Validateable.defaultNullable).
-    // The trait static is marked @Virtual to opt into the per-implementer
-    // override path; plain trait statics (no marker) are declarer-bound
-    // and would return the trait's own copy regardless of any same-named
-    // static on the implementer — see VirtualAnnotationTest for the
-    // un-annotated control. Contrast baseline A (plain class same shape —
-    // declarer-bound, 'base'): the @Virtual marker makes the trait answer
-    // polymorphic at the spot a plain class is not.
+    // SPEC-NORMATIVE end-state (GEP-22 § Static members, item 4): override
+    // visible to trait code. Holds on 4.x (always did) and on 5.0.7+ /
+    // 6.0.0-alpha-2+ (where GROOVY-11985 corrects the GROOVY-8854 regression).
+    // Red on 5.0.0–5.0.6 and 6.0.0-alpha-1 = bug detector for those releases.
+    // Contrast baseline A (plain class same shape — declarer-bound, 'base'):
+    // this row's polymorphic answer is the trait-machinery distinctive.
     @Test
     void row01_publicStatic_overrideSeenByTrait() {
         // Per-implementer override visibility is opt-in via @Virtual.
@@ -150,10 +184,13 @@ class TraitStaticDispatchMatrix {
     }
 
     // ---- Row 2 — same as #1 but the call is inside a closure ----
-    // The closure carve-out: a call from inside a closure body is
-    // helper-bound regardless of @Virtual. Matches baseline B (plain
-    // class same shape — declarer-bound, 'base'): the carve-out aligns
-    // trait closure-context dispatch with plain-Groovy semantics.
+    // The closure carve-out. Helper-bound on every version (long-standing,
+    // not a 5/6 regression). Matches baseline B (plain class same shape —
+    // declarer-bound, 'base'): the carve-out aligns trait closure-context
+    // dispatch with plain-Groovy semantics. Removing it would extend the
+    // trait-machinery distinctive into closures, further from plain Groovy
+    // not closer — the simplified-model "Move 3" proposal was retired
+    // after the baseline analysis surfaced this.
     @Test
     void row02_publicStatic_insideClosure() {
         def r = ev '''
@@ -164,7 +201,7 @@ class TraitStaticDispatchMatrix {
             class Over implements V { static boolean defaultNullable() { true } }
             Over.seenInClosure()
         '''
-        assert r == false : "row2 closure: expected false (Groovy ${MAJOR}), got ${r} — carve-out aligns with baseline B"
+        assert r == false : "row2 closure: expected false on every version (Groovy ${MAJOR}), got ${r} — carve-out aligns with baseline B"
     }
 
     // ---- Row 3 — private trait static is NOT overridable by the impl ----
@@ -226,35 +263,31 @@ class TraitStaticDispatchMatrix {
         assert r.c == 'class' && r.d == 'trait'
     }
 
-    // ---- Row 7 — T.m() trait-qualified inside trait body ----
-    // Throws MissingMethodException on every shipping 5.x (the trait
-    // interface carries no statics — GEP-22 § Static members, item 9).
+    // ---- Row 7 — T.m() trait-qualified from inside trait body ----
+    // Resolves at the JVM level via the trait interface's static method
+    // (public trait statics are promoted onto the trait interface). The
+    // trait's own copy wins; any same-named static on the implementer is
+    // an independent method, not an override (declarer-bound dispatch).
     @Test
-    void row07_traitQualified_observed() {
-        def outcome
-        try {
-            outcome = ev '''
-                trait T {
-                    static String who() { 'T' }
-                    static String viaTrait() { T.who() }
-                }
-                class C implements T { static String who() { 'C' } }
-                C.viaTrait()
-            '''
-        } catch (Throwable t) {
-            outcome = "THREW:${t.class.simpleName}"
-        }
-        println "row07 observed on Groovy ${MAJOR}: ${outcome}"
-        assert outcome == 'THREW:MissingMethodException' : "row7 expected MissingMethodException: ${outcome}"
+    void row07_traitQualified_resolvesViaInterfaceStatic() {
+        def r = ev '''
+            trait T {
+                static String who() { 'T' }
+                static String viaTrait() { T.who() }
+            }
+            class C implements T { static String who() { 'C' } }
+            C.viaTrait()
+        '''
+        assert r == 'T' : "row7: T.m() from trait body must resolve to trait's own copy via interface static (got ${r})"
     }
 
-    // ---- Row 8 — external Impl.m() works; external T.m() unsupported ----
+    // ---- Row 8 — external Impl.m() works AND external Trait.m() works ----
+    // Public trait statics are JVM-native interface statics, so both
+    // forms of external access resolve cleanly.
     @Test
     void row08_externalAccess() {
         assert ev('trait T { static String foo() { "ok" } }\nclass C implements T {}\nC.foo()') == 'ok'
-        GroovyAssert.shouldFail {           // no statics on the trait interface
-            ev 'trait T { static String foo() { "x" } }\nT.foo()'
-        }
+        assert ev('trait T { static String foo() { "ok" } }\nT.foo()') == 'ok'
     }
 
     // ---- Row 9 — static FIELD override NOT seen by trait (documented non-goal) ----
@@ -307,20 +340,24 @@ class TraitStaticDispatchMatrix {
     // so B.m1() still dispatches m2 through A's forwarder. Row 1's
     // override-visible dispatch flows through here: A's override of m2 IS
     // visible to m1 (returns 'A.m2'); B's own m2 is NOT (it would require
-    // re-composition).
+    // re-composition). Red on 5.0.0–5.0.6 / 6.0.0-alpha-1 — same regression
+    // as row 1, same fix in 5.0.7 / 6.0.0-alpha-2 via GROOVY-11985.
     @Test
     void row10_subclassAnchorsOnDirectImplementer() {
-        // The override-visible part requires @Virtual on the callee (m2);
-        // without it m1's call to m2 is declarer-bound and returns 'T.m2'.
+        // m2 needs @Virtual for A's override to be visible to T's m1
+        // (per-implementer override visibility is opt-in).
         def r = ev '''
             import groovy.transform.Virtual
-            trait T { @Virtual static String m2() { 'T.m2' }; static String m1() { m2() } }
+            trait T {
+                @Virtual static String m2() { 'T.m2' }
+                static String m1() { m2() }
+            }
             class A implements T { static String m2() { 'A.m2' } }
             class B extends A    { static String m2() { 'B.m2' } }
             [ a: A.m1(), b: B.m1(), bDirect: B.m2() ]
         '''
         assert r.bDirect == 'B.m2'
-        assert r.a == 'A.m2' : "row10 a: A's override must be visible to A.m1(), got ${r.a}"
+        assert r.a == 'A.m2' : "row10 a: A's override must be visible to A.m1() (m2 is @Virtual), got ${r.a}"
         assert r.b == 'A.m2' : "row10 b: B.m1() must anchor on A (the direct implementer), got ${r.b}"
         assert r.b != 'B.m2' : "row10 load-bearing: B's own m2 must never win — dispatch anchors on direct implementer A, not the receiver class"
     }
@@ -383,14 +420,13 @@ class TraitStaticDispatchMatrix {
     }
 
     // ---- Row 12 — overload across trait/impl under @CompileStatic ----
-    // A consequence of row 1's dispatch path: when the callee is @Virtual
-    // the trait-side overload set is widened by what the implementer
-    // declares, so A.call2(X2) resolves to A.m(X2) rather than T.m(X1).
-    // Without @Virtual the trait static is declarer-bound and both calls
-    // would return '2'. Jochen flagged the @Virtual outcome here as
-    // "imho wrong" but the team has not settled an alternative; this row
-    // locks the current outcome so any further change is surfaced for
-    // discussion.
+    // A consequence of row 1's dispatch path: GROOVY-11985 also shifts this
+    // overload case from '22' (pre-fix G5/G6 behaviour) back to '21' (G4's
+    // long-standing answer, and the post-fix answer on 5.0.7 / 6.0.0-alpha-2).
+    // Red on 5.0.0–5.0.6 / 6.0.0-alpha-1 — same regression boundary as
+    // rows 1 and 10. Jochen flagged both G4 and G5 as "imho wrong" but the
+    // team has not settled an alternative; this row locks the current
+    // post-fix outcome so any further change is surfaced for discussion.
     @Test
     void row12_overloadUnderCompileStatic_observed() {
         // Overload dispatch through the implementer requires @Virtual;
@@ -408,7 +444,225 @@ class TraitStaticDispatchMatrix {
             class X2 extends X1 {}
             "" + A.call2(new X1()) + A.call2(new X2())
         '''
-        assert out == '21' : "row12 @Virtual: expected '21', got '${out}'"
+        println "row12 observed on Groovy ${MAJOR}: ${out} (expected '21' on 4.x and on 5.0.7+ / 6.0.0-alpha-2+)"
+        assert out == '21' : "row12: expected '21' (post-GROOVY-11985), got '${out}' — on 5.0.0–5.0.6 / 6.0.0-alpha-1 this returns '22' (the regression boundary)"
     }
 
+    // ---- Row 14 — T.this.* qualifier in trait code (proposed compile error) ----
+    // Latent bug surfaced during the GROOVY-12093 alternatives discussion.
+    // `T.this.m()` inside trait code currently produces invalid bytecode
+    // (VerifyError on 4.x: "Class not assignable to Closure"; ClassCastException
+    // at runtime on 5.x/6.x). GEP-22 § "this, super, and stackable traits"
+    // item 4 proposes rejecting the syntax at compile time. NYI until the
+    // fix lands; flips red on a build that implements the rejection.
+    @Test
+    void row14_T_this_qualifier_inTrait_isCompileError() {
+        GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
+            ev '''
+                trait V {
+                    static boolean defaultNullable() { false }
+                    static seen() { V.this.defaultNullable() }
+                }
+                class Over implements V { static boolean defaultNullable() { true } }
+                Over.seen()
+            '''
+        }
+    }
+
+    // ---- Row 15 — unqualified super.m() from trait STATIC method (GROOVY-12105) ----
+    // Unqualified `super.m()` inside a trait instance method walks the trait
+    // chain (spec item 2); from a trait STATIC method the chain is not
+    // walked. GROOVY-12105 rejects the static-context use at compile time,
+    // pointing at `T.super.m()` as the explicit form. See Groovy12105.groovy
+    // for focused coverage (regression-guards for the instance-method and
+    // plain-class super-call cases). This row is the matrix-level anchor.
+    @Test
+    void row15_unqualified_static_super_inTrait_isCompileError() {
+        GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
+            ev '''
+                trait Base { static String m() { 'Base' } }
+                trait V extends Base {
+                    static String m() { 'V' }
+                    static callSuper() { super.m() }   // unqualified, from static
+                }
+                class Impl implements V { }
+                Impl.callSuper()
+            '''
+        }
+    }
+
+    // ---- Row 16 — child trait resolves an INHERITED parent-trait static (GROOVY-12106) ----
+    // Scenario: a child trait `extends` a parent trait under @CompileStatic and its
+    // body calls an inherited parent-trait `static` with an argument whose static type
+    // is a PROPER SUBTYPE of the declared parameter type (SimpleArgument for the Object
+    // parameter). This is the Grails GraphQL DSL helper shape (ExecutesClosures /
+    // Arguable). SPEC-NORMATIVE expectation: the inherited static resolves, exactly as a
+    // plain unqualified intra-trait static call would.
+    //
+    // History: worked on 4.0.x (compiles AND runs); regressed in the 5.0.x line, where
+    // STC misrouted the call to the CHILD trait's helper with a synthetic `java.lang.Class`
+    // $self first argument:
+    //   Cannot find matching method Arguable$Trait$Helper#withDelegate(java.lang.Class, Closure, SimpleArgument)
+    // The cause was TraitTypeCheckingExtension resolving the inherited super-trait helper
+    // static by an EXACT parameter-type match, so only an exact-type (Object) argument
+    // matched — which is why GROOVY-12106 was first closed "Cannot Reproduce". Fixed by
+    // GROOVY-12106 (subtype-aware resolution); this row and row 16b lock that in. Distinct
+    // from GROOVY-12104 (T.this.* rejection) and GROOVY-12105 (unqualified static super).
+    @Test
+    void row16_childTrait_inheritedParentStatic_subtypeArg_unqualified() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            trait ExecutesClosures {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            trait Arguable extends ExecutesClosures {
+                String run(SimpleArgument arg) { withDelegate({ -> }, arg) }   // unqualified, subtype arg
+            }
+            class C implements Arguable { }
+            new C().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "row16: child trait must resolve inherited parent-trait static with a subtype argument (got ${r})"
+    }
+
+    // ---- Row 16b — same as row 16 but via `this.` (GROOVY-12106) ----
+    // `this.m(...)` is the form GROOVY-12104 steers users toward as the supported
+    // alternative to the rejected `T.this.m(...)`. For this inherited-parent-trait
+    // static case it fails identically to the unqualified form (same misrouted
+    // Helper#... receiver), so that escape hatch does not cover case (b). Same
+    // version profile and same fix/backport expectation as row 16.
+    @Test
+    void row16b_childTrait_inheritedParentStatic_subtypeArg_thisQualified() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            trait ExecutesClosures {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            trait Arguable extends ExecutesClosures {
+                String run(SimpleArgument arg) { this.withDelegate({ -> }, arg) }   // this.-qualified, subtype arg
+            }
+            class C implements Arguable { }
+            new C().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "row16b: this.-qualified inherited parent-trait static must resolve with a subtype argument (got ${r})"
+    }
+
+    // ---- Row 16q — qualified Parent.m(...) form of rows 16/16b (GROOVY-12106 case (a)) ----
+    // The trait-qualified counterpart: the child trait calls the inherited parent-trait
+    // static via `ExecutesClosures.withDelegate(...)` with a subtype argument. Unlike the
+    // unqualified/`this.` forms (rows 16/16b, broken everywhere in 5.x/6.x), THIS form is
+    // already FIXED on master (6.0.0-SNAPSHOT) by the recent trait-static dispatch work,
+    // but is NOT in the GROOVY_5_0_X line — it fails to compile on 5.0.6 / 5.0.7-SNAPSHOT
+    // (STC: `java.lang.Class#withDelegate`). It is therefore a plain spec assertion (like
+    // rows 1/10/12), NOT @NotYetImplemented: green on master, RED when run against 5.0.x —
+    // the intended detector for the missing backport (GROOVY-12106 case (a)).
+    //
+    // Runtime nuance (why this is a real fix, not just a regression): the qualified form
+    // COMPILES but throws MissingMethodException at RUNTIME on 4.0.x, fails to COMPILE on
+    // 5.0.x, and only compiles AND runs on master. This row asserts the compile+runtime
+    // success state, so it tracks the genuinely-correct end-state rather than any prior
+    // partial behaviour.
+    @Test
+    void row16q_childTrait_inheritedParentStatic_subtypeArg_qualified() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            trait ExecutesClosures {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            trait Arguable extends ExecutesClosures {
+                String run(SimpleArgument arg) { ExecutesClosures.withDelegate({ -> }, arg) }   // qualified, subtype arg
+            }
+            class C implements Arguable { }
+            new C().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "row16q: qualified inherited parent-trait static must resolve+run with a subtype argument (got ${r}) — RED on 5.0.x marks the missing backport (GROOVY-12106 case a)"
+    }
+
+    // ---- Row 17 — child trait resolves an inherited @Virtual parent-trait static ----
+    // The @Virtual companion to rows 16/16b: a child trait calls an inherited @Virtual
+    // parent-trait static unqualified, with a PROPER SUBTYPE argument, and an implementer
+    // overrides it. @Virtual routes through the per-implementer dynamic-dispatch path
+    // (DO_DYNAMIC), which is INDEPENDENT of the GROOVY-12106 STC fix that rows 16/16b
+    // require — verified by reverting that fix: these forms behave identically with or
+    // without it, so this row is green on master before and after the fix. Asserts both
+    // that the inherited @Virtual resolves with a subtype arg AND that per-implementer
+    // override visibility survives through the child-trait body (the point of @Virtual;
+    // cf. row 1 for the same-trait case).
+    // Note: the *qualified* form `Parent.m(...)` does NOT work for @Virtual (the method is
+    // not promoted onto the interface) — a separate, pre-existing limitation tracked apart
+    // from GROOVY-12106.
+    @Test
+    void row17_childTrait_inheritedVirtualParentStatic_unqualified_overrideVisible() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.Virtual
+            final class SimpleArgument { }
+            @CompileStatic
+            trait P { @Virtual static String make(Object o) { 'P:' + o.class.simpleName } }
+            @CompileStatic
+            trait Q extends P { String run(SimpleArgument a) { make(a) } }   // unqualified, subtype, inherited @Virtual
+            class Over implements Q { static String make(Object o) { 'Over:' + o.class.simpleName } }
+            class Def  implements Q { }
+            [ over: new Over().run(new SimpleArgument()), def: new Def().run(new SimpleArgument()) ]
+        '''
+        assert r.over == 'Over:SimpleArgument' : "row17: inherited @Virtual override must be visible to the child-trait body (got ${r.over})"
+        assert r.def  == 'P:SimpleArgument'    : "row17: no override -> inherited @Virtual default (got ${r.def})"
+    }
+
+    // ---- Row 17b — same as row 17 but via `this.` ----
+    @Test
+    void row17b_childTrait_inheritedVirtualParentStatic_thisQualified_overrideVisible() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.Virtual
+            final class SimpleArgument { }
+            @CompileStatic
+            trait P { @Virtual static String make(Object o) { 'P:' + o.class.simpleName } }
+            @CompileStatic
+            trait Q extends P { String run(SimpleArgument a) { this.make(a) } }
+            class Over implements Q { static String make(Object o) { 'Over:' + o.class.simpleName } }
+            class Def  implements Q { }
+            [ over: new Over().run(new SimpleArgument()), def: new Def().run(new SimpleArgument()) ]
+        '''
+        assert r.over == 'Over:SimpleArgument' : "row17b: this.-qualified inherited @Virtual override must be visible (got ${r.over})"
+        assert r.def  == 'P:SimpleArgument'    : "row17b: no override -> inherited @Virtual default (got ${r.def})"
+    }
+
+    // ---- Row 17esc — `Parent.super.m()` reaches the inherited trait's own @Virtual copy ----
+    // The explicit trait-anchored escape: from a child trait body, `P.super.m()` bypasses
+    // the implementer override and calls P's own copy (declarer-bound), exactly as
+    // `T.super.m()` does for the trait-vs-superclass case (cf. row 11esc). The override is
+    // intentionally NOT visible here — bypassing it is the defined purpose of the super form.
+    @Test
+    void row17esc_childTrait_inheritedVirtualParentStatic_superIsDeclarerBound() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.Virtual
+            final class SimpleArgument { }
+            @CompileStatic
+            trait P { @Virtual static String make(Object o) { 'P:' + o.class.simpleName } }
+            @CompileStatic
+            trait Q extends P { String run(SimpleArgument a) { P.super.make(a) } }
+            class Over implements Q { static String make(Object o) { 'Over:' + o.class.simpleName } }
+            new Over().run(new SimpleArgument())
+        '''
+        assert r == 'P:SimpleArgument' : "row17esc: P.super.make() must reach P's own @Virtual copy (declarer-bound), got ${r}"
+    }
 }

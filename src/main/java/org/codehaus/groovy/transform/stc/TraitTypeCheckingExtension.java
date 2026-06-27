@@ -30,9 +30,11 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
 
 /**
@@ -77,17 +79,30 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
             ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
             if (returnType != null) return Collections.singletonList(makeDynamic(call, returnType));
 
-            // GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-8854, GROOVY-10312: trait: this.m($static$self)
+            // GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-8854, GROOVY-10312, GROOVY-12106: trait: this.m($static$self)
             ClassNode targetClass = isClassClassNodeWrappingConcreteType(receiver)? receiver.getGenericsTypes()[0].getType(): receiver;
             if (Traits.isTrait(targetClass.getOuterClass()) && argumentTypes.length > 0 && ClassHelper.isClassType(argumentTypes[0])) {
-                Parameter[] signature = java.util.Arrays.stream(argumentTypes).map(t -> new Parameter(t,"")).toArray(Parameter[]::new);
                 List<ClassNode> traits = Traits.findTraits(targetClass.getOuterClass());
                 traits.remove(targetClass.getOuterClass());
 
                 for (ClassNode trait : traits) { // check super trait for static method
-                    MethodNode method = Traits.findHelper(trait).getDeclaredMethod(name, signature);
-                    if (method != null && method.isStatic()) {
-                        return Collections.singletonList(makeDynamic(call, method.getReturnType()));
+                    // GROOVY-12106: select over the super-trait helper's OWN declared statics
+                    // with subtype-aware overload resolution, so an argument whose static type
+                    // is a subtype of the declared parameter still resolves (matching plain-class
+                    // static inheritance). chooseBestMethod (not findMethod) is used deliberately:
+                    // it avoids folding in DGM/extension methods that could collide by name, and
+                    // it makes the chosen candidate deterministic.
+                    ClassNode helper = Traits.findHelper(trait);
+                    List<MethodNode> candidates = new ArrayList<>();
+                    for (MethodNode m : helper.getDeclaredMethods(name)) {
+                        if (m.isStatic()) candidates.add(m);
+                    }
+                    if (!candidates.isEmpty()) {
+                        List<MethodNode> best = chooseBestMethod(helper, candidates, argumentTypes);
+                        if (!best.isEmpty()) { // one match -> its type; a tie -> Object (ambiguity-safe)
+                            return Collections.singletonList(makeDynamic(call,
+                                    best.size() == 1 ? best.get(0).getReturnType() : ClassHelper.OBJECT_TYPE));
+                        }
                     }
                 }
             }
