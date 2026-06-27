@@ -564,4 +564,41 @@ class TraitStaticDispatchMatrix {
         '''
         assert r == 'target=SimpleArgument' : "row16b: this.-qualified inherited parent-trait static must resolve with a subtype argument (got ${r})"
     }
+
+    // ---- Row 16q — qualified Parent.m(...) form of rows 16/16b (GROOVY-12106 case (a)) ----
+    // The trait-qualified counterpart: the child trait calls the inherited parent-trait
+    // static via `ExecutesClosures.withDelegate(...)` with a subtype argument. Unlike the
+    // unqualified/`this.` forms (rows 16/16b, broken everywhere in 5.x/6.x), THIS form is
+    // already FIXED on master (6.0.0-SNAPSHOT) by the recent trait-static dispatch work,
+    // but is NOT in the GROOVY_5_0_X line — it fails to compile on 5.0.6 / 5.0.7-SNAPSHOT
+    // (STC: `java.lang.Class#withDelegate`). It is therefore a plain spec assertion (like
+    // rows 1/10/12), NOT @NotYetImplemented: green on master, RED when run against 5.0.x —
+    // the intended detector for the missing backport (GROOVY-12106 case (a)).
+    //
+    // Runtime nuance (why this is a real fix, not just a regression): the qualified form
+    // COMPILES but throws MissingMethodException at RUNTIME on 4.0.x, fails to COMPILE on
+    // 5.0.x, and only compiles AND runs on master. This row asserts the compile+runtime
+    // success state, so it tracks the genuinely-correct end-state rather than any prior
+    // partial behaviour.
+    @Test
+    void row16q_childTrait_inheritedParentStatic_subtypeArg_qualified() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            trait ExecutesClosures {
+                static String withDelegate(Closure cl, Object target) {
+                    cl.call()
+                    'target=' + target.class.simpleName
+                }
+            }
+            final class SimpleArgument { }
+            @CompileStatic
+            trait Arguable extends ExecutesClosures {
+                String run(SimpleArgument arg) { ExecutesClosures.withDelegate({ -> }, arg) }   // qualified, subtype arg
+            }
+            class C implements Arguable { }
+            new C().run(new SimpleArgument())
+        '''
+        assert r == 'target=SimpleArgument' : "row16q: qualified inherited parent-trait static must resolve+run with a subtype argument (got ${r}) — RED on 5.0.x marks the missing backport (GROOVY-12106 case a)"
+    }
 }
