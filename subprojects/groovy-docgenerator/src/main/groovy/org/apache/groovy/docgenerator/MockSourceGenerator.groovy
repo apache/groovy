@@ -18,11 +18,6 @@
  */
 package org.apache.groovy.docgenerator
 
-import com.thoughtworks.qdox.JavaProjectBuilder
-import com.thoughtworks.qdox.model.JavaClass
-import com.thoughtworks.qdox.model.JavaMethod
-import com.thoughtworks.qdox.model.JavaParameter
-import com.thoughtworks.qdox.model.JavaType
 import groovy.cli.internal.CliBuilderInternal
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
@@ -77,29 +72,22 @@ class MockSourceGenerator {
      * Generates mock source files for all supported receiver types.
      */
     void generateAll() {
-        def builder = new JavaProjectBuilder()
-        sourceFiles.each {
-            if (it.exists()) {
-                builder.addSource(it.newReader())
-            }
+        def sourceSet = new JavaExtensionSourceSet()
+        sourceFiles.each { File sourceFile ->
+            sourceSet.addSource(sourceFile)
         }
 
         // Bucket methods by receiver FQCN (generics stripped, single-letter type
         // variables coerced to java.lang.Object[] as docgenerator historically did).
-        def byReceiver = new LinkedHashMap<String, List<JavaMethod>>()
-        def typeOf = new LinkedHashMap<String, JavaType>()
-        builder.sources.each { source ->
-            source.classes.each { JavaClass aClass ->
-                aClass.methods.each { JavaMethod method ->
-                    if (!method.public || !method.static) return
-                    if (method.parameters.empty) return
-                    if (method.annotations.any { it.type.fullyQualifiedName == 'java.lang.Deprecated' }) return
-                    def raw = method.parameters[0].type.toString()
-                    def fqcn = resolveJdkClassName(raw)
-                    byReceiver.computeIfAbsent(fqcn) { [] } << method
-                    typeOf.putIfAbsent(fqcn, method.parameters[0].type)
-                }
-            }
+        def byReceiver = new LinkedHashMap<String, List<JavaExtensionMethod>>()
+        def typeOf = new LinkedHashMap<String, ReceiverTypeInfo>()
+        sourceSet.methods.each { JavaExtensionMethod method ->
+            if (!method.publicMethod || !method.staticMethod) return
+            if (method.parameters.empty) return
+            if (method.deprecated) return
+            def fqcn = method.receiverTypeName
+            byReceiver.computeIfAbsent(fqcn) { [] } << method
+            typeOf.putIfAbsent(fqcn, method.receiverTypeInfo)
         }
 
         // Group nested receivers under their outer class so we emit one file per
@@ -110,23 +98,23 @@ class MockSourceGenerator {
             if (outer) {
                 // Make sure the outer exists as an owner even if it has no direct methods.
                 def parent = topLevelOwners.computeIfAbsent(outer) {
-                    new Owner(fqcn: outer, type: typeOf[outer])
+                    new Owner(fqcn: outer, typeInfo: typeOf[outer] ?: sourceSet.typeInfoForFqcn(outer))
                 }
-                parent.nested[fqcn] = new Owner(fqcn: fqcn, type: typeOf[fqcn], methods: methods)
+                parent.nested[fqcn] = new Owner(fqcn: fqcn, typeInfo: typeOf[fqcn], methods: methods)
             } else {
                 def owner = topLevelOwners.computeIfAbsent(fqcn) {
-                    new Owner(fqcn: fqcn, type: typeOf[fqcn])
+                    new Owner(fqcn: fqcn, typeInfo: typeOf[fqcn])
                 }
                 owner.methods.addAll(methods)
-                if (!owner.type) owner.type = typeOf[fqcn]
+                if (!owner.typeInfo) owner.typeInfo = typeOf[fqcn]
             }
         }
 
         def manifestEntries = []
         topLevelOwners.values().each { owner ->
-            def mockPkg = mockPackageFor(owner.fqcn, owner.type)
-            def mockName = mockClassNameFor(owner.fqcn, owner.type)
-            def displayPkg = displayPackageFor(owner.fqcn, owner.type)
+            def mockPkg = mockPackageFor(owner.fqcn, owner.typeInfo)
+            def mockName = mockClassNameFor(owner.fqcn, owner.typeInfo)
+            def displayPkg = displayPackageFor(owner.fqcn, owner.typeInfo)
             def displayName = displayNameFor(owner.fqcn)
             if (mockPkg != displayPkg || mockName != displayName) {
                 manifestEntries << "${mockPkg}\t${mockName}\t${displayPkg}\t${displayName}"
@@ -137,24 +125,24 @@ class MockSourceGenerator {
     }
 
     /** Where the generated HTML page should live after rewriting (historical URL). */
-    static String displayPackageFor(String fqcn, JavaType type) {
+    static String displayPackageFor(String fqcn, ReceiverTypeInfo typeInfo) {
         def base = stripArraySuffix(fqcn)
         if (base in PRIMITIVE_BASES) return 'primitives-and-primitive-arrays'
-        if (type?.isPrimitive()) return 'primitives-and-primitive-arrays'
+        if (typeInfo?.primitive) return 'primitives-and-primitive-arrays'
         def dot = base.lastIndexOf('.')
         dot < 0 ? '' : base[0..<dot]
     }
 
     private static class Owner {
         String fqcn
-        JavaType type
-        List<JavaMethod> methods = []
+        ReceiverTypeInfo typeInfo
+        List<JavaExtensionMethod> methods = []
         Map<String, Owner> nested = [:]
     }
 
     private void emitMock(Owner owner) {
-        def pkg = mockPackageFor(owner.fqcn, owner.type)
-        def mockName = mockClassNameFor(owner.fqcn, owner.type)
+        def pkg = mockPackageFor(owner.fqcn, owner.typeInfo)
+        def mockName = mockClassNameFor(owner.fqcn, owner.typeInfo)
         def displayName = displayNameFor(owner.fqcn)
 
         def dir = new File(outputDir, pkg.replace('.', '/'))
@@ -163,7 +151,7 @@ class MockSourceGenerator {
         def sb = new StringBuilder()
         sb << "package ${pkg};\n\n"
         appendClassJavadoc(sb, displayName, owner.fqcn, '')
-        def kw = classKeyword(owner.type)
+        def kw = classKeyword(owner.typeInfo)
         sb << "public ${kw} ${mockName} {\n"
         owner.methods.each { sb << serializeMethod(it, kw == 'interface', '    ') }
         owner.nested.values().each { nested ->
@@ -179,7 +167,7 @@ class MockSourceGenerator {
         def mockName = simpleMockName(owner.fqcn)
         sb << '\n'
         appendClassJavadoc(sb, displayName, owner.fqcn, indent)
-        def kw = classKeyword(owner.type)
+        def kw = classKeyword(owner.typeInfo)
         sb << "${indent}public static ${kw} ${mockName} {\n"
         owner.methods.each { sb << serializeMethod(it, kw == 'interface', indent + '    ') }
         sb << "${indent}}\n"
@@ -194,11 +182,11 @@ class MockSourceGenerator {
         sb << "${indent} */\n"
     }
 
-    private static String classKeyword(JavaType type) {
-        (type instanceof JavaClass && ((JavaClass) type).isInterface()) ? 'interface' : 'class'
+    private static String classKeyword(ReceiverTypeInfo typeInfo) {
+        typeInfo?.interfaceType ? 'interface' : 'class'
     }
 
-    private String serializeMethod(JavaMethod m, boolean ownerIsInterface, String indent) {
+    private String serializeMethod(JavaExtensionMethod m, boolean ownerIsInterface, String indent) {
         def sb = new StringBuilder()
         def javadoc = copyJavadoc(m)
         if (javadoc) {
@@ -207,18 +195,18 @@ class MockSourceGenerator {
             sb << "${indent} */\n"
         }
         sb << indent << 'public '
-        boolean isStatic = m.declaringClass.name.endsWith('StaticMethods') || m.declaringClass.name.endsWith('StaticExtensions')
+        boolean isStatic = m.declaringClassName.endsWith('StaticMethods') || m.declaringClassName.endsWith('StaticExtensions')
         if (isStatic) sb << 'static '
         if (m.typeParameters) {
-            sb << '<' << m.typeParameters.collect { it.toString() }.join(', ') << '> '
+            sb << '<' << m.typeParameters.join(', ') << '> '
         }
-        sb << (m.returns ? m.returns.genericCanonicalName : 'void') << ' '
+        sb << (m.returnType ?: 'void') << ' '
         sb << m.name << '('
         def params = isStatic ? m.parameters.toList() : (m.parameters.size() > 1 ? m.parameters.toList()[1..-1] : [])
-        sb << params.collect { JavaParameter p -> "${p.type.genericCanonicalName} ${p.name}" }.join(', ')
+        sb << params.collect { JavaExtensionParameter p -> "${p.type} ${p.name}" }.join(', ')
         sb << ')'
         if (m.exceptions) {
-            sb << ' throws ' << m.exceptions.collect { it.genericCanonicalName }.join(', ')
+            sb << ' throws ' << m.exceptions.join(', ')
         }
         if (ownerIsInterface && !isStatic) {
             sb << ';\n\n'
@@ -229,8 +217,8 @@ class MockSourceGenerator {
         sb.toString()
     }
 
-    private static String bodyFor(JavaMethod m) {
-        def rt = m.returns?.toString()
+    private static String bodyFor(JavaExtensionMethod m) {
+        def rt = m.returnType
         if (!rt || rt == 'void') return ''
         'throw new UnsupportedOperationException();'
     }
@@ -241,12 +229,12 @@ class MockSourceGenerator {
      * {@code {@link Recv#m(X,Y)}} so groovydoc's link resolver can resolve them
      * against the mock source tree.
      */
-    private static String copyJavadoc(JavaMethod m) {
-        def text = m.comment ?: ''
-        def allTags = m.tags
+    private static String copyJavadoc(JavaExtensionMethod m) {
+        def text = m.javadoc?.description ?: ''
+        def allTags = m.javadoc?.tags ?: []
         def paramTags = allTags.findAll { it.name == 'param' }
         def otherTags = allTags.findAll { it.name != 'param' }
-        boolean isStatic = m.declaringClass.name.endsWith('StaticMethods') || m.declaringClass.name.endsWith('StaticExtensions')
+        boolean isStatic = m.declaringClassName.endsWith('StaticMethods') || m.declaringClassName.endsWith('StaticExtensions')
         def remainingParams = isStatic ? paramTags : (paramTags.size() > 1 ? paramTags.drop(1) : [])
         def sb = new StringBuilder(rewriteLinks(text))
         if (sb.length() > 0) sb << '\n'
@@ -276,21 +264,21 @@ class MockSourceGenerator {
     }
 
     /** Package the mock file lives in, derived from the receiver's FQCN. */
-    static String mockPackageFor(String fqcn, JavaType type) {
+    static String mockPackageFor(String fqcn, ReceiverTypeInfo typeInfo) {
         def base = stripArraySuffix(fqcn)
         if (base in PRIMITIVE_BASES) return PRIMITIVES_PKG
-        if (type?.isPrimitive()) return PRIMITIVES_PKG
+        if (typeInfo?.primitive) return PRIMITIVES_PKG
         def dot = base.lastIndexOf('.')
         dot < 0 ? '' : base[0..<dot]
     }
 
     /** Legal Java identifier used as the mock class name for a top-level receiver. */
-    static String mockClassNameFor(String fqcn, JavaType type) {
+    static String mockClassNameFor(String fqcn, ReceiverTypeInfo typeInfo) {
         def base = stripArraySuffix(fqcn)
         def dims = arrayDimensions(fqcn)
         def simple = (base.lastIndexOf('.') < 0) ? base : base[(base.lastIndexOf('.') + 1)..-1]
         def name
-        if (base in PRIMITIVE_BASES || (type?.isPrimitive())) {
+        if (base in PRIMITIVE_BASES || (typeInfo?.primitive)) {
             name = 'Primitive' + simple.capitalize()
         } else {
             name = simple
