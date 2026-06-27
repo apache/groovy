@@ -98,33 +98,32 @@ public final class MonadicCarrierRegistry {
     private static final List<Entry> ENTRIES;
     private static final List<NamedEntry> NAMED_ENTRIES;
     static {
-        List<Entry> e = new ArrayList<Entry>();
-        e.add(new Entry(Optional.class,        "flatMap",     "map"));
-        e.add(new Entry(Stream.class,          "flatMap",     "map"));
-        e.add(new Entry(CompletionStage.class, "thenCompose", "thenApply")); // covers CompletableFuture
-        e.add(new Entry(Awaitable.class,       "thenCompose", "then"));      // covers DataflowVariable
-        ENTRIES = Collections.unmodifiableList(e);
+        // covers DataflowVariable
+        ENTRIES = List.of(
+            new Entry(Optional.class, "flatMap", "map"),
+            new Entry(Stream.class, "flatMap", "map"),
+            new Entry(CompletionStage.class, "thenCompose", "thenApply"), // covers CompletableFuture
+            new Entry(Awaitable.class, "thenCompose", "then"));
 
         // Functional Java (org.functionaljava) — recognised by name; no dependency.
-        List<NamedEntry> n = new ArrayList<NamedEntry>();
-        n.add(new NamedEntry("fj.data.Option",     "bind", "map"));
-        n.add(new NamedEntry("fj.data.List",       "bind", "map"));
-        n.add(new NamedEntry("fj.data.Stream",     "bind", "map"));
-        n.add(new NamedEntry("fj.data.Validation", "bind", "map"));
-        n.add(new NamedEntry("fj.P1",              "bind", "map"));
 
-        // Vavr (io.vavr) — recognised by name; no dependency. Vavr's control
-        // carriers use the structural flatMap/map convention, so they are
-        // covered by the default dispatcher even without an entry here; the
-        // entries are retained so the carrier names appear explicitly in the
-        // standard allow-list and pass the MonadicChecker's participation test
-        // without requiring a structural match.
-        n.add(new NamedEntry("io.vavr.control.Option",     "flatMap", "map"));
-        n.add(new NamedEntry("io.vavr.control.Try",        "flatMap", "map"));
-        n.add(new NamedEntry("io.vavr.control.Either",     "flatMap", "map"));
-        n.add(new NamedEntry("io.vavr.control.Validation", "flatMap", "map"));
+        NAMED_ENTRIES = List.of(
+            new NamedEntry("fj.data.Option", "bind", "map"),
+            new NamedEntry("fj.data.List", "bind", "map"),
+            new NamedEntry("fj.data.Stream", "bind", "map"),
+            new NamedEntry("fj.data.Validation", "bind", "map"),
+            new NamedEntry("fj.P1", "bind", "map"),
 
-        NAMED_ENTRIES = Collections.unmodifiableList(n);
+            // Vavr (io.vavr) — recognised by name; no dependency. Vavr's control
+            // carriers use the structural flatMap/map convention, so they are
+            // covered by the default dispatcher even without an entry here; the
+            // entries are retained so the carrier names appear explicitly in the
+            // standard allow-list and pass the MonadicChecker's participation test
+            // without requiring a structural match.
+            new NamedEntry("io.vavr.control.Option", "flatMap", "map"),
+            new NamedEntry("io.vavr.control.Try", "flatMap", "map"),
+            new NamedEntry("io.vavr.control.Either", "flatMap", "map"),
+            new NamedEntry("io.vavr.control.Validation", "flatMap", "map"));
     }
 
     private MonadicCarrierRegistry() {}

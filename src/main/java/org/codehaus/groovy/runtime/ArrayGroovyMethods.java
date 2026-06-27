@@ -10318,7 +10318,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> toImmutableList(T[] self) {
         if (self.length == 0) return Collections.emptyList();
-        return Collections.unmodifiableList(new ArrayList<>(Arrays.asList(self)));
+        return List.of(self);
     }
 
     //--------------------------------------------------------------------------
