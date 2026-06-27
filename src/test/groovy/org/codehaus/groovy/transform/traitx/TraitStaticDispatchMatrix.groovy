@@ -601,4 +601,75 @@ class TraitStaticDispatchMatrix {
         '''
         assert r == 'target=SimpleArgument' : "row16q: qualified inherited parent-trait static must resolve+run with a subtype argument (got ${r}) — RED on 5.0.x marks the missing backport (GROOVY-12106 case a)"
     }
+
+    // ---- Row 17 — child trait resolves an inherited @Virtual parent-trait static ----
+    // The @Virtual companion to rows 16/16b: a child trait calls an inherited @Virtual
+    // parent-trait static unqualified, with a PROPER SUBTYPE argument, and an implementer
+    // overrides it. @Virtual routes through the per-implementer dynamic-dispatch path
+    // (DO_DYNAMIC), which is INDEPENDENT of the GROOVY-12106 STC fix that rows 16/16b
+    // require — verified by reverting that fix: these forms behave identically with or
+    // without it, so this row is green on master before and after the fix. Asserts both
+    // that the inherited @Virtual resolves with a subtype arg AND that per-implementer
+    // override visibility survives through the child-trait body (the point of @Virtual;
+    // cf. row 1 for the same-trait case).
+    // Note: the *qualified* form `Parent.m(...)` does NOT work for @Virtual (the method is
+    // not promoted onto the interface) — a separate, pre-existing limitation tracked apart
+    // from GROOVY-12106.
+    @Test
+    void row17_childTrait_inheritedVirtualParentStatic_unqualified_overrideVisible() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.Virtual
+            final class SimpleArgument { }
+            @CompileStatic
+            trait P { @Virtual static String make(Object o) { 'P:' + o.class.simpleName } }
+            @CompileStatic
+            trait Q extends P { String run(SimpleArgument a) { make(a) } }   // unqualified, subtype, inherited @Virtual
+            class Over implements Q { static String make(Object o) { 'Over:' + o.class.simpleName } }
+            class Def  implements Q { }
+            [ over: new Over().run(new SimpleArgument()), def: new Def().run(new SimpleArgument()) ]
+        '''
+        assert r.over == 'Over:SimpleArgument' : "row17: inherited @Virtual override must be visible to the child-trait body (got ${r.over})"
+        assert r.def  == 'P:SimpleArgument'    : "row17: no override -> inherited @Virtual default (got ${r.def})"
+    }
+
+    // ---- Row 17b — same as row 17 but via `this.` ----
+    @Test
+    void row17b_childTrait_inheritedVirtualParentStatic_thisQualified_overrideVisible() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.Virtual
+            final class SimpleArgument { }
+            @CompileStatic
+            trait P { @Virtual static String make(Object o) { 'P:' + o.class.simpleName } }
+            @CompileStatic
+            trait Q extends P { String run(SimpleArgument a) { this.make(a) } }
+            class Over implements Q { static String make(Object o) { 'Over:' + o.class.simpleName } }
+            class Def  implements Q { }
+            [ over: new Over().run(new SimpleArgument()), def: new Def().run(new SimpleArgument()) ]
+        '''
+        assert r.over == 'Over:SimpleArgument' : "row17b: this.-qualified inherited @Virtual override must be visible (got ${r.over})"
+        assert r.def  == 'P:SimpleArgument'    : "row17b: no override -> inherited @Virtual default (got ${r.def})"
+    }
+
+    // ---- Row 17esc — `Parent.super.m()` reaches the inherited trait's own @Virtual copy ----
+    // The explicit trait-anchored escape: from a child trait body, `P.super.m()` bypasses
+    // the implementer override and calls P's own copy (declarer-bound), exactly as
+    // `T.super.m()` does for the trait-vs-superclass case (cf. row 11esc). The override is
+    // intentionally NOT visible here — bypassing it is the defined purpose of the super form.
+    @Test
+    void row17esc_childTrait_inheritedVirtualParentStatic_superIsDeclarerBound() {
+        def r = ev '''
+            import groovy.transform.CompileStatic
+            import groovy.transform.Virtual
+            final class SimpleArgument { }
+            @CompileStatic
+            trait P { @Virtual static String make(Object o) { 'P:' + o.class.simpleName } }
+            @CompileStatic
+            trait Q extends P { String run(SimpleArgument a) { P.super.make(a) } }
+            class Over implements Q { static String make(Object o) { 'Over:' + o.class.simpleName } }
+            new Over().run(new SimpleArgument())
+        '''
+        assert r == 'P:SimpleArgument' : "row17esc: P.super.make() must reach P's own @Virtual copy (declarer-bound), got ${r}"
+    }
 }
