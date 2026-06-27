@@ -10630,8 +10630,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 6.0.0
      */
     public static <T> Set<T> toImmutableSet(T[] self) {
-        Set<T> answer = toSet(self);
-        return answer.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(answer);
+        if (self.length == 0) return Collections.emptySet();
+        return Collections.unmodifiableSet(toSet(self));
     }
 
     //--------------------------------------------------------------------------
