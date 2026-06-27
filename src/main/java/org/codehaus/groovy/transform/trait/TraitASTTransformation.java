@@ -37,7 +37,6 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
@@ -117,8 +116,8 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class TraitASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
 
-    /** Marker annotation type for {@code @Anchored} trait static methods. */
-    private static final ClassNode ANCHORED_TYPE = ClassHelper.make(groovy.transform.Anchored.class);
+    /** Marker annotation type for {@code @Virtual} trait static methods. */
+    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(groovy.transform.Virtual.class);
 
     public static final String DO_DYNAMIC = TraitReceiverTransformer.class + ".doDynamic";
     public static final String POST_TYPECHECKING_REPLACEMENT = TraitReceiverTransformer.class + ".replacement";
@@ -251,18 +250,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             processField(field, initializer, staticInitializer, fieldHelper, helper, staticFieldHelper, cNode, fieldNames);
         }
 
-        // Reject misapplied @Anchored markers before we waste effort
+        // Reject misapplied @Virtual markers before we waste effort
         // processing them. Errors are registered against the source unit but
         // processing continues so that multiple violations can be reported
         // in a single compilation.
-        validateAnchoredAnnotations(cNode);
-
-        // Identify @Anchored public statics whose bodies the main loop will
-        // emit on the helper. Captured up front so the main loop carries no
-        // @Anchored-specific branching and so the interface forwarders can be
-        // installed in a single post-processing step after the originals are
-        // removed from the trait interface.
-        List<MethodNode> anchoredOnInterface = collectAnchoredOnInterface(cNode);
+        validateVirtualAnnotations(cNode);
 
         // add methods
         List<MethodNode> nonPublicAPIMethods = new ArrayList<>();
@@ -290,15 +282,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         // remove methods which should not appear in the trait interface
         for (MethodNode privateMethod : nonPublicAPIMethods) {
             cNode.removeMethod(privateMethod);
-        }
-
-        // Install a public-static method on the trait interface for each
-        // @Anchored callee identified above. The forwarder delegates to the
-        // helper so external `Trait.m()` and from-trait `T.m()` calls resolve
-        // at the JVM level. Done after the removal step so the original
-        // static method is no longer on cNode when the forwarder is added.
-        for (MethodNode anchored : anchoredOnInterface) {
-            cNode.addMethod(createAnchoredInterfaceForwarder(cNode, helper, anchored));
         }
 
         // copy statements from static and instance init blocks
@@ -645,15 +628,15 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     /**
-     * Reports a compile error for any {@code @Anchored} annotation that is
+     * Reports a compile error for any {@code @Virtual} annotation that is
      * applied to something other than a public static non-abstract trait
      * method. Without this check the misapplied annotation would be silently
      * ignored, leaving the user with no signal that the marker had no effect.
      */
-    private void validateAnchoredAnnotations(final ClassNode traitClass) {
+    private void validateVirtualAnnotations(final ClassNode traitClass) {
         for (MethodNode methodNode : traitClass.getMethods()) {
-            List<AnnotationNode> annotations = methodNode.getAnnotations(ANCHORED_TYPE);
-            if (annotations.isEmpty()) continue;
+            List<AnnotationNode> virtualAnns = methodNode.getAnnotations(VIRTUAL_TYPE);
+            if (virtualAnns.isEmpty()) continue;
             String issue;
             if (!methodNode.isStatic()) {
                 issue = "is not static";
@@ -664,84 +647,12 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             } else {
                 continue; // valid
             }
-            AnnotationNode anchored = annotations.get(0);
+            AnnotationNode virtual = virtualAnns.get(0);
             sourceUnit.addError(new SyntaxException(
-                    "@Anchored can only be applied to public static trait methods; "
+                    "@Virtual can only be applied to public static trait methods; "
                             + traitClass.getName() + "#" + methodNode.getTypeDescriptor() + " " + issue,
-                    anchored.getLineNumber(), anchored.getColumnNumber()));
+                    virtual.getLineNumber(), virtual.getColumnNumber()));
         }
-    }
-
-    /**
-     * Returns the public {@code static} trait methods whose {@code @Anchored}
-     * marker requests interface promotion (i.e. {@code inInterface=true}, the
-     * default). The returned list snapshots the trait's method set so the
-     * caller can iterate the methods without being affected by later
-     * mutations to {@code traitClass.getMethods()}.
-     */
-    private static List<MethodNode> collectAnchoredOnInterface(final ClassNode traitClass) {
-        List<MethodNode> result = new ArrayList<>();
-        for (MethodNode methodNode : traitClass.getMethods()) {
-            if (methodNode.isStatic() && !methodNode.isPrivate() && !methodNode.isAbstract()
-                    && isAnchoredOnInterface(methodNode)) {
-                result.add(methodNode);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Returns {@code true} if the method is annotated with {@code @Anchored}
-     * and the {@code inInterface} attribute is true (the default).
-     */
-    private static boolean isAnchoredOnInterface(final MethodNode methodNode) {
-        List<AnnotationNode> anns = methodNode.getAnnotations(ANCHORED_TYPE);
-        if (anns.isEmpty()) return false;
-        Expression member = anns.get(0).getMember("inInterface");
-        if (member instanceof ConstantExpression
-                && Boolean.FALSE.equals(((ConstantExpression) member).getValue())) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Builds a public-static method on the trait interface that delegates to
-     * the corresponding helper method.
-     *
-     * <p>Emits {@code public static R m(args) { return T$Trait$Helper.m(T.class, args); }},
-     * preserving generics, exceptions and parameter list of the original
-     * trait static. The trait class itself is passed as the synthetic
-     * {@code $self} receiver expected by the helper, consistent with the
-     * declarer-bound dispatch model that {@code @Anchored} selects.
-     */
-    private static MethodNode createAnchoredInterfaceForwarder(final ClassNode traitClass, final ClassNode helper, final MethodNode original) {
-        Parameter[] params = original.getParameters();
-        Expression[] callArgs = new Expression[params.length + 1];
-        callArgs[0] = classX(traitClass);
-        for (int i = 0; i < params.length; i++) {
-            callArgs[i + 1] = varX(params[i]);
-        }
-        MethodCallExpression call = callX(classX(helper), original.getName(), args(callArgs));
-        Statement body = VOID_TYPE.equals(original.getReturnType()) ? stmt(call) : returnS(call);
-        MethodNode forwarder = new MethodNode(
-                original.getName(),
-                ACC_PUBLIC | ACC_STATIC,
-                original.getReturnType(),
-                params,
-                original.getExceptions(),
-                body);
-        forwarder.setGenericsTypes(original.getGenericsTypes());
-        forwarder.setSynthetic(true);
-        forwarder.setSourcePosition(original);
-        // Carry over the trait method's RUNTIME/CLASS-retention annotations (e.g.
-        // @Deprecated) so the promoted interface static behaves like the original,
-        // consistent with the forwarders generated by TraitComposer. The helper
-        // filters out SOURCE-retention/transform markers and closure-member ones.
-        List<AnnotationNode> copied = new ArrayList<>(), notCopied = new ArrayList<>();
-        GeneralUtils.copyAnnotatedNodeAnnotations(original, copied, notCopied);
-        forwarder.addAnnotations(copied);
-        return forwarder;
     }
 
     private MethodNode processMethod(final ClassNode traitClass, final ClassNode traitHelperClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
