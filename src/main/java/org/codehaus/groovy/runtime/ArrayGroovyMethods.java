@@ -38,8 +38,8 @@ import groovy.util.function.FloatUnaryOperator;
 import groovy.util.function.IntComparator;
 import groovy.util.function.LongComparator;
 import org.apache.groovy.lang.annotation.Incubating;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.util.ArrayIterable;
 import org.codehaus.groovy.util.ArrayIterator;
 import org.codehaus.groovy.util.BooleanArrayIterator;
@@ -10318,7 +10318,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> toImmutableList(T[] self) {
         if (self.length == 0) return Collections.emptyList();
-        return List.of(self);
+        return Collections.unmodifiableList(Arrays.asList(self));
     }
 
     //--------------------------------------------------------------------------
