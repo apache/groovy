@@ -163,6 +163,26 @@ if [ -z "$GROOVY_CONF" ] ; then
 fi
 STARTER_CLASSPATH="$GROOVY_HOME/lib/@GROOVYJAR@"
 
+# Sanity check: the Groovy startup jar must exist, otherwise the JVM fails later
+# with a cryptic "Could not find or load main class ...GroovyStarter". This most
+# commonly happens when GROOVY_HOME is set but points at the wrong location.
+if [ ! -f "$STARTER_CLASSPATH" ] ; then
+    warn "Could not find the Groovy startup jar:"
+    warn "    $STARTER_CLASSPATH"
+    warn ""
+    if [ -n "$GROOVY_HOME" ] ; then
+        warn "GROOVY_HOME is set to: $GROOVY_HOME"
+        warn "but it does not look like a valid Groovy installation"
+        warn "(no lib/@GROOVYJAR@ found under it)."
+    else
+        warn "GROOVY_HOME is not set and could not be derived from the script location."
+    fi
+    warn ""
+    warn "Please either unset GROOVY_HOME, or set it to the root directory of your"
+    warn "Groovy installation (the directory containing the bin, conf and lib folders)."
+    die  "Aborting."
+fi
+
 # Create the final classpath. Setting a classpath using the -cp or -classpath option means not to use the
 # global classpath. Groovy behaves then the same as the java interpreter
 if [ -n "$CP" ] ; then

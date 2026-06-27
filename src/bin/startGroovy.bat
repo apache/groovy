@@ -259,6 +259,28 @@ set CMD_LINE_ARGS=%$
 @rem Setup the command line
 set STARTER_CLASSPATH=%GROOVY_HOME%\lib\@GROOVYJAR@
 
+@rem Sanity check: the Groovy startup jar must exist, otherwise the JVM fails later
+@rem with a cryptic "Could not find or load main class ...GroovyStarter". This most
+@rem commonly happens when GROOVY_HOME is set but points at the wrong location.
+if not exist "%STARTER_CLASSPATH%" (
+    echo.
+    echo ERROR: Could not find the Groovy startup jar:
+    echo     %STARTER_CLASSPATH%
+    echo.
+    if not "%GROOVY_HOME%" == "" (
+        echo GROOVY_HOME is set to: %GROOVY_HOME%
+        echo but it does not look like a valid Groovy installation
+        echo ^(no lib\@GROOVYJAR@ found under it^).
+    ) else (
+        echo GROOVY_HOME is not set and could not be derived from the script location.
+    )
+    echo.
+    echo Please either clear GROOVY_HOME ^(set GROOVY_HOME=^), or set it to the root
+    echo directory of your Groovy installation ^(the directory containing the bin,
+    echo conf and lib folders^).
+    goto end
+)
+
 if exist "%USERPROFILE%/.groovy/init.bat" call "%USERPROFILE%/.groovy/init.bat"
 
 @rem Setting a classpath using the -cp or -classpath option means not to use
