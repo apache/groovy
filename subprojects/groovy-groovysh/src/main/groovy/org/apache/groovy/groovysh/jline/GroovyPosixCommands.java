@@ -124,7 +124,7 @@ public class GroovyPosixCommands {
     private static void doCat(Context context, BufferedReader reader, boolean numbered) throws IOException {
         String line;
         int lineno = 1;
-        try {
+        try (reader) {
             while ((line = reader.readLine()) != null) {
                 if (numbered) {
                     context.out().printf("%6d\t%s%n", lineno++, line);
@@ -132,8 +132,6 @@ public class GroovyPosixCommands {
                     context.out().println(line);
                 }
             }
-        } finally {
-            reader.close();
         }
     }
 
