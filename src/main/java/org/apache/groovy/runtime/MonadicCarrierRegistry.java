@@ -22,7 +22,6 @@ import groovy.concurrent.Awaitable;
 import org.apache.groovy.lang.annotation.Incubating;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashSet;
@@ -98,12 +97,12 @@ public final class MonadicCarrierRegistry {
     private static final List<Entry> ENTRIES;
     private static final List<NamedEntry> NAMED_ENTRIES;
     static {
-        // covers DataflowVariable
         ENTRIES = List.of(
             new Entry(Optional.class, "flatMap", "map"),
             new Entry(Stream.class, "flatMap", "map"),
             new Entry(CompletionStage.class, "thenCompose", "thenApply"), // covers CompletableFuture
-            new Entry(Awaitable.class, "thenCompose", "then"));
+            new Entry(Awaitable.class, "thenCompose", "then") // covers DataflowVariable
+        );
 
         // Functional Java (org.functionaljava) — recognised by name; no dependency.
 
