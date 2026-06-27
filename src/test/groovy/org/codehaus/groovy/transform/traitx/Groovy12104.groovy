@@ -108,16 +108,17 @@ final class Groovy12104 {
         assert err.message.contains("'V.this' is not allowed inside trait code")
     }
 
-    /** Recommended alternative #1: this.m() — works for normal override-visible dispatch. */
+    /** Recommended alternative #1: this.m() — works for normal dispatch (declarer-bound by default; @Virtual opts into per-implementer override). */
     @Test
     void thisMethodCall_recommendedAlternative_works() {
         assertScript '''
+            import groovy.transform.Virtual
             trait V {
-                static boolean defaultNullable() { false }
+                @Virtual static boolean defaultNullable() { false }
                 static seen() { this.defaultNullable() }   // normal dispatch
             }
             class Over implements V { static boolean defaultNullable() { true } }
-            assert Over.seen() == true   // override visible (GEP-22 § Static members item 4)
+            assert Over.seen() == true   // @Virtual: override visible from trait body
         '''
     }
 
