@@ -176,8 +176,9 @@ public class MethodClosure extends Closure {
     }
 
     @Serial
-    private Object readResolve() {
+    private Object readResolve() throws java.io.ObjectStreamException {
         if (ALLOW_RESOLVE) {
+            Closure.checkForReferenceCycle(this);
             return this;
         }
         throw new UnsupportedOperationException();
