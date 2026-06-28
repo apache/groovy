@@ -44,6 +44,8 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClas
  */
 public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
 
+    private static final ClassNode VIRTUAL_TYPE = ClassHelper.make(groovy.transform.Virtual.class);
+
     /**
      * Creates the trait-specific type-checking extension.
      */
@@ -84,6 +86,38 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
             ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
             if (returnType != null) return Collections.singletonList(makeDynamic(call, returnType));
 
+            // GROOVY-12112: a qualified `Trait.m(...)` call to a @Virtual trait static cannot
+            // resolve — @Virtual statics are intentionally not promoted onto the trait interface
+            // (they exist to be overridden per implementing class, so a bare Trait.m(...) has no
+            // implementing class to dispatch through). Replace the generic "cannot find method"
+            // with a clear, actionable error pointing at the supported forms.
+            if (isClassClassNodeWrappingConcreteType(receiver)) {
+                ClassNode traitType = receiver.getGenericsTypes()[0].getType();
+                if (Traits.isTrait(traitType)) {
+                    for (ClassNode trait : Traits.findTraits(traitType)) {
+                        ClassNode helper = Traits.findHelper(trait);
+                        if (helper == null) continue;
+                        for (MethodNode m : helper.getDeclaredMethods(name)) {
+                            if (m.isStatic() && !m.getAnnotations(VIRTUAL_TYPE).isEmpty()) {
+                                // The `T.super.m(...)` escape is only valid where `T` is the
+                                // *enclosing* trait (it walks that trait's super chain), so suggest
+                                // the trait the call sits in — not the receiver or declaring trait,
+                                // which need not match (e.g. `P.super.m()` from `Q`'s body is itself
+                                // illegal). Fall back to generic wording outside trait code.
+                                ClassNode enclosingTrait = enclosingTrait(getEnclosingClassNode());
+                                String superHint = enclosingTrait != null
+                                        ? ", or use '" + enclosingTrait.getNameWithoutPackage() + ".super." + name + "(...)' from within trait code for the trait's own definition"
+                                        : "; from within a trait use that trait's 'super' form (e.g. 'EnclosingTrait.super." + name + "(...)') for the trait's own definition";
+                                addStaticTypeError("Cannot call '" + traitType.getNameWithoutPackage() + "." + name + "(...)': '" + name
+                                        + "' is a @Virtual trait static method, which is overridable per implementing class and is not callable through the trait itself. "
+                                        + "Invoke it on an implementing class (e.g. 'SomeImpl." + name + "(...)')" + superHint, mce);
+                                return Collections.singletonList(makeDynamic(call, m.getReturnType()));
+                            }
+                        }
+                    }
+                }
+            }
+
             // GROOVY-7322, GROOVY-8272, GROOVY-8587, GROOVY-8854, GROOVY-10312, GROOVY-12106: trait: this.m($static$self)
             ClassNode targetClass = isClassClassNodeWrappingConcreteType(receiver)? receiver.getGenericsTypes()[0].getType(): receiver;
             if (Traits.isTrait(targetClass.getOuterClass()) && argumentTypes.length > 0 && ClassHelper.isClassType(argumentTypes[0])) {
@@ -114,6 +148,20 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Returns the trait whose body the currently type-checked code belongs to, or
+     * {@code null} when not in trait code. At type-check time a trait's methods have
+     * been moved to its {@code $Trait$Helper}, so the enclosing class is normally that
+     * helper, whose outer class is the trait.
+     */
+    private static ClassNode enclosingTrait(final ClassNode enclosing) {
+        if (enclosing == null) return null;
+        if (Traits.isTrait(enclosing)) return enclosing;
+        ClassNode outer = enclosing.getOuterClass();
+        if (outer != null && enclosing.getName().endsWith("$Helper") && Traits.isTrait(outer)) return outer;
+        return null;
     }
 
     /**
