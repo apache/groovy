@@ -44,7 +44,7 @@ jobs:
 
 
     - name: Install Java
-      uses: actions/setup-java@v5.2.0
+      uses: actions/setup-java@v5.3.0
       with:
           distribution: 'zulu'
           java-version: ${{ matrix.java }}

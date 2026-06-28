@@ -40,7 +40,7 @@ jobs:
           # SonarCloud needs full history (not a shallow clone) so it can
           # attribute issues/coverage to the right commits via SCM blame.
           fetch-depth: 0
-      - uses: actions/setup-java@v5.2.0
+      - uses: actions/setup-java@v5.3.0
         with:
           distribution: 'zulu'
           java-version: 21
