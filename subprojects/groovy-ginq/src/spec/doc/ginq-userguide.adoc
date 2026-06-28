@@ -1153,6 +1153,16 @@ Shutdown without waiting tasks to complete:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_11,indent=0]
 ----
 
+=== Asynchronous Querying
+
+A GINQ query is an ordinary (blocking) expression, so you can run it asynchronously using Groovy's
+`async`/`await` with no GINQ-specific support: wrap the query in `async { ... }` to launch it, carry on
+with other work, then `await` the result when you need it.
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_async_await,indent=0]
+----
+
 === Customize GINQ
 
 NOTE: *INCUBATING*: the custom code-generator (provider) extension point described here -- the

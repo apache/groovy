@@ -7336,6 +7336,30 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "testGinq - async await - 0"() {
+        assertScript '''
+// tag::ginq_async_await[]
+            def numbers = [1, 2, 3, 4, 5]
+
+            // launch the GINQ query asynchronously
+            def query = async {
+                GQL {
+                    from n in numbers
+                    where n % 2 == 0
+                    select n
+                }
+            }
+
+            // ... do other work here ...
+
+            // await the result when it is needed
+            def evens = await query
+            assert evens == [2, 4]
+// end::ginq_async_await[]
+        '''
+    }
+
     private static void assertGinqScript(String script) {
         String deoptimizedScript = script.replaceAll(/\bGQ\s*[{]/, 'GQ(optimize:false) {')
         List<String> scriptList = [deoptimizedScript, script]
