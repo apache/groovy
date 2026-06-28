@@ -37,11 +37,15 @@ import com.github.javaparser.ast.type.TypeParameter
 import com.github.javaparser.ast.type.UnionType
 import com.github.javaparser.ast.type.VoidType
 import com.github.javaparser.ast.type.WildcardType
+import groovy.transform.PackageScope
 import org.codehaus.groovy.control.ResolveVisitor
 
 /**
  * JavaParser-backed view of the extension source files consumed by {@link MockSourceGenerator}.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class JavaExtensionSourceSet {
     private final JavaParser parser = new JavaParser(
             new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.BLEEDING_EDGE)
