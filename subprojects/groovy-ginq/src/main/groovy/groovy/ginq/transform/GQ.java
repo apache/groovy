@@ -33,7 +33,6 @@ import java.lang.annotation.Target;
  *
  * @since 4.0.0
  */
-@Incubating
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD})
@@ -55,7 +54,12 @@ public @interface GQ {
     boolean parallel() default false;
 
     /**
-     * Specify the GINQ AST walker to customize GINQ behaviour
+     * Specify the GINQ AST walker to customize GINQ behaviour.
+     * <p>
+     * This is an advanced extension point: the named class must implement the
+     * {@link org.apache.groovy.ginq.dsl.GinqAstVisitor} provider SPI, which is still
+     * {@link Incubating} and may change in a future release.
      */
+    @Incubating
     String astWalker() default "org.apache.groovy.ginq.provider.collection.GinqAstWalker";
 }
