@@ -48,7 +48,7 @@ jobs:
       NO_COLOR: ${{ matrix.env-no-color }}
     steps:
       - name: "📥 Checkout repository"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
       - name: "☕️ Setup JDK"
         uses: actions/setup-java@v5.3.0
         with:
@@ -166,7 +166,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Checkout repository"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
       - name: "☕️ Setup JDK"
         uses: actions/setup-java@v5.3.0
         with:
@@ -253,7 +253,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Checkout repository"
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
       - name: "⬇️ Download EA JDK"
         run: wget -nv -O "$RUNNER_TEMP/java_package.tar.gz" "${{ matrix.jdk-url }}"
       - name: "☕️ Setup EA JDK (test target)"

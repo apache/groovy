@@ -35,7 +35,7 @@ jobs:
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           # SonarCloud needs full history (not a shallow clone) so it can
           # attribute issues/coverage to the right commits via SCM blame.
