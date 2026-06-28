@@ -294,7 +294,10 @@ final class JavaExtensionSourceSet {
 
 /**
  * Type rendering and name-resolution context derived from one compilation unit.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class JavaExtensionContext {
     public static final Set<String> PRIMITIVES = Set.of('boolean', 'byte', 'char', 'double', 'float', 'int', 'long', 'short')
     private static final List<String> DEFAULT_IMPORT_LIST = List.of(ResolveVisitor.DEFAULT_IMPORTS)
@@ -507,7 +510,10 @@ final class JavaExtensionContext {
 
 /**
  * Serializable view of one extension method consumed by {@link MockSourceGenerator}.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class JavaExtensionMethod {
     String name
     String declaringClassName
@@ -525,7 +531,10 @@ final class JavaExtensionMethod {
 
 /**
  * Serializable view of one method parameter.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class JavaExtensionParameter {
     String type
     String name
@@ -534,7 +543,10 @@ final class JavaExtensionParameter {
 
 /**
  * Receiver metadata used to decide mock type shape and output location.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class ReceiverTypeInfo {
     String canonicalName
     boolean primitive
@@ -543,7 +555,10 @@ final class ReceiverTypeInfo {
 
 /**
  * Parsed representation of method javadoc text and tags.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class JavadocInfo {
     String description = ''
     List<JavadocTagInfo> tags = []
@@ -586,7 +601,10 @@ final class JavadocInfo {
 
 /**
  * Serializable javadoc tag entry.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class JavadocTagInfo {
     String name
     String value
@@ -594,7 +612,10 @@ final class JavadocTagInfo {
 
 /**
  * Parsed source unit paired with its originating file.
+ *
+ * @since 6.0.0
  */
+@PackageScope
 final class ParsedUnit {
     File file
     CompilationUnit compilationUnit
