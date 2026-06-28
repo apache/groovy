@@ -31,6 +31,7 @@ import org.apache.groovy.ginq.dsl.expression.SelectExpression;
 import org.apache.groovy.ginq.dsl.expression.SetOperationExpression;
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 
 /**
@@ -38,6 +39,7 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
  *
  * @since 4.0.0
  */
+@Incubating
 public class GinqAstBaseVisitor extends CodeVisitorSupport implements GinqAstVisitor<Void> {
     /**
      * Visits a GINQ expression and its child clauses.

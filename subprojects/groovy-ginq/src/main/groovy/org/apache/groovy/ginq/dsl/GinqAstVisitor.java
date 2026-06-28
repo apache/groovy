@@ -31,6 +31,7 @@ import org.apache.groovy.ginq.dsl.expression.SelectExpression;
 import org.apache.groovy.ginq.dsl.expression.SetOperationExpression;
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
+import org.apache.groovy.lang.annotation.Incubating;
 
 import java.util.Collections;
 import java.util.Map;
@@ -41,6 +42,7 @@ import java.util.Map;
  * @param <R> the type of visit result
  * @since 4.0.0
  */
+@Incubating
 public interface GinqAstVisitor<R> {
     /**
      * Visits a full GINQ expression.

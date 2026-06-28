@@ -1155,6 +1155,10 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_11,indent
 
 === Customize GINQ
 
+NOTE: *INCUBATING*: the custom code-generator (provider) extension point described here -- the
+`astWalker` option and the `GinqAstVisitor` SPI it selects -- is still incubating and may change
+in a future release, even though the rest of GINQ is stable.
+
 For advanced users, you could customize GINQ behaviour by specifying your own target code generator.
 For example, we could specify the qualified class name `org.apache.groovy.ginq.provider.collection.GinqAstWalker` as the target code generator to generate GINQ method calls for querying collections,
 which is the default behaviour of GINQ:

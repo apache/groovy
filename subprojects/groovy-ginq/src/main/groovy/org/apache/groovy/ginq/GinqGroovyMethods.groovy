@@ -25,7 +25,6 @@ import org.apache.groovy.ginq.dsl.GinqAstVisitor
 import org.apache.groovy.ginq.dsl.expression.AbstractGinqExpression
 import org.apache.groovy.ginq.dsl.expression.GinqExpression
 import org.apache.groovy.ginq.provider.collection.GinqAstWalker
-import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -44,7 +43,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX
  *
  * @since 4.0.0
  */
-@Incubating
 @CompileStatic
 class GinqGroovyMethods {
     /**
@@ -156,6 +154,8 @@ class GinqGroovyMethods {
     public static final List<String> CONF_LIST = [CONF_PARALLEL, CONF_AST_WALKER, CONF_OPTIMIZE]
     /** Configuration key enabling parallel execution. */
     public static final String CONF_PARALLEL = 'parallel'
+    // The 'astWalker' key selects a custom GinqAstVisitor provider; that SPI is still
+    // incubating (see GinqAstVisitor / @GQ.astWalker) and may change in a future release.
     private static final String CONF_AST_WALKER = 'astWalker'
     private static final String CONF_OPTIMIZE = 'optimize'
     private static final String DEFAULT_AST_WALKER_CLASS_NAME = GinqAstWalker.class.name
