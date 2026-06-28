@@ -37,6 +37,8 @@ import com.github.javaparser.ast.type.TypeParameter
 import com.github.javaparser.ast.type.UnionType
 import com.github.javaparser.ast.type.VoidType
 import com.github.javaparser.ast.type.WildcardType
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import org.codehaus.groovy.control.ResolveVisitor
 
@@ -45,6 +47,7 @@ import org.codehaus.groovy.control.ResolveVisitor
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class JavaExtensionSourceSet {
     private final JavaParser parser = new JavaParser(
@@ -229,10 +232,11 @@ final class JavaExtensionSourceSet {
 
     private static Set<String> scopeTypeParametersOf(TypeDeclaration<?> declaringType, MethodDeclaration method) {
         def scopeTypeParameters = new LinkedHashSet<String>(ownerTypeParametersOf(declaringType))
-        scopeTypeParameters.addAll(method.typeParameters*.nameAsString)
+        scopeTypeParameters.addAll((List<String>) method.typeParameters*.nameAsString)
         scopeTypeParameters
     }
 
+    @CompileDynamic
     private static List<String> ownerTypeParametersOf(TypeDeclaration<?> declaringType) {
         declaringType.respondsTo('getTypeParameters') ? declaringType.typeParameters*.nameAsString : []
     }
@@ -297,6 +301,7 @@ final class JavaExtensionSourceSet {
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class JavaExtensionContext {
     public static final Set<String> PRIMITIVES = Set.of('boolean', 'byte', 'char', 'double', 'float', 'int', 'long', 'short')
@@ -346,9 +351,9 @@ final class JavaExtensionContext {
         } else if (type instanceof WildcardType) {
             rendered = renderWildcardType((WildcardType) type, typeParameterNames)
         } else if (type instanceof IntersectionType) {
-            rendered = renderTypeList(((IntersectionType) type).elements, typeParameterNames, ' & ')
+            rendered = renderTypeList(((IntersectionType) type).elements as Iterable<Type>, typeParameterNames, ' & ')
         } else if (type instanceof UnionType) {
-            rendered = renderTypeList(((UnionType) type).elements, typeParameterNames, ' | ')
+            rendered = renderTypeList(((UnionType) type).elements as Iterable<Type>, typeParameterNames, ' | ')
         } else {
             rendered = type.toString()
         }
@@ -513,6 +518,7 @@ final class JavaExtensionContext {
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class JavaExtensionMethod {
     String name
@@ -534,6 +540,7 @@ final class JavaExtensionMethod {
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class JavaExtensionParameter {
     String type
@@ -546,6 +553,7 @@ final class JavaExtensionParameter {
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class ReceiverTypeInfo {
     String canonicalName
@@ -558,6 +566,7 @@ final class ReceiverTypeInfo {
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class JavadocInfo {
     String description = ''
@@ -582,7 +591,7 @@ final class JavadocInfo {
             if (line.startsWith('@')) {
                 def matcher = (line =~ /^@(\S+)\s*(.*)$/)
                 if (matcher.matches()) {
-                    currentTag = new JavadocTagInfo(name: matcher[0][1], value: matcher[0][2])
+                    currentTag = new JavadocTagInfo(name: matcher.group(1), value: matcher.group(2))
                     tags << currentTag
                 }
             } else if (currentTag != null) {
@@ -604,6 +613,7 @@ final class JavadocInfo {
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class JavadocTagInfo {
     String name
@@ -615,6 +625,7 @@ final class JavadocTagInfo {
  *
  * @since 6.0.0
  */
+@CompileStatic
 @PackageScope
 final class ParsedUnit {
     File file
