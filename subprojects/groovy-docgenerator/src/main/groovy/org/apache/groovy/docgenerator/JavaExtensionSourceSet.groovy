@@ -590,7 +590,7 @@ final class JavadocInfo {
         }.each { String line ->
             if (line.startsWith('@')) {
                 def matcher = (line =~ /^@(\S+)\s*(.*)$/)
-                if (matcher.matches()) {
+                if (matcher.find()) {
                     currentTag = new JavadocTagInfo(name: matcher.group(1), value: matcher.group(2))
                     tags << currentTag
                 }
