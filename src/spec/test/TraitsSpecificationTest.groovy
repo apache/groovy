@@ -545,6 +545,57 @@ assert !Baz.TestHelper__CALLED                  // <5>
     }
 
     @Test
+    void testVirtualStaticDefault() {
+        assertScript '''// tag::virtual_default[]
+import groovy.transform.CompileStatic
+import groovy.transform.Virtual
+
+@CompileStatic
+trait Configurable {
+    @Virtual static boolean nullableByDefault() { false }   // <1>
+    static String describe() {                              // <2>
+        "nullable=${nullableByDefault()}"                  // <3>
+    }
+}
+
+@CompileStatic
+class StrictEntity implements Configurable {}              // <4>
+
+@CompileStatic
+class LenientEntity implements Configurable {
+    static boolean nullableByDefault() { true }            // <5>
+}
+
+assert StrictEntity.describe()  == 'nullable=false'        // <6>
+assert LenientEntity.describe() == 'nullable=true'         // <7>
+assert LenientEntity.nullableByDefault() == true           // <8>
+// end::virtual_default[]
+'''
+    }
+
+    @Test
+    void testVirtualQualifiedRejected() {
+        def err = shouldFail '''
+// tag::virtual_qualified[]
+import groovy.transform.CompileStatic
+import groovy.transform.Virtual
+
+@CompileStatic
+trait Configurable {
+    @Virtual static boolean nullableByDefault() { false }
+}
+
+@CompileStatic
+class Entity implements Configurable {
+    static check() { Configurable.nullableByDefault() }    // <1>
+}
+Entity.check()
+// end::virtual_qualified[]
+'''
+        assert err.message.contains('@Virtual trait static method')
+    }
+
+    @Test
     void testPrePostfixIsDisallowed() {
         def message = shouldFail '''
 // tag::prefix_postfix[]
