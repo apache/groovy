@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782546673245,
+  "lastUpdate": 1782633965651,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -2248,6 +2248,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 488.0566666666666,
             "range": "±27.8",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "304832bd265bd8fd91541b75554b236659eb44f8",
+          "message": "GROOVY-12112: Reject qualified Trait.m() to a @Virtual trait static with a clear compile error",
+          "timestamp": "2026-06-28T02:45:22Z",
+          "url": "https://github.com/apache/groovy/commit/304832bd265bd8fd91541b75554b236659eb44f8"
+        },
+        "date": 1782633963589,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 572.27,
+            "range": "±24.12",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 671.3199999999999,
+            "range": "±216.98",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 590.8933333333333,
+            "range": "±148.97",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 504.0166666666667,
+            "range": "±23.79",
             "unit": "ms",
             "extra": "5.0.6"
           }
