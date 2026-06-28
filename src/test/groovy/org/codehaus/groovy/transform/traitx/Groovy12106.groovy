@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.test.NotYetImplemented
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -74,6 +75,10 @@ final class Groovy12106 {
         '''
     }
 
+    // On GROOVY_5_0_X: @NotYetImplemented — the qualified form resolves via the trait's
+    // promoted interface static (GROOVY-12111), which is master-only; the unqualified and
+    // this.-qualified forms above (the GROOVY-12106 fix) work here, but Parent.m(...) does not.
+    @NotYetImplemented
     @Test
     void testQualifiedInheritedStaticWithSubtypeArg() {
         assertScript '''

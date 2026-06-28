@@ -36,6 +36,7 @@
 package org.codehaus.groovy.transform.traitx
 
 import groovy.test.GroovyAssert
+import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.Test
 
@@ -268,6 +269,9 @@ class TraitStaticDispatchMatrix {
     // (public trait statics are promoted onto the trait interface). The
     // trait's own copy wins; any same-named static on the implementer is
     // an independent method, not an override (declarer-bound dispatch).
+    // On GROOVY_5_0_X: @NotYetImplemented — interface promotion of trait statics
+    // (GROOVY-12111) is master-only, so T.m() from trait code does not resolve here yet.
+    @NotYetImplemented
     @Test
     void row07_traitQualified_resolvesViaInterfaceStatic() {
         def r = ev '''
@@ -284,6 +288,9 @@ class TraitStaticDispatchMatrix {
     // ---- Row 8 — external Impl.m() works AND external Trait.m() works ----
     // Public trait statics are JVM-native interface statics, so both
     // forms of external access resolve cleanly.
+    // On GROOVY_5_0_X: @NotYetImplemented — external Trait.m() needs interface promotion
+    // (GROOVY-12111, master-only); Impl.m() works but the Trait.m() assertion fails here.
+    @NotYetImplemented
     @Test
     void row08_externalAccess() {
         assert ev('trait T { static String foo() { "ok" } }\nclass C implements T {}\nC.foo()') == 'ok'
@@ -453,8 +460,11 @@ class TraitStaticDispatchMatrix {
     // `T.this.m()` inside trait code currently produces invalid bytecode
     // (VerifyError on 4.x: "Class not assignable to Closure"; ClassCastException
     // at runtime on 5.x/6.x). GEP-22 § "this, super, and stackable traits"
-    // item 4 proposes rejecting the syntax at compile time. NYI until the
-    // fix lands; flips red on a build that implements the rejection.
+    // item 4 proposes rejecting the syntax at compile time.
+    // On GROOVY_5_0_X: @NotYetImplemented — the compile-time rejection (GROOVY-12104) is
+    // master-only; here T.this.* still produces the runtime ClassCastException, so the
+    // expected compile error does not occur yet.
+    @NotYetImplemented
     @Test
     void row14_T_this_qualifier_inTrait_isCompileError() {
         GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
@@ -476,6 +486,10 @@ class TraitStaticDispatchMatrix {
     // pointing at `T.super.m()` as the explicit form. See Groovy12105.groovy
     // for focused coverage (regression-guards for the instance-method and
     // plain-class super-call cases). This row is the matrix-level anchor.
+    // On GROOVY_5_0_X: @NotYetImplemented — the compile-time rejection (GROOVY-12105) is
+    // master-only; here unqualified static super still throws MissingMethodException at
+    // runtime, so the expected compile error does not occur yet.
+    @NotYetImplemented
     @Test
     void row15_unqualified_static_super_inTrait_isCompileError() {
         GroovyAssert.shouldFail(MultipleCompilationErrorsException) {
@@ -574,6 +588,7 @@ class TraitStaticDispatchMatrix {
     // success state, so it tracks the genuinely-correct end-state rather than any prior
     // partial behaviour.
     @Test
+    @NotYetImplemented
     void row16q_childTrait_inheritedParentStatic_subtypeArg_qualified() {
         def r = ev '''
             import groovy.transform.CompileStatic
