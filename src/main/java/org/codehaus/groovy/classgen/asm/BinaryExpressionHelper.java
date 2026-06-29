@@ -151,6 +151,9 @@ public class BinaryExpressionHelper {
     // isCase/isNotCase
     private static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
     private static final MethodCaller isNotCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isNotCase");
+    // isIn/isNotIn -- GROOVY-9848: the membership operator is decoupled from isCase (switch/grep keep isCase)
+    private static final MethodCaller isInMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isIn");
+    private static final MethodCaller isNotInMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isNotIn");
 
     /**
      * Coordinates the active bytecode-generation state.
@@ -379,11 +382,11 @@ public class BinaryExpressionHelper {
             break;
 
         case KEYWORD_IN:
-            evaluateCompareExpression(isCaseMethod, expression);
+            evaluateCompareExpression(isInMethod, expression);
             break;
 
         case COMPARE_NOT_IN:
-            evaluateCompareExpression(isNotCaseMethod, expression);
+            evaluateCompareExpression(isNotInMethod, expression);
             break;
 
         case COMPARE_IDENTICAL:

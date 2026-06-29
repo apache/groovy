@@ -153,6 +153,34 @@ public @interface OperatorRename {
      */
     String compareTo() default Undefined.STRING;
     /**
+     * Returns the replacement method name for the {@code in} membership operator
+     * (whose default method is {@code isIn}). Defaults to {@link Undefined#STRING},
+     * meaning no rename. The receiver is the right operand (the container), so
+     * {@code a in b} dispatches to {@code b.name(a)}. Setting this to {@code 'isCase'}
+     * restores the pre-GROOVY-9848 value-based membership for maps and char sequences
+     * within the annotated scope.
+     * <p>
+     * This governs {@code in} only; {@code !in} is renamed separately via {@link #isNotIn()}.
+     * To change membership <em>consistently</em>, set both (otherwise {@code in} and
+     * {@code !in} can disagree for maps and char sequences) -- for example
+     * {@code @OperatorRename(isIn='isCase', isNotIn='isNotCase')} to fully restore legacy behaviour.
+     *
+     * @return the replacement method name
+     * @since 6.0.0
+     */
+    String isIn() default Undefined.STRING;
+    /**
+     * Returns the replacement method name for the {@code !in} membership operator
+     * (whose default method is {@code isNotIn}). Defaults to {@link Undefined#STRING},
+     * meaning no rename. The receiver is the right operand (the container), so
+     * {@code a !in b} dispatches to {@code b.name(a)}. Usually set together with
+     * {@link #isIn()} so that {@code in} and {@code !in} stay consistent.
+     *
+     * @return the replacement method name
+     * @since 6.0.0
+     */
+    String isNotIn() default Undefined.STRING;
+    /**
      * GEP-15: rename the dedicated compound-assignment method for {@code +=}.
      *
      * @since 6.0.0
