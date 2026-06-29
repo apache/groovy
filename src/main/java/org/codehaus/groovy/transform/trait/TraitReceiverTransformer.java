@@ -335,6 +335,19 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     return methodNode;
                 }
             }
+            // GROOVY-12117: when a co-compiled super trait has not been transformed
+            // yet, its helper is still an empty GROOVY-7909 stub, so the lowered
+            // static above is not found. The original static is still declared on
+            // the trait node at this point, so resolve it there. This keeps the
+            // rewrite independent of the order in which sibling traits are
+            // transformed (GEP-22 P1' dispatch consistency); the helper resolves
+            // identically once every trait is lowered, so this only matters for
+            // the not-yet-lowered super trait.
+            for (MethodNode methodNode : superTrait.getDeclaredMethods(methodName)) {
+                if (methodNode.isPublic() && methodNode.isStatic()) {
+                    return methodNode;
+                }
+            }
         }
 
         return null;

@@ -175,4 +175,39 @@ final class Groovy12106 {
             assert new C().describe(new Field()) == 'seen'
         '''
     }
+
+    /**
+     * The Grails helper shape (above) but with the sub-trait declared <em>before</em>
+     * the super-trait in the same compilation unit (GROOVY-12117). When the sub-trait
+     * is transformed first, the super-trait's helper has not been generated yet, so
+     * {@code TraitReceiverTransformer.findConcreteMethod} could not see the inherited
+     * static via the helper and left the call as an unrewritten {@code Arguable#withDelegate},
+     * which then failed type checking — making resolution depend on declaration order.
+     * In a multi-file build (e.g. Grails GraphQL) the files sort sub-trait-first, which
+     * is why this shape escaped {@link #testGrailsHelperShapeWithDelegatesTo}. Resolution
+     * must be order independent (GEP-22 P1').
+     */
+    @Test
+    void testGrailsHelperShapeWithSubTraitDeclaredFirst() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            final class Field { String name = 'f' }
+            @CompileStatic
+            trait Arguable<T> extends ExecutesClosures {   // sub-trait declared FIRST
+                String describe(Field f) {
+                    def sb = new StringBuilder()
+                    withDelegate({ -> sb.append('seen') }, f)   // f:Field is a subtype of Object
+                    sb.toString()
+                }
+            }
+            @CompileStatic
+            trait ExecutesClosures {
+                static void withDelegate(@DelegatesTo(strategy=Closure.DELEGATE_ONLY, genericTypeIndex=0) Closure callable, Object delegate) {
+                    if (callable != null) { callable.delegate = delegate; callable.resolveStrategy = Closure.DELEGATE_ONLY; callable.call() }
+                }
+            }
+            class C implements Arguable<String> { }
+            assert new C().describe(new Field()) == 'seen'
+        '''
+    }
 }
