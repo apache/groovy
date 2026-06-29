@@ -19156,6 +19156,62 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Decorates the given Map with a default value supplied by a closure, as per
+     * {@link #withDefault(Map, Closure)}, but the returned map additionally enforces its
+     * key and value types at runtime. Looking up (and so auto-growing for) a key that is
+     * not an instance of {@code keyType} throws {@link ClassCastException} at the point of
+     * misuse, rather than silently inserting a wrong-typed key that only surfaces later
+     * (for example when reading {@code keySet()}). The check is provided by decorating an
+     * {@link #asChecked(Map, Class, Class) asChecked} view, so direct mutation such as
+     * {@code map[key] = value} is guarded too.
+     * <pre class="language-groovy">
+     * def m = [:].withDefault(Number, String){ 'n/a' }
+     * assert m[1] == 'n/a'       // a compatible key (and String default) grows the map
+     * // m['x']                  // would throw ClassCastException (incompatible key)
+     * // m[2] = 99               // would throw ClassCastException (incompatible value)
+     * </pre>
+     * The {@code keyType} and {@code valueType} arguments are candidates to be supplied
+     * automatically from the map's static type under static compilation (GROOVY-12115);
+     * until then they are passed explicitly and this variant also works in dynamic code.
+     *
+     * @param self a Map
+     * @param keyType the required runtime key type
+     * @param valueType the required runtime value type
+     * @param init a Closure which when passed a {@code key} returns the default value
+     * @return a wrapped Map that enforces key/value types and returns a default value for missing keys
+     * @see #withDefault(Map, Closure)
+     * @see #asChecked(Map, Class, Class)
+     * @since 6.0.0
+     */
+    @Incubating
+    public static <K, V> Map<K, V> withDefault(Map<K, V> self, /* @ClassTag GROOVY-12115 */ Class<K> keyType, /* @ClassTag */ Class<V> valueType, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
+        return withDefault(asChecked(self, keyType, valueType), init);
+    }
+
+    /**
+     * Key-checked variant of {@link #withDefault(Map, Class, Class, Closure)} for the common
+     * case (such as a {@code Map<Number, ?>}) where only the key type needs enforcing; values
+     * are left unchecked.
+     * <pre class="language-groovy">
+     * def m = [:].withDefault(Number){ null }
+     * assert m[1] == null
+     * // m['x']                  // would throw ClassCastException (incompatible key)
+     * </pre>
+     *
+     * @param self a Map
+     * @param keyType the required runtime key type
+     * @param init a Closure which when passed a {@code key} returns the default value
+     * @return a wrapped Map that enforces the key type and returns a default value for missing keys
+     * @see #withDefault(Map, Class, Class, Closure)
+     * @since 6.0.0
+     */
+    @Incubating
+    @SuppressWarnings("unchecked")
+    public static <K, V> Map<K, V> withDefault(Map<K, V> self, /* @ClassTag GROOVY-12115 */ Class<K> keyType, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
+        return withDefault(self, keyType, (Class<V>) (Class<?>) Object.class, init);
+    }
+
+    /**
      * An alias for <code>withLazyDefault</code> which decorates a list allowing
      * it to grow when called with index values outside the normal list bounds.
      *
