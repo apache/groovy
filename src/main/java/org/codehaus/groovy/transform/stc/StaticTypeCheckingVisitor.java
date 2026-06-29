@@ -26,6 +26,7 @@ import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
 import groovy.transform.TypeChecked;
 import groovy.transform.TypeCheckingMode;
+import groovy.transform.stc.ClassTag;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.ClosureSignatureConflictResolver;
 import groovy.transform.stc.ClosureSignatureHint;
@@ -388,6 +389,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode DELEGATES_TO_TARGET = ClassHelper.make(DelegatesTo.Target.class);
     /** Cached {@link ClosureParams} annotation type. */
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = ClassHelper.make(ClosureParams.class);
+    protected static final ClassNode CLASSTAG_CLASSNODE = ClassHelper.make(ClassTag.class); // GROOVY-12115
     /** Cached {@link NamedParams} annotation type. */
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
     /** Cached {@link NamedParam} annotation type. */
@@ -3456,6 +3458,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             new ReturnAdder(returnStmt -> applyTargetType(returnType, returnStmt.getExpression())).visitMethod(node);
         }
         readClosureParameterAnnotation(node); // GROOVY-6603
+        validateClassTagParameters(node); // GROOVY-12115
         doWithTypeCheckingExtensions(node, it -> super.visitConstructorOrMethod(it, isConstructor));
         if (node.hasDefaultValue()) {
             visitDefaultParameterArguments(node.getParameters());
@@ -4353,6 +4356,44 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             mn = allowStaticAccessToMember(mn, !currentReceiver.isObject());
                             if (!mn.isEmpty()) {
                                 break;
+                            }
+                        }
+                    }
+                    // GROOVY-12115: @ClassTag - under static checking, synthesize compiler-supplied
+                    // Class<X> token argument(s) from the receiver's type argument(s) at their declared
+                    // positions, then retry selection. When nothing matched this is additive (supplying
+                    // an otherwise-mandatory token, e.g. for asChecked); when a token-less overload already
+                    // matched, injecting *preempts* it (e.g. the lenient withDefault is superseded by the
+                    // key-checked one), so that case is gated to the configured allowlist of method names.
+                    // Injection is arity-based; applicability is decided by the retry, so if the retry
+                    // finds nothing the insertion is undone and the call binds - or reports its error -
+                    // exactly as written.
+                    if (mn.isEmpty() || isClassTagPreemptionTarget(name)) {
+                        List<Expression> suppliedArguments = new ArrayList<>(argumentList.getExpressions());
+                        if (injectClassTagArguments(argumentList, receivers, name, args)) {
+                            ClassNode[] taggedArgs = getArgumentTypes(argumentList);
+                            List<MethodNode> taggedMn = Collections.emptyList();
+                            MethodNode taggedFirst = null;
+                            Receiver<String> taggedReceiver = null;
+                            for (Receiver<String> currentReceiver : receivers) {
+                                taggedMn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, taggedArgs);
+                                if (!taggedMn.isEmpty()) {
+                                    taggedFirst = taggedMn.get(0);
+                                    taggedReceiver = currentReceiver;
+                                    taggedMn = allowStaticAccessToMember(taggedMn, !currentReceiver.isObject());
+                                    if (!taggedMn.isEmpty()) {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!taggedMn.isEmpty()) {
+                                args = taggedArgs;
+                                mn = taggedMn;
+                                first = taggedFirst;
+                                chosenReceiver = taggedReceiver;
+                            } else {
+                                argumentList.getExpressions().clear();
+                                argumentList.getExpressions().addAll(suppliedArguments);
                             }
                         }
                     }
@@ -5767,6 +5808,212 @@ trying: for (ClassNode[] signature : signatures) {
      * @param name     the name of the methods to return
      * @return the methods that are defined on the receiver completed with stubs for future methods
      */
+    //--------------------------------------------------------------------------
+    // GROOVY-12115: @ClassTag support
+
+    /**
+     * Support for {@link groovy.transform.stc.ClassTag}. Looks across the {@code receivers} for the
+     * overload of {@code name} that can absorb the most compiler-supplied {@code Class<X>} tokens: an
+     * overload whose non-{@code @ClassTag} parameters number exactly the supplied argument count and
+     * whose every {@code @ClassTag} parameter reifies to a concrete class from the receiver's type
+     * argument(s). When found, the synthesised {@code X.class} literal(s) are inserted at their
+     * declared positions in {@code argumentList} (the supplied arguments filling the remaining slots
+     * left-to-right), so the normal selection machinery and code generation treat the call as if the
+     * tokens had been written explicitly.
+     * <p>
+     * The caller decides <em>when</em> to consult this: additively when no token-less overload matched
+     * (e.g. supplying {@code asChecked}'s otherwise-mandatory token), or preemptively when one did
+     * match (e.g. the lenient {@code withDefault(Map, Closure)} superseded by the key-checked
+     * {@code withDefault(Map, Class, Closure)}) - the latter only for {@link #isClassTagPreemptionTarget
+     * allowlisted} method names, since it changes the meaning of existing source. Static-only by
+     * construction (this visitor runs under {@code @TypeChecked}/{@code @CompileStatic}); when a type
+     * argument is not statically known no token is synthesised and the call binds as before.
+     * <p>
+     * Matching here is by arity (and reifiability) only - whether the overload's remaining parameters
+     * accept the supplied argument types is decided by the caller's retried selection. The caller must
+     * therefore undo the insertion (restore {@code argumentList}) if that retry finds no applicable
+     * method, so a failed injection never alters how the call as written binds or is reported.
+     *
+     * @return {@code true} if one or more class-literal arguments were inserted
+     */
+    private boolean injectClassTagArguments(final ArgumentListExpression argumentList, final List<Receiver<String>> receivers, final String name, final ClassNode[] args) {
+        ClassTagMatch best = null; // prefer the overload that reifies the most tokens (strongest checking)
+        for (Receiver<String> receiver : receivers) {
+            ClassNode receiverType = receiver.getType();
+            ClassNode plain = receiverType.getPlainNodeReference();
+            List<MethodNode> candidates = new ArrayList<>(findMethodsWithGenerated(plain, name));
+            candidates.addAll(findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), plain, name));
+            for (MethodNode candidate : candidates) {
+                ClassTagMatch match = matchClassTagOverload(candidate, receiverType, args.length);
+                if (match == null) continue;
+                if (best == null || match.tokens.size() > best.tokens.size()) {
+                    best = match;
+                } else if (match.tokens.size() == best.tokens.size() && !sameErasedClasses(best.tokens, match.tokens)) {
+                    return false; // equally-specific candidates disagree on the tokens; too ambiguous to proceed
+                }
+            }
+        }
+        if (best == null) return false;
+        // nothing to gain (and so nothing worth preempting a token-less overload for) when every token
+        // erases to Object - e.g. an untyped/`def` map keeps the lenient withDefault rather than becoming
+        // a checked view that can never reject anything
+        if (best.tokens.stream().allMatch(token -> isObjectType(token))) return false;
+
+        // rebuild the argument list, placing each synthesised token at its declared position
+        List<Expression> supplied = new ArrayList<>(argumentList.getExpressions());
+        List<Expression> rebuilt = new ArrayList<>(best.parameterCount);
+        for (int p = 0, s = 0, t = 0; p < best.parameterCount; p += 1) {
+            if (t < best.tagPositions.size() && best.tagPositions.get(t) == p) {
+                rebuilt.add(classX(best.tokens.get(t).getPlainNodeReference()));
+                t += 1;
+            } else {
+                rebuilt.add(supplied.get(s++));
+            }
+        }
+        argumentList.getExpressions().clear();
+        argumentList.getExpressions().addAll(rebuilt);
+        return true;
+    }
+
+    /**
+     * The outcome of matching one overload against a {@code @ClassTag} call: the overload's parameter
+     * count, the (ascending) positions of its {@code @ClassTag} parameters, and the concrete class
+     * token resolved for each, in the same order.
+     */
+    private static final class ClassTagMatch {
+        final int parameterCount;
+        final List<Integer> tagPositions;
+        final List<ClassNode> tokens;
+
+        ClassTagMatch(final int parameterCount, final List<Integer> tagPositions, final List<ClassNode> tokens) {
+            this.parameterCount = parameterCount;
+            this.tagPositions = tagPositions;
+            this.tokens = tokens;
+        }
+    }
+
+    /**
+     * If {@code candidate} has one or more {@code @ClassTag} parameters such that the remaining
+     * parameters number exactly {@code suppliedArgCount}, and every tag reifies to a concrete class
+     * from the receiver's type argument(s), returns the match; otherwise {@code null} (not a match, or
+     * a type variable that is not statically reifiable - the fail-soft case in which no injection
+     * happens and the call binds as before).
+     */
+    private ClassTagMatch matchClassTagOverload(final MethodNode candidate, final ClassNode receiverType, final int suppliedArgCount) {
+        Parameter[] params = candidate.getParameters();
+        List<Integer> tagPositions = new ArrayList<>();
+        for (int i = 0; i < params.length; i += 1) {
+            if (hasClassTag(params[i])) tagPositions.add(i);
+        }
+        if (tagPositions.isEmpty() || params.length - tagPositions.size() != suppliedArgCount) return null;
+
+        // map the receiver's actual type argument(s) onto the declaring/self type variables
+        Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+        if (candidate instanceof ExtensionMethodNode) {
+            Parameter[] declared = ((ExtensionMethodNode) candidate).getExtensionMethodNode().getParameters();
+            if (declared.length == 0) return null;
+            extractGenericsConnections(spec, receiverType, declared[0].getType()); // self param carries <T> / <K,V>
+        } else {
+            extractGenericsConnections(spec, receiverType, candidate.getDeclaringClass());
+        }
+
+        List<ClassNode> tokens = new ArrayList<>(tagPositions.size());
+        for (int pos : tagPositions) {
+            ClassNode token = resolveClassTagType(params[pos], spec);
+            if (token == null) return null; // a tag could not be reified; degrade (no injection)
+            tokens.add(token);
+        }
+        return new ClassTagMatch(params.length, tagPositions, tokens);
+    }
+
+    /**
+     * Resolves the concrete class that a single {@code @ClassTag Class<X>} parameter reifies, using
+     * the supplied receiver placeholder map. Honours an explicit {@code @ClassTag("name")} override.
+     * Returns {@code null} when the type variable cannot be statically determined.
+     */
+    private ClassNode resolveClassTagType(final Parameter tagParam, final Map<GenericsTypeName, GenericsType> spec) {
+        ClassNode paramType = tagParam.getType();
+        if (!"java.lang.Class".equals(paramType.getName())) return null; // @ClassTag only applies to Class tokens
+        String varName = classTagOverride(tagParam);
+        if (varName.isEmpty()) {
+            GenericsType[] gts = paramType.getGenericsTypes();
+            if (gts == null || gts.length != 1) return null; // raw Class with no override: nothing to reify
+            varName = gts[0].getName();
+        }
+        GenericsType resolved = spec.get(new GenericsTypeName(varName));
+        if (resolved == null) return null;
+        ClassNode type = resolved.getType();
+        if (type == null || type.isGenericsPlaceHolder() || GenericsUtils.hasUnresolvedGenerics(type)) return null;
+        return type;
+    }
+
+    /**
+     * Validates {@code @ClassTag("name")} overrides on a method's parameters: a non-empty name must
+     * resolve to a type variable declared by the method or its enclosing class, otherwise it is a
+     * typo that would silently disable injection, so it is reported as a compile-time error. An empty
+     * {@code @ClassTag} (name read from the {@code Class<X>} parameter type) needs no validation here.
+     * <p>
+     * This only covers methods compiled from source in the current unit; an extension method from an
+     * already-compiled library is never visited here, so a typo in its override is not caught (it just
+     * fails to inject). In practice library {@code @ClassTag} parameters use the no-override form,
+     * where the name is taken from {@code Class<X>} and cannot be mistyped.
+     */
+    private void validateClassTagParameters(final MethodNode node) {
+        for (Parameter parameter : node.getParameters()) {
+            if (!hasClassTag(parameter)) continue;
+            String override = classTagOverride(parameter);
+            if (!override.isEmpty() && !classTagNamesTypeVariable(node, override)) {
+                addStaticTypeError("@ClassTag(\"" + override + "\") does not name a type parameter in scope", parameter);
+            }
+        }
+    }
+
+    private static boolean classTagNamesTypeVariable(final MethodNode node, final String name) {
+        if (containsTypeVariable(node.getGenericsTypes(), name)) return true;
+        ClassNode declaringClass = node.getDeclaringClass();
+        return declaringClass != null && containsTypeVariable(declaringClass.getGenericsTypes(), name);
+    }
+
+    private static boolean containsTypeVariable(final GenericsType[] typeVariables, final String name) {
+        if (typeVariables != null) {
+            for (GenericsType typeVariable : typeVariables) {
+                if (typeVariable.getName().equals(name)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether a {@code @ClassTag} overload of {@code name} may preempt a matching token-less overload,
+     * per {@link org.codehaus.groovy.control.CompilerConfiguration#getClassTagPreemptionTargets()}.
+     * Preemption changes the meaning of existing source, so it is opt-in by name (default: only
+     * Groovy's own {@code withDefault}); additive injection is not gated by this.
+     */
+    private boolean isClassTagPreemptionTarget(final String name) {
+        SourceUnit source = getSourceUnit();
+        return source != null && source.getConfiguration().getClassTagPreemptionTargets().contains(name);
+    }
+
+    private static boolean hasClassTag(final Parameter parameter) {
+        return !parameter.getAnnotations(CLASSTAG_CLASSNODE).isEmpty();
+    }
+
+    private static String classTagOverride(final Parameter parameter) {
+        AnnotationNode tag = parameter.getAnnotations(CLASSTAG_CLASSNODE).get(0);
+        Expression member = tag.getMember("value");
+        return (member instanceof ConstantExpression) ? member.getText() : "";
+    }
+
+    private static boolean sameErasedClasses(final List<ClassNode> a, final List<ClassNode> b) {
+        if (a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i += 1) {
+            if (!a.get(i).getName().equals(b.get(i).getName())) return false;
+        }
+        return true;
+    }
+
+    //--------------------------------------------------------------------------
+
     protected List<MethodNode> findMethodsWithGenerated(final ClassNode receiver, final String name) {
         if (receiver.isArray()) {
             if (name.equals("clone")) { // GROOVY-10319: array clone -- <https://docs.oracle.com/javase/specs/jls/se8/html/jls-10.html#jls-10.7>
