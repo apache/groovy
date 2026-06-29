@@ -770,6 +770,26 @@ public class ScriptBytecodeAdapter {
         return !isCase(switchValue, caseExpression);
     }
 
+    //isIn  (GROOVY-9848: membership operator, decoupled from isCase)
+    public static boolean isIn(final Object switchValue, final Object caseExpression) throws Throwable {
+        if (caseExpression == null) {
+            return switchValue == null;
+        }
+        // map membership is key-based; char-sequence membership is substring-based;
+        // every other receiver keeps its existing (isCase) semantics, incl. user-defined isCase
+        if (caseExpression instanceof Map) {
+            return ((Map) caseExpression).containsKey(switchValue);
+        }
+        if (caseExpression instanceof CharSequence && switchValue instanceof CharSequence) {
+            return caseExpression.toString().contains(switchValue.toString());
+        }
+        return isCase(switchValue, caseExpression);
+    }
+
+    public static boolean isNotIn(final Object switchValue, final Object caseExpression) throws Throwable {
+        return !isIn(switchValue, caseExpression);
+    }
+
     //compare
     public static boolean compareIdentical(final Object left, final Object right) {
         return left == right;

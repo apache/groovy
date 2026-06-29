@@ -10615,7 +10615,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.6
      */
     public static boolean isCase(Map caseValue, Object switchValue) {
-        return DefaultTypeTransformation.castToBoolean(caseValue.get(switchValue));
+        // GROOVY-9848: guard get() with containsKey() so a classification test (switch/grep)
+        // never triggers default-value generation (auto-grow) on a withDefault map.
+        return caseValue.containsKey(switchValue) && DefaultTypeTransformation.castToBoolean(caseValue.get(switchValue));
     }
 
     /**

@@ -397,6 +397,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode LINKEDHASHMAP_CLASSNODE = LinkedHashMap_TYPE;
     /** Cached {@link Enumeration} type. */
     protected static final ClassNode ENUMERATION_TYPE = ClassHelper.make(Enumeration.class);
+    /** Cached {@link CharSequence} type (GROOVY-9848: membership operator dispatch). */
+    protected static final ClassNode CHAR_SEQUENCE_TYPE = ClassHelper.make(CharSequence.class);
     /** Cached {@link java.util.Map.Entry} type. */
     protected static final ClassNode MAP_ENTRY_TYPE = ClassHelper.make(Map.Entry.class);
     /** Cached {@link Iterable} type. */
@@ -996,7 +998,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 BinaryExpression reverseExpression = binX(rightExpression, expression.getOperation(), leftExpression);
                 resultType = getResultType(rType, op, lType, reverseExpression);
                 if (resultType == null) resultType = boolean_TYPE; // GROOVY-10239
-                storeTargetMethod(expression, reverseExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+                // GROOVY-9848: Map and CharSequence membership (and unknown/Object receivers, resolved at
+                // runtime) route through ScriptBytecodeAdapter.isIn -> containsKey / contains. Every other
+                // (concrete) receiver keeps the directly-resolved isCase target, so its membership is
+                // unchanged and still benefits from static direct dispatch.
+                MethodNode inTarget = reverseExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+                if (inTarget != null && !isObjectType(rType)
+                        && !isOrImplements(rType, MAP_TYPE)
+                        && !isOrImplements(rType, CHAR_SEQUENCE_TYPE)) {
+                    storeTargetMethod(expression, inTarget);
+                }
             } else {
                 resultType = getResultType(lType, op, rType, expression);
             }
@@ -5447,7 +5458,8 @@ trying: for (ClassNode[] signature : signatures) {
         MethodNode method = findMethodOrFail(expr, left, operationName, right);
         if (method != null) {
             if (op == COMPARE_NOT_IN && isDefaultExtension(method)) {
-                // GROOVY-10915: check if left implements its own isCase method
+                // GROOVY-10915: a user-defined isCase still drives `in` (GROOVY-9848 only
+                // changes Map/CharSequence), so fall back to dynamic dispatch when present.
                 MethodNode isCase = findMethodOrFail(expr, left, "isCase", right);
                 if (isCase != null && !isDefaultExtension(isCase)) return null; // require dynamic dispatch
             }

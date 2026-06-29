@@ -600,10 +600,11 @@ final class GroovyMethodsTest {
     // GROOVY-9848
     @Test
     void testInForMaps() {
+        // GROOVY-9848: map membership is key-based (containsKey), not value-truthy
         assert 'foo'  in [foo:true]
-        assert 'foo' !in [foo:false]
+        assert 'foo'  in [foo:false]   // key present regardless of value
         assert 'bar' !in [foo:false]
-        assert 'bar'  in [:].withDefault{ true }
+        assert 'bar' !in [:].withDefault{ true }   // not a key; and no auto-grow
         assert 'bar' !in [:].withDefault{ false }
     }
 
@@ -646,13 +647,15 @@ final class GroovyMethodsTest {
     // GROOVY-2456
     @Test
     void testInForStrings() {
+        // GROOVY-2456 / GROOVY-9848: char-sequence membership is substring-based
         def string = 'abc'
-        shouldFail { assert 'a'  in string }
-        shouldFail { assert 'b'  in string }
-        shouldFail { assert 'c'  in string }
-        shouldFail { assert 'ab' in string }
-        shouldFail { assert 'bc' in string }
+        assert 'a'  in string
+        assert 'b'  in string
+        assert 'c'  in string
+        assert 'ab' in string
+        assert 'bc' in string
         assert 'abc' in string
+        assert 'd' !in string
         assert !('d' in string)
         assert !(null in string)
         assert !(true in string)
