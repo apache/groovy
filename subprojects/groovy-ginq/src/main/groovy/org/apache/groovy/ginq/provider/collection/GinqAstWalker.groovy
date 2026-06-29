@@ -68,6 +68,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.query.AstQuery
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.Statement
@@ -521,17 +522,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private void collectHashJoinFields(List<Expression> expressionList, String joinAliasName, List<Expression> leftExpressionList, List<Expression> rightExpressionList) {
         expressionList.each {expression ->
-            List<Expression> foundVariableExpressionList = []
-            expression.visit(new CodeVisitorSupport() {
-                @Override
-                void visitVariableExpression(VariableExpression expr) {
-                    if (expr.text.charAt(0).isLowerCase()) {
-                        foundVariableExpressionList << expr
-                    }
-                    super.visitVariableExpression(expr)
-                }
-            })
-            def variableNameList = foundVariableExpressionList.collect { it.text }
+            def variableNameList = AstQuery.from(expression)
+                    .andSelf() // the side expression may itself be the alias VariableExpression
+                    .descendants(VariableExpression)
+                    .where { VariableExpression expr -> Character.isLowerCase(expr.text.charAt(0)) }
+                    .list()
+                    .collect { it.text }
             if (1 != variableNameList.size()) {
                 collectSyntaxError(
                         new GinqSyntaxError(

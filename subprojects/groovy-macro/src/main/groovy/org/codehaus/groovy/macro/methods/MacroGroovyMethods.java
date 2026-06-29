@@ -21,10 +21,8 @@ package org.codehaus.groovy.macro.methods;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -32,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.query.AstQuery;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.ClosureUtils;
@@ -41,8 +40,6 @@ import org.codehaus.groovy.macro.runtime.Macro;
 import org.codehaus.groovy.macro.runtime.MacroBuilder;
 import org.codehaus.groovy.macro.runtime.MacroContext;
 import org.codehaus.groovy.syntax.SyntaxException;
-
-import java.util.Iterator;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -217,63 +214,21 @@ public class MacroGroovyMethods {
      */
     public static ListExpression buildSubstitutions(final SourceUnit source, final ASTNode expr) {
         final ListExpression listExpression = new ListExpression();
-
-        ClassCodeVisitorSupport visitor = new ClassCodeVisitorSupport() {
-            /**
-             * Returns no source unit because this visitor only collects substitutions.
-             *
-             * @return {@code null}
-             */
-            @Override
-            protected SourceUnit getSourceUnit() {
-                return null;
-            }
-
-            /**
-             * Visits the class and its inner classes to collect substitutions.
-             *
-             * @param node the class node to inspect
-             */
-            @Override
-            public void visitClass(final ClassNode node) {
-                super.visitClass(node);
-                Iterator<InnerClassNode> it = node.getInnerClasses();
-                while (it.hasNext()) {
-                    InnerClassNode next = it.next();
-                    visitClass(next);
-                }
-            }
-
-            /**
-             * Collects substitution closures referenced through {@code $v} calls.
-             *
-             * @param call the method call to inspect
-             */
-            @Override
-            public void visitMethodCallExpression(MethodCallExpression call) {
-                super.visitMethodCallExpression(call);
-
-                if (DOLLAR_VALUE.equals(call.getMethodAsString())) {
+        AstQuery.from(expr)
+                .descendants(MethodCallExpression.class)
+                .into(ClassNode.class) // also collect $v calls declared in inner classes
+                .where(call -> DOLLAR_VALUE.equals(call.getMethodAsString()))
+                .forEach(call -> {
                     ClosureExpression substitutionClosureExpression = getClosureArgument(source, call);
-
                     if (substitutionClosureExpression == null) {
                         return;
                     }
-
                     Statement code = substitutionClosureExpression.getCode();
                     if (code instanceof BlockStatement) {
                         ((BlockStatement) code).setVariableScope(null);
                     }
-
                     listExpression.addExpression(substitutionClosureExpression);
-                }
-            }
-        };
-        if (expr instanceof ClassNode) {
-            visitor.visitClass((ClassNode) expr);
-        } else {
-            expr.visit(visitor);
-        }
+                });
         return listExpression;
     }
 
