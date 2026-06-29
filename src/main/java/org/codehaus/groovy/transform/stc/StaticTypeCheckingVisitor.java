@@ -3456,6 +3456,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             new ReturnAdder(returnStmt -> applyTargetType(returnType, returnStmt.getExpression())).visitMethod(node);
         }
         readClosureParameterAnnotation(node); // GROOVY-6603
+        ClassTagSupport.validateParameters(this, node); // GROOVY-12115
         doWithTypeCheckingExtensions(node, it -> super.visitConstructorOrMethod(it, isConstructor));
         if (node.hasDefaultValue()) {
             visitDefaultParameterArguments(node.getParameters());
@@ -4353,6 +4354,36 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             mn = allowStaticAccessToMember(mn, !currentReceiver.isObject());
                             if (!mn.isEmpty()) {
                                 break;
+                            }
+                        }
+                    }
+                    // GROOVY-12115: @ClassTag - under static checking, synthesize compiler-supplied
+                    // Class<X> token argument(s) from the receiver's type argument(s) at their declared
+                    // positions, then retry selection. When nothing matched this is additive (supplying
+                    // an otherwise-mandatory token, e.g. for asChecked); when a token-less overload
+                    // already matched, injecting *preempts* it (e.g. the lenient withDefault superseded
+                    // by the key-checked one) - gated by the API author's declared intent (preempt=true),
+                    // contained to the incumbent's owner, and vetoable via the configured selectors.
+                    // Matching is a pure computation; the call is only rewritten once the retried
+                    // selection binds a method on the matched receiver, so a failed match leaves the
+                    // call - and its error reporting - exactly as written.
+                    if (mn.isEmpty() || ClassTagSupport.isPreemptionPossible(this)) {
+                        ClassTagSupport.ClassTagMatch tagged = mn.isEmpty()
+                                ? ClassTagSupport.matchAdditive(this, receivers, name, args)
+                                : ClassTagSupport.matchPreemption(this, chosenReceiver, mn, name, args);
+                        if (tagged != null) {
+                            ClassNode[] taggedArgs = tagged.expandArgumentTypes(args);
+                            List<MethodNode> taggedMn = findMethod(tagged.receiver.getType().getPlainNodeReference(), name, taggedArgs);
+                            if (!taggedMn.isEmpty()) {
+                                MethodNode taggedFirst = taggedMn.get(0);
+                                taggedMn = allowStaticAccessToMember(taggedMn, !tagged.receiver.isObject());
+                                if (!taggedMn.isEmpty()) {
+                                    tagged.rewriteArguments(argumentList); // commit the synthesised tokens
+                                    args = taggedArgs;
+                                    mn = taggedMn;
+                                    first = taggedFirst;
+                                    chosenReceiver = tagged.receiver;
+                                }
                             }
                         }
                     }

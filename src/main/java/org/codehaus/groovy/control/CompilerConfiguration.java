@@ -226,6 +226,11 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public void setClassTagPreemptionDisabled(final boolean classTagPreemptionDisabled) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setBytecodePostprocessor(final BytecodeProcessor bytecodePostprocessor) {
             throw new UnsupportedOperationException();
         }
@@ -435,6 +440,17 @@ public class CompilerConfiguration {
     private Set<String> scriptExtensions = new LinkedHashSet<>();
 
     /**
+     * Global consumer opt-out for {@link groovy.transform.stc.ClassTag @ClassTag} preemption under
+     * static compilation (GROOVY-12115). Preemption is declared by the API author
+     * ({@code @ClassTag(preempt=true)}) and contained to the declaring class; setting this flag
+     * lets the consuming build veto every preemptive upgrade anyway. Additive injection (supplying
+     * an otherwise-mandatory token, such as for {@code asChecked}) is never gated by this flag.
+     * Seeded from the {@code groovy.classtag.preemption.disable} system property; false (the
+     * default) honours declared intent.
+     */
+    private boolean classTagPreemptionDisabled = getBooleanSafe("groovy.classtag.preemption.disable");
+
+    /**
      * If set to true recompilation is enabled.
      */
     private boolean recompileGroovySource;
@@ -613,6 +629,7 @@ public class CompilerConfiguration {
         setPluginFactory(configuration.getPluginFactory());
         setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
         setScriptExtensions(new LinkedHashSet<>(configuration.getScriptExtensions()));
+        setClassTagPreemptionDisabled(configuration.isClassTagPreemptionDisabled());
         setOptimizationOptions(new HashMap<>(configuration.getOptimizationOptions()));
         setForInPerIterationCaptureEnabled(configuration.isForInPerIterationCaptureEnabled());
         setBytecodePostprocessor(configuration.getBytecodePostprocessor());
@@ -1158,6 +1175,32 @@ public class CompilerConfiguration {
             scriptExtensions = SourceExtensionHandler.getRegisteredExtensions(getClass().getClassLoader());
         }
         return scriptExtensions;
+    }
+
+    /**
+     * Whether {@link groovy.transform.stc.ClassTag @ClassTag} preemption is disabled globally
+     * under static compilation (GROOVY-12115). Preemption requires the API author's declared
+     * intent ({@code @ClassTag(preempt=true)}) and is contained to the declaring class; this flag
+     * lets the consuming build veto every preemptive upgrade anyway. Additive injection, such as
+     * for {@code asChecked}, is never gated by this flag. False (the default) honours declared
+     * intent.
+     *
+     * @return whether preemption is disabled
+     * @since 6.0.0
+     */
+    public boolean isClassTagPreemptionDisabled() {
+        return classTagPreemptionDisabled;
+    }
+
+    /**
+     * Disables (or re-enables) {@link groovy.transform.stc.ClassTag @ClassTag} preemption
+     * globally under static compilation (GROOVY-12115).
+     *
+     * @param classTagPreemptionDisabled whether to disable preemption
+     * @since 6.0.0
+     */
+    public void setClassTagPreemptionDisabled(final boolean classTagPreemptionDisabled) {
+        this.classTagPreemptionDisabled = classTagPreemptionDisabled;
     }
 
     /**

@@ -491,6 +491,15 @@ them:
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_withDefault,indent=0]
 ----------------------------------------------------------------
 
+NOTE: Since Groovy 6, under static compilation, calling `withDefault` on a map with statically-known key/value
+types automatically selects the type-checked variant: the wrapped map rejects ill-typed keys and values at
+runtime instead of silently growing entries that violate the map's declared generics
+(link:https://issues.apache.org/jira/browse/GROOVY-11807[GROOVY-11807]). Code that (usually inadvertently)
+relied on the lenient behaviour can defer the upgrade with the
+`groovy.classtag.preemption.disable` system property — see the
+link:core-semantics.html#classtag-annotation[`@ClassTag` documentation] for details. Dynamic code is
+unaffected.
+
 [[Collections-Ranges]]
 == Ranges
 

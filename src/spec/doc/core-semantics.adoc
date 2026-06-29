@@ -2255,6 +2255,75 @@ The `@DelegatesTo` annotation is used by the type checker to infer the type of t
 to instruct the compiler what is the type of the delegate and the delegation strategy. The `@DelegatesTo` annotation is
 discussed in a link:core-domain-specific-languages.html#section-delegatesto[specific section].
 
+[[classtag-annotation]]
+===== The `@ClassTag` annotation
+
+On the JVM, generic type arguments are erased at runtime, so a method that needs the runtime class of a type
+argument must take an explicit `Class` token, even though that token repeats a type the compiler already knows.
+The `groovy.transform.stc.ClassTag` parameter annotation (incubating since Groovy 6) marks such a token as
+_compiler-supplied_: under `@TypeChecked` or `@CompileStatic`, a call that omits the token can select the tagged
+overload, and the type checker synthesises the `X.class` argument from the receiver's type argument. The
+`asChecked` methods from the GDK declare their token this way:
+
+[source,groovy]
+----
+include::../test/typing/ClassTagSpecTest.groovy[tags=classtag_additive,indent=0]
+----
+<1> there is no token-less `asChecked()`: the type checker selects `asChecked(List<T>, Class<T>)` and injects
+`String.class`, reified from the receiver's type argument
+<2> the checked view rejects ill-typed elements at runtime, exactly as if `asChecked(String)` had been written
+
+Any API can declare tagged parameters; each `@ClassTag` parameter is filled at its declared position and the
+supplied arguments map onto the remaining parameters in order:
+
+[source,groovy]
+----
+include::../test/typing/ClassTagSpecTest.groovy[tags=classtag_declare,indent=0]
+----
+<1> the token parameter repeats the receiver's type argument `T`, so it is marked compiler-supplied
+<2> equivalent to `registry.create('first', StringBuilder)`: the token is reified from `Registry<StringBuilder>`
+
+Selection is normally _additive_: the tagged overload is only chosen when the call as written matches no method,
+so the meaning of existing code never changes. An API author may go further and declare a tagged overload with
+`@ClassTag(preempt=true)`, allowing it to _preempt_ a token-less overload declared by the same class: existing
+calls are transparently upgraded to the checked variant. Since Groovy 6, the checked `withDefault` variants
+declare this (their lenient sibling could silently corrupt a typed map's key set, see
+link:https://issues.apache.org/jira/browse/GROOVY-11807[GROOVY-11807]):
+
+[source,groovy]
+----
+include::../test/typing/ClassTagSpecTest.groovy[tags=classtag_preempt,indent=0]
+----
+<1> under static compilation the call binds `withDefault(Map<K,V>, Class<K>, Class<V>, Closure)` with
+`String.class` and `Integer.class` injected; the returned map rejects ill-typed keys and values
+<2> reads behave as before for well-typed keys
+
+Preemption is deliberately constrained by three independent controls:
+
+* _intent_: only an overload explicitly marked `@ClassTag(preempt=true)` may displace a token-less one;
+an unmarked tag is strictly additive;
+* _containment_: a tagged overload can only preempt a token-less overload declared by the same class (or, for
+instance methods, the same class hierarchy) — adding a jar to the compile classpath can never re-route calls
+to methods it does not own;
+* _consent_: the consuming build may veto all preemption:
+
+[source,groovy]
+----
+include::../test/typing/ClassTagSpecTest.groovy[tags=classtag_disable,indent=0]
+----
+<1> also available without a configuration script via the `groovy.classtag.preemption.disable` system property;
+code compiled with the veto behaves exactly as it did before any library declared preemption
+
+Some boundaries worth knowing:
+
+* injection is a static-checking feature: dynamic Groovy ignores the annotation, so dynamic code passes the
+`Class` token explicitly;
+* the receiver's type argument must be statically known — `def`, raw and wildcard receivers synthesise no token —
+and only the erased class is reified (`List<List<String>>` yields `List.class`);
+* when every token would erase to `Object` (for example a `List<Object>` receiver), no token is synthesised:
+a checked `Object` view could never reject anything;
+* passing the `Class` explicitly always works, in every mode.
+
 === Static compilation
 
 ==== Dynamic vs static
