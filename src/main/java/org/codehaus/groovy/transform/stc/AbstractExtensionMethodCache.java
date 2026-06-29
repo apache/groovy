@@ -50,6 +50,8 @@ import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 public abstract class AbstractExtensionMethodCache {
     /** Caches extension methods per class loader. */
     final EvictableCache<ClassLoader, Map<String, List<MethodNode>>> cache = new StampedCommonCache<>(new WeakHashMap<>());
+    /** Caches, per class loader, the names of extension methods that declare {@code @ClassTag(preempt=true)} (GROOVY-12115). */
+    private final EvictableCache<ClassLoader, Set<String>> preemptiveNamesCache = new StampedCommonCache<>(new WeakHashMap<>());
     private final String disabledString = SystemUtil.getSystemPropertySafe(getDisablePropertyName());
     private final boolean disabling = disabledString != null;
     private final Set<String> disabledNames = disabling ? new HashSet<>(Arrays.asList(disabledString.split(","))) : null;
@@ -59,6 +61,25 @@ public abstract class AbstractExtensionMethodCache {
      */
     public Map<String, List<MethodNode>> get(ClassLoader loader) {
         return cache.getAndPut(loader, this::getMethodsFromClassLoader);
+    }
+
+    /**
+     * Returns the names of extension methods that declare {@code @ClassTag(preempt=true)}, for the
+     * supplied class loader (GROOVY-12115). Preemption matching consults this to skip the full
+     * candidate scan for the overwhelmingly common name that has no preemptive extension overload;
+     * derived once (lazily) from the already-cached method map and sharing its loader lifecycle, so
+     * it never goes stale independently. Out of the box this holds only {@code "withDefault"}.
+     */
+    Set<String> getPreemptiveNames(ClassLoader loader) {
+        return preemptiveNamesCache.getAndPut(loader, l -> {
+            Set<String> names = new HashSet<>();
+            for (List<MethodNode> overloads : get(l).values()) {
+                for (MethodNode method : overloads) {
+                    if (ClassTagSupport.declaresPreemptIntent(method)) names.add(method.getName());
+                }
+            }
+            return names.isEmpty() ? Collections.emptySet() : names;
+        });
     }
 
     private Map<String, List<MethodNode>> getMethodsFromClassLoader(ClassLoader classLoader) {

@@ -59,6 +59,7 @@ public final class CompilerConfigurationTest {
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
+        assertFalse(config.isClassTagPreemptionDisabled()); // GROOVY-12115
         // GROOVY-9192: parser error recovery is opt-in
         assertFalse(config.isErrorRecoveryEnabled());
         assertEquals("errorRecovery", CompilerConfiguration.ERROR_RECOVERY);
@@ -247,6 +248,33 @@ public final class CompilerConfigurationTest {
         assertNull(config.getJointCompilationOptions());
     }
 
+    @Test // GROOVY-12115
+    public void testClassTagPreemptionDisabled() {
+        CompilerConfiguration init = new CompilerConfiguration();
+        // default is false: the API author's declared intent is honoured
+        assertFalse(init.isClassTagPreemptionDisabled());
+
+        // the setter flips the flag and the copy constructor round-trips it
+        init.setClassTagPreemptionDisabled(true);
+        CompilerConfiguration config = new CompilerConfiguration(init);
+        assertTrue(config.isClassTagPreemptionDisabled());
+
+        // the copy is independent of the original
+        config.setClassTagPreemptionDisabled(false);
+        assertTrue(init.isClassTagPreemptionDisabled());
+    }
+
+    @Test // GROOVY-12115
+    public void testClassTagPreemptionDisabledSystemProperty() {
+        System.setProperty("groovy.classtag.preemption.disable", "true");
+        try {
+            assertTrue(new CompilerConfiguration().isClassTagPreemptionDisabled());
+        } finally {
+            System.clearProperty("groovy.classtag.preemption.disable");
+        }
+        assertFalse(new CompilerConfiguration().isClassTagPreemptionDisabled());
+    }
+
     @Test
     public void testDefaultConfigurationIsImmutable() {
         CompilerConfiguration config = CompilerConfiguration.DEFAULT;
@@ -283,6 +311,9 @@ public final class CompilerConfigurationTest {
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setScriptBaseClass("");
+        });
+        assertThrows(UnsupportedOperationException.class, () -> { // GROOVY-12115
+            config.setClassTagPreemptionDisabled(true);
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setSourceEncoding("Gutenberg");
