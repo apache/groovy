@@ -62,4 +62,9 @@ public @interface OperatorRename {
     String or() default Undefined.STRING;
     String xor() default Undefined.STRING;
     String compareTo() default Undefined.STRING;
+    // GROOVY-9848: the membership operators `in` / `!in` (default methods isIn / isNotIn).
+    // Operands are reversed, so `a in b` dispatches to `b.name(a)`. For example
+    // isIn='containsKey' opts a scope into key-based map membership.
+    String isIn() default Undefined.STRING;
+    String isNotIn() default Undefined.STRING;
 }

@@ -39,6 +39,79 @@ class OperatorRenameTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-9848: @OperatorRename can opt a scope into key-based map membership (the Groovy 6
+    // default). Groovy 5's own default `in` stays value-based (isCase).
+    void testMembershipRenameOptsIntoKeyMembership() {
+        assertScript '''
+            assert !('b' in [a:1, b:0])              // Groovy 5 default: value-based (0 is falsy)
+
+            @groovy.transform.OperatorRename(isIn='containsKey')
+            def keyBased() {
+                assert 'b' in [a:1, b:0]             // opted in: containsKey
+                assert !('z' in [a:1, b:0])
+            }
+            keyBased()
+        '''
+    }
+
+    // GROOVY-9848 / GROOVY-2456: `isIn='contains'` opts a scope into substring string membership
+    // (the Groovy 6 default for char sequences). It also leaves collections/ranges unchanged
+    // (their `contains` already matches the default `in`); only maps are unsupported (no `contains`).
+    void testMembershipRenameOptsIntoSubstringMembership() {
+        assertScript '''
+            assert !('ell' in 'hello')               // Groovy 5 default: equality (no substring)
+
+            @groovy.transform.OperatorRename(isIn='contains')
+            def substring() {
+                assert 'ell' in 'hello'              // opted in: String.contains
+                assert !('xyz' in 'hello')
+                assert 'llo' in "he${'llo'}"         // GString
+                assert 2 in [1, 2, 3]                // collections unchanged (Collection.contains)
+                assert 3 in (1..5)                   // ranges unchanged
+            }
+            substring()
+        '''
+    }
+
+    void testMembershipRenameToIsCaseIsHarmlessOnGroovy5() {
+        assertScript '''
+            @groovy.transform.OperatorRename(isIn='isCase', isNotIn='isNotCase')
+            def f() {
+                assert !('b' in [a:1, b:0])          // no-op vs Groovy 5 default (still value-based)
+                assert 'a' in [a:1, b:0]
+                assert 'b' !in [a:1, b:0]
+            }
+            f()
+        '''
+    }
+
+    void testMembershipRenameUnderCompileStatic() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            @groovy.transform.OperatorRename(isIn='containsKey')
+            boolean has(Map<String,Integer> m, String k) { k in m }
+            assert has([a:1, b:0], 'b')              // containsKey -> true even for value 0
+            assert !has([a:1], 'z')
+        '''
+    }
+
+    // The ScriptBytecodeAdapter.isIn helper backported for forward binary compatibility with
+    // Groovy 6 in-operator codegen (Map -> containsKey, CharSequence -> contains, else -> isCase).
+    void testScriptBytecodeAdapterIsInHelper() {
+        assertScript '''
+            import org.codehaus.groovy.runtime.ScriptBytecodeAdapter as SBA
+            assert  SBA.isIn('b', [a:1, b:0])        // map -> containsKey (value 0 irrelevant)
+            assert !SBA.isIn('z', [a:1, b:0])
+            assert  SBA.isIn('ell', 'hello')         // char sequence -> contains
+            assert  SBA.isIn(2, [1, 2, 3])           // collection -> contains (via isCase)
+            assert  SBA.isNotIn('z', [a:1])
+            // does not mutate a withDefault map
+            def dm = [:].withDefault{ 1 }
+            assert !SBA.isIn('x', dm)
+            assert !dm.containsKey('x')
+        '''
+    }
+
     void testOperatorRenameSimulateMatrixNamesFromCommonLibs() {
         assertScript '''
             @groovy.transform.TupleConstructor
