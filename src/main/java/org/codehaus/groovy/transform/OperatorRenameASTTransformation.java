@@ -48,9 +48,11 @@ import static org.codehaus.groovy.syntax.Types.BITWISE_OR;
 import static org.codehaus.groovy.syntax.Types.BITWISE_OR_EQUAL;
 import static org.codehaus.groovy.syntax.Types.BITWISE_XOR;
 import static org.codehaus.groovy.syntax.Types.BITWISE_XOR_EQUAL;
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_IN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_TO;
 import static org.codehaus.groovy.syntax.Types.DIVIDE;
 import static org.codehaus.groovy.syntax.Types.DIVIDE_EQUAL;
+import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.LEFT_SHIFT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.MINUS;
@@ -105,6 +107,9 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
         addIfFound(anno, nameTable, "or");
         addIfFound(anno, nameTable, "xor");
         addIfFound(anno, nameTable, "compareTo");
+        // GROOVY-9848: membership operators (in / !in)
+        addIfFound(anno, nameTable, "isIn");
+        addIfFound(anno, nameTable, "isNotIn");
         if (parent instanceof ClassNode) {
             super.visitClass((ClassNode) parent);
         } else if (parent instanceof ConstructorNode) {
@@ -125,6 +130,19 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
         if (expr instanceof BinaryExpression) {
             final BinaryExpression be = (BinaryExpression) expr;
             int type = be.getOperation().getType();
+            // GROOVY-9848: the membership operators are handled explicitly -- their public member
+            // names (isIn/isNotIn) are fixed here rather than derived from getOperationName, and the
+            // operands are reversed (`a in b` dispatches on the right operand, i.e. b.name(a)).
+            if (type == KEYWORD_IN || type == COMPARE_NOT_IN) {
+                String memberName = (type == KEYWORD_IN) ? "isIn" : "isNotIn";
+                if (nameTable.containsKey(memberName)) {
+                    Expression left = transform(be.getLeftExpression());
+                    Expression right = transform(be.getRightExpression());
+                    Expression result = callX(right, nameTable.get(memberName), left);
+                    result.setSourcePosition(be);
+                    return result;
+                }
+            }
             String oldName = getOperationName(type);
             if (nameTable.containsKey(oldName)) {
                 boolean isEqualOperator = removeAssignment(type) != type;
