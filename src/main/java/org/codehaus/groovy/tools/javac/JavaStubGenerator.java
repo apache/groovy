@@ -28,7 +28,6 @@ import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
@@ -51,6 +50,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.query.AstQuery;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -1260,28 +1260,22 @@ public class JavaStubGenerator {
                     return member || (node instanceof ClassNode && type == PackageScopeTarget.CLASS);
                 }
 
-                final boolean[] val = new boolean[1];
-                expr.visit(new CodeVisitorSupport() {
-                    @Override
-                    public void visitPropertyExpression(final PropertyExpression property) {
-                        if ("groovy.transform.PackageScopeTarget".equals(property.getObjectExpression().getText())
-                                && property.getPropertyAsString().equals(type.name())) {
-                            val[0] = true;
-                        }
-                    }
-                    @Override
-                    public void visitVariableExpression(final VariableExpression variable) {
-                        if (variable.getName().equals(type.name())) {
-                            ImportNode imp = currentModule.getStaticImports().get(type.name());
-                            if (imp != null && "groovy.transform.PackageScopeTarget".equals(imp.getType().getName())) {
-                                val[0] = true;
-                            } else if (imp == null && currentModule.getStaticStarImports().get("groovy.transform.PackageScopeTarget") != null) {
-                                val[0] = true;
+                final String pstType = "groovy.transform.PackageScopeTarget";
+                return AstQuery.from(expr).andSelf()
+                        .descendants(PropertyExpression.class, VariableExpression.class)
+                        .notInto(PropertyExpression.class) // mirror original: do not descend into a property target
+                        .where(n -> {
+                            if (n instanceof PropertyExpression property) {
+                                return pstType.equals(property.getObjectExpression().getText())
+                                        && property.getPropertyAsString().equals(type.name());
                             }
-                        }
-                    }
-                });
-                return val[0];
+                            VariableExpression variable = (VariableExpression) n;
+                            if (!variable.getName().equals(type.name())) return false;
+                            ImportNode imp = currentModule.getStaticImports().get(type.name());
+                            return (imp != null && pstType.equals(imp.getType().getName()))
+                                    || (imp == null && currentModule.getStaticStarImports().get(pstType) != null);
+                        })
+                        .any();
             }
         }
         if (member) { // check for @PackageScope(XXX) on class

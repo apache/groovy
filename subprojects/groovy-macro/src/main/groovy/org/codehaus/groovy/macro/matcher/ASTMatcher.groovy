@@ -73,6 +73,8 @@ import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.macro.matcher.internal.MatchingConstraintsBuilder
 
+import java.util.function.Predicate
+
 /**
  * Matches AST nodes against pattern ASTs.
  *
@@ -142,6 +144,25 @@ class ASTMatcher extends ContextualClassCodeVisitor {
         def finder = new ASTFinder(pattern)
         node.visit(finder)
         finder.matches
+    }
+
+    /**
+     * Returns a {@link Predicate} that tests whether a node matches the supplied pattern AST. This
+     * is the bridge between exemplar pattern matching and the fluent
+     * {@link org.codehaus.groovy.ast.query.AstQuery} API, letting a pattern be used as a filter:
+     * <pre>
+     * import static org.codehaus.groovy.macro.matcher.ASTMatcher.matching
+     * AstQuery.from(node).descendants(MethodCallExpression).where(matching(macro { _.foo() })).list()
+     * </pre>
+     * The predicate reports only whether the shape matches (honouring {@code _} wildcards); use
+     * {@link #find(ASTNode, ASTNode)} when placeholder bindings need to be extracted.
+     *
+     * @param pattern the pattern AST to match candidate nodes against
+     * @return a predicate that returns {@code true} when a node matches the pattern
+     * @since 6.0.0
+     */
+    static Predicate<ASTNode> matching(ASTNode pattern) {
+        { ASTNode node -> matches(node, pattern) } as Predicate<ASTNode>
     }
 
     private void storeContraints(ASTNode src) {

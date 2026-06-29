@@ -524,30 +524,35 @@ public class DataSet extends Sql {
     protected SqlOrderByVisitor getSqlOrderByVisitor() {
         if (sortVisitor == null) {
             sortVisitor = new SqlOrderByVisitor();
-            visit(sort, sortVisitor);
+            Statement code = closureCode(sort);
+            if (code != null) sortVisitor.visit(code);
         }
         return sortVisitor;
     }
 
     private static void visit(Closure closure, CodeVisitorSupport visitor) {
-        if (closure != null) {
-            ClassNode classNode = closure.getMetaClass().getClassNode();
-            if (classNode == null) {
-                throw new GroovyRuntimeException(
-                        "DataSet unable to evaluate expression. AST not available for closure: " + closure.getMetaClass().getTheClass().getName() +
-                                ". Is the source code on the classpath?");
-            }
-            List methods = classNode.getDeclaredMethods("doCall");
-            if (!methods.isEmpty()) {
-                MethodNode method = (MethodNode) methods.get(0);
-                if (method != null) {
-                    Statement statement = method.getCode();
-                    if (statement != null) {
-                        statement.visit(visitor);
-                    }
-                }
-            }
+        Statement code = closureCode(closure);
+        if (code != null) {
+            code.visit(visitor);
         }
+    }
+
+    private static Statement closureCode(Closure closure) {
+        if (closure == null) {
+            return null;
+        }
+        ClassNode classNode = closure.getMetaClass().getClassNode();
+        if (classNode == null) {
+            throw new GroovyRuntimeException(
+                    "DataSet unable to evaluate expression. AST not available for closure: " + closure.getMetaClass().getTheClass().getName() +
+                            ". Is the source code on the classpath?");
+        }
+        List methods = classNode.getDeclaredMethods("doCall");
+        if (methods.isEmpty()) {
+            return null;
+        }
+        MethodNode method = (MethodNode) methods.get(0);
+        return method != null ? method.getCode() : null;
     }
 
     /**

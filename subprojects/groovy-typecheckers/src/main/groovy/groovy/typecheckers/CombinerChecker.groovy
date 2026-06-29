@@ -21,7 +21,6 @@ package groovy.typecheckers
 import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -32,6 +31,7 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.MethodPointerExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.query.AstQuery
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
@@ -241,24 +241,18 @@ class CombinerChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
         Set<String> params = (closure.parameters ?: []).collect { it.name } as Set<String>
 
         // High-confidence only: a non-associative operator applied directly to
-        // the two combiner parameters (e.g. { a, b -> a - b }). Array holder:
-        // an anonymous visitor cannot mutate an enclosing local.
-        final boolean[] badOp = [false]
-        if (params.size() == 2 && closure.code != null) {
-            closure.code.visit(new CodeVisitorSupport() {
-                @Override
-                void visitBinaryExpression(BinaryExpression be) {
-                    super.visitBinaryExpression(be)
-                    if (be.operation.text in NON_ASSOCIATIVE_OPS &&
-                            isParamRef(be.leftExpression, params) &&
-                            isParamRef(be.rightExpression, params)) {
-                        badOp[0] = true
-                    }
-                }
-            })
-        }
+        // the two combiner parameters (e.g. { a, b -> a - b }).
+        boolean badOp = params.size() == 2 && closure.code != null &&
+                AstQuery.from(closure.code)
+                        .descendants(BinaryExpression)
+                        .where { BinaryExpression be ->
+                            be.operation.text in NON_ASSOCIATIVE_OPS &&
+                                    isParamRef(be.leftExpression, params) &&
+                                    isParamRef(be.rightExpression, params)
+                        }
+                        .any()
 
-        if (badOp[0]) {
+        if (badOp) {
             return "CombinerChecker: combiner passed to '${name}' applies a non-associative " +
                     "operator to its arguments; parallel reduction will be non-deterministic. " +
                     "Use an associative combiner."

@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.query.AstQuery;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -169,18 +169,11 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
     private String getUniqueVariableName(final String name, final Statement code) {
         if (code == null) return name;
-        final Object[] found = new Object[1];
-        CodeVisitorSupport cv = new CodeVisitorSupport() {
-            /**
-             * Detects whether the candidate name is already referenced in the statement block.
-             */
-            @Override
-            public void visitVariableExpression(VariableExpression expression) {
-                if (expression.getName().equals(name)) found[0] = Boolean.TRUE;
-            }
-        };
-        code.visit(cv);
-        if (found[0] != null) return getUniqueVariableName("_" + name, code);
+        boolean found = AstQuery.from(code)
+                .descendants(VariableExpression.class)
+                .where(v -> v.getName().equals(name))
+                .any();
+        if (found) return getUniqueVariableName("_" + name, code);
         return name;
     }
 

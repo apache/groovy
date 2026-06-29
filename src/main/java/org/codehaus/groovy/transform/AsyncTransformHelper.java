@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.query.AstQuery;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -140,22 +141,12 @@ public final class AsyncTransformHelper {
      * call, without descending into nested closures.
      */
     public static boolean containsYieldReturn(Statement stmt) {
-        boolean[] found = {false};
-        stmt.visit(new CodeVisitorSupport() {
-            @Override
-            public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
-                if (YIELD_RETURN_METHOD.equals(call.getMethod())
-                        && AsyncSupport.class.getName().equals(call.getOwnerType().getName())) {
-                    found[0] = true;
-                }
-                if (!found[0]) super.visitStaticMethodCallExpression(call);
-            }
-            @Override
-            public void visitClosureExpression(ClosureExpression expression) {
-                // Don't descend into nested closures
-            }
-        });
-        return found[0];
+        return AstQuery.from(stmt)
+                .descendants(StaticMethodCallExpression.class)
+                .notInto(ClosureExpression.class) // don't descend into nested closures
+                .where(call -> YIELD_RETURN_METHOD.equals(call.getMethod())
+                        && AsyncSupport.class.getName().equals(call.getOwnerType().getName()))
+                .any();
     }
 
     /**
@@ -185,22 +176,12 @@ public final class AsyncTransformHelper {
      * without descending into nested closures.
      */
     public static boolean containsDefer(Statement stmt) {
-        boolean[] found = {false};
-        stmt.visit(new CodeVisitorSupport() {
-            @Override
-            public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
-                if (DEFER_METHOD.equals(call.getMethod())
-                        && AsyncSupport.class.getName().equals(call.getOwnerType().getName())) {
-                    found[0] = true;
-                }
-                if (!found[0]) super.visitStaticMethodCallExpression(call);
-            }
-            @Override
-            public void visitClosureExpression(ClosureExpression expression) {
-                // Don't descend into nested closures
-            }
-        });
-        return found[0];
+        return AstQuery.from(stmt)
+                .descendants(StaticMethodCallExpression.class)
+                .notInto(ClosureExpression.class) // don't descend into nested closures
+                .where(call -> DEFER_METHOD.equals(call.getMethod())
+                        && AsyncSupport.class.getName().equals(call.getOwnerType().getName()))
+                .any();
     }
 
     /**

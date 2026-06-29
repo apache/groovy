@@ -19,38 +19,15 @@
 package org.codehaus.groovy.transform.tailrec;
 
 import org.apache.groovy.util.Maps;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.query.AstQuery;
 
 /**
  * Check if there are any recursive calls in a method
  */
-public class HasRecursiveCalls extends CodeVisitorSupport {
-    private MethodNode method;
-    private boolean hasRecursiveCalls = false;
-
-    /** {@inheritDoc} */
-    @Override
-    public void visitMethodCallExpression(MethodCallExpression call) {
-        if (isRecursive(call)) {
-            hasRecursiveCalls = true;
-        } else {
-            super.visitMethodCallExpression(call);
-        }
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
-        if (isRecursive(call)) {
-            hasRecursiveCalls = true;
-        } else {
-            super.visitStaticMethodCallExpression(call);
-        }
-    }
+public class HasRecursiveCalls {
 
     /**
      * Tests whether the supplied method contains at least one recursive call.
@@ -58,14 +35,11 @@ public class HasRecursiveCalls extends CodeVisitorSupport {
      * @param method the method to inspect
      * @return {@code true} if the method contains a recursive call; {@code false} otherwise
      */
-    public synchronized boolean test(MethodNode method) {
-        hasRecursiveCalls = false;
-        this.method = method;
-        this.method.getCode().visit(this);
-        return hasRecursiveCalls;
-    }
-
-    private boolean isRecursive(Expression call) {
-        return new RecursivenessTester().isRecursive(Maps.of("method", method, "call", call));
+    public boolean test(MethodNode method) {
+        RecursivenessTester tester = new RecursivenessTester();
+        return AstQuery.from(method.getCode())
+                .descendants(MethodCallExpression.class, StaticMethodCallExpression.class)
+                .where(call -> tester.isRecursive(Maps.of("method", method, "call", call)))
+                .any();
     }
 }
