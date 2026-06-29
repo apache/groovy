@@ -188,6 +188,16 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public Set<String> getClassTagPreemptionTargets() {
+            return Collections.unmodifiableSet(super.getClassTagPreemptionTargets());
+        }
+
+        @Override
+        public void setClassTagPreemptionTargets(final Set<String> classTagPreemptionTargets) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setBytecodePostprocessor(final BytecodeProcessor bytecodePostprocessor) {
             throw new UnsupportedOperationException();
         }
@@ -382,6 +392,16 @@ public class CompilerConfiguration {
     private Set<String> scriptExtensions = new LinkedHashSet<>();
 
     /**
+     * Method names whose {@link groovy.transform.stc.ClassTag @ClassTag} overload is allowed to
+     * <em>preempt</em> a matching token-less overload under static compilation (GROOVY-12115), e.g.
+     * letting {@code map.withDefault{...}} on a statically-typed map select the key-checked variant.
+     * Preemption changes the meaning of existing source, so it is opt-in by name; the default holds
+     * only Groovy's own known case. Additive injection (supplying an otherwise-mandatory token, such
+     * as for {@code asChecked}) is not gated by this set. Never null.
+     */
+    private Set<String> classTagPreemptionTargets = new LinkedHashSet<>(Collections.singletonList("withDefault"));
+
+    /**
      * If set to true recompilation is enabled.
      */
     private boolean recompileGroovySource;
@@ -527,6 +547,7 @@ public class CompilerConfiguration {
         setPluginFactory(configuration.getPluginFactory());
         setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
         setScriptExtensions(new LinkedHashSet<>(configuration.getScriptExtensions()));
+        setClassTagPreemptionTargets(new LinkedHashSet<>(configuration.getClassTagPreemptionTargets()));
         setOptimizationOptions(new HashMap<>(configuration.getOptimizationOptions()));
         setBytecodePostprocessor(configuration.getBytecodePostprocessor());
 
@@ -1067,6 +1088,32 @@ public class CompilerConfiguration {
             scriptExtensions = SourceExtensionHandler.getRegisteredExtensions(getClass().getClassLoader());
         }
         return scriptExtensions;
+    }
+
+    /**
+     * Returns the method names whose {@link groovy.transform.stc.ClassTag @ClassTag} overload may
+     * preempt a matching token-less overload under static compilation (GROOVY-12115). Defaults to
+     * Groovy's own known case ({@code "withDefault"}). Clearing the set disables preemptive
+     * injection (additive injection, such as for {@code asChecked}, is unaffected); adding a name
+     * opts a user API in.
+     *
+     * @return the (never null) set of preemption target method names
+     * @since 6.0.0
+     */
+    public Set<String> getClassTagPreemptionTargets() {
+        return classTagPreemptionTargets;
+    }
+
+    /**
+     * Replaces the set of method names whose {@link groovy.transform.stc.ClassTag @ClassTag} overload
+     * may preempt a matching token-less overload under static compilation (GROOVY-12115). A null
+     * argument resets to an empty set (preemption disabled).
+     *
+     * @param classTagPreemptionTargets the preemption target method names
+     * @since 6.0.0
+     */
+    public void setClassTagPreemptionTargets(final Set<String> classTagPreemptionTargets) {
+        this.classTagPreemptionTargets = Optional.ofNullable(classTagPreemptionTargets).orElseGet(LinkedHashSet::new);
     }
 
     /**
