@@ -205,4 +205,37 @@ final class Groovy12106 {
             assert new C().describe(new Field()) == 'seen'
         '''
     }
+
+    /**
+     * The sub-trait-first shape (above) with the helper's delegate parameter carrying
+     * {@code @DelegatesTo.Target} — the faithful Grails {@code withDelegate} signature, so
+     * the {@code @DelegatesTo} closure annotation fully resolves rather than relying on
+     * {@code genericTypeIndex}. The inherited static must still resolve order independently
+     * (GROOVY-12117); the {@code @DelegatesTo} metadata on the super-trait helper static
+     * must not perturb that resolution.
+     */
+    @Test
+    void testGrailsHelperShapeWithDelegatesToTargetSubTraitFirst() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            final class Field { String name = 'f' }
+            @CompileStatic
+            trait Arguable<T> extends ExecutesClosures {   // sub-trait declared FIRST
+                String describe(Field f) {
+                    def sb = new StringBuilder()
+                    withDelegate({ -> sb.append('seen') }, f)   // f:Field is a subtype of the target delegate
+                    sb.toString()
+                }
+            }
+            @CompileStatic
+            trait ExecutesClosures {
+                static void withDelegate(@DelegatesTo(strategy=Closure.DELEGATE_ONLY) Closure callable,
+                                         @DelegatesTo.Target Object delegate) {
+                    if (callable != null) { callable.delegate = delegate; callable.resolveStrategy = Closure.DELEGATE_ONLY; callable.call() }
+                }
+            }
+            class C implements Arguable<String> { }
+            assert new C().describe(new Field()) == 'seen'
+        '''
+    }
 }
