@@ -23,6 +23,7 @@ import javax.management.remote.JMXConnectorServer
 import javax.management.remote.JMXConnectorServerFactory
 import javax.management.remote.JMXServiceURL
 import javax.management.remote.rmi.RMIConnectorServer
+import javax.net.ssl.SSLContext
 import javax.rmi.ssl.SslRMIClientSocketFactory
 import javax.rmi.ssl.SslRMIServerSocketFactory
 
@@ -52,6 +53,23 @@ import javax.rmi.ssl.SslRMIServerSocketFactory
 class JmxServerConnectorFactory extends AbstractFactory {
 
     private static final List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "jmxmp"]
+
+    // Restrict the SSL server socket factory to modern TLS versions rather than relying on
+    // the JVM default protocol set (which may still enable TLS 1.0/1.1 on older/misconfigured JREs).
+    // Intersect with the protocols the running JDK actually supports so we never request an
+    // unsupported protocol (which the factory would reject), e.g. TLS 1.3 on a JDK without it.
+    private static final String[] ENABLED_TLS_PROTOCOLS = pinnedTlsProtocols()
+
+    private static String[] pinnedTlsProtocols() {
+        Set<String> preferred = ['TLSv1.3', 'TLSv1.2']
+        try {
+            Set<String> supported = SSLContext.getDefault().supportedSSLParameters.protocols
+            Set<String> usable = preferred.intersect(supported)
+            return (usable ?: preferred) as String[]
+        } catch (Exception ignored) {
+            return preferred as String[]
+        }
+    }
 
     /**
      * Creates a server connector for the supplied connection settings.
@@ -140,14 +158,14 @@ class JmxServerConnectorFactory extends AbstractFactory {
         env.put("com.sun.management.jmxremote.access.file", aFile)
 
         // SSL connection
-        def ssl = props.remove("com.sun.management.jmxremote. ssl") ?: props.remove("sslEnabled")
+        def ssl = props.remove("com.sun.management.jmxremote.ssl") ?: props.remove("sslEnabled")
         env.put("com.sun.management.jmxremote.ssl", ssl)
 
         // config other rmi props
         if (protocol == "rmi") {
             if (ssl) {
                 def csf = props.remove(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE) ?: new SslRMIClientSocketFactory()
-                def ssf = props.remove(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE) ?: new SslRMIServerSocketFactory()
+                def ssf = props.remove(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE) ?: new SslRMIServerSocketFactory((String[]) null, ENABLED_TLS_PROTOCOLS, false)
                 env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE, csf)
                 env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE, ssf)
             }
@@ -158,6 +176,8 @@ class JmxServerConnectorFactory extends AbstractFactory {
         }
 
         props.clear()
+
+        return env
     }
 
     private JMXServiceURL generateServiceUrl(def protocol, def host, def port) {
