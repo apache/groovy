@@ -17,6 +17,9 @@ name: "Validate Gradle Wrapper"
 
 on:
   push:
+    branches:
+      - master
+      - GROOVY_*
     paths:
       - 'gradlew'
       - 'gradlew.bat'

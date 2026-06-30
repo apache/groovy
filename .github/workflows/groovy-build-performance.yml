@@ -15,7 +15,12 @@
 
 name: Performance check
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - GROOVY_*
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
