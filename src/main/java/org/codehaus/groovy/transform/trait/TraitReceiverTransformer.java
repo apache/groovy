@@ -327,22 +327,26 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         for (ClassNode superTrait : traits) {
             ClassNode traitHelper = Traits.findHelper(superTrait);
-            if (traitHelper == null) continue; // GROOVY-11743: order issue
-            for (MethodNode methodNode : traitHelper.getDeclaredMethods(methodName)) {
-                if (methodNode.isPublic() && methodNode.isStatic()
-                        // exclude public method with body as it's included in trait interface
-                        && ClassHelper.isClassType(methodNode.getParameters()[0].getType())) {
-                    return methodNode;
+            if (traitHelper != null) { // GROOVY-11743: helper may not be generated yet
+                for (MethodNode methodNode : traitHelper.getDeclaredMethods(methodName)) {
+                    if (methodNode.isPublic() && methodNode.isStatic()
+                            // exclude public method with body as it's included in trait interface
+                            && ClassHelper.isClassType(methodNode.getParameters()[0].getType())) {
+                        return methodNode;
+                    }
                 }
             }
             // GROOVY-12117: when a co-compiled super trait has not been transformed
-            // yet, its helper is still an empty GROOVY-7909 stub, so the lowered
-            // static above is not found. The original static is still declared on
-            // the trait node at this point, so resolve it there. This keeps the
-            // rewrite independent of the order in which sibling traits are
-            // transformed (GEP-22 P1' dispatch consistency); the helper resolves
-            // identically once every trait is lowered, so this only matters for
-            // the not-yet-lowered super trait.
+            // yet, its helper is not generated (findHelper returns null on 5.0.x;
+            // an empty GROOVY-7909 stub on 6.0), so the lowered static above is not
+            // found. The original static is still declared on the trait node at
+            // this point, so resolve it there. This must run even when the helper
+            // is null, otherwise the GROOVY-11743 guard above would skip it in
+            // exactly the sub-trait-first ordering it targets. Keeps the rewrite
+            // independent of the order in which sibling traits are transformed
+            // (GEP-22 P1' dispatch consistency); the helper resolves identically
+            // once every trait is lowered, so this only matters for the
+            // not-yet-lowered super trait.
             for (MethodNode methodNode : superTrait.getDeclaredMethods(methodName)) {
                 if (methodNode.isPublic() && methodNode.isStatic()) {
                     return methodNode;
