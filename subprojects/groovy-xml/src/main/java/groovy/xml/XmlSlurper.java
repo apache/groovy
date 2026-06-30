@@ -508,9 +508,27 @@ public class XmlSlurper extends DefaultHandler {
     }
 
     /**
-     * Resolves entities against using the supplied URL as the base for relative URLs
+     * Installs an {@link org.xml.sax.EntityResolver} that resolves an entity's system identifier
+     * against the supplied URL as the base for <em>relative</em> system identifiers.
+     * <p>
+     * <strong>This does not sandbox or restrict entity resolution.</strong> It is a convenience for
+     * locating relative external references, not a security control:
+     * <ul>
+     *   <li>an <em>absolute</em> system identifier (e.g. {@code SYSTEM "file:///etc/passwd"} or
+     *       {@code "http://host/x"}) is used unchanged &mdash; {@code base} is ignored, since
+     *       {@link java.net.URI#resolve(String)} returns an already-absolute URI as-is; and</li>
+     *   <li>no scheme allow-list or containment check is applied, so the resolved reference is
+     *       fetched whatever its scheme or location.</li>
+     * </ul>
+     * The installed resolver is only consulted when external entities are processed, which requires
+     * DOCTYPE declarations to have been enabled (see {@link #setAllowDocTypeDeclaration(boolean)});
+     * that is off by default. Do not rely on this method to confine resolution of untrusted XML:
+     * keep {@code allowDocTypeDeclaration} {@code false} for untrusted input, and if you need real
+     * confinement install your own {@link org.xml.sax.EntityResolver} via
+     * {@link #setEntityResolver(org.xml.sax.EntityResolver)} that validates the resolved location
+     * and scheme.
      *
-     * @param base The URL used to resolve relative URLs
+     * @param base The URL used as the base for resolving relative system identifiers
      */
     public void setEntityBaseUrl(final URL base) {
         ensureReader().setEntityResolver((publicId, systemId) -> {
