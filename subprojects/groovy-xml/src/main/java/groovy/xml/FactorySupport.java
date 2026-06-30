@@ -210,11 +210,14 @@ public class FactorySupport {
      * Creates a new hardened {@link SchemaFactory} for the requested schema language.
      * <p>
      * The returned factory has {@link XMLConstants#FEATURE_SECURE_PROCESSING}
-     * enabled. External schema resolution is left at JDK defaults so that
-     * legitimate {@code <xs:import>}/{@code <xs:include>} usages continue to
-     * work; callers needing stricter behaviour can set
-     * {@link XMLConstants#ACCESS_EXTERNAL_SCHEMA} or {@link XMLConstants#ACCESS_EXTERNAL_DTD}
-     * on the returned factory.
+     * enabled, which by default already restricts resolution of external schemas
+     * and DTDs. That default can be widened by a global
+     * {@code javax.xml.accessExternalSchema}/{@code javax.xml.accessExternalDTD}
+     * system property or a {@code jaxp.properties} entry; if you need external
+     * access denied regardless of such global configuration, set
+     * {@link XMLConstants#ACCESS_EXTERNAL_SCHEMA} and {@link XMLConstants#ACCESS_EXTERNAL_DTD}
+     * to {@code ""} on the returned factory (a property set directly on the factory takes
+     * precedence over the global configuration).
      *
      * @param schemaLanguage the schema language URI (see {@link XMLConstants})
      * @return a newly created, hardened schema factory
