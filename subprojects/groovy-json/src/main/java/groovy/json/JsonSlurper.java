@@ -100,8 +100,19 @@ public class JsonSlurper {
     private JsonParserType type = JsonParserType.CHAR_BUFFER;
 
     /**
-     * Max size before Slurper starts to use windowing buffer parser.
-     * @return size of file/buffer
+     * The threshold (in characters) that selects which parser strategy the {@code File}-based parse
+     * methods use: documents smaller than this are parsed in memory, larger ones use a windowing
+     * buffer parser.
+     * <p>
+     * <strong>This is a parser-strategy selector, not a size limit.</strong> It does not reject or
+     * cap input &mdash; an oversized document is still parsed in full (by the windowing parser).
+     * It is consulted <em>only</em> by the {@link java.io.File}-based parse methods; the
+     * {@link #parse(Reader)}, {@link #parse(InputStream)} and {@code parse(URL)} entry points ignore
+     * it and buffer their entire input into memory regardless of this value. To bound untrusted
+     * input, limit its size yourself before parsing (and cap nesting via
+     * {@link #setMaxNestingDepth(int)} or the {@code groovy.json.maxNestingDepth} system property).
+     *
+     * @return the in-memory vs windowing-parser selection threshold
      * @since 2.3
      */
     public int getMaxSizeForInMemory() {
@@ -109,9 +120,18 @@ public class JsonSlurper {
     }
 
     /**
-     * Max size before Slurper starts to use windowing buffer parser.
+     * Sets the threshold that selects which parser strategy the {@code File}-based parse methods use
+     * (see {@link #getMaxSizeForInMemory()}).
+     * <p>
+     * <strong>This selects a parser strategy; it does not limit or reject input.</strong> Setting it
+     * gives no DoS protection: it is not consulted by {@link #parse(Reader)},
+     * {@link #parse(InputStream)} or {@code parse(URL)}, and even the {@code File}-based methods still
+     * parse documents larger than the threshold. Bound untrusted input by its size before parsing,
+     * and cap nesting via {@link #setMaxNestingDepth(int)} or {@code groovy.json.maxNestingDepth}.
+     *
+     * @param maxSizeForInMemory the in-memory vs windowing-parser selection threshold
+     * @return this {@code JsonSlurper} instance
      * @since 2.3
-     * @return JsonSlurper
      */
     public JsonSlurper setMaxSizeForInMemory(int maxSizeForInMemory) {
         this.maxSizeForInMemory = maxSizeForInMemory;
