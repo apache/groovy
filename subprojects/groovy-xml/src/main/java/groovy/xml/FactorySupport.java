@@ -32,6 +32,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathFactoryConfigurationException;
 import java.security.PrivilegedExceptionAction;
+import java.util.logging.Logger;
 
 /**
  * Support class for creating hardened JAXP factories.
@@ -43,7 +44,27 @@ import java.security.PrivilegedExceptionAction;
  */
 public class FactorySupport {
 
+    private static final Logger LOG = Logger.getLogger(FactorySupport.class.getName());
+
     private static final String DISALLOW_DOCTYPE_DECL_FEATURE = "http://apache.org/xml/features/disallow-doctype-decl";
+
+    /**
+     * Logs that a security-hardening setting could not be applied to a JAXP factory. These settings
+     * are applied on a best-effort basis (a non-standard JAXP provider may not recognise them), but a
+     * silent failure would leave the factory more permissive than the caller expects, so it is logged
+     * rather than swallowed.
+     *
+     * @param factory the factory the setting was applied to
+     * @param name    the feature/attribute/property name
+     * @param value   the value that could not be applied
+     * @param cause   the failure, or {@code null} if the value was simply not retained after being set
+     */
+    private static void warnHardeningNotApplied(Object factory, String name, Object value, Exception cause) {
+        LOG.warning("Unable to apply XML security setting '" + name + "'=" + value + " on "
+                + factory.getClass().getName()
+                + (cause != null ? ": " + cause : " (value was not retained after being set)")
+                + "; the factory may be more permissive than intended (e.g. weaker XXE/DTD protection).");
+    }
 
     /**
      * Runs the supplied factory creation action and normalizes checked failures.
@@ -241,59 +262,75 @@ public class FactorySupport {
         return factory;
     }
 
-    private static void setFeatureQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
+    // package-private for testing
+    static void setFeatureQuietly(DocumentBuilderFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
-        } catch (ParserConfigurationException ignored) {
-            // feature is not supported, ignore
+            if (factory.getFeature(feature) != value) {
+                warnHardeningNotApplied(factory, feature, value, null);
+            }
+        } catch (ParserConfigurationException e) {
+            warnHardeningNotApplied(factory, feature, value, e);
         }
     }
 
     private static void setFeatureQuietly(SAXParserFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
-        } catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException ignored) {
-            // feature is not supported, ignore
+            if (factory.getFeature(feature) != value) {
+                warnHardeningNotApplied(factory, feature, value, null);
+            }
+        } catch (ParserConfigurationException | SAXNotSupportedException | SAXNotRecognizedException e) {
+            warnHardeningNotApplied(factory, feature, value, e);
         }
     }
 
     private static void setFeatureQuietly(TransformerFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
-        } catch (TransformerConfigurationException ignored) {
-            // feature is not supported, ignore
+            if (factory.getFeature(feature) != value) {
+                warnHardeningNotApplied(factory, feature, value, null);
+            }
+        } catch (TransformerConfigurationException e) {
+            warnHardeningNotApplied(factory, feature, value, e);
         }
     }
 
     private static void setFeatureQuietly(SchemaFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
-        } catch (SAXNotSupportedException | SAXNotRecognizedException ignored) {
-            // feature is not supported, ignore
+            if (factory.getFeature(feature) != value) {
+                warnHardeningNotApplied(factory, feature, value, null);
+            }
+        } catch (SAXNotSupportedException | SAXNotRecognizedException e) {
+            warnHardeningNotApplied(factory, feature, value, e);
         }
     }
 
     private static void setFeatureQuietly(XPathFactory factory, String feature, boolean value) {
         try {
             factory.setFeature(feature, value);
-        } catch (XPathFactoryConfigurationException ignored) {
-            // feature is not supported, ignore
+            if (factory.getFeature(feature) != value) {
+                warnHardeningNotApplied(factory, feature, value, null);
+            }
+        } catch (XPathFactoryConfigurationException e) {
+            warnHardeningNotApplied(factory, feature, value, e);
         }
     }
 
     private static void setAttributeQuietly(TransformerFactory factory, String attribute, Object value) {
         try {
             factory.setAttribute(attribute, value);
-        } catch (IllegalArgumentException ignored) {
-            // attribute is not supported, ignore
+        } catch (IllegalArgumentException e) {
+            warnHardeningNotApplied(factory, attribute, value, e);
         }
     }
 
     private static void setPropertyQuietly(XMLInputFactory factory, String property, Object value) {
         try {
             factory.setProperty(property, value);
-        } catch (IllegalArgumentException ignored) {
-            // property is not supported, ignore
+        } catch (IllegalArgumentException e) {
+            warnHardeningNotApplied(factory, property, value, e);
         }
     }
 }
