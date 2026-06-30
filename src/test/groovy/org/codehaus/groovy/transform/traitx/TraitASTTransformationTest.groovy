@@ -24,6 +24,7 @@ import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
@@ -4108,6 +4109,179 @@ final class TraitASTTransformationTest {
             }
 
             new C().test()
+        '''
+    }
+
+    // ---- PR #2646 edge cases: closure `this` and multi-trait field conflicts ----
+
+    // `this` inside a closure in a trait method is the implementing instance,
+    // even when another object owns the closure and changes its delegate;
+    // `this.@field` reaches the trait field on that instance. Extends
+    // testTraitClosure3 (single closure, no delegate change).
+    @Test
+    void testThisInTraitClosureRefersToImplementingInstance() {
+        assertScript shell, '''
+            class Helper {
+                String ownerName
+                def captureThis(Closure cl) { cl.delegate = this; cl.resolveStrategy = Closure.DELEGATE_ONLY; cl() }
+            }
+            trait T {
+                String traitName = 'MyTrait'
+                String test() { new Helper().captureThis { -> this.@traitName } }
+            }
+            class C implements T { }
+
+            assert new C().test() == 'MyTrait'
+        '''
+    }
+
+    // NOTE: this documents Closure DELEGATE_FIRST precedence, not a trait
+    // invariant. When a trait method hands a closure to another object that
+    // installs itself as a DELEGATE_FIRST delegate, that delegate's same-named
+    // method shadows the trait's in name lookup. `this` is unchanged; the
+    // delegate merely wins resolution.
+    @Test
+    void testThisInTraitClosureInsideAnotherObjectsMethod() {
+        assertScript shell, '''
+            class Receiver {
+                def execute(Closure cl) { cl.delegate = this; cl.resolveStrategy = Closure.DELEGATE_FIRST; cl() }
+                String whoAmI() { 'Receiver' }
+            }
+            trait T {
+                String whoAmI() { 'TraitImpl' }
+                String test() { new Receiver().execute { -> whoAmI() } }
+            }
+            class C implements T { }
+
+            assert new C().test() == 'Receiver'
+        '''
+    }
+
+    // Two traits each declaring a public field of the same name: both are
+    // remapped (<Trait>__<field>) and independently accessible. Extends the
+    // single-trait remap of testFieldInTraitModifiers to the collision case.
+    @Test
+    void testTwoTraitsWithSamePublicFieldNameAreRemapped() {
+        assertScript shell, '''
+            trait A { public String name = 'A-name' }
+            trait B { public String name = 'B-name' }
+            class C implements A, B { }
+
+            def c = new C()
+            assert c.A__name == 'A-name'
+            assert c.B__name == 'B-name'
+        '''
+    }
+
+    // Same public field + same property accessor in two traits: the
+    // last-declared trait's getter wins (default conflict resolution).
+    @Test
+    void testTwoTraitsWithSamePublicFieldNameViaGetter() {
+        assertScript shell, '''
+            trait A { public String value = 'from-A'; String display() { value } }
+            trait B { public String value = 'from-B'; String display() { value } }
+            class C implements A, B { }
+
+            assert new C().display() == 'from-B'
+        '''
+    }
+
+    // Same property accessor (getLabel) in two traits, read as a property from
+    // the class: last-declared trait wins (cf. testTraitMethodOverloadAndOverride).
+    @Test
+    void testTwoTraitsWithSamePropertyAccessorAccessedFromClass() {
+        assertScript shell, '''
+            trait A { String getLabel() { 'A' } }
+            trait B { String getLabel() { 'B' } }
+            class C implements A, B { }
+
+            assert new C().label == 'B'
+        '''
+    }
+
+    // Private fields are trait-local: two traits with the same-named mutable
+    // collection field stay isolated. Extends testPrivateFieldNameConflict (int)
+    // to mutable state.
+    @Test
+    void testMultipleTraitsPrivateFieldDoesNotLeak() {
+        assertScript shell, '''
+            trait A { private List items = []; void addA(Object o) { items << o }; int countA() { items.size() } }
+            trait B { private List items = []; void addB(Object o) { items << o }; int countB() { items.size() } }
+            class C implements A, B { }
+
+            def c = new C()
+            c.addA('x'); c.addA('y'); c.addB('z')
+            assert c.countA() == 2
+            assert c.countB() == 1
+        '''
+    }
+
+    // A trait method overrides a Java interface `default` method that the
+    // implementing class inherits via its superclass (PR #2646). Corollary of
+    // "trait wins over superclass", through an interface default.
+    @Test
+    void testTraitForcesOverrideOverSuperclassInterfaceDefault() {
+        assertScript shell, '''
+            interface I { default String who() { 'interface' } }
+            trait T { String who() { 'trait' } }
+            class Base implements I { }
+            class Sub extends Base implements T { }
+
+            assert new Sub().who() == 'trait'
+        '''
+    }
+
+    // `this` inside deeply nested closures in a trait method stays the
+    // implementing instance (PR #2646). Extends the single-level closure tests.
+    @Test
+    void testThisInDeeplyNestedTraitClosureRefersToImplementingInstance() {
+        assertScript shell, '''
+            trait T {
+                String ident() { 'from-trait' }
+                String deepNested() { [1].collect { [1].collect { [1].collect { this.ident() } } }[0][0][0] }
+            }
+            class C implements T { }
+
+            assert new C().deepNested() == 'from-trait'
+        '''
+    }
+
+    // `this` identity holds across nested closures in a trait method (PR #2646):
+    // a captured `this` .is() the `this` seen inside nested closures.
+    @Test
+    void testThisInTraitNestedClosureIdentity() {
+        assertScript shell, '''
+            trait T {
+                boolean check() { def selfRef = this; [1].collect { [1].collect { selfRef.is(this) } }[0][0] }
+            }
+            class C implements T { }
+
+            assert new C().check()
+        '''
+    }
+
+    // Prefix/postfix ++/-- on a trait field/property are rejected at compile
+    // time (GEP-22 Limitations): the field-helper indirection cannot represent
+    // the read-modify-write atomically. The supported workaround is += / -= 1.
+    @Test
+    void testIncrementDecrementOnTraitFieldRejected() {
+        for (op in ['count++', '++count', 'count--', '--count']) {
+            def err = shouldFail(MultipleCompilationErrorsException) {
+                assertScript shell, """
+                    trait T { int count = 0; void bump() { $op } }
+                    class C implements T { }
+                    new C().bump()
+                """
+            }
+            assert err.message.contains('expressions on trait fields/properties are not supported in traits') :
+                "expected the trait ++/-- rejection for '$op', got: ${err.message}"
+        }
+        // the documented += / -= workaround compiles and runs
+        assertScript shell, '''
+            trait T { int count = 0; void bump() { count += 1 } }
+            class C implements T { }
+            def c = new C(); c.bump(); c.bump()
+            assert c.count == 2
         '''
     }
 }

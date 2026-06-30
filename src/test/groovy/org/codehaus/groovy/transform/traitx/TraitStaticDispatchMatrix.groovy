@@ -37,7 +37,7 @@ package org.codehaus.groovy.transform.traitx
 
 import groovy.test.GroovyAssert
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class TraitStaticDispatchMatrix {
 
@@ -299,7 +299,7 @@ class TraitStaticDispatchMatrix {
     // baseline rows) so this is a deliberate alignment with JVM convention,
     // not a TODO.
     @Test
-    void row09_staticFieldOverride_notSeenByTrait_observed() {
+    void row09_staticFieldOverride_notSeenByTrait() {
         def r = ev '''
             trait V {
                 static String origin = 'trait'
@@ -332,6 +332,93 @@ class TraitStaticDispatchMatrix {
             Over.describe()
         '''
         assert r == 'origin is class' : "row9acc: accessor pattern must dispatch through implementer like row 1 (got ${r})"
+    }
+
+    // ---- Row 9v — @Virtual accessor present, direct field read still trait-bound ----
+    // Row 9's static-field non-goal is unaffected by @Virtual: adding a
+    // @Virtual static accessor (which DOES dispatch per-implementer, row 17)
+    // does not promote a bare static-field read in trait code to override-
+    // visibility. directField() reads the trait's own template field exactly
+    // as row 9 — the @Virtual accessor and the raw field reference are
+    // independent paths. (PR #2646 edge case: @Virtual must not perturb row 9.)
+    @Test
+    void row09v_virtualAccessorPresent_directFieldReadStillTraitBound() {
+        def r = ev '''
+            import groovy.transform.Virtual
+            trait V {
+                static String data = 'trait'
+                @Virtual static String getData() { data }
+                static String directField() { data }
+            }
+            class C implements V { static String data = 'class' }
+            C.directField()
+        '''
+        assert r == 'trait' : "row9v: a bare static-field read stays trait-bound even with a @Virtual accessor present (got ${r})"
+    }
+
+    // ---- Row 9accv — @Virtual field-backed accessor, no override: trait default ----
+    // The no-override leg of the accessor pattern (row 9acc) when the trait's
+    // accessor is @Virtual and backed by a static field. With no implementer
+    // override, fetch() reads the trait's own field-backed default. Pairs with
+    // row 17 (the override-visible leg of a @Virtual parent static).
+    @Test
+    void row09accv_virtualFieldBackedAccessor_noOverride_returnsTraitDefault() {
+        def r = ev '''
+            import groovy.transform.Virtual
+            trait V {
+                static String defaultData = 'default-value'
+                @Virtual static String getDefaultData() { defaultData }
+                static String fetch() { defaultData }
+            }
+            class Impl implements V { }
+            Impl.fetch()
+        '''
+        assert r == 'default-value' : "row9accv: @Virtual field-backed accessor with no override returns the trait's default (got ${r})"
+    }
+
+    // ---- Row 9vget — @Virtual static GETTER override visible via property read ----
+    // The getter form of row 1: a @Virtual static getter, overridden on the
+    // implementer, is visible to a trait-body PROPERTY read (describe() reads
+    // `data`, which routes through getData()). The no-override case returns the
+    // trait's own field-backed default. (PR #2646 edge case 5a.)
+    @Test
+    void row09vget_virtualStaticGetterOverrideVisibleViaProperty() {
+        def r = ev '''
+            import groovy.transform.Virtual
+            trait V {
+                private static String myData = 'trait-default'
+                @Virtual static String getData() { myData }
+                static String describe() { data }
+            }
+            class Over implements V { static String getData() { 'overridden' } }
+            class Def implements V { }
+            [Over.describe(), Def.describe()]
+        '''
+        assert r == ['overridden', 'trait-default'] : "row9vget: @Virtual static getter override must be visible to a trait-body property read (got ${r})"
+    }
+
+    // ---- Row 9vfg — implementer overrides both the field and the @Virtual getter ----
+    // The two paths stay independent: a bare static-field read from the trait
+    // body (describe() reads `data`) is trait-bound (row 9 non-goal), while the
+    // implementer's getData() override reads the implementer's own field. So
+    // C.describe() is the trait field and C.getData() is the class field.
+    // (PR #2646 edge case 5c.)
+    @Test
+    void row09vfg_implementerOverridesBothFieldAndGetter() {
+        def r = ev '''
+            import groovy.transform.Virtual
+            trait V {
+                static String data = 'trait-data'
+                @Virtual static String getData() { data }
+                static String describe() { data }
+            }
+            class C implements V {
+                static String data = 'class-data'
+                static String getData() { data }
+            }
+            [C.describe(), C.getData()]
+        '''
+        assert r == ['trait-data', 'class-data'] : "row9vfg: trait-body field read stays trait-bound; implementer getter override reads its own field (got ${r})"
     }
 
     // ---- Row 10 — B extends A implements T: dispatch anchors on A ----
@@ -371,7 +458,7 @@ class TraitStaticDispatchMatrix {
     // an instance receiver. Disambiguate by declaring m on D — see
     // row11esc.
     @Test
-    void row11_traitStaticVsInheritedInstance_observed() {
+    void row11_traitStaticVsInheritedInstance() {
         def r = ev '''
             trait T { static m() { 'T' } }
             class C { def m() { 'C' } }
@@ -389,7 +476,7 @@ class TraitStaticDispatchMatrix {
     // pure-static case this completes the four-cell trait-shadows-class
     // quadrant.
     @Test
-    void row11c_traitInstanceVsInheritedStatic_observed() {
+    void row11c_traitInstanceVsInheritedStatic() {
         def r = ev '''
             trait T { def m() { 'T' } }
             class C { static m() { 'C' } }
