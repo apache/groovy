@@ -18,6 +18,8 @@
  */
 package groovy.sql
 
+import java.sql.SQLException
+
 import static groovy.sql.SqlTestConstants.*
 
 class SqlCompleteTest extends SqlHelperTestCase {
@@ -375,6 +377,26 @@ class SqlCompleteTest extends SqlHelperTestCase {
         def gstring = "A narrow ${foo} supported by a ${bar}!!"
         def result = sql.asSql(gstring, gstring.values.toList())
         assert result == "A narrow ? supported by a ?!!"
+    }
+
+    // GROOVY-12118: by default a quoted dynamic expression (a SQL injection risk) must be rejected
+    void testQuotedGStringExpressionRejectedByDefault() {
+        def name = "x' OR '1'='1"
+        def gstring = "select * from PERSON where firstname = '${name}'"
+        def msg = shouldFail(SQLException) {
+            sql.asSql(gstring, gstring.values.toList())
+        }
+        assert msg.contains('SQL injection')
+        assert msg.contains(Sql.INJECTION_LENIENT)
+        // end-to-end via a query method
+        shouldFail(SQLException) {
+            sql.firstRow("select * from PERSON where firstname = '${name}'")
+        }
+        // SQL double quotes around the expression are detected the same way
+        def dqGString = "select * from PERSON where firstname = \"${name}\""
+        shouldFail(SQLException) {
+            sql.asSql(dqGString, dqGString.values.toList())
+        }
     }
 
     void testNullHandling() {

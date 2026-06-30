@@ -154,6 +154,21 @@ include::../test/SqlTest.groovy[tags=sql_inserting_row_executeInsert,indent=0]
 In addition, both the `execute` and `executeInsert` methods allow you to use GStrings. Any '$' placeholders within the SQL are assumed
 to be placeholders. An escaping mechanism exists if you want to supply part of the GString with a variable in a
 position which isn't where normal placeholders go within SQL. See the GroovyDoc for more details.
+
+[WARNING]
+====
+Do *not* surround an interpolated GString expression with SQL quotes, for example
+`sql.rows("select * from PERSON where name = '${name}'")`. The surrounding quotes prevent Groovy from
+binding the value via a JDBC `PreparedStatement` placeholder, which would reopen a SQL injection hole.
+Simply remove the quotes (`sql.rows("select * from PERSON where name = $name")`) and the value will be
+bound safely as a parameter.
+
+For secure-by-default behaviour, Groovy *rejects* such quoted dynamic expressions by throwing a
+`java.sql.SQLException`. The previous (insecure) behaviour of inlining the value via string concatenation
+can be restored by setting the `groovy.sql.injection.lenient` system property to `true`, but this is
+strongly discouraged.
+====
+
 Also, `executeInsert` allows you to supply a list of key column names, when multiple keys are returned and you are only interested in some of them.
  Here is a fragment illustrating key name specification and GStrings:
 

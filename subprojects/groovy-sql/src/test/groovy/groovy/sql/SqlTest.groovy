@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 
 import java.sql.Connection
+import java.sql.SQLException
 
 import static groovy.sql.SqlTestConstants.DB_DATASOURCE
 import static groovy.sql.SqlTestConstants.DB_DS_KEY
@@ -30,6 +31,7 @@ import static groovy.sql.SqlTestConstants.DB_PASSWORD
 import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
 import static groovy.sql.SqlTestConstants.DB_USER
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * This is more of a sample program than a unit test and is here as an easy
@@ -93,11 +95,17 @@ final class SqlTest {
         assert result.name == 'brie'
     }
 
+    // GROOVY-12118: quoting a dynamic expression prevents safe parameter binding, so it is rejected by default.
+    // The complementary lenient (insecure) behaviour is verified in SqlInjectionLenientTest (which needs a forked JVM).
     @Test
     void testSqlQueryWithIncorrectlyQuotedDynamicExpressions() {
         def foo = "cheese"
         def bar = "edam"
-        sql.eachRow("select * from FOOD where type='${foo}' and name != '${bar}'") { println("Found cheese ${it.name}") }
+        def e = shouldFail(SQLException) {
+            sql.eachRow("select * from FOOD where type='${foo}' and name != '${bar}'") { println("Found cheese ${it.name}") }
+        }
+        assert e.message.contains('SQL injection')
+        assert e.message.contains(Sql.INJECTION_LENIENT)
     }
 
     @Test

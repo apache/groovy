@@ -182,6 +182,14 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * or the GString variants which will be converted to the placeholder variants under the covers:
  * <code>sql.firstRow("select * from PersonTable where SurnameColumn = $userInput")</code>
  * or the named parameter variants discussed next.
+ * <p>
+ * When using the GString variants, do <b>not</b> surround an interpolated expression with SQL quotes,
+ * e.g. <code>sql.firstRow("select * from PersonTable where SurnameColumn = '$userInput'")</code>.
+ * Such quoting prevents Groovy from using a JDBC PreparedStatement placeholder for the value and would
+ * otherwise reopen the SQL injection hole. By default Groovy rejects such queries by throwing a
+ * {@link SQLException}. The (insecure) legacy behaviour of inlining the value via string concatenation
+ * can be restored by setting the {@value #INJECTION_LENIENT} system property to {@code true}, but this
+ * is strongly discouraged.
  *
  * <h4>Named and named ordinal parameters</h4>
  *
@@ -251,6 +259,24 @@ public class Sql implements AutoCloseable {
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
     private static final int USE_COLUMN_NAMES = -1;
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
+
+    /**
+     * Boolean system property which controls how a quoted dynamic expression (an interpolated
+     * GString expression surrounded by SQL quotes, e.g. {@code "... where name = '${value}'"})
+     * is handled by {@link #asSql(GString, List)}.
+     * <p>
+     * Such a construct can't be expressed as a JDBC {@link java.sql.PreparedStatement} placeholder,
+     * so the value would have to be inlined into the SQL string via string concatenation, exposing
+     * a SQL injection vulnerability (CWE-89).
+     * <p>
+     * By default (property unset or any value other than {@code true}) such a query is rejected with
+     * a {@link SQLException}, giving secure-by-default behaviour. Setting the property to {@code true}
+     * restores the legacy (insecure) behaviour of logging a warning and inlining the value; this is
+     * strongly discouraged and provided only for backwards compatibility.
+     *
+     * @since 6.0.0
+     */
+    public static final String INJECTION_LENIENT = "groovy.sql.injection.lenient";
 
     private DataSource dataSource;
 
@@ -4591,9 +4617,11 @@ public class Sql implements AutoCloseable {
      * @param gstring a GString containing the SQL query with embedded params
      * @param values  the values to embed
      * @return the SQL version of the given query using ? instead of any parameter
+     * @throws SQLException if a quoted dynamic expression is detected (a SQL injection risk),
+     *                      unless the {@value #INJECTION_LENIENT} system property is set to {@code true}
      * @see #expand(Object)
      */
-    protected String asSql(GString gstring, List<?> values) {
+    protected String asSql(GString gstring, List<?> values) throws SQLException {
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
@@ -4618,11 +4646,21 @@ public class Sql implements AutoCloseable {
                         if (i < strings.length - 1) {
                             String nextText = strings[i + 1];
                             if ((text.endsWith("\"") || text.endsWith("'")) && (nextText.startsWith("'") || nextText.startsWith("\""))) {
+                                String unsafeExpression = buffer.toString() + "?" + nextText;
+                                if (!Boolean.getBoolean(INJECTION_LENIENT)) {
+                                    throw new SQLException("Detected a quoted dynamic expression (one starting with $) in a " +
+                                            "Groovy SQL query. Surrounding such an expression with quotes prevents the use of a " +
+                                            "JDBC PreparedStatement and exposes a SQL injection vulnerability. Remove the surrounding " +
+                                            "quotes so the value can be bound safely as a parameter. The unsafe expression so far is: " +
+                                            unsafeExpression + ". To restore the previous (insecure) behaviour, set the system property '" +
+                                            INJECTION_LENIENT + "' to 'true'.");
+                                }
                                 if (!warned) {
                                     LOG.warning("In Groovy SQL please do not use quotes around dynamic expressions " +
                                             "(which start with $) as this means we cannot use a JDBC PreparedStatement " +
-                                            "and so is a security hole. Groovy has worked around your mistake but the security hole is still there. " +
-                                            "The expression so far is: " + buffer.toString() + "?" + nextText);
+                                            "and so is a security hole. The '" + INJECTION_LENIENT + "' system property is set to 'true' " +
+                                            "so Groovy has worked around your mistake but the security hole is still there. " +
+                                            "The expression so far is: " + unsafeExpression);
                                     warned = true;
                                 }
                                 buffer.append(value);
