@@ -47,6 +47,8 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -119,7 +121,6 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         if (exp instanceof BinaryExpression) {
             return transformBinaryExpression((BinaryExpression) exp);
         } else if (exp instanceof MethodCallExpression mce) {
-            String obj = mce.getObjectExpression().getText();
             // GROOVY-12104: T.this.m() inside trait code (where T is the
             // enclosing trait) compiles successfully today but generates
             // invalid or mis-typed bytecode that fails at runtime — Verify-
@@ -158,9 +159,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     mce.getLineNumber(), mce.getColumnNumber()));
                 return mce;
             }
-            if ("super".equals(obj)) {
+            if (isSuperExpression(mce.getObjectExpression())) {
                 return transformSuperMethodCall(mce); // super.m(x) --> $self.Ttrait$super$m(x)
-            } else if ("this".equals(obj)) {
+            } else if (isThisExpression(mce.getObjectExpression())) {
                 return transformMethodCallOnThis(mce); // this.m(x) --> $self.m(x) or this.m($self, x)
             }
         } else if (exp instanceof FieldExpression) {

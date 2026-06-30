@@ -130,10 +130,19 @@ final class AsyncAwaitTest {
     void testAwaitableAny() {
         assertScript '''
             import groovy.concurrent.Awaitable
+            import java.util.concurrent.CountDownLatch
 
+            // Gate 'slow' so it cannot complete until after any() has returned,
+            // making completion order deterministic (see
+            // testAsyncSupportAnyReturnsFirstCompletion). The earlier version
+            // raced 'fast' against a 500ms sleep, which 'slow' could win under a
+            // saturated executor since Awaitable.any honours the genuinely-first
+            // completion.
+            def proceed = new CountDownLatch(1)
             def fast = async { 'fast' }
-            def slow = async { Thread.sleep(500); 'slow' }
+            def slow = async { proceed.await(); 'slow' }
             def result = await Awaitable.any(fast, slow)
+            proceed.countDown() // release 'slow' for clean shutdown
             assert result == 'fast'
         '''
     }
@@ -2170,11 +2179,22 @@ final class AsyncAwaitTest {
     void testAsyncSupportAnyReturnsFirstCompletion() {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncSupport
+            import java.util.concurrent.CountDownLatch
 
-            def slow = async { Thread.sleep(100); 'slow' }
+            // Gate 'slow' so it cannot complete until after any() has returned,
+            // making completion order deterministic. The earlier version raced
+            // 'fast' against a 100ms Thread.sleep, but any() honours the
+            // genuinely-first completion: under a saturated executor (full test
+            // suite) 'fast' may not be scheduled within 100ms while 'slow's
+            // sleep timer fires regardless, so 'slow' could win the race.
+            def proceed = new CountDownLatch(1)
+            def slow = async { proceed.await(); 'slow' }
             def fast = async { 'fast' }
 
-            assert AsyncSupport.any(slow, fast) == 'fast'
+            def result = AsyncSupport.any(slow, fast)
+            proceed.countDown() // release 'slow' for clean shutdown
+
+            assert result == 'fast'
         '''
     }
 

@@ -665,10 +665,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 issue = "is not static";
             } else if (methodNode.isPrivate()) {
                 issue = "is private";
-            } else if (methodNode.isAbstract()) {
-                issue = "is abstract";
             } else {
-                continue; // valid
+                continue; // valid (static implies non-abstract)
             }
             AnnotationNode at = virtualAnns.get(0);
             sourceUnit.addError(new SyntaxException(
@@ -694,7 +692,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private static List<MethodNode> collectInterfaceStatics(final ClassNode traitClass) {
         List<MethodNode> result = new ArrayList<>();
         for (MethodNode methodNode : traitClass.getMethods()) {
-            if (methodNode.isStatic() && !methodNode.isPrivate() && !methodNode.isAbstract()
+            if (methodNode.isStatic() && !methodNode.isPrivate() // static implies non-abstract
                     && methodNode.getAnnotations(VIRTUAL_TYPE).isEmpty()) {
                 result.add(methodNode);
             }
