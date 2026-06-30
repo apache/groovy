@@ -72,6 +72,27 @@ import java.util.Set;
  * references to fields of the POGO, literals (i.e. constant Strings or numbers),
  * and variables captured from the enclosing scope. Method calls, arithmetic,
  * and other complex expressions are not currently supported.
+ *
+ * <h4>SQL identifiers and untrusted input</h4>
+ * The table name and column names handled by a {@code DataSet} are SQL <em>identifiers</em>:
+ * they are included directly in the generated SQL because JDBC cannot bind identifiers as
+ * {@code ?} parameters. Row <em>values</em> are always bound as parameters and so are safe against
+ * SQL injection, but identifiers are not. Treat the table name (the constructor argument) and the
+ * column names (the keys of any {@code Map} passed to {@link #add(Map)}) as <strong>trusted</strong>,
+ * developer-controlled values. If such an identifier originates from less-trusted input, validate or
+ * quote it yourself first &mdash; for example with the driver-aware JDBC methods
+ * {@link java.sql.Statement#isSimpleIdentifier(String)} or
+ * {@link java.sql.Statement#enquoteIdentifier(String, boolean)} (Java 9+), which you can reach via
+ * {@link Sql#cacheConnection(groovy.lang.Closure)}:
+ * <pre>
+ * {@code
+ * db.cacheConnection { con ->
+ *     assert con.createStatement().isSimpleIdentifier(userSuppliedName)
+ * }
+ * }
+ * </pre>
+ * Passing untrusted input as an identifier is a SQL-injection risk, exactly as for any hand-built
+ * SQL string (see the "Avoiding SQL injection" notes on {@link Sql}).
  */
 public class DataSet extends Sql {
 
@@ -93,6 +114,9 @@ public class DataSet extends Sql {
 
     /**
      * Creates a {@code DataSet} whose table name is derived from the supplied type.
+     * <p>
+     * The table name is the lower-cased simple name of {@code type}, i.e. a trusted,
+     * compile-time-controlled SQL identifier.
      *
      * @param sql the backing {@link Sql} instance
      * @param type the type whose simple name identifies the table
@@ -110,9 +134,12 @@ public class DataSet extends Sql {
 
     /**
      * Creates a {@code DataSet} for the supplied table.
+     * <p>
+     * The {@code table} name is a trusted SQL identifier included directly in the generated SQL;
+     * do not pass untrusted input (see the class-level note on SQL identifiers and untrusted input).
      *
      * @param sql the backing {@link Sql} instance
-     * @param table the table name to query and update
+     * @param table the trusted table name to query and update
      */
     public DataSet(Sql sql, String table) {
         super(sql);
@@ -278,8 +305,13 @@ public class DataSet extends Sql {
 
     /**
      * Adds the provided map of key-value pairs as a new row in the table represented by this DataSet.
+     * <p>
+     * The map <em>values</em> are bound as JDBC parameters, but the map <em>keys</em> are used as
+     * column names and included directly in the generated SQL. Treat the keys as trusted SQL
+     * identifiers; do not use keys taken from untrusted input (see the class-level note on SQL
+     * identifiers and untrusted input).
      *
-     * @param map the key (column-name), value pairs to add as a new row
+     * @param map the key (column-name), value pairs to add as a new row; keys are treated as trusted identifiers
      * @throws SQLException if a database error occurs
      */
     public void add(Map<String, Object> map) throws SQLException {
