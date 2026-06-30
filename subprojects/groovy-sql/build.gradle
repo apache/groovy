@@ -27,6 +27,7 @@ dependencies {
 //    testImplementation 'com.h2database:h2:1.3.164'
 //    testImplementation 'hsqldb:hsqldb:1.8.0.10'
     testImplementation projects.groovyTest
+    testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testRuntimeOnly(project(':')) {
         because "Tests are using Grapes"
         capabilities {
