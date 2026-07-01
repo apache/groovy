@@ -99,7 +99,7 @@ false_friends:
   - "@ConditionInterrupt"
   - "@CompileStatic"           # correctness/perf, not security
   - "@TypeChecked"
-  - groovy.sql.Sql-non-GString # only GString/bind forms parameterize (P1)
+  - groovy.sql.Sql-non-GString # only GString/bind forms parameterize (P1); Sql.expand & DataSet table/column names are identifiers, not protected
   - groovysh / groovyConsole   # run with user's full privileges; not sandboxed
 
 not_provided:                  # THREAT_MODEL.md#9

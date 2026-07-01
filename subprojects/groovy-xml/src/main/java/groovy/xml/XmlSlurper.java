@@ -108,6 +108,10 @@ import java.util.Stack;
  *
  * Navigation through the returned {@link GPathResult} is lazy, so selectors are
  * evaluated on demand rather than exposing an eager {@code groovy.util.Node} tree.
+ * <p>
+ * {@code XmlSlurper} builds the whole document in memory. For very large documents, bound the input
+ * size or use a streaming / Jackson-based parser instead (e.g. {@code jackson-dataformat-xml}); Groovy
+ * interoperates cleanly with Jackson.
  *
  * @see GPathResult
  */

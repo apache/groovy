@@ -70,6 +70,10 @@ import java.util.Map;
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }
  * </pre>
+ * <p>
+ * {@code XmlParser} builds the whole document into a {@code groovy.util.Node} tree in memory. For very
+ * large documents, bound the input size or use a streaming / Jackson-based parser instead (e.g.
+ * {@code jackson-dataformat-xml}); Groovy interoperates cleanly with Jackson.
  */
 public class XmlParser implements ContentHandler {
 

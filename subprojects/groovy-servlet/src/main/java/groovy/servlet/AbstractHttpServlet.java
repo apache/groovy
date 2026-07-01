@@ -78,6 +78,13 @@ import java.util.regex.Pattern;
  * <pre>
  * reflection = false(default) | true
  * </pre>
+ * <p>
+ * <b>Deployment security notes.</b> The script/template path is resolved from the request URI via the
+ * servlet container's {@code getRealPath}/{@code getResource}; this class relies on the container to
+ * normalize {@code ..} segments and reject path traversal, so operators must not expose an
+ * attacker-writable script root (a Groovlet/template is operator-deployed, trusted code). Response
+ * security headers such as {@code Strict-Transport-Security} (HSTS) and {@code Content-Security-Policy}
+ * are not emitted here — configure them at the TLS-terminating reverse proxy or servlet container.
  */
 public abstract class AbstractHttpServlet extends HttpServlet implements ResourceConnector {
 

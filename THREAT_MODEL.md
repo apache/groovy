@@ -339,6 +339,17 @@ closed the last gap here for the 6.0.0 line; on the 3.0.x/4.0.x/5.0.x branches,
 where it is not (yet) available, depth-bounding untrusted JSON remains a
 downstream responsibility ([§10](#10-downstream-responsibilities)).
 
+**Proportionate size is not amplification.** The `VALID-HARDENING` obligation above is for
+*disproportionate* blow-up driven by a *small* crafted document (a `StackOverflowError`, a
+"billion laughs" expansion, non-linear CPU). A document whose memory cost is merely *proportional*
+to its own (large) size — a big flat JSON array, or a large XML document with no amplification — is
+the ordinary "bound your input" case ([§10](#10-downstream-responsibilities)), not a parser bug:
+`JsonSlurper`, `XmlSlurper`, and `XmlParser` build the whole document in memory. For very large or
+streaming inputs, bound the input size before parsing, or use a streaming / Jackson-based parser —
+Groovy interoperates cleanly with Jackson (the `groovy-yaml`/`groovy-toml`/`groovy-csv` slurpers are
+already Jackson-backed, and `jackson-databind` / `jackson-dataformat-xml` can stand in for the
+built-in JSON/XML slurpers when document size demands it). *(inferred)*
+
 ---
 
 ## 7. Adversary model
@@ -481,7 +492,7 @@ Groovy does **not** claim, and you must not assume, any of the following.
 | `SecureASTCustomizer` | A grammar/AST allow-or-deny filter applied at compile time | Its own javadoc states it "by itself isn't intended to be the complete solution of all security issues when running scripts on the JVM." Bypassable; one layer among many, not a perimeter. *(documented)* |
 | `@ThreadInterrupt` / `@TimedInterrupt` / `@ConditionInterrupt` | Cooperative interruption checks woven into loops/methods to tame *runaway* (buggy) scripts | Cooperative and removable by the code being run; no defense against deliberately malicious scripts. |
 | `@CompileStatic` / `@TypeChecked` | Compile-time type checking for correctness and performance | Not a security control; statically-compiled code is exactly as privileged. |
-| `groovy.sql.Sql` (beyond P1) | Convenience SQL access | Only the GString/bind forms parameterize. A `String` you concatenate yourself, or dynamic identifiers via `Sql.expand`, are **not** protected (CWE-89). |
+| `groovy.sql.Sql` (beyond P1) | Convenience SQL access | Only the GString/bind forms parameterize. A `String` you concatenate yourself, dynamic identifiers via `Sql.expand`, or `DataSet` table/column names, are **not** protected (CWE-89). |
 | The Groovy "shell"/console tools | Developer/operator conveniences | `groovysh`/`groovyConsole` run code with the user's full privileges; they are not multi-tenant or sandboxed. |
 
 Well-known attack classes Groovy does **not** defend against on the
@@ -581,6 +592,9 @@ vulnerabilities** unless a concrete, in-model data-boundary crossing
 | Temp-file/dir creation | Now NIO owner-only (P4) — `KNOWN-NON-FINDING` |
 | Regex, `BigInteger`/`BigDecimal` parsing, hash-collision flooding (JDK treeifies heavily-collided `String`-keyed buckets since Java 8) | DoS bounded by developer-chosen input — `OUT-OF-MODEL: downstream-responsibility` |
 | Deep recursion / unbounded input in Groovy's *own* data parsers (`JsonSlurper`, `XmlSlurper`/`XmlParser`, `groovy-yaml`/`-toml`/`-csv`) | Robustness of code meant to consume untrusted input — **`VALID-HARDENING`** *(maintainer)*; nesting depth is now bounded by default in all of them (JSON via the 6.0.0 `maxNestingDepth` cap, GROOVY-12064), per-parser exposure in [§6](#6-assumptions-about-inputs) |
+| Proportionate memory use from a *large* (not amplified) document handed to `JsonSlurper`/`XmlSlurper`/`XmlParser` | Cost proportional to input size; bound the input or use a streaming/Jackson parser ([§6](#6-assumptions-about-inputs)) — `OUT-OF-MODEL: downstream-responsibility` |
+| `groovy-servlet` building a filesystem path from the request URI (`GroovyServlet`/`TemplateServlet`/`AbstractHttpServlet`) | Groovlets/templates are operator-deployed code ([§3](#3-out-of-scope-explicit-non-goals)); request-path normalization is the servlet container's responsibility — `OUT-OF-MODEL: downstream-responsibility` |
+| Missing response security headers (HSTS/CSP/…) from `groovy-servlet` | Transport/edge concern set at the TLS-terminating proxy or container ([§10](#10-downstream-responsibilities)) — `OUT-OF-MODEL: downstream-responsibility` |
 | Dynamic proxy / runtime class generation (`Proxy`, `ProxyGenerator`) | Core runtime mechanism — `KNOWN-NON-FINDING` |
 | `SecureASTCustomizer` bypass demonstrations | `BY-DESIGN: property-disclaimed` (it is not a sandbox) |
 | Groovy tool/compiler/test output echoing attacker-controlled text (identifiers in errors, values in results), or a dependency emitting agent-targeted text | Faithful output, not sanitized for a downstream sink (shell / browser / SQL / **LLM agent**); the consumer treats it as data — `OUT-OF-MODEL: downstream-responsibility` (see [§3](#3-out-of-scope-explicit-non-goals), [`AGENTS.md`](AGENTS.md)) |

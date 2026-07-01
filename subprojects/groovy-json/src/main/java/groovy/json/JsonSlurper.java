@@ -85,6 +85,12 @@ import java.util.Map;
  * <code><pre>
  *             parser = new JsonSlurper().setType(JsonParserType.INDEX_OVERLAY);
  * </pre></code>
+ * <p>
+ * {@code JsonSlurper} reads the whole document into memory and does not bound total input size (only
+ * nesting depth, via {@link #setMaxNestingDepth(int)}). For very large documents, bound the input size
+ * before parsing, or use a streaming / Jackson-based parser instead; Groovy interoperates cleanly with
+ * Jackson (the {@code groovy-yaml}/{@code groovy-toml}/{@code groovy-csv} slurpers are already
+ * Jackson-backed).
  *
  * @see groovy.json.JsonParserType
  * @since 1.8.0
