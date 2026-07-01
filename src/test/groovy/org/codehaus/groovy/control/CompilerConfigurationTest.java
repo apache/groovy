@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,6 +59,7 @@ public final class CompilerConfigurationTest {
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
+        assertEquals(Collections.singleton("withDefault"), config.getClassTagPreemptionTargets()); // GROOVY-12115
     }
 
     @Test
@@ -226,6 +228,27 @@ public final class CompilerConfigurationTest {
         assertNull(config.getJointCompilationOptions());
     }
 
+    @Test // GROOVY-12115
+    public void testClassTagPreemptionTargets() {
+        CompilerConfiguration init = new CompilerConfiguration();
+        // default holds only Groovy's own known case
+        assertEquals(Collections.singleton("withDefault"), init.getClassTagPreemptionTargets());
+
+        // the setter replaces the set and the copy constructor round-trips it
+        init.setClassTagPreemptionTargets(new LinkedHashSet<>(Arrays.asList("withDefault", "grow")));
+        CompilerConfiguration config = new CompilerConfiguration(init);
+        assertEquals(new LinkedHashSet<>(Arrays.asList("withDefault", "grow")), config.getClassTagPreemptionTargets());
+
+        // the copy is independent of the original
+        config.getClassTagPreemptionTargets().add("other");
+        assertFalse(init.getClassTagPreemptionTargets().contains("other"));
+
+        // a null argument disables preemption (empty, never null)
+        config.setClassTagPreemptionTargets(null);
+        assertNotNull(config.getClassTagPreemptionTargets());
+        assertTrue(config.getClassTagPreemptionTargets().isEmpty());
+    }
+
     @Test
     public void testDefaultConfigurationIsImmutable() {
         CompilerConfiguration config = CompilerConfiguration.DEFAULT;
@@ -262,6 +285,9 @@ public final class CompilerConfigurationTest {
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setScriptBaseClass("");
+        });
+        assertThrows(UnsupportedOperationException.class, () -> { // GROOVY-12115
+            config.setClassTagPreemptionTargets(Collections.emptySet());
         });
         assertThrows(UnsupportedOperationException.class, () -> {
             config.setSourceEncoding("Gutenberg");
