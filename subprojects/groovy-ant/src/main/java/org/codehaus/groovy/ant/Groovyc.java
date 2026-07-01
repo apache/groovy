@@ -54,6 +54,7 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1334,7 +1335,7 @@ public class Groovyc extends MatchingTask {
         // 32767 is the command line length limit on Windows
         if (fork && (count > 32767)) {
             try {
-                File tempFile = File.createTempFile("groovyc-files-", ".txt");
+                File tempFile = Files.createTempFile("groovyc-files-", ".txt").toFile();
                 temporaryFiles.add(tempFile);
                 PrintWriter pw = printWriter(tempFile);
                 for (File srcFile : compileList) {

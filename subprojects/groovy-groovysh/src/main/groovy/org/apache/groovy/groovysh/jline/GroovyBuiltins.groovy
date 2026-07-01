@@ -29,6 +29,7 @@ import org.jline.console.impl.Builtins
 import org.jline.reader.LineReader
 import org.jline.reader.Widget
 
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.function.Function
 import java.util.function.Supplier
@@ -78,7 +79,7 @@ class GroovyBuiltins extends Builtins {
             }
             boolean usingBuffer = opt.args().size() == 0
             if (usingBuffer) {
-                def temp = File.createTempFile('groovysh', '.groovy')
+                def temp = Files.createTempFile('groovysh', '.groovy').toFile()
                 temp.text = engine.buffer
                 input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
             }
@@ -97,7 +98,7 @@ class GroovyBuiltins extends Builtins {
             boolean usingBuffer = opt.args().size() == 0
             def temp = null
             if (usingBuffer) {
-                temp = File.createTempFile('groovysh', '.groovy')
+                temp = Files.createTempFile('groovysh', '.groovy').toFile()
                 temp.text = engine.buffer
                 input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
             }
