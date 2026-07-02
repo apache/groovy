@@ -93,4 +93,32 @@ class DirectoryDeleteTest {
         outside.deleteDir()
         base.deleteDir()
     }
+
+    @Test
+    void testDeleteDirOnSymlinkDoesNotFollowIntoTarget() {
+        def base = Files.createTempDirectory("deleteDirSymlinkSelf").toFile()
+
+        def outside = new File(base, "outside")
+        outside.mkdir()
+        def survivor = new File(outside, "survivor.txt")
+        survivor.write("keep")
+
+        // call deleteDir directly on a symlink pointing at the outside directory
+        def link = new File(base, "link")
+        try {
+            Files.createSymbolicLink(link.toPath(), outside.toPath())
+        } catch (IOException | UnsupportedOperationException e) {
+            assumeTrue(false, "symbolic links not supported on this platform: $e")
+        }
+
+        assert link.deleteDir()
+
+        // the link itself is removed, but the target and its contents survive
+        assert !Files.exists(link.toPath(), LinkOption.NOFOLLOW_LINKS)
+        assert outside.exists()
+        assert survivor.exists()
+        assert survivor.text == "keep"
+
+        base.deleteDir()
+    }
 }

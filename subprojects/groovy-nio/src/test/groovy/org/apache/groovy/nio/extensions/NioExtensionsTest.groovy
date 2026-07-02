@@ -19,10 +19,12 @@
 package org.apache.groovy.nio.extensions
 
 import groovy.io.FileType
+import org.opentest4j.TestAbortedException
 import spock.lang.Specification
 import spock.lang.TempDir
 
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.StandardCopyOption
 
 class NioExtensionsTest extends Specification {
@@ -734,8 +736,8 @@ class NioExtensionsTest extends Specification {
         def link = tree.resolve('link')
         try {
             Files.createSymbolicLink(link, outside)
-        } catch (IOException | UnsupportedOperationException ignored) {
-            return // platform without symbolic link support
+        } catch (IOException | UnsupportedOperationException e) {
+            throw new TestAbortedException("symbolic links not supported on this platform: $e")
         }
 
         when:
@@ -744,6 +746,30 @@ class NioExtensionsTest extends Specification {
         then:
         result
         !Files.exists(tree)
+        Files.exists(survivor)
+        new String(Files.readAllBytes(survivor)) == 'keep'
+    }
+
+    def testDeleteDirOnSymlinkDoesNotFollowIntoTarget() {
+        setup:
+        def base = Files.createTempDirectory(tempDir.toPath(), 'symlinkSelf_')
+        def outside = Files.createDirectory(base.resolve('outside'))
+        def survivor = outside.resolve('survivor.txt')
+        Files.write(survivor, 'keep'.bytes)
+        def link = base.resolve('link')
+        try {
+            Files.createSymbolicLink(link, outside)
+        } catch (IOException | UnsupportedOperationException e) {
+            throw new TestAbortedException("symbolic links not supported on this platform: $e")
+        }
+
+        when:
+        def result = link.deleteDir()
+
+        then:
+        result
+        !Files.exists(link, LinkOption.NOFOLLOW_LINKS)
+        Files.exists(outside)
         Files.exists(survivor)
         new String(Files.readAllBytes(survivor)) == 'keep'
     }
