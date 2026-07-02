@@ -797,7 +797,7 @@ switchExpressionLabel
 
 // GEP-19 structural pattern matching: pattern forms usable in case labels
 casePattern
-    :   (typePattern | recordPattern) (nls caseGuard)?
+    :   (typePattern | recordPattern | listPattern) (nls caseGuard)?
     ;
 
 typePattern
@@ -819,6 +819,33 @@ recordPatternComponent
     |   (DEF | VAR) identifier
     |   typePattern
     |   { "_".equals(_input.LT(1).getText()) }? identifier
+    ;
+
+// a `[...]` label parses as a list pattern whenever its elements fit; whether it
+// is treated as a pattern or keeps legacy isCase semantics is decided in the
+// AST builder (a non-empty literal with no binding form, rest or nested pattern
+// among its elements is rebuilt as a legacy list expression label)
+listPattern
+    :   LBRACK nls (listPatternElements nls)? RBRACK
+    ;
+
+listPatternElements
+    :   listPatternElement (COMMA nls listPatternElement)*
+    ;
+
+listPatternElement
+    :   listPatternRest
+    |   recordPattern
+    |   listPattern
+    |   (DEF | VAR) identifier
+    |   typePattern
+    |   expression
+    ;
+
+// at most one rest binding per list pattern (validated in the AST builder);
+// `...` and `... t` are shortcuts for `var... _` and `var... t`
+listPatternRest
+    :   (DEF | VAR | standardType)? ELLIPSIS identifier?
     ;
 
 caseGuard

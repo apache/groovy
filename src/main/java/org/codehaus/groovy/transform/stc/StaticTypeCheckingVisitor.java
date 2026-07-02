@@ -164,6 +164,7 @@ import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Enum_Type;
 import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.ITERABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
@@ -4865,6 +4866,11 @@ trying: for (ClassNode[] signature : signatures) {
                 typeTest = label.getType(); // legacy class literal label has type-test semantics
             }
             if (typeTest == null) {
+                if (Boolean.TRUE.equals(label.getNodeMetaData("_SWITCH_PATTERN_LIST"))
+                        && !subjectType.isArray() && provablyDisjoint(subjectType, ITERABLE_TYPE)) {
+                    // a list pattern destructures List, array and Iterable values only
+                    addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
+                }
                 if (!isNullConstant(label)) opaqueLabels = true;
                 continue;
             }

@@ -42,6 +42,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
+import org.apache.groovy.runtime.ListPatternSupport;
 import org.apache.groovy.runtime.RecordPatternSupport;
 import org.apache.groovy.util.Maps;
 import org.apache.groovy.util.SystemUtil;
@@ -180,8 +181,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ltX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.minusX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -1118,7 +1122,34 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static boolean containsCasePattern(final SwitchExpressionContext ctx) {
         return ctx.switchBlockStatementExpressionGroup().stream()
                 .flatMap(e -> e.switchExpressionLabel().stream())
-                .anyMatch(e -> asBoolean(e.casePattern()));
+                .anyMatch(e -> isPatternLabel(e.casePattern()));
+    }
+
+    private static boolean isPatternLabel(final CasePatternContext ctx) {
+        if (!asBoolean(ctx)) return false;
+        // a `[...]` label parses via the broader listPattern rule; only a
+        // pattern-shaped literal is treated as a pattern (see isPatternShapedList)
+        return !asBoolean(ctx.listPattern()) || isPatternShapedList(ctx.listPattern());
+    }
+
+    /**
+     * Whether a {@code [...]} literal is a list pattern (GEP-19) rather than a legacy
+     * {@code isCase} label: it is a pattern if and only if it is empty, or some element
+     * is a binding form (a rest binding, a {@code var}/{@code def} binding or a type
+     * pattern) or a nested pattern (a record pattern or a pattern-shaped list literal).
+     */
+    private static boolean isPatternShapedList(final ListPatternContext ctx) {
+        if (!asBoolean(ctx.listPatternElements())) return true; // `[]` is the empty list pattern
+        for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+            if (asBoolean(elementCtx.listPatternRest())
+                    || asBoolean(elementCtx.recordPattern())
+                    || asBoolean(elementCtx.typePattern())
+                    || null != elementCtx.DEF() || null != elementCtx.VAR()
+                    || (asBoolean(elementCtx.listPattern()) && isPatternShapedList(elementCtx.listPattern()))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -1268,6 +1299,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         final Integer acType = ctx.ac.getType();
         if (asBoolean(ctx.CASE())) {
             if (asBoolean(ctx.casePattern())) {
+                if (!isPatternLabel(ctx.casePattern())) {
+                    // a plain list literal that parsed via the broader listPattern rule,
+                    // e.g. `case [1, 2, 3]:` -- it keeps its legacy isCase semantics
+                    if (asBoolean(ctx.casePattern().caseGuard())) {
+                        throw createParsingFailedException("`when` guards are only supported on pattern labels; a list pattern needs a binding form among its elements", ctx.casePattern().caseGuard());
+                    }
+                    return tuple(ctx.CASE().getSymbol(), Collections.singletonList(this.rebuildListExpression(ctx.casePattern().listPattern())), acType);
+                }
                 if (ARROW != acType) {
                     throw createParsingFailedException("`case` with a pattern label supports only the arrow form (`->`)", ctx.casePattern());
                 }
@@ -1295,6 +1334,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         Expression guard = asBoolean(ctx.caseGuard()) ? (Expression) this.visit(ctx.caseGuard().expression()) : null;
         if (asBoolean(ctx.recordPattern())) {
             return this.createRecordPatternLabel(ctx, guard);
+        }
+        if (asBoolean(ctx.listPattern())) {
+            return this.createListPatternLabel(ctx, guard);
         }
 
         TypePatternContext typePatternCtx = ctx.typePattern();
@@ -1444,6 +1486,187 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
+     * Builds a closure case label for a list pattern (GEP-19), e.g.
+     * {@code case [Integer h, var... t] when h > 0 ->} becomes:
+     * <pre>
+     * case { __$$pc1 -> List __$$lv2 = ListPatternSupport.elementsOrNull(__$$pc1)
+     *                   if (__$$lv2 == null) return false
+     *                   if (__$$lv2.size() < 1) return false
+     *                   def __$$le3 = __$$lv2.get(0)
+     *                   if (!(__$$le3 instanceof Integer)) return false
+     *                   Integer h = (Integer) __$$le3
+     *                   List t = ListPatternSupport.rest(__$$lv2, 1, 0)
+     *                   return h > 0 }:
+     * </pre>
+     * List patterns destructure {@code List}, array and {@code Iterable} values,
+     * so element access goes through {@link org.apache.groovy.runtime.ListPatternSupport}.
+     */
+    private Expression createListPatternLabel(final CasePatternContext ctx, final Expression guard) {
+        PatternNode pattern = this.buildListPattern(ctx.listPattern());
+        String candidateName = "__$$pc" + switchPatternVariableSeq++;
+        Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+        List<Statement> checkStatements = new ArrayList<>();
+        appendListPatternExtraction(pattern, varX(candidateName), checkStatements, true);
+        checkStatements.add(returnS(guard != null ? guard : constX(Boolean.TRUE, true)));
+        Expression labelExpr = configureAST(closureX(params(candidate), createBlockStatement(checkStatements)), ctx);
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels;
+        // a list pattern has no type at the head and is always conditional
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_LIST, Boolean.TRUE);
+
+        List<Statement> bindingDecls = new ArrayList<>();
+        if (pattern.hasBindings()) {
+            appendListPatternExtraction(pattern, varX(switchPatternSubjectStack.peek()), bindingDecls, false);
+        }
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecls);
+        return labelExpr;
+    }
+
+    private PatternNode buildListPattern(final ListPatternContext ctx) {
+        PatternNode pattern = new PatternNode();
+        pattern.list = true;
+        pattern.components = new ArrayList<>();
+        if (asBoolean(ctx.listPatternElements())) {
+            boolean restSeen = false;
+            for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+                PatternNode element = this.buildListPatternElement(elementCtx);
+                if (element.rest) {
+                    if (restSeen) {
+                        throw createParsingFailedException("a list pattern supports at most one rest binding", elementCtx);
+                    }
+                    restSeen = true;
+                }
+                pattern.components.add(element);
+            }
+        }
+        return pattern;
+    }
+
+    private PatternNode buildListPatternElement(final ListPatternElementContext ctx) {
+        if (asBoolean(ctx.listPatternRest())) {
+            ListPatternRestContext restCtx = ctx.listPatternRest();
+            PatternNode element = new PatternNode();
+            element.rest = true;
+            if (asBoolean(restCtx.type())) {
+                element.type = this.visitType(restCtx.type());
+            }
+            if (asBoolean(restCtx.identifier())) {
+                String name = this.visitIdentifier(restCtx.identifier());
+                element.name = "_".equals(name) ? null : name; // `_` is bind-and-discard
+            }
+            return element;
+        }
+        if (asBoolean(ctx.recordPattern())) {
+            return this.buildRecordPattern(ctx.recordPattern());
+        }
+        if (asBoolean(ctx.listPattern())) {
+            if (isPatternShapedList(ctx.listPattern())) {
+                return this.buildListPattern(ctx.listPattern());
+            }
+            PatternNode element = new PatternNode(); // a plain list literal element is matched by equality
+            element.constant = this.rebuildListExpression(ctx.listPattern());
+            return element;
+        }
+        PatternNode element = new PatternNode();
+        if (asBoolean(ctx.typePattern())) {
+            element.type = this.visitType(ctx.typePattern().type());
+            String name = this.visitIdentifier(ctx.typePattern().identifier());
+            element.name = "_".equals(name) ? null : name;
+        } else if (null != ctx.DEF() || null != ctx.VAR()) {
+            String name = this.visitIdentifier(ctx.identifier());
+            element.name = "_".equals(name) ? null : name;
+        } else {
+            element.constant = (Expression) this.visit(ctx.expression()); // matched by equality
+        }
+        return element;
+    }
+
+    /** Rebuilds a legacy list expression from a {@code [...]} literal that parsed via the listPattern rule but is not pattern-shaped. */
+    private Expression rebuildListExpression(final ListPatternContext ctx) {
+        List<Expression> expressions = new ArrayList<>();
+        if (asBoolean(ctx.listPatternElements())) {
+            for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+                expressions.add(asBoolean(elementCtx.listPattern())
+                        ? this.rebuildListExpression(elementCtx.listPattern())
+                        : (Expression) this.visit(elementCtx.expression()));
+            }
+        }
+        return configureAST(new ListExpression(expressions), ctx);
+    }
+
+    /**
+     * Emits the destructuring of a list pattern rooted at {@code source}. With
+     * {@code withChecks}, the shape and element checks guard each step (for use in
+     * a case label closure); without, only the statements needed to declare the
+     * pattern variables are emitted (for use in the case body, where the match is
+     * already established). Without a rest binding the pattern requires exactly as
+     * many elements as specified; with one, at least the fixed elements, those
+     * following the rest binding being addressed from the end.
+     */
+    private void appendListPatternExtraction(final PatternNode pattern, final Expression source, final List<Statement> statements, final boolean withChecks) {
+        String elementsName = "__$$lv" + switchPatternVariableSeq++;
+        statements.add(declS(localVarX(elementsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                callX(classX(LIST_PATTERN_SUPPORT_TYPE), "elementsOrNull", args(source))));
+        int n = pattern.components.size();
+        int restIndex = -1;
+        for (int i = 0; i < n; i += 1) {
+            if (pattern.components.get(i).rest) restIndex = i;
+        }
+        int fixed = n - (restIndex < 0 ? 0 : 1);
+        if (withChecks) {
+            statements.add(ifS(eqX(varX(elementsName), nullX()), returnS(constX(Boolean.FALSE, true))));
+            if (restIndex < 0) {
+                statements.add(ifS(neX(callX(varX(elementsName), "size"), constX(fixed, true)), returnS(constX(Boolean.FALSE, true))));
+            } else if (fixed > 0) {
+                statements.add(ifS(ltX(callX(varX(elementsName), "size"), constX(fixed, true)), returnS(constX(Boolean.FALSE, true))));
+            }
+        }
+        for (int i = 0; i < n; i += 1) {
+            PatternNode element = pattern.components.get(i);
+            if (withChecks ? element.isUncheckedWildcard() : !element.hasBindings()) continue;
+            if (element.rest) {
+                String restName = element.name != null ? element.name : "__$$lr" + switchPatternVariableSeq++;
+                statements.add(declS(localVarX(restName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                        callX(classX(LIST_PATTERN_SUPPORT_TYPE), "rest", args(varX(elementsName), constX(i, true), constX(n - i - 1, true)))));
+                if (withChecks && element.type != null) {
+                    statements.add(ifS(notX(callX(classX(LIST_PATTERN_SUPPORT_TYPE), "allInstanceOf",
+                            args(varX(restName), classX(ClassHelper.getWrapper(element.type))))), returnS(constX(Boolean.FALSE, true))));
+                }
+                continue;
+            }
+            Expression indexExpr = (restIndex >= 0 && i > restIndex)
+                    ? minusX(callX(varX(elementsName), "size"), constX(n - i, true))
+                    : constX(i, true);
+            Expression elementAccess = callX(varX(elementsName), "get", args(indexExpr));
+            if (element.constant != null) {
+                statements.add(ifS(notX(eqX(elementAccess, element.constant)), returnS(constX(Boolean.FALSE, true))));
+                continue;
+            }
+            String elementName = "__$$le" + switchPatternVariableSeq++;
+            statements.add(declS(localVarX(elementName), elementAccess));
+            Expression elementVar = varX(elementName);
+            if (element.components != null) { // nested pattern
+                if (element.list) {
+                    appendListPatternExtraction(element, elementVar, statements, withChecks);
+                } else if (withChecks) {
+                    appendRecordPatternChecks(element, elementVar, statements);
+                } else {
+                    appendRecordPatternExtraction(element, elementVar, statements, false);
+                }
+            } else {
+                if (withChecks && element.type != null) {
+                    statements.add(ifS(notX(isInstanceOfX(elementVar, ClassHelper.getWrapper(element.type))), returnS(constX(Boolean.FALSE, true))));
+                }
+                if (element.name != null) {
+                    statements.add(declS(localVarX(element.name, element.type != null ? element.type : ClassHelper.dynamicType()),
+                            element.type != null ? castX(element.type, elementVar) : elementVar));
+                }
+            }
+        }
+    }
+
+    /**
      * Builds the lowered expression for a record pattern in {@code instanceof} (GEP-19),
      * a conjunction of ordinary expressions and {@code instanceof} bindings (JEP 394), e.g.
      * {@code p instanceof Point(int x, var y)} becomes:
@@ -1505,14 +1728,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
     }
 
-    /** A parsed pattern (GEP-19): a record pattern when {@code components} is non-null, otherwise a binding or wildcard. */
+    /** A parsed pattern (GEP-19): a record or list pattern when {@code components} is non-null, otherwise a binding, literal element or wildcard. */
     private static class PatternNode {
-        ClassNode type;               // null for an untyped (var/def) binding or a bare wildcard
-        String name;                  // null for a wildcard or a nested record pattern
-        List<PatternNode> components; // non-null for a record pattern
+        ClassNode type;               // null for an untyped (var/def) binding or a bare wildcard; the element type for a typed rest binding
+        String name;                  // null for a wildcard or a nested pattern
+        List<PatternNode> components; // non-null for a record or list pattern
+        boolean list;                 // components are list pattern elements rather than record components
+        boolean rest;                 // a rest binding element within a list pattern
+        Expression constant;          // a literal element within a list pattern, matched by equality
 
         boolean isUncheckedWildcard() {
-            return type == null && name == null && components == null;
+            return type == null && name == null && components == null && constant == null;
         }
 
         boolean hasBindings() {
@@ -5358,7 +5584,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String SWITCH_PATTERN_TYPE = "_SWITCH_PATTERN_TYPE";
     private static final String SWITCH_PATTERN_GUARDED = "_SWITCH_PATTERN_GUARDED";
     private static final String SWITCH_PATTERN_RECORD = "_SWITCH_PATTERN_RECORD";
+    private static final String SWITCH_PATTERN_LIST = "_SWITCH_PATTERN_LIST";
     private static final ClassNode RECORD_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(RecordPatternSupport.class);
+    private static final ClassNode LIST_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(ListPatternSupport.class);
     private static final String IS_NUMERIC = "_IS_NUMERIC";
     private static final String IS_STRING = "_IS_STRING";
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";
