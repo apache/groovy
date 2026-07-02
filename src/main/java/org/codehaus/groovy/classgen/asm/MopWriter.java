@@ -180,7 +180,9 @@ public class MopWriter {
             Parameter[] parameters = method.getParameters();
             String mopName = getMopMethodName(method, useThis);
             String signature = BytecodeHelper.getMethodDescriptor(returnType, parameters);
-            MethodVisitor mv = controller.getClassVisitor().visitMethod(ACC_PUBLIC | ACC_SYNTHETIC, mopName, signature, null, null);
+            MethodVisitor mv = new PeepholeOptimizingMethodVisitor(
+                                controller.getClassVisitor().visitMethod(
+                                    ACC_PUBLIC | ACC_SYNTHETIC, mopName, signature, null, null));
             controller.setMethodVisitor(mv);
 
             int stackIndex = 0;

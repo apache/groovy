@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
+import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PackageNode;
@@ -56,7 +57,6 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
-import org.codehaus.groovy.ast.IntersectionTypeClassNode;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
@@ -103,6 +103,7 @@ import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter;
+import org.codehaus.groovy.classgen.asm.PeepholeOptimizingMethodVisitor;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.control.SourceUnit;
@@ -622,11 +623,15 @@ public class AsmClassGenerator extends ClassGenerator {
             receiver = parameters[0]; // non-static method or inner class ctor
             parameters = Arrays.copyOfRange(parameters, 1, parameters.length);
         }
-        MethodVisitor mv = classVisitor.visitMethod(
-                node.getModifiers() | (isVargs(parameters) ? ACC_VARARGS : 0), node.getName(),
-                BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters),
-                BytecodeHelper.getGenericsMethodSignature(node),
-                buildExceptions(node.getExceptions()));
+
+        MethodVisitor mv = new PeepholeOptimizingMethodVisitor(
+                                    classVisitor.visitMethod(
+                                        node.getModifiers() | (isVargs(parameters) ? ACC_VARARGS : 0),
+                                        node.getName(),
+                                        BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters),
+                                        BytecodeHelper.getGenericsMethodSignature(node),
+                                        buildExceptions(node.getExceptions())));
+
         controller.setMethodVisitor(mv);
         controller.resetLineNumber();
 
@@ -678,10 +683,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitMaxs(0, 0);
             } catch (Throwable t) {
                 Writer writer = null;
-                if (mv instanceof TraceMethodVisitor) {
+                if (mv instanceof TraceMethodVisitor tmv) {
                     writer = new StringBuilderWriter();
                     PrintWriter p = new PrintWriter(writer);
-                    ((TraceMethodVisitor) mv).p.print(p);
+                    tmv.p.print(p);
                     p.flush();
                 }
                 StringBuilder message = new StringBuilder(64);
@@ -2329,11 +2334,12 @@ public class AsmClassGenerator extends ClassGenerator {
                 while (index<size) {
                     String methodName = "$createListEntry_" + controller.getNextHelperMethodIndex();
                     methods.add(methodName);
-                    mv = controller.getClassVisitor().visitMethod(
-                            ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC,
-                            methodName,
-                            "([Ljava/lang/Object;)V",
-                            null, null);
+                    mv = new PeepholeOptimizingMethodVisitor(
+                            controller.getClassVisitor().visitMethod(
+                                    ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC,
+                                    methodName,
+                                    "([Ljava/lang/Object;)V",
+                                    null, null));
                     controller.setMethodVisitor(mv);
                     mv.visitCode();
                     int methodBlockSize = Math.min(size-index, maxInit);
