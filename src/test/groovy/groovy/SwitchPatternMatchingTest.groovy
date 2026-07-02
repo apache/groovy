@@ -18,6 +18,8 @@
  */
 package groovy
 
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -181,5 +183,170 @@ final class SwitchPatternMatchingTest {
                     break
             }
         '''
+    }
+
+    // GEP-19 phase 2: static type checking of pattern switches
+
+    @Test
+    void testImpossiblePatternRejectedWhenTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Integer i) {
+                switch (i) {
+                    case String s -> s
+                    default       -> 'other'
+                }
+            }
+        '''
+        assert err.message.contains('incompatible with the switch subject type')
+    }
+
+    @Test
+    void testImpossiblePatternIgnoredInDynamicCode() {
+        // dynamic Groovy stays permissive: the arm simply never matches
+        assertScript '''
+            def m(Integer i) {
+                switch (i) {
+                    case String s -> s
+                    default       -> 'other'
+                }
+            }
+            assert m(42) == 'other'
+        '''
+    }
+
+    @Test
+    void testDominatedPatternWarningWhenTypeChecked() {
+        def warnings = patternSwitchWarnings '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case Number n  -> 'number'
+                    case Integer i -> 'integer'
+                    default        -> 'other'
+                }
+            }
+        '''
+        assert warnings.any { it.contains('dominated by a preceding case label') }
+    }
+
+    @Test
+    void testNonExhaustivePatternSwitchWarningWhenTypeChecked() {
+        def warnings = patternSwitchWarnings '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case String s  -> s
+                    case Integer i -> i
+                }
+            }
+        '''
+        assert warnings.any { it.contains('not exhaustive') }
+    }
+
+    @Test
+    void testDefaultBranchMakesPatternSwitchExhaustive() {
+        assert patternSwitchWarnings('''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case String s -> s
+                    default       -> 'other'
+                }
+            }
+        ''').isEmpty()
+    }
+
+    @Test
+    void testUnconditionalPatternMakesPatternSwitchExhaustive() {
+        assert patternSwitchWarnings('''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Integer i) {
+                switch (i) {
+                    case Number n -> n.intValue()
+                }
+            }
+        ''').isEmpty()
+    }
+
+    @Test
+    void testSealedHierarchyCoverageMakesPatternSwitchExhaustive() {
+        assert patternSwitchWarnings('''
+            import groovy.transform.TypeChecked
+            sealed interface Shape permits Circle, Square {}
+            final class Circle implements Shape { double radius = 1 }
+            final class Square implements Shape { double side = 1 }
+            @TypeChecked
+            def area(Shape shape) {
+                switch (shape) {
+                    case Circle c -> 3.14 * c.radius * c.radius
+                    case Square s -> s.side * s.side
+                }
+            }
+        ''').isEmpty()
+    }
+
+    @Test
+    void testIncompleteSealedHierarchyCoverageWarns() {
+        def warnings = patternSwitchWarnings '''
+            import groovy.transform.TypeChecked
+            sealed interface Shape permits Circle, Square {}
+            final class Circle implements Shape { double radius = 1 }
+            final class Square implements Shape { double side = 1 }
+            @TypeChecked
+            def area(Shape shape) {
+                switch (shape) {
+                    case Circle c -> 3.14 * c.radius * c.radius
+                }
+            }
+        '''
+        assert warnings.any { it.contains('not exhaustive') }
+    }
+
+    @Test
+    void testGuardedPatternDoesNotCountTowardsExhaustiveness() {
+        def warnings = patternSwitchWarnings '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Number n) {
+                switch (n) {
+                    case Number x when x.intValue() > 0 -> 'positive'
+                }
+            }
+        '''
+        assert warnings.any { it.contains('not exhaustive') }
+    }
+
+    @Test
+    void testEnumShorthandMixedWithPatternsWhenCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            enum Color { RED, GREEN, BLUE }
+            @CompileStatic
+            def describe(Color c) {
+                switch (c) {
+                    case RED -> 'red'
+                    case Color k when k.name().startsWith('G') -> 'greenish'
+                    default -> 'other'
+                }
+            }
+            assert describe(Color.RED) == 'red'
+            assert describe(Color.GREEN) == 'greenish'
+            assert describe(Color.BLUE) == 'other'
+        '''
+    }
+
+    private static List<String> patternSwitchWarnings(String source) {
+        def cu = new CompilationUnit()
+        cu.addSource('PatternSwitchTestScript.groovy', source)
+        cu.compile(Phases.CLASS_GENERATION)
+        (cu.errorCollector.warnings ?: [])*.message.findAll {
+            it.contains('pattern switch') || it.contains('case pattern')
+        }
     }
 }

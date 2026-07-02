@@ -4817,6 +4817,7 @@ trying: for (ClassNode[] signature : signatures) {
     /** {@inheritDoc} */
     @Override
     public void visitSwitch(final SwitchStatement statement) {
+        checkPatternSwitchLabels(statement); // GEP-19
         typeCheckingContext.pushEnclosingSwitchStatement(statement);
         try {
             Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
@@ -4836,7 +4837,85 @@ trying: for (ClassNode[] signature : signatures) {
     protected void afterSwitchConditionExpressionVisited(final SwitchStatement statement) {
         typeCheckingContext.pushTemporaryTypeInfo();
         Expression conditionExpression = statement.getExpression();
-        conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
+        // GEP-19: a pattern switch is lowered so that its condition is a synthetic
+        // closure parameter; the parser records the original subject (see AstBuilder)
+        Expression subjectExpression = statement.getNodeMetaData("_SWITCH_PATTERN_SUBJECT");
+        conditionExpression.putNodeMetaData(TYPE, getType(subjectExpression != null ? subjectExpression : conditionExpression));
+    }
+
+    /**
+     * Checks the pattern labels of a pattern switch (GEP-19): reports an error for a
+     * pattern that cannot match the switch subject's static type, a warning for a
+     * pattern dominated by a preceding case label, and a warning when the switch is
+     * not exhaustive. Exhaustiveness is only checked when every case label can be
+     * statically analysed (patterns, class literals and {@code null}).
+     */
+    private void checkPatternSwitchLabels(final SwitchStatement statement) {
+        Expression subjectExpression = statement.getNodeMetaData("_SWITCH_PATTERN_SUBJECT");
+        if (subjectExpression == null) return;
+        ClassNode subjectType = wrapTypeIfNecessary(getType(subjectExpression));
+
+        List<ClassNode> priorTypeTests = new ArrayList<>();
+        boolean opaqueLabels = false, unconditional = false;
+        for (CaseStatement caseStatement : statement.getCaseStatements()) {
+            Expression label = caseStatement.getExpression();
+            ClassNode patternType = label.getNodeMetaData("_SWITCH_PATTERN_TYPE");
+            ClassNode typeTest = patternType;
+            if (typeTest == null && label instanceof ClassExpression) {
+                typeTest = label.getType(); // legacy class literal label has type-test semantics
+            }
+            if (typeTest == null) {
+                if (!isNullConstant(label)) opaqueLabels = true;
+                continue;
+            }
+            ClassNode wrappedTest = wrapTypeIfNecessary(typeTest);
+            if (patternType != null && provablyDisjoint(subjectType, wrappedTest)) {
+                addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
+                continue;
+            }
+            for (ClassNode prior : priorTypeTests) {
+                if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
+                    addPatternSwitchWarning("The case pattern is dominated by a preceding case label and will never match", label);
+                    break;
+                }
+            }
+            if (!Boolean.TRUE.equals(label.getNodeMetaData("_SWITCH_PATTERN_GUARDED"))) {
+                priorTypeTests.add(wrappedTest);
+                if (implementsInterfaceOrIsSubclassOf(subjectType, wrappedTest)) unconditional = true;
+            }
+        }
+        if (statement.getDefaultStatement().isEmpty() && !opaqueLabels && !unconditional
+                && !coversAllPermittedSubclasses(subjectType, priorTypeTests)) {
+            addPatternSwitchWarning("The pattern switch is not exhaustive and may match nothing; consider adding a default branch", statement);
+        }
+    }
+
+    private void addPatternSwitchWarning(final String text, final ASTNode node) {
+        Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
+        typeCheckingContext.getErrorCollector().addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, getSourceUnit()));
+    }
+
+    private static boolean provablyDisjoint(final ClassNode subjectType, final ClassNode patternType) {
+        if (isObjectType(subjectType)
+                || subjectType.isArray() || patternType.isArray()
+                || implementsInterfaceOrIsSubclassOf(patternType, subjectType)
+                || implementsInterfaceOrIsSubclassOf(subjectType, patternType)) {
+            return false;
+        }
+        if (subjectType.isInterface()) return Modifier.isFinal(patternType.getModifiers());
+        if (patternType.isInterface()) return Modifier.isFinal(subjectType.getModifiers());
+        return true; // unrelated classes
+    }
+
+    private static boolean coversAllPermittedSubclasses(final ClassNode type, final List<ClassNode> typeTests) {
+        if (!type.isSealed()) return false;
+        List<ClassNode> permittedSubclasses = type.getPermittedSubclasses();
+        if (permittedSubclasses.isEmpty()) return false;
+        for (ClassNode permitted : permittedSubclasses) {
+            boolean covered = typeTests.stream().anyMatch(t -> implementsInterfaceOrIsSubclassOf(permitted, t));
+            if (!covered && !coversAllPermittedSubclasses(permitted, typeTests)) return false;
+        }
+        return true;
     }
 
     /** {@inheritDoc} */

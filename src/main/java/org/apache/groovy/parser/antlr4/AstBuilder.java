@@ -1083,13 +1083,16 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
             Expression subject = this.visitExpressionInPar(ctx.expressionInPar());
             String subjectName = switchPatternSubjectStack.peek();
-            Statement statement = configureAST(
-                    new SwitchStatement(
-                            hasPattern ? varX(subjectName) : subject,
-                            caseStatements,
-                            defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
-                    ),
-                    ctx);
+            SwitchStatement switchStatement = new SwitchStatement(
+                    hasPattern ? varX(subjectName) : subject,
+                    caseStatements,
+                    defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
+            );
+            if (hasPattern) {
+                // read by StaticTypeCheckingVisitor to determine the subject type of a pattern switch
+                switchStatement.putNodeMetaData(SWITCH_PATTERN_SUBJECT, subject);
+            }
+            Statement statement = configureAST(switchStatement, ctx);
             statement = createBlockStatement(List.of(statement));
 
             MethodCallExpression immediateExecution;
@@ -1298,9 +1301,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     returnS(guard)
             );
             labelExpr = configureAST(closureX(params(candidate), guardCode), ctx);
+            labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
         } else {
             labelExpr = configureAST(new ClassExpression(type), typePatternCtx);
         }
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_TYPE, type);
 
         Statement bindingDecl = declS(configureAST(localVarX(name, type), typePatternCtx.identifier()), castX(type, varX(subjectName)));
         labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecl);
@@ -5127,6 +5134,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
     private static final String IS_SWITCH_DEFAULT = "_IS_SWITCH_DEFAULT";
     private static final String SWITCH_TYPE_PATTERN_BINDING = "_SWITCH_TYPE_PATTERN_BINDING";
+    // the next three keys are also read (as literals) by StaticTypeCheckingVisitor
+    private static final String SWITCH_PATTERN_SUBJECT = "_SWITCH_PATTERN_SUBJECT";
+    private static final String SWITCH_PATTERN_TYPE = "_SWITCH_PATTERN_TYPE";
+    private static final String SWITCH_PATTERN_GUARDED = "_SWITCH_PATTERN_GUARDED";
     private static final String IS_NUMERIC = "_IS_NUMERIC";
     private static final String IS_STRING = "_IS_STRING";
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";
