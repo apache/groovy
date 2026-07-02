@@ -1403,7 +1403,8 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
         // delete contained files
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             for (Path path : stream) {
-                if (Files.isDirectory(path)) {
+                // do not follow a symbolic link into its target; delete the link itself
+                if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
                     if (!deleteDir(path)) {
                         return false;
                     }
