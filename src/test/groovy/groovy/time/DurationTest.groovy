@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertTrue
 
+@Deprecated
 class DurationTest {
     @Test
     void testFixedDurationArithmetic() {
@@ -138,7 +139,7 @@ class DurationTest {
     }
 
     @Test
-    void testDatumDependantArithmetic() {
+    void testDatumDependentArithmetic() {
         use(TimeCategory) {
             def start = new Date(961552080000)
             def then = (start + 1.month) + 1.week

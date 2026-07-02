@@ -16,17 +16,20 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.time
+package org.apache.groovy.dateutil
 
 import org.junit.jupiter.api.Test
 
+import static java.util.Calendar.DAY_OF_YEAR
+import static java.util.Calendar.MONTH
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
- * Tests the groovy.time.TimeCategory class. 
- * Most of these tests use January 1 as a start time to avoid 
- * leap years and daylight savings time issues. 
+ * Tests the {@link org.apache.groovy.dateutil.TimeCategory} class, the dequirked
+ * {@code java.util.Date}-flavored parallel to the legacy {@code groovy.time.TimeCategory}.
+ * The arithmetic assertions are ported verbatim from the legacy suite; the final section
+ * exercises the two behaviors that were intentionally changed ("dequirked").
  */
-@Deprecated
 class TimeCategoryTest {
 
     @Test
@@ -145,7 +148,6 @@ class TimeCategoryTest {
         }
     }
 
-
     @Test
     void testDateSubtractionOnSeconds() {
         use(TimeCategory) {
@@ -153,10 +155,8 @@ class TimeCategoryTest {
             def oneSecondLater = new Date(100, 0, 1, 0, 0, 1)
             def twoSecondsLater = new Date(100, 0, 1, 0, 0, 2)
 
-            def result = oneSecondLater - current
-            assert result.seconds == 1
-            result = twoSecondsLater - current
-            assert result.seconds == 2
+            assert (oneSecondLater - current).seconds == 1
+            assert (twoSecondsLater - current).seconds == 2
         }
     }
 
@@ -164,13 +164,8 @@ class TimeCategoryTest {
     void testDateSubtractionOnMinutes() {
         use(TimeCategory) {
             def current = new Date(100, 0, 1, 0, 0, 0)
-            def oneMinuteLater = new Date(100, 0, 1, 0, 1, 0)
-            def twoMinutesLater = new Date(100, 0, 1, 0, 2, 0)
-
-            def result = oneMinuteLater - current
-            assert result.minutes == 1
-            result = twoMinutesLater - current
-            assert result.minutes == 2
+            assert (new Date(100, 0, 1, 0, 1, 0) - current).minutes == 1
+            assert (new Date(100, 0, 1, 0, 2, 0) - current).minutes == 2
         }
     }
 
@@ -178,13 +173,8 @@ class TimeCategoryTest {
     void testDateSubtractionOnHours() {
         use(TimeCategory) {
             def current = new Date(100, 0, 1, 0, 0, 0)
-            def oneHourLater = new Date(100, 0, 1, 1, 0, 0)
-            def twoHoursLater = new Date(100, 0, 1, 2, 0, 0)
-
-            def result = oneHourLater - current
-            assert result.hours == 1
-            result = twoHoursLater - current
-            assert result.hours == 2
+            assert (new Date(100, 0, 1, 1, 0, 0) - current).hours == 1
+            assert (new Date(100, 0, 1, 2, 0, 0) - current).hours == 2
         }
     }
 
@@ -192,29 +182,18 @@ class TimeCategoryTest {
     void testDateSubtractionOnDays() {
         use(TimeCategory) {
             def current = new Date(100, 0, 1, 0, 0, 0)
-            def oneDayLater = new Date(100, 0, 2, 0, 0, 0)
-            def twoDaysLater = new Date(100, 0, 3, 0, 0, 0)
-
-            def result = oneDayLater - current
-            assert result.days == 1
-            result = twoDaysLater - current
-            assert result.days == 2
+            assert (new Date(100, 0, 2, 0, 0, 0) - current).days == 1
+            assert (new Date(100, 0, 3, 0, 0, 0) - current).days == 2
         }
     }
 
     @Test
     void testDateSubtraction_NoYearsOrMonths() {
         use(TimeCategory) {
-            def yearOne = new Date(100, 0, 1, 0, 0, 0)
-            def yearThree = new Date(102, 0, 1, 0, 0, 0)
-
-            def result = yearThree - yearOne
-
-            //do NOT expect months and years to be
-            //set on the result of date subtraction
+            def result = new Date(102, 0, 1, 0, 0, 0) - new Date(100, 0, 1, 0, 0, 0)
+            // date subtraction does not populate months and years
             assert result.years == 0
             assert result.months == 0
-
         }
     }
 
@@ -246,13 +225,59 @@ class TimeCategoryTest {
     }
 
     @Test
-    void testDateEquality() {
+    void testZeroDurationFromNowIsNow() {
         use(TimeCategory) {
-            Date dt1 = 0.days.from.now
-            Date dt2 = new Date(0.days.from.now.time)
+            // Replaces the legacy testDateEquality, whose reproducibility relied on from.now
+            // flooring to midnight. Dequirked, a zero-length duration from now is now, with the
+            // time-of-day preserved; bracket the call so it is robust under scheduling delays.
+            long before = System.currentTimeMillis()
+            Date result = 0.days.from.now
+            long after = System.currentTimeMillis()
+            assert result.time >= before && result.time <= after
+        }
+    }
 
-            assert dt1 == dt2
-            assert dt1.toString() == dt2.toString()
+    // ===== Dequirked behavior (would fail against the legacy groovy.time.TimeCategory) =====
+
+    @Test
+    void testAgoPreservesTimeOfDay() { // DEQUIRK A
+        use(TimeCategory) {
+            def now = Calendar.instance
+            def before = 3.days.ago
+            now.add(DAY_OF_YEAR, -3)
+            // same wall-clock instant; legacy would have floored to midnight
+            assertTrue Math.abs(now.timeInMillis - before.time) < 2000
+        }
+    }
+
+    @Test
+    void testMonthAgoPreservesTimeOfDay() { // DEQUIRK A
+        use(TimeCategory) {
+            def now = Calendar.instance
+            def before = 1.month.ago
+            now.add(MONTH, -1)
+            assertTrue Math.abs(now.timeInMillis - before.time) < 2000
+        }
+    }
+
+    @Test
+    void testWeeksFromNowPreservesTimeOfDay() { // DEQUIRK A
+        use(TimeCategory) {
+            def now = Calendar.instance
+            now.add(DAY_OF_YEAR, 21)
+            def later = 3.weeks.from.now
+            assertTrue Math.abs(now.timeInMillis - later.time) < 2000
+        }
+    }
+
+    @Test
+    void testToMillisecondsIsDeterministic() { // DEQUIRK B
+        use(TimeCategory) {
+            // no dependence on "now": years and months use fixed ChronoUnit estimates
+            assert 1.year.toMilliseconds() == 12.months.toMilliseconds()
+            assert 2.weeks.toMilliseconds() == 14.days.toMilliseconds()
+            assert 5.months.toMilliseconds() ==
+                    5 * java.time.temporal.ChronoUnit.MONTHS.duration.toMillis()
         }
     }
 }

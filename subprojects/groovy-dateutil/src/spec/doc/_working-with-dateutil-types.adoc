@@ -52,3 +52,27 @@ You can also create a new Date or Calendar based on an existing one:
 -------------------------------------
 include::../test/gdk/WorkingWithDateUtilTypesTest.groovy[tags=date_copyWith,indent=0]
 -------------------------------------
+
+=== A number-based DSL for durations
+
+The `org.apache.groovy.dateutil.TimeCategory` category adds properties to numbers for
+producing durations that can be added to or subtracted from `Date` instances:
+
+[source,groovy]
+-------------------------------------
+use (org.apache.groovy.dateutil.TimeCategory) {
+    def christmas = new Date(124, 11, 25)     // 25 Dec 2024
+    assert (christmas + 1.week - 3.days).date == 29
+    assert (christmas - christmas).toMilliseconds() == 0
+
+    def party = 2.hours + 30.minutes
+    assert party.toMilliseconds() == (150 * 60 * 1000)
+}
+-------------------------------------
+
+This is a dequirked, `java.util.Date`-flavored parallel to the (now deprecated)
+`groovy.time.TimeCategory`. Relative to the legacy class, `.ago`/`.from.now` preserve the
+time-of-day uniformly (they no longer floor day/month/year amounts to midnight), and
+`toMilliseconds()` is deterministic (years and months use fixed `java.time.temporal.ChronoUnit`
+estimates rather than resolving against the current date). A `java.time` flavored equivalent,
+`org.apache.groovy.datetime.TimeCategory`, is available in the `groovy-datetime` module.
