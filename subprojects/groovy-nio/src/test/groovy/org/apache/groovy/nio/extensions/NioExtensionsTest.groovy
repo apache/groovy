@@ -724,6 +724,30 @@ class NioExtensionsTest extends Specification {
         !Files.exists(folder)
     }
 
+    def testDeleteDirDoesNotFollowSymlink() {
+        setup:
+        def base = Files.createTempDirectory(tempDir.toPath(), 'symlink_')
+        def outside = Files.createDirectory(base.resolve('outside'))
+        def survivor = outside.resolve('survivor.txt')
+        Files.write(survivor, 'keep'.bytes)
+        def tree = Files.createDirectory(base.resolve('tree'))
+        def link = tree.resolve('link')
+        try {
+            Files.createSymbolicLink(link, outside)
+        } catch (IOException | UnsupportedOperationException ignored) {
+            return // platform without symbolic link support
+        }
+
+        when:
+        def result = tree.deleteDir()
+
+        then:
+        result
+        !Files.exists(tree)
+        Files.exists(survivor)
+        new String(Files.readAllBytes(survivor)) == 'keep'
+    }
+
     def testWithWriter() {
         setup:
         def path = tempFile.toPath()
