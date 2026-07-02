@@ -789,9 +789,22 @@ switchBlockStatementExpressionGroup
     ;
 
 switchExpressionLabel
-    :   (   CASE expressionList[true]
+    :   (   CASE (casePattern | expressionList[true])
         |   DEFAULT
         ) ac=(ARROW | COLON)
+    ;
+
+// GEP-19 structural pattern matching: pattern forms usable in case labels
+casePattern
+    :   typePattern (nls caseGuard)?
+    ;
+
+typePattern
+    :   standardType identifier
+    ;
+
+caseGuard
+    :   { "when".equals(_input.LT(1).getText()) }? identifier nls expression
     ;
 
 expression

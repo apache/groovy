@@ -162,13 +162,22 @@ import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.parser.antlr4.GroovyParser.*;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureEndPosition;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -1012,10 +1021,34 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      *     }
      * }.call()
      * </pre>
+     * If any case label is a pattern (GEP-19), the switch subject is passed as a
+     * closure parameter so pattern bindings can refer to it, e.g.
+     * <pre>
+     * switch(x) {
+     *   case Integer i when i > 0 -> 'p'
+     *   case String s             -> s
+     *   default                   -> 'z'
+     * }
+     * </pre>
+     * will be transformed to:
+     * <pre>
+     * { __$$pv0 ->
+     *     switch(__$$pv0) {
+     *       case { __$$pc1 -> if (!(__$$pc1 instanceof Integer)) return false
+     *                         Integer i = (Integer) __$$pc1
+     *                         return i > 0 }:
+     *                     { Integer i = (Integer) __$$pv0; return 'p' }
+     *       case String:  { String s = (String) __$$pv0; return s }
+     *       default:      return 'z'
+     *     }
+     * }.call(x)
+     * </pre>
      */
     @Override
     public MethodCallExpression visitSwitchExpression(final SwitchExpressionContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
+        boolean hasPattern = containsCasePattern(ctx);
+        switchPatternSubjectStack.push(hasPattern ? "__$$pv" + switchPatternVariableSeq++ : "");
         try {
             validateSwitchExpressionLabels(ctx);
             List<Tuple3<List<Statement>, Boolean, Boolean>> statementsAndArrowAndYieldOrThrow =
@@ -1048,21 +1081,36 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 }
             }
 
+            Expression subject = this.visitExpressionInPar(ctx.expressionInPar());
+            String subjectName = switchPatternSubjectStack.peek();
             Statement statement = configureAST(
                     new SwitchStatement(
-                            this.visitExpressionInPar(ctx.expressionInPar()),
+                            hasPattern ? varX(subjectName) : subject,
                             caseStatements,
                             defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
                     ),
                     ctx);
             statement = createBlockStatement(List.of(statement));
 
-            MethodCallExpression immediateExecution = callX(closureX(null, statement), CALL_STR);
+            MethodCallExpression immediateExecution;
+            if (hasPattern) {
+                Parameter subjectParameter = new Parameter(ClassHelper.dynamicType(), subjectName);
+                immediateExecution = callX(closureX(params(subjectParameter), statement), CALL_STR, args(subject));
+            } else {
+                immediateExecution = callX(closureX(null, statement), CALL_STR);
+            }
             immediateExecution.setImplicitThis(false);
             return immediateExecution;
         } finally {
+            switchPatternSubjectStack.pop();
             switchExpressionRuleContextStack.pop();
         }
+    }
+
+    private static boolean containsCasePattern(final SwitchExpressionContext ctx) {
+        return ctx.switchBlockStatementExpressionGroup().stream()
+                .flatMap(e -> e.switchExpressionLabel().stream())
+                .anyMatch(e -> asBoolean(e.casePattern()));
     }
 
     @Override
@@ -1163,15 +1211,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             }
                             for (int i = 0, n = tuple.getV2().size(); i < n; i += 1) {
                                 Expression expr = tuple.getV2().get(i);
+
+                                // check whether processing the last label. if yes, block statement should be attached.
+                                Statement code = (isLast && i == n - 1) ? codeBlock
+                                        : EmptyStatement.INSTANCE;
+
+                                Statement bindingDecl = expr.getNodeMetaData(SWITCH_TYPE_PATTERN_BINDING);
+                                if (bindingDecl != null && !(code instanceof EmptyStatement)) {
+                                    expr.removeNodeMetaData(SWITCH_TYPE_PATTERN_BINDING);
+                                    code = createBlockStatement(List.of(bindingDecl, code));
+                                }
+
                                 statementList.add(
                                         configureAST(
-                                                new CaseStatement(
-                                                        expr,
-
-                                                        // check whether processing the last label. if yes, block statement should be attached.
-                                                        (isLast && i == n - 1) ? codeBlock
-                                                                : EmptyStatement.INSTANCE
-                                                ),
+                                                new CaseStatement(expr, code),
                                                 firstLabelHolder.get(0)));
                             }
                             break;
@@ -1202,12 +1255,56 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Tuple3<Token, List<Expression>, Integer> visitSwitchExpressionLabel(SwitchExpressionLabelContext ctx) {
         final Integer acType = ctx.ac.getType();
         if (asBoolean(ctx.CASE())) {
+            if (asBoolean(ctx.casePattern())) {
+                if (ARROW != acType) {
+                    throw createParsingFailedException("`case` with a pattern label supports only the arrow form (`->`)", ctx.casePattern());
+                }
+                return tuple(ctx.CASE().getSymbol(), Collections.singletonList(this.visitCasePattern(ctx.casePattern())), acType);
+            }
             return tuple(ctx.CASE().getSymbol(), this.visitExpressionList(ctx.expressionList()), acType);
         } else if (asBoolean(ctx.DEFAULT())) {
             return tuple(ctx.DEFAULT().getSymbol(), Collections.singletonList(EmptyExpression.INSTANCE), acType);
         }
 
         throw createParsingFailedException("Unsupported switch expression label: " + ctx.getText(), ctx);
+    }
+
+    /**
+     * Builds the case label expression for a pattern label (GEP-19). A type pattern
+     * without a guard becomes a plain class literal label; with a {@code when} guard
+     * it becomes a closure label checking the type then evaluating the guard with the
+     * pattern variable in scope. In both forms, the statement declaring the pattern
+     * variable within the case body is attached as node metadata for
+     * {@link #visitSwitchBlockStatementExpressionGroup}.
+     */
+    @Override
+    public Expression visitCasePattern(final CasePatternContext ctx) {
+        TypePatternContext typePatternCtx = ctx.typePattern();
+        ClassNode type = this.visitType(typePatternCtx.type());
+        if (ClassHelper.isPrimitiveType(type)) {
+            throw createParsingFailedException("primitive type patterns are not yet supported", typePatternCtx);
+        }
+        String name = this.visitIdentifier(typePatternCtx.identifier());
+        String subjectName = switchPatternSubjectStack.peek();
+
+        Expression labelExpr;
+        if (asBoolean(ctx.caseGuard())) {
+            Expression guard = (Expression) this.visit(ctx.caseGuard().expression());
+            String candidateName = "__$$pc" + switchPatternVariableSeq++;
+            Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+            Statement guardCode = block(
+                    ifS(notX(isInstanceOfX(varX(candidateName), type)), returnS(constX(Boolean.FALSE, true))),
+                    declS(localVarX(name, type), castX(type, varX(candidateName))),
+                    returnS(guard)
+            );
+            labelExpr = configureAST(closureX(params(candidate), guardCode), ctx);
+        } else {
+            labelExpr = configureAST(new ClassExpression(type), typePatternCtx);
+        }
+
+        Statement bindingDecl = declS(configureAST(localVarX(name, type), typePatternCtx.identifier()), castX(type, varX(subjectName)));
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecl);
+        return labelExpr;
     }
 
     // } statement -------------------------------------------------------------
@@ -4982,6 +5079,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private final Deque<GroovyParserRuleContext> switchExpressionRuleContextStack = new ArrayDeque<>();
 
+    /** Name of the synthetic variable holding the switch subject of the enclosing switch expression ("" if it has no pattern labels). */
+    private final Deque<String> switchPatternSubjectStack = new ArrayDeque<>();
+    private int switchPatternVariableSeq;
+
     private Tuple2<GroovyParserRuleContext, Exception> numberFormatError;
 
     private int visitingClosureCount;
@@ -5025,6 +5126,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String INSIDE_PARENTHESES_LEVEL = "_INSIDE_PARENTHESES_LEVEL";
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
     private static final String IS_SWITCH_DEFAULT = "_IS_SWITCH_DEFAULT";
+    private static final String SWITCH_TYPE_PATTERN_BINDING = "_SWITCH_TYPE_PATTERN_BINDING";
     private static final String IS_NUMERIC = "_IS_NUMERIC";
     private static final String IS_STRING = "_IS_STRING";
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";
