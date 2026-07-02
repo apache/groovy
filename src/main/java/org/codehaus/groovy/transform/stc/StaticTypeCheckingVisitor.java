@@ -4873,6 +4873,16 @@ trying: for (ClassNode[] signature : signatures) {
                 addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
                 continue;
             }
+            Integer recordPatternArity = label.getNodeMetaData("_SWITCH_PATTERN_RECORD");
+            if (recordPatternArity != null) {
+                // a record pattern is conditional (arity and component checks), so it
+                // cannot be proven exhaustive here; leave exhaustiveness unassessed
+                opaqueLabels = true;
+                int componentCount = patternType.getRecordComponents().size();
+                if (componentCount > 0 && componentCount != recordPatternArity) {
+                    addStaticTypeError("The record pattern specifies " + recordPatternArity + " component(s) but " + prettyPrintTypeName(patternType) + " has " + componentCount, label);
+                }
+            }
             for (ClassNode prior : priorTypeTests) {
                 if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
                     addPatternSwitchWarning("The case pattern is dominated by a preceding case label and will never match", label);

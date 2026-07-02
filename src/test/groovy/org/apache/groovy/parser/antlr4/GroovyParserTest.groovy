@@ -532,6 +532,7 @@ final class GroovyParserTest {
         doRunAndTestAntlr4('core/SwitchExpression_25x.groovy')
         doRunAndTestAntlr4('core/SwitchExpression_26x.groovy')
         doRunAndTestAntlr4('core/SwitchExpression_27x.groovy')
+        doRunAndTestAntlr4('core/SwitchExpression_28x.groovy')
     }
 
     @Test
