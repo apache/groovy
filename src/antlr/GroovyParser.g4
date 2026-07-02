@@ -351,7 +351,8 @@ referenceType
     ;
 
 matchingType // see: instanceof
-    :   standardType identifier?
+    :   recordPattern
+    |   standardType identifier?
     ;
 
 standardType // see: returnType

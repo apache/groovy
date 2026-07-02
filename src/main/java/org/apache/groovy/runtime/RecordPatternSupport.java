@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -72,5 +73,25 @@ public final class RecordPatternSupport {
         } catch (MissingMethodException ignore) {
         }
         throw new GroovyRuntimeException("Cannot deconstruct an instance of " + value.getClass().getName() + ": it is neither a record nor does it provide a toList() method");
+    }
+
+    /**
+     * Like {@link #components(Object)} but yields an empty list for {@code null}.
+     * Used by the {@code instanceof} record pattern lowering, whose conjuncts are
+     * combined without short-circuiting and so may deconstruct the (null) default
+     * value of a pattern variable whose type check failed.
+     */
+    public static List<Object> componentsOrEmpty(final Object value) {
+        return value == null ? Collections.emptyList() : components(value);
+    }
+
+    /**
+     * Bounds-safe component access, yielding {@code null} when the index is out of
+     * range. Used by the {@code instanceof} record pattern lowering (see
+     * {@link #componentsOrEmpty}) where a failed arity check does not stop the
+     * remaining component conjuncts from being evaluated.
+     */
+    public static Object component(final List<Object> components, final int index) {
+        return index < components.size() ? components.get(index) : null;
     }
 }

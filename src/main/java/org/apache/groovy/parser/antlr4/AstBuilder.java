@@ -165,6 +165,7 @@ import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.config
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureEndPosition;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -174,6 +175,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
@@ -1437,6 +1439,68 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     statements.add(declS(localVarX(component.name, component.type != null ? component.type : ClassHelper.dynamicType()),
                             component.type != null ? castX(component.type, componentVar) : componentVar));
                 }
+            }
+        }
+    }
+
+    /**
+     * Builds the lowered expression for a record pattern in {@code instanceof} (GEP-19),
+     * a conjunction of ordinary expressions and {@code instanceof} bindings (JEP 394), e.g.
+     * {@code p instanceof Point(int x, var y)} becomes:
+     * <pre>
+     * p instanceof Point __$$rp1
+     *   &amp; RecordPatternSupport.componentsOrEmpty(__$$rp1) instanceof List __$$rc2
+     *   &amp; __$$rc2.size() == 2
+     *   &amp; RecordPatternSupport.component(__$$rc2, 0) instanceof Integer x
+     *   &amp; (RecordPatternSupport.component(__$$rc2, 1) instanceof Object y | true)
+     * </pre>
+     * The conjunction deliberately uses the non-short-circuiting {@code &} operator:
+     * each {@code instanceof} binding declares and default-initialises its variable
+     * where it occurs, so evaluating every conjunct unconditionally keeps all pattern
+     * variables definitely assigned for the bytecode verifier (short-circuit joins
+     * would merge frames in which the variables do not exist). The helper methods
+     * make each conjunct safe to evaluate after an earlier conjunct has failed, and
+     * accessors are only ever invoked on values that passed their own type check.
+     * The {@code | true} form gives {@code var}/{@code def} components their
+     * unconditional semantics: a {@code null} component keeps the match alive and
+     * leaves the binding {@code null}.
+     */
+    private Expression createRecordPatternInstanceof(final Expression left, final org.codehaus.groovy.syntax.Token instanceOf, final RecordPatternContext ctx) {
+        PatternNode pattern = this.buildRecordPattern(ctx);
+        List<Expression> conjuncts = new ArrayList<>();
+        appendRecordPatternInstanceofConjuncts(pattern, left, instanceOf, conjuncts);
+        Expression result = conjuncts.get(0);
+        for (int i = 1, n = conjuncts.size(); i < n; i += 1) {
+            result = binX(result, org.codehaus.groovy.syntax.Token.newSymbol(Types.BITWISE_AND, instanceOf.getStartLine(), instanceOf.getStartColumn()), conjuncts.get(i));
+        }
+        return result;
+    }
+
+    private void appendRecordPatternInstanceofConjuncts(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Expression> conjuncts) {
+        String recordName = "__$$rp" + switchPatternVariableSeq++;
+        conjuncts.add(binX(source, instanceOf, declX(varX(recordName, pattern.type), EmptyExpression.INSTANCE)));
+        // componentsOrEmpty(...) always yields a List; this conjunct just binds it
+        String componentsName = "__$$rc" + switchPatternVariableSeq++;
+        conjuncts.add(binX(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "componentsOrEmpty", args(varX(recordName))), instanceOf,
+                declX(varX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()), EmptyExpression.INSTANCE)));
+        conjuncts.add(eqX(callX(varX(componentsName), "size"), constX(pattern.components.size(), true)));
+        for (int i = 0, n = pattern.components.size(); i < n; i += 1) {
+            PatternNode component = pattern.components.get(i);
+            if (component.isUncheckedWildcard()) continue;
+            Expression componentExpr = callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "component", args(varX(componentsName), constX(i, true)));
+            if (component.components != null) { // nested record pattern
+                appendRecordPatternInstanceofConjuncts(component, componentExpr, instanceOf, conjuncts);
+            } else if (component.type != null) {
+                ClassNode bindType = ClassHelper.getWrapper(component.type);
+                Expression rhs = component.name != null
+                        ? declX(varX(component.name, bindType), EmptyExpression.INSTANCE)
+                        : new ClassExpression(bindType);
+                conjuncts.add(binX(componentExpr, instanceOf, rhs));
+            } else { // var/def binding: unconditional, also matches a null component
+                conjuncts.add(binX(
+                        binX(componentExpr, instanceOf, declX(varX(component.name, ClassHelper.OBJECT_TYPE.getPlainNodeReference()), EmptyExpression.INSTANCE)),
+                        org.codehaus.groovy.syntax.Token.newSymbol(Types.BITWISE_OR, instanceOf.getStartLine(), instanceOf.getStartColumn()),
+                        constX(Boolean.TRUE, true)));
             }
         }
     }
@@ -3488,6 +3552,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
           case INSTANCEOF:
             ctx.matchingType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            if (asBoolean(ctx.matchingType().recordPattern())) { // GEP-19
+                return configureAST(
+                        this.createRecordPatternInstanceof(
+                                (Expression) this.visit(ctx.left),
+                                this.createGroovyToken(ctx.op),
+                                ctx.matchingType().recordPattern()),
+                        ctx);
+            }
             return configureAST(
                     new BinaryExpression(
                             (Expression) this.visit(ctx.left),
