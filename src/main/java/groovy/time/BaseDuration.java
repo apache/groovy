@@ -30,7 +30,11 @@ import java.util.List;
  * Base class for date and time durations.
  *
  * @see Duration
+ * @deprecated Superseded by the quirk-free DSLs: {@code org.apache.groovy.dateutil.TimeCategory}
+ * (and its {@code java.util.Date}-based duration classes) or {@code org.apache.groovy.datetime.TimeCategory}
+ * (producing {@code java.time} types). This legacy class is retained, unchanged, for backward compatibility.
  */
+@Deprecated
 public abstract class BaseDuration implements Comparable<BaseDuration> {
     /**
      * Year component.

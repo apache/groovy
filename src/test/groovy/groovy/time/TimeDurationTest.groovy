@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*
 /**
  * Unit tests for {@link TimeDuration} class.
  */
+@Deprecated
 class TimeDurationTest {
 
     @Test

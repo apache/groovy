@@ -37,7 +37,12 @@ import java.util.TimeZone;
  * </pre>
  *
  * @see BaseDuration
+ * @deprecated Use one of the quirk-free replacements instead:
+ * {@code org.apache.groovy.datetime.TimeCategory} (produces {@code java.time} types) or
+ * {@code org.apache.groovy.dateutil.TimeCategory} (produces {@code java.util.Date}). This
+ * legacy category is retained, unchanged, for backward compatibility.
  */
+@Deprecated
 public class TimeCategory {
     /*
      * Methods to allow Date Duration arithmetic

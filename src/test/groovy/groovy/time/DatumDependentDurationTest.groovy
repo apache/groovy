@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*
  * DatumDependentDuration represents durations whose length in milliseconds
  * cannot be determined without knowing the datum point (e.g., months, years).
  */
+@Deprecated
 class DatumDependentDurationTest {
 
     // ===== Constructor and Getter Tests =====

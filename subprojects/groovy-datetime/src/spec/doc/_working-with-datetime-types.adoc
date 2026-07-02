@@ -302,6 +302,39 @@ result is negative:
 include::../test/gdk/WorkingWithDateTimeTypesTest.groovy[tags=rightshift_operator_negative,indent=0]
 -------------------------------------
 
+=== A number-based DSL for periods and durations
+
+The `org.apache.groovy.datetime.TimeCategory` category adds properties to numbers for
+producing `Duration` (time-based) and `Period` (date-based) values, giving a concise DSL
+for date/time manipulation:
+
+[source,groovy]
+-------------------------------------
+import java.time.LocalDate
+import java.time.LocalDateTime
+use (org.apache.groovy.datetime.TimeCategory) {
+    assert 1.hour == java.time.Duration.ofHours(1)
+    assert 2.months == java.time.Period.ofMonths(2)
+
+    // apply amounts to temporals via their native arithmetic
+    assert LocalDate.of(2000, 1, 1) + 2.months == LocalDate.of(2000, 3, 1)
+
+    // date-based and time-based amounts compose by chaining
+    def base = LocalDateTime.of(2000, 1, 1, 0, 0, 0)
+    assert base + 1.month + 3.hours == LocalDateTime.of(2000, 2, 1, 3, 0, 0)
+
+    // relative-time terminals: a Period yields a LocalDate, a Duration a LocalDateTime
+    assert 2.days.ago instanceof LocalDate
+    assert 1.hour.from.now instanceof LocalDateTime
+}
+-------------------------------------
+
+Time-based units (`nanoseconds`, `milliseconds`, `seconds`, `minutes`, `hours`) produce a
+`Duration`; date-based units (`days`, `weeks`, `months`, `years`) produce a `Period`. This is
+the modern counterpart to the (now deprecated) `groovy.time.TimeCategory`. A `java.util.Date`
+flavored equivalent, `org.apache.groovy.dateutil.TimeCategory`, is available in the
+`groovy-dateutil` module.
+
 == Converting between legacy and JSR 310 types
 
 Despite the shortcomings of `Date`, `Calendar`, and `TimeZone` types in the `java.util` package
