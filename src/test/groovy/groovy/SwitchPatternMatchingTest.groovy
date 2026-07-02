@@ -994,6 +994,46 @@ final class SwitchPatternMatchingTest {
         assert err.message.contains('map pattern is incompatible with the switch subject type')
     }
 
+    @Test
+    void testPatternVariableNamesMayRepeatAcrossArms() {
+        // each arm of a pattern switch has its own scope
+        assertScript '''
+            record Circle(int r) {}
+            record Square(int side) {}
+            def area(shape) {
+                switch (shape) {
+                    case Circle(var d) -> 3 * d * d
+                    case Square(var d) -> d * d
+                    case Integer d     -> d
+                    default            -> 0
+                }
+            }
+            assert area(new Circle(2)) == 12
+            assert area(new Square(3)) == 9
+            assert area(5) == 5
+        '''
+    }
+
+    @Test
+    void testRecordDeconstructedOncePerMatch() {
+        // the closure-free lowering binds pattern variables while matching,
+        // so a matched record is deconstructed exactly once
+        assertScript '''
+            class Counter {
+                static int reads = 0
+                final int value
+                Counter(int value) { this.value = value }
+                List toList() { reads++; [value] }
+            }
+            def r = switch (new Counter(7)) {
+                case Counter(var v) -> v
+                default             -> -1
+            }
+            assert r == 7
+            assert Counter.reads == 1
+        '''
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)

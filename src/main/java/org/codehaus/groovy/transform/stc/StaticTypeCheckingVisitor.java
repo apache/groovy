@@ -4241,6 +4241,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             addStaticTypeError("Cannot resolve dynamic method name at compile time", call.getMethod());
             return;
         }
+        Expression closureOfPatternSwitch = call.getObjectExpression(); // GEP-19: the closure-free lowering of an all-pattern switch
+        List<Expression> patternSwitchArms = closureOfPatternSwitch.getNodeMetaData("_SWITCH_PATTERN_ARMS");
+        if (patternSwitchArms != null) {
+            checkPatternSwitchLabels(closureOfPatternSwitch.getNodeMetaData("_SWITCH_PATTERN_SUBJECT"), patternSwitchArms,
+                    Boolean.TRUE.equals(closureOfPatternSwitch.getNodeMetaData("_SWITCH_PATTERN_DEFAULT")), call);
+        }
         if (extension.beforeMethodCall(call)) {
             extension.afterMethodCall(call);
             return;
@@ -4854,12 +4860,26 @@ trying: for (ClassNode[] signature : signatures) {
     private void checkPatternSwitchLabels(final SwitchStatement statement) {
         Expression subjectExpression = statement.getNodeMetaData("_SWITCH_PATTERN_SUBJECT");
         if (subjectExpression == null) return;
+        List<Expression> labels = new ArrayList<>();
+        for (CaseStatement caseStatement : statement.getCaseStatements()) {
+            labels.add(caseStatement.getExpression());
+        }
+        checkPatternSwitchLabels(subjectExpression, labels, !statement.getDefaultStatement().isEmpty(), statement);
+    }
+
+    /**
+     * The pattern switch label checks, shared between the two lowerings of a pattern
+     * switch (GEP-19): the closure-label lowering retains a {@code SwitchStatement}
+     * whose case expressions carry the pattern metadata, while the closure-free
+     * lowering of an all-pattern switch attaches the arm condition expressions to
+     * the generated call (see the parser's AstBuilder).
+     */
+    private void checkPatternSwitchLabels(final Expression subjectExpression, final List<Expression> labels, final boolean hasDefault, final ASTNode switchNode) {
         ClassNode subjectType = wrapTypeIfNecessary(getType(subjectExpression));
 
         List<ClassNode> priorTypeTests = new ArrayList<>();
         boolean opaqueLabels = false, unconditional = false;
-        for (CaseStatement caseStatement : statement.getCaseStatements()) {
-            Expression label = caseStatement.getExpression();
+        for (Expression label : labels) {
             ClassNode patternType = label.getNodeMetaData("_SWITCH_PATTERN_TYPE");
             ClassNode typeTest = patternType;
             if (typeTest == null && label instanceof ClassExpression) {
@@ -4905,9 +4925,9 @@ trying: for (ClassNode[] signature : signatures) {
                 if (implementsInterfaceOrIsSubclassOf(subjectType, wrappedTest)) unconditional = true;
             }
         }
-        if (statement.getDefaultStatement().isEmpty() && !opaqueLabels && !unconditional
+        if (!hasDefault && !opaqueLabels && !unconditional
                 && !coversAllPermittedSubclasses(subjectType, priorTypeTests)) {
-            addPatternSwitchWarning("The pattern switch is not exhaustive and may match nothing; consider adding a default branch", statement);
+            addPatternSwitchWarning("The pattern switch is not exhaustive and may match nothing; consider adding a default branch", switchNode);
         }
     }
 
