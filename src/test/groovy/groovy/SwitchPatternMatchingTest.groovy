@@ -502,6 +502,308 @@ final class SwitchPatternMatchingTest {
         '''
     }
 
+    @Test
+    void testListPatternDispatch() {
+        assertScript '''
+            def describe(x) {
+                switch (x) {
+                    case []               -> 'empty'
+                    case [var only]       -> "one: $only"
+                    case [var a, var b]   -> "two: $a, $b"
+                    default               -> 'other'
+                }
+            }
+            assert describe([]) == 'empty'
+            assert describe([42]) == 'one: 42'
+            assert describe([1, 2]) == 'two: 1, 2'
+            assert describe([1, 2, 3]) == 'other'
+            assert describe('s') == 'other'   // not a List, array or Iterable
+            assert describe([a: 1]) == 'other'
+            assert describe(null) == 'other'  // patterns do not match null
+        '''
+    }
+
+    @Test
+    void testListPatternRestForms() {
+        assertScript '''
+            def r = switch ([1, 2, 3]) {
+                case [var h, var... t] -> "h=$h, t=$t"
+                default                -> 'no'
+            }
+            assert r == 'h=1, t=[2, 3]'
+            def r2 = switch ([1]) {
+                case [var h, var... t] -> "h=$h, t=$t"
+                default                -> 'no'
+            }
+            assert r2 == 'h=1, t=[]'
+            def r3 = switch (['a', 'b']) {
+                case [... t] -> t        // `... t` is a shortcut for `var... t`
+                default      -> 'no'
+            }
+            assert r3 == ['a', 'b']
+            def r4 = switch (1..4) {
+                case [var first, var... middle, var last] -> "$first, $middle, $last"
+                default                                   -> 'no'
+            }
+            assert r4 == '1, [2, 3], 4'
+        '''
+    }
+
+    @Test
+    void testEmptyAndBareRestListPatterns() {
+        assertScript '''
+            def shape(x) {
+                switch (x) {
+                    case []    -> 'empty'
+                    case [...] -> 'non-empty'
+                    default    -> 'not a list'
+                }
+            }
+            assert shape([]) == 'empty'
+            assert shape([1, 2]) == 'non-empty'
+            assert shape(42) == 'not a list'
+            // without a preceding empty case, `[...]` matches any list, including empty
+            def r = switch ([]) {
+                case [...] -> 'any list'
+                default    -> 'no'
+            }
+            assert r == 'any list'
+        '''
+    }
+
+    @Test
+    void testListPatternTypedElements() {
+        assertScript '''
+            def r = switch ([1, 'x']) {
+                case [Integer i, String s] -> "$i-$s"
+                default                    -> 'no'
+            }
+            assert r == '1-x'
+            def r2 = switch (['x', 1]) {
+                case [Integer i, String s] -> "$i-$s"
+                default                    -> 'no'
+            }
+            assert r2 == 'no'
+            def r3 = switch ([1, null]) {
+                case [Integer i, String s] -> "$i-$s" // typed element does not match null
+                case [Integer i, var v]    -> "$i:$v" // var element does
+                default                    -> 'no'
+            }
+            assert r3 == '1:null'
+        '''
+    }
+
+    @Test
+    void testListPatternTypedRest() {
+        assertScript '''
+            def sum(x) {
+                switch (x) {
+                    case [Integer... nums] -> nums.sum() ?: 0
+                    default                -> 'not all ints'
+                }
+            }
+            assert sum([1, 2, 3]) == 6
+            assert sum([]) == 0
+            assert sum([1, 'x']) == 'not all ints'
+        '''
+    }
+
+    @Test
+    void testListPatternLiteralElements() {
+        assertScript '''
+            def r = switch ([1, 9, 8]) {
+                case [1, var x, ...] -> "starts with 1, then $x"
+                default              -> 'no'
+            }
+            assert r == 'starts with 1, then 9'
+            def r2 = switch ([2, 9]) {
+                case [1, var x, ...] -> 'yes'
+                default              -> 'no'
+            }
+            assert r2 == 'no'
+        '''
+    }
+
+    @Test
+    void testListPatternGuard() {
+        assertScript '''
+            def r = switch ([1, 2]) {
+                case [var a, var b] when a < b -> 'ascending'
+                case [var a, var b]            -> 'other pair'
+                default                        -> 'no'
+            }
+            assert r == 'ascending'
+            def r2 = switch ([2, 1]) {
+                case [var a, var b] when a < b -> 'ascending'
+                case [var a, var b]            -> 'other pair'
+                default                        -> 'no'
+            }
+            assert r2 == 'other pair'
+        '''
+    }
+
+    @Test
+    void testNestedPatternsInListPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def r = switch ([new Point(3, 4), 'z']) {
+                case [Point(var x, _), var tag] -> "$x-$tag"
+                default                         -> 'no'
+            }
+            assert r == '3-z'
+            def r2 = switch ([[1], 2]) {
+                case [[var a], var b] -> "$a, $b"
+                default               -> 'no'
+            }
+            assert r2 == '1, 2'
+            def r3 = switch ([1, 2]) {
+                case [[var a], var b] -> "$a, $b" // 1 is not destructurable
+                default               -> 'no'
+            }
+            assert r3 == 'no'
+        '''
+    }
+
+    @Test
+    void testListPatternDestructuresArraysAndIterables() {
+        assertScript '''
+            def describe(x) {
+                switch (x) {
+                    case [var a, var... rest] -> "$a+${rest.size()}"
+                    default                   -> 'no'
+                }
+            }
+            assert describe(new int[] {7, 8, 9}) == '7+2'
+            assert describe(new String[] {'a'}) == 'a+0'
+            assert describe([10, 20] as LinkedHashSet) == '10+1'
+        '''
+    }
+
+    @Test
+    void testListPatternWildcardElements() {
+        assertScript '''
+            def r = switch ([1, 2, 3]) {
+                case [var _, var x, var _] -> x  // `var _` is bind-and-discard
+                default                    -> 'no'
+            }
+            assert r == 2
+            def r2 = switch ([1, 2, 3, 4]) {
+                case [var h, ... _] -> h
+                default             -> 'no'
+            }
+            assert r2 == 1
+        '''
+    }
+
+    @Test
+    void testListPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            def m(Object o) {
+                switch (o) {
+                    case [Integer a, var... t] -> a + t.size()
+                    case []                    -> 0
+                    default                    -> -1
+                }
+            }
+            assert m([5, 'x', 'y']) == 7
+            assert m([]) == 0
+            assert m('s') == -1
+        '''
+    }
+
+    @Test
+    void testLegacyListLiteralLabelsKeepIsCaseSemantics() {
+        // a list literal without a binding form keeps its legacy containment semantics
+        assertScript '''
+            def r = switch (2) {
+                case [1, 2, 3] -> 'contained'
+                default        -> 'no'
+            }
+            assert r == 'contained'
+            def r2 = switch (5) {
+                case [1, 2, 3] -> 'contained'
+                default        -> 'no'
+            }
+            assert r2 == 'no'
+            def r3 = switch (2) {
+                case [1, 2, 3]: yield 'contained' // colon form stays legacy as well
+                default: yield 'no'
+            }
+            assert r3 == 'contained'
+            def r4 = switch ([1, 2]) {
+                case [[1, 2], [3, 4]] -> 'contained' // nested literals stay legacy too
+                default               -> 'no'
+            }
+            assert r4 == 'contained'
+            def r5 = switch (3) {
+                case [1, 2, 3] -> 'contained' // legacy containment amid pattern labels
+                case Integer i -> "int $i"
+                default        -> 'no'
+            }
+            assert r5 == 'contained'
+            def r6 = switch (7) {
+                case [1, 2, 3] -> 'contained'
+                case Integer i -> "int $i"
+                default        -> 'no'
+            }
+            assert r6 == 'int 7'
+        '''
+    }
+
+    @Test
+    void testGuardOnLegacyListLabelRejected() {
+        def err = shouldFail '''
+            def r = switch (2) {
+                case [1, 2, 3] when true -> 'x'
+                default                  -> 'y'
+            }
+        '''
+        assert err.message.contains('`when` guards are only supported on pattern labels')
+    }
+
+    @Test
+    void testListPatternSupportsAtMostOneRestBinding() {
+        def err = shouldFail '''
+            def r = switch ([1, 2]) {
+                case [var... a, var... b] -> 'x'
+                default                   -> 'y'
+            }
+        '''
+        assert err.message.contains('at most one rest binding')
+    }
+
+    @Test
+    void testListPatternIncompatibleSubjectRejectedWhenTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Integer i) {
+                switch (i) {
+                    case [var a] -> a
+                    default      -> 'other'
+                }
+            }
+        '''
+        assert err.message.contains('list pattern is incompatible with the switch subject type')
+    }
+
+    @Test
+    void testListPatternExhaustivenessUnassessed() {
+        // a list pattern is always conditional, so no exhaustiveness warning is issued
+        assert patternSwitchWarnings('''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(List l) {
+                switch (l) {
+                    case [var a] -> a
+                    case []      -> 0
+                }
+            }
+        ''').isEmpty()
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)
