@@ -20,6 +20,7 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class InstanceofTest {
@@ -222,5 +223,103 @@ final class InstanceofTest {
             y = { -> s + 'bar' }()
         }
         assert y == 'foobar'
+    }
+
+    // GEP-19: record patterns in instanceof
+
+    @Test
+    void testRecordPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def p = new Point(3, 4)
+            if (p instanceof Point(int x, int y)) {
+                assert x == 3 && y == 4
+            } else {
+                assert false : 'expected match'
+            }
+            assert !('s' instanceof Point(int x, int y))
+        '''
+    }
+
+    @Test
+    void testRecordPatternInCondition() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def p = new Point(3, 4)
+            assert p instanceof Point(int x, _) && x == 3
+            def r = p instanceof Point(var a, var b) ? a + b : -1
+            assert r == 7
+        '''
+    }
+
+    @Test
+    void testNestedRecordPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            record Line(Point start, Point end) {}
+            def l = new Line(new Point(0, 1), new Point(4, 5))
+            if (l instanceof Line(Point(_, var y1), Point p2)) {
+                assert y1 == 1
+                assert p2.x() == 4
+            } else {
+                assert false : 'expected match'
+            }
+        '''
+    }
+
+    @Test
+    void testRecordPatternComponentTypeAndArity() {
+        assertScript '''
+            record Box(Object value) {}
+            assert new Box('t') instanceof Box(String s) && s == 't'
+            assert !(new Box(42) instanceof Box(String s2))
+            record Point(int x, int y) {}
+            assert !(new Point(1, 2) instanceof Point(var a))       // arity mismatch
+        '''
+    }
+
+    @Test
+    void testRecordPatternVarBindsNullComponent() {
+        assertScript '''
+            record Box(Object value) {}
+            def b = new Box(null)
+            if (b instanceof Box(var v)) {
+                assert v == null
+            } else {
+                assert false : 'var component should match null'
+            }
+            assert !(b instanceof Box(String s)) // typed component does not match null
+        '''
+    }
+
+    @Test
+    void testRecordPatternInWhileLoop() {
+        assertScript '''
+            record Cons(Object head, Object tail) {}
+            def list = new Cons(1, new Cons(2, new Cons(3, null)))
+            def sum = 0
+            while (list instanceof Cons(Integer h, var t)) {
+                sum += h
+                list = t
+            }
+            assert sum == 6
+        '''
+    }
+
+    @Test
+    void testRecordPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            @CompileStatic
+            def m(Object o) {
+                if (o instanceof Point(int x, int y)) {
+                    return x + y
+                }
+                return -1
+            }
+            assert m(new Point(3, 4)) == 7
+            assert m('s') == -1
+        '''
     }
 }
