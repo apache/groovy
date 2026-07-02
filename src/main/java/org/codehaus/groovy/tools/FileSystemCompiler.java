@@ -40,6 +40,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -359,7 +360,8 @@ public class FileSystemCompiler {
         if (!file.exists()) {
             return;
         }
-        if (file.isFile()) {
+        if (Files.isSymbolicLink(file.toPath()) || file.isFile()) {
+            // for a symbolic link, remove the link itself rather than following it into the target
             file.delete();
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
