@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.time.Timed;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -207,6 +208,85 @@ public class DefaultGroovyStaticMethods {
      */
     public static void sleep(Object self, long milliseconds, Closure onInterrupt) {
         sleepImpl(milliseconds, onInterrupt);
+    }
+
+    /**
+     * Executes the given closure and returns the elapsed time in nanoseconds.
+     * <p>
+     * Timing uses {@link System#nanoTime()}, which is monotonic and unaffected by
+     * wall-clock adjustments. The closure is executed synchronously on the calling
+     * thread and any exception it throws propagates unchanged (the elapsed time is
+     * not reported in that case). Its result, if any, is discarded; use
+     * {@link #timed(System, Closure)} when the result is also needed.
+     * <pre class="groovyTestCase">
+     * long elapsed = System.timedNanos { (1..1_000).sum() }
+     * assert elapsed &gt;= 0
+     * </pre>
+     *
+     * @param self placeholder variable used by Groovy categories; ignored for default static methods
+     * @param code the closure to execute and time
+     * @return the elapsed time in nanoseconds
+     * @see #timedMillis(System, Closure)
+     * @see #timed(System, Closure)
+     * @since 6.0.0
+     */
+    public static long timedNanos(System self, Closure<?> code) {
+        long start = System.nanoTime();
+        code.call();
+        return System.nanoTime() - start;
+    }
+
+    /**
+     * Executes the given closure and returns the elapsed time in whole milliseconds.
+     * <p>
+     * This is a convenience for {@code timedNanos(code) / 1_000_000}. Timing uses
+     * {@link System#nanoTime()}, which is monotonic and unaffected by wall-clock
+     * adjustments. The closure is executed synchronously on the calling thread and
+     * any exception it throws propagates unchanged. Its result, if any, is
+     * discarded; use {@link #timed(System, Closure)} when the result is also needed.
+     * <pre class="groovyTestCase">
+     * long elapsed = System.timedMillis { (1..1_000).sum() }
+     * assert elapsed &gt;= 0
+     * </pre>
+     *
+     * @param self placeholder variable used by Groovy categories; ignored for default static methods
+     * @param code the closure to execute and time
+     * @return the elapsed time in milliseconds, truncated toward zero
+     * @see #timedNanos(System, Closure)
+     * @see #timed(System, Closure)
+     * @since 6.0.0
+     */
+    public static long timedMillis(System self, Closure<?> code) {
+        return timedNanos(self, code) / 1_000_000;
+    }
+
+    /**
+     * Executes the given closure and returns a {@link Timed} capturing both the
+     * closure's result and the elapsed time in nanoseconds.
+     * <p>
+     * Timing uses {@link System#nanoTime()}, which is monotonic and unaffected by
+     * wall-clock adjustments. The closure is executed synchronously on the calling
+     * thread and any exception it throws propagates unchanged.
+     * <pre class="groovyTestCase">
+     * def t = System.timed { (1..1_000).sum() }
+     * assert t.result == 500_500
+     * assert t.nanos &gt;= 0
+     * println "computed ${t.result} in ${t.millis}ms"
+     * </pre>
+     *
+     * @param self placeholder variable used by Groovy categories; ignored for default static methods
+     * @param code the closure to execute and time
+     * @param <T>  the type of the closure's result
+     * @return a {@link Timed} holding the result and the elapsed nanoseconds
+     * @see #timedNanos(System, Closure)
+     * @see #timedMillis(System, Closure)
+     * @since 6.0.0
+     */
+    public static <T> Timed<T> timed(System self, Closure<T> code) {
+        long start = System.nanoTime();
+        T result = code.call();
+        long nanos = System.nanoTime() - start;
+        return new Timed<>(result, nanos);
     }
 
     /**
