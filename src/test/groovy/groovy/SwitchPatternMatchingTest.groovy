@@ -804,6 +804,196 @@ final class SwitchPatternMatchingTest {
         ''').isEmpty()
     }
 
+    @Test
+    void testMapPatternDispatch() {
+        assertScript '''
+            def describe(x) {
+                switch (x) {
+                    case [:]                        -> 'empty map'
+                    case [name: var n, age: var a]  -> "person $n, $a"
+                    case [name: var n]              -> "named $n"
+                    default                         -> 'other'
+                }
+            }
+            assert describe([:]) == 'empty map'
+            assert describe([name: 'sam', age: 42]) == 'person sam, 42'
+            assert describe([name: 'sam', age: 42, id: 1]) == 'person sam, 42' // open: extra keys ignored
+            assert describe([name: 'dee']) == 'named dee'
+            assert describe([age: 42]) == 'other'  // required key missing
+            assert describe([1, 2]) == 'other'     // not a map
+            assert describe(null) == 'other'       // patterns do not match null
+        '''
+    }
+
+    @Test
+    void testMapPatternLiteralAndTypedValues() {
+        assertScript '''
+            def r = switch ([type: 'circle', radius: 5]) {
+                case [type: 'circle', radius: var r] -> "circle r=$r"
+                case [type: 'square', side: var s]   -> "square s=$s"
+                default                              -> 'other'
+            }
+            assert r == 'circle r=5'
+            def r2 = switch ([name: 42]) {
+                case [name: String n] -> "string $n" // typed value does not match
+                case [name: var v]    -> "any $v"
+                default               -> 'other'
+            }
+            assert r2 == 'any 42'
+            def r3 = switch ([name: null]) {
+                case [name: String n] -> "string $n" // typed value does not match null
+                case [name: var v]    -> "present $v" // var does, if the key is present
+                default               -> 'other'
+            }
+            assert r3 == 'present null'
+        '''
+    }
+
+    @Test
+    void testMapPatternRest() {
+        assertScript '''
+            def r = switch ([name: 'sam', age: 42, id: 1]) {
+                case [name: String n, ... rest] -> "named $n; others=$rest"
+                default                         -> 'other'
+            }
+            assert r == "named sam; others=[age:42, id:1]"
+            def r2 = switch ([name: 'sam']) {
+                case [name: String n, ... rest] -> rest
+                default                         -> 'other'
+            }
+            assert r2 == [:]
+            def r3 = switch ([name: 'dee', x: 1]) {
+                case [name: def n, ...] -> "any named map ($n)" // others discarded
+                default                 -> 'other'
+            }
+            assert r3 == 'any named map (dee)'
+        '''
+    }
+
+    @Test
+    void testMapPatternGuard() {
+        assertScript '''
+            def r = switch ([age: 42]) {
+                case [age: Integer a] when a >= 18 -> 'adult'
+                case [age: Integer a]              -> 'minor'
+                default                            -> 'other'
+            }
+            assert r == 'adult'
+            def r2 = switch ([age: 7]) {
+                case [age: Integer a] when a >= 18 -> 'adult'
+                case [age: Integer a]              -> 'minor'
+                default                            -> 'other'
+            }
+            assert r2 == 'minor'
+        '''
+    }
+
+    @Test
+    void testNestedPatternsInMapPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def r = switch ([origin: new Point(3, 4), tags: ['a', 'b']]) {
+                case [origin: Point(var x, _), tags: [var first, ...]] -> "$x-$first"
+                default                                                -> 'other'
+            }
+            assert r == '3-a'
+            def r2 = switch ([outer: [inner: 7]]) {
+                case [outer: [inner: var v]] -> v
+                default                      -> 'other'
+            }
+            assert r2 == 7
+            def r3 = switch ([[a: 1], 'x']) {
+                case [[a: var v], var tag] -> "$v-$tag" // map pattern nested in a list pattern
+                default                    -> 'other'
+            }
+            assert r3 == '1-x'
+        '''
+    }
+
+    @Test
+    void testMapPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            @CompileStatic
+            def m(Object o) {
+                switch (o) {
+                    case [name: String n, ... rest] -> n + rest.size()
+                    case [:]                        -> 'empty'
+                    default                         -> 'other'
+                }
+            }
+            assert m([name: 'sam', x: 1, y: 2]) == 'sam2'
+            assert m([:]) == 'empty'
+            assert m('s') == 'other'
+        '''
+    }
+
+    @Test
+    void testLegacyMapLiteralLabelsKeepIsCaseSemantics() {
+        // a map literal without a binding form keeps its legacy lookup semantics
+        assertScript '''
+            def r = switch ('a') {
+                case [a: true, b: false] -> 'truthy value'
+                default                  -> 'no'
+            }
+            assert r == 'truthy value'
+            def r2 = switch ('b') {
+                case [a: true, b: false] -> 'truthy value'
+                default                  -> 'no'
+            }
+            assert r2 == 'no'
+            def r3 = switch ('a') {
+                case [a: [1, 2]]: yield 'truthy value' // colon form stays legacy as well
+                default: yield 'no'
+            }
+            assert r3 == 'truthy value'
+            def r4 = switch ('a') {
+                case [a: true]  -> 'legacy amid pattern labels'
+                case String s   -> "string $s"
+                default         -> 'no'
+            }
+            assert r4 == 'legacy amid pattern labels'
+        '''
+    }
+
+    @Test
+    void testMapPatternKeysMustBeConstants() {
+        def err = shouldFail '''
+            def k = 'name'
+            def r = switch ([name: 'sam']) {
+                case [("$k".toString()): var n] -> n
+                default                         -> 'other'
+            }
+        '''
+        assert err.message.contains('map pattern keys must be constants')
+    }
+
+    @Test
+    void testMapPatternSupportsAtMostOneRestBinding() {
+        def err = shouldFail '''
+            def r = switch ([a: 1]) {
+                case [a: var v, ... r1, ... r2] -> 'x'
+                default                         -> 'y'
+            }
+        '''
+        assert err.message.contains('at most one rest binding')
+    }
+
+    @Test
+    void testMapPatternIncompatibleSubjectRejectedWhenTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(Integer i) {
+                switch (i) {
+                    case [name: var n] -> n
+                    default            -> 'other'
+                }
+            }
+        '''
+        assert err.message.contains('map pattern is incompatible with the switch subject type')
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)

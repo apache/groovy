@@ -4871,6 +4871,11 @@ trying: for (ClassNode[] signature : signatures) {
                     // a list pattern destructures List, array and Iterable values only
                     addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
                 }
+                if (Boolean.TRUE.equals(label.getNodeMetaData("_SWITCH_PATTERN_MAP"))
+                        && provablyDisjoint(subjectType, MAP_TYPE)) {
+                    // a map pattern destructures Map values only
+                    addStaticTypeError("The map pattern is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
+                }
                 if (!isNullConstant(label)) opaqueLabels = true;
                 continue;
             }

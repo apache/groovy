@@ -797,7 +797,7 @@ switchExpressionLabel
 
 // GEP-19 structural pattern matching: pattern forms usable in case labels
 casePattern
-    :   (typePattern | recordPattern | listPattern) (nls caseGuard)?
+    :   (typePattern | recordPattern | listPattern | mapPattern) (nls caseGuard)?
     ;
 
 typePattern
@@ -837,6 +837,7 @@ listPatternElement
     :   listPatternRest
     |   recordPattern
     |   listPattern
+    |   mapPattern
     |   (DEF | VAR) identifier
     |   typePattern
     |   expression
@@ -846,6 +847,22 @@ listPatternElement
 // `...` and `... t` are shortcuts for `var... _` and `var... t`
 listPatternRest
     :   (DEF | VAR | standardType)? ELLIPSIS identifier?
+    ;
+
+// like listPattern, this rule over-matches: whether a `[k: v, ...]` literal is a
+// pattern or keeps legacy isCase semantics is decided in the AST builder
+mapPattern
+    :   LBRACK
+        (   mapPatternEntry (COMMA mapPatternEntry)*
+        |   COLON
+        )
+        RBRACK
+    ;
+
+// `... rest` binds the entries not named by the pattern; `...` discards them
+mapPatternEntry
+    :   mapEntryLabel COLON nls listPatternElement
+    |   ELLIPSIS identifier?
     ;
 
 caseGuard

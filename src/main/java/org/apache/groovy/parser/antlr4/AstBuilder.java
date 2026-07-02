@@ -43,6 +43,7 @@ import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
 import org.apache.groovy.runtime.ListPatternSupport;
+import org.apache.groovy.runtime.MapPatternSupport;
 import org.apache.groovy.runtime.RecordPatternSupport;
 import org.apache.groovy.util.Maps;
 import org.apache.groovy.util.SystemUtil;
@@ -1127,25 +1128,47 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private static boolean isPatternLabel(final CasePatternContext ctx) {
         if (!asBoolean(ctx)) return false;
-        // a `[...]` label parses via the broader listPattern rule; only a
+        // a `[...]` label parses via the broader listPattern/mapPattern rules; only a
         // pattern-shaped literal is treated as a pattern (see isPatternShapedList)
-        return !asBoolean(ctx.listPattern()) || isPatternShapedList(ctx.listPattern());
+        if (asBoolean(ctx.listPattern())) return isPatternShapedList(ctx.listPattern());
+        if (asBoolean(ctx.mapPattern())) return isPatternShapedMap(ctx.mapPattern());
+        return true;
     }
 
     /**
      * Whether a {@code [...]} literal is a list pattern (GEP-19) rather than a legacy
      * {@code isCase} label: it is a pattern if and only if it is empty, or some element
      * is a binding form (a rest binding, a {@code var}/{@code def} binding or a type
-     * pattern) or a nested pattern (a record pattern or a pattern-shaped list literal).
+     * pattern) or a nested pattern (a record pattern or a pattern-shaped list or map
+     * literal).
      */
     private static boolean isPatternShapedList(final ListPatternContext ctx) {
         if (!asBoolean(ctx.listPatternElements())) return true; // `[]` is the empty list pattern
         for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
-            if (asBoolean(elementCtx.listPatternRest())
-                    || asBoolean(elementCtx.recordPattern())
-                    || asBoolean(elementCtx.typePattern())
-                    || null != elementCtx.DEF() || null != elementCtx.VAR()
-                    || (asBoolean(elementCtx.listPattern()) && isPatternShapedList(elementCtx.listPattern()))) {
+            if (isPatternShapedElement(elementCtx)) return true;
+        }
+        return false;
+    }
+
+    private static boolean isPatternShapedElement(final ListPatternElementContext ctx) {
+        return asBoolean(ctx.listPatternRest())
+                || asBoolean(ctx.recordPattern())
+                || asBoolean(ctx.typePattern())
+                || null != ctx.DEF() || null != ctx.VAR()
+                || (asBoolean(ctx.listPattern()) && isPatternShapedList(ctx.listPattern()))
+                || (asBoolean(ctx.mapPattern()) && isPatternShapedMap(ctx.mapPattern()));
+    }
+
+    /**
+     * Whether a {@code [k: v, ...]} literal is a map pattern (GEP-19) rather than a
+     * legacy {@code isCase} label: it is a pattern if and only if it is empty
+     * ({@code [:]}), or it has a rest binding, or some entry value is a binding form
+     * or a nested pattern.
+     */
+    private static boolean isPatternShapedMap(final MapPatternContext ctx) {
+        if (ctx.mapPatternEntry().isEmpty()) return true; // `[:]` is the empty map pattern
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            if (asBoolean(entryCtx.ELLIPSIS()) || isPatternShapedElement(entryCtx.listPatternElement())) {
                 return true;
             }
         }
@@ -1300,12 +1323,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.CASE())) {
             if (asBoolean(ctx.casePattern())) {
                 if (!isPatternLabel(ctx.casePattern())) {
-                    // a plain list literal that parsed via the broader listPattern rule,
-                    // e.g. `case [1, 2, 3]:` -- it keeps its legacy isCase semantics
+                    // a plain list or map literal that parsed via the broader listPattern or
+                    // mapPattern rule, e.g. `case [1, 2, 3]:` -- it keeps its legacy isCase semantics
                     if (asBoolean(ctx.casePattern().caseGuard())) {
-                        throw createParsingFailedException("`when` guards are only supported on pattern labels; a list pattern needs a binding form among its elements", ctx.casePattern().caseGuard());
+                        throw createParsingFailedException("`when` guards are only supported on pattern labels; a list or map pattern needs a binding form", ctx.casePattern().caseGuard());
                     }
-                    return tuple(ctx.CASE().getSymbol(), Collections.singletonList(this.rebuildListExpression(ctx.casePattern().listPattern())), acType);
+                    Expression legacyLabel = asBoolean(ctx.casePattern().listPattern())
+                            ? this.rebuildListExpression(ctx.casePattern().listPattern())
+                            : this.rebuildMapExpression(ctx.casePattern().mapPattern());
+                    return tuple(ctx.CASE().getSymbol(), Collections.singletonList(legacyLabel), acType);
                 }
                 if (ARROW != acType) {
                     throw createParsingFailedException("`case` with a pattern label supports only the arrow form (`->`)", ctx.casePattern());
@@ -1337,6 +1363,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
         if (asBoolean(ctx.listPattern())) {
             return this.createListPatternLabel(ctx, guard);
+        }
+        if (asBoolean(ctx.mapPattern())) {
+            return this.createMapPatternLabel(ctx, guard);
         }
 
         TypePatternContext typePatternCtx = ctx.typePattern();
@@ -1568,6 +1597,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             element.constant = this.rebuildListExpression(ctx.listPattern());
             return element;
         }
+        if (asBoolean(ctx.mapPattern())) {
+            if (isPatternShapedMap(ctx.mapPattern())) {
+                return this.buildMapPattern(ctx.mapPattern());
+            }
+            PatternNode element = new PatternNode(); // a plain map literal element is matched by equality
+            element.constant = this.rebuildMapExpression(ctx.mapPattern());
+            return element;
+        }
         PatternNode element = new PatternNode();
         if (asBoolean(ctx.typePattern())) {
             element.type = this.visitType(ctx.typePattern().type());
@@ -1587,12 +1624,27 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         List<Expression> expressions = new ArrayList<>();
         if (asBoolean(ctx.listPatternElements())) {
             for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
-                expressions.add(asBoolean(elementCtx.listPattern())
-                        ? this.rebuildListExpression(elementCtx.listPattern())
-                        : (Expression) this.visit(elementCtx.expression()));
+                expressions.add(this.rebuildElementExpression(elementCtx));
             }
         }
         return configureAST(new ListExpression(expressions), ctx);
+    }
+
+    /** Rebuilds a legacy map expression from a {@code [k: v, ...]} literal that parsed via the mapPattern rule but is not pattern-shaped. */
+    private Expression rebuildMapExpression(final MapPatternContext ctx) {
+        List<MapEntryExpression> entries = new ArrayList<>();
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            Expression keyExpr = this.visitMapEntryLabel(entryCtx.mapEntryLabel());
+            Expression valueExpr = this.rebuildElementExpression(entryCtx.listPatternElement());
+            entries.add(configureAST(new MapEntryExpression(keyExpr, valueExpr), entryCtx));
+        }
+        return configureAST(new MapExpression(entries), ctx);
+    }
+
+    private Expression rebuildElementExpression(final ListPatternElementContext ctx) {
+        if (asBoolean(ctx.listPattern())) return this.rebuildListExpression(ctx.listPattern());
+        if (asBoolean(ctx.mapPattern())) return this.rebuildMapExpression(ctx.mapPattern());
+        return (Expression) this.visit(ctx.expression());
     }
 
     /**
@@ -1649,6 +1701,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (element.components != null) { // nested pattern
                 if (element.list) {
                     appendListPatternExtraction(element, elementVar, statements, withChecks);
+                } else if (element.map) {
+                    appendMapPatternExtraction(element, elementVar, statements, withChecks);
                 } else if (withChecks) {
                     appendRecordPatternChecks(element, elementVar, statements);
                 } else {
@@ -1661,6 +1715,141 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 if (element.name != null) {
                     statements.add(declS(localVarX(element.name, element.type != null ? element.type : ClassHelper.dynamicType()),
                             element.type != null ? castX(element.type, elementVar) : elementVar));
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds a closure case label for a map pattern (GEP-19), e.g.
+     * {@code case [name: String n, ... rest] when n ->} becomes:
+     * <pre>
+     * case { __$$pc1 -> Map __$$mv2 = MapPatternSupport.entriesOrNull(__$$pc1)
+     *                   if (__$$mv2 == null) return false
+     *                   if (!__$$mv2.containsKey('name')) return false
+     *                   def __$$me3 = __$$mv2.get('name')
+     *                   if (!(__$$me3 instanceof String)) return false
+     *                   String n = (String) __$$me3
+     *                   Map rest = MapPatternSupport.rest(__$$mv2, ['name'])
+     *                   return n }:
+     * </pre>
+     * Matching is open: all named keys must be present and their value patterns
+     * match; extra entries are ignored unless captured by a rest binding. The
+     * empty map pattern {@code [:]} matches only an empty map.
+     */
+    private Expression createMapPatternLabel(final CasePatternContext ctx, final Expression guard) {
+        PatternNode pattern = this.buildMapPattern(ctx.mapPattern());
+        String candidateName = "__$$pc" + switchPatternVariableSeq++;
+        Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+        List<Statement> checkStatements = new ArrayList<>();
+        appendMapPatternExtraction(pattern, varX(candidateName), checkStatements, true);
+        checkStatements.add(returnS(guard != null ? guard : constX(Boolean.TRUE, true)));
+        Expression labelExpr = configureAST(closureX(params(candidate), createBlockStatement(checkStatements)), ctx);
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels;
+        // a map pattern has no type at the head and is always conditional
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_MAP, Boolean.TRUE);
+
+        List<Statement> bindingDecls = new ArrayList<>();
+        if (pattern.hasBindings()) {
+            appendMapPatternExtraction(pattern, varX(switchPatternSubjectStack.peek()), bindingDecls, false);
+        }
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecls);
+        return labelExpr;
+    }
+
+    private PatternNode buildMapPattern(final MapPatternContext ctx) {
+        PatternNode pattern = new PatternNode();
+        pattern.map = true;
+        pattern.components = new ArrayList<>();
+        boolean restSeen = false;
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            PatternNode entry;
+            if (asBoolean(entryCtx.ELLIPSIS())) {
+                if (restSeen) {
+                    throw createParsingFailedException("a map pattern supports at most one rest binding", entryCtx);
+                }
+                restSeen = true;
+                entry = new PatternNode();
+                entry.rest = true;
+                if (asBoolean(entryCtx.identifier())) {
+                    String name = this.visitIdentifier(entryCtx.identifier());
+                    entry.name = "_".equals(name) ? null : name; // `_` is bind-and-discard
+                }
+            } else {
+                Expression keyExpr = this.visitMapEntryLabel(entryCtx.mapEntryLabel());
+                if (!(keyExpr instanceof ConstantExpression)) {
+                    throw createParsingFailedException("map pattern keys must be constants", entryCtx.mapEntryLabel());
+                }
+                entry = this.buildListPatternElement(entryCtx.listPatternElement());
+                if (entry.rest) {
+                    throw createParsingFailedException("a rest binding is not supported as a map pattern value", entryCtx.listPatternElement());
+                }
+                entry.key = ((ConstantExpression) keyExpr).getValue();
+            }
+            pattern.components.add(entry);
+        }
+        return pattern;
+    }
+
+    /**
+     * Emits the destructuring of a map pattern rooted at {@code source}; the
+     * {@code withChecks} contract matches {@link #appendListPatternExtraction}.
+     * Every named key requires a presence check even when its value pattern is a
+     * wildcard, since open matching is defined over the keys.
+     */
+    private void appendMapPatternExtraction(final PatternNode pattern, final Expression source, final List<Statement> statements, final boolean withChecks) {
+        String entriesName = "__$$mv" + switchPatternVariableSeq++;
+        statements.add(declS(localVarX(entriesName, ClassHelper.MAP_TYPE.getPlainNodeReference()),
+                callX(classX(MAP_PATTERN_SUPPORT_TYPE), "entriesOrNull", args(source))));
+        if (withChecks) {
+            statements.add(ifS(eqX(varX(entriesName), nullX()), returnS(constX(Boolean.FALSE, true))));
+            if (pattern.components.isEmpty()) { // `[:]` matches only an empty map
+                statements.add(ifS(notX(callX(varX(entriesName), "isEmpty")), returnS(constX(Boolean.FALSE, true))));
+            }
+        }
+        for (PatternNode entry : pattern.components) {
+            if (!withChecks && !entry.hasBindings()) continue;
+            if (entry.rest) {
+                if (entry.name == null) continue; // `...` just relaxes the match, which is open anyway
+                List<Expression> namedKeys = new ArrayList<>();
+                for (PatternNode named : pattern.components) {
+                    if (!named.rest) namedKeys.add(constX(named.key));
+                }
+                statements.add(declS(localVarX(entry.name, ClassHelper.MAP_TYPE.getPlainNodeReference()),
+                        callX(classX(MAP_PATTERN_SUPPORT_TYPE), "rest", args(varX(entriesName), listX(namedKeys)))));
+                continue;
+            }
+            if (withChecks) {
+                statements.add(ifS(notX(callX(varX(entriesName), "containsKey", args(constX(entry.key)))), returnS(constX(Boolean.FALSE, true))));
+            }
+            Expression valueAccess = callX(varX(entriesName), "get", args(constX(entry.key)));
+            if (entry.constant != null) {
+                statements.add(ifS(notX(eqX(valueAccess, entry.constant)), returnS(constX(Boolean.FALSE, true))));
+                continue;
+            }
+            if (entry.isUncheckedWildcard()) continue; // presence check only
+            String valueName = "__$$me" + switchPatternVariableSeq++;
+            statements.add(declS(localVarX(valueName), valueAccess));
+            Expression valueVar = varX(valueName);
+            if (entry.components != null) { // nested pattern
+                if (entry.list) {
+                    appendListPatternExtraction(entry, valueVar, statements, withChecks);
+                } else if (entry.map) {
+                    appendMapPatternExtraction(entry, valueVar, statements, withChecks);
+                } else if (withChecks) {
+                    appendRecordPatternChecks(entry, valueVar, statements);
+                } else {
+                    appendRecordPatternExtraction(entry, valueVar, statements, false);
+                }
+            } else {
+                if (withChecks && entry.type != null) {
+                    statements.add(ifS(notX(isInstanceOfX(valueVar, ClassHelper.getWrapper(entry.type))), returnS(constX(Boolean.FALSE, true))));
+                }
+                if (entry.name != null) {
+                    statements.add(declS(localVarX(entry.name, entry.type != null ? entry.type : ClassHelper.dynamicType()),
+                            entry.type != null ? castX(entry.type, valueVar) : valueVar));
                 }
             }
         }
@@ -1732,10 +1921,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static class PatternNode {
         ClassNode type;               // null for an untyped (var/def) binding or a bare wildcard; the element type for a typed rest binding
         String name;                  // null for a wildcard or a nested pattern
-        List<PatternNode> components; // non-null for a record or list pattern
+        List<PatternNode> components; // non-null for a record, list or map pattern
         boolean list;                 // components are list pattern elements rather than record components
-        boolean rest;                 // a rest binding element within a list pattern
-        Expression constant;          // a literal element within a list pattern, matched by equality
+        boolean map;                  // components are map pattern entries rather than record components
+        boolean rest;                 // a rest binding element within a list or map pattern
+        Expression constant;          // a literal element within a list or map pattern, matched by equality
+        Object key;                   // the constant key of a map pattern entry
 
         boolean isUncheckedWildcard() {
             return type == null && name == null && components == null && constant == null;
@@ -5585,8 +5776,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String SWITCH_PATTERN_GUARDED = "_SWITCH_PATTERN_GUARDED";
     private static final String SWITCH_PATTERN_RECORD = "_SWITCH_PATTERN_RECORD";
     private static final String SWITCH_PATTERN_LIST = "_SWITCH_PATTERN_LIST";
+    private static final String SWITCH_PATTERN_MAP = "_SWITCH_PATTERN_MAP";
     private static final ClassNode RECORD_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(RecordPatternSupport.class);
     private static final ClassNode LIST_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(ListPatternSupport.class);
+    private static final ClassNode MAP_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(MapPatternSupport.class);
     private static final String IS_NUMERIC = "_IS_NUMERIC";
     private static final String IS_STRING = "_IS_STRING";
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";
