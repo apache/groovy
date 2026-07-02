@@ -18,23 +18,32 @@
  */
 package org.codehaus.groovy.tools;
 
-import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests the compiling & running of GroovyTestCases
  */
-public class FileSystemCompilerTest extends GroovyTestCase {
+public class FileSystemCompilerTest {
 
-    FileSystemCompiler compiler = null;
-    final boolean dumpClass = true;
+    private FileSystemCompiler compiler = null;
+    private final boolean dumpClass = true;
 
+    @Test
     public void testMethodCall() throws Exception {
         runTest(new String[] {"ClosureMethodTest.groovy"});
         runTest(new String[] {"tree/VerboseTreeTest.groovy"});
@@ -50,12 +59,13 @@ public class FileSystemCompilerTest extends GroovyTestCase {
             String name = names[i];
             File file = new File("src/test/groovy/groovy/" + name);
             files.add(file);
-            assertTrue("Could not find source file: " + file, file.exists());
+            assertTrue(file.exists(), "Could not find source file: " + file);
         }
 
         compiler.compile((File[]) files.toArray(new File[names.length]));
     }
 
+    @BeforeEach
     protected void setUp() throws Exception {
         File dir = new File("build/test-generated-classes");
         dir.mkdirs();
@@ -70,6 +80,7 @@ public class FileSystemCompilerTest extends GroovyTestCase {
         compiler = new FileSystemCompiler(configuration);
     }
 
+    @Test
     public void testCommandLine() throws Exception {
         try {
             FileSystemCompiler.commandLineCompile(new String[] {"--bogus-option"});
@@ -81,6 +92,37 @@ public class FileSystemCompilerTest extends GroovyTestCase {
         File dir = new File("build/test-generated-classes/cl");
         dir.mkdirs();
         FileSystemCompiler.commandLineCompile(new String[] {"src/test/groovy/groovy/LittleClosureTest.groovy", "-d", dir.getPath()});
+    }
+
+    @Test
+    public void testDeleteRecursiveDoesNotFollowSymlink() throws Exception {
+        File base = Files.createTempDirectory("deleteRecursiveSymlink").toFile();
+        try {
+            // a directory outside the tree being deleted, holding a file that must survive
+            File outside = new File(base, "outside");
+            assertTrue(outside.mkdir());
+            File survivor = new File(outside, "survivor.txt");
+            Files.write(survivor.toPath(), "keep".getBytes());
+
+            // the tree we delete, containing a symlink pointing at the outside directory
+            File tree = new File(base, "tree");
+            assertTrue(tree.mkdir());
+            File link = new File(tree, "link");
+            try {
+                Files.createSymbolicLink(link.toPath(), outside.toPath());
+            } catch (IOException | UnsupportedOperationException e) {
+                assumeTrue(false, "symbolic links not supported on this platform: " + e);
+            }
+
+            FileSystemCompiler.deleteRecursive(tree);
+
+            // the tree and the link are gone, but the target's contents are untouched
+            assertFalse(tree.exists(), "tree should be deleted");
+            assertTrue(outside.exists(), "linked-to directory must survive");
+            assertTrue(survivor.exists(), "linked-to file must survive");
+        } finally {
+            FileSystemCompiler.deleteRecursive(base);
+        }
     }
 
 }

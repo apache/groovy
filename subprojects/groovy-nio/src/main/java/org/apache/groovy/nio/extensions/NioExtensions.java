@@ -1393,6 +1393,18 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @since 2.3.0
      */
     public static boolean deleteDir(final Path self) {
+        if (Files.isSymbolicLink(self)) {
+            // never follow a symbolic link into its target; remove the link itself.
+            // Note: Files.isSymbolicLink does not detect Windows directory junctions
+            // (reparse points), which are therefore still traversed.
+            try {
+                Files.delete(self);
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+        }
+
         if (!Files.exists(self))
             return true;
 
