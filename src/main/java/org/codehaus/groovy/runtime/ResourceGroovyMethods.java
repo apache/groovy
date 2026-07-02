@@ -1743,7 +1743,14 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         // delete contained files
         boolean result = true;
         for (File file : files) {
-            if (file.isDirectory()) {
+            if (Files.isSymbolicLink(file.toPath())) {
+                // remove the link itself; do not recurse through it into the target
+                try {
+                    Files.delete(file.toPath());
+                } catch (IOException e) {
+                    result = false;
+                }
+            } else if (file.isDirectory()) {
                 if (!deleteDir(file))
                     result = false;
             } else {

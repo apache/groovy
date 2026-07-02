@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase;
+import groovy.test.GroovyTestCase
+
+import java.nio.file.Files
 
 /**
  * Test File.deleteDir() method in Groovy
@@ -54,5 +56,35 @@ class DirectoryDeleteTest extends GroovyTestCase {
         subdir.mkdir()
         new File(subdir, "testsubdir.txt").write("Test")
         assert dir.deleteDir()
+    }
+
+    void testDeleteDirDoesNotFollowSymlink() {
+        def base = Files.createTempDirectory("deleteDirSymlink").toFile()
+
+        // a directory outside the tree being deleted, holding a file that must survive
+        def outside = new File(base, "outside")
+        outside.mkdir()
+        def survivor = new File(outside, "survivor.txt")
+        survivor.write("keep")
+
+        // the tree we delete, containing a symlink pointing at the outside directory
+        def tree = new File(base, "tree")
+        tree.mkdir()
+        def link = new File(tree, "link")
+        try {
+            Files.createSymbolicLink(link.toPath(), outside.toPath())
+        } catch (IOException | UnsupportedOperationException ignored) {
+            return // platform without symbolic link support
+        }
+
+        assert tree.deleteDir()
+
+        // the link and its parent are gone, but the target's contents are untouched
+        assert !tree.exists()
+        assert survivor.exists()
+        assert survivor.text == "keep"
+
+        outside.deleteDir()
+        base.deleteDir()
     }
 }
