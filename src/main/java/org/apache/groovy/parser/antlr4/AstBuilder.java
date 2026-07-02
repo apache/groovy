@@ -42,6 +42,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
+import org.apache.groovy.runtime.RecordPatternSupport;
 import org.apache.groovy.util.Maps;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -168,6 +169,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
@@ -176,6 +178,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -1219,10 +1222,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 Statement code = (isLast && i == n - 1) ? codeBlock
                                         : EmptyStatement.INSTANCE;
 
-                                Statement bindingDecl = expr.getNodeMetaData(SWITCH_TYPE_PATTERN_BINDING);
-                                if (bindingDecl != null && !(code instanceof EmptyStatement)) {
+                                List<Statement> bindingDecls = expr.getNodeMetaData(SWITCH_TYPE_PATTERN_BINDING);
+                                if (bindingDecls != null && !(code instanceof EmptyStatement)) {
                                     expr.removeNodeMetaData(SWITCH_TYPE_PATTERN_BINDING);
-                                    code = createBlockStatement(List.of(bindingDecl, code));
+                                    if (!bindingDecls.isEmpty()) {
+                                        List<Statement> codeWithBindings = new ArrayList<>(bindingDecls);
+                                        codeWithBindings.add(code);
+                                        code = createBlockStatement(codeWithBindings);
+                                    }
                                 }
 
                                 statementList.add(
@@ -1274,14 +1281,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     /**
      * Builds the case label expression for a pattern label (GEP-19). A type pattern
-     * without a guard becomes a plain class literal label; with a {@code when} guard
-     * it becomes a closure label checking the type then evaluating the guard with the
-     * pattern variable in scope. In both forms, the statement declaring the pattern
-     * variable within the case body is attached as node metadata for
+     * without a guard becomes a plain class literal label; a guarded type pattern or
+     * a record pattern becomes a closure label performing the type, arity and
+     * component checks before evaluating the guard (if any) with the pattern
+     * variables in scope. In all forms, the statements declaring the pattern
+     * variables within the case body are attached as node metadata for
      * {@link #visitSwitchBlockStatementExpressionGroup}.
      */
     @Override
     public Expression visitCasePattern(final CasePatternContext ctx) {
+        Expression guard = asBoolean(ctx.caseGuard()) ? (Expression) this.visit(ctx.caseGuard().expression()) : null;
+        if (asBoolean(ctx.recordPattern())) {
+            return this.createRecordPatternLabel(ctx, guard);
+        }
+
         TypePatternContext typePatternCtx = ctx.typePattern();
         ClassNode type = this.visitType(typePatternCtx.type());
         if (ClassHelper.isPrimitiveType(type)) {
@@ -1291,8 +1304,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         String subjectName = switchPatternSubjectStack.peek();
 
         Expression labelExpr;
-        if (asBoolean(ctx.caseGuard())) {
-            Expression guard = (Expression) this.visit(ctx.caseGuard().expression());
+        if (guard != null) {
             String candidateName = "__$$pc" + switchPatternVariableSeq++;
             Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
             Statement guardCode = block(
@@ -1310,8 +1322,143 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         labelExpr.putNodeMetaData(SWITCH_PATTERN_TYPE, type);
 
         Statement bindingDecl = declS(configureAST(localVarX(name, type), typePatternCtx.identifier()), castX(type, varX(subjectName)));
-        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecl);
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, Collections.singletonList(bindingDecl));
         return labelExpr;
+    }
+
+    /**
+     * Builds a closure case label for a record pattern (GEP-19), e.g.
+     * {@code case Point(int x, int y) when x == y ->} becomes:
+     * <pre>
+     * case { __$$pc1 -> if (!(__$$pc1 instanceof Point)) return false
+     *                   List __$$rc2 = RecordPatternSupport.components(__$$pc1)
+     *                   if (__$$rc2.size() != 2) return false
+     *                   def __$$rv3 = __$$rc2.get(0)
+     *                   if (!(__$$rv3 instanceof Integer)) return false
+     *                   int x = (int) __$$rv3
+     *                   ... likewise for y ...
+     *                   return x == y }:
+     * </pre>
+     * Component names are not known at parse time (record patterns are positional),
+     * so deconstruction goes through {@link org.apache.groovy.runtime.RecordPatternSupport}.
+     */
+    private Expression createRecordPatternLabel(final CasePatternContext ctx, final Expression guard) {
+        PatternNode pattern = this.buildRecordPattern(ctx.recordPattern());
+        String candidateName = "__$$pc" + switchPatternVariableSeq++;
+        Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+        List<Statement> checkStatements = new ArrayList<>();
+        appendRecordPatternChecks(pattern, varX(candidateName), checkStatements);
+        checkStatements.add(returnS(guard != null ? guard : constX(Boolean.TRUE, true)));
+        Expression labelExpr = configureAST(closureX(params(candidate), createBlockStatement(checkStatements)), ctx);
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels;
+        // a record pattern is always conditional (arity and component checks)
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_TYPE, pattern.type);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_RECORD, pattern.components.size());
+
+        List<Statement> bindingDecls = new ArrayList<>();
+        if (pattern.hasBindings()) {
+            appendRecordPatternExtraction(pattern, varX(switchPatternSubjectStack.peek()), bindingDecls, false);
+        }
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecls);
+        return labelExpr;
+    }
+
+    private PatternNode buildRecordPattern(final RecordPatternContext ctx) {
+        PatternNode pattern = new PatternNode();
+        pattern.type = this.visitType(ctx.type());
+        if (ClassHelper.isPrimitiveType(pattern.type)) {
+            throw createParsingFailedException("primitive type patterns are not yet supported", ctx);
+        }
+        pattern.components = new ArrayList<>();
+        for (RecordPatternComponentContext componentCtx : ctx.recordPatternComponents().recordPatternComponent()) {
+            pattern.components.add(this.buildRecordPatternComponent(componentCtx));
+        }
+        return pattern;
+    }
+
+    private PatternNode buildRecordPatternComponent(final RecordPatternComponentContext ctx) {
+        if (asBoolean(ctx.recordPattern())) {
+            return this.buildRecordPattern(ctx.recordPattern());
+        }
+        PatternNode component = new PatternNode();
+        String name;
+        if (asBoolean(ctx.typePattern())) {
+            component.type = this.visitType(ctx.typePattern().type());
+            name = this.visitIdentifier(ctx.typePattern().identifier());
+        } else {
+            name = this.visitIdentifier(ctx.identifier());
+            if (null == ctx.DEF() && null == ctx.VAR() && !"_".equals(name)) {
+                throw createParsingFailedException("record pattern component must be a type pattern, a var/def binding, a nested record pattern or `_`", ctx);
+            }
+        }
+        component.name = "_".equals(name) ? null : name; // `_` is bind-and-discard
+        return component;
+    }
+
+    /** Emits the type, arity and component checks (plus bindings) for a record pattern; used inside closure case labels. */
+    private void appendRecordPatternChecks(final PatternNode pattern, final Expression source, final List<Statement> statements) {
+        statements.add(ifS(notX(isInstanceOfX(source, pattern.type)), returnS(constX(Boolean.FALSE, true))));
+        appendRecordPatternExtraction(pattern, source, statements, true);
+    }
+
+    /**
+     * Emits the component extraction of a record pattern rooted at {@code source}.
+     * With {@code withChecks}, arity and component type checks guard each step
+     * (for use in a case label closure); without, only the statements needed to
+     * declare the pattern variables are emitted (for use in the case body, where
+     * the match is already established).
+     */
+    private void appendRecordPatternExtraction(final PatternNode pattern, final Expression source, final List<Statement> statements, final boolean withChecks) {
+        String componentsName = "__$$rc" + switchPatternVariableSeq++;
+        statements.add(declS(localVarX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "components", args(source))));
+        if (withChecks) {
+            statements.add(ifS(neX(callX(varX(componentsName), "size"), constX(pattern.components.size(), true)), returnS(constX(Boolean.FALSE, true))));
+        }
+        for (int i = 0, n = pattern.components.size(); i < n; i += 1) {
+            PatternNode component = pattern.components.get(i);
+            if (withChecks ? component.isUncheckedWildcard() : !component.hasBindings()) continue;
+            String componentName = "__$$rv" + switchPatternVariableSeq++;
+            statements.add(declS(localVarX(componentName), callX(varX(componentsName), "get", args(constX(i, true)))));
+            Expression componentVar = varX(componentName);
+            if (component.components != null) { // nested record pattern
+                if (withChecks) {
+                    appendRecordPatternChecks(component, componentVar, statements);
+                } else {
+                    appendRecordPatternExtraction(component, componentVar, statements, false);
+                }
+            } else {
+                if (withChecks && component.type != null) {
+                    statements.add(ifS(notX(isInstanceOfX(componentVar, ClassHelper.getWrapper(component.type))), returnS(constX(Boolean.FALSE, true))));
+                }
+                if (component.name != null) {
+                    statements.add(declS(localVarX(component.name, component.type != null ? component.type : ClassHelper.dynamicType()),
+                            component.type != null ? castX(component.type, componentVar) : componentVar));
+                }
+            }
+        }
+    }
+
+    /** A parsed pattern (GEP-19): a record pattern when {@code components} is non-null, otherwise a binding or wildcard. */
+    private static class PatternNode {
+        ClassNode type;               // null for an untyped (var/def) binding or a bare wildcard
+        String name;                  // null for a wildcard or a nested record pattern
+        List<PatternNode> components; // non-null for a record pattern
+
+        boolean isUncheckedWildcard() {
+            return type == null && name == null && components == null;
+        }
+
+        boolean hasBindings() {
+            if (name != null) return true;
+            if (components == null) return false;
+            for (PatternNode component : components) {
+                if (component.hasBindings()) return true;
+            }
+            return false;
+        }
     }
 
     // } statement -------------------------------------------------------------
@@ -5134,10 +5281,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
     private static final String IS_SWITCH_DEFAULT = "_IS_SWITCH_DEFAULT";
     private static final String SWITCH_TYPE_PATTERN_BINDING = "_SWITCH_TYPE_PATTERN_BINDING";
-    // the next three keys are also read (as literals) by StaticTypeCheckingVisitor
+    // the next four keys are also read (as literals) by StaticTypeCheckingVisitor
     private static final String SWITCH_PATTERN_SUBJECT = "_SWITCH_PATTERN_SUBJECT";
     private static final String SWITCH_PATTERN_TYPE = "_SWITCH_PATTERN_TYPE";
     private static final String SWITCH_PATTERN_GUARDED = "_SWITCH_PATTERN_GUARDED";
+    private static final String SWITCH_PATTERN_RECORD = "_SWITCH_PATTERN_RECORD";
+    private static final ClassNode RECORD_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(RecordPatternSupport.class);
     private static final String IS_NUMERIC = "_IS_NUMERIC";
     private static final String IS_STRING = "_IS_STRING";
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";

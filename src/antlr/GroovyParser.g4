@@ -796,11 +796,28 @@ switchExpressionLabel
 
 // GEP-19 structural pattern matching: pattern forms usable in case labels
 casePattern
-    :   typePattern (nls caseGuard)?
+    :   (typePattern | recordPattern) (nls caseGuard)?
     ;
 
 typePattern
     :   standardType identifier
+    ;
+
+// components are mandatory and must be pattern-shaped so that legacy method
+// call labels such as `case foo()` and `case foo(bar)` keep isCase semantics
+recordPattern
+    :   standardType LPAREN nls recordPatternComponents nls RPAREN
+    ;
+
+recordPatternComponents
+    :   recordPatternComponent (COMMA nls recordPatternComponent)*
+    ;
+
+recordPatternComponent
+    :   recordPattern
+    |   (DEF | VAR) identifier
+    |   typePattern
+    |   { "_".equals(_input.LT(1).getText()) }? identifier
     ;
 
 caseGuard

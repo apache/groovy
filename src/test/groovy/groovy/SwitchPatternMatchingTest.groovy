@@ -341,6 +341,167 @@ final class SwitchPatternMatchingTest {
         '''
     }
 
+    // GEP-19 phase 3: record patterns
+
+    @Test
+    void testRecordPatternBasics() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def r = switch (new Point(1, 2)) {
+                case Point(int x, int y) -> x + y
+                default                  -> -1
+            }
+            assert r == 3
+        '''
+    }
+
+    @Test
+    void testRecordPatternGuardAndWildcard() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def m = { obj ->
+                switch (obj) {
+                    case Point(int x, int y) when x == y -> "diagonal $x"
+                    case Point(int x, _)                 -> "x=$x"
+                    default                              -> 'other'
+                }
+            }
+            assert m(new Point(3, 3)) == 'diagonal 3'
+            assert m(new Point(1, 2)) == 'x=1'
+            assert m('s') == 'other'
+        '''
+    }
+
+    @Test
+    void testNestedRecordPattern() {
+        assertScript '''
+            record Point(int x, int y) {}
+            record Line(Point start, Point end) {}
+            def r = switch (new Line(new Point(0, 0), new Point(4, 5))) {
+                case Line(Point(var x1, _), Point p2) -> "$x1 to ${p2.x()},${p2.y()}"
+                default                               -> 'other'
+            }
+            assert r == '0 to 4,5'
+        '''
+    }
+
+    @Test
+    void testRecordPatternComponentTypeNarrowing() {
+        assertScript '''
+            record Box(Object value) {}
+            def m = { obj ->
+                switch (obj) {
+                    case Box(Integer i) -> "int $i"
+                    case Box(String s)  -> "string $s"
+                    default             -> 'other'
+                }
+            }
+            assert m(new Box(42)) == 'int 42'
+            assert m(new Box('t')) == 'string t'
+            assert m(new Box(1.5)) == 'other'
+        '''
+    }
+
+    @Test
+    void testRecordPatternArityMismatchNeverMatches() {
+        assertScript '''
+            record Point(int x, int y) {}
+            def r = switch (new Point(1, 2)) {
+                case Point(var a) -> "one $a"
+                default           -> 'no match'
+            }
+            assert r == 'no match'
+        '''
+    }
+
+    @Test
+    void testRecordPatternCompileStatic() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            @CompileStatic
+            def m(Object o) {
+                switch (o) {
+                    case Point(int x, int y) when x == y -> 'diagonal ' + (x * 2)
+                    case Point(int x, _)                 -> 'x ' + x
+                    default                              -> 'other'
+                }
+            }
+            assert m(new Point(2, 2)) == 'diagonal 4'
+            assert m(new Point(1, 5)) == 'x 1'
+            assert m('s') == 'other'
+        '''
+    }
+
+    @Test
+    void testRecordPatternArityCheckedWhenTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case Point(int x, _) when x > 0 -> x
+                    case Point(var a)               -> a
+                    default                         -> 'other'
+                }
+            }
+        '''
+        assert err.message.contains('specifies 1 component(s) but')
+    }
+
+    @Test
+    void testRecordPatternDominatedByEarlierTypePattern() {
+        def warnings = patternSwitchWarnings '''
+            import groovy.transform.TypeChecked
+            record Point(int x, int y) {}
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case Point p             -> 'point'
+                    case Point(int x, int y) -> 'components'
+                    default                  -> 'other'
+                }
+            }
+        '''
+        assert warnings.any { it.contains('dominated by a preceding case label') }
+    }
+
+    @Test
+    void testLegacyMethodCallLabelsKeepIsCaseSemantics() {
+        assertScript '''
+            def lower(s) { s.toLowerCase() }
+            def noArg() { 42 }
+            def r = switch ('abc') {
+                case lower('ABC') -> 'call label'
+                default           -> 'no'
+            }
+            assert r == 'call label'
+            def r2 = switch (42) {
+                case noArg() -> 'no-arg call label'
+                default      -> 'no'
+            }
+            assert r2 == 'no-arg call label'
+        '''
+    }
+
+    @Test
+    void testDeconstructableViaToList() {
+        // not a record, but provides toList(): deconstructs like emulated Groovy records
+        assertScript '''
+            class Pair {
+                def a, b
+                Pair(a, b) { this.a = a; this.b = b }
+                List toList() { [a, b] }
+            }
+            def r = switch (new Pair(1, 'x')) {
+                case Pair(var a, var b) -> "$a-$b"
+                default                 -> 'no'
+            }
+            assert r == '1-x'
+        '''
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)
