@@ -31,7 +31,12 @@ import java.util.Date;
  * <p>
  * If you ask Duration to convert itself to milliseconds then it will work on the basis of 24 hours
  * in a day. If you add or subtract it from a date it will take daylight saving into account.
+ *
+ * @deprecated Superseded by {@code org.apache.groovy.dateutil.Duration} (the dequirked
+ * {@code java.util.Date} flavor) or {@code java.time.Duration}/{@code java.time.Period}.
+ * This legacy class is retained, unchanged, for backward compatibility.
  */
+@Deprecated
 public class Duration extends BaseDuration {
     /**
      * Creates a fixed duration.

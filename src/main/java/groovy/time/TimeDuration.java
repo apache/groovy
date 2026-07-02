@@ -33,8 +33,12 @@ import java.util.Date;
  * <p>
  * If you ask Duration to convert itself to milliseconds then it will work on the basis of 60 seconds in a minute.
  * If you add or subtract it from a date it will take leap seconds into account.
+ *
+ * @deprecated Superseded by {@code org.apache.groovy.dateutil.TimeDuration} (the dequirked
+ * {@code java.util.Date} flavor) or {@code java.time.Duration}. This legacy class is retained,
+ * unchanged, for backward compatibility.
  */
-
+@Deprecated
 public class TimeDuration extends Duration {
     /**
      * Creates a time duration without a day component.

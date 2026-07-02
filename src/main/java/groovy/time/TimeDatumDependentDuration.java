@@ -24,7 +24,13 @@ import java.util.Date;
 /**
  * TimeDatumDuration represents a time period which results from an
  * arithmetic operation between a TimeDuration object and a DatumDuration object
+ *
+ * @deprecated Superseded by {@code org.apache.groovy.dateutil.TimeDatumDependentDuration} (the
+ * dequirked {@code java.util.Date} flavor) or the {@code java.time} DSL in
+ * {@code org.apache.groovy.datetime.TimeCategory}. This legacy class is retained, unchanged,
+ * for backward compatibility.
  */
+@Deprecated
 public class TimeDatumDependentDuration extends DatumDependentDuration {
     /**
      * Creates a mixed time and datum-dependent duration.

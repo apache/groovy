@@ -29,7 +29,12 @@ import java.util.Date;
  * <p>
  * I don't know how many days in a month unless I know the name of the month 
  * (and if it's a leap year if the month is February)
+ *
+ * @deprecated Superseded by {@code org.apache.groovy.dateutil.DatumDependentDuration} (the
+ * dequirked {@code java.util.Date} flavor) or {@code java.time.Period}. This legacy class is
+ * retained, unchanged, for backward compatibility.
  */
+@Deprecated
 public class DatumDependentDuration extends BaseDuration {
     /**
      * Creates a datum-dependent duration.
