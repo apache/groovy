@@ -164,6 +164,7 @@ import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Enum_Type;
 import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.ITERABLE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
@@ -4240,6 +4241,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             addStaticTypeError("Cannot resolve dynamic method name at compile time", call.getMethod());
             return;
         }
+        Expression closureOfPatternSwitch = call.getObjectExpression(); // GEP-19: the closure-free lowering of an all-pattern switch
+        List<Expression> patternSwitchArms = closureOfPatternSwitch.getNodeMetaData("_SWITCH_PATTERN_ARMS");
+        if (patternSwitchArms != null) {
+            checkPatternSwitchLabels(closureOfPatternSwitch.getNodeMetaData("_SWITCH_PATTERN_SUBJECT"), patternSwitchArms,
+                    Boolean.TRUE.equals(closureOfPatternSwitch.getNodeMetaData("_SWITCH_PATTERN_DEFAULT")), call);
+        }
         if (extension.beforeMethodCall(call)) {
             extension.afterMethodCall(call);
             return;
@@ -4817,6 +4824,7 @@ trying: for (ClassNode[] signature : signatures) {
     /** {@inheritDoc} */
     @Override
     public void visitSwitch(final SwitchStatement statement) {
+        checkPatternSwitchLabels(statement); // GEP-19
         typeCheckingContext.pushEnclosingSwitchStatement(statement);
         try {
             Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
@@ -4836,7 +4844,119 @@ trying: for (ClassNode[] signature : signatures) {
     protected void afterSwitchConditionExpressionVisited(final SwitchStatement statement) {
         typeCheckingContext.pushTemporaryTypeInfo();
         Expression conditionExpression = statement.getExpression();
-        conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
+        // GEP-19: a pattern switch is lowered so that its condition is a synthetic
+        // closure parameter; the parser records the original subject (see AstBuilder)
+        Expression subjectExpression = statement.getNodeMetaData("_SWITCH_PATTERN_SUBJECT");
+        conditionExpression.putNodeMetaData(TYPE, getType(subjectExpression != null ? subjectExpression : conditionExpression));
+    }
+
+    /**
+     * Checks the pattern labels of a pattern switch (GEP-19): reports an error for a
+     * pattern that cannot match the switch subject's static type, a warning for a
+     * pattern dominated by a preceding case label, and a warning when the switch is
+     * not exhaustive. Exhaustiveness is only checked when every case label can be
+     * statically analysed (patterns, class literals and {@code null}).
+     */
+    private void checkPatternSwitchLabels(final SwitchStatement statement) {
+        Expression subjectExpression = statement.getNodeMetaData("_SWITCH_PATTERN_SUBJECT");
+        if (subjectExpression == null) return;
+        List<Expression> labels = new ArrayList<>();
+        for (CaseStatement caseStatement : statement.getCaseStatements()) {
+            labels.add(caseStatement.getExpression());
+        }
+        checkPatternSwitchLabels(subjectExpression, labels, !statement.getDefaultStatement().isEmpty(), statement);
+    }
+
+    /**
+     * The pattern switch label checks, shared between the two lowerings of a pattern
+     * switch (GEP-19): the closure-label lowering retains a {@code SwitchStatement}
+     * whose case expressions carry the pattern metadata, while the closure-free
+     * lowering of an all-pattern switch attaches the arm condition expressions to
+     * the generated call (see the parser's AstBuilder).
+     */
+    private void checkPatternSwitchLabels(final Expression subjectExpression, final List<Expression> labels, final boolean hasDefault, final ASTNode switchNode) {
+        ClassNode subjectType = wrapTypeIfNecessary(getType(subjectExpression));
+
+        List<ClassNode> priorTypeTests = new ArrayList<>();
+        boolean opaqueLabels = false, unconditional = false;
+        for (Expression label : labels) {
+            ClassNode patternType = label.getNodeMetaData("_SWITCH_PATTERN_TYPE");
+            ClassNode typeTest = patternType;
+            if (typeTest == null && label instanceof ClassExpression) {
+                typeTest = label.getType(); // legacy class literal label has type-test semantics
+            }
+            if (typeTest == null) {
+                if (Boolean.TRUE.equals(label.getNodeMetaData("_SWITCH_PATTERN_LIST"))
+                        && !subjectType.isArray() && provablyDisjoint(subjectType, ITERABLE_TYPE)) {
+                    // a list pattern destructures List, array and Iterable values only
+                    addStaticTypeError("The list pattern is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
+                }
+                if (Boolean.TRUE.equals(label.getNodeMetaData("_SWITCH_PATTERN_MAP"))
+                        && provablyDisjoint(subjectType, MAP_TYPE)) {
+                    // a map pattern destructures Map values only
+                    addStaticTypeError("The map pattern is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
+                }
+                if (!isNullConstant(label)) opaqueLabels = true;
+                continue;
+            }
+            ClassNode wrappedTest = wrapTypeIfNecessary(typeTest);
+            if (patternType != null && provablyDisjoint(subjectType, wrappedTest)) {
+                addStaticTypeError("The case pattern type " + prettyPrintTypeName(typeTest) + " is incompatible with the switch subject type " + prettyPrintTypeName(subjectType), label);
+                continue;
+            }
+            Integer recordPatternArity = label.getNodeMetaData("_SWITCH_PATTERN_RECORD");
+            if (recordPatternArity != null) {
+                // a record pattern is conditional (arity and component checks), so it
+                // cannot be proven exhaustive here; leave exhaustiveness unassessed
+                opaqueLabels = true;
+                int componentCount = patternType.getRecordComponents().size();
+                if (componentCount > 0 && componentCount != recordPatternArity) {
+                    addStaticTypeError("The record pattern specifies " + recordPatternArity + " component(s) but " + prettyPrintTypeName(patternType) + " has " + componentCount, label);
+                }
+            }
+            for (ClassNode prior : priorTypeTests) {
+                if (implementsInterfaceOrIsSubclassOf(wrappedTest, prior)) {
+                    addPatternSwitchWarning("The case pattern is dominated by a preceding case label and will never match", label);
+                    break;
+                }
+            }
+            if (!Boolean.TRUE.equals(label.getNodeMetaData("_SWITCH_PATTERN_GUARDED"))) {
+                priorTypeTests.add(wrappedTest);
+                if (implementsInterfaceOrIsSubclassOf(subjectType, wrappedTest)) unconditional = true;
+            }
+        }
+        if (!hasDefault && !opaqueLabels && !unconditional
+                && !coversAllPermittedSubclasses(subjectType, priorTypeTests)) {
+            addPatternSwitchWarning("The pattern switch is not exhaustive and may match nothing; consider adding a default branch", switchNode);
+        }
+    }
+
+    private void addPatternSwitchWarning(final String text, final ASTNode node) {
+        Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
+        typeCheckingContext.getErrorCollector().addWarning(new WarningMessage(WarningMessage.LIKELY_ERRORS, text, token, getSourceUnit()));
+    }
+
+    private static boolean provablyDisjoint(final ClassNode subjectType, final ClassNode patternType) {
+        if (isObjectType(subjectType)
+                || subjectType.isArray() || patternType.isArray()
+                || implementsInterfaceOrIsSubclassOf(patternType, subjectType)
+                || implementsInterfaceOrIsSubclassOf(subjectType, patternType)) {
+            return false;
+        }
+        if (subjectType.isInterface()) return Modifier.isFinal(patternType.getModifiers());
+        if (patternType.isInterface()) return Modifier.isFinal(subjectType.getModifiers());
+        return true; // unrelated classes
+    }
+
+    private static boolean coversAllPermittedSubclasses(final ClassNode type, final List<ClassNode> typeTests) {
+        if (!type.isSealed()) return false;
+        List<ClassNode> permittedSubclasses = type.getPermittedSubclasses();
+        if (permittedSubclasses.isEmpty()) return false;
+        for (ClassNode permitted : permittedSubclasses) {
+            boolean covered = typeTests.stream().anyMatch(t -> implementsInterfaceOrIsSubclassOf(permitted, t));
+            if (!covered && !coversAllPermittedSubclasses(permitted, typeTests)) return false;
+        }
+        return true;
     }
 
     /** {@inheritDoc} */

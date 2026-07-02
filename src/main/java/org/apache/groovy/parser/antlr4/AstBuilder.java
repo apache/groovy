@@ -42,6 +42,9 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.groovy.parser.antlr4.internal.DescriptiveErrorStrategy;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.AtnManager;
 import org.apache.groovy.parser.antlr4.util.StringUtils;
+import org.apache.groovy.runtime.ListPatternSupport;
+import org.apache.groovy.runtime.MapPatternSupport;
+import org.apache.groovy.runtime.RecordPatternSupport;
 import org.apache.groovy.util.Maps;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -162,13 +165,30 @@ import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.parser.antlr4.GroovyParser.*;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureEndPosition;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.eqX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.geX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ltX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.minusX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -1012,10 +1032,37 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      *     }
      * }.call()
      * </pre>
+     * If any case label is a pattern (GEP-19), the switch subject is passed as a
+     * closure parameter so pattern bindings can refer to it, e.g.
+     * <pre>
+     * switch(x) {
+     *   case Integer i when i > 0 -> 'p'
+     *   case String s             -> s
+     *   default                   -> 'z'
+     * }
+     * </pre>
+     * will be transformed to:
+     * <pre>
+     * { __$$pv0 ->
+     *     switch(__$$pv0) {
+     *       case { __$$pc1 -> if (!(__$$pc1 instanceof Integer)) return false
+     *                         Integer i = (Integer) __$$pc1
+     *                         return i > 0 }:
+     *                     { Integer i = (Integer) __$$pv0; return 'p' }
+     *       case String:  { String s = (String) __$$pv0; return s }
+     *       default:      return 'z'
+     *     }
+     * }.call(x)
+     * </pre>
      */
     @Override
     public MethodCallExpression visitSwitchExpression(final SwitchExpressionContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
+        boolean hasPattern = containsCasePattern(ctx);
+        // when every case label is a pattern, a faster closure-free lowering applies
+        boolean allPatterns = hasPattern && allCasePatterns(ctx);
+        switchPatternSubjectStack.push(hasPattern ? "__$$pv" + switchPatternVariableSeq++ : "");
+        switchPatternFastStack.push(allPatterns);
         try {
             validateSwitchExpressionLabels(ctx);
             List<Tuple3<List<Statement>, Boolean, Boolean>> statementsAndArrowAndYieldOrThrow =
@@ -1048,21 +1095,126 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 }
             }
 
-            Statement statement = configureAST(
-                    new SwitchStatement(
-                            this.visitExpressionInPar(ctx.expressionInPar()),
-                            caseStatements,
-                            defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
-                    ),
-                    ctx);
-            statement = createBlockStatement(List.of(statement));
+            Expression subject = this.visitExpressionInPar(ctx.expressionInPar());
+            String subjectName = switchPatternSubjectStack.peek();
+            Statement statement;
+            List<Expression> armConditions = null;
+            if (allPatterns) {
+                // closure-free lowering: each arm is an instanceof-conjunction `if` in its
+                // own block, so pattern variable names may repeat across arms and a failed
+                // match (or guard) falls through to the next arm; a matched arm returns
+                armConditions = new ArrayList<>();
+                List<Statement> arms = new ArrayList<>();
+                for (CaseStatement caseStatement : caseStatements) {
+                    Expression label = caseStatement.getExpression();
+                    armConditions.add(label);
+                    List<Object> armItems = label.getNodeMetaData(SWITCH_PATTERN_ARM_ITEMS);
+                    label.removeNodeMetaData(SWITCH_PATTERN_ARM_ITEMS);
+                    Statement arm = createBlockStatement(nestArmItems(armItems, caseStatement.getCode()));
+                    arm.setSourcePosition(caseStatement);
+                    arms.add(arm);
+                }
+                if (defaultStatement != null) {
+                    arms.add(defaultStatement);
+                }
+                statement = configureAST(createBlockStatement(arms), ctx);
+            } else {
+                SwitchStatement switchStatement = new SwitchStatement(
+                        hasPattern ? varX(subjectName) : subject,
+                        caseStatements,
+                        defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
+                );
+                if (hasPattern) {
+                    // read by StaticTypeCheckingVisitor to determine the subject type of a pattern switch
+                    switchStatement.putNodeMetaData(SWITCH_PATTERN_SUBJECT, subject);
+                }
+                statement = createBlockStatement(List.of(configureAST(switchStatement, ctx)));
+            }
 
-            MethodCallExpression immediateExecution = callX(closureX(null, statement), CALL_STR);
+            MethodCallExpression immediateExecution;
+            if (hasPattern) {
+                Parameter subjectParameter = new Parameter(ClassHelper.dynamicType(), subjectName);
+                Expression closure = closureX(params(subjectParameter), statement);
+                if (allPatterns) {
+                    // read by StaticTypeCheckingVisitor to check pattern switch case labels;
+                    // attached to the closure, which (unlike the call) survives ResolveVisitor
+                    closure.putNodeMetaData(SWITCH_PATTERN_SUBJECT, subject);
+                    closure.putNodeMetaData(SWITCH_PATTERN_ARMS, armConditions);
+                    closure.putNodeMetaData(SWITCH_PATTERN_DEFAULT, defaultStatement != null);
+                }
+                immediateExecution = callX(closure, CALL_STR, args(subject));
+            } else {
+                immediateExecution = callX(closureX(null, statement), CALL_STR);
+            }
             immediateExecution.setImplicitThis(false);
             return immediateExecution;
         } finally {
+            switchPatternFastStack.pop();
+            switchPatternSubjectStack.pop();
             switchExpressionRuleContextStack.pop();
         }
+    }
+
+    private static boolean allCasePatterns(final SwitchExpressionContext ctx) {
+        return ctx.switchBlockStatementExpressionGroup().stream()
+                .flatMap(e -> e.switchExpressionLabel().stream())
+                .filter(e -> asBoolean(e.CASE()))
+                .allMatch(e -> isPatternLabel(e.casePattern()));
+    }
+
+    private static boolean containsCasePattern(final SwitchExpressionContext ctx) {
+        return ctx.switchBlockStatementExpressionGroup().stream()
+                .flatMap(e -> e.switchExpressionLabel().stream())
+                .anyMatch(e -> isPatternLabel(e.casePattern()));
+    }
+
+    private static boolean isPatternLabel(final CasePatternContext ctx) {
+        if (!asBoolean(ctx)) return false;
+        // a `[...]` label parses via the broader listPattern/mapPattern rules; only a
+        // pattern-shaped literal is treated as a pattern (see isPatternShapedList)
+        if (asBoolean(ctx.listPattern())) return isPatternShapedList(ctx.listPattern());
+        if (asBoolean(ctx.mapPattern())) return isPatternShapedMap(ctx.mapPattern());
+        return true;
+    }
+
+    /**
+     * Whether a {@code [...]} literal is a list pattern (GEP-19) rather than a legacy
+     * {@code isCase} label: it is a pattern if and only if it is empty, or some element
+     * is a binding form (a rest binding, a {@code var}/{@code def} binding or a type
+     * pattern) or a nested pattern (a record pattern or a pattern-shaped list or map
+     * literal).
+     */
+    private static boolean isPatternShapedList(final ListPatternContext ctx) {
+        if (!asBoolean(ctx.listPatternElements())) return true; // `[]` is the empty list pattern
+        for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+            if (isPatternShapedElement(elementCtx)) return true;
+        }
+        return false;
+    }
+
+    private static boolean isPatternShapedElement(final ListPatternElementContext ctx) {
+        return asBoolean(ctx.listPatternRest())
+                || asBoolean(ctx.recordPattern())
+                || asBoolean(ctx.typePattern())
+                || null != ctx.DEF() || null != ctx.VAR()
+                || (asBoolean(ctx.listPattern()) && isPatternShapedList(ctx.listPattern()))
+                || (asBoolean(ctx.mapPattern()) && isPatternShapedMap(ctx.mapPattern()));
+    }
+
+    /**
+     * Whether a {@code [k: v, ...]} literal is a map pattern (GEP-19) rather than a
+     * legacy {@code isCase} label: it is a pattern if and only if it is empty
+     * ({@code [:]}), or it has a rest binding, or some entry value is a binding form
+     * or a nested pattern.
+     */
+    private static boolean isPatternShapedMap(final MapPatternContext ctx) {
+        if (ctx.mapPatternEntry().isEmpty()) return true; // `[:]` is the empty map pattern
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            if (asBoolean(entryCtx.ELLIPSIS()) || isPatternShapedElement(entryCtx.listPatternElement())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -1163,15 +1315,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             }
                             for (int i = 0, n = tuple.getV2().size(); i < n; i += 1) {
                                 Expression expr = tuple.getV2().get(i);
+
+                                // check whether processing the last label. if yes, block statement should be attached.
+                                Statement code = (isLast && i == n - 1) ? codeBlock
+                                        : EmptyStatement.INSTANCE;
+
+                                List<Statement> bindingDecls = expr.getNodeMetaData(SWITCH_TYPE_PATTERN_BINDING);
+                                if (bindingDecls != null && !(code instanceof EmptyStatement)) {
+                                    expr.removeNodeMetaData(SWITCH_TYPE_PATTERN_BINDING);
+                                    if (!bindingDecls.isEmpty()) {
+                                        List<Statement> codeWithBindings = new ArrayList<>(bindingDecls);
+                                        codeWithBindings.add(code);
+                                        code = createBlockStatement(codeWithBindings);
+                                    }
+                                }
+
                                 statementList.add(
                                         configureAST(
-                                                new CaseStatement(
-                                                        expr,
-
-                                                        // check whether processing the last label. if yes, block statement should be attached.
-                                                        (isLast && i == n - 1) ? codeBlock
-                                                                : EmptyStatement.INSTANCE
-                                                ),
+                                                new CaseStatement(expr, code),
                                                 firstLabelHolder.get(0)));
                             }
                             break;
@@ -1202,12 +1363,801 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Tuple3<Token, List<Expression>, Integer> visitSwitchExpressionLabel(SwitchExpressionLabelContext ctx) {
         final Integer acType = ctx.ac.getType();
         if (asBoolean(ctx.CASE())) {
+            if (asBoolean(ctx.casePattern())) {
+                if (!isPatternLabel(ctx.casePattern())) {
+                    // a plain list or map literal that parsed via the broader listPattern or
+                    // mapPattern rule, e.g. `case [1, 2, 3]:` -- it keeps its legacy isCase semantics
+                    if (asBoolean(ctx.casePattern().caseGuard())) {
+                        throw createParsingFailedException("`when` guards are only supported on pattern labels; a list or map pattern needs a binding form", ctx.casePattern().caseGuard());
+                    }
+                    Expression legacyLabel = asBoolean(ctx.casePattern().listPattern())
+                            ? this.rebuildListExpression(ctx.casePattern().listPattern())
+                            : this.rebuildMapExpression(ctx.casePattern().mapPattern());
+                    return tuple(ctx.CASE().getSymbol(), Collections.singletonList(legacyLabel), acType);
+                }
+                if (ARROW != acType) {
+                    throw createParsingFailedException("`case` with a pattern label supports only the arrow form (`->`)", ctx.casePattern());
+                }
+                return tuple(ctx.CASE().getSymbol(), Collections.singletonList(this.visitCasePattern(ctx.casePattern())), acType);
+            }
             return tuple(ctx.CASE().getSymbol(), this.visitExpressionList(ctx.expressionList()), acType);
         } else if (asBoolean(ctx.DEFAULT())) {
             return tuple(ctx.DEFAULT().getSymbol(), Collections.singletonList(EmptyExpression.INSTANCE), acType);
         }
 
         throw createParsingFailedException("Unsupported switch expression label: " + ctx.getText(), ctx);
+    }
+
+    /**
+     * Builds the case label expression for a pattern label (GEP-19). A type pattern
+     * without a guard becomes a plain class literal label; a guarded type pattern or
+     * a record pattern becomes a closure label performing the type, arity and
+     * component checks before evaluating the guard (if any) with the pattern
+     * variables in scope. In all forms, the statements declaring the pattern
+     * variables within the case body are attached as node metadata for
+     * {@link #visitSwitchBlockStatementExpressionGroup}.
+     */
+    @Override
+    public Expression visitCasePattern(final CasePatternContext ctx) {
+        Expression guard = asBoolean(ctx.caseGuard()) ? (Expression) this.visit(ctx.caseGuard().expression()) : null;
+        if (Boolean.TRUE.equals(switchPatternFastStack.peek())) {
+            return this.createPatternArmLabel(ctx, guard);
+        }
+        if (asBoolean(ctx.recordPattern())) {
+            return this.createRecordPatternLabel(ctx, guard);
+        }
+        if (asBoolean(ctx.listPattern())) {
+            return this.createListPatternLabel(ctx, guard);
+        }
+        if (asBoolean(ctx.mapPattern())) {
+            return this.createMapPatternLabel(ctx, guard);
+        }
+
+        TypePatternContext typePatternCtx = ctx.typePattern();
+        ClassNode type = this.visitType(typePatternCtx.type());
+        if (ClassHelper.isPrimitiveType(type)) {
+            throw createParsingFailedException("primitive type patterns are not yet supported", typePatternCtx);
+        }
+        String name = this.visitIdentifier(typePatternCtx.identifier());
+        String subjectName = switchPatternSubjectStack.peek();
+
+        Expression labelExpr;
+        if (guard != null) {
+            String candidateName = "__$$pc" + switchPatternVariableSeq++;
+            Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+            Statement guardCode = block(
+                    ifS(notX(isInstanceOfX(varX(candidateName), type)), returnS(constX(Boolean.FALSE, true))),
+                    declS(localVarX(name, type), castX(type, varX(candidateName))),
+                    returnS(guard)
+            );
+            labelExpr = configureAST(closureX(params(candidate), guardCode), ctx);
+            labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        } else {
+            labelExpr = configureAST(new ClassExpression(type), typePatternCtx);
+        }
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_TYPE, type);
+
+        Statement bindingDecl = declS(configureAST(localVarX(name, type), typePatternCtx.identifier()), castX(type, varX(subjectName)));
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, Collections.singletonList(bindingDecl));
+        return labelExpr;
+    }
+
+    /**
+     * Builds the case label for a pattern arm of a closure-free pattern switch
+     * (GEP-19). The label is a placeholder carrying the arm's matching steps as
+     * node metadata: an ordered mix of check expressions and binding statements
+     * that {@link #visitSwitchExpression} nests into
+     * {@code if (check) { binding; if (check) { ... armCode } } }.
+     * Statement nesting short-circuits, so unlike the {@code instanceof}
+     * conjunction lowering no null-tolerant helpers are needed, and every
+     * binding declaration dominates its reads for the bytecode verifier.
+     * Pattern variables are bound while matching, so unlike the closure-label
+     * lowering no per-arm closure is allocated and record, list and map
+     * patterns are destructured once rather than twice. The {@code when}
+     * guard, if any, is the innermost check, evaluated only once the pattern
+     * has matched and its variables are bound.
+     */
+    private Expression createPatternArmLabel(final CasePatternContext ctx, final Expression guard) {
+        org.codehaus.groovy.syntax.Token instanceOf = org.codehaus.groovy.syntax.Token.newSymbol(
+                Types.KEYWORD_INSTANCEOF, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine() + 1);
+        Expression subjectVar = varX(switchPatternSubjectStack.peek());
+        Expression label = constX(Boolean.TRUE, true);
+        List<Object> items = new ArrayList<>();
+        if (asBoolean(ctx.typePattern())) {
+            TypePatternContext typePatternCtx = ctx.typePattern();
+            ClassNode type = this.visitType(typePatternCtx.type());
+            if (ClassHelper.isPrimitiveType(type)) {
+                throw createParsingFailedException("primitive type patterns are not yet supported", typePatternCtx);
+            }
+            String name = this.visitIdentifier(typePatternCtx.identifier());
+            items.add(binX(subjectVar, instanceOf, declX(varX(name, type), EmptyExpression.INSTANCE)));
+            label.putNodeMetaData(SWITCH_PATTERN_TYPE, type);
+        } else {
+            if (asBoolean(ctx.recordPattern())) {
+                PatternNode pattern = this.buildRecordPattern(ctx.recordPattern());
+                appendRecordPatternArmItems(pattern, subjectVar, instanceOf, items);
+                label.putNodeMetaData(SWITCH_PATTERN_TYPE, pattern.type);
+                label.putNodeMetaData(SWITCH_PATTERN_RECORD, pattern.components.size());
+            } else if (asBoolean(ctx.listPattern())) {
+                appendListPatternArmItems(this.buildListPattern(ctx.listPattern()), subjectVar, instanceOf, items);
+                label.putNodeMetaData(SWITCH_PATTERN_LIST, Boolean.TRUE);
+            } else {
+                appendMapPatternArmItems(this.buildMapPattern(ctx.mapPattern()), subjectVar, instanceOf, items);
+                label.putNodeMetaData(SWITCH_PATTERN_MAP, Boolean.TRUE);
+            }
+            // record, list and map patterns are always conditional
+            label.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        }
+        if (guard != null) {
+            items.add(guard);
+            label.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        }
+        label.putNodeMetaData(SWITCH_PATTERN_ARM_ITEMS, items);
+        return configureAST(label, ctx);
+    }
+
+    /** Nests an arm's matching steps around its code: check expressions become guarding {@code if}s, binding statements execute between them. */
+    private Statement nestArmItems(final List<Object> items, final Statement armCode) {
+        Statement result = armCode;
+        for (int i = items.size() - 1; i >= 0; i -= 1) {
+            Object item = items.get(i);
+            if (item instanceof Expression) {
+                result = ifS((Expression) item, result);
+            } else {
+                result = createBlockStatement(List.of((Statement) item, result));
+            }
+        }
+        return result;
+    }
+
+    /** Emits the matching steps of a record pattern rooted at {@code source} for a pattern arm (see {@link #createPatternArmLabel}). */
+    private void appendRecordPatternArmItems(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Object> items) {
+        String recordName = "__$$rp" + switchPatternVariableSeq++;
+        items.add(binX(source, instanceOf, declX(varX(recordName, pattern.type), EmptyExpression.INSTANCE)));
+        String componentsName = "__$$rc" + switchPatternVariableSeq++;
+        items.add(declS(localVarX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "components", args(varX(recordName)))));
+        items.add(eqX(callX(varX(componentsName), "size"), constX(pattern.components.size(), true)));
+        for (int i = 0, n = pattern.components.size(); i < n; i += 1) {
+            PatternNode component = pattern.components.get(i);
+            if (component.isUncheckedWildcard()) continue;
+            appendElementArmItems(component, callX(varX(componentsName), "get", args(constX(i, true))), instanceOf, items);
+        }
+    }
+
+    /** Emits the matching steps of a list pattern rooted at {@code source} for a pattern arm (see {@link #createPatternArmLabel}). */
+    private void appendListPatternArmItems(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Object> items) {
+        String elementsName = "__$$lv" + switchPatternVariableSeq++;
+        items.add(binX(callX(classX(LIST_PATTERN_SUPPORT_TYPE), "elementsOrNull", args(source)), instanceOf,
+                declX(varX(elementsName, ClassHelper.LIST_TYPE.getPlainNodeReference()), EmptyExpression.INSTANCE)));
+        int n = pattern.components.size();
+        int restIndex = -1;
+        for (int i = 0; i < n; i += 1) {
+            if (pattern.components.get(i).rest) restIndex = i;
+        }
+        int fixed = n - (restIndex < 0 ? 0 : 1);
+        if (restIndex < 0) {
+            items.add(eqX(callX(varX(elementsName), "size"), constX(fixed, true)));
+        } else if (fixed > 0) {
+            items.add(geX(callX(varX(elementsName), "size"), constX(fixed, true)));
+        }
+        for (int i = 0; i < n; i += 1) {
+            PatternNode element = pattern.components.get(i);
+            if (element.rest) {
+                if (element.type == null && element.name == null) continue; // bare rest just relaxes the size check
+                String restName = element.name != null ? element.name : "__$$lr" + switchPatternVariableSeq++;
+                items.add(declS(localVarX(restName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                        callX(classX(LIST_PATTERN_SUPPORT_TYPE), "rest", args(varX(elementsName), constX(i, true), constX(n - i - 1, true)))));
+                if (element.type != null) {
+                    items.add(callX(classX(LIST_PATTERN_SUPPORT_TYPE), "allInstanceOf",
+                            args(varX(restName), classX(ClassHelper.getWrapper(element.type)))));
+                }
+                continue;
+            }
+            if (element.isUncheckedWildcard()) continue;
+            Expression indexExpr = (restIndex >= 0 && i > restIndex)
+                    ? minusX(callX(varX(elementsName), "size"), constX(n - i, true))
+                    : constX(i, true);
+            appendElementArmItems(element, callX(varX(elementsName), "get", args(indexExpr)), instanceOf, items);
+        }
+    }
+
+    /** Emits the matching steps of a map pattern rooted at {@code source} for a pattern arm (see {@link #createPatternArmLabel}). */
+    private void appendMapPatternArmItems(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Object> items) {
+        String entriesName = "__$$mv" + switchPatternVariableSeq++;
+        items.add(binX(callX(classX(MAP_PATTERN_SUPPORT_TYPE), "entriesOrNull", args(source)), instanceOf,
+                declX(varX(entriesName, ClassHelper.MAP_TYPE.getPlainNodeReference()), EmptyExpression.INSTANCE)));
+        if (pattern.components.isEmpty()) { // `[:]` matches only an empty map
+            items.add(callX(varX(entriesName), "isEmpty"));
+            return;
+        }
+        for (PatternNode entry : pattern.components) {
+            if (entry.rest) {
+                if (entry.name == null) continue; // `...` just relaxes the match, which is open anyway
+                List<Expression> namedKeys = new ArrayList<>();
+                for (PatternNode named : pattern.components) {
+                    if (!named.rest) namedKeys.add(constX(named.key));
+                }
+                items.add(declS(localVarX(entry.name, ClassHelper.MAP_TYPE.getPlainNodeReference()),
+                        callX(classX(MAP_PATTERN_SUPPORT_TYPE), "rest", args(varX(entriesName), listX(namedKeys)))));
+                continue;
+            }
+            items.add(callX(varX(entriesName), "containsKey", args(constX(entry.key))));
+            if (entry.isUncheckedWildcard()) continue; // presence check only
+            appendElementArmItems(entry, callX(varX(entriesName), "get", args(constX(entry.key))), instanceOf, items);
+        }
+    }
+
+    /** Emits the matching steps for one record component, list element or map entry value. */
+    private void appendElementArmItems(final PatternNode element, final Expression access, final org.codehaus.groovy.syntax.Token instanceOf, final List<Object> items) {
+        if (element.constant != null) {
+            items.add(eqX(access, element.constant));
+        } else if (element.components != null) { // nested pattern
+            if (element.list) {
+                appendListPatternArmItems(element, access, instanceOf, items);
+            } else if (element.map) {
+                appendMapPatternArmItems(element, access, instanceOf, items);
+            } else {
+                appendRecordPatternArmItems(element, access, instanceOf, items);
+            }
+        } else if (element.type != null) {
+            ClassNode bindType = ClassHelper.getWrapper(element.type);
+            Expression rhs = element.name != null
+                    ? declX(varX(element.name, bindType), EmptyExpression.INSTANCE)
+                    : new ClassExpression(bindType);
+            items.add(binX(access, instanceOf, rhs));
+        } else { // var/def binding: unconditional, also matches a null value
+            items.add(declS(localVarX(element.name, ClassHelper.dynamicType()), access));
+        }
+    }
+
+    /**
+     * Builds a closure case label for a record pattern (GEP-19), e.g.
+     * {@code case Point(int x, int y) when x == y ->} becomes:
+     * <pre>
+     * case { __$$pc1 -> if (!(__$$pc1 instanceof Point)) return false
+     *                   List __$$rc2 = RecordPatternSupport.components(__$$pc1)
+     *                   if (__$$rc2.size() != 2) return false
+     *                   def __$$rv3 = __$$rc2.get(0)
+     *                   if (!(__$$rv3 instanceof Integer)) return false
+     *                   int x = (int) __$$rv3
+     *                   ... likewise for y ...
+     *                   return x == y }:
+     * </pre>
+     * Component names are not known at parse time (record patterns are positional),
+     * so deconstruction goes through {@link org.apache.groovy.runtime.RecordPatternSupport}.
+     */
+    private Expression createRecordPatternLabel(final CasePatternContext ctx, final Expression guard) {
+        PatternNode pattern = this.buildRecordPattern(ctx.recordPattern());
+        String candidateName = "__$$pc" + switchPatternVariableSeq++;
+        Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+        List<Statement> checkStatements = new ArrayList<>();
+        appendRecordPatternChecks(pattern, varX(candidateName), checkStatements);
+        checkStatements.add(returnS(guard != null ? guard : constX(Boolean.TRUE, true)));
+        Expression labelExpr = configureAST(closureX(params(candidate), createBlockStatement(checkStatements)), ctx);
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels;
+        // a record pattern is always conditional (arity and component checks)
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_TYPE, pattern.type);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_RECORD, pattern.components.size());
+
+        List<Statement> bindingDecls = new ArrayList<>();
+        if (pattern.hasBindings()) {
+            appendRecordPatternExtraction(pattern, varX(switchPatternSubjectStack.peek()), bindingDecls, false);
+        }
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecls);
+        return labelExpr;
+    }
+
+    private PatternNode buildRecordPattern(final RecordPatternContext ctx) {
+        PatternNode pattern = new PatternNode();
+        pattern.type = this.visitType(ctx.type());
+        if (ClassHelper.isPrimitiveType(pattern.type)) {
+            throw createParsingFailedException("primitive type patterns are not yet supported", ctx);
+        }
+        pattern.components = new ArrayList<>();
+        for (RecordPatternComponentContext componentCtx : ctx.recordPatternComponents().recordPatternComponent()) {
+            pattern.components.add(this.buildRecordPatternComponent(componentCtx));
+        }
+        return pattern;
+    }
+
+    private PatternNode buildRecordPatternComponent(final RecordPatternComponentContext ctx) {
+        if (asBoolean(ctx.recordPattern())) {
+            return this.buildRecordPattern(ctx.recordPattern());
+        }
+        PatternNode component = new PatternNode();
+        String name;
+        if (asBoolean(ctx.typePattern())) {
+            component.type = this.visitType(ctx.typePattern().type());
+            name = this.visitIdentifier(ctx.typePattern().identifier());
+        } else {
+            name = this.visitIdentifier(ctx.identifier());
+            if (null == ctx.DEF() && null == ctx.VAR() && !"_".equals(name)) {
+                throw createParsingFailedException("record pattern component must be a type pattern, a var/def binding, a nested record pattern or `_`", ctx);
+            }
+        }
+        component.name = "_".equals(name) ? null : name; // `_` is bind-and-discard
+        return component;
+    }
+
+    /** Emits the type, arity and component checks (plus bindings) for a record pattern; used inside closure case labels. */
+    private void appendRecordPatternChecks(final PatternNode pattern, final Expression source, final List<Statement> statements) {
+        statements.add(ifS(notX(isInstanceOfX(source, pattern.type)), returnS(constX(Boolean.FALSE, true))));
+        appendRecordPatternExtraction(pattern, source, statements, true);
+    }
+
+    /**
+     * Emits the component extraction of a record pattern rooted at {@code source}.
+     * With {@code withChecks}, arity and component type checks guard each step
+     * (for use in a case label closure); without, only the statements needed to
+     * declare the pattern variables are emitted (for use in the case body, where
+     * the match is already established).
+     */
+    private void appendRecordPatternExtraction(final PatternNode pattern, final Expression source, final List<Statement> statements, final boolean withChecks) {
+        String componentsName = "__$$rc" + switchPatternVariableSeq++;
+        statements.add(declS(localVarX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "components", args(source))));
+        if (withChecks) {
+            statements.add(ifS(neX(callX(varX(componentsName), "size"), constX(pattern.components.size(), true)), returnS(constX(Boolean.FALSE, true))));
+        }
+        for (int i = 0, n = pattern.components.size(); i < n; i += 1) {
+            PatternNode component = pattern.components.get(i);
+            if (withChecks ? component.isUncheckedWildcard() : !component.hasBindings()) continue;
+            String componentName = "__$$rv" + switchPatternVariableSeq++;
+            statements.add(declS(localVarX(componentName), callX(varX(componentsName), "get", args(constX(i, true)))));
+            Expression componentVar = varX(componentName);
+            if (component.components != null) { // nested record pattern
+                if (withChecks) {
+                    appendRecordPatternChecks(component, componentVar, statements);
+                } else {
+                    appendRecordPatternExtraction(component, componentVar, statements, false);
+                }
+            } else {
+                if (withChecks && component.type != null) {
+                    statements.add(ifS(notX(isInstanceOfX(componentVar, ClassHelper.getWrapper(component.type))), returnS(constX(Boolean.FALSE, true))));
+                }
+                if (component.name != null) {
+                    statements.add(declS(localVarX(component.name, component.type != null ? component.type : ClassHelper.dynamicType()),
+                            component.type != null ? castX(component.type, componentVar) : componentVar));
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds a closure case label for a list pattern (GEP-19), e.g.
+     * {@code case [Integer h, var... t] when h > 0 ->} becomes:
+     * <pre>
+     * case { __$$pc1 -> List __$$lv2 = ListPatternSupport.elementsOrNull(__$$pc1)
+     *                   if (__$$lv2 == null) return false
+     *                   if (__$$lv2.size() < 1) return false
+     *                   def __$$le3 = __$$lv2.get(0)
+     *                   if (!(__$$le3 instanceof Integer)) return false
+     *                   Integer h = (Integer) __$$le3
+     *                   List t = ListPatternSupport.rest(__$$lv2, 1, 0)
+     *                   return h > 0 }:
+     * </pre>
+     * List patterns destructure {@code List}, array and {@code Iterable} values,
+     * so element access goes through {@link org.apache.groovy.runtime.ListPatternSupport}.
+     */
+    private Expression createListPatternLabel(final CasePatternContext ctx, final Expression guard) {
+        PatternNode pattern = this.buildListPattern(ctx.listPattern());
+        String candidateName = "__$$pc" + switchPatternVariableSeq++;
+        Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+        List<Statement> checkStatements = new ArrayList<>();
+        appendListPatternExtraction(pattern, varX(candidateName), checkStatements, true);
+        checkStatements.add(returnS(guard != null ? guard : constX(Boolean.TRUE, true)));
+        Expression labelExpr = configureAST(closureX(params(candidate), createBlockStatement(checkStatements)), ctx);
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels;
+        // a list pattern has no type at the head and is always conditional
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_LIST, Boolean.TRUE);
+
+        List<Statement> bindingDecls = new ArrayList<>();
+        if (pattern.hasBindings()) {
+            appendListPatternExtraction(pattern, varX(switchPatternSubjectStack.peek()), bindingDecls, false);
+        }
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecls);
+        return labelExpr;
+    }
+
+    private PatternNode buildListPattern(final ListPatternContext ctx) {
+        PatternNode pattern = new PatternNode();
+        pattern.list = true;
+        pattern.components = new ArrayList<>();
+        if (asBoolean(ctx.listPatternElements())) {
+            boolean restSeen = false;
+            for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+                PatternNode element = this.buildListPatternElement(elementCtx);
+                if (element.rest) {
+                    if (restSeen) {
+                        throw createParsingFailedException("a list pattern supports at most one rest binding", elementCtx);
+                    }
+                    restSeen = true;
+                }
+                pattern.components.add(element);
+            }
+        }
+        return pattern;
+    }
+
+    private PatternNode buildListPatternElement(final ListPatternElementContext ctx) {
+        if (asBoolean(ctx.listPatternRest())) {
+            ListPatternRestContext restCtx = ctx.listPatternRest();
+            PatternNode element = new PatternNode();
+            element.rest = true;
+            if (asBoolean(restCtx.type())) {
+                element.type = this.visitType(restCtx.type());
+            }
+            if (asBoolean(restCtx.identifier())) {
+                String name = this.visitIdentifier(restCtx.identifier());
+                element.name = "_".equals(name) ? null : name; // `_` is bind-and-discard
+            }
+            return element;
+        }
+        if (asBoolean(ctx.recordPattern())) {
+            return this.buildRecordPattern(ctx.recordPattern());
+        }
+        if (asBoolean(ctx.listPattern())) {
+            if (isPatternShapedList(ctx.listPattern())) {
+                return this.buildListPattern(ctx.listPattern());
+            }
+            PatternNode element = new PatternNode(); // a plain list literal element is matched by equality
+            element.constant = this.rebuildListExpression(ctx.listPattern());
+            return element;
+        }
+        if (asBoolean(ctx.mapPattern())) {
+            if (isPatternShapedMap(ctx.mapPattern())) {
+                return this.buildMapPattern(ctx.mapPattern());
+            }
+            PatternNode element = new PatternNode(); // a plain map literal element is matched by equality
+            element.constant = this.rebuildMapExpression(ctx.mapPattern());
+            return element;
+        }
+        PatternNode element = new PatternNode();
+        if (asBoolean(ctx.typePattern())) {
+            element.type = this.visitType(ctx.typePattern().type());
+            String name = this.visitIdentifier(ctx.typePattern().identifier());
+            element.name = "_".equals(name) ? null : name;
+        } else if (null != ctx.DEF() || null != ctx.VAR()) {
+            String name = this.visitIdentifier(ctx.identifier());
+            element.name = "_".equals(name) ? null : name;
+        } else {
+            element.constant = (Expression) this.visit(ctx.expression()); // matched by equality
+        }
+        return element;
+    }
+
+    /** Rebuilds a legacy list expression from a {@code [...]} literal that parsed via the listPattern rule but is not pattern-shaped. */
+    private Expression rebuildListExpression(final ListPatternContext ctx) {
+        List<Expression> expressions = new ArrayList<>();
+        if (asBoolean(ctx.listPatternElements())) {
+            for (ListPatternElementContext elementCtx : ctx.listPatternElements().listPatternElement()) {
+                expressions.add(this.rebuildElementExpression(elementCtx));
+            }
+        }
+        return configureAST(new ListExpression(expressions), ctx);
+    }
+
+    /** Rebuilds a legacy map expression from a {@code [k: v, ...]} literal that parsed via the mapPattern rule but is not pattern-shaped. */
+    private Expression rebuildMapExpression(final MapPatternContext ctx) {
+        List<MapEntryExpression> entries = new ArrayList<>();
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            Expression keyExpr = this.visitMapEntryLabel(entryCtx.mapEntryLabel());
+            Expression valueExpr = this.rebuildElementExpression(entryCtx.listPatternElement());
+            entries.add(configureAST(new MapEntryExpression(keyExpr, valueExpr), entryCtx));
+        }
+        return configureAST(new MapExpression(entries), ctx);
+    }
+
+    private Expression rebuildElementExpression(final ListPatternElementContext ctx) {
+        if (asBoolean(ctx.listPattern())) return this.rebuildListExpression(ctx.listPattern());
+        if (asBoolean(ctx.mapPattern())) return this.rebuildMapExpression(ctx.mapPattern());
+        return (Expression) this.visit(ctx.expression());
+    }
+
+    /**
+     * Emits the destructuring of a list pattern rooted at {@code source}. With
+     * {@code withChecks}, the shape and element checks guard each step (for use in
+     * a case label closure); without, only the statements needed to declare the
+     * pattern variables are emitted (for use in the case body, where the match is
+     * already established). Without a rest binding the pattern requires exactly as
+     * many elements as specified; with one, at least the fixed elements, those
+     * following the rest binding being addressed from the end.
+     */
+    private void appendListPatternExtraction(final PatternNode pattern, final Expression source, final List<Statement> statements, final boolean withChecks) {
+        String elementsName = "__$$lv" + switchPatternVariableSeq++;
+        statements.add(declS(localVarX(elementsName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                callX(classX(LIST_PATTERN_SUPPORT_TYPE), "elementsOrNull", args(source))));
+        int n = pattern.components.size();
+        int restIndex = -1;
+        for (int i = 0; i < n; i += 1) {
+            if (pattern.components.get(i).rest) restIndex = i;
+        }
+        int fixed = n - (restIndex < 0 ? 0 : 1);
+        if (withChecks) {
+            statements.add(ifS(eqX(varX(elementsName), nullX()), returnS(constX(Boolean.FALSE, true))));
+            if (restIndex < 0) {
+                statements.add(ifS(neX(callX(varX(elementsName), "size"), constX(fixed, true)), returnS(constX(Boolean.FALSE, true))));
+            } else if (fixed > 0) {
+                statements.add(ifS(ltX(callX(varX(elementsName), "size"), constX(fixed, true)), returnS(constX(Boolean.FALSE, true))));
+            }
+        }
+        for (int i = 0; i < n; i += 1) {
+            PatternNode element = pattern.components.get(i);
+            if (withChecks ? element.isUncheckedWildcard() : !element.hasBindings()) continue;
+            if (element.rest) {
+                String restName = element.name != null ? element.name : "__$$lr" + switchPatternVariableSeq++;
+                statements.add(declS(localVarX(restName, ClassHelper.LIST_TYPE.getPlainNodeReference()),
+                        callX(classX(LIST_PATTERN_SUPPORT_TYPE), "rest", args(varX(elementsName), constX(i, true), constX(n - i - 1, true)))));
+                if (withChecks && element.type != null) {
+                    statements.add(ifS(notX(callX(classX(LIST_PATTERN_SUPPORT_TYPE), "allInstanceOf",
+                            args(varX(restName), classX(ClassHelper.getWrapper(element.type))))), returnS(constX(Boolean.FALSE, true))));
+                }
+                continue;
+            }
+            Expression indexExpr = (restIndex >= 0 && i > restIndex)
+                    ? minusX(callX(varX(elementsName), "size"), constX(n - i, true))
+                    : constX(i, true);
+            Expression elementAccess = callX(varX(elementsName), "get", args(indexExpr));
+            if (element.constant != null) {
+                statements.add(ifS(notX(eqX(elementAccess, element.constant)), returnS(constX(Boolean.FALSE, true))));
+                continue;
+            }
+            String elementName = "__$$le" + switchPatternVariableSeq++;
+            statements.add(declS(localVarX(elementName), elementAccess));
+            Expression elementVar = varX(elementName);
+            if (element.components != null) { // nested pattern
+                if (element.list) {
+                    appendListPatternExtraction(element, elementVar, statements, withChecks);
+                } else if (element.map) {
+                    appendMapPatternExtraction(element, elementVar, statements, withChecks);
+                } else if (withChecks) {
+                    appendRecordPatternChecks(element, elementVar, statements);
+                } else {
+                    appendRecordPatternExtraction(element, elementVar, statements, false);
+                }
+            } else {
+                if (withChecks && element.type != null) {
+                    statements.add(ifS(notX(isInstanceOfX(elementVar, ClassHelper.getWrapper(element.type))), returnS(constX(Boolean.FALSE, true))));
+                }
+                if (element.name != null) {
+                    statements.add(declS(localVarX(element.name, element.type != null ? element.type : ClassHelper.dynamicType()),
+                            element.type != null ? castX(element.type, elementVar) : elementVar));
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds a closure case label for a map pattern (GEP-19), e.g.
+     * {@code case [name: String n, ... rest] when n ->} becomes:
+     * <pre>
+     * case { __$$pc1 -> Map __$$mv2 = MapPatternSupport.entriesOrNull(__$$pc1)
+     *                   if (__$$mv2 == null) return false
+     *                   if (!__$$mv2.containsKey('name')) return false
+     *                   def __$$me3 = __$$mv2.get('name')
+     *                   if (!(__$$me3 instanceof String)) return false
+     *                   String n = (String) __$$me3
+     *                   Map rest = MapPatternSupport.rest(__$$mv2, ['name'])
+     *                   return n }:
+     * </pre>
+     * Matching is open: all named keys must be present and their value patterns
+     * match; extra entries are ignored unless captured by a rest binding. The
+     * empty map pattern {@code [:]} matches only an empty map.
+     */
+    private Expression createMapPatternLabel(final CasePatternContext ctx, final Expression guard) {
+        PatternNode pattern = this.buildMapPattern(ctx.mapPattern());
+        String candidateName = "__$$pc" + switchPatternVariableSeq++;
+        Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
+        List<Statement> checkStatements = new ArrayList<>();
+        appendMapPatternExtraction(pattern, varX(candidateName), checkStatements, true);
+        checkStatements.add(returnS(guard != null ? guard : constX(Boolean.TRUE, true)));
+        Expression labelExpr = configureAST(closureX(params(candidate), createBlockStatement(checkStatements)), ctx);
+
+        // read by StaticTypeCheckingVisitor to check pattern switch case labels;
+        // a map pattern has no type at the head and is always conditional
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
+        labelExpr.putNodeMetaData(SWITCH_PATTERN_MAP, Boolean.TRUE);
+
+        List<Statement> bindingDecls = new ArrayList<>();
+        if (pattern.hasBindings()) {
+            appendMapPatternExtraction(pattern, varX(switchPatternSubjectStack.peek()), bindingDecls, false);
+        }
+        labelExpr.putNodeMetaData(SWITCH_TYPE_PATTERN_BINDING, bindingDecls);
+        return labelExpr;
+    }
+
+    private PatternNode buildMapPattern(final MapPatternContext ctx) {
+        PatternNode pattern = new PatternNode();
+        pattern.map = true;
+        pattern.components = new ArrayList<>();
+        boolean restSeen = false;
+        for (MapPatternEntryContext entryCtx : ctx.mapPatternEntry()) {
+            PatternNode entry;
+            if (asBoolean(entryCtx.ELLIPSIS())) {
+                if (restSeen) {
+                    throw createParsingFailedException("a map pattern supports at most one rest binding", entryCtx);
+                }
+                restSeen = true;
+                entry = new PatternNode();
+                entry.rest = true;
+                if (asBoolean(entryCtx.identifier())) {
+                    String name = this.visitIdentifier(entryCtx.identifier());
+                    entry.name = "_".equals(name) ? null : name; // `_` is bind-and-discard
+                }
+            } else {
+                Expression keyExpr = this.visitMapEntryLabel(entryCtx.mapEntryLabel());
+                if (!(keyExpr instanceof ConstantExpression)) {
+                    throw createParsingFailedException("map pattern keys must be constants", entryCtx.mapEntryLabel());
+                }
+                entry = this.buildListPatternElement(entryCtx.listPatternElement());
+                if (entry.rest) {
+                    throw createParsingFailedException("a rest binding is not supported as a map pattern value", entryCtx.listPatternElement());
+                }
+                entry.key = ((ConstantExpression) keyExpr).getValue();
+            }
+            pattern.components.add(entry);
+        }
+        return pattern;
+    }
+
+    /**
+     * Emits the destructuring of a map pattern rooted at {@code source}; the
+     * {@code withChecks} contract matches {@link #appendListPatternExtraction}.
+     * Every named key requires a presence check even when its value pattern is a
+     * wildcard, since open matching is defined over the keys.
+     */
+    private void appendMapPatternExtraction(final PatternNode pattern, final Expression source, final List<Statement> statements, final boolean withChecks) {
+        String entriesName = "__$$mv" + switchPatternVariableSeq++;
+        statements.add(declS(localVarX(entriesName, ClassHelper.MAP_TYPE.getPlainNodeReference()),
+                callX(classX(MAP_PATTERN_SUPPORT_TYPE), "entriesOrNull", args(source))));
+        if (withChecks) {
+            statements.add(ifS(eqX(varX(entriesName), nullX()), returnS(constX(Boolean.FALSE, true))));
+            if (pattern.components.isEmpty()) { // `[:]` matches only an empty map
+                statements.add(ifS(notX(callX(varX(entriesName), "isEmpty")), returnS(constX(Boolean.FALSE, true))));
+            }
+        }
+        for (PatternNode entry : pattern.components) {
+            if (!withChecks && !entry.hasBindings()) continue;
+            if (entry.rest) {
+                if (entry.name == null) continue; // `...` just relaxes the match, which is open anyway
+                List<Expression> namedKeys = new ArrayList<>();
+                for (PatternNode named : pattern.components) {
+                    if (!named.rest) namedKeys.add(constX(named.key));
+                }
+                statements.add(declS(localVarX(entry.name, ClassHelper.MAP_TYPE.getPlainNodeReference()),
+                        callX(classX(MAP_PATTERN_SUPPORT_TYPE), "rest", args(varX(entriesName), listX(namedKeys)))));
+                continue;
+            }
+            if (withChecks) {
+                statements.add(ifS(notX(callX(varX(entriesName), "containsKey", args(constX(entry.key)))), returnS(constX(Boolean.FALSE, true))));
+            }
+            Expression valueAccess = callX(varX(entriesName), "get", args(constX(entry.key)));
+            if (entry.constant != null) {
+                statements.add(ifS(notX(eqX(valueAccess, entry.constant)), returnS(constX(Boolean.FALSE, true))));
+                continue;
+            }
+            if (entry.isUncheckedWildcard()) continue; // presence check only
+            String valueName = "__$$me" + switchPatternVariableSeq++;
+            statements.add(declS(localVarX(valueName), valueAccess));
+            Expression valueVar = varX(valueName);
+            if (entry.components != null) { // nested pattern
+                if (entry.list) {
+                    appendListPatternExtraction(entry, valueVar, statements, withChecks);
+                } else if (entry.map) {
+                    appendMapPatternExtraction(entry, valueVar, statements, withChecks);
+                } else if (withChecks) {
+                    appendRecordPatternChecks(entry, valueVar, statements);
+                } else {
+                    appendRecordPatternExtraction(entry, valueVar, statements, false);
+                }
+            } else {
+                if (withChecks && entry.type != null) {
+                    statements.add(ifS(notX(isInstanceOfX(valueVar, ClassHelper.getWrapper(entry.type))), returnS(constX(Boolean.FALSE, true))));
+                }
+                if (entry.name != null) {
+                    statements.add(declS(localVarX(entry.name, entry.type != null ? entry.type : ClassHelper.dynamicType()),
+                            entry.type != null ? castX(entry.type, valueVar) : valueVar));
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds the lowered expression for a record pattern in {@code instanceof} (GEP-19),
+     * a conjunction of ordinary expressions and {@code instanceof} bindings (JEP 394), e.g.
+     * {@code p instanceof Point(int x, var y)} becomes:
+     * <pre>
+     * p instanceof Point __$$rp1
+     *   &amp; RecordPatternSupport.componentsOrEmpty(__$$rp1) instanceof List __$$rc2
+     *   &amp; __$$rc2.size() == 2
+     *   &amp; RecordPatternSupport.component(__$$rc2, 0) instanceof Integer x
+     *   &amp; (RecordPatternSupport.component(__$$rc2, 1) instanceof Object y | true)
+     * </pre>
+     * The conjunction deliberately uses the non-short-circuiting {@code &} operator:
+     * each {@code instanceof} binding declares and default-initialises its variable
+     * where it occurs, so evaluating every conjunct unconditionally keeps all pattern
+     * variables definitely assigned for the bytecode verifier (short-circuit joins
+     * would merge frames in which the variables do not exist). The helper methods
+     * make each conjunct safe to evaluate after an earlier conjunct has failed, and
+     * accessors are only ever invoked on values that passed their own type check.
+     * The {@code | true} form gives {@code var}/{@code def} components their
+     * unconditional semantics: a {@code null} component keeps the match alive and
+     * leaves the binding {@code null}.
+     */
+    private Expression createRecordPatternInstanceof(final Expression left, final org.codehaus.groovy.syntax.Token instanceOf, final RecordPatternContext ctx) {
+        PatternNode pattern = this.buildRecordPattern(ctx);
+        List<Expression> conjuncts = new ArrayList<>();
+        appendRecordPatternInstanceofConjuncts(pattern, left, instanceOf, conjuncts);
+        return foldConjuncts(conjuncts, instanceOf);
+    }
+
+    private static Expression foldConjuncts(final List<Expression> conjuncts, final org.codehaus.groovy.syntax.Token instanceOf) {
+        Expression result = conjuncts.get(0);
+        for (int i = 1, n = conjuncts.size(); i < n; i += 1) {
+            result = binX(result, org.codehaus.groovy.syntax.Token.newSymbol(Types.BITWISE_AND, instanceOf.getStartLine(), instanceOf.getStartColumn()), conjuncts.get(i));
+        }
+        return result;
+    }
+
+    private void appendRecordPatternInstanceofConjuncts(final PatternNode pattern, final Expression source, final org.codehaus.groovy.syntax.Token instanceOf, final List<Expression> conjuncts) {
+        String recordName = "__$$rp" + switchPatternVariableSeq++;
+        conjuncts.add(binX(source, instanceOf, declX(varX(recordName, pattern.type), EmptyExpression.INSTANCE)));
+        // componentsOrEmpty(...) always yields a List; this conjunct just binds it
+        String componentsName = "__$$rc" + switchPatternVariableSeq++;
+        conjuncts.add(binX(callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "componentsOrEmpty", args(varX(recordName))), instanceOf,
+                declX(varX(componentsName, ClassHelper.LIST_TYPE.getPlainNodeReference()), EmptyExpression.INSTANCE)));
+        conjuncts.add(eqX(callX(varX(componentsName), "size"), constX(pattern.components.size(), true)));
+        for (int i = 0, n = pattern.components.size(); i < n; i += 1) {
+            PatternNode component = pattern.components.get(i);
+            if (component.isUncheckedWildcard()) continue;
+            Expression componentExpr = callX(classX(RECORD_PATTERN_SUPPORT_TYPE), "component", args(varX(componentsName), constX(i, true)));
+            if (component.components != null) { // nested record pattern
+                appendRecordPatternInstanceofConjuncts(component, componentExpr, instanceOf, conjuncts);
+            } else if (component.type != null) {
+                ClassNode bindType = ClassHelper.getWrapper(component.type);
+                Expression rhs = component.name != null
+                        ? declX(varX(component.name, bindType), EmptyExpression.INSTANCE)
+                        : new ClassExpression(bindType);
+                conjuncts.add(binX(componentExpr, instanceOf, rhs));
+            } else { // var/def binding: unconditional, also matches a null component
+                conjuncts.add(binX(
+                        binX(componentExpr, instanceOf, declX(varX(component.name, ClassHelper.OBJECT_TYPE.getPlainNodeReference()), EmptyExpression.INSTANCE)),
+                        org.codehaus.groovy.syntax.Token.newSymbol(Types.BITWISE_OR, instanceOf.getStartLine(), instanceOf.getStartColumn()),
+                        constX(Boolean.TRUE, true)));
+            }
+        }
+    }
+
+    /** A parsed pattern (GEP-19): a record or list pattern when {@code components} is non-null, otherwise a binding, literal element or wildcard. */
+    private static class PatternNode {
+        ClassNode type;               // null for an untyped (var/def) binding or a bare wildcard; the element type for a typed rest binding
+        String name;                  // null for a wildcard or a nested pattern
+        List<PatternNode> components; // non-null for a record, list or map pattern
+        boolean list;                 // components are list pattern elements rather than record components
+        boolean map;                  // components are map pattern entries rather than record components
+        boolean rest;                 // a rest binding element within a list or map pattern
+        Expression constant;          // a literal element within a list or map pattern, matched by equality
+        Object key;                   // the constant key of a map pattern entry
+
+        boolean isUncheckedWildcard() {
+            return type == null && name == null && components == null && constant == null;
+        }
+
+        boolean hasBindings() {
+            if (name != null) return true;
+            if (components == null) return false;
+            for (PatternNode component : components) {
+                if (component.hasBindings()) return true;
+            }
+            return false;
+        }
     }
 
     // } statement -------------------------------------------------------------
@@ -3237,6 +4187,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
           case INSTANCEOF:
             ctx.matchingType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            if (asBoolean(ctx.matchingType().recordPattern())) { // GEP-19
+                return configureAST(
+                        this.createRecordPatternInstanceof(
+                                (Expression) this.visit(ctx.left),
+                                this.createGroovyToken(ctx.op),
+                                ctx.matchingType().recordPattern()),
+                        ctx);
+            }
             return configureAST(
                     new BinaryExpression(
                             (Expression) this.visit(ctx.left),
@@ -4982,6 +5940,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private final Deque<GroovyParserRuleContext> switchExpressionRuleContextStack = new ArrayDeque<>();
 
+    /** Name of the synthetic variable holding the switch subject of the enclosing switch expression ("" if it has no pattern labels). */
+    private final Deque<String> switchPatternSubjectStack = new ArrayDeque<>();
+    private final Deque<Boolean> switchPatternFastStack = new ArrayDeque<>();
+    private int switchPatternVariableSeq;
+
     private Tuple2<GroovyParserRuleContext, Exception> numberFormatError;
 
     private int visitingClosureCount;
@@ -5025,6 +5988,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String INSIDE_PARENTHESES_LEVEL = "_INSIDE_PARENTHESES_LEVEL";
     private static final String IS_INSIDE_INSTANCEOF_EXPR = "_IS_INSIDE_INSTANCEOF_EXPR";
     private static final String IS_SWITCH_DEFAULT = "_IS_SWITCH_DEFAULT";
+    private static final String SWITCH_TYPE_PATTERN_BINDING = "_SWITCH_TYPE_PATTERN_BINDING";
+    // the next four keys are also read (as literals) by StaticTypeCheckingVisitor
+    private static final String SWITCH_PATTERN_SUBJECT = "_SWITCH_PATTERN_SUBJECT";
+    private static final String SWITCH_PATTERN_TYPE = "_SWITCH_PATTERN_TYPE";
+    private static final String SWITCH_PATTERN_GUARDED = "_SWITCH_PATTERN_GUARDED";
+    private static final String SWITCH_PATTERN_RECORD = "_SWITCH_PATTERN_RECORD";
+    private static final String SWITCH_PATTERN_LIST = "_SWITCH_PATTERN_LIST";
+    private static final String SWITCH_PATTERN_MAP = "_SWITCH_PATTERN_MAP";
+    private static final String SWITCH_PATTERN_ARM_ITEMS = "_SWITCH_PATTERN_ARM_ITEMS";
+    private static final String SWITCH_PATTERN_ARMS = "_SWITCH_PATTERN_ARMS";
+    private static final String SWITCH_PATTERN_DEFAULT = "_SWITCH_PATTERN_DEFAULT";
+    private static final ClassNode RECORD_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(RecordPatternSupport.class);
+    private static final ClassNode LIST_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(ListPatternSupport.class);
+    private static final ClassNode MAP_PATTERN_SUPPORT_TYPE = ClassHelper.makeCached(MapPatternSupport.class);
     private static final String IS_NUMERIC = "_IS_NUMERIC";
     private static final String IS_STRING = "_IS_STRING";
     private static final String IS_INTERFACE_WITH_DEFAULT_METHODS = "_IS_INTERFACE_WITH_DEFAULT_METHODS";
