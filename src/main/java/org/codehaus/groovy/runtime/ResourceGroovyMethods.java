@@ -1730,6 +1730,17 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static boolean deleteDir(final File self) {
+        if (Files.isSymbolicLink(self.toPath())) {
+            // never follow a symbolic link into its target; remove the link itself.
+            // Note: Files.isSymbolicLink does not detect Windows directory junctions
+            // (reparse points), which are therefore still traversed.
+            try {
+                Files.delete(self.toPath());
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+        }
         if (!self.exists())
             return true;
         if (!self.isDirectory())

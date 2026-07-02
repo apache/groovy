@@ -361,7 +361,9 @@ public class FileSystemCompiler {
             return;
         }
         if (Files.isSymbolicLink(file.toPath()) || file.isFile()) {
-            // for a symbolic link, remove the link itself rather than following it into the target
+            // for a symbolic link, remove the link itself rather than following it into the target.
+            // Note: Files.isSymbolicLink does not detect Windows directory junctions
+            // (reparse points), which are therefore still traversed.
             file.delete();
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
