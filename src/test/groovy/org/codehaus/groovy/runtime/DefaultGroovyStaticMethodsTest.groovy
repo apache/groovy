@@ -43,4 +43,41 @@ class DefaultGroovyStaticMethodsTest {
     void testAllThreads() {
         assert Thread.allThreads().stream().anyMatch(t -> 'Finalizer' == t.name)
     }
+
+    @Test
+    void testTimedNanos() {
+        boolean ran = false
+        long elapsed = System.timedNanos { ran = true; (1..1000).sum() }
+        assert ran
+        assert elapsed >= 0
+    }
+
+    @Test
+    void testTimedMillis() {
+        boolean ran = false
+        long elapsed = System.timedMillis { ran = true; (1..1000).sum() }
+        assert ran
+        assert elapsed >= 0
+    }
+
+    @Test
+    void testTimed() {
+        def t = System.timed { (1..1000).sum() }
+        assert t.result == 500500
+        assert t.nanos >= 0
+        assert t.millis == t.nanos.intdiv(1_000_000)
+        assert t.duration == java.time.Duration.ofNanos(t.nanos)
+    }
+
+    @Test
+    void testTimedPropagatesException() {
+        def ex = new IllegalStateException('boom')
+        def caught = null
+        try {
+            System.timed { throw ex }
+        } catch (IllegalStateException e) {
+            caught = e
+        }
+        assert caught.is(ex)
+    }
 }
