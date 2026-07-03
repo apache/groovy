@@ -91,7 +91,7 @@ class GinqSqlTranslationTest {
             groupby e.deptId into g
             select g.deptId, g.count() as cnt, g.avg(e -> e.salary) as avgSalary
         }
-        assert 'SELECT e.deptId, COUNT(*) AS cnt, AVG(e.salary) AS avgSalary FROM employees e ' +
+        assert 'SELECT e.deptId AS deptId, COUNT(*) AS cnt, AVG(e.salary) AS avgSalary FROM employees e ' +
                 'WHERE e.deptId IS NOT NULL GROUP BY e.deptId' == db.sqlText
         assert [] == db.params
     }
@@ -104,7 +104,7 @@ class GinqSqlTranslationTest {
             having g.count() > 1
             select g.deptId
         }
-        assert 'SELECT e.deptId FROM employees e GROUP BY e.deptId HAVING COUNT(*) > ?' == db.sqlText
+        assert 'SELECT e.deptId AS deptId FROM employees e GROUP BY e.deptId HAVING COUNT(*) > ?' == db.sqlText
         assert [1] == db.params
     }
 
@@ -128,6 +128,121 @@ class GinqSqlTranslationTest {
             select distinct(e.salary)
         }
         assert 'SELECT DISTINCT e.salary FROM employees e' == db.sqlText
+    }
+
+    @Test
+    void testLikeMethods() {
+        def part = 'li'
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.contains(part) || e.name.startsWith('Bo') || e.name.endsWith('ve')
+            select e.name
+        }
+        assert "SELECT e.name FROM employees e WHERE e.name LIKE ? ESCAPE '!' " +
+                "OR e.name LIKE ? ESCAPE '!' OR e.name LIKE ? ESCAPE '!'" == db.sqlText
+        assert ['%li%', 'Bo%', '%ve'] == db.params
+    }
+
+    @Test
+    void testSubstringReplaceAndConcat() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.substring(0, 3) == 'Ali'
+            select e.name.replace('A', 'X') + '!' as decorated
+        }
+        assert "SELECT REPLACE(e.name, ?, ?) || ? AS decorated FROM employees e " +
+                'WHERE SUBSTRING(e.name FROM ? FOR ?) = ?' == db.sqlText
+        assert ['A', 'X', '!', 1, 3, 'Ali'] == db.params
+    }
+
+    @Test
+    void testTernaryBecomesCaseWhen() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            select e.name, (e.salary > 4000 ? 'high' : 'low') as band
+        }
+        assert "SELECT e.name, CASE WHEN e.salary > ? THEN 'high' ELSE 'low' END AS band FROM employees e" == db.sqlText
+        assert [4000] == db.params
+    }
+
+    @Test
+    void testClassicGroupBy() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            groupby e.deptId
+            having count() > 1
+            select e.deptId, count() as cnt, sum(e.salary) as total
+        }
+        assert 'SELECT e.deptId, COUNT(*) AS cnt, SUM(e.salary) AS total FROM employees e ' +
+                'GROUP BY e.deptId HAVING COUNT(*) > ?' == db.sqlText
+        assert [1] == db.params
+    }
+
+    @Test
+    void testSetOperationWithTrailingOrderByAndLimit() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from a in 'employees'
+            where a.deptId == 1
+            select a.name, a.salary
+            union
+            from b in 'employees'
+            where b.deptId == 2
+            orderby b.salary in desc, b.name
+            limit 1, 2
+            select b.name, b.salary
+        }
+        assert 'SELECT a.name, a.salary FROM employees a WHERE a.deptId = ? ' +
+                'UNION SELECT b.name, b.salary FROM employees b WHERE b.deptId = ? ' +
+                'ORDER BY 2 DESC NULLS LAST, 1 ASC NULLS LAST OFFSET ? ROWS FETCH NEXT ? ROWS ONLY' == db.sqlText
+        assert [1, 2, 1, 2] == db.params
+    }
+
+    @Test
+    void testDerivedTable() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from v in (from e in 'employees' where e.salary >= 4000 select e.name, e.salary)
+            where v.salary < 6000
+            select v.name
+        }
+        assert 'SELECT v.name FROM (SELECT e.name, e.salary FROM employees e WHERE e.salary >= ?) v ' +
+                'WHERE v.salary < ?' == db.sqlText
+        assert [4000, 6000] == db.params
+    }
+
+    @Test
+    void testCorrelatedExists() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where (from d in 'departments' where d.id == e.deptId select d.id).exists()
+            select e.name
+        }
+        assert 'SELECT e.name FROM employees e ' +
+                'WHERE EXISTS (SELECT d.id FROM departments d WHERE d.id = e.deptId)' == db.sqlText
+        assert [] == db.params
+    }
+
+    @Test
+    void testInSubquery() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId in (from d in 'departments' where d.name != 'Support' select d.id)
+            select e.name
+        }
+        assert 'SELECT e.name FROM employees e ' +
+                'WHERE e.deptId IN (SELECT d.id FROM departments d WHERE d.name <> ?)' == db.sqlText
+        assert ['Support'] == db.params
+    }
+
+    @Test
+    void testScalarSubquery() {
+        GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.salary == (from x in 'employees' select max(x.salary))
+            select e.name
+        }
+        assert 'SELECT e.name FROM employees e ' +
+                'WHERE e.salary = (SELECT MAX(x.salary) FROM employees x)' == db.sqlText
+        assert [] == db.params
     }
 
     @Test

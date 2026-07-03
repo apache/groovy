@@ -1211,11 +1211,28 @@ Every literal and captured variable in the query becomes a positional bound para
 text never contains user-supplied values and SQL injection is structurally impossible.
 
 The SQL backend operates in strict mode: an expression either translates cleanly to SQL, or the
-query is rejected at compile time with an error explaining the untranslatable construct. Notable
-current restrictions include subqueries, window functions, `groupby` without `into`, and
-`orderby`/`limit` within set operation operands; use `groupby ... into g` for aggregation, e.g.
-`g.count()`, `g.sum(e -> e.salary)`. A small set of common methods maps to SQL functions, e.g.
-`toUpperCase()` to `UPPER(...)` and `length()` to `CHAR_LENGTH(...)`.
+query is rejected at compile time with an error explaining the untranslatable construct. The main
+current restriction is window functions. Aggregation is supported both in the classic form, e.g.
+`groupby e.deptId` with `select e.deptId, count(), sum(e.salary)`, and the `groupby ... into g`
+form, e.g. `g.count()`, `g.sum(e -> e.salary)`.
+
+Nested queries translate to SQL subqueries: a nested query as a data source becomes a derived
+table, `(...).exists()` becomes `EXISTS (...)`, `in` against a nested query becomes `IN (subquery)`,
+and a nested query in an expression position becomes a scalar subquery. Subqueries in expression
+positions may be correlated, i.e. reference the aliases of enclosing queries; derived tables
+cannot, matching standard SQL.
+
+A set of common methods and operators maps to SQL: `toUpperCase()`/`toLowerCase()` to
+`UPPER(...)`/`LOWER(...)`, `trim()` to `TRIM(...)`, `length()` to `CHAR_LENGTH(...)`,
+`contains(...)`/`startsWith(...)`/`endsWith(...)` to `LIKE` (with wildcard characters in the
+runtime value escaped, so it always matches literally), `substring(...)` to `SUBSTRING(...)`,
+`replace(a, b)` to `REPLACE(...)`, string concatenation with `+` to `||`, and ternary
+expressions to `CASE WHEN ... END`.
+
+A trailing `orderby`/`limit` on the final operand of a set operation applies to the combined
+result, matching SQL semantics; the order keys must match columns of the final `select` clause.
+(Note that the collection provider instead applies such an `orderby` to the final operand before
+combining.) `orderby`/`limit` within earlier operands are rejected.
 
 Because a `dataSource` is a runtime value, it cannot be supplied via the `@GQ` annotation;
 use the `GQ`/`GQL` macro form for database-backed queries.
