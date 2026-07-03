@@ -33,3 +33,12 @@ groovyLibrary {
 
     withoutBinaryCompatibilityChecks()
 }
+
+// GINQ macros expand at test-compile time using this module's classes, so the
+// provider implementation (not just its ABI) is a genuine input; without this,
+// compilation avoidance and the build cache can reuse test classes containing
+// stale macro expansions
+tasks.named('compileTestGroovy') {
+    inputs.files(tasks.named('compileGroovy').flatMap { it.destinationDirectory })
+            .withPropertyName('sqlProviderImplementation')
+}

@@ -250,6 +250,200 @@ class GinqSqlIntegrationTest {
     }
 
     @Test
+    void testLikeMethods() {
+        def part = 'li'
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.contains(part)
+            select e.name
+        }
+        assert ['Alice'] == result.collect { it.name }
+
+        result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.startsWith('Da') || e.name.endsWith('ve')
+            orderby e.name
+            select e.name
+        }
+        assert ['Dave', 'Eve'] == result.collect { it.name }
+    }
+
+    @Test
+    void testLikeWildcardsAreEscaped() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.startsWith('A%')
+            select e.name
+        }
+        // '%' matches literally, so 'Alice' must not match 'A%...'
+        assert [] == result
+    }
+
+    @Test
+    void testSubstring() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name.substring(0, 3) == 'Ali'
+            select e.name.substring(1) as rest
+        }
+        assert ['lice'] == result.collect { it.rest }
+    }
+
+    @Test
+    void testReplaceAndConcat() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.name + '!' == 'Bob!'
+            select e.name.replace('B', 'R') + '?' as renamed
+        }
+        assert ['Rob?'] == result.collect { it.renamed }
+    }
+
+    @Test
+    void testTernaryBecomesCaseWhen() {
+        // equal-length branch literals since some databases, e.g. HSQLDB, infer a
+        // CHAR(n) type for the CASE expression and pad the shorter value
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            orderby e.name
+            select e.name, (e.salary > 4000 ? 'high' : 'low!') as band
+        }
+        assert [['Alice', 'high'], ['Bob', 'low!'], ['Carol', 'low!'], ['Dave', 'low!'], ['Eve', 'high'], ['Frank', 'high']] ==
+                result.collect { [it.name, it.band] }
+    }
+
+    @Test
+    void testClassicGroupBy() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId != null
+            groupby e.deptId
+            orderby e.deptId
+            select e.deptId, count() as cnt, sum(e.salary) as total
+        }
+        assert [[1, 2, 8000], [2, 2, 9000], [3, 1, 6000]] ==
+                result.collect { [it.deptId, it.cnt, it.total] }
+    }
+
+    @Test
+    void testClassicGroupByWithHavingAndJoin() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            join d in 'departments' on e.deptId == d.id
+            groupby d.name
+            having count() > 1
+            orderby d.name
+            select d.name, max(e.salary) as top
+        }
+        assert [['Dev', 5000], ['Sales', 5000]] == result.collect { [it.name, it.top] }
+    }
+
+    @Test
+    void testClassicGroupByWithKeyAlias() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId != null
+            groupby e.deptId as dept
+            orderby dept
+            select dept, count() as cnt
+        }
+        assert [[1, 2], [2, 2], [3, 1]] == result.collect { [it.dept, it.cnt] }
+    }
+
+    @Test
+    void testSetOperationWithTrailingOrderByAndLimit() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from a in 'employees'
+            where a.deptId == 1
+            select a.name, a.salary
+            union
+            from b in 'employees'
+            where b.deptId == 2
+            orderby b.salary in desc, b.name
+            limit 1, 2
+            select b.name, b.salary
+        }
+        // combined rows ordered by salary desc, name asc: Alice/5000, Eve/5000, Carol/4000, Bob/3000; offset 1, size 2
+        assert [['Eve', 5000], ['Carol', 4000]] == result.collect { [it.name, it.salary] }
+    }
+
+    @Test
+    void testDerivedTable() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from v in (from e in 'employees' where e.salary >= 4000 select e.name, e.salary)
+            where v.salary < 6000
+            orderby v.name
+            select v.name
+        }
+        assert ['Alice', 'Carol', 'Eve'] == result.collect { it.name }
+    }
+
+    @Test
+    void testDerivedTableInJoin() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            join t in (from x in 'employees' where x.deptId != null groupby x.deptId select x.deptId, max(x.salary) as top) on e.deptId == t.deptId
+            where e.salary == t.top
+            orderby e.name
+            select e.name, e.salary
+        }
+        assert [['Alice', 5000], ['Eve', 5000], ['Frank', 6000]] ==
+                result.collect { [it.name, it.salary] }
+    }
+
+    @Test
+    void testCorrelatedExists() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where (from d in 'departments' where d.id == e.deptId select d.id).exists()
+            orderby e.name
+            select e.name
+        }
+        assert ['Alice', 'Bob', 'Carol', 'Eve', 'Frank'] == result.collect { it.name }
+    }
+
+    @Test
+    void testInSubquery() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId in (from d in 'departments' where d.name != 'Support' select d.id)
+            orderby e.name
+            select e.name
+        }
+        assert ['Alice', 'Bob', 'Carol', 'Eve'] == result.collect { it.name }
+    }
+
+    @Test
+    void testNotInSubquery() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.deptId != null && e.deptId !in (from d in 'departments' where d.name != 'Support' select d.id)
+            select e.name
+        }
+        assert ['Frank'] == result.collect { it.name }
+    }
+
+    @Test
+    void testScalarSubquery() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from e in 'employees'
+            where e.salary == (from x in 'employees' select max(x.salary))
+            select e.name
+        }
+        assert ['Frank'] == result.collect { it.name }
+    }
+
+    @Test
+    void testCorrelatedScalarSubqueryInSelect() {
+        def result = GQL(provider: 'native-sql', dataSource: db) {
+            from d in 'departments'
+            orderby d.name
+            select d.name, (from e in 'employees' where e.deptId == d.id select count()) as headcount
+        }
+        assert [['Dev', 2], ['Sales', 2], ['Support', 1]] == result.collect { [it.name, it.headcount] }
+    }
+
+    @Test
     void testWholeRowProjection() {
         def result = GQL(provider: 'native-sql', dataSource: db) {
             from e in 'employees'

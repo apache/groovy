@@ -20,13 +20,16 @@ package org.apache.groovy.ginq.provider.sql
 
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
+import org.apache.groovy.ginq.provider.sql.ir.SqlCaseWhen
 import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
 import org.apache.groovy.ginq.provider.sql.ir.SqlCountStar
 import org.apache.groovy.ginq.provider.sql.ir.SqlFunction
 import org.apache.groovy.ginq.provider.sql.ir.SqlIn
 import org.apache.groovy.ginq.provider.sql.ir.SqlIsNull
 import org.apache.groovy.ginq.provider.sql.ir.SqlJoin
+import org.apache.groovy.ginq.provider.sql.ir.SqlLike
 import org.apache.groovy.ginq.provider.sql.ir.SqlOrderSpec
+import org.apache.groovy.ginq.provider.sql.ir.SqlOrdinal
 import org.apache.groovy.ginq.provider.sql.ir.SqlParam
 import org.apache.groovy.ginq.provider.sql.ir.SqlProjection
 import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
@@ -196,6 +199,42 @@ class SqlRendererTest {
         query.projections << new SqlProjection(new SqlBinary('+', col('d', 'name'), param(50)))
 
         assert [50, 100, 200, 300, 400, 500] == values(render(query))
+    }
+
+    @Test
+    void testLikeAndCaseWhen() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('t', 't')
+        query.where = new SqlLike(col('t', 'name'), param('%x%'))
+        query.projections << new SqlProjection(
+                new SqlCaseWhen(new SqlBinary('>', col('t', 'salary'), param(1000)), param('high'), param('low')), 'band')
+
+        def rendered = render(query)
+        assert "SELECT CASE WHEN t.salary > ? THEN ? ELSE ? END AS band FROM t t " +
+                "WHERE t.name LIKE ? ESCAPE '!'" == rendered.sql
+        assert [1000, 'high', 'low', '%x%'] == values(rendered)
+    }
+
+    @Test
+    void testSubstringRendersFromFor() {
+        def query = new SqlQuery()
+        query.from = new SqlTableRef('t', 't')
+        query.projections << new SqlProjection(new SqlFunction('SUBSTRING', [col('t', 'name'), param(1), param(3)]))
+
+        assert 'SELECT SUBSTRING(t.name FROM ? FOR ?) FROM t t' == render(query).sql
+    }
+
+    @Test
+    void testSetQueryWithOrdinalOrderByAndLimit() {
+        def setQuery = new SqlSetQuery(simpleQuery('a'), SqlSetQuery.SetOp.UNION, simpleQuery('b'))
+        setQuery.orderBy << new SqlOrderSpec(new SqlOrdinal(1), false, true)
+        setQuery.offset = param(1)
+        setQuery.fetch = param(2)
+
+        def rendered = render(setQuery)
+        assert 'SELECT a.id FROM a a UNION SELECT b.id FROM b b ' +
+                'ORDER BY 1 DESC NULLS LAST OFFSET ? ROWS FETCH NEXT ? ROWS ONLY' == rendered.sql
+        assert [1, 2] == values(rendered)
     }
 
     private static SqlQuery simpleQuery(String table) {

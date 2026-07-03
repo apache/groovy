@@ -18,7 +18,7 @@
  */
 
 /**
- * Runtime support the generated code of the SQL provider calls into to execute
+ * Runtime support invoked by the generated code of the SQL provider to execute
  * the rendered SQL against a data source.
  */
 package org.apache.groovy.ginq.provider.sql.runtime;

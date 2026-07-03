@@ -31,10 +31,10 @@ import org.apache.groovy.lang.annotation.Incubating
 @CompileStatic
 class SqlJoin {
     final Type type
-    final SqlTableRef table
+    final SqlTableSource table
     final SqlExpr on
 
-    SqlJoin(Type type, SqlTableRef table, SqlExpr on) {
+    SqlJoin(Type type, SqlTableSource table, SqlExpr on) {
         this.type = type
         this.table = table
         this.on = on

@@ -22,30 +22,19 @@ import groovy.transform.CompileStatic
 import org.apache.groovy.lang.annotation.Incubating
 
 /**
- * Represents two queries combined with a SQL set operation.
- * The left side may itself be a {@code SqlSetQuery}, mirroring the
- * left-nested chaining of GINQ set operations. Ordering and limiting
- * apply to the combined result and reference select-list ordinals.
+ * Represents an inline SQL literal. Only ever constructed from compile-time
+ * constants appearing in the query source, never from runtime values, so
+ * parameter safety is preserved. Used where databases require a typed value
+ * for inference, e.g. {@code CASE} branches.
  *
  * @since 6.0.0
  */
 @Incubating
 @CompileStatic
-class SqlSetQuery implements SqlQueryNode {
-    final SqlQueryNode left
-    final SetOp op
-    final SqlQuery right
-    final List<SqlOrderSpec> orderBy = []
-    SqlExpr offset
-    SqlExpr fetch
+class SqlLiteral extends SqlExpr {
+    final Object value
 
-    SqlSetQuery(SqlQueryNode left, SetOp op, SqlQuery right) {
-        this.left = left
-        this.op = op
-        this.right = right
-    }
-
-    enum SetOp {
-        UNION, UNION_ALL, INTERSECT, MINUS
+    SqlLiteral(Object value) {
+        this.value = value
     }
 }

@@ -22,30 +22,19 @@ import groovy.transform.CompileStatic
 import org.apache.groovy.lang.annotation.Incubating
 
 /**
- * Represents two queries combined with a SQL set operation.
- * The left side may itself be a {@code SqlSetQuery}, mirroring the
- * left-nested chaining of GINQ set operations. Ordering and limiting
- * apply to the combined result and reference select-list ordinals.
+ * Represents a {@code LIKE} test. The pattern is always rendered with
+ * {@code ESCAPE '!'}; pattern values are escaped accordingly at runtime.
  *
  * @since 6.0.0
  */
 @Incubating
 @CompileStatic
-class SqlSetQuery implements SqlQueryNode {
-    final SqlQueryNode left
-    final SetOp op
-    final SqlQuery right
-    final List<SqlOrderSpec> orderBy = []
-    SqlExpr offset
-    SqlExpr fetch
+class SqlLike extends SqlExpr {
+    final SqlExpr expr
+    final SqlExpr pattern
 
-    SqlSetQuery(SqlQueryNode left, SetOp op, SqlQuery right) {
-        this.left = left
-        this.op = op
-        this.right = right
-    }
-
-    enum SetOp {
-        UNION, UNION_ALL, INTERSECT, MINUS
+    SqlLike(SqlExpr expr, SqlExpr pattern) {
+        this.expr = expr
+        this.pattern = pattern
     }
 }

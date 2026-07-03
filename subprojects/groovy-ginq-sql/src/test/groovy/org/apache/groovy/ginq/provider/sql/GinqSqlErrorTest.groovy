@@ -61,26 +61,15 @@ class GinqSqlErrorTest {
     }
 
     @Test
-    void testSubqueryNotSupported() {
-        def err = shouldFail '''\
-            GQ(provider: 'native-sql', dataSource: db) {
-                from e in (from x in 'employees' select x.name)
-                select e.name
-            }
-        '''
-        assert err.message.contains('subqueries are not yet supported by the native-sql provider')
-    }
-
-    @Test
-    void testGroupByWithoutInto() {
+    void testUnknownAliasInsideSubquery() {
         def err = shouldFail '''\
             GQ(provider: 'native-sql', dataSource: db) {
                 from e in 'employees'
-                groupby e.deptId
-                select e.deptId, count()
+                where (from d in 'departments' where d.id == z.deptId select d.id).exists()
+                select e.name
             }
         '''
-        assert err.message.contains('`groupby` without `into` is not yet supported by the native-sql provider')
+        assert err.message.contains('Unknown alias in `z.deptId`')
     }
 
     @Test
@@ -129,7 +118,7 @@ class GinqSqlErrorTest {
                 select e.name
             }
         '''
-        assert err.message.contains('only list literals are supported on the right-hand side of `in`')
+        assert err.message.contains('only list literals and subqueries are supported on the right-hand side of `in`')
     }
 
     @Test
@@ -156,18 +145,57 @@ class GinqSqlErrorTest {
     }
 
     @Test
-    void testOrderByInSetOperationOperand() {
+    void testOrderByInInnerSetOperationOperand() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from a in 'employees'
+                orderby a.name
+                select a.name
+                union
+                from b in 'employees'
+                select b.name
+            }
+        '''
+        assert err.message.contains('`orderby` within set operation operands is only supported on the final operand')
+    }
+
+    @Test
+    void testOrderByOnSetOperationResultMustMatchSelect() {
         def err = shouldFail '''\
             GQ(provider: 'native-sql', dataSource: db) {
                 from a in 'employees'
                 select a.name
                 union
                 from b in 'employees'
-                orderby b.name
+                orderby b.salary
                 select b.name
             }
         '''
-        assert err.message.contains('`orderby` within set operation operands is not supported by the native-sql provider')
+        assert err.message.contains('`orderby` on a set operation result must reference columns of the final `select` clause')
+    }
+
+    @Test
+    void testElvisOperator() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                select e.name ?: 'unknown'
+            }
+        '''
+        assert err.message.contains('the Elvis operator cannot be translated to SQL by the native-sql provider')
+    }
+
+    @Test
+    void testLikeArgumentMustBeParameter() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dataSource: db) {
+                from e in 'employees'
+                join d in 'departments' on e.deptId == d.id
+                where e.name.contains(d.name)
+                select e.name
+            }
+        '''
+        assert err.message.contains('the arguments of `contains` must be literals or captured variables')
     }
 
     @Test

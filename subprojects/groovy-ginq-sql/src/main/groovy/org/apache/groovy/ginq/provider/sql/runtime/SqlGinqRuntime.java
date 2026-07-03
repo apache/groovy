@@ -70,6 +70,25 @@ public final class SqlGinqRuntime {
                 + (dataSource == null ? "null" : dataSource.getClass().getName()));
     }
 
+    /**
+     * Builds a {@code LIKE} pattern from a runtime value, escaping the
+     * wildcard characters {@code %} and {@code _} (and the escape character
+     * itself) with {@code !}, matching the {@code ESCAPE '!'} clause the
+     * renderer emits. Used for {@code contains}/{@code startsWith}/{@code endsWith}.
+     *
+     * @param value the value to match literally
+     * @param matchBefore whether anything may precede the value
+     * @param matchAfter whether anything may follow the value
+     * @return the escaped pattern
+     */
+    public static String likePattern(Object value, boolean matchBefore, boolean matchAfter) {
+        String escaped = String.valueOf(value)
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
+        return (matchBefore ? "%" : "") + escaped + (matchAfter ? "%" : "");
+    }
+
     private SqlGinqRuntime() {
     }
 }

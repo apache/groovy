@@ -31,7 +31,7 @@ import org.apache.groovy.lang.annotation.Incubating
 class SqlQuery implements SqlQueryNode {
     boolean distinct
     final List<SqlProjection> projections = []
-    SqlTableRef from
+    SqlTableSource from
     final List<SqlJoin> joins = []
     SqlExpr where
     final List<SqlExpr> groupBy = []

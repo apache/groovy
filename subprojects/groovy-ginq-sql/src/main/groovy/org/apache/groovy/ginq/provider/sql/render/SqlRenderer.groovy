@@ -20,20 +20,30 @@ package org.apache.groovy.ginq.provider.sql.render
 
 import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.provider.sql.ir.SqlBinary
+import org.apache.groovy.ginq.provider.sql.ir.SqlCaseWhen
 import org.apache.groovy.ginq.provider.sql.ir.SqlColumn
 import org.apache.groovy.ginq.provider.sql.ir.SqlCountStar
+import org.apache.groovy.ginq.provider.sql.ir.SqlDerivedTable
+import org.apache.groovy.ginq.provider.sql.ir.SqlExists
 import org.apache.groovy.ginq.provider.sql.ir.SqlExpr
 import org.apache.groovy.ginq.provider.sql.ir.SqlFunction
 import org.apache.groovy.ginq.provider.sql.ir.SqlIn
+import org.apache.groovy.ginq.provider.sql.ir.SqlInQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlIsNull
 import org.apache.groovy.ginq.provider.sql.ir.SqlJoin
+import org.apache.groovy.ginq.provider.sql.ir.SqlLike
+import org.apache.groovy.ginq.provider.sql.ir.SqlLiteral
 import org.apache.groovy.ginq.provider.sql.ir.SqlOrderSpec
+import org.apache.groovy.ginq.provider.sql.ir.SqlOrdinal
 import org.apache.groovy.ginq.provider.sql.ir.SqlParam
 import org.apache.groovy.ginq.provider.sql.ir.SqlProjection
 import org.apache.groovy.ginq.provider.sql.ir.SqlQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlQueryNode
+import org.apache.groovy.ginq.provider.sql.ir.SqlScalarQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlSetQuery
 import org.apache.groovy.ginq.provider.sql.ir.SqlStar
+import org.apache.groovy.ginq.provider.sql.ir.SqlTableRef
+import org.apache.groovy.ginq.provider.sql.ir.SqlTableSource
 import org.apache.groovy.ginq.provider.sql.ir.SqlUnary
 import org.apache.groovy.lang.annotation.Incubating
 import org.codehaus.groovy.GroovyBugError
@@ -72,6 +82,7 @@ class SqlRenderer {
             if (parenthesizeLeft) sb.append(')')
             sb.append(' ').append(setOperator(queryNode.op)).append(' ')
             renderQuery(queryNode.right, sb, parameters)
+            renderOrderAndLimit(queryNode.orderBy, queryNode.offset, queryNode.fetch, sb, parameters)
         } else {
             renderQuery((SqlQuery) queryNode, sb, parameters)
         }
@@ -97,11 +108,11 @@ class SqlRenderer {
         }
 
         sb.append(' FROM ')
-        sb.append(dialect.identifier(query.from.tableName)).append(' ').append(dialect.identifier(query.from.alias))
+        renderTableSource(query.from, sb, parameters)
 
         for (SqlJoin join : query.joins) {
             sb.append(' ').append(join.type.sqlText).append(' ')
-            sb.append(dialect.identifier(join.table.tableName)).append(' ').append(dialect.identifier(join.table.alias))
+            renderTableSource(join.table, sb, parameters)
             if (join.on != null) {
                 sb.append(' ON ')
                 renderExpr(join.on, sb, parameters)
@@ -126,9 +137,13 @@ class SqlRenderer {
             renderExpr(query.having, sb, parameters)
         }
 
-        if (query.orderBy) {
+        renderOrderAndLimit(query.orderBy, query.offset, query.fetch, sb, parameters)
+    }
+
+    private void renderOrderAndLimit(List<SqlOrderSpec> orderBy, SqlExpr offset, SqlExpr fetch, StringBuilder sb, List<Expression> parameters) {
+        if (orderBy) {
             sb.append(' ORDER BY ')
-            query.orderBy.eachWithIndex { SqlOrderSpec orderSpec, int i ->
+            orderBy.eachWithIndex { SqlOrderSpec orderSpec, int i ->
                 if (i > 0) sb.append(', ')
                 renderExpr(orderSpec.expr, sb, parameters)
                 sb.append(orderSpec.asc ? ' ASC' : ' DESC')
@@ -136,14 +151,14 @@ class SqlRenderer {
             }
         }
 
-        if (query.offset != null) {
+        if (offset != null) {
             sb.append(' OFFSET ')
-            renderExpr(query.offset, sb, parameters)
+            renderExpr(offset, sb, parameters)
             sb.append(' ROWS')
         }
-        if (query.fetch != null) {
-            sb.append(query.offset != null ? ' FETCH NEXT ' : ' FETCH FIRST ')
-            renderExpr(query.fetch, sb, parameters)
+        if (fetch != null) {
+            sb.append(offset != null ? ' FETCH NEXT ' : ' FETCH FIRST ')
+            renderExpr(fetch, sb, parameters)
             sb.append(' ROWS ONLY')
         }
     }
@@ -155,6 +170,8 @@ class SqlRenderer {
         } else if (expr instanceof SqlParam) {
             sb.append('?')
             parameters.add(expr.valueExpr)
+        } else if (expr instanceof SqlLiteral) {
+            renderLiteral(expr.value, sb)
         } else if (expr instanceof SqlBinary) {
             int prec = precedence(expr.op)
             renderOperand(expr.left, prec, sb, parameters)
@@ -176,7 +193,49 @@ class SqlRenderer {
                 renderExpr(valueExpr, sb, parameters)
             }
             sb.append(')')
+        } else if (expr instanceof SqlExists) {
+            sb.append('EXISTS (')
+            renderQuery(expr.query, sb, parameters)
+            sb.append(')')
+        } else if (expr instanceof SqlInQuery) {
+            renderOperand(expr.expr, PREC_UNARY, sb, parameters)
+            sb.append(expr.negated ? ' NOT IN (' : ' IN (')
+            renderQuery(expr.query, sb, parameters)
+            sb.append(')')
+        } else if (expr instanceof SqlScalarQuery) {
+            sb.append('(')
+            renderQuery(expr.query, sb, parameters)
+            sb.append(')')
+        } else if (expr instanceof SqlLike) {
+            renderOperand(expr.expr, PREC_UNARY, sb, parameters)
+            sb.append(' LIKE ')
+            renderExpr(expr.pattern, sb, parameters)
+            // pattern values are escaped with '!' at runtime, see SqlGinqRuntime#likePattern
+            sb.append(" ESCAPE '!'")
+        } else if (expr instanceof SqlCaseWhen) {
+            sb.append('CASE WHEN ')
+            renderExpr(expr.condition, sb, parameters)
+            sb.append(' THEN ')
+            renderExpr(expr.thenExpr, sb, parameters)
+            sb.append(' ELSE ')
+            renderExpr(expr.elseExpr, sb, parameters)
+            sb.append(' END')
+        } else if (expr instanceof SqlOrdinal) {
+            sb.append(expr.position)
         } else if (expr instanceof SqlFunction) {
+            if ('SUBSTRING' == expr.name && expr.args.size() > 1) {
+                // ANSI form: SUBSTRING(x FROM start [FOR length])
+                sb.append(dialect.functionName(expr.name)).append('(')
+                renderExpr(expr.args[0], sb, parameters)
+                sb.append(' FROM ')
+                renderExpr(expr.args[1], sb, parameters)
+                if (expr.args.size() > 2) {
+                    sb.append(' FOR ')
+                    renderExpr(expr.args[2], sb, parameters)
+                }
+                sb.append(')')
+                return
+            }
             sb.append(dialect.functionName(expr.name)).append('(')
             expr.args.eachWithIndex { SqlExpr argExpr, int i ->
                 if (i > 0) sb.append(', ')
@@ -190,6 +249,33 @@ class SqlRenderer {
             sb.append('*')
         } else {
             throw new GroovyBugError("Unknown SQL expression: ${expr?.getClass()?.name}")
+        }
+    }
+
+    private void renderTableSource(SqlTableSource tableSource, StringBuilder sb, List<Expression> parameters) {
+        if (tableSource instanceof SqlTableRef) {
+            sb.append(dialect.identifier(tableSource.tableName))
+        } else if (tableSource instanceof SqlDerivedTable) {
+            sb.append('(')
+            renderQuery(tableSource.query, sb, parameters)
+            sb.append(')')
+        } else {
+            throw new GroovyBugError("Unknown table source: ${tableSource?.getClass()?.name}")
+        }
+        sb.append(' ').append(dialect.identifier(tableSource.alias))
+    }
+
+    private static void renderLiteral(Object value, StringBuilder sb) {
+        if (value == null) {
+            sb.append('NULL')
+        } else if (value instanceof String || value instanceof Character) {
+            sb.append("'").append(value.toString().replace("'", "''")).append("'")
+        } else if (value instanceof Boolean) {
+            sb.append(value ? 'TRUE' : 'FALSE')
+        } else if (value instanceof Number) {
+            sb.append(value)
+        } else {
+            throw new GroovyBugError("Unsupported SQL literal: ${value.getClass().name}")
         }
     }
 
