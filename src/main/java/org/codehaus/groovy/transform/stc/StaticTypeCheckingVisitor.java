@@ -4910,7 +4910,9 @@ trying: for (ClassNode[] signature : signatures) {
                 // cannot be proven exhaustive here; leave exhaustiveness unassessed
                 opaqueLabels = true;
                 int componentCount = patternType.getRecordComponents().size();
-                if (componentCount > 0 && componentCount != recordPatternArity) {
+                // isRecord() covers zero-component (native) records; a positive component
+                // count covers emulated records; other deconstructables (toList) are unchecked
+                if ((patternType.isRecord() || componentCount > 0) && componentCount != recordPatternArity) {
                     addStaticTypeError("The record pattern specifies " + recordPatternArity + " component(s) but " + prettyPrintTypeName(patternType) + " has " + componentCount, label);
                 }
             }

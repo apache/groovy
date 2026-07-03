@@ -1034,6 +1034,54 @@ final class SwitchPatternMatchingTest {
         '''
     }
 
+    @Test
+    void testEmptyRecordPatternArityCheckedWhenTypeChecked() {
+        // a record pattern always has at least one component, so any pattern
+        // against a zero-component record is a statically-known mismatch
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            record Empty() {}
+            @TypeChecked
+            def m(Object o) {
+                switch (o) {
+                    case Empty(var a) -> a
+                    default           -> 'other'
+                }
+            }
+        '''
+        assert err.message.contains('specifies 1 component(s) but')
+    }
+
+    @Test
+    void testPrimitiveComponentBindingTypeConsistentAcrossLowerings() {
+        // a primitive-typed component binds its declared primitive type whether the
+        // switch takes the closure-free lowering (all-pattern) or the closure-label
+        // lowering (mixed with a legacy label)
+        assertScript '''
+            import groovy.transform.CompileStatic
+            record Point(int x, int y) {}
+            String pick(int i) { 'int' }
+            String pick(Integer i) { 'Integer' }
+            @CompileStatic
+            String pure(Object o) {
+                switch (o) {
+                    case Point(int x, _) -> pick(x)
+                    default              -> 'other'
+                }
+            }
+            @CompileStatic
+            String mixed(Object o) {
+                switch (o) {
+                    case Point(int x, _) -> pick(x)
+                    case 'legacy'        -> 'legacy'
+                    default              -> 'other'
+                }
+            }
+            assert pure(new Point(1, 2)) == 'int'
+            assert mixed(new Point(1, 2)) == 'int'
+        '''
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)

@@ -1604,10 +1604,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
         } else if (element.type != null) {
             ClassNode bindType = ClassHelper.getWrapper(element.type);
-            Expression rhs = element.name != null
-                    ? declX(varX(element.name, bindType), EmptyExpression.INSTANCE)
-                    : new ClassExpression(bindType);
-            items.add(binX(access, instanceOf, rhs));
+            if (element.name == null) {
+                items.add(binX(access, instanceOf, new ClassExpression(bindType)));
+            } else if (ClassHelper.isPrimitiveType(element.type)) {
+                // the instanceof check needs the wrapper, but the pattern variable is
+                // bound with its declared primitive type, matching the closure-label
+                // lowering and Java record patterns (JEP 440)
+                String wrapperName = "__$$pw" + switchPatternVariableSeq++;
+                items.add(binX(access, instanceOf, declX(varX(wrapperName, bindType), EmptyExpression.INSTANCE)));
+                items.add(declS(localVarX(element.name, element.type), castX(element.type, varX(wrapperName))));
+            } else {
+                items.add(binX(access, instanceOf, declX(varX(element.name, bindType), EmptyExpression.INSTANCE)));
+            }
         } else { // var/def binding: unconditional, also matches a null value
             items.add(declS(localVarX(element.name, ClassHelper.dynamicType()), access));
         }
