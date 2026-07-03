@@ -1166,8 +1166,8 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_async_await,in
 === Customize GINQ
 
 NOTE: *INCUBATING*: the custom code-generator (provider) extension point described here -- the
-`astWalker` option and the `GinqAstVisitor` SPI it selects -- is still incubating and may change
-in a future release, even though the rest of GINQ is stable.
+`provider` and `astWalker` options, the `GinqProvider` registry and the `GinqAstVisitor` SPI --
+is still incubating and may change in a future release, even though the rest of GINQ is stable.
 
 For advanced users, you could customize GINQ behaviour by specifying your own target code generator.
 For example, we could specify the qualified class name `org.apache.groovy.ginq.provider.collection.GinqAstWalker` as the target code generator to generate GINQ method calls for querying collections,
@@ -1176,6 +1176,49 @@ which is the default behaviour of GINQ:
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_customize_01,indent=0]
 ----
+
+Alternatively, a code generator can be selected by short name through the `provider` option.
+The name is resolved through the `org.apache.groovy.ginq.provider.GinqProvider` SPI, so provider
+modules on the compile classpath register themselves automatically. The built-in provider is
+`collection`, the default, which executes queries in memory.
+
+=== Executing GINQ against a database
+
+NOTE: *INCUBATING*: the SQL backend described here is provided by the optional `groovy-ginq-sql`
+module (GEP-26) and is still incubating.
+
+With the `groovy-ginq-sql` module on the classpath, the same query syntax can be executed against
+a relational database by selecting the `native-sql` provider and supplying a `dataSource`, which
+may be a `groovy.sql.Sql`, a `javax.sql.DataSource` or a `java.sql.Connection`. Table references
+are string literals naming the tables:
+[source, groovy]
+----
+def threshold = 2500
+def result = GQL(provider: 'native-sql', dataSource: db) {
+    from e in 'employees'
+    join d in 'departments' on e.deptId == d.id
+    where e.salary > threshold
+    select e.name, d.name as deptName
+}
+----
+
+Rather than loading rows into memory, the query is translated at compile time into ANSI SQL, e.g.
+`SELECT e.name, d.name AS deptName FROM employees e INNER JOIN departments d ON e.deptId = d.id
+WHERE e.salary > ?`, and filtering, joining and aggregating are pushed down to the database.
+The result rows are `groovy.sql.GroovyRowResult` instances.
+
+Every literal and captured variable in the query becomes a positional bound parameter, so the SQL
+text never contains user-supplied values and SQL injection is structurally impossible.
+
+The SQL backend operates in strict mode: an expression either translates cleanly to SQL, or the
+query is rejected at compile time with an error explaining the untranslatable construct. Notable
+current restrictions include subqueries, window functions, `groupby` without `into`, and
+`orderby`/`limit` within set operation operands; use `groupby ... into g` for aggregation, e.g.
+`g.count()`, `g.sum(e -> e.salary)`. A small set of common methods maps to SQL functions, e.g.
+`toUpperCase()` to `UPPER(...)` and `length()` to `CHAR_LENGTH(...)`.
+
+Because a `dataSource` is a runtime value, it cannot be supplied via the `@GQ` annotation;
+use the `GQ`/`GQL` macro form for database-backed queries.
 
 === Optimize GINQ
 
