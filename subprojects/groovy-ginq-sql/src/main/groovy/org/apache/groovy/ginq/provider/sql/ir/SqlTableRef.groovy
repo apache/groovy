@@ -28,7 +28,7 @@ import org.apache.groovy.lang.annotation.Incubating
  */
 @Incubating
 @CompileStatic
-class SqlTableRef {
+class SqlTableRef implements SqlTableSource {
     final String tableName
     final String alias
 
