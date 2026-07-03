@@ -32,6 +32,7 @@ import org.apache.groovy.ginq.dsl.expression.SetOperationExpression;
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 import org.apache.groovy.lang.annotation.Incubating;
+import org.codehaus.groovy.ast.expr.Expression;
 
 import java.util.Collections;
 import java.util.Map;
@@ -149,4 +150,21 @@ public interface GinqAstVisitor<R> {
      * @return the current configuration
      */
     default Map<String, String> getConfiguration() { return Collections.emptyMap(); }
+    /**
+     * Updates the visitor configuration with the raw option value expressions.
+     * Unlike {@link #setConfiguration(Map)}, which receives option values as text,
+     * this method supplies each option's value as the original expression, allowing
+     * providers to splice runtime values, e.g. a {@code dataSource}, into generated code.
+     *
+     * @param configurationExpressions the raw option value expressions keyed by option name
+     * @since 6.0.0
+     */
+    default void setConfigurationExpressions(Map<String, Expression> configurationExpressions) {}
+    /**
+     * Returns the raw option value expressions.
+     *
+     * @return the current raw option value expressions keyed by option name
+     * @since 6.0.0
+     */
+    default Map<String, Expression> getConfigurationExpressions() { return Collections.emptyMap(); }
 }

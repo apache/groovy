@@ -3769,6 +3769,16 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - customize GINQ target - 1"() {
+        assertGinqScript '''
+            assert [0, 1, 2] == GQ(provider: 'collection') {
+                from n in [0, 1, 2]
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - GINQ tips - 0"() {
         assertGinqScript '''
 // tag::ginq_tips_01[]
