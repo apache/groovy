@@ -20,6 +20,9 @@ package org.apache.groovy.ginq.provider;
 
 import org.apache.groovy.lang.annotation.Incubating;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Represents a named GINQ provider, i.e. an execution back-end for GINQ queries,
  * discovered via {@link java.util.ServiceLoader}. A provider maps a short name,
@@ -49,4 +52,16 @@ public interface GinqProvider {
      * @return the AST walker class name
      */
     String getAstWalkerClassName();
+
+    /**
+     * Returns the names of provider-specific configuration options, e.g.
+     * {@code dialect}, accepted in addition to the standard GINQ options.
+     * Registering an option here only relaxes validation; interpreting it
+     * is up to the provider's AST walker.
+     *
+     * @return the additional option names, empty by default
+     */
+    default List<String> getAdditionalOptionNames() {
+        return Collections.emptyList();
+    }
 }

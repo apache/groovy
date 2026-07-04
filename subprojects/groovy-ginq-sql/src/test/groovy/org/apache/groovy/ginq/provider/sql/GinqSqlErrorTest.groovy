@@ -221,6 +221,28 @@ class GinqSqlErrorTest {
     }
 
     @Test
+    void testUnknownJooqDialect() {
+        def err = shouldFail '''\
+            GQ(provider: 'jooq-sql', dialect: 'NOPE', dataSource: db) {
+                from e in 'employees'
+                select e.name
+            }
+        '''
+        assert err.message.contains('Unknown dialect: NOPE')
+    }
+
+    @Test
+    void testDialectWithNativeProvider() {
+        def err = shouldFail '''\
+            GQ(provider: 'native-sql', dialect: 'H2', dataSource: db) {
+                from e in 'employees'
+                select e.name
+            }
+        '''
+        assert err.message.contains('`dialect` is only supported by the jooq-sql provider')
+    }
+
+    @Test
     void testAnnotationWithoutDataSource() {
         def err = shouldFail '''\
             import groovy.ginq.transform.GQ
