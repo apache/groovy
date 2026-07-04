@@ -24,7 +24,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 /**
- * Runs GINQ queries end-to-end against an in-memory HSQLDB database
+ * Runs GINQ queries end-to-end against an in-memory H2 database
  * via the native-sql provider.
  */
 class GinqSqlIntegrationTest {
@@ -301,7 +301,7 @@ class GinqSqlIntegrationTest {
 
     @Test
     void testTernaryBecomesCaseWhen() {
-        // equal-length branch literals since some databases, e.g. HSQLDB, infer a
+        // equal-length branch literals since some databases infer a
         // CHAR(n) type for the CASE expression and pad the shorter value
         def result = GQL(provider: 'native-sql', dataSource: db) {
             from e in 'employees'
@@ -500,7 +500,7 @@ class GinqSqlIntegrationTest {
 
     @Test
     void testDataSourceAsJdbcDataSource() {
-        def dataSource = new org.hsqldb.jdbc.JDBCDataSource(database: dbUrl, user: 'sa', password: '')
+        def dataSource = new org.h2.jdbcx.JdbcDataSource(URL: dbUrl, user: 'sa', password: '')
         def result = GQL(provider: 'native-sql', dataSource: dataSource) {
             from e in 'employees'
             where e.id == 4

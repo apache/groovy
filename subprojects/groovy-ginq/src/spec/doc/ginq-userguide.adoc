@@ -1237,6 +1237,30 @@ combining.) `orderby`/`limit` within earlier operands are rejected.
 Because a `dataSource` is a runtime value, it cannot be supplied via the `@GQ` annotation;
 use the `GQ`/`GQL` macro form for database-backed queries.
 
+==== The jooq-sql provider
+
+When `org.jooq:jooq` is also on the compile classpath, the `jooq-sql` provider becomes available.
+It supports everything the `native-sql` provider supports but uses jOOQ as a compile-time,
+dialect-aware SQL renderer: the `dialect` option names one of jOOQ's `SQLDialect` values and the
+generated SQL uses that dialect's syntax and function spellings, e.g. HSQLDB's `limit ? offset ?`
+in place of the ANSI `OFFSET ? ROWS FETCH NEXT ? ROWS ONLY`:
+[source, groovy]
+----
+def result = GQL(provider: 'jooq-sql', dialect: 'POSTGRES', dataSource: db) {
+    from e in 'employees'
+    where e.salary > threshold
+    orderby e.salary in desc
+    limit 10
+    select e.name, e.salary
+}
+----
+
+jOOQ is used at compile time only: execution and results are identical to the `native-sql`
+provider (bound positional parameters, `GroovyRowResult` rows), and jOOQ does not need to be
+on the runtime classpath. With no `dialect` option, jOOQ's `DEFAULT` dialect is used.
+Selecting `provider: 'sql'` auto-detects, preferring `jooq-sql` over `native-sql` when both
+are available.
+
 === Optimize GINQ
 
 GINQ optimizer is enabled by default for better performance. It will transform the GINQ AST to achieve better execution plan.

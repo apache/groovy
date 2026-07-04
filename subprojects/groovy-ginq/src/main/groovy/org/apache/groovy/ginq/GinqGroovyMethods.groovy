@@ -174,10 +174,18 @@ class GinqGroovyMethods {
         Map<String, String> configuration = [:]
         if (!ginqConfigurationMapExpression) return configuration
 
+        List<String> providerOptionNames = null // discovered lazily, only when an unknown key is seen
         for (MapEntryExpression mapEntryExpression : ginqConfigurationMapExpression.getMapEntryExpressions()) {
             def conf = mapEntryExpression.keyExpression.text
             if (conf !in CONF_LIST) {
-                collectErrors("Invalid option: ${conf}. (supported options: ${CONF_LIST})", mapEntryExpression.keyExpression, sourceUnit)
+                if (providerOptionNames == null) {
+                    providerOptionNames = ServiceLoader.load(GinqProvider, GinqGroovyMethods.class.classLoader)
+                            .collectMany { GinqProvider p -> p.additionalOptionNames }
+                }
+                if (conf !in providerOptionNames) {
+                    collectErrors("Invalid option: ${conf}. (supported options: ${CONF_LIST + providerOptionNames.sort()})",
+                            mapEntryExpression.keyExpression, sourceUnit)
+                }
             }
             configuration.put(conf, mapEntryExpression.valueExpression.text)
         }
