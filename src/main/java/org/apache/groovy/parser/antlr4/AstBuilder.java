@@ -1415,9 +1415,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         TypePatternContext typePatternCtx = ctx.typePattern();
         ClassNode type = this.visitType(typePatternCtx.type());
-        if (ClassHelper.isPrimitiveType(type)) {
-            throw createParsingFailedException("primitive type patterns are not yet supported", typePatternCtx);
-        }
+        // a primitive type pattern tests the wrapper and binds the primitive, matching
+        // JEP 507's semantics for a reference-typed subject (e.g. `case int i` matches
+        // exactly the Integer instances); the box test never widens or narrows
+        ClassNode checkType = ClassHelper.getWrapper(type);
         String name = this.visitIdentifier(typePatternCtx.identifier());
         String subjectName = switchPatternSubjectStack.peek();
 
@@ -1426,14 +1427,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             String candidateName = "__$$pc" + switchPatternVariableSeq++;
             Parameter candidate = new Parameter(ClassHelper.dynamicType(), candidateName);
             Statement guardCode = block(
-                    ifS(notX(isInstanceOfX(varX(candidateName), type)), returnS(constX(Boolean.FALSE, true))),
+                    ifS(notX(isInstanceOfX(varX(candidateName), checkType)), returnS(constX(Boolean.FALSE, true))),
                     declS(localVarX(name, type), castX(type, varX(candidateName))),
                     returnS(guard)
             );
             labelExpr = configureAST(closureX(params(candidate), guardCode), ctx);
             labelExpr.putNodeMetaData(SWITCH_PATTERN_GUARDED, Boolean.TRUE);
         } else {
-            labelExpr = configureAST(new ClassExpression(type), typePatternCtx);
+            labelExpr = configureAST(new ClassExpression(checkType), typePatternCtx);
         }
 
         // read by StaticTypeCheckingVisitor to check pattern switch case labels
@@ -1467,13 +1468,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         List<Object> items = new ArrayList<>();
         if (asBoolean(ctx.typePattern())) {
             TypePatternContext typePatternCtx = ctx.typePattern();
-            ClassNode type = this.visitType(typePatternCtx.type());
-            if (ClassHelper.isPrimitiveType(type)) {
-                throw createParsingFailedException("primitive type patterns are not yet supported", typePatternCtx);
-            }
-            String name = this.visitIdentifier(typePatternCtx.identifier());
-            items.add(binX(subjectVar, instanceOf, declX(varX(name, type), EmptyExpression.INSTANCE)));
-            label.putNodeMetaData(SWITCH_PATTERN_TYPE, type);
+            // handles primitive type patterns too: the instanceof check tests the
+            // wrapper and the pattern variable binds the primitive (JEP 507 semantics
+            // for a reference-typed subject)
+            PatternNode pattern = new PatternNode();
+            pattern.type = this.visitType(typePatternCtx.type());
+            pattern.name = this.visitIdentifier(typePatternCtx.identifier());
+            appendElementArmItems(pattern, subjectVar, instanceOf, items);
+            label.putNodeMetaData(SWITCH_PATTERN_TYPE, pattern.type);
         } else {
             if (asBoolean(ctx.recordPattern())) {
                 PatternNode pattern = this.buildRecordPattern(ctx.recordPattern());
@@ -1664,7 +1666,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         PatternNode pattern = new PatternNode();
         pattern.type = this.visitType(ctx.type());
         if (ClassHelper.isPrimitiveType(pattern.type)) {
-            throw createParsingFailedException("primitive type patterns are not yet supported", ctx);
+            throw createParsingFailedException("a record pattern cannot deconstruct a primitive type", ctx);
         }
         pattern.components = new ArrayList<>();
         for (RecordPatternComponentContext componentCtx : ctx.recordPatternComponents().recordPatternComponent()) {

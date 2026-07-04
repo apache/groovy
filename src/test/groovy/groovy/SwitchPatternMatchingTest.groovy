@@ -1082,6 +1082,111 @@ final class SwitchPatternMatchingTest {
         '''
     }
 
+    @Test
+    void testPrimitiveTypePatternDispatch() {
+        // JEP 507 alignment for a reference-typed subject: a primitive type pattern
+        // tests the wrapper type and binds the primitive; no widening or narrowing
+        assertScript '''
+            def describe(subject) {
+                switch (subject) {
+                    case int i     -> "int $i"
+                    case long l    -> "long $l"
+                    case double d  -> "double $d"
+                    case boolean b -> "boolean $b"
+                    case char c    -> "char $c"
+                    default        -> 'other'
+                }
+            }
+            assert describe(42) == 'int 42'
+            assert describe(42L) == 'long 42'
+            assert describe(3.5d) == 'double 3.5'
+            assert describe(false) == 'boolean false'
+            assert describe('x' as char) == 'char x'
+            assert describe(42 as byte) == 'other' // Byte is not an int
+            assert describe(3.5) == 'other'        // BigDecimal is not a double
+            assert describe(null) == 'other'
+        '''
+    }
+
+    @Test
+    void testPrimitiveTypePatternWithGuard() {
+        assertScript '''
+            def fizzbuzz(n) {
+                switch (n) {
+                    case int i when i % 15 == 0 -> 'FizzBuzz'
+                    case int i when i % 3 == 0  -> 'Fizz'
+                    case int i when i % 5 == 0  -> 'Buzz'
+                    case int i                  -> i.toString()
+                    default                     -> 'not an int'
+                }
+            }
+            assert (1..15).collect { fizzbuzz(it) }.join(',') ==
+                '1,2,Fizz,4,Buzz,Fizz,7,8,Fizz,Buzz,11,Fizz,13,14,FizzBuzz'
+            assert fizzbuzz(15L) == 'not an int'
+        '''
+    }
+
+    @Test
+    void testPrimitiveTypePatternMixedWithLegacyLabel() {
+        // both the guarded (closure label) and unguarded (class literal label)
+        // forms of the closure-label lowering
+        assertScript '''
+            def describe(subject) {
+                switch (subject) {
+                    case int i when i < 0 -> "negative $i"
+                    case int i            -> "int $i"
+                    case 'legacy'         -> 'legacy'
+                    default               -> 'other'
+                }
+            }
+            assert describe(-3) == 'negative -3'
+            assert describe(42) == 'int 42'
+            assert describe('legacy') == 'legacy'
+            assert describe(42L) == 'other'
+        '''
+    }
+
+    @Test
+    void testPrimitiveTypePatternBindingTypeConsistentAcrossLowerings() {
+        assertScript '''
+            import groovy.transform.CompileStatic
+            String pick(int i) { 'int' }
+            String pick(Integer i) { 'Integer' }
+            @CompileStatic
+            String pure(Object o) {
+                switch (o) {
+                    case int i -> pick(i)
+                    default    -> 'other'
+                }
+            }
+            @CompileStatic
+            String mixed(Object o) {
+                switch (o) {
+                    case int i when i > 0 -> pick(i)
+                    case 'legacy'         -> 'legacy'
+                    default               -> 'other'
+                }
+            }
+            assert pure(42) == 'int'
+            assert mixed(42) == 'int'
+        '''
+    }
+
+    @Test
+    void testPrimitiveTypePatternIncompatibleSubjectTypeChecked() {
+        def err = shouldFail '''
+            import groovy.transform.TypeChecked
+            @TypeChecked
+            def m(String s) {
+                switch (s) {
+                    case int i -> i
+                    default    -> 0
+                }
+            }
+        '''
+        assert err.message.contains('The case pattern type int is incompatible with the switch subject type java.lang.String')
+    }
+
     private static List<String> patternSwitchWarnings(String source) {
         def cu = new CompilationUnit()
         cu.addSource('PatternSwitchTestScript.groovy', source)

@@ -17,8 +17,8 @@
  *  under the License.
  */
 
-// GEP-19: primitive type patterns are not yet supported (JEP 507 still in preview)
+// GEP-19: a record pattern cannot deconstruct a primitive type
 def result = switch (42) {
-    case int i -> i + 1
+    case int(var i) -> i + 1
     default -> 0
 }
