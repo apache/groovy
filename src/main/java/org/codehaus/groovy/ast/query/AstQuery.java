@@ -355,8 +355,7 @@ public final class AstQuery<T extends ASTNode> {
                 visitField((FieldNode) node);
             } else if (node instanceof PropertyNode) {
                 visitProperty((PropertyNode) node);
-            } else if (node instanceof ModuleNode) {
-                ModuleNode module = (ModuleNode) node;
+            } else if (node instanceof ModuleNode module) {
                 for (ClassNode cn : module.getClasses()) {
                     if (!(cn instanceof InnerClassNode)) visitClass(cn);
                 }

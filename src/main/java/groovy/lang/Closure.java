@@ -1352,8 +1352,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             grey.add(node);
             stack.push(new Marker(node));
             for (final Object link : new Object[]{node.owner, node.delegate, node.thisObject}) {
-                if (link instanceof Closure) {
-                    final Closure<?> child = (Closure<?>) link;
+                if (link instanceof Closure<?> child) {
                     if (grey.contains(child)) {
                         throw new InvalidObjectException(
                                 "Closure owner/delegate/thisObject references form a cycle; refusing to deserialize");
