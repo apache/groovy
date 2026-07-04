@@ -29,7 +29,7 @@ import java.sql.SQLException
 /**
  * Asserts the SQL text and bound parameters the native-sql provider generates,
  * by capturing what reaches {@link Sql#rows(String, List)}. Queries still
- * execute against a real HSQLDB database, so the SQL is also validated.
+ * execute against a real H2 database, so the SQL is also validated.
  */
 class GinqSqlTranslationTest {
     private Sql realDb

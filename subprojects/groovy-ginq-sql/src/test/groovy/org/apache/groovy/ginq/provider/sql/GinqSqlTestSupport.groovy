@@ -23,18 +23,19 @@ import groovy.sql.Sql
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Creates uniquely-named in-memory HSQLDB databases populated with the
+ * Creates uniquely-named in-memory H2 databases populated with the
  * employees/departments test schema.
  */
 class GinqSqlTestSupport {
     private static final AtomicInteger COUNTER = new AtomicInteger()
 
     static String newDbUrl() {
-        "jdbc:hsqldb:mem:ginqSqlTest${COUNTER.getAndIncrement()}"
+        // keep the database alive between connections; closeDb shuts it down
+        "jdbc:h2:mem:ginqSqlTest${COUNTER.getAndIncrement()};DB_CLOSE_DELAY=-1"
     }
 
     static Sql newPopulatedDb(String url = newDbUrl()) {
-        def db = Sql.newInstance(url, 'sa', '', 'org.hsqldb.jdbc.JDBCDriver')
+        def db = Sql.newInstance(url, 'sa', '', 'org.h2.Driver')
         db.execute 'create table employees (id integer, name varchar(50), salary integer, deptId integer, active boolean)'
         db.execute 'create table departments (id integer, name varchar(50))'
         [[1, 'Dev'], [2, 'Sales'], [3, 'Support']].each {
@@ -52,7 +53,11 @@ class GinqSqlTestSupport {
     }
 
     static void closeDb(Sql db) {
-        db.execute 'SHUTDOWN'
+        try {
+            db.execute 'SHUTDOWN'
+        } catch (java.sql.SQLException ignore) {
+            // H2 reports the connection as closed once SHUTDOWN completes
+        }
         db.close()
     }
 }

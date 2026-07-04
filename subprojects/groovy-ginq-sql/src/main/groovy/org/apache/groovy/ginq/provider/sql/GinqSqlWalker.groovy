@@ -81,19 +81,20 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     @Override
     Expression visit(AbstractGinqExpression expression) {
         if ('true' == configuration.get(GinqGroovyMethods.CONF_PARALLEL)) {
-            error('`parallel` is not supported by the native-sql provider', expression)
+            error("`parallel` is not supported by the ${providerName} provider", expression)
         }
         if (expression instanceof ShutdownExpression) {
-            error('`shutdown` is not supported by the native-sql provider', expression)
+            error("`shutdown` is not supported by the ${providerName} provider", expression)
         }
         Expression dataSourceExpr = configurationExpressions.get(GinqGroovyMethods.CONF_DATA_SOURCE)
         if (dataSourceExpr == null) {
-            error("the native-sql provider requires a `dataSource`, e.g. GQ(provider: 'native-sql', dataSource: db) {...}; " +
+            error("the ${providerName} provider requires a `dataSource`, e.g. GQ(provider: '${providerName}', dataSource: db) {...}; " +
                     'note that `@GQ` does not support `dataSource`', expression)
         }
+        validateOptions(expression)
 
         SqlQueryNode queryNode = new GinqToSqlTranslator(sourceUnit).translate(expression)
-        RenderedSql renderedSql = new SqlRenderer(new AnsiDialect()).render(queryNode)
+        RenderedSql renderedSql = renderSql(queryNode, expression)
 
         MethodCallExpression executeCall = callX(
                 classX(SQL_GINQ_RUNTIME_TYPE),
@@ -101,6 +102,29 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 args(dataSourceExpr, constX(renderedSql.sql), new ListExpression(renderedSql.parameters)))
         executeCall.setSourcePosition(expression)
         return executeCall
+    }
+
+    /**
+     * Returns the provider name used in diagnostics.
+     */
+    protected String getProviderName() {
+        return 'native-sql'
+    }
+
+    /**
+     * Validates provider-specific options.
+     */
+    protected void validateOptions(AbstractGinqExpression expression) {
+        if (configuration.containsKey('dialect')) {
+            error('`dialect` is only supported by the jooq-sql provider', expression)
+        }
+    }
+
+    /**
+     * Renders the translated query to SQL text plus ordered parameters.
+     */
+    protected RenderedSql renderSql(SqlQueryNode queryNode, AbstractGinqExpression expression) {
+        return new SqlRenderer(new AnsiDialect()).render(queryNode)
     }
 
     @Override
@@ -183,7 +207,7 @@ class GinqSqlWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         return configurationExpressions
     }
 
-    private void error(String message, org.codehaus.groovy.ast.ASTNode node) {
+    protected void error(String message, org.codehaus.groovy.ast.ASTNode node) {
         collectSyntaxError(new GinqSyntaxError(message, node.lineNumber, node.columnNumber))
     }
 
