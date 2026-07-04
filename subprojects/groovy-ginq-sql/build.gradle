@@ -24,8 +24,10 @@ dependencies {
     api rootProject
     api projects.groovyGinq
     api projects.groovySql
+    compileOnly "org.jooq:jooq:${versions.jooq}" // used by the optional jooq-sql provider
     testImplementation projects.groovyTest
-    testImplementation 'org.hsqldb:hsqldb:2.7.4'
+    testImplementation "org.jooq:jooq:${versions.jooq}"
+    testImplementation 'com.h2database:h2:2.4.240'
 }
 
 groovyLibrary {
