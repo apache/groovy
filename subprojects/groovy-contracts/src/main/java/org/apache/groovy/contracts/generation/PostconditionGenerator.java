@@ -141,17 +141,12 @@ public class PostconditionGenerator extends BaseGenerator {
         Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
 
         if (!isPrimitiveVoid(method.getReturnType())) {
-            // if return type is not void, then a "result" variable is provided in the postcondition expression
+            // if return type is not void, then a "result" variable is provided in the postcondition
+            // expression. Implicit returns (trailing expressions, if/else branches, an empty body's
+            // default value per GROOVY-12082) have already been converted to explicit returns by
+            // getReturnStatements (GROOVY-12129); an empty list here means the method cannot
+            // complete normally (e.g. it always throws), so the postcondition is vacuous.
             List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
-
-            // GROOVY-12082: a method that falls off the end (e.g. an empty body) implicitly returns the
-            // default for its return type; synthesize that return so the result-based postcondition is
-            // still evaluated (reference types yield null, primitives yield 0/false to match Groovy)
-            if (returnStatements.isEmpty()) {
-                ReturnStatement implicitReturn = new ReturnStatement(defaultReturnValueExpression(method.getReturnType()));
-                block.addStatement(implicitReturn);
-                returnStatements = List.of(implicitReturn);
-            }
 
             for (ReturnStatement returnStatement : returnStatements) {
                 BlockStatement localPostconditionBlockStatement = block(new VariableScope(), postconditionBlockStatement.getStatements());
@@ -171,25 +166,6 @@ public class PostconditionGenerator extends BaseGenerator {
             block.addStatements(postconditionBlockStatement.getStatements());
         }
         method.putNodeMetaData(METHOD_PROCESSED, true);
-    }
-
-    /**
-     * Returns the constant a method implicitly yields when it falls off the end of its body, matching
-     * Groovy's runtime semantics: the default value of the (primitive) return type, or {@code null} for
-     * reference types. Used by {@link #addPostcondition} (GROOVY-12082) to bind {@code result} for an
-     * empty-bodied (or returnless) non-void method so its postcondition can still be evaluated.
-     *
-     * @param returnType the method's declared return type
-     * @return the implicit default-return expression for that type
-     */
-    private static Expression defaultReturnValueExpression(final ClassNode returnType) {
-        if (!ClassHelper.isPrimitiveType(returnType)) return constX(null);
-        if (returnType.equals(ClassHelper.boolean_TYPE)) return constX(Boolean.FALSE);
-        if (returnType.equals(ClassHelper.long_TYPE)) return constX(0L);
-        if (returnType.equals(ClassHelper.float_TYPE)) return constX(0.0f);
-        if (returnType.equals(ClassHelper.double_TYPE)) return constX(0.0d);
-        // byte, short, int and char all default to a zero integer constant
-        return constX(0);
     }
 
     private void setOldVariablesIfEnabled(BlockStatement block, Expression contractsEnabled, MethodNode method) {
