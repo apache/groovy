@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
@@ -117,7 +119,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         boolean isPrimitive = isPrimitiveType(constantExpression.getType());
         FieldNode field = isPrimitive ? const2Prims.get(n) : const2Objects.get(n);
         if (field != null) {
-            constantExpression.setConstantName(field.getName());
+            stampConstantName(constantExpression, field.getName());
             return;
         }
         String name;
@@ -132,12 +134,42 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
                 constantExpression);
         field.setSynthetic(true);
         missingFields.add(field);
-        constantExpression.setConstantName(field.getName());
+        stampConstantName(constantExpression, field.getName());
         if (isPrimitive) {
             const2Prims.put(n, field);
         } else {
             const2Objects.put(n, field);
         }
+    }
+
+    /**
+     * Records the cached-constant field name on the expression node, warning when the node was
+     * already stamped with a different name (GROOVY-12131). The field name lives on the node
+     * itself, which assumes each node is reachable from exactly one class — the parser only ever
+     * produces such trees, and closure bodies are exempt from caching (GROOVY-3339). An AST
+     * transform that aliases a constant-bearing subtree into a second class breaks the
+     * assumption: the classes overwrite each other's stamp and whichever class generates
+     * bytecode against the other's numbering silently reads the wrong {@code $const$} field at
+     * runtime. A same-name re-stamp is harmless (each class reads its own field, holding the
+     * same value), so only a diverging name is reported.
+     *
+     * @param constantExpression the constant being cached
+     * @param name the {@code $const$} field name assigned for the current class
+     */
+    private void stampConstantName(ConstantExpression constantExpression, String name) {
+        String previousName = constantExpression.getConstantName();
+        if (previousName != null && !previousName.equals(name)) {
+            source.getErrorCollector().addWarning(WarningMessage.LIKELY_ERRORS,
+                    "Constant expression " + constantExpression.getText() + " is shared between classes: cached as "
+                            + previousName + " in a previously optimized class and now as " + name + " in "
+                            + currentClass.getName() + ". One of the classes will read the wrong cached constant"
+                            + " at runtime; the responsible AST transform should copy expression nodes rather than"
+                            + " alias them across classes.",
+                    Token.newString(constantExpression.getText(),
+                            constantExpression.getLineNumber(), constantExpression.getColumnNumber()),
+                    source);
+        }
+        constantExpression.setConstantName(name);
     }
 
     /**
