@@ -98,8 +98,11 @@ jobs:
 
       # The action writes a default index.html on first run and leaves it in
       # place after that. We overlay our custom (4-series, normalised) page
-      # every run, but only commit if it has actually changed.
-      - name: Install custom dashboard page
+      # every run, but only commit if it has actually changed. The gh-pages
+      # root landing page is synced from source control here too, so new
+      # dashboards get linked via normal review rather than manual gh-pages
+      # edits.
+      - name: Install custom dashboard pages
         run: |
           set -euo pipefail
           # Sync the custom page AND its locally-vendored JS (vendor/) so the
@@ -113,14 +116,17 @@ jobs:
           # Mirror vendor/ exactly (drop files removed upstream, e.g. on a
           # version bump) but keep data.js and other generated siblings.
           rsync -a --delete "$SRC_DIR/vendor/" "/tmp/gh-pages/$DEST_DIR/vendor/"
+          # Landing page for apache.github.io/groovy — source of truth is
+          # root-index.html on master; the gh-pages copy is overwritten.
+          cp "$SRC_DIR/root-index.html" /tmp/gh-pages/index.html
           cd /tmp/gh-pages
-          git add "$DEST_DIR/index.html" "$DEST_DIR/vendor"
+          git add "$DEST_DIR/index.html" "$DEST_DIR/vendor" index.html
           if git diff --cached --quiet; then
-            echo 'Custom dashboard page and vendored assets already up to date.'
+            echo 'Dashboard pages and vendored assets already up to date.'
           else
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'Update compiler performance dashboard page'
+            git commit -m 'Update dashboard pages'
             git push origin gh-pages
           fi
 

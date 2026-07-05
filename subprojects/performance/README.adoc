@@ -133,3 +133,12 @@ bootstrap). The `n` parameter probes below and past the indy promotion
 threshold (`groovy.indy.optimize.threshold`, default 1000). Static and
 instance dispatch take different cold paths (static sites promote on first
 hit, GROOVY-11935), hence the two benches.
+
+== Dashboard pages
+
+The `dashboard/` directory is the source of truth for the hand-crafted pages
+published to gh-pages: the compiler dashboard (`index.html` + `vendor/`), the
+90-day trend page (`jmh-summary.html`), the per-commit summary script
+(`jmh-summary.py`), and the site landing page (`root-index.html`, synced to
+the gh-pages root by the `perf-daily` workflow). Edit these here on master —
+the gh-pages copies are overwritten by the daily workflows.

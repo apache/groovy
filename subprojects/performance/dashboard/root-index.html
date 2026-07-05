@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<!--
+    This is the landing page for https://apache.github.io/groovy/ (the root
+    index.html of the gh-pages branch). It is synced there by the perf-daily
+    workflow's "Install custom dashboard pages" step — edit THIS file (under
+    subprojects/performance/dashboard/ on master), not the gh-pages copy,
+    which is overwritten on every run.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Apache Groovy Benchmark Dashboards</title>
+</head>
+<body>
+<h1>Apache Groovy Benchmark Dashboards</h1>
+<p>Daily JMH benchmark and performance trends, sharded by suite and indy mode. Each dashboard
+shows trend lines for individual benchmarks; data refreshes after the daily jobs run:</p>
+<ul>
+    <li><code>jmh-daily</code> workflow runs at 06:00 UTC.</li>
+    <li><code>perf-daily</code> workflow runs at 06:30 UTC.</li>
+    <li><code>ad-hoc</code> workflow runs weekly on Mondays at 07:00 UTC.</li>
+</ul>
+
+<h2>perf</h2>
+<ul>
+<li><a href="dev/bench/perf/compiler/">Compiler Performance</a></li>
+<li><a href="dev/bench/perf/dispatch/">Dispatch Metrics (deterministic class-load &amp; bytecode counters)</a></li>
+</ul>
+
+<h2>adhoc</h2>
+<ul>
+    <li><a href="dev/bench/jmh-adhoc/">ad-hoc benchmarks</a></li>
+</ul>
+
+<h2>bench</h2>
+<ul>
+<li><a href="dev/bench/jmh/bench/indy/">bench &mdash; indy</a></li>
+<li><a href="dev/bench/jmh/bench/classic/">bench &mdash; classic</a></li>
+</ul>
+
+<h2>core</h2>
+<ul>
+<li><a href="dev/bench/jmh/core-ag/indy/">core-ag (A&ndash;G) &mdash; indy</a></li>
+<li><a href="dev/bench/jmh/core-ag/classic/">core-ag (A&ndash;G) &mdash; classic</a></li>
+<li><a href="dev/bench/jmh/core-hz/indy/">core-hz (H&ndash;Z) &mdash; indy</a></li>
+<li><a href="dev/bench/jmh/core-hz/classic/">core-hz (H&ndash;Z) &mdash; classic</a></li>
+</ul>
+
+<h2>grails</h2>
+<ul>
+<li><a href="dev/bench/jmh/grails-ad/indy/">grails-ad (A&ndash;D) &mdash; indy</a></li>
+<li><a href="dev/bench/jmh/grails-ad/classic/">grails-ad (A&ndash;D) &mdash; classic</a></li>
+<li><a href="dev/bench/jmh/grails-ez/indy/">grails-ez (E&ndash;Z) &mdash; indy</a></li>
+<li><a href="dev/bench/jmh/grails-ez/classic/">grails-ez (E&ndash;Z) &mdash; classic</a></li>
+</ul>
+
+<h2>summary</h2>
+<ul>
+    <li><a href="dev/bench/jmh/summary.html">trend (last 90 days)</a></li>
+</ul>
+
+</body>
+</html>

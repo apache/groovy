@@ -66,15 +66,21 @@ jobs:
         timeout-minutes: 20
 
       - name: Fetch dispatch metrics baseline
+        id: dispatch-baseline
         run: |
           URL="https://apache.github.io/groovy/dev/bench/perf/dispatch/data.js"
           if curl -fsSL "$URL" -o dispatch-data.js; then
             sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' dispatch-data.js > dispatch-prev.json
+            echo 'found=true' >> "$GITHUB_OUTPUT"
           else
-            echo '{}' > dispatch-prev.json
+            # perf-daily has not published dispatch metrics yet; the action
+            # cannot handle an empty external data file, so skip the compare.
+            echo 'No dispatch metrics baseline on gh-pages yet; skipping comparison.'
+            echo 'found=false' >> "$GITHUB_OUTPUT"
           fi
 
       - name: Compare dispatch metrics against history
+        if: steps.dispatch-baseline.outputs.found == 'true'
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
           name: 'Dispatch Metrics'
