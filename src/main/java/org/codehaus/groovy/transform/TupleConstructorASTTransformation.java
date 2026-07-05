@@ -51,6 +51,7 @@ import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.WarningMessage;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -339,7 +340,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                     "%s specifies duplicate constructor: %s(%s)",
                     xform.getAnnotationName(), cNode.getNameWithoutPackage(),
                     params.stream().map(Parameter::getType).map(ClassNodeUtils::formatTypeName).collect(joining(",")));
-                sourceUnit.addWarning(warning, anno.getLineNumber() > 0 ? anno : cNode);
+                sourceUnit.addWarning(WarningMessage.LIKELY_ERRORS, warning, anno.getLineNumber() > 0 ? anno : cNode);
             }
         } else {
             // add main tuple constructor; if any parameters have default values, then Verifier will generate the variants

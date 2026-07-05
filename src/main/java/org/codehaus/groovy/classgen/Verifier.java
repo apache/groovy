@@ -63,6 +63,7 @@ import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.classgen.asm.OptimizingStatementWriter.ClassNodeSkip;
 import org.codehaus.groovy.classgen.asm.WriterController;
+import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
@@ -466,7 +467,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                         one += via.apply(i);
                                         two += via.apply(j);
                                         if (Traits.isTrait(in)) { // GROOVY-11508
-                                            cn.getModule().getContext().addWarning("The trait " + in.getNameWithoutPackage() +
+                                            cn.getModule().getContext().addWarning(WarningMessage.LIKELY_ERRORS, "The trait " + in.getNameWithoutPackage() +
                                                 " is implemented more than once with different arguments: " + one + " and " + two, cn);
                                         } else {
                                             throw new RuntimeParserException("The interface " + in.getNameWithoutPackage() +
@@ -989,7 +990,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         message = message.substring(message.indexOf(' ') + 1); // strip return type
         message = String.format("Property %s cannot override final method %s of class %s", pn.getName(), message, mn.getDeclaringClass().getName());
 
-        classNode.getModule().getContext().addWarning(message, pn);
+        classNode.getModule().getContext().addWarning(WarningMessage.LIKELY_ERRORS, message, pn);
     }
 
     private boolean methodNeedsReplacement(final MethodNode mn, final Consumer<MethodNode> cannotReplace) {
@@ -1233,7 +1234,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             } else {
                 String warning = "Default argument(s) specify duplicate constructor: " +
                     MethodNodeUtils.methodDescriptor(old,true).replace("<init>",type.getNameWithoutPackage());
-                type.getModule().getContext().addWarning(warning, method.getLineNumber() > 0 ? method : type);
+                type.getModule().getContext().addWarning(WarningMessage.LIKELY_ERRORS, warning, method.getLineNumber() > 0 ? method : type);
             }
         });
     }

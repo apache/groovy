@@ -18,13 +18,25 @@
  */
 package org.codehaus.groovy.tools;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.customizers.CompilationCustomizer;
+import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.syntax.Token;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,6 +104,74 @@ public class FileSystemCompilerTest {
         File dir = new File("build/test-generated-classes/cl");
         dir.mkdirs();
         FileSystemCompiler.commandLineCompile(new String[] {"src/test/groovy/groovy/LittleClosureTest.groovy", "-d", dir.getPath()});
+    }
+
+    // warnings collected during a SUCCESSFUL compile must reach the command-line user via the
+    // injectable writer; the failure path already surfaces them alongside the errors
+    @Test
+    public void testWarningsAreDisplayedOnSuccessfulCompile(@TempDir Path dir) throws Exception {
+        StringWriter warnings = new StringWriter();
+        compile(dir, "WarnDemo", "class WarnDemo { }", warningEmittingConfiguration(), warnings);
+        String output = warnings.toString();
+        assertTrue(output.contains("spike warning marker"), "expected the collected warning but got: " + output);
+        assertTrue(output.contains("1 warning"), "expected a warning summary but got: " + output);
+    }
+
+    @Test
+    public void testCleanCompileWritesNothing(@TempDir Path dir) throws Exception {
+        StringWriter warnings = new StringWriter();
+        compile(dir, "CleanDemo", "class CleanDemo { }", null, warnings);
+        assertTrue(warnings.toString().isEmpty(), "clean compile should produce no warning output but got: " + warnings);
+    }
+
+    // a null writer (the default for embedders such as the in-process Ant task) must leave
+    // warning handling to the caller — the shared doCompilation entry point stays quiet
+    @Test
+    public void testNullWriterProducesNoWarningOutput(@TempDir Path dir) throws Exception {
+        // proves the suppression is due to the null writer, not the absence of a warning:
+        // the same configuration DOES emit when a writer is supplied
+        StringWriter probe = new StringWriter();
+        compile(dir, "QuietProbe", "class QuietProbe { }", warningEmittingConfiguration(), probe);
+        assertTrue(probe.toString().contains("spike warning marker"), "sanity: warning should exist with a writer");
+
+        // must not throw and (having no sink) produces nothing observable
+        compile(dir, "QuietDemo", "class QuietDemo { }", warningEmittingConfiguration(), null);
+    }
+
+    // integration of the display fix with the level-1 demotion: a genuinely warnable program
+    // (a property that cannot override a final accessor, GROOVY-8659) now surfaces its warning
+    // at the DEFAULT warning level, where previously it was a suppressed level-2 warning
+    @Test
+    public void testDemotedWarningVisibleAtDefaultLevel(@TempDir Path dir) throws Exception {
+        StringWriter warnings = new StringWriter();
+        compile(dir, "OverrideDemo",
+                "abstract class A { final String getFoo() { 'A' } }\n"
+                        + "class OverrideDemo extends A { final String foo = 'C' }\n",
+                null, warnings);
+        assertTrue(warnings.toString().contains("cannot override final method getFoo"),
+                "expected the demoted (level-1) property-override warning at default level but got: " + warnings);
+    }
+
+    private static CompilerConfiguration warningEmittingConfiguration() {
+        CompilerConfiguration configuration = new CompilerConfiguration();
+        configuration.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                source.getErrorCollector().addWarning(WarningMessage.LIKELY_ERRORS, "spike warning marker",
+                        Token.newString(classNode.getName(), 1, 1), source);
+            }
+        });
+        return configuration;
+    }
+
+    private static void compile(Path dir, String className, String source, CompilerConfiguration configuration, Writer warningWriter) throws Exception {
+        File file = dir.resolve(className + ".groovy").toFile();
+        Files.write(file.toPath(), source.getBytes(StandardCharsets.UTF_8));
+        if (configuration == null) {
+            configuration = new CompilerConfiguration();
+        }
+        configuration.setTargetDirectory(dir.toFile());
+        FileSystemCompiler.doCompilation(configuration, null, new String[]{file.getPath()}, false, warningWriter);
     }
 
     @Test
