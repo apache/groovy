@@ -29,12 +29,12 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.classgen.ReturnAdder;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
@@ -100,20 +100,21 @@ public final class AssertStatementCreationUtility {
         returnStatementVisitor.visitMethod(method);
 
         final List<ReturnStatement> returnStatements = returnStatementVisitor.getReturnStatements();
-        final BlockStatement blockStatement = (BlockStatement) method.getCode();
 
         if (returnStatements.isEmpty()) {
-            final int statementCount = blockStatement.getStatements().size();
-            if (statementCount > 0) {
-                final Statement lastStatement = blockStatement.getStatements().get(statementCount - 1);
-                if (lastStatement instanceof ExpressionStatement) {
-                    final ReturnStatement returnStatement = new ReturnStatement((ExpressionStatement) lastStatement);
-                    returnStatement.setSourcePosition(lastStatement);
-                    blockStatement.getStatements().remove(lastStatement);
-                    blockStatement.addStatement(returnStatement);
-                    returnStatements.add(returnStatement);
-                }
-            }
+            // GROOVY-12129: delegate implicit-return conversion to the compiler's own ReturnAdder.
+            // The value-producing trailing statement may be a plain expression statement, but also
+            // an if/else whose branches are expressions, a switch, or a try/catch (e.g. after
+            // method-level @Decreases wrapping); converting only the first case bound `result` to
+            // a synthesized default — and the synthesized `return <default>` changed what the
+            // woven method returned. ReturnAdder performs exactly the conversion the compiler
+            // would apply later anyway (including a default-value return for an empty body,
+            // preserving GROOVY-12082 semantics), so weaving at its returns cannot change what
+            // the method computes. Void methods are left untouched by ReturnAdder.
+            new ReturnAdder().visitMethod(method);
+            final ReturnStatementVisitor implicitReturnVisitor = new ReturnStatementVisitor();
+            implicitReturnVisitor.visitMethod(method);
+            returnStatements.addAll(implicitReturnVisitor.getReturnStatements());
         }
 
         return returnStatements;
