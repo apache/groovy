@@ -389,7 +389,7 @@ public class OptimizingStatementWriter extends StatementWriter {
     }
 
     private boolean writeDeclarationExtraction(final Statement statement) {
-        Expression ex = null;
+        Expression ex;
         if (statement instanceof ReturnStatement rs) {
             ex = rs.getExpression();
         } else if (statement instanceof ExpressionStatement es) {
@@ -974,7 +974,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             if (AsmClassGenerator.containsSpreadExpression(callArgs)) return;
 
             // find method call target
-            Parameter[] paraTypes = null;
+            Parameter[] paraTypes;
             if (callArgs instanceof ArgumentListExpression args) {
                 int size = args.getExpressions().size();
                 paraTypes = new Parameter[size];
@@ -988,7 +988,7 @@ public class OptimizingStatementWriter extends StatementWriter {
             } else {
                 ClassNode type = typeChooser.resolveType(callArgs, node);
                 if (!validTypeForCall(type)) return;
-                paraTypes = new Parameter[]{new Parameter(type, "")};
+                paraTypes = new Parameter[] { new Parameter(type, "") };
             }
 
             MethodNode target;

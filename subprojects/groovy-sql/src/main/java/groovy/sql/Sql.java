@@ -2489,7 +2489,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public GroovyRowResult firstRow(String sql) throws SQLException {
-        List<GroovyRowResult> rows = null;
+        List<GroovyRowResult> rows;
         try {
             rows = rows(sql, 1, 1, null);
         }
@@ -2561,7 +2561,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      */
     public GroovyRowResult firstRow(String sql, List<?> params) throws SQLException {
-        List<GroovyRowResult> rows = null;
+        List<GroovyRowResult> rows;
         try {
             rows = rows(sql, params, 1, 1, null);
         }
@@ -4512,7 +4512,7 @@ public class Sql implements AutoCloseable {
      */
     protected final ResultSet executeQuery(String sql) throws SQLException {
         AbstractQueryCommand command = createQueryCommand(sql);
-        ResultSet rs = null;
+        ResultSet rs;
         try {
             rs = command.execute();
         } finally {
@@ -4535,7 +4535,7 @@ public class Sql implements AutoCloseable {
     protected final ResultSet executePreparedQuery(String sql, List<?> params)
             throws SQLException {
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
-        ResultSet rs = null;
+        ResultSet rs;
         try {
             rs = command.execute();
         } finally {

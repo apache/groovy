@@ -536,7 +536,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 MethodNode bridge;
                 if (method instanceof ConstructorNode) {
                     // create constructor with a nested class as the first parameter, creating one if necessary
-                    ClassNode thatType = null;
+                    ClassNode thatType;
                     Iterator<InnerClassNode> innerClasses = node.getInnerClasses();
                     if (innerClasses.hasNext()) {
                         thatType = innerClasses.next();

@@ -127,10 +127,9 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
 
     private Object decodeValue() {
         CharacterSource characterSource = this.characterSource;
-        Object value = null;
         characterSource.skipWhiteSpace();
 
-        value = switch (characterSource.currentChar()) {
+        Object value = switch (characterSource.currentChar()) {
             case '"' -> decodeString();
             case 't' -> decodeTrue();
             case 'f' -> decodeFalse();
@@ -148,7 +147,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
 
     private Object decodeNumber(boolean negative) {
         char[] chars = characterSource.readNumber();
-        Object value = null;
+        Object value;
 
         if (CharScanner.hasDecimalChar(chars, negative)) {
             value = CharScanner.parseBigDecimal(chars);

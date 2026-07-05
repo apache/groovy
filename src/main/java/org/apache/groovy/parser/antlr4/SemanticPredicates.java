@@ -161,7 +161,7 @@ public class SemanticPredicates {
         int tokenType3;
 
         if (DOT == tokenType2) {
-            int tokeTypeN = tokenType2;
+            int tokeTypeN;
 
             do {
                 index = index + 2;

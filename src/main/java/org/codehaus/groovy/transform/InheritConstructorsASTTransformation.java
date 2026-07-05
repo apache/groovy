@@ -94,8 +94,8 @@ public class InheritConstructorsASTTransformation extends AbstractASTTransformat
         if (ctorNode.isPrivate()) return;
         Parameter[] oldParams = ctorNode.getParameters();
         Parameter[] newParams = new Parameter[oldParams.length];
-        Map<String, ClassNode> genericsSpec = createGenericsSpec(classNode);
-        genericsSpec = createGenericsSpec(classNode.getUnresolvedSuperClass());
+        createGenericsSpec(classNode);
+        Map<String, ClassNode> genericsSpec = createGenericsSpec(classNode.getUnresolvedSuperClass());
         List<Expression> theArgs = buildParams(oldParams, newParams, genericsSpec, copyParameterAnnotations);
         if (!isExisting(classNode, newParams)) {
             ConstructorNode added = addGeneratedConstructor(classNode, ctorNode.getModifiers(), newParams, ctorNode.getExceptions(), block(ctorSuperS(args(theArgs))));

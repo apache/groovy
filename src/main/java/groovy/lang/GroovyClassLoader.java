@@ -404,7 +404,7 @@ public class GroovyClassLoader extends URLClassLoader {
         if (recompile != null ? recompile : config.getRecompileGroovySource()) {
             unit.addFirstPhaseOperation(TimestampAdder.INSTANCE, CompilePhase.CLASS_GENERATION.getPhaseNumber());
         }
-        SourceUnit su = null;
+        SourceUnit su;
         File file = codeSource.getFile();
         if (file != null) {
             su = unit.addSource(file);
@@ -806,10 +806,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * when the class loader tried to resolve the file name and would choke on the URLEncoded space values.
      */
     private static String decodeFileName(final String fileName) {
-        String decodedFile = fileName;
-        decodedFile = URLDecoder.decode(fileName, StandardCharsets.UTF_8);
-
-        return decodedFile;
+        return URLDecoder.decode(fileName, StandardCharsets.UTF_8);
     }
 
     private static boolean isFile(final URL ret) {

@@ -126,7 +126,7 @@ public class Numbers {
         // remove placeholder underscore before starting
         text1 = text1.replace("_", "");
 
-        char c = ' ';
+        char c;
         int length = text1.length();
 
         //

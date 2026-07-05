@@ -459,7 +459,7 @@ public class CharScanner {
      * @return the parsed {@link Number}
      */
     public static Number parseJsonNumber(char[] buffer, int from, int max, int[] size) {
-        Number value = null;
+        Number value;
         boolean simple = true;
         int digitsPastPoint = 0;
 

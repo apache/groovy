@@ -76,9 +76,8 @@ public class MapExpression extends Expression {
         StringBuilder sb = new StringBuilder(32);
         sb.append("[");
         int size = mapEntryExpressions.size();
-        MapEntryExpression mapEntryExpression = null;
         if (size > 0) {
-            mapEntryExpression = mapEntryExpressions.get(0);
+            MapEntryExpression mapEntryExpression = mapEntryExpressions.get(0);
             sb.append(mapEntryExpression.getKeyExpression().getText()).append(":").append(mapEntryExpression.getValueExpression().getText());
             for (int i = 1; i < size; i++) {
                 mapEntryExpression = mapEntryExpressions.get(i);

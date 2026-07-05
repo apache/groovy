@@ -289,7 +289,7 @@ public class ObservableMap implements Map {
                 boolean newKey = !delegate.containsKey(key);
                 if (test != null) {
                     oldValue = delegate.put(key, newValue);
-                    Object result = null;
+                    Object result;
                     if (test.getMaximumNumberOfParameters() == 2) {
                         result = test.call(key, newValue);
                     } else {

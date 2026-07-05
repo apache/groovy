@@ -226,10 +226,9 @@ public class JsonParserCharArray extends BaseJsonParser {
     }
 
     private Object decodeValueInternal() {
-        Object value = null;
         skipWhiteSpace();
 
-        value = switch (__currentChar) {
+        Object value = switch (__currentChar) {
             case '"' -> decodeString();
             case 't' -> decodeTrue();
             case 'f' -> decodeFalse();
@@ -241,8 +240,6 @@ public class JsonParserCharArray extends BaseJsonParser {
             default -> throw new JsonException(exceptionDetails("Unable to determine the " +
                 "current character, it is not a string, number, array, or object"));
         };
-
-
 
         return value;
     }

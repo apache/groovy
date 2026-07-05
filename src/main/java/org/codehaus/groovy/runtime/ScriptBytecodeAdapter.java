@@ -147,7 +147,7 @@ public class ScriptBytecodeAdapter {
     public static Object invokeMethodOnSuperN(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable {
         MetaClass metaClass = receiver.getMetaClass();
         // ignore interception and missing method fallback
-        Object result = null;
+        Object result;
         try {
             result = metaClass.invokeMethod(senderClass, receiver, messageName, messageArguments, true, true);
         } catch (GroovyRuntimeException gre) {

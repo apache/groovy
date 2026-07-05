@@ -502,7 +502,7 @@ public class Groovy extends Java {
             throws IOException {
         log.debug("runStatements()");
         StringBuilder txt = new StringBuilder();
-        String line = "";
+        String line;
         BufferedReader in = new BufferedReader(reader);
 
         while ((line = in.readLine()) != null) {

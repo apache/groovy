@@ -114,13 +114,11 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      */
     @Override
     public final Object get(Object key) {
-        Object object = null;
-
         /* if the map is null, then we create it. */
         if (map == null) {
             buildMap();
         }
-        object = map.get(key);
+        Object object = map.get(key);
 
         lazyChopIfNeeded(object);
         return object;

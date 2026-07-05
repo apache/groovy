@@ -79,7 +79,7 @@ public class AllTestSuite extends TestSuite {
     private static final GroovyClassLoader GROOVY_LOADER = new GroovyClassLoader(JAVA_LOADER);
 
     private static final String[] EMPTY_ARGS = new String[]{};
-    private static IFileNameFinder finder = null;
+    private static IFileNameFinder finder;
 
     static { // this is only needed since the Groovy Build compiles *.groovy files after *.java files
         try {

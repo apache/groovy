@@ -28,7 +28,7 @@ public class MetaExpandoProperty extends MetaProperty {
     /**
      * Current value stored for the expando property.
      */
-    Object value = null;
+    Object value;
 
     /**
      * Creates an expando property from a map entry.

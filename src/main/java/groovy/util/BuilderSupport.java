@@ -109,7 +109,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
      * @return the created node, or a replacement from {@link #postNodeCompletion(Object, Object)}
      */
     protected Object doInvokeMethod(final String methodName, final Object name, final Object args) {
-        Object node = null;
+        Object node;
         Closure closure = null;
         List list = InvokerHelper.asList(args);
 

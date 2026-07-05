@@ -41,7 +41,7 @@ public class Reduction extends CSTNode {
     // INITIALIZATION AND SUCH
 
     /** The list of child nodes (including root at index 0). */
-    private List elements = null;
+    private List elements;
     /** Flag used by some parser implementations to mark expression completion. */
     private boolean marked = false;
 

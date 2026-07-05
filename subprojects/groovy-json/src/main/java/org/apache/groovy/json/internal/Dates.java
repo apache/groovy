@@ -131,7 +131,7 @@ public class Dates {
                 int minute = CharScanner.parseIntFromTo(charArray, from + 14, from + 16);
 
                 int second = CharScanner.parseIntFromTo(charArray, from + 17, from + 19);
-                TimeZone tz = null;
+                TimeZone tz;
 
                 if (charArray[from + 19] == 'Z') {
                     tz = TimeZone.getTimeZone("GMT");

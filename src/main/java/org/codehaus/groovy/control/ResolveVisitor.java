@@ -740,15 +740,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // check module node imports aliases
         // the while loop enables a check for inner classes which are not fully imported,
         // but visible as the surrounding class is imported and the inner class is public/protected static
-        String pname = name;
         int index = name.length();
+
         /*
          * we have a name foo.bar and an import foo.foo. This means foo.bar is possibly
          * foo.foo.bar rather than foo.bar. This means to cut at the dot in foo.bar and
          * foo for import
          */
         do {
-            pname = name.substring(0, index);
+            String pname = name.substring(0, index);
             ClassNode aliasedNode = null;
             ImportNode importNode = module.getImport(pname);
             if (importNode != null && importNode != currentImport) {

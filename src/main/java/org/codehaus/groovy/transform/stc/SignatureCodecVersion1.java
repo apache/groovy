@@ -125,7 +125,7 @@ public class SignatureCodecVersion1 implements SignatureCodec {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(128);
         DataOutputStream dos = new DataOutputStream(baos);
         Writer wrt = new StringBuilderWriter();
-        String encoded = null;
+        String encoded;
         try {
             doEncode(node, dos);
             EncodingGroovyMethods.encodeBase64(baos.toByteArray()).writeTo(wrt);

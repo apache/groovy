@@ -578,7 +578,7 @@ public class GenericsUtils {
         if (tps != null) {
             for (GenericsType tp : tps) {
                 String name = tp.getName();
-                ClassNode type = tp.getType();
+                ClassNode type;
                 ClassNode redirect;
                 if (tp.getUpperBounds() != null) {
                     redirect = tp.getUpperBounds()[0];

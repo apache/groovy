@@ -27,7 +27,7 @@ import java.util.Properties;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 
 /**
- * Exposes the Groovy release information 
+ * Exposes the Groovy release information
  */
 public class ReleaseInfo {
     private static final Properties RELEASE_INFO = new Properties();
@@ -35,7 +35,7 @@ public class ReleaseInfo {
     private static final String KEY_IMPLEMENTATION_VERSION = "ImplementationVersion";
 
     static {
-        URL url = null;
+        URL url;
         ClassLoader cl = ReleaseInfo.class.getClassLoader();
         // we need no security check for getting the system class
         // loader since if we do the invoker has a null loader,

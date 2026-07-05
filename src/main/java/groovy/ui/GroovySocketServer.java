@@ -200,7 +200,7 @@ public class GroovySocketServer implements Runnable {
         @Override
         public void run() {
             try {
-                String line = null;
+                String line;
                 script.setProperty("out", writer);
                 script.setProperty("socket", socket);
                 script.setProperty("init", Boolean.TRUE);

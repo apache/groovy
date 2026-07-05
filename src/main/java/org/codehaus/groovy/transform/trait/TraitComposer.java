@@ -224,8 +224,6 @@ public abstract class TraitComposer {
                     int isStatic = 0;
                     boolean publicField = true;
                     FieldNode helperField = null;
-                    fieldMods = 0;
-                    isStatic = 0;
 
                     // look first for field with encoded modifier information
                     for (Integer mod : Traits.FIELD_PREFIXES) {

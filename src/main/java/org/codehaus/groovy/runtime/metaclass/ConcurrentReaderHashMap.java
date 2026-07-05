@@ -644,7 +644,7 @@ public class ConcurrentReaderHashMap
     Entry[] tab = table;
     int index = hash & (tab.length-1);
     Entry first = tab[index];
-    Entry e = first;
+    Entry e;
 
     for (e = first; e != null; e = e.next)
       if (e.hash == hash && eq(key, e.key))
@@ -1188,7 +1188,7 @@ public class ConcurrentReaderHashMap
      */
     @Override
     public boolean hasMoreElements() { return hasNext(); }
-    
+
     /**
      * Returns the next element (Enumeration interface).
      *

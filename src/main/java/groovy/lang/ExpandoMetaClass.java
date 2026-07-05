@@ -1106,7 +1106,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             else
                 methodName = name;
 
-            ClosureStaticMetaMethod metaMethod = null;
+            ClosureStaticMetaMethod metaMethod;
 
             if (paramTypes != null) {
                 metaMethod = new ClosureStaticMetaMethod(methodName, theClass, callable, paramTypes);
