@@ -95,6 +95,86 @@ class LoopDecreasesTests extends BaseTestClass {
         '''
     }
 
+    // GROOVY-12128: a classic for loop runs its update expression after the body, so a variant
+    // whose progress lives in the update clause used to be re-evaluated before any progress had
+    // registered and could never decrease. The variant is now measured at the start of each
+    // iteration and consecutive iteration-start values are compared.
+    @Test
+    void decreasesOnClassicForLoopWithUpdateClauseProgress() {
+        assertScript '''
+            import groovy.contracts.Decreases
+
+            int n = 3
+            int i = 0
+            @Decreases({ n - i })
+            for (i = 0; i < n; i++) { }
+            assert i == 3
+        '''
+    }
+
+    // GROOVY-12128: compound update expressions (j += 2) progress in the update clause too
+    @Test
+    void decreasesOnClassicForLoopWithCompoundUpdate() {
+        assertScript '''
+            import groovy.contracts.Decreases
+
+            int last = -1
+            @Decreases({ 10 - j })
+            for (int j = 0; j < 10; j += 2) {
+                last = j
+            }
+            assert last == 8
+        '''
+    }
+
+    // GROOVY-12128: the well-foundedness obligation is non-negativity at iteration entry, not
+    // after the final body execution — a loop that overshoots below zero on its last pass still
+    // terminates and must not be flagged.
+    @Test
+    void decreasesMayOvershootOnFinalIteration() {
+        assertScript '''
+            import groovy.contracts.Decreases
+
+            int n = 5
+            @Decreases({ n })
+            while (n > 0) {
+                n -= 2
+            }
+            assert n == -1
+        '''
+    }
+
+    // GROOVY-12128: a for loop whose update clause makes no progress is still caught (at the
+    // second iteration entry, where the variant has not decreased)
+    @Test
+    void decreasesViolationWhenForUpdateMakesNoProgress() {
+        shouldFail AssertionError, '''
+            import groovy.contracts.Decreases
+
+            int guard = 0
+            @Decreases({ 5 - i })
+            for (int i = 0; i < 5; i = i) {
+                if (++guard > 10) break
+            }
+        '''
+    }
+
+    // GROOVY-12128: a scalar measure that is already negative at first loop entry is not
+    // well-founded, even when the loop happens to exit after a single iteration (the only
+    // shape the consecutive-iteration comparison alone would let through)
+    @Test
+    void decreasesViolationWhenNegativeAtFirstEntry() {
+        shouldFail AssertionError, '''
+            import groovy.contracts.Decreases
+
+            int n = 1
+            @Decreases({ n - 2 })
+            while (n > 0) {
+                n--
+            }
+        '''
+    }
+
     @Test
     void decreasesWithExpression() {
         assertScript '''

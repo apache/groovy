@@ -50,24 +50,34 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.geX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifElseS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ltX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
  * Handles {@link Decreases} annotations placed on loop statements ({@code for},
- * {@code while}, {@code do-while}). The closure must return a value that
- * strictly decreases on every iteration and remains non-negative.
+ * {@code while}, {@code do-while}). The closure must return a value that is
+ * non-negative at the start of each iteration and strictly decreases between
+ * consecutive iterations.
  * <p>
  * The transformation injects code to:
  * <ol>
- *   <li>Save the expression value at the start of each iteration.</li>
- *   <li>Re-evaluate it at the end of the iteration.</li>
- *   <li>Assert the value has strictly decreased.</li>
- *   <li>Assert the value is non-negative.</li>
+ *   <li>Evaluate the expression at the start of each iteration.</li>
+ *   <li>On the first iteration, assert a scalar measure is non-negative at
+ *       loop entry (well-foundedness).</li>
+ *   <li>On subsequent iterations, assert it has strictly decreased since the
+ *       previous iteration start, and is non-negative (GROOVY-12128: comparing
+ *       iteration starts — rather than the start and end of one pass — sees
+ *       progress made by a classic {@code for} loop's update expression, which
+ *       runs after the body, and does not demand non-negativity after the
+ *       final body execution).</li>
  * </ol>
+ * The final iteration's decrease is intentionally unchecked: a loop that has
+ * exited needs no further termination evidence.
  * <p>
  * Example:
  * <pre>
@@ -116,31 +126,76 @@ public class LoopVariantASTTransformation implements ASTTransformation, Compilat
         String suffix = Long.toString(COUNTER.getAndIncrement());
         String prevVarName = "$_gc_decreases_prev_" + suffix;
         String currVarName = "$_gc_decreases_curr_" + suffix;
+        String seenVarName = "$_gc_decreases_seen_" + suffix;
 
-        // At start of iteration: def prevVar = <expression>
-        Statement savePrev = declS(localVarX(prevVarName, ClassHelper.dynamicType()), variantExpression);
-        savePrev.setSourcePosition(annotation);
-
-        // At end of iteration: def currVar = <expression copy>
-        // We need a fresh copy of the expression for re-evaluation
-        Expression variantCopy = copyExpression(closureExpression);
-        Statement saveCurr = declS(localVarX(currVarName, ClassHelper.dynamicType()), variantCopy);
-        saveCurr.setSourcePosition(annotation);
-
-        // Assert (if enabled): currVar < prevVar and non-negative — delegated to the
-        // shared VariantSupport, gated by the enclosing class's -ea/-da configuration.
         String className = LoopContractSupport.enclosingClassName(source, (ASTNode) loopStatement);
-        Statement decreaseCheck = stmt(
-                callX(
-                        ClassHelper.make(VariantSupport.class),
-                        "checkLoopVariant",
-                        args(varX(prevVarName), varX(currVarName), constX(className))
-                )
-        );
-        decreaseCheck.setSourcePosition(annotation);
+        BlockStatement enclosingBlock = LoopContractSupport.enclosingBlock(source, (ASTNode) loopStatement);
 
-        // Inject: save at start, check at end
-        injectAtLoopBodyStartAndEnd(loopStatement, savePrev, block(saveCurr, decreaseCheck));
+        if (enclosingBlock != null) {
+            // GROOVY-12128: measure the variant at the start of each iteration and compare
+            // consecutive iteration-start values. Measuring within a single pass (body start vs
+            // body end) misses progress made by a classic for loop's update expression, which
+            // runs after the body end, and wrongly demands non-negativity after the final body
+            // execution instead of at iteration entry.
+            Statement declPrev = declS(localVarX(prevVarName, ClassHelper.dynamicType()), nullX());
+            declPrev.setSourcePosition(annotation);
+            Statement declSeen = declS(localVarX(seenVarName, ClassHelper.boolean_TYPE), constX(false, true));
+            declSeen.setSourcePosition(annotation);
+            List<Statement> siblings = enclosingBlock.getStatements();
+            siblings.addAll(siblings.indexOf(loopStatement), List.of(declPrev, declSeen));
+
+            Statement saveCurr = declS(localVarX(currVarName, ClassHelper.dynamicType()), variantExpression);
+            saveCurr.setSourcePosition(annotation);
+            // on the first iteration there is no previous value to compare against, but a scalar
+            // measure must already be non-negative at loop entry (well-foundedness)
+            Statement decreaseCheck = ifElseS(
+                    boolX(varX(seenVarName)),
+                    stmt(callX(
+                            ClassHelper.make(VariantSupport.class),
+                            "checkLoopVariant",
+                            args(varX(prevVarName), varX(currVarName), constX(className))
+                    )),
+                    stmt(callX(
+                            ClassHelper.make(VariantSupport.class),
+                            "checkLoopVariantEntry",
+                            args(varX(currVarName), constX(className))
+                    ))
+            );
+            decreaseCheck.setSourcePosition(annotation);
+            Statement markSeen = assignS(varX(seenVarName), constX(true, true));
+            markSeen.setSourcePosition(annotation);
+            Statement savePrev = assignS(varX(prevVarName), varX(currVarName));
+            savePrev.setSourcePosition(annotation);
+
+            injectAtLoopBodyStart(loopStatement, block(saveCurr, decreaseCheck, markSeen, savePrev));
+        } else {
+            // The loop is not a direct child of a block (e.g. a braceless if branch), so there is
+            // nowhere to hoist cross-iteration state; fall back to the single-pass measurement.
+
+            // At start of iteration: def prevVar = <expression>
+            Statement savePrev = declS(localVarX(prevVarName, ClassHelper.dynamicType()), variantExpression);
+            savePrev.setSourcePosition(annotation);
+
+            // At end of iteration: def currVar = <expression copy>
+            // We need a fresh copy of the expression for re-evaluation
+            Expression variantCopy = copyExpression(closureExpression);
+            Statement saveCurr = declS(localVarX(currVarName, ClassHelper.dynamicType()), variantCopy);
+            saveCurr.setSourcePosition(annotation);
+
+            // Assert (if enabled): currVar < prevVar and non-negative — delegated to the
+            // shared VariantSupport, gated by the enclosing class's -ea/-da configuration.
+            Statement decreaseCheck = stmt(
+                    callX(
+                            ClassHelper.make(VariantSupport.class),
+                            "checkLoopVariant",
+                            args(varX(prevVarName), varX(currVarName), constX(className))
+                    )
+            );
+            decreaseCheck.setSourcePosition(annotation);
+
+            // Inject: save at start, check at end
+            injectAtLoopBodyStartAndEnd(loopStatement, savePrev, block(saveCurr, decreaseCheck));
+        }
 
         // The variant closure lived inside a statement annotation, so the compiler's resolution
         // passes never reached it; re-resolve types, static imports and variable scopes now that the
@@ -171,6 +226,19 @@ public class LoopVariantASTTransformation implements ASTTransformation, Compilat
             return exprStmt.getExpression().transformExpression(expr -> expr);
         }
         return null;
+    }
+
+    private static void injectAtLoopBodyStart(LoopingStatement loopStatement, Statement bookkeeping) {
+        Statement loopBody = loopStatement.getLoopBlock();
+        if (loopBody instanceof BlockStatement block) {
+            block.getStatements().addAll(0, ((BlockStatement) bookkeeping).getStatements());
+        } else {
+            BlockStatement newBody = new BlockStatement();
+            newBody.addStatements(((BlockStatement) bookkeeping).getStatements());
+            newBody.addStatement(loopBody);
+            newBody.setSourcePosition(loopBody);
+            loopStatement.setLoopBlock(newBody);
+        }
     }
 
     private static void injectAtLoopBodyStartAndEnd(LoopingStatement loopStatement,

@@ -85,6 +85,64 @@ class LoopInvariantTests extends BaseTestClass {
         '''
     }
 
+    // GROOVY-12128: a do-while runs its body before the first condition check, so the loop
+    // invariant only needs to be established by that first body execution; checking it at loop
+    // entry rejects valid loops.
+    @Test
+    void invariantOnDoWhileEstablishedByFirstBodyExecution() {
+        assertScript '''
+            import groovy.contracts.*
+
+            class C {
+                @Requires({ n >= 1 })
+                @Ensures({ result == n })
+                static int countUp(int n) {
+                    int i = 0
+                    @Invariant({ 1 <= i && i <= n })
+                    @Decreases({ n - i })
+                    do { i++ } while (i < n)
+                    return i
+                }
+            }
+
+            assert C.countUp(1) == 1
+            assert C.countUp(3) == 3
+        '''
+    }
+
+    // GROOVY-12128: the do-while invariant is checked after each body execution, so a body
+    // that breaks the invariant is caught even when the invariant held at loop entry.
+    @Test
+    void invariantOnDoWhileViolatedByBodyThrows() {
+        shouldFail AssertionError, '''
+            import groovy.contracts.Invariant
+
+            int i = 0
+            @Invariant({ i <= 2 })
+            do {
+                i += 5
+            } while (false)
+        '''
+    }
+
+    // GROOVY-12128: an invariant is not required to hold at a break exit (only on the paths
+    // that continue looping), so the do-while end-of-body check must be skipped by break —
+    // matching the while/for placement, where break likewise exits after the entry check.
+    @Test
+    void invariantOnDoWhileNotRequiredAtBreak() {
+        assertScript '''
+            import groovy.contracts.Invariant
+
+            int i = 0
+            @Invariant({ i <= 2 })
+            do {
+                i = 99
+                break
+            } while (true)
+            assert i == 99
+        '''
+    }
+
     @Test
     void multipleInvariantsOnLoop() {
         assertScript '''

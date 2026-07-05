@@ -90,6 +90,24 @@ public final class VariantSupport {
         }
     }
 
+    /**
+     * Loop-variant entry point for the first iteration of a loop, where no previous value
+     * exists to compare against: if enabled, verify a scalar {@link Number} measure is
+     * non-negative at loop entry (GROOVY-12128), throwing {@link LoopVariantViolation}
+     * otherwise. This mirrors the non-negative floor {@link #describeFailure} applies to
+     * every subsequent iteration-start value. {@link List} (lexicographic) measures have no
+     * single deciding component at entry, so they are not floor-checked here.
+     *
+     * @param curr      the variant at first loop entry
+     * @param className the enclosing class name (for {@code -ea}/{@code -da} gating)
+     */
+    public static void checkLoopVariantEntry(final Object curr, final String className) {
+        if (!enabled(className)) return;
+        if (curr instanceof Number && ((Number) curr).doubleValue() < 0) {
+            throw new LoopVariantViolation("<groovy.contracts.Decreases> loop variant is negative at loop entry: " + curr);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static String describeScalar(final Object prev, final Object curr) {
         Comparable<Object> prevComp = (Comparable<Object>) prev;

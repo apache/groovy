@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.LoopingStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -43,8 +44,14 @@ import java.util.List;
 
 /**
  * Handles {@link Invariant} annotations placed on loop statements ({@code for},
- * {@code while}, {@code do-while}). The invariant closure is evaluated as an
- * assertion at the start of each loop iteration.
+ * {@code while}, {@code do-while}). For {@code for} and {@code while} loops the
+ * invariant closure is evaluated as an assertion at the start of each loop
+ * iteration. For {@code do-while} loops it is evaluated after each body
+ * execution instead (GROOVY-12128): the body runs before the first condition
+ * check, so the invariant only needs to be established by that first execution —
+ * checking it at loop entry would reject valid loops. (A {@code continue} inside
+ * a {@code do-while} jumps straight to the condition and therefore skips the
+ * check for that pass.)
  * <p>
  * When {@code @Invariant} is placed on a class (its original usage), this
  * transform returns immediately, letting the existing global contract pipeline
@@ -106,7 +113,14 @@ public class LoopInvariantASTTransformation implements ASTTransformation, Compil
         );
         wrapped.setSourcePosition(annotation);
 
-        injectAtLoopBodyStart(loopStatement, wrapped);
+        // GROOVY-12128: a do-while establishes its invariant with the first body execution
+        // (the body runs before the first condition check), so check after each execution
+        // rather than at iteration start
+        if (loopStatement instanceof DoWhileStatement) {
+            injectAtLoopBodyEnd(loopStatement, wrapped);
+        } else {
+            injectAtLoopBodyStart(loopStatement, wrapped);
+        }
 
         // The invariant closure lived inside a statement annotation, so the compiler's resolution
         // passes never reached it; re-resolve types, static imports and variable scopes now that the
@@ -122,6 +136,19 @@ public class LoopInvariantASTTransformation implements ASTTransformation, Compil
             BlockStatement newBody = new BlockStatement();
             newBody.addStatements(((BlockStatement) check).getStatements());
             newBody.addStatement(loopBody);
+            newBody.setSourcePosition(loopBody);
+            loopStatement.setLoopBlock(newBody);
+        }
+    }
+
+    private static void injectAtLoopBodyEnd(LoopingStatement loopStatement, Statement check) {
+        Statement loopBody = loopStatement.getLoopBlock();
+        if (loopBody instanceof BlockStatement block) {
+            block.getStatements().addAll(((BlockStatement) check).getStatements());
+        } else {
+            BlockStatement newBody = new BlockStatement();
+            newBody.addStatement(loopBody);
+            newBody.addStatements(((BlockStatement) check).getStatements());
             newBody.setSourcePosition(loopBody);
             loopStatement.setLoopBlock(newBody);
         }
