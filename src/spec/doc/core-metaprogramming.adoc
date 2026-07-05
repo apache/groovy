@@ -2515,6 +2515,72 @@ class A {
 ----
 |=======================================================================
 
+[[xform-SafeRegex]]
+===== `@groovy.transform.SafeRegex`
+
+Regular expression evaluation is another way for untrusted input to consume unbounded CPU.
+Java's regex engine has no native timeout, so a pattern subject to _catastrophic backtracking_
+can effectively hang a thread when fed adversarial input -- a Regular Expression Denial of
+Service (ReDoS). Thread interruption doesn't help here: the regex engine never checks the
+interrupt flag, so even `@ThreadInterrupt` or `@TimedInterrupt` cannot stop a runaway match --
+the hang occurs inside a single JDK library call, not in user code where those transforms
+insert their checks.
+
+`@SafeRegex` addresses this for the regex operators. Within the annotated scope, find (`=~`)
+and match (`==~`) expressions are rewritten at compile time to deadline-guarded
+gapi:groovy.util.regex.RegexGuard[] calls which throw a
+gapi:groovy.util.regex.RegexTimeoutException[] if an evaluation exceeds the configured timeout.
+Matching semantics are otherwise unchanged:
+
+[source,groovy]
+----
+include::../test/SaferScriptingASTTransformsTest.groovy[tags=saferegex_handler,indent=0]
+----
+
+The `check` method is rewritten to the equivalent of:
+
+[source,groovy]
+----
+include::../test/SaferScriptingASTTransformsTest.groovy[tags=saferegex_handler_equiv,indent=0]
+----
+
+Well-behaved evaluations are unaffected, while a runaway one is cut off shortly after the
+deadline:
+
+[source,groovy]
+----
+include::../test/SaferScriptingASTTransformsTest.groovy[tags=saferegex_control,indent=0]
+----
+
+The annotation may be placed on a class, method, or constructor. It may also be placed on a
+field or local variable declaration, in which case only regex operators lexically within the
+initializer expression are guarded (a guarded field initializer runs, as usual, in the
+constructor, or in the static initializer for a static field, where a timeout surfaces as an
+`ExceptionInInitializerError` whose cause is the `RegexTimeoutException`).
+
+`@SafeRegex` supports one option:
+
+[cols="1,1,2,3a",options="header"]
+|=======================================================================
+|Attribute|Default value|Description|Example
+|millis|1000|The timeout in milliseconds applied to each guarded regex evaluation within the annotated scope. Must be a positive constant.|
+[source,groovy]
+----
+@SafeRegex(millis = 200)
+boolean check(String input) {
+    input ==~ /(.*,){16}X/
+}
+----
+|=======================================================================
+
+Only regex operators lexically visible within the annotated scope are rewritten. Regex
+evaluation via method calls such as `String#matches`, `replaceAll` or `split`, or occurring in
+code called from the annotated scope, is not guarded by this transform; for those, use
+gapi:groovy.util.regex.RegexGuard[] explicitly -- its `guard(timeout) { ... }` form guards all
+regex evaluations reached through Groovy's runtime for the dynamic extent of a closure. See the
+link:core-operators.html#_guarding_against_runaway_regular_expressions[operator documentation]
+for details.
+
 ==== Compiler directives
 
 This category of AST transformations groups annotations which have a direct impact on the semantics of the code, rather

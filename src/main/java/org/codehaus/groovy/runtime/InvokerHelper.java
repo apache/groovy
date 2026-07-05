@@ -33,6 +33,7 @@ import groovy.lang.Script;
 import groovy.lang.SpreadMap;
 import groovy.lang.SpreadMapEvaluatingException;
 import groovy.lang.Tuple;
+import groovy.util.regex.RegexGuard;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
@@ -304,11 +305,11 @@ public class InvokerHelper {
         if (right instanceof String) {
             regexToCompareTo = (String) right;
         } else if (right instanceof Pattern pattern) {
-            return pattern.matcher(stringToCompare);
+            return pattern.matcher(RegexGuard.ambientGuard(stringToCompare));
         } else {
             regexToCompareTo = FormatHelper.toString(right);
         }
-        return Pattern.compile(regexToCompareTo).matcher(stringToCompare);
+        return Pattern.compile(regexToCompareTo).matcher(RegexGuard.ambientGuard(stringToCompare));
     }
 
     /**
@@ -326,7 +327,7 @@ public class InvokerHelper {
             pattern = Pattern.compile(FormatHelper.toString(right));
         }
         String stringToCompare = FormatHelper.toString(left);
-        Matcher matcher = pattern.matcher(stringToCompare);
+        Matcher matcher = pattern.matcher(RegexGuard.ambientGuard(stringToCompare));
         RegexSupport.setLastMatcher(matcher);
         return matcher.matches();
     }

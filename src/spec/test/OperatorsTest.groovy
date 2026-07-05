@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+import groovy.util.regex.RegexGuard
+import groovy.util.regex.RegexTimeoutException
 import org.junit.jupiter.api.Test
 
 import java.util.regex.Matcher
@@ -421,6 +423,35 @@ assert user.@name == 'Bob'                   // <1>
         assert m5[0] == 'and with'
         assert m5[1] == 'four words'
         // end::pattern_find_vs_matcher[]
+    }
+
+    @Test
+    void testRegexGuard() {
+        // tag::regex_guard_scope[]
+        def groups = RegexGuard.guard(200) {
+            '6.0.0-beta-2'.findGroups(/(\d+)\.(\d+)\.(\d+)(?:-(.+))?/)
+        }
+        assert groups == ['6.0.0-beta-2', '6', '0', '0', 'beta-2']
+        // end::regex_guard_scope[]
+
+        // tag::regex_guard_scope_timeout[]
+        try {
+            RegexGuard.guard(200) {
+                ('1,' * 40) ==~ /(.*,){16}X/   // catastrophic backtracking
+            }
+            assert false, 'should have timed out'
+        } catch (RegexTimeoutException expected) {
+        }
+        // end::regex_guard_scope_timeout[]
+
+        // tag::regex_guard_input[]
+        def untrusted = RegexGuard.guard('1,' * 40, 200)
+        try {
+            untrusted.findAll(~/(.*,){16}X/)
+            assert false, 'should have timed out'
+        } catch (RegexTimeoutException expected) {
+        }
+        // end::regex_guard_input[]
     }
 
     @Test

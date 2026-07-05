@@ -277,7 +277,58 @@ a|Operators
 'string' =~ /regex/      // find operator
 'string' ==~ /regex/     // (exact) match operator
 ----
+a|`String` methods taking a regex argument _(`matches` since Groovy 4.0.0, the rest since 6.0.0)_
+[source,groovy]
+----
+'string'.matches(regex)             'string'.split(regex)
+'string'.find(regex)                'string'.findAll(regex)
+'string'.findGroups(regex)          'string'.findAllGroups(regex)
+'string'.eachMatch(regex) { }       'string'.splitEachLine(regex) { }
+'string'.replaceAll(regex, repl)    'string'.replaceFirst(regex, repl)
+----
+a|`groovy.util.regex.RegexGuard` _(since Groovy 6.0.0)_
+[source,groovy]
+----
+static boolean matches(Object pattern, Object input, long millis)
+static Matcher matcher(Object pattern, Object input, long millis)
+static boolean matchRegex(Object input, Object pattern, long millis)
+static Matcher findRegex(Object input, Object pattern, long millis)
+----
 |===
+
+=== findGroups destructuring
+
+`findGroups` returns the full match followed by each capture group, so it pairs naturally
+with multiple assignment. Where the regex can be determined, `RegexChecker` verifies that
+the number of variables does not exceed the full match plus one per group -- more could
+never all be bound, even on a successful match:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=findgroups_arity,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=findgroups_arity_message,indent=0]
+----
+
+Using fewer variables than available elements is legitimate and not flagged.
+
+=== Guarded regex evaluation
+
+Deadline-guarded evaluations via `groovy.util.regex.RegexGuard` are checked in the same way
+as the regex operators: the pattern argument is validated where a constant regex string can
+be determined, and matcher group counts are tracked for the matcher-returning methods. This
+also means code within a `@groovy.transform.SafeRegex` scope keeps its full checking -- the
+transform rewrites the find and match operators to `RegexGuard` calls (the operator-shaped
+`matchRegex` and `findRegex` entry points, which take the input first), and `RegexChecker`
+recognizes the rewritten form, including the smarter matcher type inference:
+
+[source,groovy]
+----
+include::../test/RegexCheckerTest.groovy[tags=guarded_example,indent=0]
+----
 
 The RegexChecker will check any method calls listed above.
 It might find such methods when they involve explicit static
