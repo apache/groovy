@@ -55,7 +55,7 @@ jobs:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v7.0.0
       - name: "☕️ Setup JDK"
-        uses: actions/setup-java@v5.3.0
+        uses: actions/setup-java@v5.4.0
         with:
           distribution: 'zulu'
           java-version: |
@@ -173,7 +173,7 @@ jobs:
       - name: "📥 Checkout repository"
         uses: actions/checkout@v7.0.0
       - name: "☕️ Setup JDK"
-        uses: actions/setup-java@v5.3.0
+        uses: actions/setup-java@v5.4.0
         with:
           distribution: 'zulu'
           java-version: |
@@ -262,7 +262,7 @@ jobs:
       - name: "⬇️ Download EA JDK"
         run: wget -nv -O "$RUNNER_TEMP/java_package.tar.gz" "${{ matrix.jdk-url }}"
       - name: "☕️ Setup EA JDK (test target)"
-        uses: actions/setup-java@v5.3.0
+        uses: actions/setup-java@v5.4.0
         with:
           distribution: 'jdkfile'
           jdkFile: ${{ runner.temp }}/java_package.tar.gz
@@ -273,7 +273,7 @@ jobs:
       - name: "☕️ Setup build JDK"
         # Last setup-java wins, so Gradle runs on this stable LTS JDK while the
         # tests target the EA JDK captured above via -Ptarget.java.home.
-        uses: actions/setup-java@v5.3.0
+        uses: actions/setup-java@v5.4.0
         with:
           distribution: 'zulu'
           java-version: '21'
