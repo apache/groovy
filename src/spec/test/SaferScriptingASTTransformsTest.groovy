@@ -353,4 +353,38 @@ assert Quotas.quotas['user'] == 'Quota exceeded'
 // end::conditionalinterrupt_thrown[]
 '''
     }
+
+    @Test
+    void testSafeRegex() {
+        assertScript '''import groovy.transform.SafeRegex
+import groovy.util.regex.RegexTimeoutException
+
+// tag::saferegex_handler[]
+@SafeRegex(millis = 200)
+class Handler {
+    boolean check(String input) {
+        input ==~ /(.*,){16}X/
+    }
+}
+// end::saferegex_handler[]
+/*
+// tag::saferegex_handler_equiv[]
+class Handler {
+    boolean check(String input) {
+        groovy.util.regex.RegexGuard.matchRegex(input, /(.*,){16}X/, 200)
+    }
+}
+// end::saferegex_handler_equiv[]
+*/
+// tag::saferegex_control[]
+def handler = new Handler()
+assert !handler.check('1,2,3')          // well-behaved input: unchanged semantics
+try {
+    handler.check('1,' * 40)            // adversarial input: catastrophic backtracking
+    assert false, 'should have timed out'
+} catch (RegexTimeoutException expected) {
+}
+// end::saferegex_control[]
+'''
+    }
 }

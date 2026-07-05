@@ -72,6 +72,51 @@ class RegexCheckerTest {
     }
 
     @Test
+    void testGuardedRegex() {
+        assertScript($/
+        import groovy.transform.SafeRegex
+        import groovy.transform.TypeChecked
+        import groovy.util.regex.RegexGuard
+
+        // tag::guarded_example[]
+        @TypeChecked(extensions='groovy.typecheckers.RegexChecker')
+        @SafeRegex(millis = 200)
+        static main(args) {
+            var m = 'foobar' =~ /(...)(...)/     // guarded by @SafeRegex, still checked
+            assert m[0][1] == 'foo'              // group inference still applies
+            assert m[0][2] == 'bar'
+
+            assert RegexGuard.matches(/(\d{4})-(\d{1,2})-(\d{1,2})/, '2020-12-31', 200)
+        }
+        // end::guarded_example[]
+        /$)
+    }
+
+    @Test
+    void testFindGroupsArity() {
+        def err = shouldFail($/
+        import groovy.transform.TypeChecked
+
+        @TypeChecked(extensions='groovy.typecheckers.RegexChecker')
+        static main(args) {
+            // tag::findgroups_arity[]
+            def semver = /(\d+)\.(\d+)\.(\d+)(?:-(.+))?/
+
+            def (all, major, minor, patch, qualifier) = '6.0.0-beta-2'.findGroups(semver)  // OK
+
+            def (a, b, c, d, e, f) = '6.0.0-beta-2'.findGroups(semver)  // one variable too many
+            // end::findgroups_arity[]
+        }
+        /$)
+        def expectedError = '''\
+        # tag::findgroups_arity_message[]
+        [Static type checking] - Too many variables 6 for findGroups: a regex with 4 groups yields at most 5 elements (the full match plus each group)
+        # end::findgroups_arity_message[]
+        '''
+        assert err.message.contains(expectedError.readLines()[1].trim())
+    }
+
+    @Test
     void testInvalidGroupCount() {
         def err = shouldFail($/
         import groovy.transform.TypeChecked

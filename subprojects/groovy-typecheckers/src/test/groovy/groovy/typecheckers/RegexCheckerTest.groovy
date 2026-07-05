@@ -358,4 +358,133 @@ final class RegexCheckerTest {
             assert m[0][2] == 'baz'
         '''
     }
+
+    @Test
+    void testBadRegexWithRegexGuard() {
+        def err = shouldFail shell, '''
+            groovy.util.regex.RegexGuard.matches(/(foo/, 'foobar', 100)
+        '''
+        assert err.message.contains('Bad regex: Unclosed group')
+
+        err = shouldFail shell, '''
+            def m = groovy.util.regex.RegexGuard.matcher(/f[o]{2/, 'foobar', 100)
+        '''
+        assert err.message =~ /Bad regex: Unclosed counted closure/
+
+        // the operator-shaped entry points take the input first and the pattern second
+        err = shouldFail shell, '''
+            groovy.util.regex.RegexGuard.matchRegex('foobar', /(foo/, 100)
+        '''
+        assert err.message.contains('Bad regex: Unclosed group')
+
+        err = shouldFail shell, '''
+            def m = groovy.util.regex.RegexGuard.findRegex('foobar', /f[o]{2/, 100)
+        '''
+        assert err.message =~ /Bad regex: Unclosed counted closure/
+    }
+
+    @Test
+    void testBadRegexWithinSafeRegexScope() {
+        def err = shouldFail shell, '''
+            @groovy.transform.SafeRegex(millis = 100)
+            def check() { 'foobar' ==~ /(foo/ }
+        '''
+        assert err.message.contains('Bad regex: Unclosed group')
+
+        err = shouldFail shell, '''
+            @groovy.transform.SafeRegex(millis = 100)
+            def check() { 'foobar' =~ /f[o]{2/ }
+        '''
+        assert err.message =~ /Bad regex: Unclosed counted closure/
+    }
+
+    @Test
+    void testInvalidGroupCountWithRegexGuardMatcher() {
+        def err = shouldFail shell, '''
+            def m = groovy.util.regex.RegexGuard.matcher(/(...)(...)/, 'foobar', 100)
+            assert m.find()
+            m.group(3)
+        '''
+        assert err.message.contains('Invalid group count 3 for regex with 2 groups')
+
+        err = shouldFail shell, '''
+            def m = groovy.util.regex.RegexGuard.findRegex('foobar', /(...)(...)/, 100)
+            assert m.find()
+            m.group(3)
+        '''
+        assert err.message.contains('Invalid group count 3 for regex with 2 groups')
+    }
+
+    @Test
+    void testInvalidGroupCountWithinSafeRegexScope() {
+        def err = shouldFail shell, '''
+            @groovy.transform.SafeRegex(millis = 100)
+            def check() {
+                def m = 'foobar' =~ /(...)(...)/
+                def x = m[0][3]
+            }
+        '''
+        assert err.message.contains('Invalid group count 3 for regex with 2 groups')
+    }
+
+    @Test
+    void testBadRegexWithCharSequenceExtensionMethods() {
+        for (name in ['find', 'findAll', 'findGroups', 'findAllGroups', 'split']) {
+            def err = shouldFail shell, "'foobar'." + name + "(/(foo/)"
+            assert err.message.contains('Bad regex: Unclosed group')
+        }
+        def err = shouldFail shell, '''
+            'foobar'.replaceAll(/f[o]{2/, 'x')
+        '''
+        assert err.message =~ /Bad regex: Unclosed counted closure/
+    }
+
+    @Test
+    void testGoodRegexWithCharSequenceExtensionMethods() {
+        assertScript shell, '''
+            assert 'foobar'.findGroups(/(...)(...)/) == ['foobar', 'foo', 'bar']
+            assert 'foobar'.findAll(/o+/) == ['oo']
+            assert 'a,b'.split(/,/) == ['a', 'b']
+        '''
+    }
+
+    @Test
+    void testTooManyVariablesForFindGroups() {
+        def err = shouldFail shell, '''
+            def (all, first, second, third) = 'foobar'.findGroups(/(...)(...)/)
+        '''
+        assert err.message.contains('Too many variables 4 for findGroups')
+        assert err.message.contains('yields at most 3 elements')
+
+        err = shouldFail shell, '''
+            def (all, first, second, third) = 'foobar'.findGroups(~/(...)(...)/)
+        '''
+        assert err.message.contains('Too many variables 4 for findGroups')
+    }
+
+    @Test
+    void testValidDestructuringForFindGroups() {
+        assertScript shell, '''
+            def (all, first, second) = 'foobar'.findGroups(/(...)(...)/)
+            assert [all, first, second] == ['foobar', 'foo', 'bar']
+        '''
+        // fewer variables than available elements is legitimate
+        assertScript shell, '''
+            def (all, first) = 'foobar'.findGroups(/(...)(...)/)
+            assert [all, first] == ['foobar', 'foo']
+        '''
+    }
+
+    @Test // matcher group inference must survive the @SafeRegex rewrite
+    void testMatcherGroupInferenceWithinSafeRegexScope() {
+        assertScript shell, '''
+            @groovy.transform.SafeRegex(millis = 500)
+            def check() {
+                def m = 'foobar' =~ /(...)(...)/
+                assert m[0][1] == 'foo'
+                assert m[0][2] == 'bar'
+            }
+            check()
+        '''
+    }
 }

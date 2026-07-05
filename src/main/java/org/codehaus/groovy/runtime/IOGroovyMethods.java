@@ -27,6 +27,7 @@ import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
+import groovy.util.regex.RegexGuard;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.runtime.BooleanClosureWrapper;
 
@@ -539,7 +540,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (line == null) {
                     break;
                 } else {
-                    List vals = Arrays.asList(pattern.split(line));
+                    List vals = Arrays.asList(pattern.split(RegexGuard.ambientGuard(line)));
                     result = closure.call(hasSingleStringArg(closure) ? vals.get(0) : vals);
                 }
             }

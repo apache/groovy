@@ -573,6 +573,57 @@ include::../test/OperatorsTest.groovy[tags=pattern_find_vs_matcher,indent=0]
 <7> one match, ignores leading space
 <8> two matches
 
+=== Guarding against runaway regular expressions
+
+Java's regex engine has no native timeout. A pattern subject to _catastrophic backtracking_
+can take practically forever on adversarial input, hanging the evaluating thread -- a Regular
+Expression Denial of Service (ReDoS). When either the pattern or the input comes from an
+untrusted source, consider using gapi:groovy.util.regex.RegexGuard[], which cuts off a
+runaway evaluation by throwing a gapi:groovy.util.regex.RegexTimeoutException[] once a
+deadline passes. It can guard a region of code or an individual piece of data.
+
+The `guard(timeout) { ... }` form applies a per-evaluation timeout to every regex evaluation
+reached through Groovy's regex operators or `CharSequence` extension methods for the dynamic
+extent of a closure (on the same thread, including within called methods), and returns the
+closure's result:
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=regex_guard_scope,indent=0]
+----
+
+Well-behaved evaluations are unaffected; a runaway one is cut off shortly after the deadline:
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=regex_guard_scope_timeout,indent=0]
+----
+
+Alternatively, `guard(input, timeout)` attaches a single total deadline to the data itself.
+Wrap untrusted input once at a trust boundary and pass it around freely; every regex
+evaluated against it, wherever that happens, shares the one budget:
+
+[source,groovy]
+----
+include::../test/OperatorsTest.groovy[tags=regex_guard_input,indent=0]
+----
+
+For guarding individual expressions, `RegexGuard.matches(pattern, input, timeout)` and
+`RegexGuard.matcher(pattern, input, timeout)` are guarded equivalents of the match and find
+operators, and the <<core-metaprogramming.adoc#xform-SafeRegex,`@SafeRegex`>> AST transform
+rewrites the operators within an annotated scope to equivalent guarded calls automatically
+(via the operator-shaped `matchRegex(input, pattern, timeout)` and
+`findRegex(input, pattern, timeout)` entry points, which keep the operators' left-to-right
+operand evaluation order).
+
+[NOTE]
+The guard mechanism works by checking a deadline while the regex engine reads input
+characters, so it requires the evaluation to go through Groovy's runtime or over guarded
+input. Direct JDK calls bypass it: on a `String` receiver, `matches(String)`,
+`replaceAll(String, String)`, `replaceFirst(String, String)` and `split(String)` dispatch to
+`java.lang.String` itself. Their `Pattern`-argument variants (e.g.
+`str.replaceAll(~/regex/, 'x')`) are Groovy extension methods and are covered.
+
 == Other operators
 
 === Spread operator

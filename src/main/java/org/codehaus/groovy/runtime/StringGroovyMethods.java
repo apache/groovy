@@ -27,6 +27,7 @@ import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.util.regex.BalancedGroup;
+import groovy.util.regex.RegexGuard;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -770,8 +771,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachMatch(String,String,Closure)
      */
     public static <T extends CharSequence> T eachMatch(final T self, final CharSequence regex, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        eachMatch(self.toString(), regex.toString(), closure);
-        return self;
+        return eachMatch(self, Pattern.compile(regex.toString()), closure);
     }
 
     /**
@@ -790,7 +790,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #eachMatch(String,Pattern,Closure)
      */
     public static <T extends CharSequence> T eachMatch(final T self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        eachMatch(self.toString(), pattern, closure);
+        Matcher m = pattern.matcher(RegexGuard.prepare(self));
+        each(m, closure);
         return self;
     }
 
@@ -808,7 +809,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.1
      */
     public static String eachMatch(final String self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        Matcher m = pattern.matcher(self);
+        Matcher m = pattern.matcher(RegexGuard.prepare(self));
         each(m, closure);
         return self;
     }
@@ -966,7 +967,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String find(final CharSequence self, final Pattern pattern) {
-        Matcher matcher = pattern.matcher(self.toString());
+        Matcher matcher = pattern.matcher(RegexGuard.prepare(self));
         if (matcher.find()) {
             return matcher.group(0);
         }
@@ -1029,7 +1030,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String find(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) final Closure closure) {
-        Matcher matcher = pattern.matcher(self.toString());
+        Matcher matcher = pattern.matcher(RegexGuard.prepare(self));
         if (matcher.find()) {
             return getReplacement(matcher, closure);
         }
@@ -1085,7 +1086,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 6.0.0
      */
     public static List<String> findGroups(final CharSequence self, final Pattern pattern) {
-        Matcher matcher = pattern.matcher(self.toString());
+        Matcher matcher = pattern.matcher(RegexGuard.prepare(self));
         if (matcher.find()) {
             return getGroups(matcher);
         }
@@ -1172,7 +1173,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static List<String> findAll(final CharSequence self, final Pattern pattern) {
-        Matcher matcher = pattern.matcher(self.toString());
+        Matcher matcher = pattern.matcher(RegexGuard.prepare(self));
         boolean hasGroup = hasGroup(matcher);
         List<String> list = new ArrayList<>();
         for (Iterator iter = iterator(matcher); iter.hasNext();) {
@@ -1215,7 +1216,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static <T> List<T> findAll(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) final Closure<T> closure) {
-        Matcher matcher = pattern.matcher(self.toString());
+        Matcher matcher = pattern.matcher(RegexGuard.prepare(self));
         return DefaultGroovyMethods.collect(matcher, closure);
     }
 
@@ -1262,7 +1263,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 6.0.0
      */
     public static List<List<String>> findAllGroups(final CharSequence self, final Pattern pattern) {
-        Matcher matcher = pattern.matcher(self.toString());
+        Matcher matcher = pattern.matcher(RegexGuard.prepare(self));
         List<List<String>> list = new ArrayList<>();
         while (matcher.find()) {
             list.add(getGroups(matcher));
@@ -1908,7 +1909,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if (switchValue == null) {
             return caseValue == null;
         }
-        final Matcher matcher = caseValue.matcher(switchValue.toString());
+        final Matcher matcher = caseValue.matcher(RegexGuard.prepare(switchValue instanceof CharSequence cs ? cs : switchValue.toString()));
         if (matcher.matches()) {
             RegexSupport.setLastMatcher(matcher);
             return true;
@@ -2139,7 +2140,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see String#matches(String)
      */
     public static boolean matches(final CharSequence self, final Pattern pattern) {
-        return pattern.matcher(self).matches();
+        return pattern.matcher(RegexGuard.ambientGuard(self)).matches();
     }
 
     /**
@@ -2175,7 +2176,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.2.0
      */
     public static String minus(final CharSequence self, final Pattern pattern) {
-        return pattern.matcher(self).replaceFirst("");
+        return pattern.matcher(RegexGuard.ambientGuard(self)).replaceFirst("");
     }
 
     /**
@@ -2623,7 +2624,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see String#replaceAll(String,String)
      */
     public static String replaceAll(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
-        return self.toString().replaceAll(regex.toString(), replacement.toString());
+        return Pattern.compile(regex.toString()).matcher(RegexGuard.prepare(self)).replaceAll(replacement.toString());
     }
 
     /**
@@ -2688,7 +2689,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String replaceAll(final CharSequence self, final Pattern pattern, final CharSequence replacement) {
-        return pattern.matcher(self).replaceAll(replacement.toString());
+        return pattern.matcher(RegexGuard.ambientGuard(self)).replaceAll(replacement.toString());
     }
 
     /**
@@ -2733,10 +2734,10 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.regex.Matcher#quoteReplacement(String)
      */
     public static String replaceAll(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        final String s = self.toString();
-        final Matcher matcher = pattern.matcher(s);
+        final CharSequence cs = RegexGuard.prepare(self);
+        final Matcher matcher = pattern.matcher(cs);
         if (matcher.find()) {
-            final StringBuilder sb = new StringBuilder(s.length() + 16);
+            final StringBuilder sb = new StringBuilder(cs.length() + 16);
             do {
                 String replacement = getReplacement(matcher, closure);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
@@ -2744,7 +2745,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             matcher.appendTail(sb);
             return sb.toString();
         } else {
-            return s;
+            return cs.toString();
         }
     }
 
@@ -2762,7 +2763,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see String#replaceFirst(String,String)
      */
     public static String replaceFirst(final CharSequence self, final CharSequence regex, final CharSequence replacement) {
-        return self.toString().replaceFirst(regex.toString(), replacement.toString());
+        return Pattern.compile(regex.toString()).matcher(RegexGuard.prepare(self)).replaceFirst(replacement.toString());
     }
 
     /**
@@ -2810,7 +2811,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String replaceFirst(final CharSequence self, final Pattern pattern, final CharSequence replacement) {
-        return pattern.matcher(self).replaceFirst(replacement.toString());
+        return pattern.matcher(RegexGuard.ambientGuard(self)).replaceFirst(replacement.toString());
     }
 
     /**
@@ -2832,16 +2833,16 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String replaceFirst(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        final String s = self.toString();
-        final Matcher matcher = pattern.matcher(s);
+        final CharSequence cs = RegexGuard.prepare(self);
+        final Matcher matcher = pattern.matcher(cs);
         if (matcher.find()) {
-            final StringBuilder sb = new StringBuilder(s.length() + 16);
+            final StringBuilder sb = new StringBuilder(cs.length() + 16);
             String replacement = getReplacement(matcher, closure);
             matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             matcher.appendTail(sb);
             return sb.toString();
         } else {
-            return s;
+            return cs.toString();
         }
     }
 
@@ -3187,7 +3188,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> T splitEachLine(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class,options={"List<String>","String[]"},conflictResolutionStrategy=PickFirstResolver.class) final Closure<T> closure) {
         T result = null;
         for (String line : new LineIterable(self)) {
-            List vals = Arrays.asList(pattern.split(line));
+            List vals = Arrays.asList(pattern.split(RegexGuard.ambientGuard(line)));
             result = closure.call(vals);
         }
         return result;
