@@ -74,15 +74,21 @@ jobs:
              subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.json
 
       - name: Fetch historical baseline
+        id: baseline
         run: |
           URL="https://apache.github.io/groovy/dev/bench/jmh/${{ matrix.suite }}/indy/data.js"
           if curl -fsSL "$URL" -o data.js; then
             sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' data.js > prev.json
+            echo 'found=true' >> "$GITHUB_OUTPUT"
           else
-            echo '{}' > prev.json
+            # the action cannot handle an empty external data file, so skip
+            # the compare when no baseline is published (or gh-pages is down)
+            echo 'No baseline for ${{ matrix.suite }} on gh-pages; skipping comparison.'
+            echo 'found=false' >> "$GITHUB_OUTPUT"
           fi
 
       - name: Compare against history
+        if: steps.baseline.outputs.found == 'true'
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
           tool: 'jmh'

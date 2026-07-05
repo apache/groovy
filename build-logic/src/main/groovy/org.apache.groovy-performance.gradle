@@ -76,6 +76,17 @@ tasks.named('jmhClasses') {
     dependsOn tasks.named('clean')
 }
 
+// The clean dependency above forces fresh JMH runs, but without an ordering
+// constraint Gradle may schedule 'clean' BETWEEN other tasks in the same
+// invocation (e.g. deleting freshly-compiled jmh classes before jmhJar
+// packages them, yielding an empty benchmark jar). Ordering-only, so tasks
+// that don't pull 'clean' into the graph are unaffected.
+tasks.configureEach {
+    if (name != 'clean') {
+        mustRunAfter tasks.named('clean')
+    }
+}
+
 var indy = (project.findProperty('indy') ?: 'true').toBoolean()
 
 tasks.named('compileJmhGroovy') {
