@@ -48,6 +48,7 @@ a number of command line switches:
 | -d | | Specify where to place generated class files. | groovyc -d target Person.groovy
 | -v | --version | Displays the compiler version | groovyc -v
 | -e | --exception | Displays the stack trace in case of compilation error | groovyc -e script.groovy
+| -w | --warningLevel | Sets how many warnings are reported after a successful compile: `0` (none), `1` (likely errors, the default), `2` (possible errors) or `3` (all). See <<section-groovyc-warnings,Compiler warnings>>. | groovyc -w 2 MyClass.groovy
 | -j | --jointCompilation* | Enables joint compilation | groovyc -j A.groovy B.java
 | -b | --basescript | Base class name for scripts (must derive from Script)|
 | | --configscript | Advanced compiler configuration script | groovyc --configscript config/config.groovy src/Person.groovy
@@ -60,6 +61,40 @@ a number of command line switches:
 
 *Notes:*
 * for a full description of joint compilation, see <<section-jointcompilation,the joint compilation section>>.
+
+[[section-groovyc-warnings]]
+== Compiler warnings
+
+While compiling, Groovy may report _warnings_: diagnostics that don't stop compilation
+but flag code that is suspicious or unlikely to behave as intended — for example, an
+unreachable `main` method or a property that can't override a `final` accessor. On a
+successful compile, `groovyc` prints any collected warnings to `stderr`, using the same
+format (message, source line and caret) as compilation errors, followed by a summary count.
+
+Every warning carries an _importance_, and the `-w` (`--warningLevel`) option controls how
+many are reported. Only warnings whose importance is at or below the configured level are
+kept, so a lower level is quieter:
+
+[cols="<,<,<",options="header"]
+|=======================================================================
+| Level | Name | Reports
+| `0` | none | No warnings at all.
+| `1` | likely errors | *(default)* Diagnostics that very probably indicate a mistake — for example an unreachable `main` method, a property that can't override a `final` accessor, or a duplicate constructor generated from default argument values or `@TupleConstructor`/`@MapConstructor`.
+| `2` | possible errors | The above, plus diagnostics that often have benign causes — for example a field hidden by a dynamic property under `@TypeChecked`, or problems found while scanning global AST transformation descriptors.
+| `3` | paranoia | The above, plus any remaining lower-priority warnings.
+|=======================================================================
+
+For example, to also see the level 2 warnings:
+
+----------------------
+groovyc -w 2 MyClass.groovy
+----------------------
+
+NOTE: The warning _level_ can also be set programmatically via
+`CompilerConfiguration#setWarningLevel`, or for the `groovy` command through the
+`groovy.warnings` system property. Displaying the collected warnings on a successful
+compile is done by the `groovyc` command line; other embeddings (for instance, code
+driving a `CompilationUnit` directly) can instead read them from the unit's `ErrorCollector`.
 
 == Ant task
 

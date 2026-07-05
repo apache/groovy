@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.BaseScriptASTTransformation;
@@ -786,7 +787,7 @@ public class ModuleNode extends ASTNode {
         // Warn about unreachable main methods
         for (int i = 1; i < validMains.size(); i++) {
             MethodNode unreachable = validMains.get(i);
-            getContext().addWarning("Method '" + unreachable.getText()
+            getContext().addWarning(WarningMessage.LIKELY_ERRORS, "Method '" + unreachable.getText()
                     + "' is not reachable from the Groovy runner"
                     + " because a higher-priority main method '"
                     + result.getText() + "' exists", unreachable);

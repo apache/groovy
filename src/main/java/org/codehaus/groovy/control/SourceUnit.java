@@ -337,11 +337,27 @@ public class SourceUnit extends ProcessingUnit {
     }
 
     /**
+     * Adds a warning with {@link WarningMessage#POSSIBLE_ERRORS} importance.
+     *
      * @since 4.0.7
      */
     public void addWarning(final String text, final ASTNode node) {
+        addWarning(WarningMessage.POSSIBLE_ERRORS, text, node);
+    }
+
+    /**
+     * Adds a warning at the given importance level. The warning is only retained
+     * if the importance is relevant for the configured warning level.
+     *
+     * @param importance one of the {@link WarningMessage} level constants
+     * @param text the warning text
+     * @param node the AST node the warning relates to (for line/column info)
+     *
+     * @since 6.0.0
+     */
+    public void addWarning(final int importance, final String text, final ASTNode node) {
         Token token = new Token(0, "", node.getLineNumber(), node.getColumnNumber()); // ASTNode to CSTNode
-        getErrorCollector().addWarning(new WarningMessage(WarningMessage.POSSIBLE_ERRORS, text, token, this));
+        getErrorCollector().addWarning(importance, text, token, this);
     }
 
     /**

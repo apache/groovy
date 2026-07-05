@@ -22,6 +22,8 @@ import groovy.lang.GroovySystem;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
+import org.codehaus.groovy.control.ErrorCollector;
+import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
@@ -39,6 +41,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -196,7 +199,7 @@ public class FileSystemCompiler {
         fileNameErrors = fileNameErrors && !validateFiles(filenames);
 
         if (!fileNameErrors) {
-            doCompilation(configuration, null, filenames, lookupUnnamedFiles);
+            doCompilation(configuration, null, filenames, lookupUnnamedFiles, new PrintWriter(System.err, true));
         }
     }
 
@@ -274,6 +277,31 @@ public class FileSystemCompiler {
      * @throws Exception if compilation fails
      */
     public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames, boolean lookupUnnamedFiles) throws Exception {
+        doCompilation(configuration, unit, filenames, lookupUnnamedFiles, null);
+    }
+
+    /**
+     * Compiles the supplied source files, optionally displaying any warnings collected
+     * during a successful compilation.
+     * <p>
+     * Warning display is opt-in via {@code warningWriter} rather than hard-wired to
+     * {@code System.err}, so that this shared entry point does not impose console output
+     * on embedders (e.g. the in-process Ant {@code <groovyc>} task) that route diagnostics
+     * their own way or read the {@link ErrorCollector} directly. The {@code groovyc}
+     * command line supplies a {@code System.err} writer; other callers pass {@code null}.
+     *
+     * @param configuration the compiler configuration to use
+     * @param unit an existing compilation unit to reuse, or {@code null}
+     * @param filenames the source files to compile
+     * @param lookupUnnamedFiles whether to search for unnamed Groovy sources
+     * beside the listed files
+     * @param warningWriter where to write warnings collected on a successful compile,
+     * or {@code null} to leave warning handling to the caller
+     * @throws Exception if compilation fails
+     *
+     * @since 6.0.0
+     */
+    public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames, boolean lookupUnnamedFiles, Writer warningWriter) throws Exception {
         File tmpDir = null;
         // if there are any joint compilation options set stubDir if not set
         try {
@@ -298,12 +326,39 @@ public class FileSystemCompiler {
                         .setResourceLoader(filename -> null);
             }
             compiler.compile(filenames);
+            if (warningWriter != null) {
+                displayWarnings(compiler.unit, warningWriter);
+            }
         } finally {
             try {
                 if (tmpDir != null) deleteRecursive(tmpDir);
             } catch (Throwable t) {
                 LOGGER.log(WARNING, "Could not delete temp files - {0}", tmpDir.getPath());
             }
+        }
+    }
+
+    /**
+     * Writes any warnings collected during a successful compilation to the given writer, in
+     * the same format the diagnostics of a failed compilation use. Without this, warnings that
+     * the compiler collected (already filtered by the configured warning level) were silently
+     * discarded whenever compilation succeeded — only embedders reading the
+     * {@link ErrorCollector} ever saw them. The writer is flushed but not closed; the caller
+     * retains ownership of it.
+     *
+     * @param unit the compilation unit that completed successfully
+     * @param out where to write the warnings
+     */
+    static void displayWarnings(CompilationUnit unit, Writer out) {
+        ErrorCollector collector = unit.getErrorCollector();
+        if (!collector.hasWarnings()) return;
+        Janitor janitor = new Janitor();
+        PrintWriter writer = (out instanceof PrintWriter) ? (PrintWriter) out : new PrintWriter(out);
+        try {
+            collector.write(writer, janitor);
+        } finally {
+            writer.flush();
+            janitor.cleanup();
         }
     }
 
