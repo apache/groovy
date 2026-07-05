@@ -77,3 +77,59 @@ untouched. Run them locally with:
 
     ./gradlew -PbenchInclude='\.adhoc\.' -PjmhProfilers=gc :perf:jmh
 
+
+== Calibration rulers
+
+Per-PR and per-commit benchmark runs are compared against a trailing 90-day
+baseline published on gh-pages — numbers produced on *different* shared-runner
+hardware, which is the dominant noise source in those comparisons. The
+`*CalibrationBench` classes are pure-Java, Groovy-independent "rulers"
+(integer throughput, pointer-chasing, allocation churn): their
+current-vs-history ratio measures the hardware delta of the current runner
+rather than anything about Groovy.
+
+Each CI suite job runs on its own runner, so one thin subclass of
+`org.apache.groovy.calibration.AbstractCalibrationBench` is named into each
+suite's `benchInclude` pattern. `dashboard/jmh-summary.py` computes a per-suite
+calibration factor from the rulers (plus the pre-existing `_java` baseline
+rows), reports a hardware-normalised "calibrated" speedup column alongside the
+raw one, and flags runs whose runner deviates more than 15% from the baseline
+hardware. The rulers are excluded from the speedup geomeans themselves, both
+in the PR summary and in the daily dashboard (`dashboard/jmh-summary.html`).
+
+== Deterministic dispatch metrics
+
+Timing benchmarks cannot give exact answers on shared runners; class-loading
+counts can. The `dispatchMetrics` task runs a fixed, deterministic
+cold-dispatch workload (`org.apache.groovy.perf.metrics.DispatchMetricsWorkload`)
+in a fresh JVM with `-Xlog:class+load` and reduces the log to counters that
+are *bit-identical* for a given JDK + Groovy build:
+
+* `classes.loaded.total` — full class-loading breadth of the workload,
+* `classes.lambdaForms` — spun `java.lang.invoke.LambdaForm$*` classes, the
+  one-time MethodHandle cost of the invokedynamic implementation (the main
+  cold-path cost driver),
+* `classes.hidden` — hidden classes (LambdaForms, lambda proxies, spun adapters),
+* `classes.groovyRuntime` — Groovy's own runtime class footprint,
+* `bytecode.corpus.bytes` / `bytecode.corpus.classes` — generated-code size for
+  compiling a fixed dependency-free corpus (inlining budgets are
+  bytecode-size based).
+
+Because the values are deterministic, they are comparable across runner
+hardware: the `perf-daily` workflow publishes them to
+`dev/bench/perf/dispatch/` on gh-pages and the per-PR `Performance check`
+workflow compares against that history with a tight (110%) alert threshold.
+Run locally with:
+
+    ./gradlew :perf:dispatchMetrics
+
+== Cold-path benchmarks
+
+`StaticMethodCallIndyColdBench` and `DynamicDispatchColdBench` measure fresh
+call sites in fresh JVMs (`SingleShotTime`, zero warmup, fork-per-sample),
+covering the first ~1000 invocations that the steady-state benchmarks warm
+away — where much real-world Groovy cost lives (scripts, CLIs, test
+bootstrap). The `n` parameter probes below and past the indy promotion
+threshold (`groovy.indy.optimize.threshold`, default 1000). Static and
+instance dispatch take different cold paths (static sites promote on first
+hit, GROOVY-11935), hence the two benches.

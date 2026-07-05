@@ -73,6 +73,29 @@ jobs:
           fail-on-alert: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      # Deterministic dispatch metrics: class-loading and bytecode-size
+      # counters from a fixed cold-dispatch workload. Values are exact for a
+      # given JDK + Groovy build (no timing), so they are comparable across
+      # runner hardware and get a tight alert threshold.
+      # Dashboard data: dev/bench/perf/dispatch/data.js on gh-pages.
+      - name: Dispatch metrics
+        run: ./gradlew :perf:dispatchMetrics
+        timeout-minutes: 20
+
+      - name: Publish dispatch metrics
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: 'Dispatch Metrics'
+          tool: 'customSmallerIsBetter'
+          output-file-path: subprojects/performance/build/dispatch-metrics.json
+          benchmark-data-dir-path: dev/bench/perf/dispatch
+          gh-pages-branch: gh-pages
+          auto-push: true
+          comment-always: true
+          alert-threshold: '110%'
+          fail-on-alert: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       # The action writes a default index.html on first run and leaves it in
       # place after that. We overlay our custom (4-series, normalised) page
       # every run, but only commit if it has actually changed.

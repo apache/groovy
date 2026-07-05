@@ -28,6 +28,8 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: write   # dispatch-metrics regression comments
+  issues: write
 
 jobs:
   test:
@@ -54,8 +56,43 @@ jobs:
       - name: Compiler performance comparison
         run: ./gradlew perf:performanceTests
         timeout-minutes: 60
+
+      # Deterministic dispatch metrics (class-loading and bytecode-size
+      # counters). Unlike the timing benchmarks these are exact for a given
+      # JDK + Groovy build, so comparing against history published from
+      # *different* runner hardware is sound and the threshold can be tight.
+      - name: Dispatch metrics
+        run: ./gradlew perf:dispatchMetrics
+        timeout-minutes: 20
+
+      - name: Fetch dispatch metrics baseline
+        run: |
+          URL="https://apache.github.io/groovy/dev/bench/perf/dispatch/data.js"
+          if curl -fsSL "$URL" -o dispatch-data.js; then
+            sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' dispatch-data.js > dispatch-prev.json
+          else
+            echo '{}' > dispatch-prev.json
+          fi
+
+      - name: Compare dispatch metrics against history
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+        with:
+          name: 'Dispatch Metrics'
+          tool: 'customSmallerIsBetter'
+          output-file-path: subprojects/performance/build/dispatch-metrics.json
+          external-data-json-path: ./dispatch-prev.json
+          save-data-file: false
+          summary-always: true
+          # fork PRs get a read-only token; commenting there would 403 and fail the step
+          comment-on-alert: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          alert-threshold: '110%'
+          fail-on-alert: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload perf report
         uses: actions/upload-artifact@v7
         with:
           name: perf-reports
-          path: subprojects/performance/build/*.csv
+          path: |
+            subprojects/performance/build/*.csv
+            subprojects/performance/build/dispatch-metrics.json

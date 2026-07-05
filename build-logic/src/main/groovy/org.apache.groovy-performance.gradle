@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+import org.apache.groovy.gradle.DispatchMetricsSummary
 import org.apache.groovy.gradle.PerformanceTestsExtension
 import org.apache.groovy.gradle.PerformanceTestSummary
 
@@ -42,6 +43,7 @@ repositories {
 }
 
 dependencies {
+    implementation project(':')
     jmh project(':')
     testImplementation project(':')
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit6}"
@@ -82,6 +84,11 @@ tasks.named('compileJmhGroovy') {
     inputs.property('indy', indy)
 }
 
+tasks.named('compileGroovy') {
+    groovyOptions.optimizationOptions.indy = indy
+    inputs.property('indy', indy)
+}
+
 tasks.register('displayJmhResults') {
     dependsOn('jmh')
     doLast {
@@ -90,6 +97,48 @@ tasks.register('displayJmhResults') {
 }
 
 tasks.register('performanceTests', PerformanceTestSummary)
+
+// Deterministic dispatch metrics: run a fixed cold-dispatch workload in a
+// fresh JVM with class+load logging, then reduce the log plus the workload's
+// own bytecode-size figures to exact, runner-independent counters. See
+// DispatchMetricsSummary and DispatchMetricsWorkload for details.
+def dispatchMetricsLog = layout.buildDirectory.file('dispatch-metrics/classload.log')
+def dispatchWorkloadJson = layout.buildDirectory.file('dispatch-metrics/workload-metrics.json')
+// dependency-free subset of the compiler-perf corpus (the other pleac files
+// need third-party libraries on the compile classpath)
+def dispatchCorpus = files(
+    'src/files/script.groovy',
+    'src/files/pleac02.groovy',
+    'src/files/pleac03.groovy',
+    'src/files/pleac04.groovy',
+    'src/jmh/groovy/org/apache/groovy/bench/Ackermann.groovy',
+    'src/jmh/groovy/org/apache/groovy/bench/Ary.groovy',
+    'src/jmh/groovy/org/apache/groovy/bench/Fibo.groovy')
+
+def dispatchMetricsRun = tasks.register('dispatchMetricsRun', JavaExec) {
+    description = 'Runs the deterministic dispatch workload with class-load logging'
+    group = 'Performance'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.apache.groovy.perf.metrics.DispatchMetricsWorkload'
+    inputs.files(dispatchCorpus)
+    outputs.file(dispatchMetricsLog)
+    outputs.file(dispatchWorkloadJson)
+    def logFile = dispatchMetricsLog.get().asFile
+    jvmArgs "-Xlog:class+load=info:file=${logFile.absolutePath}:none"
+    args([dispatchWorkloadJson.get().asFile.absolutePath] + dispatchCorpus.files.sort()*.absolutePath)
+    doFirst {
+        logFile.parentFile.mkdirs()
+        logFile.delete()
+    }
+}
+
+tasks.register('dispatchMetrics', DispatchMetricsSummary) {
+    description = 'Summarises deterministic dispatch metrics (class-load and bytecode-size counters)'
+    group = 'Performance'
+    dependsOn dispatchMetricsRun
+    classLoadLog = dispatchMetricsLog
+    workloadJson = dispatchWorkloadJson
+}
 
 sonarqube {
     skipProject = true

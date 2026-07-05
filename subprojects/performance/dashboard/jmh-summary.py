@@ -20,6 +20,15 @@
 # 90-day mean from gh-pages, then geomean within bench/core/grails. Mirrors the same
 # normalisation as subprojects/performance/dashboard/jmh-summary.html so the numbers
 # are directly comparable with the daily dashboard.
+#
+# Runner calibration: the historical baseline was produced on different (shared)
+# runner hardware, which is the dominant noise source in these comparisons. Pure-Java
+# "ruler" benchmarks (the *Calibration* benches, plus the pre-existing `_java`
+# baseline rows) are Groovy-independent, so their current-vs-history ratio measures
+# the hardware delta of this run's runner. Each CI-split part runs on its own runner,
+# so a calibration factor (geomean of ruler ratios) is computed per part and used to
+# (a) produce a hardware-normalised "calibrated" speedup column and (b) flag runs
+# whose hardware deviates so far from the baseline that raw ratios are meaningless.
 
 import argparse
 import json
@@ -34,6 +43,11 @@ from pathlib import Path
 
 DAY_MS = 86_400_000
 WINDOW_MS = 90 * DAY_MS
+
+# runner speed within this factor of the historical baseline counts as comparable
+CALIBRATION_TOLERANCE = 1.15
+# a calibration factor needs at least this many ruler measurements to be trusted
+MIN_RULERS = 3
 
 # (group label, CI-split parts whose data.js makes up that group)
 GROUPS = [
@@ -54,6 +68,32 @@ def normalize(value, baseline, unit):
     return value / baseline if is_higher_better(unit) else baseline / value
 
 
+def is_ruler(name):
+    """Groovy-independent benchmarks usable as host-speed rulers.
+
+    Calibration benches exist for exactly this purpose; the `_java`/`java`
+    baseline rows of the comparative benches are equally Groovy-independent
+    and give the `bench` suite ruler history predating the Calibration benches.
+    """
+    if 'Calibration' in name:
+        return True
+    method = name.split(' (')[0].rsplit('.', 1)[-1]
+    return method == 'java' or method.endswith('_java')
+
+
+def is_calibration(name):
+    return 'Calibration' in name
+
+
+def result_key(name, params):
+    """Reconstruct the name github-action-benchmark's jmh extractor publishes:
+    parameterised benchmarks become `fqn ( {"n":"500"} )`."""
+    if not params:
+        return name
+    encoded = json.dumps({k: str(v) for k, v in params.items()}, separators=(',', ':'))
+    return f'{name} ( {encoded} )'
+
+
 def load_results(results_dir):
     out = {}
     for p in sorted(Path(results_dir).rglob('results-*.json')):
@@ -72,7 +112,7 @@ def load_results(results_dir):
             value = metric.get('score')
             unit = metric.get('scoreUnit', '') or ''
             if name and isinstance(value, (int, float)) and value > 0:
-                bench_map[name] = (float(value), unit)
+                bench_map[result_key(name, entry.get('params'))] = (float(value), unit)
         if bench_map:
             out[m.group(1)] = bench_map
     return out
@@ -113,45 +153,88 @@ def geomean(values):
     return math.exp(sum(math.log(v) for v in values) / len(values)) if values else None
 
 
+def part_ratios(current, means):
+    """Per-benchmark current-vs-baseline ratios for one CI-split part."""
+    ratios = []
+    for name, (value, unit) in current.items():
+        base = means.get(name)
+        if not base or base <= 0:
+            continue
+        r = normalize(value, base, unit)
+        if r > 0 and math.isfinite(r):
+            ratios.append((name, r))
+    return ratios
+
+
 def compute_group_scores(results_by_part, mode, now_ms):
-    rows = []
+    """Returns (rows, calibrations):
+    rows          - (label, raw_geomean, calibrated_geomean, n) per group
+    calibrations  - (part, factor_or_None, ruler_count) per part that had results
+    """
+    rows, calibrations = [], []
     for label, parts in GROUPS:
-        ratios = []
+        raw, calibrated = [], []
         for part in parts:
             current = results_by_part.get(part) or {}
             if not current:
                 continue
             means = baseline_means(fetch_baseline(part, mode), now_ms, WINDOW_MS)
-            for name, (value, unit) in current.items():
-                base = means.get(name)
-                if not base or base <= 0:
-                    continue
-                r = normalize(value, base, unit)
-                if r > 0 and math.isfinite(r):
-                    ratios.append(r)
-        rows.append((label, geomean(ratios), len(ratios)))
-    return rows
+            ratios = part_ratios(current, means)
+            ruler_vals = [r for name, r in ratios if is_ruler(name)]
+            calib = geomean(ruler_vals) if len(ruler_vals) >= MIN_RULERS else None
+            calibrations.append((part, calib, len(ruler_vals)))
+            # Calibration rulers measure the runner, not Groovy: keep them out
+            # of the speedup scores. The legacy `_java` rows stay in the raw
+            # score (dashboard continuity) but not in the calibrated one, where
+            # they would converge to 1.0 by construction and dilute the signal.
+            raw += [r for name, r in ratios if not is_calibration(name)]
+            if calib:
+                calibrated += [r / calib for name, r in ratios if not is_ruler(name)]
+        rows.append((label, geomean(raw), geomean(calibrated), len(raw)))
+    return rows, calibrations
 
 
-def render_markdown(rows, mode, commit_sha, marker):
+def render_markdown(rows, calibrations, mode, commit_sha, marker):
     short = (commit_sha or '')[:7] or 'unknown'
     lines = [
         f'### JMH summary — {mode} (commit `{short}`)',
         '',
         'Speedup vs trailing 90-day baseline on gh-pages. Higher = faster.',
         '`1.00` = in line with history. Per-benchmark ratio, geomean within group.',
-        'Time-per-op units inverted so direction is consistent.',
+        'Time-per-op units inverted so direction is consistent. The *calibrated*',
+        'column divides out this runner\'s speed vs the baseline hardware, as',
+        'measured by Groovy-independent pure-Java ruler benchmarks.',
         '',
-        '| Group  | Speedup | n |',
-        '|--------|---------|---|',
+        '| Group  | Speedup | Calibrated | n |',
+        '|--------|---------|------------|---|',
     ]
     any_data = False
-    for label, score, n in rows:
-        if score is None:
-            lines.append(f'| {label} | _no overlap with baseline_ | {n} |')
+    for label, raw, calibrated, n in rows:
+        if raw is None:
+            lines.append(f'| {label} | _no overlap with baseline_ | — | {n} |')
         else:
             any_data = True
-            lines.append(f'| {label} | {score:.3f} × | {n} |')
+            cal = f'{calibrated:.3f} ×' if calibrated is not None else '—'
+            lines.append(f'| {label} | {raw:.3f} × | {cal} | {n} |')
+
+    with_calib = [(part, factor, count) for part, factor, count in calibrations if factor is not None]
+    off_parts = [part for part, factor, _ in with_calib
+                 if factor > CALIBRATION_TOLERANCE or factor < 1 / CALIBRATION_TOLERANCE]
+    if off_parts:
+        lines += [
+            '',
+            f'> ⚠️ Runner speed differs ≥{round((CALIBRATION_TOLERANCE - 1) * 100)}% from the '
+            f'historical baseline hardware for: {", ".join(off_parts)}. '
+            'Raw speedups are not meaningful for those parts — use the calibrated column.',
+        ]
+    if with_calib:
+        calib_text = ' · '.join(f'{part} {factor:.2f}× ({count} rulers)'
+                                for part, factor, count in with_calib)
+        lines += ['', f'<sub>Runner calibration (this run vs baseline hardware): {calib_text}</sub>']
+    else:
+        lines += ['', '<sub>Runner calibration: no ruler history yet (Calibration '
+                      'benches need to appear in the gh-pages baseline first).</sub>']
+
     lines += [
         '',
         f'<sub>Baseline: <code>dev/bench/jmh/&lt;part&gt;/{mode}/data.js</code> on '
@@ -213,9 +296,9 @@ def main():
         print(f'No results-*.json found under {args.results_dir}', file=sys.stderr)
         return 1
 
-    rows = compute_group_scores(results_by_part, args.mode, int(time.time() * 1000))
+    rows, calibrations = compute_group_scores(results_by_part, args.mode, int(time.time() * 1000))
     marker = f'<!-- jmh-summary:{args.mode} -->'
-    body, any_data = render_markdown(rows, args.mode, args.commit, marker)
+    body, any_data = render_markdown(rows, calibrations, args.mode, args.commit, marker)
     print(body)
 
     pr = (args.pr_number or '').strip()
