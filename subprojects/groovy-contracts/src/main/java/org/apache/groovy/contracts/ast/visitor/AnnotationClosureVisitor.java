@@ -52,6 +52,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -170,7 +171,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                 BlockStatement block = TryCatchBlockGenerator.generateTryCatchBlockForInlineMode(
                         ClassHelper.makeWithoutCaching(ClassInvariantViolation.class),
                         "<" + annotationNode.getClassNode().getName() + "> " + classNode.getName() + " \n\n",
-                        AssertStatementCreationUtility.getAssertionStatements(booleanExpressions)
+                        AssertStatementCreationUtility.getAssertionStatements(unshareConstants(booleanExpressions))
                 );
                 block.setNodeMetaData(META_DATA_USE_EXECUTION_TRACKER, validator.isMethodCalls());
 
@@ -262,7 +263,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         BlockStatement block = TryCatchBlockGenerator.generateTryCatchBlockForInlineMode(
                 isPostcondition ? ClassHelper.makeWithoutCaching(PostconditionViolation.class) : ClassHelper.makeWithoutCaching(PreconditionViolation.class),
                 "<" + annotationNode.getClassNode().getName() + "> " + classNode.getName() + "." + methodNode.getTypeDescriptor() + " \n\n",
-                AssertStatementCreationUtility.getAssertionStatements(booleanExpressions)
+                AssertStatementCreationUtility.getAssertionStatements(unshareConstants(booleanExpressions))
         );
         block.setNodeMetaData(META_DATA_USE_EXECUTION_TRACKER, validator.isMethodCalls());
 
@@ -317,6 +318,48 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         copy.setClassScope(original.getClassScope());
         copy.setInStaticContext(original.isInStaticContext());
         return copy;
+    }
+
+    /**
+     * Rebuilds the boolean expressions with fresh {@link ConstantExpression} leaves so the inline
+     * assertion block shares no constant nodes with the generated closure class (GROOVY-12130).
+     * The compiler's {@code OptimizerVisitor} caches eligible constants (e.g. {@code BigDecimal},
+     * {@code BigInteger}, most {@code Long}s) in per-class synthetic {@code $const$} fields by
+     * <em>mutating</em> each {@code ConstantExpression} with the assigned field name — a node
+     * reachable from two classes keeps whichever class's field name was assigned last, making the
+     * other class read the wrong constant at runtime (e.g. {@code result &lt; 0.0} evaluated as
+     * {@code result &lt; -2.5}). Nested closures may stay shared: the optimizer does not descend
+     * into closure bodies.
+     *
+     * @param booleanExpressions the assertion expressions also compiled into the closure class
+     * @return copies safe to inline into the contract subject's own methods
+     */
+    private static List<BooleanExpression> unshareConstants(final List<BooleanExpression> booleanExpressions) {
+        final ConstantUnsharer unsharer = new ConstantUnsharer();
+        final List<BooleanExpression> copies = new ArrayList<>(booleanExpressions.size());
+        for (BooleanExpression booleanExpression : booleanExpressions) {
+            // transformExpression preserves the node's own type (e.g. NotExpression), source
+            // position and metadata, so the whole node is transformed rather than unwrapped
+            copies.add((BooleanExpression) unsharer.transform(booleanExpression));
+        }
+        return copies;
+    }
+
+    private static final class ConstantUnsharer implements ExpressionTransformer {
+        @Override
+        public Expression transform(final Expression expression) {
+            if (expression == null) return null;
+            // exact type match mirrors OptimizerVisitor's own eligibility check
+            if (expression.getClass() == ConstantExpression.class) {
+                ConstantExpression constant = (ConstantExpression) expression;
+                ConstantExpression copy = new ConstantExpression(constant.getValue(), true);
+                copy.setType(constant.getType());
+                copy.setSourcePosition(constant);
+                copy.copyNodeMetaData(constant);
+                return copy;
+            }
+            return expression.transformExpression(this);
+        }
     }
 
     private void markClosureReplaced(ASTNode someNode) {
