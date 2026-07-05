@@ -36,8 +36,10 @@ import java.lang.annotation.Target;
  * {@code >= 0} for numeric types) — a well-founded measure.
  * <p>
  * <b>On a loop</b> ({@code for}/{@code while}/{@code do-while}) the expression is
- * evaluated at the start and end of each iteration and must decrease per
- * iteration; a {@link org.apache.groovy.contracts.LoopVariantViolation
+ * evaluated at the start of each iteration and must be non-negative there and
+ * strictly decrease between consecutive iterations (so progress made by a classic
+ * {@code for} loop's update expression is seen); a
+ * {@link org.apache.groovy.contracts.LoopVariantViolation
  * LoopVariantViolation} is thrown otherwise. The measure may also be a
  * {@link java.util.List} compared lexicographically.
  * <pre>

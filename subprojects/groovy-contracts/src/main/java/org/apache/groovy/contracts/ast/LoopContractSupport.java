@@ -21,6 +21,7 @@ package org.apache.groovy.contracts.ast;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
@@ -132,6 +133,24 @@ final class LoopContractSupport {
     }
 
     /**
+     * Find the {@link BlockStatement} that directly contains a loop statement, so bookkeeping
+     * state that must survive across iterations (GROOVY-12128) can be declared just before the
+     * loop. Returns {@code null} when the loop is not a direct child of a block (e.g. the
+     * braceless branch of an {@code if}).
+     *
+     * @param source the current source unit
+     * @param target the loop statement to locate
+     * @return the directly enclosing block, or {@code null}
+     */
+    static BlockStatement enclosingBlock(final SourceUnit source, final ASTNode target) {
+        ClassNode enclosing = enclosingClassNode(source, target);
+        if (enclosing == null) return null;
+        BlockFinder finder = new BlockFinder(target);
+        finder.visitClass(enclosing);
+        return finder.found;
+    }
+
+    /**
      * Find the {@link ClassNode} enclosing a loop statement, or {@code null} if it cannot be
      * determined.
      *
@@ -147,6 +166,29 @@ final class LoopContractSupport {
             if (finder.found) return classNode;
         }
         return null;
+    }
+
+    private static final class BlockFinder extends ClassCodeVisitorSupport {
+        private final ASTNode target;
+        private BlockStatement found;
+
+        BlockFinder(final ASTNode target) {
+            this.target = target;
+        }
+
+        @Override
+        protected SourceUnit getSourceUnit() {
+            return null;
+        }
+
+        @Override
+        public void visitBlockStatement(final BlockStatement block) {
+            if (found == null && block.getStatements().contains(target)) {
+                found = block;
+                return;
+            }
+            super.visitBlockStatement(block);
+        }
     }
 
     private static final class EnclosingFinder extends ClassCodeVisitorSupport {
