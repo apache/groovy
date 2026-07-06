@@ -239,6 +239,81 @@ class ContractsTest extends GroovyTestCase {
         '''
     }
 
+    void testThrowsIfWoven() {
+        runScript '''
+        // tag::throwsif_woven_example[]
+        import groovy.contracts.ThrowsIf
+        import static groovy.test.GroovyAssert.shouldFail
+
+        class Calculator {
+            @ThrowsIf(value = { b == 0 }, exception = ArithmeticException)
+            static int divide(int a, int b) { a.intdiv(b) }
+        }
+
+        assert Calculator.divide(4, 2) == 2
+        shouldFail(ArithmeticException) { Calculator.divide(1, 0) }   // the woven guard
+        // end::throwsif_woven_example[]
+        '''
+    }
+
+    void testThrowsIfBody() {
+        runScript '''
+        // tag::throwsif_body_example[]
+        import groovy.contracts.ThrowsIf
+        import static groovy.test.GroovyAssert.shouldFail
+
+        class MathUtil {
+            @ThrowsIf(value = { n < 0 }, exception = IllegalArgumentException, woven = false)
+            static int fact(int n) {
+                if (n < 0) throw new IllegalArgumentException('negative')   // the guard is already here
+                n <= 1 ? 1 : n * fact(n - 1)
+            }
+        }
+
+        assert MathUtil.fact(4) == 24
+        shouldFail(IllegalArgumentException) { MathUtil.fact(-1) }
+        // end::throwsif_body_example[]
+        '''
+    }
+
+    void testThrowsIfIndirect() {
+        runScript '''
+        // tag::throwsif_indirect_example[]
+        import groovy.contracts.ThrowsIf
+
+        class Wrapper {
+            @ThrowsIf(value = { s == null }, exception = NullPointerException, woven = false, direct = false)
+            static Object describe(Object s) {
+                Objects.requireNonNull(s)   // the library throws; the annotation records the contract
+                "value: $s"
+            }
+        }
+
+        assert Wrapper.describe('x') == 'value: x'
+        // end::throwsif_indirect_example[]
+        '''
+    }
+
+    void testThrowsIfChecked() {
+        runScript '''
+        // tag::throwsif_checked_example[]
+        import groovy.contracts.ThrowsIf
+        import org.apache.groovy.contracts.ThrowsIfViolation
+        import static groovy.test.GroovyAssert.shouldFail
+
+        class Broken {
+            // the body SHOULD throw when n < 0 but does not — a broken implementation,
+            // reported as a violation (never the declared exception)
+            @ThrowsIf(value = { n < 0 }, exception = IllegalArgumentException, woven = false, checked = true)
+            static int identity(int n) { n }
+        }
+
+        assert Broken.identity(5) == 5
+        shouldFail(ThrowsIfViolation) { Broken.identity(-5) }
+        // end::throwsif_checked_example[]
+        '''
+    }
+
     private static void runScript(String scriptText) {
         new GroovyShell().run(scriptText, 'ScriptSnippet', [] as String[])
     }
