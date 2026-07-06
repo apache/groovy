@@ -270,6 +270,133 @@ parameter names re-mapped to the override's); an override may declare its own
   same unit; an override of a method from a precompiled (binary) supertype is not yet
   instrumented.
 
+== Exceptional contracts with @ThrowsIf
+
+`@ThrowsIf` declares a method's _exceptional contract_: the method throws the given
+exception when the given condition holds on entry. It is the exceptional counterpart
+of `@Requires` &#8212; a precondition says _the caller must not do this_ (violating it
+is the caller's bug), whereas a `@ThrowsIf` arm says _this input is handled, by
+throwing_: it is *defined behaviour*, part of the contract, that callers may rely on
+(and catch). Guard clauses of this shape are among the most common contract-shaped
+code written by hand (`if (b == 0) throw ...`, `Objects.requireNonNull(y)`,
+Guava's `Preconditions`); `@ThrowsIf` makes that behaviour a first-class,
+machine-readable annotation. The condition is a closure over the method's
+parameters, using the same conventions as `@Requires`, and the annotation is
+repeatable &#8212; each _arm_ pairs one condition with one exception type.
+
+The contract is read as an _iff_: the method throws a matching exception _exactly
+when_ some arm's condition holds. Two attributes generate code; the others are
+runtime-retained metadata for readers and tools (documentation generators, static
+analysers, verifiers, AI coding agents):
+
+[cols="1,4"]
+|===
+|Member |Effect on generated code
+
+|`woven`
+|`true` (default): the guard &#8212; `if (cond) throw new E(...)` &#8212; is inserted at
+method entry (the general form of the pattern `groovy.transform.NullCheck` provides
+for the null-check special case). `false`: nothing is generated &#8212; the throw
+already exists.
+
+|`checked`
+|`true`: a verification wrapper is generated (see below). `false` (default): nothing.
+
+|`exception`
+|The type the woven guard constructs (it should provide a `(String)` constructor, as
+the standard exceptions do), and the type the checked wrapper matches escaping throws
+against.
+
+|`exhaustive`
+|Nothing on its own. Under `checked = true` it gates the escaping-throw check:
+`false` says the method may throw the same exception for other, unlisted reasons, so
+escaping throws are never judged.
+
+|`direct`
+|Nothing, ever &#8212; pure information: `true` (default) says a hand-written `throw`
+statement lives in this body; `false` says the exception arises from code the method
+_executes_ (a call, possibly transitive, or a runtime operation), so there is no
+throw statement in this body to find. Ignored (implicitly `true`) for woven arms.
+This is documentation for a human reader but exists primarily for tools - if you
+are not using a tool that needs it, you can safely ignore it.
+|===
+
+=== Woven guards
+
+With the defaults, the annotation _is_ the guard:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=throwsif_woven_example,indent=0]
+----
+
+On a constructor whose first statement is an explicit `super(...)` or `this(...)`
+call, the guard is inserted immediately _after_ that call, which must stay first
+&#8212; a (current) language constraint.
+
+=== Documenting an existing throw
+
+With `woven = false` nothing is generated; the annotation is checkable documentation
+of a guard that is already there:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=throwsif_body_example,indent=0]
+----
+
+When the throw originates in code the method merely _calls_ (a third-party library),
+add `direct = false` &#8212; there is no throw statement in this body to find, and
+weaving a wrong claim about invoked code would silently change behaviour, which is
+why such arms are never woven:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=throwsif_indirect_example,indent=0]
+----
+
+Most users never set `direct`: the defaults are right for woven arms and hand-written
+guards alike, and the usual prompt to add `direct = false` is a verification or
+analysis tool reporting that it cannot find the promised throw in the body.
+
+=== Runtime checking
+
+Weaving _implements_ the contract; `checked = true` additionally _verifies_ it at
+runtime, in the same assertion style as `@Ensures`: on a normal return, no non-woven
+arm's condition may have held on entry (_must-throw_), and an escaping exception
+matching some arm's type must be justified by a matching arm's condition having held
+(_only-when_ &#8212; checked only for `exhaustive` arm-sets). A broken implementation
+raises `ThrowsIfViolation` &#8212; never the declared exception, which is defined
+behaviour delivered at entry; a justified throw always propagates untouched:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=throwsif_checked_example,indent=0]
+----
+
+`checked` is _set-level_: if any arm is `checked`, the whole arm-set is checked
+&#8212; every non-woven arm is must-throw checked, and every arm serves as an
+only-when justifier.
+
+=== Rules for @ThrowsIf closures
+
+* The closure is a boolean expression over the method's parameters (the same
+  conventions as `@Requires`; it cannot reference `result` or `old`).
+* Multiple arms are independent must-throws; the only-when direction is a property
+  of the whole arm-set. One `exhaustive = false` arm disclaims it for the set.
+* Exhaustiveness is (at most) over the _conditions for the exception types
+  mentioned_, never over exception _types_: declaring an `ArithmeticException` arm
+  says nothing about whether the method can throw anything else.
+* No claim, however `exhaustive`, reasons about VM resource conditions: an
+  `OutOfMemoryError` or `StackOverflowError` is outside contract semantics, and the
+  checked wrapper passes any `VirtualMachineError` through unjudged.
+* When both apply on the same input, a `@Requires` violation is reported first
+  (`PreconditionViolation`): the caller's obligation is judged before the method's
+  defined behaviour.
+
+NOTE: `@ThrowsIf` is incubating in Groovy 6.0.0. The attribute set &#8212; in
+particular the `direct` metadata member and the set-level `checked` rule &#8212; may
+be refined in a future release based on usage feedback.
+
 == Frame Conditions with @Modifies
 
 The `@Modifies` annotation declares which fields or parameters a method is allowed to modify.
