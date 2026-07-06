@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
@@ -69,20 +70,110 @@ final class DelegateTransformTest {
     // GROOVY-10439
     @Test
     void testDelegateImplementingInterfaceWithDifferentTypeArgumentThanOwner() {
-        def err = shouldFail '''
+        assertScript '''
             class C extends ArrayList<String> {
                 @Delegate List<Number> numbers // List<String> takes precedence
             }
             new C(numbers:[1,2,3])
         '''
-        assert err.message =~ /The return type of java.lang.Number get\(int\) in C is incompatible with java.lang.String in java.util.ArrayList/
 
-        err = shouldFail '''
+        def err = shouldFail '''
             class C extends ArrayList<String> {
                 @Delegate HashSet<Number> numbers // Set<Number> added; Verifier checks
             }
         '''
         assert err.message =~ /The interface Collection cannot be implemented more than once with different arguments: java.util.Collection<java.lang.Number> \(via Set\) and java.util.Collection<java.lang.String> \(via ArrayList\)/
+    }
+
+    // GROOVY-12134
+    @Test
+    void testDelegateSkipsMethodsInheritedFromPrecompiledSuperclass() {
+        // final methods format(Object) and format(Object,StringBuffer,FieldPosition)
+        // are inherited by C from binary (pre-compiled) super types
+        assertScript '''
+            import java.text.SimpleDateFormat
+            class C extends SimpleDateFormat {
+                @Delegate SimpleDateFormat delegate = new SimpleDateFormat('yyyy')
+            }
+            new C()
+        '''
+
+        // same shape with Groovy-compiled classes loaded from the classpath
+        def config = new CompilerConfiguration(targetDirectory: File.createTempDir())
+        def parentDir = File.createTempDir()
+        try {
+            def supSource = new File(parentDir, 'Sup.groovy')
+            supSource.write '''
+                class Sup {
+                    final String describe() { 'sup' }
+                }
+            '''
+            def baseSource = new File(parentDir, 'Base.groovy')
+            baseSource.write '''
+                class Base extends Sup {
+                    String hello() { 'hello' }
+                }
+            '''
+            def unit = new CompilationUnit(config)
+            unit.addSources(supSource, baseSource)
+            unit.compile()
+
+            new GroovyClassLoader(this.class.classLoader).withCloseable { loader ->
+                loader.addClasspath(config.targetDirectory.path)
+                def result = new GroovyShell(loader).evaluate '''
+                    class Base2 extends Base {
+                        String hello() { 'delegated' }
+                    }
+                    class Child extends Base {
+                        @Delegate Base b = new Base2()
+                    }
+                    def c = new Child()
+                    c.describe() + ' ' + c.hello()
+                '''
+                // inherited implementations win, as when all classes are compiled together
+                assert result == 'sup hello'
+            }
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
+    }
+
+    // GROOVY-12134
+    @Test
+    void testDelegateImplementsAbstractMethodInheritedFromPrecompiledSuperclass() {
+        // an abstract method inherited from a binary super type must still be
+        // implemented via @Delegate; the bodiless-placeholder guard must not skip it
+        def config = new CompilerConfiguration(targetDirectory: File.createTempDir())
+        def parentDir = File.createTempDir()
+        try {
+            def baseSource = new File(parentDir, 'AbstractBase.groovy')
+            baseSource.write '''
+                abstract class AbstractBase {
+                    abstract String greet()
+                }
+            '''
+            def unit = new CompilationUnit(config)
+            unit.addSources(baseSource)
+            unit.compile()
+
+            new GroovyClassLoader(this.class.classLoader).withCloseable { loader ->
+                loader.addClasspath(config.targetDirectory.path)
+                def result = new GroovyShell(loader).evaluate '''
+                    class Impl {
+                        String greet() { 'hi' }
+                    }
+                    class Child extends AbstractBase {
+                        @Delegate Impl delegate = new Impl()
+                    }
+                    new Child().greet()
+                '''
+                assert result == 'hi'
+            }
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
     }
 
     // GROOVY-5974
