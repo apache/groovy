@@ -424,7 +424,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
                 break;
             }
         }
-        if (existingNode == null || existingNode.getCode() == null) {
+        // GROOVY-12134: a non-abstract method from a pre-compiled class is an
+        // implementation despite having no code; only a primary class node can
+        // supply a bodiless placeholder that should be overwritten
+        if (existingNode == null || (existingNode.getCode() == null && existingNode.getDeclaringClass().isPrimaryClassNode())) {
             final ArgumentListExpression args = new ArgumentListExpression();
             final Parameter[] params = candidate.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
