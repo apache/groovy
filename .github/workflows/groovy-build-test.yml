@@ -142,7 +142,14 @@ jobs:
       # saves ~/.groovy/grapes — so all JARs/POMs and good resolution state are
       # preserved and a transient miss never becomes persistent. Runs on success
       # or failure so poison written by a failing run is scrubbed too.
-      - name: "🧹 Scrub poisoned Grape negative-cache markers (exists=false) before save"
+      #
+      # Additionally validate every cached jar's zip integrity: a jar truncated
+      # by a copy race or a mid-copy timeout kill would otherwise be saved and
+      # replayed on every later run — Ivy trusts cached files without any
+      # integrity re-check (seen as GenericsSTCTest#testMockito failing with
+      # NoClassDefFoundError on a torn byte-buddy jar). Corrupt jars are deleted
+      # together with the module's ivydata markers so Ivy re-resolves cleanly.
+      - name: "🧹 Scrub poisoned Grape negative-cache markers and corrupt jars before save"
         if: always()
         shell: bash
         run: |
@@ -156,6 +163,15 @@ jobs:
             deleted=$((deleted + 1))
           done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
           echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
+          corrupt=0
+          while IFS= read -r jar; do
+            if ! unzip -tqq "$jar" >/dev/null 2>&1; then
+              echo "corrupt jar: $jar"
+              rm -f "$jar" "$(dirname "$jar")"/../ivydata-*.properties
+              corrupt=$((corrupt + 1))
+            fi
+          done < <(find "$dir" -name '*.jar' 2>/dev/null)
+          echo "Scrubbed $corrupt corrupt jar(s) before cache save."
       - name: "🚀Upload reports"
         uses: actions/upload-artifact@v7
         if: always()
@@ -223,8 +239,10 @@ jobs:
         timeout-minutes: 60
       # See the lts job for rationale: drop only Ivy's transient `exists=false`
       # negative markers just before actions/cache saves, so a one-off resolution
-      # miss can't be cached and replayed as a sticky failure on later runs.
-      - name: "🧹 Scrub poisoned Grape negative-cache markers (exists=false) before save"
+      # miss can't be cached and replayed as a sticky failure on later runs, and
+      # delete any zip-corrupt jars (plus their ivydata markers) so a torn copy
+      # can't be persisted either.
+      - name: "🧹 Scrub poisoned Grape negative-cache markers and corrupt jars before save"
         if: always()
         shell: bash
         run: |
@@ -238,6 +256,15 @@ jobs:
             deleted=$((deleted + 1))
           done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
           echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
+          corrupt=0
+          while IFS= read -r jar; do
+            if ! unzip -tqq "$jar" >/dev/null 2>&1; then
+              echo "corrupt jar: $jar"
+              rm -f "$jar" "$(dirname "$jar")"/../ivydata-*.properties
+              corrupt=$((corrupt + 1))
+            fi
+          done < <(find "$dir" -name '*.jar' 2>/dev/null)
+          echo "Scrubbed $corrupt corrupt jar(s) before cache save."
 
   # Canary job: run the test suite against an upcoming, not-yet-released JDK.
   # setup-java has no first-class EA distribution, so we download the OpenJDK
@@ -321,8 +348,10 @@ jobs:
         timeout-minutes: 60
       # See the lts job for rationale: drop only Ivy's transient `exists=false`
       # negative markers just before actions/cache saves, so a one-off resolution
-      # miss can't be cached and replayed as a sticky failure on later runs.
-      - name: "🧹 Scrub poisoned Grape negative-cache markers (exists=false) before save"
+      # miss can't be cached and replayed as a sticky failure on later runs, and
+      # delete any zip-corrupt jars (plus their ivydata markers) so a torn copy
+      # can't be persisted either.
+      - name: "🧹 Scrub poisoned Grape negative-cache markers and corrupt jars before save"
         if: always()
         shell: bash
         run: |
@@ -336,6 +365,15 @@ jobs:
             deleted=$((deleted + 1))
           done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
           echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
+          corrupt=0
+          while IFS= read -r jar; do
+            if ! unzip -tqq "$jar" >/dev/null 2>&1; then
+              echo "corrupt jar: $jar"
+              rm -f "$jar" "$(dirname "$jar")"/../ivydata-*.properties
+              corrupt=$((corrupt + 1))
+            fi
+          done < <(find "$dir" -name '*.jar' 2>/dev/null)
+          echo "Scrubbed $corrupt corrupt jar(s) before cache save."
       - name: "🚀Upload reports"
         uses: actions/upload-artifact@v7
         if: always()

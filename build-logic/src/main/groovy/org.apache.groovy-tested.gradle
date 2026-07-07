@@ -200,6 +200,18 @@ tasks.withType(Test).configureEach {
                     from(testGrapes)
                     into(sharedGrapes)
                     exclude '**/*.lck', '**/*.lastUpdated'
+                    // Grape artifacts are immutable by coordinate, so fold back only
+                    // files the shared cache doesn't have yet. Rewriting an existing
+                    // jar races with a concurrent Test task's forward bridge (up to
+                    // two Test tasks run at once): the reader can capture a torn,
+                    // truncated jar, and Ivy trusts cached files without any
+                    // integrity re-check (e.g. GenericsSTCTest#testMockito failing
+                    // with NoClassDefFoundError on a truncated byte-buddy jar).
+                    eachFile { fcd ->
+                        if (new File(sharedGrapes, fcd.path).file) {
+                            fcd.exclude()
+                        }
+                    }
                 }
             }
         }

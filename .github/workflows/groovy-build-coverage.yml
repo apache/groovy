@@ -98,6 +98,34 @@ jobs:
       - name: Test with Gradle
         run: ./gradlew -Pgroovy.grape.bridge-cache=true -Pcoverage=true jacocoAllReport
         timeout-minutes: 60
+      # See the lts job in groovy-build-test.yml for rationale: this workflow
+      # saves into the same `<os>-grape-` cache lineage, so scrub Ivy's transient
+      # `exists=false` negative markers and any zip-corrupt jars (plus their
+      # ivydata markers) just before actions/cache saves, so a one-off resolution
+      # miss or a torn jar copy can't be persisted and replayed on later runs.
+      - name: "🧹 Scrub poisoned Grape negative-cache markers and corrupt jars before save"
+        if: always()
+        shell: bash
+        run: |
+          dir=~/.groovy/grapes
+          [ -d "$dir" ] || { echo "No $dir — nothing to scrub."; exit 0; }
+          deleted=0
+          while IFS= read -r f; do
+            echo "poisoned marker: $f"
+            grep -E 'exists=false' "$f" | sed 's/^/    /'
+            rm -f "$f"
+            deleted=$((deleted + 1))
+          done < <(grep -rlE --include='ivydata-*.properties' 'exists=false' "$dir" 2>/dev/null)
+          echo "Scrubbed $deleted poisoned ivydata marker(s) before cache save."
+          corrupt=0
+          while IFS= read -r jar; do
+            if ! unzip -tqq "$jar" >/dev/null 2>&1; then
+              echo "corrupt jar: $jar"
+              rm -f "$jar" "$(dirname "$jar")"/../ivydata-*.properties
+              corrupt=$((corrupt + 1))
+            fi
+          done < <(find "$dir" -name '*.jar' 2>/dev/null)
+          echo "Scrubbed $corrupt corrupt jar(s) before cache save."
       # Coverage upload is best-effort: fork PRs run without secrets and
       # codecov-action falls back to a tokenless upload that can fail/be
       # rate-limited. A failed upload must not fail the build or skip the
