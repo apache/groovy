@@ -93,6 +93,29 @@ public class DynamicDispatchColdBench {
     }
 
     /**
+     * As {@link #dynamicMono_groovy} but with the experimental reflective cold
+     * tier enabled (GROOVY-12137): cold dispatch runs reflectively until
+     * hit-count promotion, avoiding per-shape MethodHandle chain construction.
+     * @return the computed sum
+     */
+    @Benchmark
+    @Fork(value = 25, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=true")
+    public int dynamicMono_groovyColdReflect() {
+        return new DynamicDispatchCold().monoSum(n);
+    }
+
+    /**
+     * As {@link #dynamicPoly_groovy} but with the experimental reflective cold
+     * tier enabled (GROOVY-12137).
+     * @return the computed sum
+     */
+    @Benchmark
+    @Fork(value = 25, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=true")
+    public int dynamicPoly_groovyColdReflect() {
+        return new DynamicDispatchCold().polySum(n);
+    }
+
+    /**
      * Dynamic property reads from a cold call site.
      * @return the computed sum
      */

@@ -120,6 +120,24 @@ public class SystemUtil {
     }
 
     /**
+     * Retrieves a Boolean System property, supporting an opt-out (default-true)
+     * flag: absent property yields the default, an explicit value is parsed.
+     *
+     * @param name the name of the system property.
+     * @param def the default value when the property is not set
+     * @return the parsed Boolean system property or the default value
+     */
+    public static boolean getBooleanSafe(String name, boolean def) {
+        try {
+            String value = System.getProperty(name);
+            return (value == null) ? def : Boolean.parseBoolean(value);
+        } catch (SecurityException ignore) {
+            // suppress exception
+        }
+        return def;
+    }
+
+    /**
      * Retrieves an Integer System property
      *
      * @param name the name of the system property.

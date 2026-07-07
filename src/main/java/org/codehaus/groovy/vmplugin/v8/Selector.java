@@ -207,6 +207,31 @@ public abstract class Selector {
      */
     abstract void setCallSiteTarget();
 
+    /**
+     * Experimental, guarded by {@code groovy.indy.cold.reflection}: runs only
+     * the method-selection portion of linking, populating {@link #method}
+     * without constructing any invocation handle, so the cold tier can
+     * dispatch reflectively and defer all MethodHandle building to promotion.
+     * Selector types that do not support this return {@code null}; callers
+     * then continue with the full {@link #setCallSiteTarget()} path (selection
+     * is deterministic, so re-running it there is safe).
+     *
+     * @return the selected meta method, or {@code null} if this call needs the
+     * full handle-building path
+     */
+    MetaMethod selectForColdReflection() {
+        return null;
+    }
+
+    /**
+     * Returns the metaclass captured by {@link #selectForColdReflection()}.
+     *
+     * @return the selection metaclass, or {@code null} if selection did not run
+     */
+    MetaClass getSelectionMetaClass() {
+        return null;
+    }
+
     //--------------------------------------------------------------------------
 
     private static class CastSelector extends MethodSelector {
@@ -1377,6 +1402,39 @@ public abstract class Selector {
 
                 addExceptionHandler();
             }
+        }
+
+        @Override
+        MetaMethod selectForColdReflection() {
+            // the cold tier is only for plain method calls; the fallback gates
+            // on CallType.METHOD, so any other call type reaching this method
+            // indicates a broken invariant rather than an unsupported case
+            if (callType != CallType.METHOD) {
+                throw new GroovyBugError("selectForColdReflection called for call type " + callType);
+            }
+            // these all need the full handle path: spread and safe-null have
+            // their own adaptation/constant handles; a Class receiver is a
+            // static-method style call, which promotes on its first hit anyway
+            // (GROOVY-11935); GroovyInterceptable routes via invokeMethod.
+            // TODO: a null receiver dispatches to NullObject, whose methods are
+            // ordinary methods on a singleton receiver — investigate serving
+            // them from the reflective tier instead of the full handle path
+            if (safeNavigation || spread || args[0] == null
+                    || args[0] instanceof Class || args[0] instanceof GroovyInterceptable) {
+                return null;
+            }
+            getMetaClass();
+            if (!cache) return null; // e.g. per-instance metaclasses in play
+            setSelectionBase();
+            MetaClassImpl mci = getMetaClassImpl(mc, true);
+            if (mci == null) return null;
+            chooseMeta(mci);
+            return method;
+        }
+
+        @Override
+        MetaClass getSelectionMetaClass() {
+            return mc;
         }
     }
 

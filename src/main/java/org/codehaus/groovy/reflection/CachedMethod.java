@@ -82,6 +82,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     private int hashCode;
     private boolean skipCompiled;
+    private Boolean callerSensitive;
 
     private boolean makeAccessibleDone;
     private CachedMethod transformedMethod;
@@ -523,6 +524,53 @@ public class CachedMethod extends MetaMethod implements Comparable {
         if (!makeAccessibleDone) {
             ReflectionUtils.makeAccessibleInPrivilegedAction(cachedMethod);
             makeAccessibleDone = true;
+        }
+    }
+
+    /**
+     * Indicates whether the underlying method is caller-sensitive, meaning its
+     * behaviour depends on the immediate caller — such methods must not be
+     * invoked through intermediaries that change the observed caller. This
+     * covers the {@code jdk.internal.reflect.CallerSensitive} annotation and
+     * declaring-class-based cases that are caller-context sensitive without
+     * the annotation (object serialization's stack-walking loader lookup).
+     * Computed once and cached; when the probe cannot decide, the method is
+     * conservatively treated as caller-sensitive. Note that an abstract
+     * method never carries the annotation itself: callers dispatching
+     * virtually should also probe the runtime receiver's implementation.
+     *
+     * @return {@code true} if the method is (or must be assumed) caller-sensitive
+     * @since 6.0.0
+     */
+    public boolean isCallerSensitive() {
+        Boolean sensitive = callerSensitive;
+        if (sensitive == null) {
+            sensitive = computeCallerSensitive(cachedMethod);
+            callerSensitive = sensitive;
+        }
+        return sensitive;
+    }
+
+    private static boolean computeCallerSensitive(final Method method) {
+        // object serialization is caller-context sensitive without carrying
+        // the annotation: its latestUserDefinedLoader walks the stack for the
+        // class loader, so intermediary frames change its behavior
+        Class<?> declaringClass = method.getDeclaringClass();
+        if (java.io.ObjectInput.class.isAssignableFrom(declaringClass)
+                || java.io.ObjectOutput.class.isAssignableFrom(declaringClass)
+                || java.io.ObjectInputStream.class.isAssignableFrom(declaringClass)
+                || java.io.ObjectOutputStream.class.isAssignableFrom(declaringClass)) {
+            return true;
+        }
+        try {
+            for (Annotation annotation : method.getDeclaredAnnotations()) {
+                if ("jdk.internal.reflect.CallerSensitive".equals(annotation.annotationType().getName())) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Throwable ignore) {
+            return true;
         }
     }
 
