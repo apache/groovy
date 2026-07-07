@@ -270,6 +270,49 @@ parameter names re-mapped to the override's); an override may declare its own
   same unit; an override of a method from a precompiled (binary) supertype is not yet
   instrumented.
 
+== Unwoven preconditions
+
+By default `@Requires` _weaves_ its assertion: a violating caller observes a
+`PreconditionViolation`. Real methods often already enforce their obligations
+&#8212; a hand-written guard, an `Objects.requireNonNull`, Guava's
+`Preconditions` &#8212; and adding a woven `@Requires` on top would double the
+check and change the exception a violating caller observes. Two members, shared
+with `@ThrowsIf`, cover this:
+
+* `woven = false` &#8212; no assertion is generated. The annotation remains the
+  caller's _documented obligation_, consumable by readers and tools (a verifier
+  discharges it at call sites regardless of where enforcement lives); a violating
+  caller observes whatever the existing enforcement does. An unwoven precondition
+  never contributes to generated assertions, including the inherited precondition
+  weaving of overriding methods.
+* `direct` &#8212; pure information, no effect on bytecode, ignored (implicitly
+  `true`) for woven preconditions: `true` (default) says a hand-written check
+  enforces the obligation in this body; `false` says the enforcement lives in
+  code the method _executes_ (a validator call, possibly transitive), so there is
+  no check to find in this body. Most users never set it.
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=requires_unwoven_example,indent=0]
+----
+
+The members are per-annotation, so repeated preconditions mix modes &#8212; woven
+arms are asserted, unwoven arms are left to their existing enforcement:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=requires_mixed_example,indent=0]
+----
+
+Choosing between an unwoven `@Requires` and a `@ThrowsIf` over the same guard is
+a statement of intent: `@Requires` says a violating call is the _caller's bug_
+(callers may not rely on the violation behaviour); `@ThrowsIf` says the throw is
+_defined behaviour_ callers may rely on and catch. Both are spellable over the
+identical `requireNonNull` body &#8212; they are different claims.
+
+NOTE: The `woven` and `direct` members of `@Requires` are incubating in
+Groovy 6.0.0 and may be refined in a future release based on usage feedback.
+
 == Exceptional contracts with @ThrowsIf
 
 `@ThrowsIf` declares a method's _exceptional contract_: the method throws the given
