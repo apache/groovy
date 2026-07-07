@@ -83,6 +83,8 @@ import static org.objectweb.asm.Opcodes.SIPUSH;
  * Single-pass bytecode compaction inspired by Groovy++'s peephole adapters.
  * The visitor only buffers the current stack-local candidate and flushes before
  * labels, frames, debug metadata, and other non-local boundaries.
+ *
+ * @since 6.0.0
  */
 public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
 
@@ -90,6 +92,11 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
     private static final String BIG_INTEGER_TYPE = "java/math/BigInteger";
     private static final String STRING_CTOR_DESCRIPTOR = "(Ljava/lang/String;)V";
     private static final int NO_OPCODE = -1;
+    private static final int FLOAT_TO_RAW_INT_BITS_0 = Float.floatToRawIntBits(0f);
+    private static final int FLOAT_TO_RAW_INT_BITS_1 = Float.floatToRawIntBits(1f);
+    private static final int FLOAT_TO_RAW_INT_BITS_2 = Float.floatToRawIntBits(2f);
+    private static final long DOUBLE_TO_RAW_LONG_BITS_0 = Double.doubleToRawLongBits(0d);
+    private static final long DOUBLE_TO_RAW_LONG_BITS_1 = Double.doubleToRawLongBits(1d);
 
     private enum PendingLoadKind {
         NONE,
@@ -713,11 +720,11 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
 
     private void emitFloatConstant(final float value) {
         int rawBits = Float.floatToRawIntBits(value);
-        if (rawBits == Float.floatToRawIntBits(0f)) {
+        if (rawBits == FLOAT_TO_RAW_INT_BITS_0) {
             super.visitInsn(FCONST_0);
-        } else if (rawBits == Float.floatToRawIntBits(1f)) {
+        } else if (rawBits == FLOAT_TO_RAW_INT_BITS_1) {
             super.visitInsn(FCONST_1);
-        } else if (rawBits == Float.floatToRawIntBits(2f)) {
+        } else if (rawBits == FLOAT_TO_RAW_INT_BITS_2) {
             super.visitInsn(FCONST_2);
         } else {
             super.visitLdcInsn(value);
@@ -726,9 +733,9 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
 
     private void emitDoubleConstant(final double value) {
         long rawBits = Double.doubleToRawLongBits(value);
-        if (rawBits == Double.doubleToRawLongBits(0d)) {
+        if (rawBits == DOUBLE_TO_RAW_LONG_BITS_0) {
             super.visitInsn(DCONST_0);
-        } else if (rawBits == Double.doubleToRawLongBits(1d)) {
+        } else if (rawBits == DOUBLE_TO_RAW_LONG_BITS_1) {
             super.visitInsn(DCONST_1);
         } else {
             super.visitLdcInsn(value);
