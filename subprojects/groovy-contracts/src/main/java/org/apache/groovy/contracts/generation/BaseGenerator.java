@@ -73,6 +73,20 @@ public abstract class BaseGenerator {
     public static final String META_DATA_USE_INLINE_MODE = "org.apache.groovy.contracts.USE_INLINE_MODE";
 
     /**
+     * The inline-mode node-metadata key for one contract kind. The flag is written while composing
+     * inherited contract calls and read when generating that kind's assertion; it MUST be qualified
+     * by kind — preconditions are processed before postconditions, and a single shared key let the
+     * precondition pass's "no inherited preconditions" verdict leak into the postcondition
+     * generator, whose inline path then dropped composed inherited postconditions.
+     *
+     * @param annotationType the contract kind's meta annotation (Precondition/Postcondition)
+     * @return the per-kind metadata key
+     */
+    protected static String inlineModeKey(final Class<? extends Annotation> annotationType) {
+        return META_DATA_USE_INLINE_MODE + "." + annotationType.getName();
+    }
+
+    /**
      * Reader source used by generators that need source-aware AST construction.
      */
     protected final ReaderSource source;
@@ -187,8 +201,16 @@ public abstract class BaseGenerator {
      */
     protected BooleanExpression addCallsToSuperMethodNodeAnnotationClosure(final ClassNode type, final MethodNode methodNode, final Class<? extends Annotation> annotationType, BooleanExpression booleanExpression, boolean isPostcondition) {
         List<AnnotationNode> contractElementAnnotations = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), methodNode, ClassHelper.makeWithoutCaching(annotationType));
+        if (!isPostcondition) {
+            // An unwoven precondition (@Requires(woven = false)) never contributes to generated
+            // assertions — inherited arms included, so an override does not weave a check its
+            // declaring class deliberately left to existing enforcement.
+            contractElementAnnotations = contractElementAnnotations.stream()
+                    .filter(a -> !isUnwoven(a))
+                    .collect(java.util.stream.Collectors.toList());
+        }
         if (contractElementAnnotations.isEmpty()) {
-            methodNode.putNodeMetaData(META_DATA_USE_INLINE_MODE, Boolean.TRUE);
+            methodNode.putNodeMetaData(inlineModeKey(annotationType), Boolean.TRUE);
         } else {
             BooleanExpression collectedPre = null;
             for (AnnotationNode contractElementAnnotation : contractElementAnnotations) {
@@ -221,5 +243,12 @@ public abstract class BaseGenerator {
             }
         }
         return booleanExpression;
+    }
+
+    /** True for a contract arm carrying {@code woven = false} (enforced elsewhere, never asserted). */
+    private static boolean isUnwoven(final AnnotationNode annotationNode) {
+        org.codehaus.groovy.ast.expr.Expression member = annotationNode.getMember("woven");
+        return member instanceof org.codehaus.groovy.ast.expr.ConstantExpression constant
+                && Boolean.FALSE.equals(constant.getValue());
     }
 }

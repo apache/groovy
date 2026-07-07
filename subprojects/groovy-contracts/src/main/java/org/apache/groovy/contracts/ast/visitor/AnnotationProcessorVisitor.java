@@ -20,6 +20,7 @@ package org.apache.groovy.contracts.ast.visitor;
 
 import org.apache.groovy.contracts.annotations.meta.ContractElement;
 import org.apache.groovy.contracts.annotations.meta.Postcondition;
+import org.apache.groovy.contracts.annotations.meta.Precondition;
 import org.apache.groovy.contracts.common.spi.AnnotationProcessor;
 import org.apache.groovy.contracts.common.spi.ProcessingContextInformation;
 import org.apache.groovy.contracts.generation.CandidateChecks;
@@ -33,6 +34,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -164,6 +166,11 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         for (AnnotationNode annotationNode : annotationNodes) {
             annotationProcessor = createAnnotationProcessor(annotationNode);
             if (annotationProcessor != null && getReplacedCondition(annotationNode) != null) {
+                // An unwoven precondition (@Requires(woven = false)) is a documented obligation whose
+                // enforcement already exists (in the body or in invoked code): it never contributes to
+                // generated assertions — filtered here at collection, which also covers the interface
+                // and inherited-precondition paths (all routed through this visitor).
+                if (isUnwovenPrecondition(annotationNode)) continue;
                 handleMethodAnnotation(methodNode, annotationNode, annotationProcessor, collectedPreconditions);
             }
         }
@@ -214,6 +221,15 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
             replaceCondition(markerAnnotation, valueExpression);
             methodNode.addAnnotation(markerAnnotation);
         }
+    }
+
+    /** True for a precondition arm carrying {@code woven = false} — enforced elsewhere, never asserted. */
+    private static boolean isUnwovenPrecondition(AnnotationNode annotationNode) {
+        if (!AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), Precondition.class.getName())) {
+            return false;
+        }
+        Expression member = annotationNode.getMember("woven");
+        return member instanceof ConstantExpression constant && Boolean.FALSE.equals(constant.getValue());
     }
 
     private AnnotationProcessor createAnnotationProcessor(AnnotationNode annotationNode) {

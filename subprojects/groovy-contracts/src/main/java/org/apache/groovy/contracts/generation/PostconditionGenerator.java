@@ -101,7 +101,7 @@ public class PostconditionGenerator extends BaseGenerator {
         // method calls which might be subject to cycling boolean expressions -> no inline mode possible
         final boolean useExecutionTracker = originalBlockStatement == null || Boolean.TRUE.equals(originalBlockStatement.getNodeMetaData(AnnotationClosureVisitor.META_DATA_USE_EXECUTION_TRACKER));
 
-        if (!useExecutionTracker && Boolean.TRUE.equals(method.getNodeMetaData(META_DATA_USE_INLINE_MODE))) {
+        if (!useExecutionTracker && Boolean.TRUE.equals(method.getNodeMetaData(inlineModeKey(Postcondition.class)))) {
             blockStatement = getInlineModeBlockStatement(originalBlockStatement);
         } else {
             blockStatement = wrapAssertionBooleanExpression(method.getDeclaringClass(), method, postconditionBooleanExpression, "postcondition");

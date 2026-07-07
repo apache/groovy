@@ -314,6 +314,51 @@ class ContractsTest extends GroovyTestCase {
         '''
     }
 
+    void testRequiresUnwoven() {
+        runScript '''
+        // tag::requires_unwoven_example[]
+        import groovy.contracts.Requires
+        import static groovy.test.GroovyAssert.shouldFail
+
+        class Greeter {
+            // the obligation is already enforced by requireNonNull: the annotation documents it,
+            // no assertion is generated, and a violating caller sees the library's NPE
+            @Requires(value = { name != null }, woven = false, direct = false)
+            static String greet(String name) {
+                Objects.requireNonNull(name)
+                "Hello, $name!"
+            }
+        }
+
+        assert Greeter.greet('World') == 'Hello, World!'
+        shouldFail(NullPointerException) { Greeter.greet(null) }   // the enforcement, untouched
+        // end::requires_unwoven_example[]
+        '''
+    }
+
+    void testRequiresMixedArms() {
+        runScript '''
+        // tag::requires_mixed_example[]
+        import groovy.contracts.Requires
+        import org.apache.groovy.contracts.PreconditionViolation
+        import static groovy.test.GroovyAssert.shouldFail
+
+        class Adjuster {
+            @Requires({ amount <= 1000 })                              // woven: asserted
+            @Requires(value = { amount >= 0 }, woven = false)          // enforced in the body
+            static int adjust(int amount) {
+                if (amount < 0) throw new IllegalArgumentException('negative')
+                amount
+            }
+        }
+
+        assert Adjuster.adjust(5) == 5
+        shouldFail(PreconditionViolation) { Adjuster.adjust(2000) }        // the woven arm
+        shouldFail(IllegalArgumentException) { Adjuster.adjust(-1) }       // the body's own guard
+        // end::requires_mixed_example[]
+        '''
+    }
+
     private static void runScript(String scriptText) {
         new GroovyShell().run(scriptText, 'ScriptSnippet', [] as String[])
     }
