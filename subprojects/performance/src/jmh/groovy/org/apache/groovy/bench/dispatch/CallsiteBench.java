@@ -47,6 +47,21 @@ public class CallsiteBench {
     }
 
     /**
+     * Monomorphic dispatch via Groovy dynamic with the experimental reflective
+     * cold tier enabled (GROOVY-12137). Steady state must match
+     * {@link #dispatch_1_monomorphic_groovy}: after hit-count promotion the
+     * hot path is identical, so a sustained gap on the dashboards is a
+     * regression signal for the cold tier.
+     * @param state the monomorphic receiver state
+     * @param bh the blackhole for consuming results
+     */
+    @Benchmark
+    @Fork(value = 2, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=true")
+    public void dispatch_1_monomorphic_groovyColdReflect(MonomorphicState state, Blackhole bh) {
+        Callsite.dispatch(state.receivers, bh);
+    }
+
+    /**
      * Monomorphic dispatch via Groovy {@code @CompileStatic}.
      * @param state the monomorphic receiver state
      * @param bh the blackhole for consuming results
@@ -73,6 +88,21 @@ public class CallsiteBench {
      */
     @Benchmark
     public void dispatch_3_polymorphic_groovy(PolymorphicState state, Blackhole bh) {
+        Callsite.dispatch(state.receivers, bh);
+    }
+
+    /**
+     * Polymorphic dispatch (3 types) via Groovy dynamic with the experimental
+     * reflective cold tier enabled (GROOVY-12137). Polymorphic sites never
+     * reach the consecutive-hit promotion, so this exercises the per-wrapper
+     * cumulative promotion; steady state must match
+     * {@link #dispatch_3_polymorphic_groovy}.
+     * @param state the polymorphic receiver state
+     * @param bh the blackhole for consuming results
+     */
+    @Benchmark
+    @Fork(value = 2, jvmArgsAppend = "-Dgroovy.indy.cold.reflection=true")
+    public void dispatch_3_polymorphic_groovyColdReflect(PolymorphicState state, Blackhole bh) {
         Callsite.dispatch(state.receivers, bh);
     }
 
