@@ -487,4 +487,20 @@ public class CallSiteWriter {
                 expression.isSafe(), expression.isSpreadSafe(), expression.isImplicitThis()
         );
     }
+
+    /**
+     * Emits a property-write site (GROOVY-12138). The assigned value is
+     * already on the operand stack. The default implementation is the classic
+     * {@code ScriptBytecodeAdapter} adapter call; the indy writer may override
+     * this to emit an {@code invokedynamic} {@code setProperty} call site.
+     *
+     * @param expression the property expression being assigned
+     * @param objectExpression the receiver expression
+     * @param name the property name
+     * @param adapter the classic set adapter used for the default path
+     * @param groovyObject whether the receiver is statically known to be a {@code GroovyObject}
+     */
+    public void makeSetPropertySite(PropertyExpression expression, Expression objectExpression, String name, MethodCallerMultiAdapter adapter, boolean groovyObject) {
+        fallbackAttributeOrPropertySite(expression, objectExpression, name, adapter);
+    }
 }
