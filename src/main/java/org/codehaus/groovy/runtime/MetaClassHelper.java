@@ -1010,6 +1010,30 @@ public class MetaClassHelper {
     }
 
     /**
+     * Re-normalizes a reflectively boxed primitive return value through the
+     * {@code valueOf} caches. {@link java.lang.reflect.Method#invoke} boxes
+     * primitive returns with fresh instances, unlike MethodHandle-based and
+     * generated-bytecode invocation, which box through the caches; without
+     * normalization, reference identity ({@code ===}) of primitive returns
+     * would differ between dispatch paths (GROOVY-12140).
+     *
+     * @param value the reflectively boxed return value (may be {@code null})
+     * @param returnType the declared return type of the invoked method
+     * @return the cache-normalized value
+     * @since 6.0.0
+     */
+    public static Object normalizeBoxedReturn(final Object value, final Class<?> returnType) {
+        if (value == null || !returnType.isPrimitive()) return value; // null includes void
+        if (returnType == int.class) return Integer.valueOf((Integer) value);
+        if (returnType == boolean.class) return Boolean.valueOf((Boolean) value);
+        if (returnType == long.class) return Long.valueOf((Long) value);
+        if (returnType == char.class) return Character.valueOf((Character) value);
+        if (returnType == byte.class) return Byte.valueOf((Byte) value);
+        if (returnType == short.class) return Short.valueOf((Short) value);
+        return value; // float/double: valueOf does not cache on any path
+    }
+
+    /**
      * Sets the metaclass for an object, by delegating to the appropriate
      * {@link DefaultGroovyMethods} helper method. This method was introduced as
      * a breaking change in 2.0 to solve rare cases of stack overflow. See GROOVY-5285.
