@@ -27,25 +27,46 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
+import org.codehaus.groovy.runtime.LoopControl;
 import org.codehaus.groovy.runtime.NonLocalReturn;
+
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
@@ -61,6 +82,14 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * ordinary return of the carried value. Methods without such returns are left
  * untouched. The reserved target {@code script} refers to the script body.
  * <p>
+ * A {@code break} or {@code continue} inside a closure passed directly as a
+ * method call argument — and not bound to a loop (or switch, for break) within
+ * the closure — becomes {@code throw LoopControl.BREAK/CONTINUE}; cooperating
+ * iterator methods (marked {@link groovy.transform.SupportsLoopControl}) catch
+ * the signal per element. Such closures are tagged with node metadata under
+ * the {@code NonLocalControlFlowRewriter.class} key so the static type checker
+ * can verify the callee cooperates.
+ * <p>
  * Runs at {@link Phases#CANONICALIZATION}, before static type checking and
  * class generation, so the desugared form compiles identically under dynamic
  * and static compilation.
@@ -68,6 +97,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 public class NonLocalControlFlowRewriter extends ClassCodeVisitorSupport {
 
     private static final ClassNode NLR_TYPE = ClassHelper.make(NonLocalReturn.class);
+    private static final ClassNode LOOP_CONTROL_TYPE = ClassHelper.make(LoopControl.class);
     private static final String TOKEN_NAME = "$nlr$token";
     private static final String SCRIPT_TARGET = "script";
 
@@ -78,6 +108,12 @@ public class NonLocalControlFlowRewriter extends ClassCodeVisitorSupport {
     private int closureDepth;
     private boolean methodNeedsWrapper;
     private boolean classNeedsScopeRepair;
+
+    /** Closures passed directly as method call arguments, i.e. eligible for break/continue. */
+    private final Set<ClosureExpression> eligibleClosures = Collections.newSetFromMap(new IdentityHashMap<>());
+    private ClosureExpression currentClosure;
+    private int loopDepth;
+    private int switchDepth;
 
     public NonLocalControlFlowRewriter(final SourceUnit sourceUnit) {
         this.sourceUnit = sourceUnit;
@@ -126,12 +162,161 @@ public class NonLocalControlFlowRewriter extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClosureExpression(final ClosureExpression expression) {
+        ClosureExpression previousClosure = currentClosure;
+        int previousLoopDepth = loopDepth;
+        int previousSwitchDepth = switchDepth;
         closureDepth += 1;
+        currentClosure = expression;
+        loopDepth = 0;
+        switchDepth = 0;
         try {
             super.visitClosureExpression(expression);
         } finally {
             closureDepth -= 1;
+            currentClosure = previousClosure;
+            loopDepth = previousLoopDepth;
+            switchDepth = previousSwitchDepth;
         }
+    }
+
+    @Override
+    public void visitMethodCallExpression(final MethodCallExpression call) {
+        markEligibleClosureArguments(call.getArguments());
+        super.visitMethodCallExpression(call);
+    }
+
+    @Override
+    public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
+        markEligibleClosureArguments(call.getArguments());
+        super.visitStaticMethodCallExpression(call);
+    }
+
+    private void markEligibleClosureArguments(final Expression arguments) {
+        if (arguments instanceof TupleExpression) {
+            for (Expression argument : ((TupleExpression) arguments).getExpressions()) {
+                if (argument instanceof ClosureExpression) {
+                    eligibleClosures.add((ClosureExpression) argument);
+                }
+            }
+        }
+    }
+
+    //--------------------------------------------------------------------------
+    // break/continue in closure arguments: statement-slot replacement
+
+    /**
+     * Returns the loop-control signal throw replacing the given statement, or
+     * null when the statement is not an applicable break/continue (reporting
+     * a compile error for break/continue misuses inside closures).
+     */
+    private Statement replacementFor(final Statement statement) {
+        boolean isBreak = statement instanceof BreakStatement;
+        if (!isBreak && !(statement instanceof ContinueStatement)) return null;
+        if (closureDepth == 0) return null; // LabelVerifier's domain
+        if (loopDepth > 0 || (isBreak && switchDepth > 0)) return null; // bound to a real loop/switch in the closure
+
+        String kind = isBreak ? "break" : "continue";
+        String label = isBreak ? ((BreakStatement) statement).getLabel() : ((ContinueStatement) statement).getLabel();
+        if (label != null) {
+            addError("labeled " + kind + " is not allowed inside a closure", statement);
+            return null;
+        }
+        if (!eligibleClosures.contains(currentClosure)) {
+            addError(kind + " inside a closure is only allowed when the closure is a direct argument of a method call", statement);
+            return null;
+        }
+        currentClosure.putNodeMetaData(NonLocalControlFlowRewriter.class, Boolean.TRUE);
+        Statement replacement = throwS(propX(classX(LOOP_CONTROL_TYPE), isBreak ? "BREAK" : "CONTINUE"));
+        replacement.setSourcePosition(statement);
+        return replacement;
+    }
+
+    @Override
+    public void visitBlockStatement(final BlockStatement block) {
+        List<Statement> statements = block.getStatements();
+        for (int i = 0, n = statements.size(); i < n; i += 1) {
+            Statement replacement = replacementFor(statements.get(i));
+            if (replacement != null) statements.set(i, replacement);
+        }
+        super.visitBlockStatement(block);
+    }
+
+    @Override
+    public void visitIfElse(final IfStatement ifElse) {
+        Statement replacement = replacementFor(ifElse.getIfBlock());
+        if (replacement != null) ifElse.setIfBlock(replacement);
+        replacement = replacementFor(ifElse.getElseBlock());
+        if (replacement != null) ifElse.setElseBlock(replacement);
+        super.visitIfElse(ifElse);
+    }
+
+    @Override
+    public void visitForLoop(final ForStatement forLoop) {
+        loopDepth += 1;
+        try {
+            super.visitForLoop(forLoop);
+        } finally {
+            loopDepth -= 1;
+        }
+    }
+
+    @Override
+    public void visitWhileLoop(final WhileStatement loop) {
+        loopDepth += 1;
+        try {
+            super.visitWhileLoop(loop);
+        } finally {
+            loopDepth -= 1;
+        }
+    }
+
+    @Override
+    public void visitDoWhileLoop(final DoWhileStatement loop) {
+        loopDepth += 1;
+        try {
+            super.visitDoWhileLoop(loop);
+        } finally {
+            loopDepth -= 1;
+        }
+    }
+
+    @Override
+    public void visitSwitch(final SwitchStatement statement) {
+        switchDepth += 1;
+        try {
+            Statement replacement = replacementFor(statement.getDefaultStatement());
+            if (replacement != null) statement.setDefaultStatement(replacement);
+            super.visitSwitch(statement);
+        } finally {
+            switchDepth -= 1;
+        }
+    }
+
+    @Override
+    public void visitCaseStatement(final CaseStatement statement) {
+        Statement replacement = replacementFor(statement.getCode());
+        if (replacement != null) statement.setCode(replacement);
+        super.visitCaseStatement(statement);
+    }
+
+    @Override
+    public void visitTryCatchFinally(final TryCatchStatement statement) {
+        Statement replacement = replacementFor(statement.getTryStatement());
+        if (replacement != null) statement.setTryStatement(replacement);
+        for (CatchStatement catchStatement : statement.getCatchStatements()) {
+            replacement = replacementFor(catchStatement.getCode());
+            if (replacement != null) catchStatement.setCode(replacement);
+        }
+        replacement = replacementFor(statement.getFinallyStatement());
+        if (replacement != null) statement.setFinallyStatement(replacement);
+        super.visitTryCatchFinally(statement);
+    }
+
+    @Override
+    public void visitSynchronizedStatement(final SynchronizedStatement statement) {
+        Statement replacement = replacementFor(statement.getCode());
+        if (replacement != null) statement.setCode(replacement);
+        super.visitSynchronizedStatement(statement);
     }
 
     @Override
