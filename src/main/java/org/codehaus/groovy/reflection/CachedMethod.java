@@ -23,6 +23,7 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.CallSiteGenerator;
 import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
@@ -335,13 +336,23 @@ public class CachedMethod extends MetaMethod implements Comparable {
         }
 
         try {
-            return cachedMethod.invoke(object, arguments);
+            return normalizeBoxedReturn(cachedMethod.invoke(object, arguments));
         } catch (IllegalArgumentException | IllegalAccessException e) {
             throw new InvokerInvocationException(e);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             throw (cause instanceof RuntimeException && !(cause instanceof MissingMethodException)) ? (RuntimeException) cause : new InvokerInvocationException(e);
         }
+    }
+
+    /**
+     * Keeps reference identity ({@code ===}) of primitive returns consistent
+     * across dispatch paths (GROOVY-12140).
+     *
+     * @see MetaClassHelper#normalizeBoxedReturn(Object, Class)
+     */
+    private Object normalizeBoxedReturn(final Object value) {
+        return MetaClassHelper.normalizeBoxedReturn(value, cachedMethod.getReturnType());
     }
 
     private void makeAccessibleIfNecessary() {
