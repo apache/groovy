@@ -22,6 +22,7 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.lang.reflect.InvocationTargetException;
@@ -40,7 +41,8 @@ public abstract class PlainObjectMetaMethodSite extends MetaMethodSite {
 
     protected static Object doInvoke(Object receiver, Object[] args, Method reflect) throws Throwable {
         try {
-            return reflect.invoke(receiver, args);
+            // GROOVY-12140: keep === identity of primitive returns consistent
+            return MetaClassHelper.normalizeBoxedReturn(reflect.invoke(receiver, args), reflect.getReturnType());
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             if (cause instanceof GroovyRuntimeException) {
