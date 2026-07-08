@@ -646,6 +646,7 @@ statement
     |   tryCatchStatement                                                                                   #tryCatchStmtAlt
     |   SYNCHRONIZED expressionInPar nls block                                                              #synchronizedStmtAlt
     |   RETURN expression?                                                                                  #returnStmtAlt
+    |   RETURN AT identifier expression?                                                                    #returnAtStmtAlt
     |   THROW expression                                                                                    #throwStmtAlt
     |   breakStatement                                                                                      #breakStmtAlt
     |   continueStatement                                                                                   #continueStmtAlt

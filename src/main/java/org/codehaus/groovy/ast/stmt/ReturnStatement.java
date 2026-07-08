@@ -43,6 +43,14 @@ public class ReturnStatement extends Statement {
     private Expression expression;
 
     /**
+     * The optional non-local return target, i.e. the {@code name} in {@code return@name expr}.
+     * Null for an ordinary return.
+     *
+     * @since 6.0.0
+     */
+    private String target;
+
+    /**
      * Constructs a return statement from an expression statement by extracting its expression.
      *
      * @param statement the {@link ExpressionStatement} whose expression will be returned
@@ -79,9 +87,29 @@ public class ReturnStatement extends Statement {
         this.expression = expression;
     }
 
+    /**
+     * Returns the non-local return target for a {@code return@name expr} statement.
+     *
+     * @return the name of the enclosing method targeted by this return, or null for an ordinary return
+     * @since 6.0.0
+     */
+    public String getTarget() {
+        return target;
+    }
+
+    /**
+     * Sets the non-local return target, i.e. the {@code name} in {@code return@name expr}.
+     *
+     * @param target the name of the enclosing method targeted by this return
+     * @since 6.0.0
+     */
+    public void setTarget(final String target) {
+        this.target = target;
+    }
+
     @Override
     public String getText() {
-        return "return " + expression.getText();
+        return "return" + (target != null ? "@" + target : "") + " " + expression.getText();
     }
 
     /**
