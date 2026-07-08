@@ -20,6 +20,7 @@ package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
+import org.codehaus.groovy.runtime.ArrayTypeUtils;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -198,18 +199,25 @@ public class ParameterTypes {
             args[aCount] = Array.newInstance(vaType, 0);
             return args;
         } else if (aCount == pCount) {
-            // the number of arguments is correct, but if the last argument
-            // is no array we have to wrap it in an array; if last argument
-            // is null, then we don't have to do anything
+            // the number of arguments is correct, but unless the last argument
+            // is null or usable as the varargs array itself — assignable, or
+            // an array of the same dimension whose elements the argument
+            // coercion below can convert (e.g. Integer[] for int...) — it is a
+            // single element and has to be wrapped in an array; being an array
+            // is not sufficient: a byte[] passed to a byte[]... parameter is
+            // an element, not the byte[][] varargs array (GROOVY-11182, GROOVY-12139)
             var lastArgument = getArgClass(arguments[aCount - 1]);
-            if (lastArgument != null && !lastArgument.isArray()) {
+            var varargsType = paramTypes[pCount - 1].getTheClass();
+            if (lastArgument == null || varargsType.isAssignableFrom(lastArgument)
+                    || (lastArgument.isArray()
+                        && ArrayTypeUtils.dimension(lastArgument) == ArrayTypeUtils.dimension(varargsType))) {
+                // we may have to box the argument!
+                return unwrappedArguments;
+            } else {
                 Object[] args = new Object[pCount];
                 System.arraycopy(unwrappedArguments, 0, args, 0, pCount - 1);
                 args[pCount-1] = makeCommonArray(unwrappedArguments, pCount - 1, vaType);
                 return args;
-            } else {
-                // we may have to box the argument!
-                return unwrappedArguments;
             }
         } else if (aCount > pCount) {
             // wrap tail arguments in an array

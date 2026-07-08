@@ -18,20 +18,35 @@
  */
 package bugs
 
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy11182 {
+
+    private static final String SCRIPT = '''
+        def foo(byte[]... byteArrays) {
+            assert byteArrays.length == 1
+            assert byteArrays[0].length == 4
+        }
+
+        foo("test".bytes)
+    '''
+
     @Test
     void testVariadicPrimitiveArray() {
-        assertScript '''
-            def foo(byte[]... byteArrays) {
-                assert byteArrays.length == 1
-                assert byteArrays[0].length == 4
-            }
+        assertScript SCRIPT
+    }
 
-            foo("test".bytes)
-        '''
+    // GROOVY-12139: the classic call-site path dispatches through
+    // MetaMethod#doMethodInvoke, whose varargs correction used to pass any
+    // trailing array through unwrapped instead of wrapping it when it is not
+    // assignable to the varargs parameter type (byte[] into byte[][])
+    @Test
+    void testVariadicPrimitiveArrayClassic() {
+        def config = new CompilerConfiguration()
+        config.optimizationOptions.indy = false
+        new GroovyShell(config).evaluate SCRIPT
     }
 }
