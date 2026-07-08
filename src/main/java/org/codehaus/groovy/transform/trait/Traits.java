@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -319,21 +320,66 @@ public abstract class Traits {
         GenericsType[] typeArguments = trait.getGenericsTypes();
         if (helperClassNode != null) {
             helperClassNode = GenericsUtils.makeClassSafe0(helperClassNode, typeArguments);
-        } else { // GROOVY-7909: stub helper
-            helperClassNode = new ClassNode(
-                Traits.helperClassName(trait),
-                ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_SYNTHETIC,
-                ClassHelper.OBJECT_TYPE
-            ){{
-                isPrimaryNode = false;
-                setGenericsTypes(typeArguments);
-            }};
+        } else {
+            // GROOVY-7909, GROOVY-12117: stub the helper
+            helperClassNode = new HelperClassStub(trait);
+            helperClassNode.setGenericsTypes(typeArguments);
         }
         if (fieldHelperClassNode != null) {
             fieldHelperClassNode = GenericsUtils.makeClassSafe0(fieldHelperClassNode, typeArguments);
         }
 
         return new TraitHelpersTuple(helperClassNode, fieldHelperClassNode, staticFieldHelperClassNode);
+    }
+
+    /**
+     * GROOVY-7909, GROOVY-12117: When a co-compiled super trait hasn't yet been
+     * transformed, its helper is stubbed so the lowered static methods can be
+     * found. This keeps the rewrite independent of the order in which sibling
+     * traits are transformed (GEP-22 dispatch consistency); the helper resolves
+     * identically once every trait is lowered, so this only matters for the
+     * not-yet-lowered super trait.
+     */
+    private static class HelperClassStub extends ClassNode {
+
+        private final ClassNode trait;
+
+        @Override
+        public ClassNode getOuterClass() {
+            return trait;
+        }
+
+        HelperClassStub(final ClassNode trait) {
+            super(Traits.helperClassName(trait), ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE);
+            this.isPrimaryNode = false;
+            this.trait = trait;
+
+            for (MethodNode m : trait.getMethods()) {
+                if ((m.isPublic() || m.isPrivate()) && !m.isAbstract() && !m.isStaticConstructor()) {
+                    addMethod(helperMethod(m));
+                }
+            }
+        }
+
+        private MethodNode helperMethod(final MethodNode method) {
+            int mods = (method.isPublic() ? ACC_PUBLIC : ACC_PRIVATE) | ACC_STATIC;
+            var self = !method.isStatic() ? trait : GenericsUtils.makeClassSafe0(ClassHelper.CLASS_Type, new GenericsType(trait));
+
+            var methodParams = method.getParameters();
+            var helperParams = new Parameter[methodParams.length + 1];
+            helperParams[0] = new Parameter(self, "traitImplementer");
+            System.arraycopy(methodParams, 0, helperParams, 1, methodParams.length);
+
+            var m = new MethodNode(method.getName(), mods, method.getReturnType(), helperParams, method.getExceptions(), null);
+            for (AnnotationNode annotation : method.getAnnotations()) {
+                if (!annotation.getClassNode().equals(ClassHelper.OVERRIDE_TYPE)) {
+                    m.addAnnotation(annotation);
+                }
+            }
+            m.addAnnotation(Traits.IMPLEMENTED_CLASSNODE);
+            m.setGenericsTypes(method.getGenericsTypes());
+            return m;
+        }
     }
 
     /**
