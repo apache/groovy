@@ -47,6 +47,7 @@ import org.codehaus.groovy.syntax.Types;
 
 import java.util.Collection;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -214,6 +215,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     varX(weaved)
             ));
             mce.setImplicitThis(false);
+            mce.setMethodTarget(ClassHelper.CLOSURE_TYPE.getMethods("rehydrate").get(0));
             mce.setSourcePosition(exp);
             boolean oldInClosure = inClosure;
             inClosure = true;
@@ -360,22 +362,24 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             MethodNode methodNode = findConcreteMethod(traitClass, call.getMethodAsString());
             if (methodNode != null) {
                 MethodCallExpression newCall;
-                boolean virtual = !methodNode.getAnnotations(VIRTUAL_TYPE).isEmpty();
-                if (methodNode.isStatic() && !methodNode.isPrivate() && virtual && !inClosure) {
+                if (methodNode.isStatic() && !methodNode.isPrivate() && !inClosure && hasAnnotation(methodNode, VIRTUAL_TYPE)) {
                     // Default dispatch for trait static methods is
                     // declarer-bound; per-implementer override visibility
                     // is opt-in via `@Virtual`. Annotating a public trait
                     // static with @Virtual emits the dynamic-dispatch
                     // path so the implementer's override (if any) is
                     // visible from trait code.
-                    Expression implClass = ClassHelper.isClassType(weaved.getOriginType()) ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
-                    newCall = callX(implClass, method, transform(arguments));
+
+                    // GROOVY-11985: this.m(x) --> ($static$self or (Class)$self.getClass()).m(x)
+                    Expression selfClass = ClassHelper.isClassType(weaved.getOriginType()) ? varX(weaved) : castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(varX(weaved), "getClass"));
+                    newCall = callX(selfClass, method, transform(arguments));
                     newCall.setImplicitThis(false);
                     newCall.putNodeMetaData(TraitASTTransformation.DO_DYNAMIC, methodNode.getReturnType());
                 } else {
-                    // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
                     // Reached for: plain (non-@Virtual) static, private static,
                     // instance method, or any call inside a closure.
+
+                    // this.m(x) --> (this or T$Trait$Helper).m($self or $static$self or (Class)$self.getClass(), x)
                     Expression selfClassOrObject = methodNode.isStatic() && !ClassHelper.isClassType(weaved.getOriginType()) ? castX(ClassHelper.CLASS_Type.getPlainNodeReference(), callX(weaved, "getClass")) : weaved;
                     newCall = callX(!inClosure ? thisExpr : classX(traitHelper), method, createArgumentList(selfClassOrObject, arguments));
                 }
@@ -386,7 +390,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             }
         }
 
-        // this.m(x) --> ($self or $static$self).m(x)
+        // this.m(x) --> (this or $self or $static$self).m(x)
         MethodCallExpression newCall = callX(inClosure ? thisExpr : weaved, method, transform(arguments));
         newCall.setGenericsTypes(call.getGenericsTypes()); // GROOVY-11302: this.<T>m(x)
         newCall.setImplicitThis(inClosure ? call.isImplicitThis() : false);
