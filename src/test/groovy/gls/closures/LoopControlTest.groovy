@@ -184,8 +184,8 @@ final class LoopControlTest {
     }
 
     @Test
-    void testUncooperativeCalleeEscapesLoudly() {
-        assertScriptBoth '''
+    void testUncooperativeCalleeEscapesLoudlyWhenDynamic() {
+        assertScript '''
             import org.codehaus.groovy.runtime.LoopControl
 
             try {
@@ -195,6 +195,18 @@ final class LoopControlTest {
                 assert expected.message.contains('does not support loop control')
             }
         '''
+    }
+
+    @Test
+    void testUncooperativeCalleeIsCompileErrorUnderStaticTypeChecking() {
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            @groovy.transform.TypeChecked
+            void m() {
+                'x'.with { break }
+            }
+            m()
+        '''
+        assert err.message.contains('is not marked @SupportsLoopControl')
     }
 
     @Test
