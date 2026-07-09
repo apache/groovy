@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 
 final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
@@ -288,6 +289,8 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
     // GROOVY-11479
     @Test
+    @DisabledIfSystemProperty(named = 'groovy.target.lambda.hoist', matches = 'true',
+        disabledReason = 'inspects the pre-hoist generated lambda class (Foo$_lambda1); with GEP-27 hoisting the type annotation is carried on the enclosing-class $lambda$ method instead')
     void testTypeAnnotationsForLambda() {
         def bytecode = compile(classNamePattern: 'Foo\\$_lambda1', method: 'doCall', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }

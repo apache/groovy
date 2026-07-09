@@ -18,16 +18,25 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
 import org.codehaus.groovy.classgen.BytecodeSequence;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
@@ -39,10 +48,14 @@ import org.codehaus.groovy.classgen.asm.WriterControllerFactory;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GENERATED_LAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
@@ -62,6 +75,7 @@ import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
@@ -104,6 +118,11 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         // already implemented by the SAM target.
         ClassNode[] markers = collectLambdaMarkers(expression, functionalType);
         GeneratedLambda generatedLambda = getOrAddGeneratedLambda(expression, abstractMethod);
+
+        if (generatedLambda.isHoistedCapturing()) {
+            writeHoistedCapturingLambda(functionalType.redirect(), abstractMethod, generatedLambda, serializable, markers);
+            return;
+        }
 
         ensureDeserializeLambdaSupport(expression, functionalType, abstractMethod, generatedLambda, serializable);
         if (generatedLambda.isCapturing() && !isPreloadedLambdaReceiver(generatedLambda)) {
@@ -253,27 +272,204 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
     private GeneratedLambda getOrAddGeneratedLambda(final LambdaExpression expression, final MethodNode abstractMethod) {
         return generatedLambdas.computeIfAbsent(expression, expr -> {
+            // Build the lambda class first: this resolves capture/instance-member analysis correctly (a
+            // doCall on the lambda class sees the enclosing class as an outer), and makes doCall static iff
+            // the lambda is non-capturing.
             ClassNode lambdaClass = createLambdaClass(expr, ACC_FINAL | ACC_PUBLIC | ACC_STATIC, abstractMethod);
+            MethodNode lambdaMethod = getLambdaMethod(lambdaClass);
+
+            // Like Java, a non-capturing (static doCall), non-serializable lambda needs no generated class:
+            // hoist its static impl onto the enclosing class and bootstrap the metafactory directly against it.
+            // Opt-in (default off) while IDE/tooling compatibility is verified; set -Dgroovy.target.lambda.hoist=true.
+            // Only hoist lambdas sitting directly in a real method: a lambda inside a closure/lambda would be
+            // hoisted onto that generated function rather than a user class, so leave those as generated classes.
+            boolean baseHoistable = isLambdaHoistEnabled() && !controller.isInGeneratedFunction()
+                    && !expr.isSerializable() && !containsNestedFunction(expr.getCode());
+
+            if (baseHoistable && !requiresLambdaInstance(lambdaMethod)) {
+                MethodNode implMethod = hoistLambdaMethodToEnclosingClass(lambdaMethod);
+                return new GeneratedLambda(controller.getClassNode(), implMethod, null, Parameter.EMPTY_ARRAY, true, false, null);
+            }
+
+            // Capturing but needing no 'this': hoist onto the enclosing class as a static method taking the
+            // captured values as leading params, with the metafactory capturing them directly (like Java) -
+            // eliminating the lambda class, its instance, and the Reference wrapping. Read-only captures only.
+            Parameter[] shared = getStoredLambdaSharedVariables(expr);
+            if (baseHoistable && shared.length != 0 && !lambdaAnalyzer.accessesInstanceMembers(lambdaMethod)
+                    && !writesAnyCapture(lambdaMethod.getCode(), shared)) {
+                GeneratedLambda hoisted = hoistCapturingLambda(lambdaClass, lambdaMethod, shared);
+                if (hoisted != null) return hoisted;
+            }
+
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(GENERATED_LAMBDA_TYPE);
             lambdaClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
             lambdaClass.putNodeMetaData(WriterControllerFactory.class, (WriterControllerFactory) x -> controller);
-            MethodNode lambdaMethod = getLambdaMethod(lambdaClass);
             return new GeneratedLambda(
                 lambdaClass,
                 lambdaMethod,
                 getGeneratedConstructor(lambdaClass),
                 getStoredLambdaSharedVariables(expr),
                 !requiresLambdaInstance(lambdaMethod),
-                lambdaAnalyzer.accessesInstanceMembers(lambdaMethod)
+                lambdaAnalyzer.accessesInstanceMembers(lambdaMethod),
+                null
             );
         });
+    }
+
+    /**
+     * Re-homes a non-capturing lambda's already-prepared {@code static doCall} (types resolved, outer static
+     * references qualified) as a {@code private static} synthetic method on the enclosing class, so no per-lambda
+     * inner class is generated and the metafactory bootstraps directly against the enclosing class.
+     */
+    private MethodNode hoistLambdaMethodToEnclosingClass(final MethodNode lambdaMethod) {
+        MethodNode implMethod = new MethodNode(nextLambdaImplMethodName(),
+                ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, lambdaMethod.getReturnType(),
+                lambdaMethod.getParameters(), lambdaMethod.getExceptions(), lambdaMethod.getCode());
+        implMethod.setSourcePosition(lambdaMethod);
+        implMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        addGeneratedMethod(controller.getClassNode(), implMethod);
+        // Added after the ReturnAdder phase (an inner class would get it via full compilation), so wire the
+        // implicit return for an expression-bodied lambda here (idempotent when returns already present).
+        new org.codehaus.groovy.classgen.ReturnAdder().visitMethod(implMethod);
+        return implMethod;
+    }
+
+    /**
+     * Hoists a read-only capturing lambda onto the enclosing class as a static method taking the captured
+     * values as leading parameters. The lambda-class {@code doCall} already reads its captures from Reference
+     * fields (accessedVariable = FieldNode); repointing those accesses to plain value parameters makes codegen
+     * load the value directly, and the metafactory then captures the values as factory arguments.
+     */
+    private GeneratedLambda hoistCapturingLambda(final ClassNode lambdaClass, final MethodNode lambdaMethod, final Parameter[] shared) {
+        Parameter[] samParams = lambdaMethod.getParameters();
+        Parameter[] valueParams = new Parameter[shared.length];
+        Map<String, Parameter> byName = new HashMap<>();
+        for (int i = 0; i < shared.length; i++) {
+            Parameter p = new Parameter(shared[i].getOriginType(), shared[i].getName());
+            valueParams[i] = p;
+            byName.put(p.getName(), p);
+        }
+        Parameter[] implParams = new Parameter[valueParams.length + samParams.length];
+        System.arraycopy(valueParams, 0, implParams, 0, valueParams.length);
+        System.arraycopy(samParams, 0, implParams, valueParams.length, samParams.length);
+
+        Statement body = lambdaMethod.getCode();
+        rebindCapturedFieldsToValueParams(body, byName);
+
+        MethodNode implMethod = new MethodNode(nextLambdaImplMethodName(),
+                ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, lambdaMethod.getReturnType(),
+                implParams, lambdaMethod.getExceptions(), body);
+        implMethod.setSourcePosition(lambdaMethod);
+        implMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        addGeneratedMethod(controller.getClassNode(), implMethod);
+        new org.codehaus.groovy.classgen.ReturnAdder().visitMethod(implMethod);
+
+        // nonCapturing=true so no lambda instance is loaded; capturedValueParams drives the dedicated factory.
+        return new GeneratedLambda(controller.getClassNode(), implMethod, null, Parameter.EMPTY_ARRAY, true, false, valueParams);
+    }
+
+    /** Repoints captured Reference-field accesses in a hoisted body to plain value parameters. */
+    private static void rebindCapturedFieldsToValueParams(final Statement body, final Map<String, Parameter> valueParams) {
+        body.visit(new CodeVisitorSupport() {
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                Parameter p = valueParams.get(ve.getName());
+                if (p != null && ve.getAccessedVariable() instanceof FieldNode) {
+                    ve.setAccessedVariable(p);
+                    ve.setClosureSharedVariable(false);
+                }
+            }
+        });
+    }
+
+    /**
+     * True if the body assigns (or increments) a captured variable — such a lambda needs the shared Reference,
+     * so decline the value-capture hoist. Matched by name (conservative: never value-captures a mutated capture).
+     */
+    private static boolean writesAnyCapture(final Statement body, final Parameter[] shared) {
+        Set<String> names = new HashSet<>();
+        for (Parameter p : shared) names.add(p.getName());
+        boolean[] written = {false};
+        body.visit(new CodeVisitorSupport() {
+            @Override public void visitBinaryExpression(final BinaryExpression be) {
+                if (Types.isAssignment(be.getOperation().getType())) flagIfCaptured(be.getLeftExpression());
+                super.visitBinaryExpression(be);
+            }
+            @Override public void visitPostfixExpression(final PostfixExpression pe) { flagIfCaptured(pe.getExpression()); super.visitPostfixExpression(pe); }
+            @Override public void visitPrefixExpression(final PrefixExpression pe) { flagIfCaptured(pe.getExpression()); super.visitPrefixExpression(pe); }
+            private void flagIfCaptured(final Expression e) {
+                if (e instanceof VariableExpression && names.contains(((VariableExpression) e).getName())) {
+                    written[0] = true;
+                }
+            }
+        });
+        return written[0];
+    }
+
+    /**
+     * Emits the invokedynamic for a hoisted capturing lambda: push the captured values as metafactory factory
+     * arguments and bootstrap against the static impl method on the enclosing class (H_INVOKESTATIC).
+     */
+    private void writeHoistedCapturingLambda(final ClassNode functionalType, final MethodNode abstractMethod, final GeneratedLambda gl, final boolean serializable, final ClassNode[] markers) {
+        Parameter[] captured = gl.capturedValueParams();
+        for (Parameter p : captured) {
+            new VariableExpression(p.getName()).visit(controller.getAcg()); // load captured value (unwraps the Reference)
+            controller.getOperandStack().doGroovyCast(p.getType());
+        }
+        Parameter[] full = gl.lambdaMethod().getParameters();
+        Parameter[] samParams = Arrays.copyOfRange(full, captured.length, full.length);
+        writeFunctionalInterfaceIndy(
+            controller.getMethodVisitor(),
+            abstractMethod.getName(),
+            createFunctionalInterfaceFactoryDescriptor(functionalType, captured),
+            createMethodDescriptor(abstractMethod),
+            H_INVOKESTATIC,
+            controller.getClassNode(),
+            gl.lambdaMethod(),
+            samParams,
+            serializable,
+            markers);
+        controller.getOperandStack().replace(functionalType, captured.length);
     }
 
     /** {@inheritDoc} */
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         return staticTypesClosureWriter.createClosureClass(expression, modifiers);
+    }
+
+    private static boolean containsNestedFunction(final Statement code) {
+        if (code == null) return false;
+        boolean[] found = {false};
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitClosureExpression(final ClosureExpression e) { found[0] = true; }
+            @Override public void visitLambdaExpression(final LambdaExpression e) { found[0] = true; }
+        });
+        return found[0];
+    }
+
+    /**
+     * Whether non-capturing SAM lambdas are hoisted onto the enclosing class (no generated lambda class).
+     * Opt-in via {@code -Dgroovy.target.lambda.hoist=true} while IDE/tooling compatibility is verified;
+     * the property is read per lambda so it can be toggled without a JVM restart.
+     */
+    private static boolean isLambdaHoistEnabled() {
+        return SystemUtil.getBooleanSafe("groovy.target.lambda.hoist");
+    }
+
+    private int lambdaImplCounter;
+
+    private String nextLambdaImplMethodName() {
+        ClassNode enclosing = controller.getClassNode();
+        MethodNode enclosingMethod = controller.getMethodNode();
+        String owner = (enclosingMethod != null) ? enclosingMethod.getName().replace('<', '_').replace('>', '_') : "init";
+        String base = "$lambda$" + owner + "$" + (lambdaImplCounter++);
+        String name = base;
+        int extra = 0;
+        while (!enclosing.getMethods(name).isEmpty()) {
+            name = base + "$" + (extra++);
+        }
+        return name;
     }
 
     /**
@@ -419,10 +615,16 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
      */
     private record GeneratedLambda(ClassNode lambdaClass, MethodNode lambdaMethod, ConstructorNode constructor,
                                    Parameter[] sharedVariables, boolean nonCapturing,
-                                   boolean accessingInstanceMembers) {
+                                   boolean accessingInstanceMembers, Parameter[] capturedValueParams) {
 
         private boolean isCapturing() {
             return !nonCapturing;
+        }
+
+        /** Non-null when the lambda body is hoisted onto the enclosing class as a static method that takes the
+         *  captured values as leading parameters, and the metafactory captures those values directly. */
+        private boolean isHoistedCapturing() {
+            return capturedValueParams != null;
         }
 
         private int getImplMethodKind() {

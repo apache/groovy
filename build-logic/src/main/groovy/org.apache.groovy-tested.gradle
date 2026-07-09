@@ -80,6 +80,13 @@ tasks.withType(Test).configureEach {
     systemProperty 'http.agent',
         "Apache-Maven/3.9.14 (Java ${System.getProperty('java.version')}; ${System.getProperty('os.name')} ${System.getProperty('os.version')})"
     systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
+    // Forward the opt-in non-capturing lambda-hoist flag (GEP-27) to the test JVM so that the
+    // bytecode-shape tests, which assert the pre-hoist generated-class structure, skip under
+    // -P/-Dgroovy.target.lambda.hoist=true (see LambdaTest). Set only when present.
+    def lambdaHoist = findProperty('groovy.target.lambda.hoist') ?: System.getProperty('groovy.target.lambda.hoist')
+    if (lambdaHoist != null) {
+        systemProperty 'groovy.target.lambda.hoist', lambdaHoist
+    }
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperty 'groovy.testdb.props', testdb
