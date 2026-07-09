@@ -132,6 +132,23 @@ final class Groovy11985 {
     }
 
     @Test
+    void testSuperTraitPublicStaticIsPolymorphicSubTraitFirst() {
+        // As above, but the sub-trait is declared FIRST so it is lowered while
+        // the super-trait's helper is still a stub (GROOVY-12117). The stub must
+        // carry @Virtual, else dispatch silently falls back to declarer-bound and
+        // D.greet() returns 'base' instead of the implementer's 'override'.
+        GroovyAssert.assertScript '''
+            import groovy.transform.Virtual
+            trait Mid extends Base { static String greet() { hello() } }
+            trait Base { @Virtual static String hello() { 'base' } }
+            class C implements Mid {}
+            class D implements Mid { static String hello() { 'override' } }
+            assert C.greet() == 'base'
+            assert D.greet() == 'override'
+        '''
+    }
+
+    @Test
     void testPrivateStaticStillRoutesToHelper() {
         // Private statics are not composed onto the implementer, so they must
         // continue to dispatch directly to the helper. The override on the
