@@ -159,21 +159,27 @@ and [compilephase] is a valid Integer based org.codehaus.groovy.control.CompileP
         def writer = new StringBuilderWriter()
         def scriptName = 'script' + System.currentTimeMillis() + '.groovy'
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, '/groovy/script')
-        CompilationUnit cu = new CompilationUnit((CompilerConfiguration) (config ?: CompilerConfiguration.DEFAULT), (CodeSource) codeSource.codeSource, (GroovyClassLoader) classLoader ?: new GroovyClassLoader(this.class.classLoader))
-        cu.addPhaseOperation(new AstNodeToScriptVisitor(writer, showScriptFreeForm, showScriptClass), compilePhase)
-        cu.addSource(codeSource.getName(), script)
+        boolean ownLoader = classLoader == null
+        GroovyClassLoader loader = (GroovyClassLoader) classLoader ?: new GroovyClassLoader(this.class.classLoader)
         try {
-            cu.compile(compilePhase)
-        } catch (CompilationFailedException cfe) {
-            writer.println 'Unable to produce AST for this phase due to earlier compilation error:'
-            cfe.message.eachLine {
-                writer.println it
+            CompilationUnit cu = new CompilationUnit((CompilerConfiguration) (config ?: CompilerConfiguration.DEFAULT), (CodeSource) codeSource.codeSource, loader)
+            cu.addPhaseOperation(new AstNodeToScriptVisitor(writer, showScriptFreeForm, showScriptClass), compilePhase)
+            cu.addSource(codeSource.getName(), script)
+            try {
+                cu.compile(compilePhase)
+            } catch (CompilationFailedException cfe) {
+                writer.println 'Unable to produce AST for this phase due to earlier compilation error:'
+                cfe.message.eachLine {
+                    writer.println it
+                }
+                writer.println 'Fix the above error(s) and then press Refresh'
+            } catch (Throwable t) {
+                writer.println 'Unable to produce AST for this phase due to an error:'
+                writer.println t.getMessage()
+                writer.println 'Fix the above error(s) and then press Refresh'
             }
-            writer.println 'Fix the above error(s) and then press Refresh'
-        } catch (Throwable t) {
-            writer.println 'Unable to produce AST for this phase due to an error:'
-            writer.println t.getMessage()
-            writer.println 'Fix the above error(s) and then press Refresh'
+        } finally {
+            if (ownLoader) loader.close()
         }
         return writer.toString()
     }

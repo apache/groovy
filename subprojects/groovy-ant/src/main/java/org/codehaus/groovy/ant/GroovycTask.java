@@ -27,6 +27,7 @@ import org.apache.tools.ant.util.SourceFileScanner;
 import org.codehaus.groovy.control.CompilationUnit;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Compiles Groovy source files.
@@ -52,7 +53,7 @@ public class GroovycTask
      * Compiles the configured Groovy sources.
      */
     @Override
-    protected void compile() {
+    protected void compile() throws IOException {
         Path path = getClasspath();
         if (path != null) {
             config.setClasspath(path.toString());
@@ -60,58 +61,59 @@ public class GroovycTask
 
         config.setTargetDirectory(destdir);
 
-        GroovyClassLoader gcl = createClassLoader();
-        CompilationUnit compilation = new CompilationUnit(config, null, gcl);
+        try (GroovyClassLoader gcl = createClassLoader()) {
+            CompilationUnit compilation = new CompilationUnit(config, null, gcl);
 
-        GlobPatternMapper mapper = new GlobPatternMapper();
-        mapper.setFrom("*.groovy");
-        mapper.setTo("*.class");
+            GlobPatternMapper mapper = new GlobPatternMapper();
+            mapper.setFrom("*.groovy");
+            mapper.setTo("*.class");
 
-        int count = 0;
-        String[] list = src.list();
+            int count = 0;
+            String[] list = src.list();
 
-        for (String s : list) {
-            File basedir = getProject().resolveFile(s);
+            for (String s : list) {
+                File basedir = getProject().resolveFile(s);
 
-            if (!basedir.exists()) {
-                throw new BuildException("Source directory does not exist: " + basedir, getLocation());
+                if (!basedir.exists()) {
+                    throw new BuildException("Source directory does not exist: " + basedir, getLocation());
+                }
+
+                DirectoryScanner scanner = getDirectoryScanner(basedir);
+                String[] includes = scanner.getIncludedFiles();
+
+                if (force) {
+                    log.debug("Forcefully including all files from: " + basedir);
+
+                    for (String include : includes) {
+                        File file = new File(basedir, include);
+                        log.debug("    " + file);
+
+                        compilation.addSource(file);
+                        count++;
+                    }
+                } else {
+                    log.debug("Including changed files from: " + basedir);
+
+                    SourceFileScanner sourceScanner = new SourceFileScanner(this);
+                    File[] files = sourceScanner.restrictAsFiles(includes, basedir, destdir, mapper);
+
+                    for (File file : files) {
+                        log.debug("    " + file);
+
+                        compilation.addSource(file);
+                        count++;
+                    }
+                }
             }
 
-            DirectoryScanner scanner = getDirectoryScanner(basedir);
-            String[] includes = scanner.getIncludedFiles();
+            if (count > 0) {
+                log.info("Compiling " + count + " source file" + (count > 1 ? "s" : "") + " to " + destdir);
 
-            if (force) {
-                log.debug("Forcefully including all files from: " + basedir);
-
-                for (String include : includes) {
-                    File file = new File(basedir, include);
-                    log.debug("    " + file);
-
-                    compilation.addSource(file);
-                    count++;
-                }
-            } else {
-                log.debug("Including changed files from: " + basedir);
-
-                SourceFileScanner sourceScanner = new SourceFileScanner(this);
-                File[] files = sourceScanner.restrictAsFiles(includes, basedir, destdir, mapper);
-
-                for (File file : files) {
-                    log.debug("    " + file);
-
-                    compilation.addSource(file);
-                    count++;
-                }
+                compilation.compile();
             }
-        }
-
-        if (count > 0) {
-            log.info("Compiling " + count + " source file" + (count > 1 ? "s" : "") + " to " + destdir);
-
-            compilation.compile();
-        }
-        else {
-            log.info("No sources found to compile");
+            else {
+                log.info("No sources found to compile");
+            }
         }
     }
 }

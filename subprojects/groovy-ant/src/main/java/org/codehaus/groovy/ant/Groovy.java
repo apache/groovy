@@ -599,6 +599,10 @@ public class Groovy extends Java {
             groovy.resetLoadedClasses();
             groovy.getClassLoader().clearCache();
             if (contextClassLoader || maven) thread.setContextClassLoader(savedLoader);
+            try {
+                classLoader.close();
+            } catch (IOException ignore) {
+            }
         }
     }
 
