@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -43,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.GENERATED_LAMBDA_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
@@ -62,6 +65,7 @@ import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
@@ -253,12 +257,25 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
     private GeneratedLambda getOrAddGeneratedLambda(final LambdaExpression expression, final MethodNode abstractMethod) {
         return generatedLambdas.computeIfAbsent(expression, expr -> {
+            // Build the lambda class first: this resolves capture/instance-member analysis correctly (a
+            // doCall on the lambda class sees the enclosing class as an outer), and makes doCall static iff
+            // the lambda is non-capturing.
             ClassNode lambdaClass = createLambdaClass(expr, ACC_FINAL | ACC_PUBLIC | ACC_STATIC, abstractMethod);
+            MethodNode lambdaMethod = getLambdaMethod(lambdaClass);
+
+            // Like Java, a non-capturing (static doCall), non-serializable lambda needs no generated class:
+            // hoist its static impl onto the enclosing class and bootstrap the metafactory directly against it.
+            // Opt-in (default off) while IDE/tooling compatibility is verified; set -Dgroovy.target.lambda.hoist=true.
+            if (isLambdaHoistEnabled() && !requiresLambdaInstance(lambdaMethod)
+                    && !expr.isSerializable() && !containsNestedFunction(expr.getCode())) {
+                MethodNode implMethod = hoistLambdaMethodToEnclosingClass(lambdaMethod);
+                return new GeneratedLambda(controller.getClassNode(), implMethod, null, Parameter.EMPTY_ARRAY, true, false);
+            }
+
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(GENERATED_LAMBDA_TYPE);
             lambdaClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
             lambdaClass.putNodeMetaData(WriterControllerFactory.class, (WriterControllerFactory) x -> controller);
-            MethodNode lambdaMethod = getLambdaMethod(lambdaClass);
             return new GeneratedLambda(
                 lambdaClass,
                 lambdaMethod,
@@ -270,10 +287,62 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         });
     }
 
+    /**
+     * Re-homes a non-capturing lambda's already-prepared {@code static doCall} (types resolved, outer static
+     * references qualified) as a {@code private static} synthetic method on the enclosing class, so no per-lambda
+     * inner class is generated and the metafactory bootstraps directly against the enclosing class.
+     */
+    private MethodNode hoistLambdaMethodToEnclosingClass(final MethodNode lambdaMethod) {
+        MethodNode implMethod = new MethodNode(nextLambdaImplMethodName(),
+                ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, lambdaMethod.getReturnType(),
+                lambdaMethod.getParameters(), lambdaMethod.getExceptions(), lambdaMethod.getCode());
+        implMethod.setSourcePosition(lambdaMethod);
+        implMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        addGeneratedMethod(controller.getClassNode(), implMethod);
+        // Added after the ReturnAdder phase (an inner class would get it via full compilation), so wire the
+        // implicit return for an expression-bodied lambda here (idempotent when returns already present).
+        new org.codehaus.groovy.classgen.ReturnAdder().visitMethod(implMethod);
+        return implMethod;
+    }
+
     /** {@inheritDoc} */
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int modifiers) {
         return staticTypesClosureWriter.createClosureClass(expression, modifiers);
+    }
+
+    private static boolean containsNestedFunction(final Statement code) {
+        if (code == null) return false;
+        boolean[] found = {false};
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitClosureExpression(final ClosureExpression e) { found[0] = true; }
+            @Override public void visitLambdaExpression(final LambdaExpression e) { found[0] = true; }
+        });
+        return found[0];
+    }
+
+    /**
+     * Whether non-capturing SAM lambdas are hoisted onto the enclosing class (no generated lambda class).
+     * Opt-in via {@code -Dgroovy.target.lambda.hoist=true} while IDE/tooling compatibility is verified;
+     * the property is read per lambda so it can be toggled without a JVM restart.
+     */
+    private static boolean isLambdaHoistEnabled() {
+        return SystemUtil.getBooleanSafe("groovy.target.lambda.hoist");
+    }
+
+    private int lambdaImplCounter;
+
+    private String nextLambdaImplMethodName() {
+        ClassNode enclosing = controller.getClassNode();
+        MethodNode enclosingMethod = controller.getMethodNode();
+        String owner = (enclosingMethod != null) ? enclosingMethod.getName().replace('<', '_').replace('>', '_') : "init";
+        String base = "$lambda$" + owner + "$" + (lambdaImplCounter++);
+        String name = base;
+        int extra = 0;
+        while (!enclosing.getMethods(name).isEmpty()) {
+            name = base + "$" + (extra++);
+        }
+        return name;
     }
 
     /**
