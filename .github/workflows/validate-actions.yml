@@ -46,11 +46,26 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
-        # 'basic' uses the MIT-licensed, open-source cache provider; the default
-        # 'enhanced' provider (v6+) is proprietary (Gradle commercial Terms of Use)
+      # Restore-only (never saves): this job resolves just the plugin
+      # classpath + the validation task's deps — a small subset of the
+      # `build` lineage. If it saved, it could win the save race for a new
+      # key and pin a thin cache that groovy-build-test.yml could then not
+      # overwrite until the next key rotation. See groovy-build-test.yml
+      # (lts job) for the full caching rationale.
+      - name: "🗄 Restore Gradle dependencies (~/.gradle/caches/modules-2 + wrapper)"
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          cache-provider: basic
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+          key: gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
+          restore-keys: |
+            gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        # The action's own caching is disabled: dependency jars and wrapper
+        # dists are cached by the explicit branch-keyed step above instead.
+        with:
+          cache-disabled: true
       - name: Validate Actions
         run: ./gradlew validateActions --no-daemon
         timeout-minutes: 5

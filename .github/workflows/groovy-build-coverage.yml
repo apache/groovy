@@ -50,7 +50,8 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      # `setup-gradle` caches ~/.gradle/caches but NOT ~/.groovy/grapes,
+      # The Gradle dependency cache below covers ~/.gradle/caches/modules-2
+      # but NOT ~/.groovy/grapes,
       # which is where @Grab-resolved artifacts (used by tests like
       # GenericsSTCTest, MethodReferenceTest, …) land. Caching it makes
       # the build resilient to transient Maven Central / CDN outages:
@@ -68,11 +69,28 @@ jobs:
           key: ${{ runner.os }}-grape-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-grape-
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
-        # 'basic' uses the MIT-licensed, open-source cache provider; the default
-        # 'enhanced' provider (v6+) is proprietary (Gradle commercial Terms of Use)
+      # Cache downloaded dependency jars/poms + wrapper dists, keyed per
+      # branch; see groovy-build-test.yml (lts job) for the full rationale.
+      # The `coverage` key segment keeps a dedicated lineage: this job also
+      # resolves jacoco/sonar jars that no other workflow populates, and
+      # under the shared `build` key the faster-finishing groovy-build-test
+      # jobs would usually win the save race, pinning a cache without them.
+      # The `build` prefix below is a cold-start fallback only.
+      - name: "🗄 Cache Gradle dependencies (~/.gradle/caches/modules-2 + wrapper)"
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          cache-provider: basic
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+          key: gradle-deps-${{ runner.os }}-coverage-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
+          restore-keys: |
+            gradle-deps-${{ runner.os }}-coverage-${{ github.base_ref || github.ref_name }}-
+            gradle-deps-${{ runner.os }}-build-${{ github.base_ref || github.ref_name }}-
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        # The action's own caching is disabled: dependency jars and wrapper
+        # dists are cached by the explicit branch-keyed step above instead.
+        with:
+          cache-disabled: true
       - name: "🌡 Pre-warm @Grab artifacts via Maven"
         shell: bash
         run: |
