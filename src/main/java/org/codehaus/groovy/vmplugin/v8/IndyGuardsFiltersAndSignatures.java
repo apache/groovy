@@ -70,7 +70,7 @@ public class IndyGuardsFiltersAndSignatures {
             BEAN_CONSTRUCTOR_PROPERTY_SETTER,
             META_PROPERTY_GETTER,
             SLOW_META_CLASS_FIND,
-            MOP_GET, MOP_SET, SBA_SET_PROPERTY, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
+            MOP_GET, MOP_SET, SET_PROPERTY, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
             INTERCEPTABLE_INVOKER,
             BOOLEAN_IDENTITY, CLASS_FOR_NAME,
             DTT_CAST_TO_TYPE, SAM_CONVERSION,
@@ -99,7 +99,7 @@ public class IndyGuardsFiltersAndSignatures {
             SLOW_META_CLASS_FIND                 = LOOKUP.findStatic (InvokerHelper.class, "getMetaClass", MethodType.methodType(MetaClass.class, Object.class));
             MOP_GET                              = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
             MOP_SET                              = LOOKUP.findVirtual(MetaObjectProtocol.class, "setProperty", MethodType.methodType(void.class, Object.class, String.class, Object.class));
-            SBA_SET_PROPERTY                     = LOOKUP.findStatic (ScriptBytecodeAdapter.class, "setProperty", MethodType.methodType(void.class, Object.class, Class.class, Object.class, String.class));
+            SET_PROPERTY                         = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "setProperty", MethodType.methodType(void.class, String.class, Class.class, Object.class, Object.class));
             MOP_INVOKE_CONSTRUCTOR               = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", MethodType.methodType(Object.class, Object[].class));
             MOP_INVOKE_METHOD                    = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
             INTERCEPTABLE_INVOKER                = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
@@ -122,6 +122,21 @@ public class IndyGuardsFiltersAndSignatures {
      * Constant handle that always returns {@code null}.
      */
     protected static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
+
+    /**
+     * Adapter shim for the non-fast-path property write of the indy
+     * {@code SetPropertySelector}. The parameter order — {@code name},
+     * {@code sender}, {@code receiver}, {@code value} — is chosen so that
+     * binding the compile-time-known {@code name} and {@code sender} as a
+     * leading prefix with a single {@link MethodHandles#insertArguments} call
+     * leaves exactly the call-site shape {@code (receiver, value)void}, with no
+     * permute required. For now it just reorders into
+     * {@link ScriptBytecodeAdapter#setProperty}; this is also the natural seam
+     * for inlining that resolution logic in the future.
+     */
+    public static void setProperty(String name, Class<?> sender, Object receiver, Object value) throws Throwable {
+        ScriptBytecodeAdapter.setProperty(value, sender, receiver, name);
+    }
 
     /**
      * This method is called by the handle to realize the bean constructor

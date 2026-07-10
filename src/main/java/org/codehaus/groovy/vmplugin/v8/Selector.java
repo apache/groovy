@@ -85,7 +85,6 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MET
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_METHOD_INVOKER;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_PROPERTY_GETTER;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_GET;
-import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SBA_SET_PROPERTY;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NON_NULL;
@@ -94,6 +93,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_MC;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM_CONVERSION;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SET_PROPERTY;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_EXCEPTION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.unwrap;
@@ -461,6 +461,8 @@ public abstract class Selector {
      */
     private static class SetPropertySelector extends MethodSelector {
 
+        private static final Class<?>[] SET_PROPERTY_PARAMS = {String.class, Object.class};
+
         public SetPropertySelector(CacheableCallSite callSite, Class<?> sender, String propertyName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
             super(callSite, sender, propertyName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
@@ -532,8 +534,6 @@ public abstract class Selector {
             // otherwise (no meta property, listeners, expando, propertyMissing, ...): adapter path
         }
 
-        private static final Class<?>[] SET_PROPERTY_PARAMS = {String.class, Object.class};
-
         /**
          * Mirrors the receiver test of {@code ScriptBytecodeAdapter#setProperty}:
          * a {@code GroovyObject} whose {@code setProperty} is a real compiled
@@ -587,11 +587,9 @@ public abstract class Selector {
             if (handle != null) return;
             useMetaClass = true;
             if (LOG_ENABLED) LOG.info("set adapter invocation path for property set.");
-            // SBA_SET_PROPERTY: (Object value, Class sender, Object receiver, String name)void
-            MethodHandle sba = MethodHandles.insertArguments(SBA_SET_PROPERTY, 1, sender);
-            sba = MethodHandles.insertArguments(sba, 2, name); // -> (Object value, Object receiver)void
-            handle = MethodHandles.permuteArguments(sba,
-                    MethodType.methodType(void.class, Object.class, Object.class), 1, 0); // -> (receiver, value)void
+            // SET_PROPERTY: (String name, Class sender, Object receiver, Object value)void
+            // binding the name/sender prefix leaves the call-site shape (receiver, value)void
+            handle = MethodHandles.insertArguments(SET_PROPERTY, 0, name, sender);
         }
     }
 
