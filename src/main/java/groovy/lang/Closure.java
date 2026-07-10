@@ -33,6 +33,8 @@ import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.ConcurrentSoftCache;
 import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
+import org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -604,7 +606,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private boolean nonStockMetaClass() {
         MetaClass mc = super.getMetaClass();
         Class<?> mcClass = (mc == null) ? null : mc.getClass();
-        return mcClass != org.codehaus.groovy.runtime.metaclass.ClosureMetaClass.class && mcClass != MetaClassImpl.class;
+        return mcClass != ClosureMetaClass.class && mcClass != MetaClassImpl.class
+                && mcClass != PackedClosureMetaClass.class;
     }
 
     @Override

@@ -21,8 +21,10 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 import org.junit.jupiter.api.RepeatedTest
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 
 import static org.junit.jupiter.api.Assertions.fail
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 final class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
@@ -51,6 +53,8 @@ final class ReproducibleBytecodeBugs extends StaticTypeCheckingTestCase implemen
     }
 
     // GROOVY-8148
+    @DisabledIfSystemProperty(named = CompilerConfiguration.CLOSURE_PACKING, matches = 'true',
+        disabledReason = 'asserts the pre-pack generated closure-class bytecode shape; superseded when GEP-27 closure packing is enabled')
     @RepeatedTest(100)
     void testShouldAlwaysAddClosureSharedVariablesInSameOrder() {
         assertScript '''

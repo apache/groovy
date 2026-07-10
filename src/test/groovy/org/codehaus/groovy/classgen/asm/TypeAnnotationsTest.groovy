@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
@@ -270,6 +271,8 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
     // GROOVY-11479
     @Test
+    @DisabledIfSystemProperty(named = CompilerConfiguration.CLOSURE_PACKING, matches = 'true',
+        disabledReason = 'asserts the pre-pack generated closure-class bytecode shape; superseded when GEP-27 closure packing is enabled')
     void testTypeAnnotationsForClosure() {
         def bytecode = compile(classNamePattern: 'Foo\\$_closure1', method: 'doCall', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
@@ -289,7 +292,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
     // GROOVY-11479
     @Test
-    @DisabledIfSystemProperty(named = 'groovy.target.lambda.hoist', matches = 'true',
+    @DisabledIfSystemProperty(named = CompilerConfiguration.LAMBDA_HOISTING, matches = 'true',
         disabledReason = 'inspects the pre-hoist generated lambda class (Foo$_lambda1); with GEP-27 hoisting the type annotation is carried on the enclosing-class $lambda$ method instead')
     void testTypeAnnotationsForLambda() {
         def bytecode = compile(classNamePattern: 'Foo\\$_lambda1', method: 'doCall', imports + '''

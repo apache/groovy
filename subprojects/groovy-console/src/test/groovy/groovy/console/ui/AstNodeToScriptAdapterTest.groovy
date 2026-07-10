@@ -1367,4 +1367,22 @@ b $$v"""/$,
         // the closure class does not exist yet, so nothing is rendered
         assert !compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS).contains('/* => ')
     }
+
+    @Test
+    void testPackedClosureShowsHoistedMethodInsteadOfClass() {
+        String script = '''
+            @groovy.transform.PackedClosures
+            class Demo {
+                def packs() { [1, 2].each { it * 2 } }
+                def declines() { [1, 2].each { delegate.hashCode() } }
+            }
+        '''
+        String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
+        // a packed closure has no generated class, so it is marked with the hoisted method it became
+        // (trailing () distinguishes it from a class); a closure that declines packing (here, because
+        // it uses delegate) keeps its generated closure class and is marked with that name
+        assert result.contains('/* => Demo.$packed$closure$0() */')
+        assert result.contains('/* => Demo$_declines_closure1 */')
+    }
 }

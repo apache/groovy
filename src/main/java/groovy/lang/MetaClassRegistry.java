@@ -19,7 +19,9 @@
 package groovy.lang;
 
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.PackedClosure;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
+import org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass;
 
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
@@ -167,7 +169,14 @@ public interface MetaClassRegistry {
          * @return the default meta class implementation for the type
          */
         protected MetaClass createNormalMetaClass(Class theClass,MetaClassRegistry registry) {
-            if (GeneratedClosure.class.isAssignableFrom(theClass)) {
+            if (PackedClosure.class.isAssignableFrom(theClass)) {
+                // the packed adapter family shares its dispatch machinery, so it gets its own
+                // metaclass with reflection-free call/doCall dispatch and instance-faithful
+                // introspection. Checked before GeneratedClosure: the fixed-arity members carry
+                // that marker (for class-level arity introspection) but must not fall into
+                // ClosureMetaClass, whose reflective dispatch assumes per-literal classes.
+                return new PackedClosureMetaClass(registry, theClass);
+            } else if (GeneratedClosure.class.isAssignableFrom(theClass)) {
                 return new ClosureMetaClass(registry,theClass);
             } else {
                 return new MetaClassImpl(registry, theClass);
