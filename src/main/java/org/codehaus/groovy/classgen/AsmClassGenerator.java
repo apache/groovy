@@ -435,6 +435,9 @@ public class AsmClassGenerator extends ClassGenerator {
                     MopWriter mopWriter = mopWriterFactory.create(controller);
                     mopWriter.createMopMethods();
                     controller.getCallSiteWriter().generateCallSiteArray();
+                    // GROOVY-12151: after every method (including hoisted bodies added during the
+                    // visit) has claimed its id, render the class's packed-closure dispatch table
+                    controller.getClosureWriter().writePackedDispatcher();
                     createSyntheticStaticFields();
                 }
             }

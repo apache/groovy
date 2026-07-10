@@ -18,12 +18,17 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import groovy.transform.PackedClosures.PackMode;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -32,42 +37,74 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.MethodVisitor;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_RETURN_TYPE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.AALOAD;
+import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ANEWARRAY;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.ATHROW;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.GETFIELD;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ILOAD;
+import static org.objectweb.asm.Opcodes.ISHR;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 
@@ -94,6 +131,52 @@ public class ClosureWriter {
     /** The controller coordinating all bytecode writers for the current class. */
     protected final WriterController controller;
     private final Map<Expression, ClassNode> closureClasses = new HashMap<>();
+    // Closures found in a syntactic position that lets them outlive the method are cached per method.
+    private final Map<MethodNode, Set<ClosureExpression>> escapingClosuresByMethod = new HashMap<>();
+    // Closure literals visibly bound for serialization (cast/coerced to Serializable, or passed
+    // directly to writeObject), cached per method like the escape gate above.
+    private final Map<MethodNode, Set<ClosureExpression>> serializationBoundByMethod = new HashMap<>();
+    // Names assigned anywhere in a method (excluding declarations), cached per method: a capture must
+    // be Reference-threaded if it is written ANYWHERE in the enclosing method, not just inside the
+    // closure -- e.g. `def fib; fib = { n -> ... fib(n-1) ... }` writes fib after the closure is
+    // constructed, so a by-value capture would see the stale (null) value.
+    private final Map<MethodNode, Set<String>> writtenNamesByMethod = new HashMap<>();
+
+    /** Name prefix of the synthetic methods holding hoisted closure bodies. */
+    private static final String PACKED_METHOD_PREFIX = "$packed$closure$";
+
+    // The class's registered dispatch targets (hoisted closure bodies), in id order. Kept as node
+    // metadata on the CLASS, not on this writer: in a class mixing dynamic and @CompileStatic methods
+    // the controller routes closures to two different ClosureWriter instances (see
+    // StaticTypesWriterController#getClosureWriter), and both must share one id space. The end-of-class
+    // hook (writePackedDispatcher) turns the list into the class's GeneratedDispatcher table.
+    private static final String PACKED_TARGETS = "org.codehaus.groovy.classgen.asm.ClosureWriter.packedTargets";
+    private static final String DISPATCHER_TYPE = "org/codehaus/groovy/runtime/GeneratedDispatcher";
+    private static final String BUNDLE_TYPE = DISPATCHER_TYPE + "$Bundle";
+    // The general table covers every target via a packed argument array; the per-arity tables
+    // cover the hot one/two-value shapes with plain parameters (no array to allocate or escape).
+    private static final String DISPATCH_METHOD = org.codehaus.groovy.runtime.GeneratedDispatcher.TABLE_METHOD;
+    private static final String DISPATCH_DESC = "(I[Ljava/lang/Object;)Ljava/lang/Object;";
+    private static final String DISPATCH1_METHOD = org.codehaus.groovy.runtime.GeneratedDispatcher.TABLE1_METHOD;
+    private static final String DISPATCH1_DESC = "(ILjava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
+    private static final String DISPATCH2_METHOD = org.codehaus.groovy.runtime.GeneratedDispatcher.TABLE2_METHOD;
+    private static final String DISPATCH2_DESC = "(ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
+    // The accessor's single invokedynamic site links all three tables through
+    // GeneratedDispatcher.bootstrap into one constant Bundle, lazily on first adapter creation.
+    private static final String DISPATCHERS_GETTER = "$getPackedDispatchers$";
+    private static final String DISPATCHERS_GETTER_DESC = "()L" + BUNDLE_TYPE + ";";
+    // Max tableswitch cases per dispatch method (power of two: the two-level entry method selects a
+    // chunk with a shift); sized so a full chunk stays well under the JIT's 325-byte inlining budget.
+    private static final int DISPATCH_CHUNK = 8;
+
+    private static List<MethodNode> packedTargets(final ClassNode classNode) {
+        List<MethodNode> targets = classNode.getNodeMetaData(PACKED_TARGETS);
+        if (targets == null) {
+            targets = new ArrayList<>();
+            classNode.putNodeMetaData(PACKED_TARGETS, targets);
+        }
+        return targets;
+    }
 
     /**
      * Creates a closure writer with the given controller.
@@ -110,6 +193,17 @@ public class ClosureWriter {
      * @param expression the closure expression
      */
     public void writeClosure(final ClosureExpression expression) {
+        // @PackedClosures spike: for an eligible top-level closure in a @PackedClosures scope, hoist the
+        // body to a method on the enclosing class and emit a shared PackedClosure adapter, instead of
+        // generating a per-closure inner class. Captured variables are threaded by value. Closures nested
+        // inside another closure are left alone (their enclosing context is a generated function, not the
+        // owner class), as are closures needing real Closure semantics.
+        if (chooseStrategy(expression) == PackStrategy.PACKED_ADAPTER) {
+            writePackedClosure(expression);
+            return;
+        }
+        reportUnpacked(expression); // @PackedClosures(mode = WARN | STRICT) diagnostics for declines
+
         CompileStack compileStack = controller.getCompileStack();
         MethodVisitor mv = controller.getMethodVisitor();
         ClassNode classNode = controller.getClassNode();
@@ -156,6 +250,849 @@ public class ClosureWriter {
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
         mv.visitMethodInsn(INVOKESPECIAL, closureClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams), false);
         controller.getOperandStack().replace(ClassHelper.CLOSURE_TYPE, localVariableParams.length);
+    }
+
+    /**
+     * GEP-27 capability analysis: choose the compilation strategy for a closure literal.
+     * <p>
+     * A closure is packed (S1, {@link PackStrategy#PACKED_ADAPTER}) when it is <em>triggered</em> —
+     * either the enclosing scope opts in via {@code @PackedClosures} (the dynamic trust path), or the
+     * capability analysis <em>proves</em> it delegate-independent under {@code @CompileStatic} (the
+     * automatic path, see {@link #isDelegateIndependent}) — and it is in a packable position:
+     * it needs no real {@code Closure} semantics we cannot reproduce ({@link #isPackable}), it is
+     * written directly in a method rather than nested in another closure (owner-retargeting for
+     * nested closures is later work), and it does not visibly escape its method. Otherwise it stays a
+     * full generated class (S0, {@link PackStrategy#FULL_CLASS}) exactly as today.
+     */
+    private PackStrategy chooseStrategy(final ClosureExpression expression) {
+        if (!isPackable(expression)) return PackStrategy.FULL_CLASS;
+        // The most-specific @PackedClosures mode in scope (method wins over class), or null if not
+        // annotated. DISABLED is a fine-grained opt-out that beats an enclosing opt-in AND the flag.
+        PackMode mode = annotatedMode();
+        if (mode == PackMode.DISABLED) return PackStrategy.FULL_CLASS;
+        boolean annotated = (mode != null); // LENIENT/WARN/STRICT all opt in (DISABLED handled above)
+        if (!isPackTriggered(expression, annotated)) return PackStrategy.FULL_CLASS;
+        if (controller.isInGeneratedFunction()) return PackStrategy.FULL_CLASS;
+        if (escapesEnclosingMethod(expression)) return PackStrategy.FULL_CLASS;
+        if (serializationBound(expression)) return PackStrategy.FULL_CLASS;
+        return PackStrategy.PACKED_ADAPTER;
+    }
+
+    /**
+     * Whether a packable, non-escaping closure literal should actually be packed. Dynamic compilation
+     * has no proof of delegate-independence, so the only trigger is the {@code @PackedClosures} trust
+     * assertion; {@code StaticTypesClosureWriter} overrides this to add the
+     * {@code groovy.target.closure.pack} flag and the delegate-independence proof.
+     *
+     * @param annotated whether a non-DISABLED {@code @PackedClosures} is in scope
+     */
+    protected boolean isPackTriggered(final ClosureExpression expression, final boolean annotated) {
+        if (annotated) return true;
+        // Dynamic compilation has no delegate-independence proof from the type checker, so the
+        // annotation is normally the only trigger. But a closure with NO free names -- no
+        // implicit-this call, no unqualified/dynamic variable -- cannot be affected by any
+        // caller-set delegate at all, so it is delegate-independent by syntax alone, no types
+        // needed. The flag auto-packs exactly that provably-safe subset (GROOVY-12151 dynamic
+        // syntactic path); a set delegate on such a closure is a harmless no-op, so it needs no
+        // strict runtime guard (marked here for writePackedClosure).
+        if (SystemUtil.getBooleanSafe("groovy.target.closure.pack") && isSyntacticallyDelegateIndependent(expression)) {
+            expression.putNodeMetaData(SYNTACTIC_PACK, Boolean.TRUE);
+            return true;
+        }
+        return false;
+    }
+
+    /** Metadata marking a closure packed because it is syntactically delegate-independent (no strict guard). */
+    private static final String SYNTACTIC_PACK = "org.codehaus.groovy.classgen.asm.ClosureWriter.syntacticPack";
+
+    /**
+     * Whether the closure's body contains no name a caller-set delegate could intercept — no
+     * implicit-this method call or property access, and no unqualified/dynamic variable (a free
+     * name the runtime would resolve through the owner/delegate chain). Only parameters, locals,
+     * captured variables, constants and explicit/parameter receivers remain, none of which a
+     * delegate can touch, so such a closure is delegate-independent by construction regardless of
+     * types. Nested closures are walked too (a free name anywhere carries the delegate chain).
+     * Conservative: any doubt returns {@code false} (keep the closure as a class).
+     */
+    private boolean isSyntacticallyDelegateIndependent(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        boolean[] dependent = {false};
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                if (call.isImplicitThis()) dependent[0] = true; // foo() -> could be a delegate method
+                super.visitMethodCallExpression(call);
+            }
+            @Override public void visitPropertyExpression(final PropertyExpression pexp) {
+                if (pexp.isImplicitThis()) dependent[0] = true; // bar -> could be a delegate property
+                super.visitPropertyExpression(pexp);
+            }
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                if (ve.getAccessedVariable() instanceof DynamicVariable) dependent[0] = true; // free name
+                super.visitVariableExpression(ve);
+            }
+        });
+        return !dependent[0];
+    }
+
+    /**
+     * A trigger-specific decline reason for {@link #declineReason}, or {@code null} if the trigger did
+     * not decline this closure. Only the static writer has one (a delegate-resolved body); the dynamic
+     * path trusts the annotation and never declines on trigger grounds.
+     */
+    protected String triggerDeclineReason(final ClosureExpression expression) {
+        return null;
+    }
+
+    /** Whether the hoisted body is compiled statically (true only for {@code @CompileStatic}). */
+    protected boolean compilesHoistedBodyStatically() {
+        return false;
+    }
+
+    /**
+     * Whether the packed adapter installs the runtime delegate guard. The dynamic trust path needs it
+     * (an unverifiable assertion must fail fast on misuse); the static writer proved independence, so
+     * it overrides this to {@code false} and a caller-set delegate is then stored and ignored.
+     */
+    protected boolean packedClosureUsesDelegateGuard() {
+        return true;
+    }
+
+    /** The closure's inferred return type, normalised the same way {@code createClosureClass} does for doCall. */
+    private static ClassNode inferredClosureReturnType(final ClosureExpression expression) {
+        ClassNode returnType = expression.getNodeMetaData(INFERRED_RETURN_TYPE);
+        if (returnType == null) returnType = ClassHelper.OBJECT_TYPE;
+        else if (returnType.isPrimaryClassNode()) returnType = returnType.getPlainNodeReference();
+        else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
+        else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
+        return returnType;
+    }
+
+    /**
+     * The erasure of a captured variable's type, safe to declare on the hoisted method: generic
+     * placeholders are replaced by their bound (the hoisted method does not declare the enclosing
+     * method's type variables) and type arguments are dropped ({@code List<T>} → {@code List}).
+     */
+    private static ClassNode erasedType(final ClassNode type) {
+        ClassNode t = type;
+        if (t == null) return ClassHelper.OBJECT_TYPE;
+        if (t.isGenericsPlaceHolder()) t = t.redirect();
+        return t.getPlainNodeReference();
+    }
+
+    /**
+     * Reports a top-level closure that was NOT packed, per the {@code mode} of the enclosing
+     * {@code @PackedClosures} annotation (WARN => compiler warning, STRICT => compiler error). Only the
+     * annotation opts in; the automatic {@code groovy.target.closure.pack} path is always lenient. A
+     * nested closure is a structural decline (its enclosing context is a generated function, not the
+     * owner class), so it is not reported.
+     */
+    private void reportUnpacked(final ClosureExpression expression) {
+        if (controller.isInGeneratedFunction()) return;
+        PackMode mode = annotatedMode();
+        // LENIENT/DISABLED are both silent -- DISABLED asked NOT to pack, so a decline is expected
+        if (mode == null || mode == PackMode.LENIENT || mode == PackMode.DISABLED) return;
+        String msg = "@PackedClosures: closure was not packed -- " + declineReason(expression);
+        if (mode == PackMode.STRICT) {
+            controller.getSourceUnit().getErrorCollector()
+                    .addErrorAndContinue(msg, expression, controller.getSourceUnit());
+        } else {
+            // WARN is opt-in, so emit at LIKELY_ERRORS to show at the default warning level (the plain
+            // addWarning(text, node) uses POSSIBLE_ERRORS, which the default level suppresses). groovyc
+            // surfaces collected warnings on success since GROOVY-12132; Gradle/IDEs already do.
+            controller.getSourceUnit().addWarning(WarningMessage.LIKELY_ERRORS, msg, expression);
+        }
+    }
+
+    /** The most specific {@code @PackedClosures} mode in scope (method wins over class), or null if not annotated. */
+    private PackMode annotatedMode() {
+        MethodNode m = controller.getMethodNode();
+        PackMode mode = (m != null) ? packModeOf(m.getAnnotations()) : null;
+        if (mode != null) return mode;
+        for (ClassNode c = controller.getClassNode(); c != null; c = c.getOuterClass()) {
+            mode = packModeOf(c.getAnnotations());
+            if (mode != null) return mode;
+        }
+        return null;
+    }
+
+    /** The mode of a {@code @PackedClosures} in the given set (LENIENT if present without an explicit mode), or null. */
+    private static PackMode packModeOf(final List<AnnotationNode> annotations) {
+        for (AnnotationNode a : annotations) {
+            if (a.getClassNode() != null && "groovy.transform.PackedClosures".equals(a.getClassNode().getName())) {
+                Expression member = a.getMember("mode");
+                if (member instanceof PropertyExpression) {
+                    try {
+                        return PackMode.valueOf(((PropertyExpression) member).getPropertyAsString());
+                    } catch (IllegalArgumentException ignore) {
+                        // malformed member; treat as the default
+                    }
+                }
+                return PackMode.LENIENT;
+            }
+        }
+        return null;
+    }
+
+    /** Why {@link #chooseStrategy} declined this (packable, top-level) closure -- the message WARN/STRICT report. */
+    private String declineReason(final ClosureExpression expression) {
+        if (!isPackable(expression)) {
+            return "it needs a real Closure (uses owner/delegate/thisObject/resolveStrategy/super or metaClass, "
+                    + "has default parameter values, or contains an anonymous inner class)";
+        }
+        String triggerReason = triggerDeclineReason(expression);
+        if (triggerReason != null) return triggerReason;
+        if (escapesEnclosingMethod(expression)) {
+            return "it escapes its method (returned, stored to a field/property/index, appended, or in a collection literal)";
+        }
+        if (serializationBound(expression)) {
+            return "it is visibly serialization-bound (cast or coerced to a Serializable type, or passed directly "
+                    + "to writeObject) and packed closures are not serializable";
+        }
+        return "it is not eligible for packing in this scope";
+    }
+
+    /**
+     * Conservative compile-time escape gate. A packed closure is bound to the owner and backed by a
+     * shared adapter that fails fast if a delegate is later set on it. To avoid that surprise for the
+     * clearest cases, decline (keep a real closure class for) a closure literal that visibly escapes
+     * the method it is written in: stored into a field/property/index (e.g. {@code attrs.optionValue =
+     * { ... }}), returned, appended with {@code <<}, or placed in a list/map literal. Transitive escapes
+     * (via a local that is later returned) are intentionally not chased here; the runtime guard remains
+     * the backstop for those.
+     */
+    private boolean escapesEnclosingMethod(final ClosureExpression expression) {
+        MethodNode m = controller.getMethodNode();
+        if (m == null || m.getCode() == null) return false;
+        return escapingClosuresByMethod
+                .computeIfAbsent(m, k -> collectEscapingClosures(k.getCode()))
+                .contains(expression);
+    }
+
+    private static Set<ClosureExpression> collectEscapingClosures(final Statement code) {
+        Set<ClosureExpression> escaping = Collections.newSetFromMap(new IdentityHashMap<>());
+        code.visit(new CodeVisitorSupport() {
+            private void mark(final Expression e) {
+                if (e instanceof ClosureExpression) escaping.add((ClosureExpression) e);
+            }
+            @Override public void visitReturnStatement(final ReturnStatement statement) {
+                mark(statement.getExpression());
+                super.visitReturnStatement(statement);
+            }
+            @Override public void visitBinaryExpression(final BinaryExpression be) {
+                int op = be.getOperation().getType();
+                if (op == Types.EQUAL && !isLocalTarget(be.getLeftExpression())) {
+                    mark(be.getRightExpression());          // assigned to a field/property/index
+                } else if (op == Types.LEFT_SHIFT) {
+                    mark(be.getRightExpression());          // appended, e.g. list << { ... }
+                }
+                super.visitBinaryExpression(be);
+            }
+            @Override public void visitListExpression(final ListExpression le) {
+                le.getExpressions().forEach(this::mark);
+                super.visitListExpression(le);
+            }
+            @Override public void visitMapEntryExpression(final MapEntryExpression me) {
+                mark(me.getValueExpression());
+                super.visitMapEntryExpression(me);
+            }
+        });
+        return escaping;
+    }
+
+    /** True when an assignment target is a plain local variable (not a field/property that escapes). */
+    private static boolean isLocalTarget(final Expression lhs) {
+        if (!(lhs instanceof VariableExpression)) return false;   // property/field/index target
+        Variable v = ((VariableExpression) lhs).getAccessedVariable();
+        return !(v instanceof FieldNode) && !(v instanceof PropertyNode);
+    }
+
+    /**
+     * Conservative compile-time serialization gate, the same shape as the escape gate: a packed
+     * closure is not serializable, so decline (keep a real closure class for) a closure literal
+     * that is <em>visibly</em> serialization-bound — cast or coerced ({@code as}) to a type that is
+     * or implements {@code Serializable} (including serializable SAM coercions, whose proxy carries
+     * the closure), or passed directly as an argument to a {@code writeObject} call. Transitive
+     * routes (a local later serialized, a callee that serializes its argument) are intentionally
+     * not chased; the adapter's fail-fast {@code writeObject} remains the backstop for those.
+     * Declines are reported by {@code @PackedClosures(mode = WARN | STRICT)} like any other.
+     */
+    private boolean serializationBound(final ClosureExpression expression) {
+        MethodNode m = controller.getMethodNode();
+        if (m == null || m.getCode() == null) return false;
+        return serializationBoundByMethod
+                .computeIfAbsent(m, k -> collectSerializationBoundClosures(k.getCode()))
+                .contains(expression);
+    }
+
+    private static Set<ClosureExpression> collectSerializationBoundClosures(final Statement code) {
+        Set<ClosureExpression> bound = Collections.newSetFromMap(new IdentityHashMap<>());
+        code.visit(new CodeVisitorSupport() {
+            private void mark(final Expression e) {
+                if (e instanceof ClosureExpression) bound.add((ClosureExpression) e);
+            }
+            @Override public void visitCastExpression(final CastExpression ce) {
+                ClassNode target = ce.getType();
+                if (ClassHelper.SERIALIZABLE_TYPE.equals(target) || target.implementsInterface(ClassHelper.SERIALIZABLE_TYPE)) {
+                    mark(ce.getExpression());
+                }
+                super.visitCastExpression(ce);
+            }
+            @Override public void visitMethodCallExpression(final MethodCallExpression mce) {
+                if ("writeObject".equals(mce.getMethodAsString()) && mce.getArguments() instanceof TupleExpression) {
+                    ((TupleExpression) mce.getArguments()).getExpressions().forEach(this::mark);
+                }
+                super.visitMethodCallExpression(mce);
+            }
+        });
+        return bound;
+    }
+
+    /**
+     * Spike packability gate: pack read-only closures (including nested and captures). Captured-variable
+     * writes are supported via Reference threading for a flat closure only (declined if the body also
+     * contains a nested closure, or uses an unsupported compound-assignment operator). Anything needing a
+     * real Closure — delegate/owner/thisObject/resolveStrategy or {@code super} — is declined.
+     */
+    private static boolean isPackable(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        // Default parameter values generate arity-overloaded doCall methods on a closure class;
+        // the single hoisted method cannot reproduce that dispatch, so decline.
+        if (expression.isParameterSpecified()) {
+            for (Parameter p : expression.getParameters()) {
+                if (p.hasInitialExpression()) return false;
+            }
+        }
+        boolean[] ok = {true};
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitClosureExpression(final ClosureExpression e) {
+                // A nested closure constructed inside the hoisted method gets the enclosing INSTANCE
+                // as its owner instead of the (packed) outer closure object. That is observationally
+                // equivalent for owner-chain resolution, but not for a nested body that names
+                // owner/delegate/thisObject explicitly -- so the outer packs only if every nested
+                // closure is itself packable.
+                if (!isPackable(e)) ok[0] = false;
+            }
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                if (ve.isSuperExpression() || FORBIDDEN_CLOSURE_NAMES.contains(ve.getName())) ok[0] = false;
+            }
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                // implicit-this accessor/mutator forms of the same pseudo-properties, e.g. getDelegate()
+                if (call.isImplicitThis() && FORBIDDEN_CLOSURE_CALLS.contains(call.getMethodAsString())) ok[0] = false;
+                super.visitMethodCallExpression(call);
+            }
+            @Override public void visitConstructorCallExpression(final ConstructorCallExpression cce) {
+                // an anonymous inner class in the body is generated against the enclosing closure
+                // class (its outer instance); hoisting would hand it the wrong enclosing instance
+                if (cce.isUsingAnonymousInnerClass()) ok[0] = false;
+                super.visitConstructorCallExpression(cce);
+            }
+        });
+        // All write forms to captured variables are supported: the shared Reference is passed as a
+        // holder parameter, so the ASM generator emits the implicit get()/set() exactly as it does
+        // for a closure class -- no operator restrictions.
+        return ok[0];
+    }
+
+    private static Set<String> capturedNames(final ClosureExpression expression) {
+        Set<String> captured = new HashSet<>();
+        VariableScope vs = expression.getVariableScope();
+        if (vs != null) {
+            for (Iterator<Variable> it = vs.getReferencedLocalVariablesIterator(); it.hasNext(); ) {
+                captured.add(it.next().getName());
+            }
+        }
+        return captured;
+    }
+
+    /** Captured variables that are written (reassigned) in the body — these need Reference threading. */
+    private Set<String> writtenCaptureNames(final ClosureExpression expression) {
+        Set<String> captured = capturedNames(expression);
+        Set<String> written = new HashSet<>(collectWrittenNames(expression.getCode()));
+        MethodNode m = controller.getMethodNode();
+        if (m != null && m.getCode() != null) {
+            written.addAll(writtenNamesByMethod.computeIfAbsent(m, k -> collectWrittenNames(k.getCode())));
+        }
+        written.retainAll(captured);
+        return written;
+    }
+
+    /** Names assigned or incremented in the given code (declarations with initializers excluded). */
+    private static Set<String> collectWrittenNames(final Statement code) {
+        Set<String> written = new HashSet<>();
+        if (code == null) return written;
+        code.visit(new CodeVisitorSupport() { // descends into nested closures
+            @Override public void visitBinaryExpression(final BinaryExpression be) {
+                if (Types.isAssignment(be.getOperation().getType())
+                        && !(be instanceof org.codehaus.groovy.ast.expr.DeclarationExpression)
+                        && be.getLeftExpression() instanceof VariableExpression) {
+                    written.add(((VariableExpression) be.getLeftExpression()).getName());
+                }
+                super.visitBinaryExpression(be);
+            }
+            @Override public void visitPostfixExpression(final PostfixExpression pe) {
+                recordIncrement(pe.getExpression());
+                super.visitPostfixExpression(pe);
+            }
+            @Override public void visitPrefixExpression(final PrefixExpression pe) {
+                recordIncrement(pe.getExpression());
+                super.visitPrefixExpression(pe);
+            }
+            private void recordIncrement(final Expression operand) {
+                if (operand instanceof VariableExpression) {
+                    written.add(((VariableExpression) operand).getName());
+                }
+            }
+        });
+        return written;
+    }
+
+    // NB: metaClass resolves against the closure object ITSELF (per-closure-class identity), which
+    // the shared adapter cannot reproduce, so it declines like the other closure pseudo-properties.
+    private static final Set<String> FORBIDDEN_CLOSURE_NAMES =
+            new HashSet<>(java.util.Arrays.asList("owner", "delegate", "thisObject", "directive",
+                    "resolveStrategy", "metaClass"));
+
+    /** Accessor/mutator forms of the same pseudo-properties, called with implicit this. */
+    private static final Set<String> FORBIDDEN_CLOSURE_CALLS =
+            new HashSet<>(java.util.Arrays.asList("getOwner", "getDelegate", "getThisObject", "getDirective",
+                    "getResolveStrategy", "setDelegate", "setDirective", "setResolveStrategy",
+                    "getMaximumNumberOfParameters", "getParameterTypes", "getMetaClass", "setMetaClass",
+                    "invokeMethod", "getProperty", "setProperty"));
+
+    /**
+     * Rebinds captured-variable references in the moved body to the hoisted method's parameters,
+     * matched by the accessed {@link Variable}'s <em>identity</em> rather than by name. Groovy forbids
+     * shadowing an in-scope local/parameter, so a name match would be correct today; keying on identity
+     * keeps it correct even if that scoping rule ever relaxed, and never rewrites an unrelated binding
+     * that happens to share a captured name.
+     */
+    private static void rebindCaptured(final Statement body, final Map<Variable, Parameter> capturedParams) {
+        body.visit(new CodeVisitorSupport() {
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                Parameter p = capturedParams.get(ve.getAccessedVariable());
+                if (p != null) {
+                    ve.setAccessedVariable(p);
+                    // read-only captures become plain by-value params; written captures stay
+                    // closure-shared so the ASM generator routes them through the holder
+                    ve.setClosureSharedVariable(p.isClosureSharedVariable());
+                }
+            }
+        });
+    }
+
+    /**
+     * Emits a packed closure: hoists the body to a synthetic method on the enclosing class (captured
+     * variables become leading, by-value parameters) and constructs a shared {@code PackedClosure}
+     * adapter that dispatches to it — no inner class.
+     */
+    private void writePackedClosure(final ClosureExpression expression) {
+        ClassNode enclosing = controller.getClassNode();
+        MethodVisitor mv = controller.getMethodVisitor();
+        AsmClassGenerator acg = controller.getAcg();
+        OperandStack os = controller.getOperandStack();
+
+        List<String> captured = new ArrayList<>();
+        Map<String, ClassNode> capturedTypes = new HashMap<>();
+        Map<String, Variable> capturedVars = new HashMap<>(); // name -> the original captured variable
+        VariableScope vs = expression.getVariableScope();
+        if (vs != null) {
+            for (Iterator<Variable> it = vs.getReferencedLocalVariablesIterator(); it.hasNext(); ) {
+                Variable v = it.next();
+                captured.add(v.getName());
+                capturedTypes.put(v.getName(), erasedType(v.getOriginType()));
+                capturedVars.put(v.getName(), v);
+            }
+        }
+
+        Parameter[] closureParams = expression.isParameterSpecified()
+                ? expression.getParameters()
+                : new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "it")};
+        int arity = closureParams.length;
+
+        Set<String> written = writtenCaptureNames(expression);
+        Parameter[] methodParams = new Parameter[captured.size() + closureParams.length];
+        Map<Variable, Parameter> capturedByVar = new IdentityHashMap<>(); // original variable -> hoisted param
+        boolean typedBody = compilesHoistedBodyStatically();
+        for (int i = 0; i < captured.size(); i++) {
+            String cn = captured.get(i);
+            boolean isWritten = written.contains(cn);
+            Parameter p;
+            if (isWritten) {
+                // A written capture arrives as the SHARED groovy.lang.Reference itself: declare the
+                // parameter exactly like a closure-class constructor does (originType = value type,
+                // descriptor type = Reference, closure-shared + use-existing-reference), so
+                // CompileStack.init registers it as a holder and the ASM generator emits the implicit
+                // get()/set() on every read/write -- no AST rewriting, and the untouched body keeps
+                // the STC metadata that lets it compile statically.
+                ClassNode vt = capturedTypes.get(cn);
+                if (ClassHelper.isPrimitiveType(vt)) vt = ClassHelper.getWrapper(vt);
+                p = new Parameter(vt, cn);
+                p.setType(ClassHelper.makeReference());
+                p.setClosureSharedVariable(true);
+                p.putNodeMetaData(UseExistingReference.class, Boolean.TRUE);
+                // the static writer's type chooser must see the VALUE type: the holder load already
+                // dereferences, so resolving this variable as Reference would add a bogus checkcast
+                p.putNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE, vt);
+            } else {
+                // For a statically-compiled body, type the read-only capture from its declared type so
+                // the loads match the STC metadata already on the body expressions (otherwise the
+                // static writer falls back to dynamic dispatch on the type mismatch).
+                p = new Parameter(typedBody ? capturedTypes.get(cn) : ClassHelper.OBJECT_TYPE, cn);
+            }
+            methodParams[i] = p;
+            capturedByVar.put(capturedVars.get(cn), p);
+        }
+        System.arraycopy(closureParams, 0, methodParams, captured.size(), closureParams.length);
+
+        Statement body = expression.getCode();
+        rebindCaptured(body, capturedByVar);  // read-only -> plain param; written -> holder param
+
+        // In a static method there is no `this`: the owner is the enclosing class and the hoisted
+        // method must be static (loaded/dispatched against the class, not local slot 0).
+        boolean staticContext = controller.isStaticMethod();
+        List<MethodNode> targets = packedTargets(enclosing);
+        int id = targets.size(); // ids are dense per class: the dispatcher emits a tableswitch over them
+        String name = PACKED_METHOD_PREFIX + id;
+        // PRIVATE, not public: the body is reached only through the class's $packedDispatch$ table
+        // (a tableswitch case invoking it directly via INVOKESPECIAL/INVOKESTATIC), and a private
+        // method is invoked exactly (no virtual dispatch), so an inherited packed closure never
+        // dispatches to a same-named hoisted method a subclass happens to declare (GROOVY-12151 review).
+        int mods = ACC_PRIVATE | ACC_SYNTHETIC | (staticContext ? ACC_STATIC : 0);
+        // Same return type a generated closure class would give doCall, so implicit return-value
+        // coercion (e.g. GString -> String for a Closure<String>) happens identically.
+        ClassNode hoistedReturnType = typedBody ? inferredClosureReturnType(expression) : ClassHelper.OBJECT_TYPE;
+        MethodNode hoisted = new MethodNode(name, mods, hoistedReturnType,
+                methodParams, ClassNode.EMPTY_ARRAY, body);
+        // Added after the ReturnAdder phase, so run it ourselves: it wires implicit returns through
+        // every statement shape (trailing expressions, if/else branches, try/catch, ...).
+        new org.codehaus.groovy.classgen.ReturnAdder().visitMethod(hoisted);
+        // Typed static dispatch (GEP-27 phase 4): the original body expressions were already visited
+        // by StaticCompilationVisitor as part of the enclosing method, so they carry the metadata the
+        // static writer needs (DIRECT_METHOD_CALL_TARGET, inferred types) -- including types that were
+        // only inferred (@ClosureParams, implicit it), which arrive for free via checkcasts. Written
+        // captures ride the holder machinery, so their bodies compile statically too.
+        hoisted.putNodeMetaData(STATIC_COMPILE_NODE, typedBody ? Boolean.TRUE : Boolean.FALSE);
+        addGeneratedMethod(enclosing, hoisted);
+        targets.add(hoisted); // claim the id; writePackedDispatcher renders the table at end of class
+        // GROOVY-12150 visibility: a packed closure has no generated class, so mark it with the hoisted
+        // method it became. The AST browser then renders it via the same path it uses for the generated
+        // closure class of an unpacked closure; the trailing () distinguishes a method from a class.
+        expression.putNodeMetaData(GENERATED_CLOSURE_CLASS, enclosing.getName() + "." + name + "()");
+
+        String pc = "org/codehaus/groovy/runtime/PackedClosure";
+        mv.visitTypeInsn(NEW, pc);
+        mv.visitInsn(DUP);
+        if (staticContext) {
+            new ClassExpression(enclosing).visit(acg);   // owner = the enclosing class (static dispatch)
+        } else {
+            mv.visitVarInsn(ALOAD, 0);
+            os.push(ClassHelper.OBJECT_TYPE);            // owner = this
+        }
+        // The class's shared dispatch table plus this body's compile-time id: dispatch is a plain
+        // interface call into a tableswitch (JIT-friendly, unlike a per-instance MethodHandle, which
+        // cannot be constant-folded), and the id binds the exact method so an inherited packed closure
+        // cannot misdispatch to a subclass's same-named method.
+        mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(enclosing), DISPATCHERS_GETTER, DISPATCHERS_GETTER_DESC, false);
+        os.push(ClassHelper.make(org.codehaus.groovy.runtime.GeneratedDispatcher.Bundle.class));
+        BytecodeHelper.pushConstant(mv, id);
+        os.push(ClassHelper.int_TYPE);
+        mv.visitLdcInsn(name);
+        os.push(ClassHelper.STRING_TYPE);   // method name (diagnostics only)
+        if (captured.isEmpty()) {
+            mv.visitInsn(ACONST_NULL);
+            os.push(ClassHelper.OBJECT_TYPE.makeArray());
+        } else {
+            // Build Object[] of captured values: written vars pass their shared Reference (so writes
+            // propagate), read-only vars pass their value.
+            BytecodeHelper.pushConstant(mv, captured.size());
+            os.push(ClassHelper.int_TYPE);
+            mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+            os.replace(ClassHelper.OBJECT_TYPE.makeArray());
+            for (int i = 0; i < captured.size(); i++) {
+                String cn = captured.get(i);
+                mv.visitInsn(DUP);
+                os.push(ClassHelper.OBJECT_TYPE.makeArray());
+                BytecodeHelper.pushConstant(mv, i);
+                os.push(ClassHelper.int_TYPE);
+                if (written.contains(cn)) {
+                    loadReference(cn, controller);       // shared Reference holder
+                } else {
+                    new VariableExpression(cn).visit(acg); // value
+                    os.box();
+                }
+                mv.visitInsn(AASTORE);
+                os.remove(3);
+            }
+        }
+        // The closure's declared parameter types, so getParameterTypes()-keyed caller behaviour
+        // (DGM arity decisions, vararg collection) matches a generated closure class exactly.
+        // A condy constant (resolved once per literal site, shared by every adapter created
+        // there — as a closure class shares its cached parameter-type array), NOT a fresh array:
+        // building one per creation measurably taxes creation-heavy code. The types travel as a
+        // method descriptor because primitive parameter types have no Class constant-pool form.
+        StringBuilder typesDescriptor = new StringBuilder("(");
+        for (int i = 0; i < arity; i++) {
+            typesDescriptor.append(BytecodeHelper.getTypeDescription(erasedType(closureParams[i].getType())));
+        }
+        typesDescriptor.append(")V");
+        mv.visitLdcInsn(new org.objectweb.asm.ConstantDynamic("paramTypes", "[Ljava/lang/Class;",
+                new org.objectweb.asm.Handle(org.objectweb.asm.Opcodes.H_INVOKESTATIC, DISPATCHER_TYPE, "paramTypes",
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;Ljava/lang/String;)[Ljava/lang/Class;",
+                        true), // the bootstrap is a static interface method
+                typesDescriptor.toString()));
+        os.push(ClassHelper.CLASS_Type.makeArray());
+        // strict guard only for the dynamic trust path; a PROVEN delegate-independent closure --
+        // statically (StaticTypesClosureWriter) or syntactically (SYNTACTIC_PACK, dynamic) --
+        // stores-and-ignores a caller-set delegate, like a @CompileStatic closure class.
+        boolean strict = packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null;
+        mv.visitInsn(strict ? org.objectweb.asm.Opcodes.ICONST_1 : org.objectweb.asm.Opcodes.ICONST_0);
+        os.push(ClassHelper.boolean_TYPE);
+        mv.visitMethodInsn(INVOKESPECIAL, pc, "<init>",
+                "(Ljava/lang/Object;L" + BUNDLE_TYPE + ";ILjava/lang/String;[Ljava/lang/Object;[Ljava/lang/Class;Z)V", false);
+        os.replace(ClassHelper.CLOSURE_TYPE, 7); // owner, dispatchers, id, name, captured[], paramTypes[], strict -> Closure
+    }
+
+    /**
+     * Emits the class's packed-closure dispatch machinery, once per class at the end of class
+     * generation (so every hoisted body — including one a hoisted body itself hoisted — has claimed
+     * its id): the {@code $packedDispatch$(int, Object[])} table, whose case {@code k} casts the
+     * packed argument array ({@code [owner, captured..., args...]}) to target {@code k}'s declared
+     * parameter types and invokes it directly; the array-free per-arity tables
+     * ({@code $packedDispatch1$}/{@code $packedDispatch2$}) doing the same from plain parameter
+     * slots for the hot one/two-value shapes; and the {@code $getPackedDispatchers$()} accessor,
+     * whose single {@code invokedynamic} site links all three through
+     * {@link org.codehaus.groovy.runtime.GeneratedDispatcher#bootstrap} into one constant
+     * {@code Bundle}, lazily on first adapter creation. A no-op for classes that packed nothing.
+     */
+    public void writePackedDispatcher() {
+        ClassNode enclosing = controller.getClassNode();
+        List<MethodNode> targets = enclosing.getNodeMetaData(PACKED_TARGETS);
+        if (targets == null || targets.isEmpty()) return;
+        enclosing.removeNodeMetaData(PACKED_TARGETS);
+        String internal = BytecodeHelper.getClassInternalName(enclosing);
+        org.objectweb.asm.ClassVisitor cv = controller.getClassVisitor();
+
+        // the accessor: return INDY packedDispatchers()Bundle — GeneratedDispatcher.bootstrap links
+        // the class's three dispatch tables (through LambdaMetafactory, with this class's lookup)
+        // once, on first adapter creation, and every later call returns the constant bundle, so
+        // the accessor is also the cache
+        MethodVisitor mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCHERS_GETTER, DISPATCHERS_GETTER_DESC, null, null);
+        mv.visitCode();
+        org.objectweb.asm.Handle bootstrap = new org.objectweb.asm.Handle(
+                org.objectweb.asm.Opcodes.H_INVOKESTATIC, DISPATCHER_TYPE, "bootstrap",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                true); // the bootstrap is a static interface method
+        mv.visitInvokeDynamicInsn("packedDispatchers", DISPATCHERS_GETTER_DESC, bootstrap);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // the array-free per-arity tables, over the targets whose captured-plus-argument count
+        // matches (membership is sparse over the id space, so cases use lookupswitch); routing is
+        // the adapter's responsibility, so any other id landing here is a compiler bug
+        writeArityTable(cv, internal, enclosing, targets, 1, DISPATCH1_METHOD, DISPATCH1_DESC);
+        writeArityTable(cv, internal, enclosing, targets, 2, DISPATCH2_METHOD, DISPATCH2_DESC);
+
+        // The table. It must stay under the JIT's inlining budget (FreqInlineSize, 325 bytecode
+        // bytes) or a hot caller cannot fold a constant id through to a direct call of the target
+        // (and the packed argument array then escapes instead of being scalar-replaced). A switch
+        // case costs ~20 bytes, so past DISPATCH_CHUNK targets the table goes two-level: the entry
+        // method shifts the id down to a chunk index and forwards -- small enough to always inline
+        // -- and each chunk method switches over its slice of at most DISPATCH_CHUNK cases.
+        int n = targets.size();
+        if (n <= DISPATCH_CHUNK) {
+            mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCH_METHOD, DISPATCH_DESC, null, null);
+            mv.visitCode();
+            writeDispatchSwitch(mv, internal, enclosing, targets, 0, n);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        } else {
+            int chunks = (n + DISPATCH_CHUNK - 1) / DISPATCH_CHUNK;
+            mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCH_METHOD, DISPATCH_DESC, null, null);
+            mv.visitCode();
+            org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
+            org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[chunks];
+            for (int c = 0; c < chunks; c += 1) labels[c] = new org.objectweb.asm.Label();
+            mv.visitVarInsn(ILOAD, 0);
+            BytecodeHelper.pushConstant(mv, Integer.numberOfTrailingZeros(DISPATCH_CHUNK));
+            mv.visitInsn(ISHR);
+            mv.visitTableSwitchInsn(0, chunks - 1, dflt, labels);
+            for (int c = 0; c < chunks; c += 1) {
+                mv.visitLabel(labels[c]);
+                mv.visitVarInsn(ILOAD, 0);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitMethodInsn(INVOKESTATIC, internal, DISPATCH_METHOD + c, DISPATCH_DESC, false);
+                mv.visitInsn(ARETURN);
+            }
+            mv.visitLabel(dflt);
+            writeDispatchDefault(mv, enclosing);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+            for (int c = 0; c < chunks; c += 1) {
+                mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCH_METHOD + c, DISPATCH_DESC, null, null);
+                mv.visitCode();
+                writeDispatchSwitch(mv, internal, enclosing, targets, c * DISPATCH_CHUNK, Math.min(n, (c + 1) * DISPATCH_CHUNK));
+                mv.visitMaxs(0, 0);
+                mv.visitEnd();
+            }
+        }
+    }
+
+    /** A dispatch table slice: a tableswitch over ids {@code [lo, hi)} into direct target invocations. */
+    private static void writeDispatchSwitch(final MethodVisitor mv, final String internal, final ClassNode enclosing, final List<MethodNode> targets, final int lo, final int hi) {
+        org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
+        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[hi - lo];
+        for (int i = 0; i < hi - lo; i += 1) labels[i] = new org.objectweb.asm.Label();
+        mv.visitVarInsn(ILOAD, 0);
+        mv.visitTableSwitchInsn(lo, hi - 1, dflt, labels);
+        for (int k = lo; k < hi; k += 1) {
+            mv.visitLabel(labels[k - lo]);
+            MethodNode target = targets.get(k);
+            boolean staticTarget = target.isStatic();
+            if (!staticTarget) {
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitInsn(ICONST_0);
+                mv.visitInsn(AALOAD);
+                mv.visitTypeInsn(CHECKCAST, internal);
+            }
+            Parameter[] params = target.getParameters();
+            for (int i = 0; i < params.length; i += 1) {
+                mv.visitVarInsn(ALOAD, 1);
+                BytecodeHelper.pushConstant(mv, i + 1); // [0] is the receiver slot, params start at [1]
+                mv.visitInsn(AALOAD);
+                BytecodeHelper.doCast(mv, params[i].getType()); // checkcast, or unbox for a primitive
+            }
+            String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), params);
+            // a hoisted body is private, so INVOKESPECIAL dispatches it exactly (never virtually)
+            mv.visitMethodInsn(staticTarget ? INVOKESTATIC : INVOKESPECIAL, internal, target.getName(), desc, false);
+            // hoisted return types are reference types by construction (see inferredClosureReturnType);
+            // box defensively so a future primitive-returning target cannot emit invalid bytecode
+            ClassNode returnType = target.getReturnType();
+            if (ClassHelper.isPrimitiveVoid(returnType)) {
+                mv.visitInsn(ACONST_NULL);
+            } else if (ClassHelper.isPrimitiveType(returnType)) {
+                BytecodeHelper.doCastToWrappedType(mv, returnType, ClassHelper.getWrapper(returnType));
+            }
+            mv.visitInsn(ARETURN);
+        }
+        mv.visitLabel(dflt);
+        writeDispatchDefault(mv, enclosing);
+    }
+
+    /**
+     * An array-free dispatch table for the targets whose captured-plus-argument count is exactly
+     * {@code paramCount}: each case loads the receiver and arguments from parameter slots — no
+     * packed array — and invokes the target directly. Membership is sparse over the id space, so
+     * cases switch with {@code lookupswitch}; ids of other arities land on the default (routing is
+     * the adapter's responsibility, so reaching it is a compiler bug). Past {@link #DISPATCH_CHUNK}
+     * members the table goes two-level under the same inline-budget discipline as the array table:
+     * the entry method shifts the id down to a chunk index and forwards, and each chunk method
+     * switches over its id-range's members (at most {@code DISPATCH_CHUNK}, since a range spans
+     * {@code DISPATCH_CHUNK} consecutive ids).
+     */
+    private static void writeArityTable(final org.objectweb.asm.ClassVisitor cv, final String internal,
+            final ClassNode enclosing, final List<MethodNode> targets, final int paramCount,
+            final String tableMethod, final String tableDesc) {
+        List<Integer> memberIds = new ArrayList<>();
+        for (int k = 0; k < targets.size(); k += 1) {
+            if (targets.get(k).getParameters().length == paramCount) memberIds.add(k);
+        }
+        MethodVisitor mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, tableMethod, tableDesc, null, null);
+        mv.visitCode();
+        if (memberIds.size() <= DISPATCH_CHUNK) {
+            writeAritySwitch(mv, internal, enclosing, targets, memberIds, paramCount);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+            return;
+        }
+        int shift = Integer.numberOfTrailingZeros(DISPATCH_CHUNK);
+        int chunks = ((targets.size() - 1) >> shift) + 1;
+        List<List<Integer>> byChunk = new ArrayList<>(chunks);
+        for (int c = 0; c < chunks; c += 1) byChunk.add(new ArrayList<>());
+        for (int memberId : memberIds) byChunk.get(memberId >> shift).add(memberId);
+        org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
+        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[chunks];
+        for (int c = 0; c < chunks; c += 1) {
+            // an id-range with no members of this arity shares the default (compiler-bug) label
+            labels[c] = byChunk.get(c).isEmpty() ? dflt : new org.objectweb.asm.Label();
+        }
+        mv.visitVarInsn(ILOAD, 0);
+        BytecodeHelper.pushConstant(mv, shift);
+        mv.visitInsn(ISHR);
+        mv.visitTableSwitchInsn(0, chunks - 1, dflt, labels);
+        for (int c = 0; c < chunks; c += 1) {
+            if (byChunk.get(c).isEmpty()) continue;
+            mv.visitLabel(labels[c]);
+            mv.visitVarInsn(ILOAD, 0);
+            for (int p = 0; p <= paramCount; p += 1) {
+                mv.visitVarInsn(ALOAD, 1 + p); // the receiver, then the value parameters
+            }
+            mv.visitMethodInsn(INVOKESTATIC, internal, tableMethod + c, tableDesc, false);
+            mv.visitInsn(ARETURN);
+        }
+        mv.visitLabel(dflt);
+        writeDispatchDefault(mv, enclosing);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+        for (int c = 0; c < chunks; c += 1) {
+            if (byChunk.get(c).isEmpty()) continue;
+            mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, tableMethod + c, tableDesc, null, null);
+            mv.visitCode();
+            writeAritySwitch(mv, internal, enclosing, targets, byChunk.get(c), paramCount);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
+        }
+    }
+
+    /** An arity-table slice: a lookupswitch over the given member ids into direct target invocations. */
+    private static void writeAritySwitch(final MethodVisitor mv, final String internal,
+            final ClassNode enclosing, final List<MethodNode> targets, final List<Integer> memberIds, final int paramCount) {
+        org.objectweb.asm.Label dflt = new org.objectweb.asm.Label();
+        int members = memberIds.size();
+        int[] keys = new int[members];
+        org.objectweb.asm.Label[] labels = new org.objectweb.asm.Label[members];
+        for (int i = 0; i < members; i += 1) {
+            keys[i] = memberIds.get(i); // ids are claimed in ascending order, as lookupswitch requires
+            labels[i] = new org.objectweb.asm.Label();
+        }
+        mv.visitVarInsn(ILOAD, 0);
+        mv.visitLookupSwitchInsn(dflt, keys, labels);
+        for (int i = 0; i < members; i += 1) {
+            mv.visitLabel(labels[i]);
+            MethodNode target = targets.get(keys[i]);
+            boolean staticTarget = target.isStatic();
+            if (!staticTarget) {
+                mv.visitVarInsn(ALOAD, 1); // the receiver parameter
+                mv.visitTypeInsn(CHECKCAST, internal);
+            }
+            Parameter[] params = target.getParameters();
+            for (int p = 0; p < paramCount; p += 1) {
+                mv.visitVarInsn(ALOAD, 2 + p); // value parameters follow (id, receiver)
+                BytecodeHelper.doCast(mv, params[p].getType()); // checkcast, or unbox for a primitive
+            }
+            String desc = BytecodeHelper.getMethodDescriptor(target.getReturnType(), params);
+            // a hoisted body is private, so INVOKESPECIAL dispatches it exactly (never virtually)
+            mv.visitMethodInsn(staticTarget ? INVOKESTATIC : INVOKESPECIAL, internal, target.getName(), desc, false);
+            ClassNode returnType = target.getReturnType();
+            if (ClassHelper.isPrimitiveVoid(returnType)) {
+                mv.visitInsn(ACONST_NULL);
+            } else if (ClassHelper.isPrimitiveType(returnType)) {
+                BytecodeHelper.doCastToWrappedType(mv, returnType, ClassHelper.getWrapper(returnType));
+            }
+            mv.visitInsn(ARETURN);
+        }
+        mv.visitLabel(dflt);
+        writeDispatchDefault(mv, enclosing);
+    }
+
+    private static void writeDispatchDefault(final MethodVisitor mv, final ClassNode enclosing) {
+        mv.visitTypeInsn(NEW, "org/codehaus/groovy/GroovyBugError");
+        mv.visitInsn(DUP);
+        mv.visitLdcInsn("Invalid packed closure dispatch id in " + enclosing.getName());
+        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/GroovyBugError", "<init>", "(Ljava/lang/String;)V", false);
+        mv.visitInsn(ATHROW);
     }
 
     /**

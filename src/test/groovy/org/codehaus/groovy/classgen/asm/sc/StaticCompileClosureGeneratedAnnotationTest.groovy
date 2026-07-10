@@ -22,12 +22,15 @@ import groovy.transform.Generated
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 
 import java.lang.reflect.Method
 
 /**
  * Verifies if {@link Generated} annotations are added on {@code call} methods of generated closure classes when static compilation is used.
  */
+@DisabledIfSystemProperty(named = 'groovy.target.closure.pack', matches = 'true',
+    disabledReason = 'reflects on generated closure classes, which do not exist when GEP-27 closure packing is enabled')
 final class StaticCompileClosureGeneratedAnnotationTest {
 
     private CompilationUnit compileScript(String script) {

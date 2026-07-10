@@ -18,16 +18,21 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.control.SourceUnit;
@@ -44,6 +49,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.IMPLICIT_RECEIVER;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS;
 
 /**
@@ -55,6 +61,75 @@ public class StaticTypesClosureWriter extends ClosureWriter {
      */
     public StaticTypesClosureWriter(WriterController wc) {
         super(wc);
+    }
+
+    // Under @CompileStatic the type checker's owner-vs-delegate resolution is authoritative, so the
+    // capability analysis can prove a closure delegate-independent and pack it automatically.
+    @Override
+    protected boolean isPackTriggered(final ClosureExpression expression, final boolean annotated) {
+        // Even the @PackedClosures opt-in needs the proof here: a delegate-resolved body compiles its
+        // IMPLICIT_RECEIVER expressions against Closure.getDelegate(), which a hoisted method cannot honour.
+        return (annotated || SystemUtil.getBooleanSafe("groovy.target.closure.pack"))
+                && isDelegateIndependent(expression);
+    }
+
+    @Override
+    protected String triggerDeclineReason(final ClosureExpression expression) {
+        return isDelegateIndependent(expression) ? null
+                : "it resolves a name against a delegate (e.g. via @DelegatesTo or with{})";
+    }
+
+    @Override
+    protected boolean compilesHoistedBodyStatically() {
+        return true;
+    }
+
+    @Override
+    protected boolean packedClosureUsesDelegateGuard() {
+        return false; // the type checker proved delegate-independence, so no runtime guard is needed
+    }
+
+    /**
+     * True when the type checker resolved every implicitly-received name in the closure (and its
+     * nested closures) against the owner/parameters rather than a delegate — the delegate-independence
+     * proof of the capability analysis. Under {@code @CompileStatic} STC records each name's resolution
+     * path as {@code IMPLICIT_RECEIVER}: a path ending in {@code "owner"} was resolved against the
+     * owner (safe), anything else (e.g. {@code "delegate"}, from {@code @DelegatesTo} or {@code with})
+     * went through a delegate — the same distinction STC itself makes. The marker can sit on a method
+     * call, a property expression, or a bare variable (e.g. {@code length} inside {@code with}), so
+     * all three are checked. If nothing resolved through a delegate, packing preserves resolution.
+     */
+    private boolean isDelegateIndependent(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        boolean[] delegateResolved = {false};
+        // Walk the whole closure tree, including nested closures: a delegate resolution anywhere in
+        // the body (e.g. an owner-passed closure whose inner closure resolves a name against the
+        // delegate) means the top closure carries a delegate chain that packing would break.
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                flag(call.getNodeMetaData(IMPLICIT_RECEIVER));
+                super.visitMethodCallExpression(call);
+            }
+            @Override public void visitPropertyExpression(final PropertyExpression pexp) {
+                flag(pexp.getNodeMetaData(IMPLICIT_RECEIVER));
+                super.visitPropertyExpression(pexp);
+            }
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                flag(ve.getNodeMetaData(IMPLICIT_RECEIVER));
+                // a name STC left dynamic (no local/param binding, no recorded receiver path) will be
+                // resolved at runtime through the closure's owner/delegate chain -- not provably owner
+                if (ve.getAccessedVariable() instanceof org.codehaus.groovy.ast.DynamicVariable
+                        && ve.getNodeMetaData(IMPLICIT_RECEIVER) == null) {
+                    delegateResolved[0] = true;
+                }
+                super.visitVariableExpression(ve);
+            }
+            private void flag(final Object receiver) {
+                if (receiver instanceof String && !((String) receiver).endsWith("owner")) delegateResolved[0] = true;
+            }
+        });
+        return !delegateResolved[0];
     }
 
     /** {@inheritDoc} */

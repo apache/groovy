@@ -169,6 +169,10 @@ public interface MetaClassRegistry {
         protected MetaClass createNormalMetaClass(Class theClass,MetaClassRegistry registry) {
             if (GeneratedClosure.class.isAssignableFrom(theClass)) {
                 return new ClosureMetaClass(registry,theClass);
+            } else if (theClass == org.codehaus.groovy.runtime.PackedClosure.class) {
+                // packed closures share one adapter class, so they get their own metaclass with
+                // reflection-free call/doCall dispatch and instance-faithful introspection
+                return new org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass(registry, theClass);
             } else {
                 return new MetaClassImpl(registry, theClass);
             }
