@@ -18,9 +18,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
-import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -450,7 +451,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
      * the property is read per lambda so it can be toggled without a JVM restart.
      */
     private static boolean isLambdaHoistEnabled() {
-        return SystemUtil.getBooleanSafe("groovy.target.lambda.hoist");
+        return SystemUtil.getBooleanSafe(CompilerConfiguration.LAMBDA_HOISTING);
     }
 
     private int lambdaImplCounter;

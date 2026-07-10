@@ -19,8 +19,10 @@
 package gls.generics
 
 import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -229,6 +231,8 @@ final class GenericsUsageTest {
 
     // GROOVY-3975
     @Test
+    @DisabledIfSystemProperty(named = CompilerConfiguration.CLOSURE_PACKING, matches = 'true',
+        disabledReason = 'reflects on the generated closure class\'s generic method signatures, per-literal metadata the shared adapter of GEP-27 closure packing does not carry')
     void testGenericsForClosureParameters() {
         def cl = { List<String> s -> }
 
