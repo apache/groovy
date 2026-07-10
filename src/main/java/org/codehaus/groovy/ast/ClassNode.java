@@ -1820,21 +1820,23 @@ faces:  if (method == null && asBoolean(getInterfaces())) { // GROOVY-11323
     }
 
     private void visitMethods(GroovyClassVisitor visitor) {
-        // create snapshot of the method list to avoid ConcurrentModificationException
-        List<MethodNode> methodList = new ArrayList<>(getMethods());
-        for (MethodNode mn : methodList) {
-            visitor.visitMethod(mn);
-        }
-
-        // visit the method nodes added while iterating,
-        // e.g. synthetic method for constructor reference
-        final List<MethodNode> newMethodList = getMethods();
-        if (newMethodList.size() > methodList.size()) { // if the newly added method nodes found, visit them
-            List<MethodNode> changedMethodList = new ArrayList<>(newMethodList);
-            boolean changed = changedMethodList.removeAll(methodList);
-            if (changed) {
-                for (MethodNode mn : changedMethodList) {
+        // Visit each method exactly once, including methods added WHILE visiting -- a synthetic method
+        // for a constructor reference, a lambda deserialization hook, or a hoisted closure body that in
+        // turn hoists a nested one. Track already-visited methods by identity (MethodNode uses the
+        // default equals) in a hash set for O(1) membership, and re-scan getMethods() after each round
+        // for the newly added ones, until none remain.
+        Set<MethodNode> visited = Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        List<MethodNode> pending = new ArrayList<>(getMethods()); // snapshot avoids ConcurrentModificationException
+        while (!pending.isEmpty()) {
+            for (MethodNode mn : pending) {
+                if (visited.add(mn)) {
                     visitor.visitMethod(mn);
+                }
+            }
+            pending = new ArrayList<>();
+            for (MethodNode mn : getMethods()) {
+                if (!visited.contains(mn)) {
+                    pending.add(mn);
                 }
             }
         }
