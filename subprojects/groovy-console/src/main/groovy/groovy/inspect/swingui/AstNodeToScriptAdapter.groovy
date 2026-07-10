@@ -400,6 +400,9 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
                 }
                 first = false
                 print it.name
+                if (!it.placeholder && !it.wildcard) {
+                    visitGenerics it.type?.genericsTypes
+                }
                 if (it.upperBounds) {
                     print ' extends '
                     boolean innerFirst = true
@@ -701,6 +704,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             print '?'
         }
         print '.'
+        visitGenerics expression.genericsTypes
         Expression method = expression.method
         if (method instanceof ConstantExpression) {
             visitConstantExpression(method, true)
@@ -737,7 +741,11 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     void visitBinaryExpression(BinaryExpression expression) {
         expression?.leftExpression?.visit this
         if (!(expression.rightExpression instanceof EmptyExpression) || expression.operation.type != Types.ASSIGN) {
-            print " $expression.operation.text "
+            if (expression?.operation?.text == '[') {
+                print expression.safe ? '?[' : ' [ '
+            } else {
+                print " $expression.operation.text "
+            }
             expression.rightExpression.visit this
 
             if (expression?.operation?.text == '[') {
@@ -768,6 +776,8 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         print '{ '
         if (expression?.parameters) {
             visitParameters(expression?.parameters)
+            print ' ->'
+        } else if (expression?.parameters == null) {
             print ' ->'
         }
         printLineBreak()
@@ -802,7 +812,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
     void visitRangeExpression(RangeExpression expression) {
         print '('
         expression?.from?.visit this
-        print '..'
+        print expression.inclusive ? '..' : '..<'
         expression?.to?.visit this
         print ')'
     }
@@ -815,7 +825,7 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
         } else if (expression?.isSafe()) {
             print '?'
         }
-        print '.'
+        print expression instanceof AttributeExpression ? '.@' : '.'
         if (expression?.property instanceof ConstantExpression) {
             visitConstantExpression((ConstantExpression) expression?.property, true)
         } else {
@@ -840,6 +850,18 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
             print "'$escaped'"
         } else {
             print expression.value
+            // re-append the literal's type suffix so re-parsing yields the same type
+            // (Integer and BigDecimal are the literal defaults and need no suffix)
+            def value = expression.value
+            if (value instanceof Long) {
+                print 'L'
+            } else if (value instanceof Float) {
+                print 'F'
+            } else if (value instanceof Double) {
+                print 'D'
+            } else if (value instanceof BigInteger) {
+                print 'G'
+            }
         }
     }
 
@@ -1043,7 +1065,9 @@ class AstNodeToScriptVisitor extends PrimaryClassNodeOperation implements Groovy
 
     @Override
     void visitShortTernaryExpression(ElvisOperatorExpression expression) {
-        visitTernaryExpression(expression)
+        expression?.booleanExpression?.visit this
+        print ' ?: '
+        expression?.falseExpression?.visit this
     }
 
     @Override

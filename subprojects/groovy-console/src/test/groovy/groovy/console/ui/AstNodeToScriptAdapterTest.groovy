@@ -159,8 +159,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
         assert result.contains('public class Tree<V> extends java.lang.Object implements groovy.lang.GroovyObject')
         assert result.contains('private java.lang.Object<V> value') // todo: is Object<V> correct? How do you know?
-        assert result.contains('private java.util.List<Tree> branches') // should the <? extends V> be dropped?
-        assert result.contains('branches = new java.util.ArrayList<Tree>()') // should the <? extends V> be dropped?
+        assert result.contains('private java.util.List<Tree<? extends java.lang.Object<V>>> branches') // GROOVY-12144: nested generics now preserved
+        assert result.contains('branches = new java.util.ArrayList<Tree<? extends java.lang.Object<V>>>()') // GROOVY-12144: nested generics now preserved
         assert result.contains('public Tree(java.lang.Object<V> value)') // again, is this correct?
         assert result.contains(' public java.lang.Object<V> getValue()') // is this correct?
         assert result.contains('public void setValue(java.lang.Object<V> value)')
@@ -322,7 +322,8 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
         assert result.contains('private static final transient java.util.logging.Logger log')
         assert result.contains("log = java.util.logging.Logger.getLogger('Event')")
-        assert result.contains('return log.isLoggable(java.util.logging.Level.FINE) ? log.fine(this.someMethod()) : null')
+        // GROOVY-12144: @Log builds Level.FINE as an AttributeExpression, now rendered .@FINE
+        assert result.contains('return log.isLoggable(java.util.logging.Level.@FINE) ? log.fine(this.someMethod()) : null')
     }
 
     void testFieldDeclarationWithValue() {
@@ -709,7 +710,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
                             foo ?: 'y'"""
         String result = compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS)
         assert result.contains("true || false ? 'y' : 'n'")
-        assert result.contains("foo ? foo : 'y'")
+        assert result.contains("foo ?: 'y'")
     }
 
     void testWhileLoop() {
@@ -982,6 +983,75 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String result = compileToScript(script)
         assert result =~ /\{\s*v = 2/
         assert result =~ /(?s)oi:.*?\{.*?v \+= 2.*?\}/
+    }
+
+    // GROOVY-12144
+    void testNestedGenerics() {
+        String result = compileToScript('Map<String, List<Integer>> nested() { null }')
+        assert result.contains('java.util.Map<String, List<Integer>> nested()')
+    }
+
+    // GROOVY-12144  -- 3.0: only inclusive `1..5` and right-exclusive `1..<5` exist
+    void testRangeExpressionExclusiveBounds() {
+        String result = compileToScript('''def a = 1..5
+            def b = 1..<5''')
+        assert result.contains('(1..5)')
+        assert result.contains('(1..<5)')
+    }
+
+    // GROOVY-12144
+    void testElvisOperator() {
+        String result = compileToScript('def a = c ?: d')
+        assert result.contains('c ?: d')
+        assert !result.contains('c ? c : d')
+    }
+
+    // GROOVY-12144
+    void testAttributeExpression() {
+        String result = compileToScript('''def a = other.@order
+            def b = foos*.@order
+            def c = other?.@order''')
+        assert result.contains('other .@order')
+        assert result.contains('foos *.@order')
+        assert result.contains('other ?.@order')
+    }
+
+    // GROOVY-12144
+    void testClosureParameterArrow() {
+        String result = compileToScript('''def implicitIt = { it * 2 }
+            def noArgs = { -> 'x' }''')
+        assert result.contains('{ ->')
+        assert result =~ /\{\s*it \* 2/
+    }
+
+    // GROOVY-12144
+    // 3.0 renders VariableExpressions with a trailing space (e.g. `list `), so safe-index
+    // access reads `list ?[0]`; verified to still re-parse/re-render as a safe index.
+    void testSafeIndexAccess() {
+        String result = compileToScript('''def a = list?[0]
+            def b = map?['key']
+            list?[1] = 42''')
+        assert result.contains('list ?[0]')
+        assert result.contains("map ?['key']")
+        assert result.contains('list ?[1] = 42')
+    }
+
+    // GROOVY-12144
+    void testNumericLiteralSuffixes() {
+        String result = compileToScript('''def a = 42L
+            def b = 2.5f
+            def c = 3.5d
+            def d = 10G''')
+        assert result.contains('= 42L')
+        assert result.contains('= 2.5F')
+        assert result.contains('= 3.5D')
+        assert result.contains('= 10G')
+    }
+
+    // GROOVY-12144
+    void testExplicitMethodTypeArguments() {
+        String result = compileToScript('def a = Collections.<String>emptyList()')
+        assert result.contains('java.util.Collections.<String>emptyList()')
     }
 
 }
