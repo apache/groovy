@@ -868,7 +868,7 @@ public class CharBuf extends Writer implements CharSequence {
         for (int index = start; index < to; index++) {
             char c = chars[index];
             if (c == '\\') {
-                if (index < to) {
+                if (index + 1 < to) {
                     index++;
                     c = chars[index];
                     switch (c) {
@@ -917,6 +917,8 @@ public class CharBuf extends Writer implements CharSequence {
                         default:
                             throw new JsonException("Unable to decode string");
                     }
+                } else {
+                    throw new JsonException("Unable to decode string");
                 }
             } else {
                 buffer[location++] = c;
