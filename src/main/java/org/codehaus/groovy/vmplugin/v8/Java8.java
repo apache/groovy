@@ -70,6 +70,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.Permission;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -294,6 +295,9 @@ public class Java8 implements VMPlugin {
             Method[] declaredMethods;
             try {
                 declaredMethods = type.getDeclaredMethods();
+                // getDeclaredMethods does not guarantee an order, and HotSpot's varies between JVM
+                // runs; sort so the annotation is emitted deterministically for reproducible builds
+                Arrays.sort(declaredMethods, Comparator.comparing(Method::getName));
             } catch (SecurityException se) {
                 declaredMethods = EMPTY_METHOD_ARRAY;
             }
