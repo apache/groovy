@@ -181,8 +181,8 @@ final class AstNodeToScriptAdapterTest {
 
         assert result.contains('public class Tree<V> extends java.lang.Object implements groovy.lang.GroovyObject')
         assert result.contains('private java.lang.Object<V> value') // todo: is Object<V> correct? How do you know?
-        assert result.contains('private java.util.List<Tree> branches') // should the <? extends V> be dropped?
-        assert result.contains('branches = new java.util.ArrayList<Tree>()') // should the <? extends V> be dropped?
+        assert result.contains('private java.util.List<Tree<? extends java.lang.Object<V>>> branches')
+        assert result.contains('branches = new java.util.ArrayList<Tree<? extends java.lang.Object<V>>>()')
         assert result.contains('public Tree(java.lang.Object<V> value)') // again, is this correct?
         assert result.contains(' public java.lang.Object<V> getValue()') // is this correct?
         assert result.contains('public void setValue(java.lang.Object<V> value)')
@@ -409,7 +409,7 @@ final class AstNodeToScriptAdapterTest {
 
         assert result.contains('private static final transient java.util.logging.Logger log')
         assert result.contains("log = java.util.logging.Logger.getLogger('Event')")
-        assert result.contains('return log.isLoggable(java.util.logging.Level.FINE) ? log.fine(this.someMethod()) : null')
+        assert result.contains('return log.isLoggable(java.util.logging.Level.@FINE) ? log.fine(this.someMethod()) : null')
     }
 
     @Test
@@ -836,7 +836,7 @@ final class AstNodeToScriptAdapterTest {
                             foo ?: 'y'"""
         String result = compileToScript(script)
         assert result.contains("true || false ? 'y' : 'n'")
-        assert result.contains("foo ? foo : 'y'")
+        assert result.contains("foo ?: 'y'")
     }
 
     @Test
@@ -1158,5 +1158,123 @@ final class AstNodeToScriptAdapterTest {
         String result = compileToScript(script)
 
         assert result.contains('(a as java.lang.String)')
+    }
+
+    // GROOVY-12144
+    @Test
+    void testNestedGenerics() {
+        String script = '''
+            Map<String, List<Integer>> nested() { null }
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('java.util.Map<String, List<Integer>> nested()')
+    }
+
+    // GROOVY-12144
+    @Test
+    void testRangeExpressionExclusiveBounds() {
+        String script = '''
+            def a = 1..5
+            def b = 1..<5
+            def c = 1<..5
+            def d = 1<..<5
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('(1..5)')
+        assert result.contains('(1..<5)')
+        assert result.contains('(1<..5)')
+        assert result.contains('(1<..<5)')
+    }
+
+    // GROOVY-12144
+    @Test
+    void testElvisOperator() {
+        String script = '''
+            def a = c ?: d
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('c ?: d')
+        assert !result.contains('c ? c : d')
+    }
+
+    // GROOVY-12144
+    @Test
+    void testAttributeExpression() {
+        String script = '''
+            def a = other.@order
+            def b = foos*.@order
+            def c = other?.@order
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('other.@order')
+        assert result.contains('foos*.@order')
+        assert result.contains('other?.@order')
+    }
+
+    // GROOVY-12144
+    @Test
+    void testClosureParameterArrow() {
+        String script = '''
+            def implicitIt = { it * 2 }
+            def noArgs = { -> 'x' }
+        '''
+        String result = compileToScript(script)
+
+        // explicit zero-argument closure keeps its arrow (otherwise it would gain an implicit 'it')
+        assert result.contains('{ ->')
+        // an implicit-'it' closure has no arrow
+        assert result =~ /\{\s*it \* 2/
+    }
+
+    // GROOVY-12144
+    @Test
+    void testSafeIndexAccess() {
+        String script = '''
+            def a = list?[0]
+            def b = map?['key']
+            list?[1] = 42
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('list?[0]')
+        assert result.contains("map?['key']")
+        assert result.contains('list?[1] = 42')
+    }
+
+    // GROOVY-12144
+    @Test
+    void testNumericLiteralSuffixes() {
+        String script = '''
+            def a = 42L
+            def b = 2.5f
+            def c = 3.5d
+            def d = 10G
+            def e = 42
+            def f = 2.5
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('= 42L')
+        assert result.contains('= 2.5F')
+        assert result.contains('= 3.5D')
+        assert result.contains('= 10G')
+        // Integer and BigDecimal are the literal defaults and carry no suffix
+        assert result.contains('= 42\n')
+        assert result.contains('= 2.5\n')
+    }
+
+    // GROOVY-12144
+    @Test
+    void testExplicitMethodTypeArguments() {
+        String script = '''
+            def a = Collections.<String>emptyList()
+        '''
+        String result = compileToScript(script)
+
+        assert result.contains('java.util.Collections.<String>emptyList()')
     }
 }
