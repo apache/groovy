@@ -353,6 +353,21 @@ public class GenericsUtils {
     }
 
     /**
+     * Computes the erasure of a type, safe to declare in a generated signature that cannot carry
+     * the original type variables: a generics placeholder is replaced by its bound
+     * ({@code T extends Number} → {@code Number}) and type arguments are dropped
+     * ({@code List<T>} → {@code List}).
+     *
+     * @since 6.0.0
+     */
+    public static ClassNode erasure(final ClassNode type) {
+        ClassNode t = type;
+        if (t == null) return ClassHelper.OBJECT_TYPE;
+        if (t.isGenericsPlaceHolder()) t = t.redirect();
+        return t.getPlainNodeReference();
+    }
+
+    /**
      * @since 2.3.0
      */
     public static ClassNode newClass(ClassNode type) {

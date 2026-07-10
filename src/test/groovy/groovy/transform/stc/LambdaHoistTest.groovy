@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue
  */
 final class LambdaHoistTest {
 
-    private static final String PROP = 'groovy.target.lambda.hoist'
+    private static final String PROP = CompilerConfiguration.LAMBDA_HOISTING
 
     /** Compiles the source with hoisting on/off and returns the sorted generated class names. */
     private static List<String> classNames(String src, boolean hoist) {

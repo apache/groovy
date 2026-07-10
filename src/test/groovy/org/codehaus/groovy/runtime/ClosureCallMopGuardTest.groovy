@@ -23,14 +23,14 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 /**
- * {@code Closure.call}'s cached direct-dispatch path must be semantically invisible:
- * it may only be taken when nothing MOP-relevant is in play. These tests pin the
- * guard — a per-instance metaclass whose {@code invokeMethod} intercepts
- * {@code doCall} must be honoured on the Java/GDK entry ({@code closure.call(...)}
- * from DGM), not just the dynamic path, for statically compiled closure classes
- * (which declare typed doCall/call methods the cache serves). Without the guard,
- * the cache invokes the target directly and the interception is silently skipped
- * on one path but not the other.
+ * The cached direct-dispatch paths ({@code Closure.call}'s override cache and
+ * {@code PackedClosure}'s dispatch tables) must be semantically invisible: they may
+ * only be taken when nothing MOP-relevant is in play. These tests pin the guard —
+ * a per-instance metaclass whose {@code invokeMethod} intercepts {@code doCall}
+ * must be honoured on the Java/GDK entry ({@code closure.call(...)} from DGM), not
+ * just the dynamic path, for statically compiled closure classes and for packed
+ * closures alike. Without the guard, the caches invoke the target directly and the
+ * interception is silently skipped on one path but not the other.
  */
 final class ClosureCallMopGuardTest {
 
@@ -59,6 +59,23 @@ final class ClosureCallMopGuardTest {
             intercept(c)
             assert c(3) == 'intercepted'           // dynamic path
             assert [3].collect(c) == ['intercepted'] // Java/GDK path: the guard must route via the MOP
+        '''
+    }
+
+    @Test
+    void perInstanceMetaclassInterceptsPackedClosureOnBothPaths() {
+        assertScript INTERCEPTOR + '''
+            @groovy.transform.PackedClosures
+            class P {
+                def m(Closure interceptor) {
+                    def c = { it * 2 }
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
+                    assert [3].collect(c) == [6]   // unperturbed: table dispatch
+                    interceptor(c)
+                    [c(3), [3].collect(c)]
+                }
+            }
+            assert new P().m(intercept) == ['intercepted', ['intercepted']]
         '''
     }
 

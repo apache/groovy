@@ -23,6 +23,7 @@ import groovy.lang.GroovySystem;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.GeneratedDispatcher;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.lang.invoke.CallSite;
@@ -567,5 +568,29 @@ public class IndyInterface {
         } else {
             return new ConstantCallSite(IndyArrayAccess.arraySet(type));
         }
+    }
+
+    /**
+     * Invokedynamic bootstrap for a class's packed-closure dispatcher accessor (GROOVY-12151):
+     * links the class's generated dispatch tables into one constant bundle, lazily on first
+     * adapter creation. Delegates to {@link GeneratedDispatcher#bootstrap}; hosted here so
+     * emitted bytecode references only this central bootstrap surface.
+     *
+     * @since 6.0.0
+     */
+    public static CallSite packedDispatchers(MethodHandles.Lookup caller, String name, MethodType type) throws Throwable {
+        return GeneratedDispatcher.bootstrap(caller, name, type);
+    }
+
+    /**
+     * Constant-dynamic bootstrap for a packed closure literal's declared parameter types
+     * (GROOVY-12151): decodes a method descriptor into a {@code Class[]} resolved once per
+     * literal site. Delegates to {@link GeneratedDispatcher#paramTypes}; hosted here so
+     * emitted bytecode references only this central bootstrap surface.
+     *
+     * @since 6.0.0
+     */
+    public static Class<?>[] packedParamTypes(MethodHandles.Lookup caller, String name, Class<?> type, String descriptor) {
+        return GeneratedDispatcher.paramTypes(caller, name, type, descriptor);
     }
 }

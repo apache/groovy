@@ -37,6 +37,7 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CallSiteWriter;
+import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
@@ -54,6 +55,7 @@ import java.util.function.Predicate;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
@@ -380,7 +382,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
-        if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
+        // a packed closure's hoisted body keeps the closure-context contract: like the inner
+        // closure class it replaces, it falls through to the dynamic property sequence (e.g.
+        // another class's private field, reachable via the MOP) instead of a compile error
+        boolean inPackedBody = controller.getMethodNode() != null
+                && controller.getMethodNode().getName().startsWith(ClosureWriter.PACKED_METHOD_PREFIX);
+        if (!isScriptVariable && !inPackedBody && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
             addPropertyAccessError(receiver, propertyName, receiverType);
         }
 
@@ -480,6 +487,19 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(receiverType), fieldName, BytecodeHelper.getTypeDescription(resultType));
                 operandStack.push(resultType);
             } else {
+                // JVMS 4.10.1.8: a protected field of a superclass in another run-time package is
+                // directly readable only through a receiver whose type is assignable to the
+                // accessing class -- so cast to the accessing class where the checker proved the
+                // receiver is one (e.g. GROOVY-9288's `with { it.superField }` compiled into the
+                // subclass, as a packed closure body is); otherwise direct access would not
+                // verify, so leave the read to the dynamic property sequence.
+                ClassNode currentClass = controller.getClassNode();
+                ClassNode castType = field.getOwner();
+                if (field.isProtected() && !currentClass.equals(field.getOwner())
+                        && !samePackageName(currentClass, field.getOwner())) {
+                    if (receiverType.isDerivedFrom(currentClass)) castType = currentClass;
+                    else return false;
+                }
                 if (implicitThis) {
                     compileStack.pushImplicitThis(true);
                     receiver.visit(controller.getAcg());
@@ -497,8 +517,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     mv.visitJumpInsn(GOTO, skip);
                     mv.visitLabel(doGet);
                 }
-                if (!operandStack.getTopOperand().isDerivedFrom(field.getOwner())) {
-                    mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(field.getOwner()));
+                if (!operandStack.getTopOperand().isDerivedFrom(castType)) {
+                    mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(castType));
                 }
                 mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(field.getOwner()), fieldName, BytecodeHelper.getTypeDescription(resultType));
                 if (safe) {

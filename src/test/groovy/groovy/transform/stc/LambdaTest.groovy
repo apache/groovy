@@ -25,6 +25,7 @@ import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 final class LambdaTest {
 
@@ -1878,7 +1879,7 @@ final class LambdaTest {
 
     // GROOVY-9770
     @Test
-    @DisabledIfSystemProperty(named = 'groovy.target.lambda.hoist', matches = 'true',
+    @DisabledIfSystemProperty(named = CompilerConfiguration.LAMBDA_HOISTING, matches = 'true',
         disabledReason = 'asserts the pre-hoist generated lambda class exists (GEP-27)')
     void testLambdaClassIsntSynthetic() {
         assertScript shell, '''
@@ -1896,7 +1897,7 @@ final class LambdaTest {
 
     // GROOVY-11905
     @Nested
-    @DisabledIfSystemProperty(named = 'groovy.target.lambda.hoist', matches = 'true',
+    @DisabledIfSystemProperty(named = CompilerConfiguration.LAMBDA_HOISTING, matches = 'true',
         disabledReason = 'asserts the pre-hoist non-capturing lambda bytecode shape (doCall on the generated lambda class); superseded when GEP-27 hoisting is enabled')
     class NonCapturingLambdaOptimizationTest extends AbstractBytecodeTestCase {
         @Test
@@ -3432,7 +3433,7 @@ final class LambdaTest {
     }
 
     @Nested
-    @DisabledIfSystemProperty(named = 'groovy.target.lambda.hoist', matches = 'true',
+    @DisabledIfSystemProperty(named = CompilerConfiguration.LAMBDA_HOISTING, matches = 'true',
         disabledReason = 'asserts the pre-hoist native lambda bytecode shape (doCall on the generated lambda class); superseded when GEP-27 hoisting is enabled')
     class NativeLambdaBytecodeTest extends AbstractBytecodeTestCase {
         @Test

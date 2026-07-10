@@ -21,9 +21,11 @@ package org.codehaus.groovy
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -37,6 +39,8 @@ import static groovy.test.GroovyAssert.assertScript
 final class ClosureAndInnerClassNodeStructureTest {
 
     @Test
+    @DisabledIfSystemProperty(named = CompilerConfiguration.CLOSURE_PACKING, matches = 'true',
+        disabledReason = 'asserts the generated closure-class structure, which GEP-27 closure packing removes')
     void testStructure() {
         def cu = new CompilationUnit()
         cu.addSource('t.groovy', '''
@@ -81,6 +85,8 @@ final class ClosureAndInnerClassNodeStructureTest {
     }
 
     @Test // GROOVY-5351
+    @DisabledIfSystemProperty(named = CompilerConfiguration.CLOSURE_PACKING, matches = 'true',
+        disabledReason = 'asserts the generated closure-class structure, which GEP-27 closure packing removes')
     void testGetSimpleName() {
         assertScript '''
             class X {
