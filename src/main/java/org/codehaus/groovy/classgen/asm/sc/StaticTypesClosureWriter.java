@@ -57,6 +57,13 @@ public class StaticTypesClosureWriter extends ClosureWriter {
         super(wc);
     }
 
+    // Under @CompileStatic the type checker's owner-vs-delegate resolution is authoritative, so the
+    // capability analysis may prove a closure delegate-independent and pack it automatically.
+    @Override
+    protected boolean isStaticCompilation() {
+        return true;
+    }
+
     /** {@inheritDoc} */
     @Override
     protected ClassNode createClosureClass(final ClosureExpression expression, final int mods) {
