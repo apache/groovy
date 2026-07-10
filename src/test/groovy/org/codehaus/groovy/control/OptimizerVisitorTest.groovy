@@ -20,9 +20,11 @@ package org.codehaus.groovy.control
 
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.classgen.GeneratorContext
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.Opcodes
 
@@ -82,5 +84,60 @@ class OptimizerVisitorTest {
         def b = classWithCode('B', stmt(shared))
 
         assert optimize(a, b).isEmpty()
+    }
+
+    /**
+     * Pipeline-level reproducer of the same problem through the real compiler, so the test
+     * survives a future rewrite of the internal caching mechanism. A buggy AST transform
+     * aliases (rather than copies) a constant node from class {@code A} into class {@code B}:
+     * {@code A} numbers the shared {@code 2.5} as {@code $const$1} (behind {@code 9.9} =
+     * {@code $const$0}), while {@code B}, meeting the same node first, re-stamps it
+     * {@code $const$0} — so {@code B} would read the wrong cached field at runtime. Since the
+     * fix is diagnostic only (it does not rewrite the tree), the observable behaviour is the
+     * warning surfacing from a genuine {@code CompilationUnit} compile rather than a corrected
+     * value.
+     */
+    @Test // GROOVY-12131
+    void sharedConstantNodeAcrossClassesWarnsThroughFullCompiler() {
+        def cu = new CompilationUnit()
+        cu.addSource('shared.groovy', '''
+            class A {
+                def m() {
+                    def a = 9.9G
+                    def b = 2.5G
+                }
+            }
+            class B {
+                def m() {}
+            }
+        ''')
+
+        // before OptimizerVisitor (CLASS_GENERATION), alias A's 2.5 node into B's body
+        cu.addPhaseOperation({ SourceUnit source, GeneratorContext context, ClassNode cn ->
+            if (cn.nameWithoutPackage != 'B') return
+            def a = cn.module.classes.find { it.nameWithoutPackage == 'A' }
+            def shared = findConstant(a, 2.5G)
+            assert shared != null: 'expected a 2.5 constant node in class A'
+            cn.getDeclaredMethods('m')[0].code.statements.add(0, stmt(shared))
+        } as CompilationUnit.IPrimaryClassNodeOperation, Phases.CANONICALIZATION)
+
+        cu.compile(Phases.CLASS_GENERATION)
+
+        def collector = cu.errorCollector
+        def warnings = (0..<collector.warningCount).collect { collector.getWarning(it).message }
+        assert warnings.any { it.contains('shared between classes') && it.contains('$const$') }
+    }
+
+    private static ConstantExpression findConstant(ClassNode cn, value) {
+        ConstantExpression result = null
+        def finder = new CodeVisitorSupport() {
+            @Override
+            void visitConstantExpression(ConstantExpression ce) {
+                if (result == null && ce.value == value) result = ce
+                super.visitConstantExpression(ce)
+            }
+        }
+        cn.methods.each { it.code?.visit(finder) }
+        result
     }
 }
