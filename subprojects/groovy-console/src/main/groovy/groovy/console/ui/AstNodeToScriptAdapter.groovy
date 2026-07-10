@@ -392,6 +392,9 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
                 }
                 first = false
                 print it.name
+                if (!it.placeholder && !it.wildcard) {
+                    visitGenerics it.type?.genericsTypes
+                }
                 if (it.upperBounds) {
                     print ' extends '
                     boolean innerFirst = true
@@ -689,6 +692,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             print '?'
         }
         print '.'
+        visitGenerics expression.genericsTypes
         Expression method = expression.method
         if (method instanceof ConstantExpression) {
             visitConstantExpression(method, true)
@@ -730,9 +734,9 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         }
         if (!(expression.rightExpression instanceof EmptyExpression) || expression.operation.type != Types.ASSIGN) {
             String opText = expression?.operation?.text
-            boolean isSubscriptOp = opText == '['
+            boolean isSubscriptOp = opText == '[' || opText == '?['
             if (isSubscriptOp) {
-                print "["
+                print expression.safe ? '?[' : opText
             } else {
                 print " $opText "
             }
@@ -773,6 +777,8 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         if (expression?.parameters) {
             visitParameters(expression?.parameters)
             print ' ->'
+        } else if (expression?.parameters == null) {
+            print ' ->'
         }
         printLineBreak()
         indented {
@@ -806,7 +812,9 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
     void visitRangeExpression(RangeExpression expression) {
         print '('
         expression?.from?.visit this
+        if (expression.exclusiveLeft) print '<'
         print '..'
+        if (expression.exclusiveRight) print '<'
         expression?.to?.visit this
         print ')'
     }
@@ -820,7 +828,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         } else if (expression?.isSafe()) {
             print '?'
         }
-        print '.'
+        print expression instanceof AttributeExpression ? '.@' : '.'
         if (expression?.property instanceof ConstantExpression) {
             visitConstantExpression((ConstantExpression) expression?.property, true)
         } else {
@@ -845,6 +853,18 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             print "'$escaped'"
         } else {
             print expression.value
+            // re-append the literal's type suffix so re-parsing yields the same type
+            // (Integer and BigDecimal are the literal defaults and need no suffix)
+            def value = expression.value
+            if (value instanceof Long) {
+                print 'L'
+            } else if (value instanceof Float) {
+                print 'F'
+            } else if (value instanceof Double) {
+                print 'D'
+            } else if (value instanceof BigInteger) {
+                print 'G'
+            }
         }
     }
 
@@ -1071,7 +1091,9 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
 
     @Override
     void visitShortTernaryExpression(ElvisOperatorExpression expression) {
-        visitTernaryExpression(expression)
+        expression?.booleanExpression?.visit this
+        print ' ?: '
+        expression?.falseExpression?.visit this
     }
 
     @Override
