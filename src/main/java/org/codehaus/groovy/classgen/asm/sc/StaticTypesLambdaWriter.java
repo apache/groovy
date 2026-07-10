@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.query.AstQuery;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.classgen.BytecodeInstruction;
@@ -439,13 +440,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     }
 
     private static boolean containsNestedFunction(final Statement code) {
-        if (code == null) return false;
-        boolean[] found = {false};
-        code.visit(new CodeVisitorSupport() {
-            @Override public void visitClosureExpression(final ClosureExpression e) { found[0] = true; }
-            @Override public void visitLambdaExpression(final LambdaExpression e) { found[0] = true; }
-        });
-        return found[0];
+        // LambdaExpression extends ClosureExpression, so this matches both nested closures and lambdas.
+        return code != null && AstQuery.from(code).descendants(ClosureExpression.class).any();
     }
 
     /**
