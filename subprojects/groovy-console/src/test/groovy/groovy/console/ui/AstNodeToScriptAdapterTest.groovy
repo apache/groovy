@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.DoWhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX
@@ -43,6 +44,7 @@ final class AstNodeToScriptAdapterTest {
         new AstNodeToScriptAdapter().compileToScript(script, phase.phaseNumber)
     }
 
+    @Test
     void testScript() {
         String result = compileToScript('true')
 
@@ -52,6 +54,7 @@ final class AstNodeToScriptAdapterTest {
         assert result =~ /public java.lang.Object run\(\) \{\s*true\s*\}/
     }
 
+    @Test
     void testStringEscaping() {
         String script = ''' if (_out.toString().endsWith('\\n\\n')) { }  '''
         String result = compileToScript(script)
@@ -59,6 +62,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("_out.toString().endsWith('\\n\\n')")
     }
 
+    @Test
     void testPackage() {
         String script = ''' package foo.bar
                             true '''
@@ -67,6 +71,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('package foo.bar\n')
     }
 
+    @Test
     void testSubScriptOperator() {
         String script = '''
             def file = new File((String)args[0])
@@ -78,6 +83,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('file = new java.io.File(((java.lang.String) args[0]))')
     }
 
+    @Test
     void testMethods() {
         String script = '''
             def method1() {}
@@ -105,6 +111,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('public java.lang.Integer[] method10(java.lang.String[] parm1, java.lang.Object[] parm2)')
     }
 
+    @Test
     void testGenerics() {
         String script = '''
             public class MyList<E> extends AbstractList<E> implements List<E> {
@@ -117,6 +124,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('public class MyList<E> extends java.util.AbstractList<E> implements java.util.List<E> {')
     }
 
+    @Test
     void testGenericBoundsOnClass() {
         String script = '''import java.util.concurrent.Callable
             abstract class MyClass<T extends String & Callable<String>, U extends Integer> extends AbstractList<String> implements Callable<? super Number> { }
@@ -128,6 +136,7 @@ final class AstNodeToScriptAdapterTest {
                 'implements java.util.concurrent.Callable<? super java.lang.Number> {')
     }
 
+    @Test
     void testGenericsInVariables() {
         // you think you know Java generics? Just contemplate a load of this mess:
         String script = '''
@@ -153,6 +162,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('b.addBranch(new Tree<java.lang.Double>(java.lang.Math.PI))')
     }
 
+    @Test
     void testGenericsInMethods() {
         // you think you know Java generics? Just contemplate a load of this mess:
         String script = '''
@@ -180,6 +190,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('void addBranch(Tree<? extends java.lang.Object<V>> branch)')
     }
 
+    @Test
     void testBitwiseNegation() {
         String script = '''
             def foo = { it }
@@ -191,6 +202,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('~(foo.call(~( bar ) ))')
     }
 
+    @Test
     void testRangeExpression() {
         String script = '''
             (1..4).each { println it }
@@ -202,6 +214,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("('1'..'4').collect({ java.lang.Object it ->")
     }
 
+    @Test
     void testUnaryOperators() {
         String script = '''
             def x = 1
@@ -233,6 +246,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('+x')
     }
 
+    @Test
     void testArrayHandling() {
         String script = '''
             String[] x = [] as String[]
@@ -247,6 +261,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('arr = new java.lang.String[0]')
     }
 
+    @Test
     void testArrayHandling_Multidimension() {
         String script = '''
             String[][] x = [] as String[][]
@@ -263,6 +278,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('arr = new java.lang.String[this.xSize(), 3]')
     }
 
+    @Test
     void testForLoop() {
         String script = '''
             for (int x = 0; x < 10;( x )++) {
@@ -276,6 +292,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('continue')
     }
 
+    @Test
     void testForLoopEmptyParameter() {
         String script = '''
             int y = 0
@@ -290,6 +307,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('for (;;) {')
     }
 
+    @Test
     void testPreAndPostFix() {
         String script = '''
             def x = 1, y = 2
@@ -300,6 +318,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('x++ + --y - --(x++)')
     }
 
+    @Test
     void testMultipleAssignments() {
         String script = '''
             def (a, b, c, d) = [1, 2, 3, 4]
@@ -316,6 +335,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('java.lang.Object z = [1, 2]')
     }
 
+    @Test
     void testListsAndMaps() {
         String script = '''
             def (bar, x, bif, qux) = [1, 2, 3, 4]
@@ -330,6 +350,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("['foo': 'bar', 'baz': bif + qux ]")
     }
 
+    @Test
     void testForEachLoop() {
         String script = '''
             for (int x : (1..10)) {
@@ -341,6 +362,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('for (int x : (1..10)) {')
     }
 
+    @Test
     void testSwitchStatements() {
         String script = '''import java.awt.Color
             switch (someMethod()) {
@@ -373,6 +395,7 @@ final class AstNodeToScriptAdapterTest {
         assert !result.contains('default:')
     }
 
+    @Test
     void testLogAnnotation() {
         String script = '''
             @groovy.util.logging.Log
@@ -389,6 +412,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('return log.isLoggable(java.util.logging.Level.FINE) ? log.fine(this.someMethod()) : null')
     }
 
+    @Test
     void testFieldDeclarationWithValue() {
         String script = '''
            class Event {
@@ -404,6 +428,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("bar = '123'")
     }
 
+    @Test
     void testClassAndProperties() {
         String script = '''
             class Event {
@@ -418,6 +443,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('metaClass = /*BytecodeExpression*/')
     }
 
+    @Test
     void testClassAnnotations() {
         String script = '''import org.codehaus.groovy.transform.*
             @SuppressWarnings
@@ -443,6 +469,7 @@ final class AstNodeToScriptAdapterTest {
                 result.contains('includeNames = false')
     }
 
+    @Test
     void testMethodAnnotations() {
         String script = '''import org.codehaus.groovy.transform.*
             class Event {
@@ -469,6 +496,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('@MyAnnotation(') && result.contains('p2 = false') && result.contains('p1 = true')
     }
 
+    @Test
     void testPropertyAnnotations() {
         String script = '''import org.codehaus.groovy.transform.*
             class Event {
@@ -495,6 +523,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('@MyAnnotation(') && result.contains('p2 = false') && result.contains('p1 = true')
     }
 
+    @Test
     void testPackageAnnotations() {
         String script = '''
             @SuppressWarnings
@@ -522,6 +551,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('package foo.bar.baz')
     }
 
+    @Test
     void testImportStatements() {
         String script = '''
             @SuppressWarnings
@@ -567,6 +597,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('import java.util.concurrent.*')
     }
 
+    @Test
     void testParameterAnnotations() {
         String script = '''
             def method(@SuppressWarnings @SuppressWarnings('foo') parameter) {
@@ -577,6 +608,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("public java.lang.Object method(@java.lang.SuppressWarnings @java.lang.SuppressWarnings(value = 'foo') java.lang.Object parameter) {")
     }
 
+    @Test
     void testParenthesisInArgumentList() {
         String script = '''
             public java.lang.String toString() {
@@ -593,6 +625,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("_result.append(')')")
     }
 
+    @Test
     void testStaticMethods() {
         String script = "Math.min(5, Math.min('str', 2))"
         String result = compileToScript(script)
@@ -600,6 +633,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("java.lang.Math.min(5, java.lang.Math.min('str', 2))")
     }
 
+    @Test
     void testAtImmutableClass() {
         String script = '@groovy.transform.Immutable class Event { }'
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
@@ -613,6 +647,7 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains('return $to$string')
     }
 
+    @Test
     void testToStringClassAndStaticMethodCallExpression() {
         String script = '@groovy.transform.ToString class Event { Date when }'
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
@@ -621,10 +656,10 @@ final class AstNodeToScriptAdapterTest {
         assert result.contains("_result.append(org.codehaus.groovy.runtime.FormatHelper.toString(this.getWhen())")
     }
 
+    @Test
     void testAtImmutableClassWithProperties() {
         String script = '''
             import groovy.transform.Immutable
-import org.junit.jupiter.api.Test
             @Immutable class Event {
                 String title
                 Date when
@@ -639,7 +674,7 @@ import org.junit.jupiter.api.Test
 
         // assert hashCode
         assert result.contains('public int hashCode()')
-        assert result.contains('java.lang.Object _result = org.codehaus.groovy.util.HashCodeHelper.initHash()')
+        assert result.contains('java.lang.Integer _result = org.codehaus.groovy.util.HashCodeHelper.initHash()')
         assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getTitle())")
         assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getWhen())")
         assert result.contains("_result = org.codehaus.groovy.util.HashCodeHelper.updateHash(_result, this.getColor())")
@@ -652,6 +687,7 @@ import org.junit.jupiter.api.Test
         }
     }
 
+    @Test
     void testAnonymousInnerClass() {
         String script = '''
             new Object() {
@@ -665,6 +701,7 @@ import org.junit.jupiter.api.Test
         assert result =~ /public java\.lang\.String toString\(\)/
     }
 
+    @Test
     void testLazyAnnotation() {
         String script = '''
             class Event {
@@ -673,12 +710,13 @@ import org.junit.jupiter.api.Test
         '''
         String result = compileToScript(script, CompilePhase.CANONICALIZATION)
 
-        assert result =~ /Lazy\s*private java\.util\.ArrayList .*speakers /
+        assert result =~ /Lazy\s*(?:@groovy\.transform\.Internal\s*)?private java\.util\.ArrayList .*speakers /
         assert result.contains('public java.util.ArrayList getSpeakers() {')
         assert result.contains('if ($speakers != null') || result.contains('if (null != $speakers')
         assert result.contains('$speakers = new java.util.ArrayList()')
     }
 
+    @Test
     void testDelegateClass() {
         String script = '''
             class Event {
@@ -693,6 +731,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('public java.util.Date getWhen() {')
     }
 
+    @Test
     void testAnnotationWithValueClass() {
         String script = '''
             class Event {
@@ -707,6 +746,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('private java.util.Date when ')
     }
 
+    @Test
     void testTryCatch() {
         String script = '''\
             try {
@@ -738,6 +778,7 @@ import org.junit.jupiter.api.Test
         assert !result.contains('finally {')
     }
 
+    @Test
     void testSuperAndThisCalls() {
         String script = '''
             class MyClass {
@@ -756,6 +797,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('public MyClass(java.lang.Object foo) {')
     }
 
+    @Test
     void testTryCatchFinally() {
         String script = '''\
             try {
@@ -769,6 +811,7 @@ import org.junit.jupiter.api.Test
         assert result =~ /try\s*\{\s*false\s*\}\s*finally\s*\{\s*true\s*\}/
     }
 
+    @Test
     void testSynchronizedBlock() {
         String script = '''\
             synchronized(this) {
@@ -787,6 +830,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('}')
     }
 
+    @Test
     void testTernaryOperaters() {
         String script = """true || false ? 'y' : 'n'
                             foo ?: 'y'"""
@@ -795,6 +839,7 @@ import org.junit.jupiter.api.Test
         assert result.contains("foo ? foo : 'y'")
     }
 
+    @Test
     void testWhileLoop() {
         String script = '''while ("foo") println 5
                             while ("foo") {println 5; println 5; break; }'''
@@ -803,6 +848,7 @@ import org.junit.jupiter.api.Test
         assert result.contains("while ('foo') {")
     }
 
+    @Test
     void testDoWhileLoop() {
         def doWhile = new DoWhileStatement(
                 new BooleanExpression(constX(true)),
@@ -819,6 +865,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('} while (true)')
     }
 
+    @Test
     void testAssertStatement() {
         String script = '''
             assert 1 == 1; assert true == foo() : 'message'
@@ -829,6 +876,7 @@ import org.junit.jupiter.api.Test
         assert result.contains("assert true == this.foo() : 'message'")
     }
 
+    @Test
     void testMethodPointer() {
         String script = '''
             class Event {
@@ -855,6 +903,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('assert 1 == m3.call(6) : null')
     }
 
+    @Test
     void testAssertRegexExpression() {
         String script = '''
             assert "abc.def" =~ /[a-z]b[a-z]\\.def/
@@ -866,6 +915,7 @@ import org.junit.jupiter.api.Test
         assert result.contains("assert 'cheesecheese' =~ 'cheese' : null")
     }
 
+    @Test
     void testArrayExpression() {
         String script = '''
             def x = [4, 5, 6] as String[]
@@ -877,6 +927,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('[1, 2, 3] << new java.lang.Integer[x.length]')
     }
 
+    @Test
     void testSpreadDot() {
         String script = '''
             def x = [ ['a':11, 'b':12], ['a':21, 'b':22] ]
@@ -890,6 +941,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('assert x*.a == [11, 21] : null')
     }
 
+    @Test
     void testSpreadNotationNullHandling() {
         String script = '''
             def x = [ ['a':11, 'b':12], ['a':21, 'b':22], null ]
@@ -905,6 +957,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('}) : null')
     }
 
+    @Test
     void testSpreadNotationAdvanced() {
         String script = '''
             class MyClass{ def getA(){ 'abc' } }
@@ -917,6 +970,7 @@ import org.junit.jupiter.api.Test
         assert result.contains("assert x*.a == [21, null, 'abc'] : null")
     }
 
+    @Test
     void testSpreadNotationForMethodsOnLists() {
         String script = '''
             class MyClass{ def getA(){ 'abc' } }
@@ -933,6 +987,7 @@ import org.junit.jupiter.api.Test
         assert result.contains("assert [c1, c2]*.getA() == ['abc', 'abc'] : null")
     }
 
+    @Test
     void testVisitSafeMethodCall() {
         String script = 'someMethod()?.somethingElse()*.sum()'
         String result = compileToScript(script)
@@ -940,6 +995,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('someMethod()?.somethingElse()*.sum()')
     }
 
+    @Test
     void testSpreadNotationInMapDefinition() {
         String script = '''
             assert ['z':900, *:['a':100, 'b':200], 'a':300] == ['a':300, 'b':200, 'z':900]
@@ -951,6 +1007,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('assert [*: [3: 3, *: [5: 5]], 7: 7] == [3: 3, 5: 5, 7: 7] : null')
     }
 
+    @Test
     void testSpreadNotationInClosure() {
         String script = '''
             def f(){ [ 1:'u', 2:'v', 3:'w' ] }
@@ -969,6 +1026,7 @@ import org.junit.jupiter.api.Test
     }
 
     // GROOVY-4636
+    @Test
     void testObjectInitializers() {
         String script = '''
             class A {
@@ -985,6 +1043,7 @@ import org.junit.jupiter.api.Test
         assert result =~ /(?s)public A\(\) \{.*?v = 2\s*v = 1\s*\}/
     }
 
+    @Test
     void testStatementLabels() {
         String script = '''
             label1:
@@ -1039,6 +1098,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('label6:\nsynchronized')
     }
 
+    @Test
     void testStatementLabelsForDoWhileLoop() {
         def doWhile = new DoWhileStatement(
                 new BooleanExpression(constX(true)),
@@ -1056,6 +1116,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('} while (true)')
     }
 
+    @Test
     void testNestedObjectInitializers() {
         String script = '''
             class A {
@@ -1077,6 +1138,7 @@ import org.junit.jupiter.api.Test
         assert result =~ /(?s)oi:.*?\{.*?v \+= 2.*?\}/
     }
 
+    @Test
     void testVisitIfElse() {
         String script = '''
             String a = 'foo'
@@ -1087,6 +1149,7 @@ import org.junit.jupiter.api.Test
         assert result.contains('if (a instanceof java.lang.String) {')
     }
 
+    @Test
     void testVisitCastExpression() {
         String script = '''
             String a = 'foo'
