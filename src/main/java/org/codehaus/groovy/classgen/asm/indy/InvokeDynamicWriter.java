@@ -63,6 +63,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.GET;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INIT;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INTERFACE;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.METHOD;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.SET;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.GROOVY_OBJECT;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.IMPLICIT_THIS;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.SAFE_NAVIGATION;
@@ -322,6 +323,42 @@ public class InvokeDynamicWriter extends InvocationWriter {
         if (implicitThis) flags |= IMPLICIT_THIS;
         else if (isThisExpression(receiver)) flags |= THIS_CALL; // GROOVY-6335
         finishIndyCall(BSM, GET.getCallSiteName(), descriptor, 1, propertyName, flags);
+    }
+
+    /**
+     * Emits an {@code invokedynamic} property-write call site (GROOVY-12138).
+     * On entry, the assigned value sits on the operand stack (the assignment
+     * machinery evaluates the RHS before visiting the LHS). The value is
+     * boxed, the receiver pushed, and the two swapped so the call-site shape
+     * is receiver-first — {@code (ReceiverType, ValueType)void} — preserving
+     * the runtime invariant that {@code arguments[0]} is the receiver. The
+     * void return means no operand-stack result to clean up, matching the
+     * classic adapter path's accounting.
+     */
+    protected void writeSetProperty(final Expression receiver, final String propertyName, final boolean implicitThis, final boolean groovyObject) {
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+
+        operandStack.box(); // the assigned value, pushed before the LHS visit
+
+        compileStack.pushLHS(false);
+        compileStack.pushImplicitThis(implicitThis);
+        visitReceiverOfMethodCall(receiver);
+        compileStack.popImplicitThis();
+
+        String receiverDescriptor = getTypeDescription(operandStack.getTopOperand());
+        operandStack.swap(); // ... value, receiver -> ... receiver, value
+        String valueDescriptor = getTypeDescription(operandStack.getTopOperand());
+        String descriptor = "(" + receiverDescriptor + valueDescriptor + ")V";
+
+        int flags = 0;
+        if (groovyObject) flags |= GROOVY_OBJECT;
+        if (implicitThis) flags |= IMPLICIT_THIS;
+        else if (isThisExpression(receiver)) flags |= THIS_CALL;
+        controller.getMethodVisitor().visitInvokeDynamicInsn(SET.getCallSiteName(), descriptor, BSM, propertyName, flags);
+
+        operandStack.remove(2); // the indy instruction consumed receiver and value
+        compileStack.popLHS();
     }
 
     /** {@inheritDoc} */

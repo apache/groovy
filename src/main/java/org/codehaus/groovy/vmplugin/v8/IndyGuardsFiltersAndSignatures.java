@@ -65,12 +65,12 @@ public class IndyGuardsFiltersAndSignatures {
             SAME_CLASS, SAME_CLASSES, SAME_MC, IS_NULL, NON_NULL,
             UNWRAP_METHOD, UNWRAP_EXCEPTION,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
-            GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,META_METHOD_INVOKER,
+            GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY, GROOVY_OBJECT_SET_PROPERTY, META_METHOD_INVOKER,
             META_CLASS_INVOKE_METHOD, META_CLASS_INVOKE_STATIC_METHOD,
             BEAN_CONSTRUCTOR_PROPERTY_SETTER,
             META_PROPERTY_GETTER,
             SLOW_META_CLASS_FIND,
-            MOP_GET, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
+            MOP_GET, MOP_SET, SET_PROPERTY, MOP_INVOKE_CONSTRUCTOR, MOP_INVOKE_METHOD,
             INTERCEPTABLE_INVOKER,
             BOOLEAN_IDENTITY, CLASS_FOR_NAME,
             DTT_CAST_TO_TYPE, SAM_CONVERSION,
@@ -90,6 +90,7 @@ public class IndyGuardsFiltersAndSignatures {
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic (GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
             GROOVY_OBJECT_INVOKER                = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "invokeGroovyObjectInvoker", MethodType.methodType(Object.class, MissingMethodException.class, Object.class, String.class, Object[].class));
             GROOVY_OBJECT_GET_PROPERTY           = LOOKUP.findVirtual(GroovyObject.class, "getProperty", MethodType.methodType(Object.class, String.class));
+            GROOVY_OBJECT_SET_PROPERTY           = LOOKUP.findVirtual(GroovyObject.class, "setProperty", MethodType.methodType(void.class, String.class, Object.class));
             META_METHOD_INVOKER                  = LOOKUP.findVirtual(MetaMethod.class, "doMethodInvoke", MethodType.methodType(Object.class, Object.class, Object[].class));
             META_CLASS_INVOKE_METHOD             = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", MethodType.methodType(Object.class, Class.class, Object.class, String.class, Object[].class, boolean.class, boolean.class));
             META_CLASS_INVOKE_STATIC_METHOD      = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
@@ -97,6 +98,8 @@ public class IndyGuardsFiltersAndSignatures {
             META_PROPERTY_GETTER                 = LOOKUP.findVirtual(MetaProperty.class, "getProperty", OBJECT_FILTER);
             SLOW_META_CLASS_FIND                 = LOOKUP.findStatic (InvokerHelper.class, "getMetaClass", MethodType.methodType(MetaClass.class, Object.class));
             MOP_GET                              = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
+            MOP_SET                              = LOOKUP.findVirtual(MetaObjectProtocol.class, "setProperty", MethodType.methodType(void.class, Object.class, String.class, Object.class));
+            SET_PROPERTY                         = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "setProperty", MethodType.methodType(void.class, String.class, Class.class, Object.class, Object.class));
             MOP_INVOKE_CONSTRUCTOR               = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", MethodType.methodType(Object.class, Object[].class));
             MOP_INVOKE_METHOD                    = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
             INTERCEPTABLE_INVOKER                = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
@@ -119,6 +122,21 @@ public class IndyGuardsFiltersAndSignatures {
      * Constant handle that always returns {@code null}.
      */
     protected static final MethodHandle NULL_REF = MethodHandles.constant(Object.class, null);
+
+    /**
+     * Adapter shim for the non-fast-path property write of the indy
+     * {@code SetPropertySelector}. The parameter order — {@code name},
+     * {@code sender}, {@code receiver}, {@code value} — is chosen so that
+     * binding the compile-time-known {@code name} and {@code sender} as a
+     * leading prefix with a single {@link MethodHandles#insertArguments} call
+     * leaves exactly the call-site shape {@code (receiver, value)void}, with no
+     * permute required. For now it just reorders into
+     * {@link ScriptBytecodeAdapter#setProperty}; this is also the natural seam
+     * for inlining that resolution logic in the future.
+     */
+    public static void setProperty(String name, Class<?> sender, Object receiver, Object value) throws Throwable {
+        ScriptBytecodeAdapter.setProperty(value, sender, receiver, name);
+    }
 
     /**
      * This method is called by the handle to realize the bean constructor

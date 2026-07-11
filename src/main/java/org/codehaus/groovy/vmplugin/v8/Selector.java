@@ -22,6 +22,8 @@ import groovy.lang.Closure;
 import groovy.lang.ExpandoMetaClass;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
+import groovy.lang.MetaBeanProperty;
+import groovy.lang.MetaProperty;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
@@ -91,6 +93,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_MC;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM_CONVERSION;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SET_PROPERTY;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_EXCEPTION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.UNWRAP_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.unwrap;
@@ -178,7 +181,7 @@ public abstract class Selector {
             case INIT      -> new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case METHOD    -> new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case GET       -> new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case SET       -> throw new GroovyBugError("your call tried to do a property set, which is not supported.");
+            case SET       -> new SetPropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             case CAST      -> new CastSelector(callSite, sender, methodName, arguments);
             case INTERFACE -> new InterfaceSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
             default        -> throw new GroovyBugError("unexpected call type");
@@ -438,6 +441,155 @@ public abstract class Selector {
             if (LOG_ENABLED) LOG.info("set meta class invocation path for property get.");
             handle = MethodHandles.insertArguments(MOP_GET, 2, this.name);
             handle = MethodHandles.insertArguments(handle, 0, mc);
+        }
+    }
+
+    /**
+     * Property-write based {@link Selector} (GROOVY-12138). Call sites have the
+     * shape {@code (receiver, value)void}; {@code args[0]} is the receiver and
+     * {@code args[1]} the value being assigned, so the standard guard machinery
+     * (receiver metaclass identity, switch point, argument classes) applies
+     * unchanged — the value-class guard triggers re-selection when the assigned
+     * type changes.
+     * <p>
+     * The fast path covers the plain cases only: a non-static
+     * {@link MetaBeanProperty} whose setter accepts the runtime value type
+     * directly, or a writable field of matching type. Everything else — type
+     * coercion, {@code propertyMissing}, maps, static and expando properties —
+     * falls through to {@link MetaObjectProtocol#setProperty}, which is exactly
+     * the path all writes took before this selector existed.
+     */
+    private static class SetPropertySelector extends MethodSelector {
+
+        private static final Class<?>[] SET_PROPERTY_PARAMS = {String.class, Object.class};
+
+        public SetPropertySelector(CacheableCallSite callSite, Class<?> sender, String propertyName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+            super(callSite, sender, propertyName, callType, safeNavigation, thisCall, spreadCall, arguments);
+        }
+
+        /**
+         * Property writes are not routed through {@code invokeMethod}, thus always returns false.
+         */
+        @Override
+        public boolean setInterceptor() {
+            return false;
+        }
+
+        /**
+         * Chooses the setter or field for a property write from the metaclass.
+         * The fast path is restricted to shapes whose resolution provably does
+         * not depend on the sender (see {@code MetaClassImpl#setProperty}'s
+         * field-vs-setter precedence, GROOVY-8283) or on receiver kind (maps,
+         * GROOVY-8065/GROOVY-11367; overridden {@code setProperty}). Anything
+         * else keeps the exact classic behavior via the adapter fallback in
+         * {@link #setMetaClassCallHandleIfNeeded}.
+         */
+        @Override
+        public void chooseMeta(MetaClassImpl mci) {
+            if (method != null || mci == null) return;
+            // ExpandoMetaClass (also produced by Class.mixin) overrides
+            // setProperty itself; only a plain MetaClassImpl resolution is
+            // safe to mirror here — mirroring the GET selector, which also
+            // keeps EMC off its fast metaclass path
+            if (mci.getClass() != MetaClassImpl.class) return;
+            Object receiver = getCorrectedReceiver();
+            if (receiver instanceof Class || receiver instanceof java.util.Map) return;
+            if (GroovyCategorySupport.hasCategoryInCurrentThread()) return; // categories can contribute setters
+
+            // a setProperty(String,Object) contributed by the class itself, a
+            // mixin, or an expando closure intercepts every write; only the
+            // GroovyObject interface default is the benign non-intercepting
+            // case (its behavior is the metaclass path this selector mirrors).
+            // Two complementary probes: reflection sees compiled overrides
+            // (including inherited ones), the metaclass sees mixin/expando
+            // contributions that reflection cannot.
+            if (receiver instanceof GroovyObject && hasOverriddenSetProperty(receiver.getClass())) return;
+            MetaMethod customSetProperty = mci.pickMethod("setProperty", SET_PROPERTY_PARAMS);
+            if (customSetProperty != null
+                    && customSetProperty.getDeclaringClass().getTheClass() != GroovyObject.class) {
+                return;
+            }
+
+            MetaProperty mp = mci.getMetaProperty(name);
+            Object value = args[1];
+            if (mp instanceof MetaBeanProperty mbp && !mp.isStatic()) {
+                MetaMethod setter = mbp.getSetter();
+                CachedField field = mbp.getField();
+                if (setter != null) {
+                    // a non-private backing field can take precedence over the
+                    // setter depending on the sender (GROOVY-8283): only the
+                    // private-or-absent-field shape is sender-independent
+                    if ((field == null || field.isPrivate()) && acceptsDirectly(setter, value)) {
+                        method = setter;
+                        if (LOG_ENABLED) LOG.info("direct setter selected for property write: " + setter);
+                    }
+                    return;
+                }
+                if (field != null) {
+                    setFieldWriteHandle(field, value);
+                }
+            } else if (mp instanceof CachedField cf && !mp.isStatic()) {
+                setFieldWriteHandle(cf, value);
+            }
+            // otherwise (no meta property, listeners, expando, propertyMissing, ...): adapter path
+        }
+
+        /**
+         * Mirrors the receiver test of {@code ScriptBytecodeAdapter#setProperty}:
+         * a {@code GroovyObject} whose {@code setProperty} is a real compiled
+         * override (not the interface default) intercepts all writes.
+         */
+        private static boolean hasOverriddenSetProperty(Class<?> receiverClass) {
+            try {
+                return !receiverClass.getMethod("setProperty", String.class, Object.class).isDefault();
+            } catch (ReflectiveOperationException ignore) {
+                return true; // cannot decide: stay on the adapter path
+            }
+        }
+
+        private boolean acceptsDirectly(MetaMethod setter, Object value) {
+            var parameterTypes = setter.getParameterTypes();
+            if (parameterTypes.length != 1 || setter.isVargsMethod()) return false;
+            if (!Modifier.isPublic(setter.getModifiers())) return false;
+            Class<?> parameterType = parameterTypes[0].getTheClass();
+            if (value == null) return !parameterType.isPrimitive();
+            return TypeHelper.getWrapperClass(parameterType).isInstance(value);
+        }
+
+        private void setFieldWriteHandle(CachedField field, Object value) {
+            // only public fields are sender-independent; the rest go through
+            // the sender-aware adapter path
+            if (!Modifier.isPublic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())) return;
+            Class<?> fieldType = field.getType();
+            boolean accepts = (value == null) ? !fieldType.isPrimitive()
+                                              : TypeHelper.getWrapperClass(fieldType).isInstance(value);
+            if (!accepts) return; // needs coercion: adapter path
+            try {
+                // like the property-get field path: lookup for the sender, then unreflect
+                @SuppressWarnings("removal")
+                MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
+                handle = field.asWriteAccessMethod(lookup);
+                if (LOG_ENABLED) LOG.info("direct field write handle set for property write");
+            } catch (IllegalAccessException e) {
+                throw new GroovyBugError(e);
+            }
+        }
+
+        /**
+         * All remaining property writes go through the exact classic path:
+         * {@code ScriptBytecodeAdapter.setProperty(value, sender, receiver, name)},
+         * bound with this call site's sender so sender-aware resolution
+         * (private members from inside the declaring class, precedence rules,
+         * maps, closure retry semantics) is preserved byte-for-byte.
+         */
+        @Override
+        public void setMetaClassCallHandleIfNeeded(boolean standardMetaClass) {
+            if (handle != null) return;
+            useMetaClass = true;
+            if (LOG_ENABLED) LOG.info("set adapter invocation path for property set.");
+            // SET_PROPERTY: (String name, Class sender, Object receiver, Object value)void
+            // binding the name/sender prefix leaves the call-site shape (receiver, value)void
+            handle = MethodHandles.insertArguments(SET_PROPERTY, 0, name, sender);
         }
     }
 

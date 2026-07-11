@@ -143,4 +143,31 @@ public class CachedField extends MetaProperty {
             throw e;
         }
     }
+
+    /**
+     * Creates a method handle that writes this field via the MethodHandles API,
+     * the mutating counterpart of {@link #asAccessMethod(MethodHandles.Lookup)}.
+     * Attempts to unreflect the field, automatically making it accessible if needed.
+     *
+     * @param lookup the method handles lookup context
+     * @return a setter handle of type {@code (declaringClass, fieldType)void}
+     * @throws IllegalAccessException if the field cannot be accessed even with accessibility adjustments
+     * @since 6.0.0
+     */
+    public MethodHandle asWriteAccessMethod(final MethodHandles.Lookup lookup) throws IllegalAccessException {
+        try {
+            return lookup.unreflectSetter(field);
+        } catch (IllegalAccessException e) {
+            if (!madeAccessible) {
+                try {
+                    makeAccessible();
+                    return lookup.unreflectSetter(field);
+                } catch (IllegalAccessException ignore) {
+                } catch (Throwable t) {
+                    e.addSuppressed(t);
+                }
+            }
+            throw e;
+        }
+    }
 }

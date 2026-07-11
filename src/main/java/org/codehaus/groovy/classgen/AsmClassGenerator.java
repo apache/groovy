@@ -1441,6 +1441,8 @@ public class AsmClassGenerator extends ClassGenerator {
             callSiteWriter.makeGroovyObjectGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
         } else if (adapter == getProperty && propertyName != null && !pexp.isSpreadSafe()) {
             callSiteWriter.makeGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
+        } else if ((adapter == setProperty || adapter == setGroovyObjectProperty) && propertyName != null && !pexp.isSpreadSafe()) {
+            callSiteWriter.makeSetPropertySite(pexp, objectExpression, propertyName, adapter, adapter == setGroovyObjectProperty); // GROOVY-12138
         } else {
             callSiteWriter.fallbackAttributeOrPropertySite(pexp, objectExpression, propertyName, adapter);
         }
