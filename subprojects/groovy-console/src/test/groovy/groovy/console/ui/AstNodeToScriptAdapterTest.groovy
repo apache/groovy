@@ -1277,4 +1277,30 @@ final class AstNodeToScriptAdapterTest {
 
         assert result.contains('java.util.Collections.<String>emptyList()')
     }
+
+    @Test
+    void testClosureShowsGeneratedClassAtClassGeneration() {
+        String script = '''
+            class Demo {
+                def outer() { [1, 2].each { a -> [3, 4].each { b -> a + b } } }
+            }
+        '''
+        String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
+
+        // each closure literal is annotated with the synthetic class it was compiled to,
+        // including the nesting of an inner closure within its enclosing closure class
+        assert result.contains('/* => Demo$_outer_closure1 */')
+        assert result.contains('/* => Demo$_outer_closure1$_closure2 */')
+    }
+
+    @Test
+    void testClosureGeneratedClassMarkAbsentBeforeClassGeneration() {
+        String script = '''
+            class Demo {
+                def outer() { [1, 2].each { it } }
+            }
+        '''
+        // the closure class does not exist yet, so nothing is rendered
+        assert !compileToScript(script, CompilePhase.SEMANTIC_ANALYSIS).contains('/* => ')
+    }
 }

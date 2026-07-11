@@ -195,6 +195,14 @@ public class ClosureWriter {
     }
 
     /**
+     * Node metadata key set on a {@link ClosureExpression} once it has been compiled to a generated
+     * closure class, holding that class's name. Tooling such as the AST browser can read it to show
+     * which synthetic class a closure literal became; the compiler itself never consults it. The mark
+     * only becomes available after the class-generation phase, since that is when the class is made.
+     */
+    public static final String GENERATED_CLOSURE_CLASS = ClosureWriter.class.getName() + ".generatedClass";
+
+    /**
      * Returns the existing generated class for a closure expression, or creates and registers
      * a new one if none exists yet.
      *
@@ -209,6 +217,7 @@ public class ClosureWriter {
             closureClasses.put(expression, closureClass);
             controller.getAcg().addInnerClass(closureClass);
             closureClass.putNodeMetaData(WriterControllerFactory.class, (WriterControllerFactory) x -> controller);
+            expression.putNodeMetaData(GENERATED_CLOSURE_CLASS, closureClass.getName());
         }
         return closureClass;
     }
