@@ -94,6 +94,7 @@ import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.classgen.Verifier
+import org.codehaus.groovy.classgen.asm.ClosureWriter
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
@@ -852,6 +853,19 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             expression?.code?.visit this
         }
         print '}'
+        printGeneratedClosureClass expression
+    }
+
+    /**
+     * Appends, as a trailing block comment, the name of the synthetic class a closure (or lambda)
+     * literal was compiled to. The mark is only present after the class-generation phase and only
+     * for literals that became a generated closure class, so nothing is printed otherwise.
+     */
+    private void printGeneratedClosureClass(ClosureExpression expression) {
+        def generatedClass = expression?.getNodeMetaData(ClosureWriter.GENERATED_CLOSURE_CLASS)
+        if (generatedClass) {
+            print " /* => ${generatedClass} */"
+        }
     }
 
     /** Renders a lambda expression. */
@@ -867,6 +881,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
             expression?.code?.visit this
         }
         print '}'
+        printGeneratedClosureClass expression
     }
 
     /** Renders a tuple expression. */
