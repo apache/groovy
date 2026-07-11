@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783670636066,
+  "lastUpdate": 1783755225377,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -301,6 +301,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1485,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194534,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Eric Milles",
+            "username": "eric-milles",
+            "email": "eric.milles@thomsonreuters.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "9d01e177d88d57516ce821531624eccd359af8b4",
+          "message": "GROOVY-12117: replace super trait search with more complete helper stub",
+          "timestamp": "2026-07-08T15:42:17Z",
+          "url": "https://github.com/apache/groovy/commit/9d01e177d88d57516ce821531624eccd359af8b4"
+        },
+        "date": 1783755224555,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3961,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 435,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 857,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1486,
             "unit": "classes"
           },
           {
