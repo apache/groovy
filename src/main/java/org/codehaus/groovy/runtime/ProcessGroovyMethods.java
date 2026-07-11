@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,9 +80,30 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(Process self) throws IOException {
-        String text = IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
+        String text = IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream(), nativeEncoding())));
         closeStreams(self);
         return text;
+    }
+
+    /**
+     * Returns the charset used to decode a child process's textual output. A process writes its
+     * output in the operating system's native encoding; since JEP 400 (JDK 18)
+     * {@link Charset#defaultCharset()} is UTF-8 regardless of platform, so on a non-UTF-8 host it
+     * no longer matches what the process emitted. The {@code native.encoding} system property
+     * (JDK 17+) reports the real native encoding.
+     *
+     * @return the native-encoding charset, or {@link Charset#defaultCharset()} if it is unavailable
+     */
+    private static Charset nativeEncoding() {
+        String name = System.getProperty("native.encoding");
+        if (name != null && !name.isEmpty()) {
+            try {
+                return Charset.forName(name);
+            } catch (IllegalArgumentException ignore) {
+                // unknown or unsupported name - fall back below
+            }
+        }
+        return Charset.defaultCharset();
     }
 
     /**
@@ -629,7 +651,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
 
         @Override
         public void run() {
-            InputStreamReader isr = new InputStreamReader(in);
+            InputStreamReader isr = new InputStreamReader(in, nativeEncoding());
             BufferedReader br = new BufferedReader(isr);
             String next;
             try {
