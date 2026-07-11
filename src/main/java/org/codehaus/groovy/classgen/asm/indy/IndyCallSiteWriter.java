@@ -82,13 +82,14 @@ public class IndyCallSiteWriter extends CallSiteWriter {
     }
 
     /**
-     * Experimental (GROOVY-12138), guarded by the {@code groovy.indy.setproperty}
-     * compile-time flag: emit an {@code invokedynamic} call site for property
+     * GROOVY-12138: emit an {@code invokedynamic} call site for property
      * writes instead of the static {@code ScriptBytecodeAdapter.setProperty}
      * call, giving writes the same call-site caching, guarding, and JIT
-     * inlining that reads have had via {@code getProperty} sites.
+     * inlining that reads have had via {@code getProperty} sites. Compile-time
+     * flag, on by default; set {@code -Dgroovy.indy.setproperty=false} to
+     * disable (opt-out).
      */
-    private static final boolean INDY_SET_PROPERTY = org.apache.groovy.util.SystemUtil.getBooleanSafe("groovy.indy.setproperty");
+    private static final boolean INDY_SET_PROPERTY = org.apache.groovy.util.SystemUtil.getBooleanSafe("groovy.indy.setproperty", true);
 
     /** {@inheritDoc} */
     @Override
