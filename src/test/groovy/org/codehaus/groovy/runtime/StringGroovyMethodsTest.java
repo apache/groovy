@@ -25,11 +25,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class StringGroovyMethodsTest {
@@ -260,5 +262,39 @@ public final class StringGroovyMethodsTest {
         assertEquals(Boolean.FALSE, StringGroovyMethods.toBoolean("false"));
         assertEquals(Boolean.FALSE, StringGroovyMethods.toBoolean("n"));
         assertEquals(Boolean.FALSE, StringGroovyMethods.toBoolean("0"));
+    }
+
+    @Test
+    public void testToNumberWithLocale() {
+        assertEquals(1234.5, StringGroovyMethods.toNumber("1,234.5", Locale.US).doubleValue(), 0.0);
+        assertEquals(1234.5, StringGroovyMethods.toNumber("1.234,5", Locale.GERMANY).doubleValue(), 0.0);
+        assertEquals(42.0, StringGroovyMethods.toNumber("  42  ", Locale.US).doubleValue(), 0.0); // surrounding whitespace trimmed
+        assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toNumber("abc", Locale.US));
+        // strict: the whole input must parse, trailing junk is rejected (not silently truncated)
+        assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toNumber("12abc", Locale.US));
+        assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toNumber("", Locale.US));
+    }
+
+    @Test
+    public void testToCurrencyNumberWithLocale() {
+        Number us = StringGroovyMethods.toCurrencyNumber("$1,234.50", Locale.US);
+        assertEquals(new BigDecimal("1234.50"), us);
+        assertTrue(us instanceof BigDecimal, "currency should parse to an exact BigDecimal");
+        // round-trip through the formatter to avoid hard-coding locale-specific symbols/spacing
+        String formatted = DefaultGroovyMethods.toCurrencyString(new BigDecimal("1234.50"), Locale.GERMANY);
+        assertEquals(new BigDecimal("1234.50"), StringGroovyMethods.toCurrencyNumber(formatted, Locale.GERMANY));
+        assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toCurrencyNumber("nope", Locale.US));
+        // strict: trailing text after the amount is rejected
+        assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toCurrencyNumber("$1,234.50 and more", Locale.US));
+    }
+
+    @Test
+    public void testToPercentNumberWithLocale() {
+        assertEquals(0.5, StringGroovyMethods.toPercentNumber("50%", Locale.US).doubleValue(), 0.0);
+        // Turkish places the percent sign before the number
+        assertEquals(0.5, StringGroovyMethods.toPercentNumber("%50", new Locale("tr", "TR")).doubleValue(), 0.0);
+        assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toPercentNumber("x", Locale.US));
+        // strict: trailing text after the percent is rejected
+        assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toPercentNumber("50% off", Locale.US));
     }
 }

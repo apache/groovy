@@ -37,6 +37,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -3464,6 +3467,108 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BigInteger toBigInteger(final CharSequence self) {
         return new BigInteger(self.toString().trim());
+    }
+
+    /**
+     * Parses a CharSequence into a Number using the given locale, honouring
+     * locale-specific grouping and decimal symbols. Like {@link #toBigDecimal(CharSequence)},
+     * parsing is strict: the entire (trimmed) CharSequence must be a valid number.
+     * <pre class="groovyTestCase">
+     * assert '1.234,5'.toNumber(Locale.GERMANY) == 1234.5
+     * </pre>
+     *
+     * @param self   a CharSequence
+     * @param locale the locale defining the number symbols
+     * @return the parsed Number
+     * @throws NumberFormatException if the CharSequence cannot be parsed in full
+     *
+     * @since 6.0.0
+     */
+    public static Number toNumber(final CharSequence self, final Locale locale) {
+        return parseFully(NumberFormat.getNumberInstance(locale), self, "number");
+    }
+
+    /**
+     * Parses a CharSequence in full using the given format, throwing a
+     * {@link NumberFormatException} if the trimmed text is not entirely consumed.
+     */
+    private static Number parseFully(final NumberFormat format, final CharSequence self, final String kind) {
+        String text = self.toString().trim();
+        ParsePosition pos = new ParsePosition(0);
+        Number result = format.parse(text, pos);
+        if (result == null || pos.getIndex() != text.length()) {
+            int at = result == null ? pos.getErrorIndex() : pos.getIndex();
+            throw new NumberFormatException("Unparseable " + kind + ": \"" + self + "\" (at index " + at + ")");
+        }
+        return result;
+    }
+
+    /**
+     * Parses a CharSequence into a Number using the currency format of the default locale.
+     * The result is an exact {@link BigDecimal}.
+     *
+     * @param self a CharSequence
+     * @return the parsed Number (a BigDecimal)
+     * @throws NumberFormatException if the CharSequence cannot be parsed
+     *
+     * @since 6.0.0
+     */
+    public static Number toCurrencyNumber(final CharSequence self) {
+        return toCurrencyNumber(self, Locale.getDefault());
+    }
+
+    /**
+     * Parses a CharSequence into a Number using the currency format of the given locale.
+     * The result is an exact {@link BigDecimal}.
+     * <pre class="groovyTestCase">
+     * assert '$1,234.50'.toCurrencyNumber(Locale.US) == 1234.50g
+     * </pre>
+     *
+     * @param self   a CharSequence
+     * @param locale the locale defining the currency format
+     * @return the parsed Number (a BigDecimal)
+     * @throws NumberFormatException if the CharSequence cannot be parsed
+     *
+     * @since 6.0.0
+     */
+    public static Number toCurrencyNumber(final CharSequence self, final Locale locale) {
+        NumberFormat nf = NumberFormat.getCurrencyInstance(locale);
+        if (nf instanceof DecimalFormat) ((DecimalFormat) nf).setParseBigDecimal(true);
+        Number result = parseFully(nf, self, "currency");
+        // guarantee the documented BigDecimal type even for non-DecimalFormat providers
+        return (result instanceof BigDecimal) ? result : new BigDecimal(result.toString());
+    }
+
+    /**
+     * Parses a CharSequence into a Number using the percent format of the default locale.
+     * The percent value is unscaled (divided by 100).
+     *
+     * @param self a CharSequence
+     * @return the parsed Number
+     * @throws NumberFormatException if the CharSequence cannot be parsed
+     *
+     * @since 6.0.0
+     */
+    public static Number toPercentNumber(final CharSequence self) {
+        return toPercentNumber(self, Locale.getDefault());
+    }
+
+    /**
+     * Parses a CharSequence into a Number using the percent format of the given locale.
+     * The percent value is unscaled (divided by 100).
+     * <pre class="groovyTestCase">
+     * assert '50%'.toPercentNumber(Locale.US) == 0.5
+     * </pre>
+     *
+     * @param self   a CharSequence
+     * @param locale the locale defining the percent format
+     * @return the parsed Number
+     * @throws NumberFormatException if the CharSequence cannot be parsed
+     *
+     * @since 6.0.0
+     */
+    public static Number toPercentNumber(final CharSequence self, final Locale locale) {
+        return parseFully(NumberFormat.getPercentInstance(locale), self, "percent");
     }
 
     /**

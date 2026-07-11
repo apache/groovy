@@ -114,6 +114,7 @@ import java.math.RoundingMode;
 import java.net.URL;
 import java.security.CodeSource;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -132,6 +133,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -16501,6 +16503,66 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BigInteger toBigInteger(Number self) {
         return NumberMath.toBigInteger(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // toCurrencyString
+
+    /**
+     * Formats a Number as a currency String using the default locale.
+     *
+     * @param self a Number
+     * @return the currency-formatted String
+     * @since 6.0.0
+     */
+    public static String toCurrencyString(Number self) {
+        return NumberFormat.getCurrencyInstance().format(self);
+    }
+
+    /**
+     * Formats a Number as a currency String using the given locale.
+     * <pre class="groovyTestCase">
+     * assert 1234.5.toCurrencyString(Locale.US) == '$1,234.50'
+     * </pre>
+     *
+     * @param self   a Number
+     * @param locale the locale defining the currency format
+     * @return the currency-formatted String
+     * @since 6.0.0
+     */
+    public static String toCurrencyString(Number self, Locale locale) {
+        return NumberFormat.getCurrencyInstance(locale).format(self);
+    }
+
+    //--------------------------------------------------------------------------
+    // toPercentString
+
+    /**
+     * Formats a Number as a percent String using the default locale.
+     * The value is scaled by 100 (e.g. {@code 0.945} becomes {@code 94.5%}).
+     *
+     * @param self a Number
+     * @return the percent-formatted String
+     * @since 6.0.0
+     */
+    public static String toPercentString(Number self) {
+        return NumberFormat.getPercentInstance().format(self);
+    }
+
+    /**
+     * Formats a Number as a percent String using the given locale.
+     * The value is scaled by 100 (e.g. {@code 0.945} becomes {@code 94.5%}).
+     * <pre class="groovyTestCase">
+     * assert 0.5.toPercentString(Locale.US) == '50%'
+     * </pre>
+     *
+     * @param self   a Number
+     * @param locale the locale defining the percent format
+     * @return the percent-formatted String
+     * @since 6.0.0
+     */
+    public static String toPercentString(Number self, Locale locale) {
+        return NumberFormat.getPercentInstance(locale).format(self);
     }
 
     //--------------------------------------------------------------------------
