@@ -67,7 +67,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -284,10 +283,7 @@ public class Java8 implements VMPlugin {
         } else {
             Method[] declaredMethods;
             try {
-                declaredMethods = annotation.annotationType().getDeclaredMethods();
-                // getDeclaredMethods does not guarantee an order, and HotSpot's varies between JVM
-                // runs; sort so the annotation is emitted deterministically for reproducible builds
-                Arrays.sort(declaredMethods, Comparator.comparing(Method::getName));
+                declaredMethods = ReflectionUtils.getDeclaredMethodsSorted(annotation.annotationType());
             } catch (SecurityException se) {
                 declaredMethods = EMPTY_METHOD_ARRAY;
             }
@@ -356,7 +352,7 @@ public class Java8 implements VMPlugin {
                 setAnnotationMetaData(f.getAnnotations(), fn);
                 classNode.addField(fn);
             }
-            Method[] methods = clazz.getDeclaredMethods();
+            Method[] methods = ReflectionUtils.getDeclaredMethodsSorted(clazz);
             for (Method m : methods) {
                 ClassNode rt = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
                 Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes(), m.getParameterAnnotations(), m);
@@ -371,7 +367,7 @@ public class Java8 implements VMPlugin {
                 mn.setSynthetic(m.isSynthetic());
                 classNode.addMethod(mn);
             }
-            Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+            Constructor<?>[] constructors = ReflectionUtils.getDeclaredConstructorsSorted(clazz);
             for (Constructor<?> c : constructors) {
                 Parameter[] params = makeParameters(compileUnit, c.getGenericParameterTypes(), c.getParameterTypes(), getConstructorParameterAnnotations(c), c);
                 ClassNode[] exceptions = makeClassNodes(compileUnit, c.getGenericExceptionTypes(), c.getExceptionTypes());
