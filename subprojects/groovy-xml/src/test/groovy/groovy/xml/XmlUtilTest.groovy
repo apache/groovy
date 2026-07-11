@@ -19,6 +19,8 @@
 package groovy.xml
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.ResourceLock
+import org.junit.jupiter.api.parallel.Resources
 import org.xml.sax.ErrorHandler
 import org.xml.sax.InputSource
 
@@ -58,6 +60,8 @@ class XmlUtilTest {
 
     // GROOVY-5361
     @Test
+    // mutates the JVM-wide default Locale; guards against future in-JVM parallelism
+    @ResourceLock(Resources.LOCALE)
     void schemaValidationUtilityMethod() {
         Locale dl = Locale.getDefault()
         Locale.setDefault(Locale.ENGLISH)

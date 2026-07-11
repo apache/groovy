@@ -22,6 +22,8 @@ import groovy.lang.Closure
 import groovy.lang.GroovyRuntimeException
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.ResourceLock
+import org.junit.jupiter.api.parallel.Resources
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
@@ -428,6 +430,8 @@ class DateUtilExtensionsTest {
 
     // format tests
     @Test
+    // mutates the JVM-wide default TimeZone; guards against future in-JVM parallelism
+    @ResourceLock(Resources.TIME_ZONE)
     void testFormatDate() {
         def originalTz = TimeZone.getDefault()
         try {

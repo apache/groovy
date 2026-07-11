@@ -22,12 +22,17 @@ import groovy.io.GroovyPrintStream
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.ResourceLock
+import org.junit.jupiter.api.parallel.Resources
 
 import java.text.NumberFormat
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assertions.assertEquals
 
+// setUp() mutates the JVM-wide default Locale; the lock is a no-op under today's
+// sequential execution and guards these tests if in-JVM parallelism is ever enabled.
+@ResourceLock(Resources.LOCALE)
 class PrintTest {
     PrintStream savedSystemOut
     private locale

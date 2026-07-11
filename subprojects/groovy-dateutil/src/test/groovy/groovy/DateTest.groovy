@@ -19,6 +19,9 @@
 package groovy
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.ResourceLock
+import org.junit.jupiter.api.parallel.ResourceLocks
+import org.junit.jupiter.api.parallel.Resources
 
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -95,6 +98,8 @@ class DateTest {
     }
 
     @Test
+    // mutates the JVM-wide default Locale and TimeZone; guards against future in-JVM parallelism
+    @ResourceLocks([@ResourceLock(Resources.LOCALE), @ResourceLock(Resources.TIME_ZONE)])
     void testGDKDateMethods() {
         Locale defaultLocale = Locale.default
         TimeZone defaultTZ = TimeZone.default
@@ -117,6 +122,8 @@ class DateTest {
     }
 
     @Test
+    // mutates the JVM-wide default TimeZone; guards against future in-JVM parallelism
+    @ResourceLock(Resources.TIME_ZONE)
     void testStaticParse() {
         TimeZone defaultTZ = TimeZone.default
         try {
@@ -131,6 +138,8 @@ class DateTest {
     }
 
     @Test
+    // mutates the JVM-wide default TimeZone; guards against future in-JVM parallelism
+    @ResourceLock(Resources.TIME_ZONE)
     void testParseWithTimeZone() {
         TimeZone defaultTZ = TimeZone.default
         try {
@@ -157,6 +166,8 @@ class DateTest {
     }
 
     @Test
+    // mutates the JVM-wide default Locale and TimeZone; guards against future in-JVM parallelism
+    @ResourceLocks([@ResourceLock(Resources.LOCALE), @ResourceLock(Resources.TIME_ZONE)])
     void testCalendarTimeZone() {
         Locale defaultLocale = Locale.default
         TimeZone defaultTZ = TimeZone.default
@@ -230,6 +241,8 @@ class DateTest {
 
     /** GROOVY-4789 */
     @Test
+    // mutates the JVM-wide default TimeZone; guards against future in-JVM parallelism
+    @ResourceLock(Resources.TIME_ZONE)
     void testStaticParseToStringDate() {
         TimeZone tz = TimeZone.getDefault()
         try {
