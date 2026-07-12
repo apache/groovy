@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783755213112,
+  "lastUpdate": 1783841969251,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -2948,6 +2948,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 468.6000000000001,
             "range": "±24.12",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "60479488494fbbe20a552dc6b88755896e628cf2",
+          "message": "Bump com.gradle.develocity from 4.4.3 to 4.5.0\n\nBumps com.gradle.develocity from 4.4.3 to 4.5.0.\n\n---\nupdated-dependencies:\n- dependency-name: com.gradle.develocity\n  dependency-version: 4.5.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2026-07-12T03:06:05Z",
+          "url": "https://github.com/apache/groovy/commit/60479488494fbbe20a552dc6b88755896e628cf2"
+        },
+        "date": 1783841967909,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 535.0133333333333,
+            "range": "±23.75",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 652.6666666666667,
+            "range": "±223.7",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 576.7199999999999,
+            "range": "±149.5",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 470.66999999999996,
+            "range": "±22.55",
             "unit": "ms",
             "extra": "5.0.6"
           }
