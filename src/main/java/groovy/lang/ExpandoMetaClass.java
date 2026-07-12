@@ -49,11 +49,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -298,7 +298,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final Map<String, Object> expandoSubclassMethods = new ConcurrentHashMap<>(16, 0.75f, 1);
     private final Map<String, MetaProperty> expandoProperties = new ConcurrentHashMap<>(16, 0.75f, 1);
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
-    private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<>();
+    private final Set<MixinInMetaClass> mixinClasses = new CopyOnWriteArraySet<>();
 
     /**
      * Creates an expando meta class with explicit registry behaviour and additional methods.
