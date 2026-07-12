@@ -153,12 +153,18 @@ public interface AbstractFunctionalInterfaceWriter {
 
         ClassNode type;
         if (isPrimitiveType(parameterType)) {
-            if (!isPrimitiveType(inferredType)) {
-                // The non-primitive type and primitive type are not allowed to mix since Java 9+
-                // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
-                type = getUnwrapper(inferredType).getPlainNodeReference(false);
+            // The lambda parameter is declared with a primitive type; reduce the inferred type to it.
+            ClassNode primitive = isPrimitiveType(inferredType) ? inferredType : getUnwrapper(inferredType);
+            if (isPrimitiveType(targetType)) {
+                // The functional-interface parameter is itself primitive, so the implementation method
+                // stays primitive (GROOVY-9790: otherwise "Integer is not a subtype of int").
+                type = primitive.getPlainNodeReference(false);
             } else {
-                type = inferredType.getPlainNodeReference(false);
+                // GROOVY-12154: the functional-interface parameter is a reference type, so the
+                // implementation method must accept the BOXED type -- LambdaMetafactory links against
+                // the erased SAM signature (Object) and will not unbox to a primitive
+                // (java.lang.invoke.LambdaConversionException: int is not a subtype of class java.lang.Object).
+                type = getWrapper(primitive).getPlainNodeReference();
             }
         } else if (isPrimitiveType(inferredType)) {
             // GROOVY-9790: bootstrap method initialization exception raised when lambda parameter type is wrong
