@@ -63,6 +63,69 @@ final class AstNodeToScriptAdapterTest {
     }
 
     @Test
+    void testStringEscapingHandlesBackslashesQuotesAndControlChars() {
+        // Dollar-slashy input keeps these readable: inside it '\\' is a literal backslash and
+        // '\n'/'\t' are literal backslash-letter pairs, so the *compiler* turns them into a
+        // single backslash / a real newline / a real tab in each constant's value.
+        String script = $/
+            def backslash = 'back\\slash'
+            def winPath   = 'C:\\Users\\name'
+            def quoted    = 'quote\'inside'
+            def tabbed    = 'tab\there'
+            def newlined  = 'multi\nline'
+        /$
+        String result = compileToScript(script)
+
+        // Each value must be re-emitted in a form that parses back to the same value.
+        assert result.contains($/'back\\slash'/$)       // literal backslash -> \\
+        assert result.contains($/'C:\\Users\\name'/$)
+        assert result.contains($/'quote\'inside'/$)     // single quote -> \'
+        assert result.contains($/'tab\there'/$)         // real tab -> \t
+        assert result.contains($/'multi\nline'/$)       // real newline -> \n
+
+        // The old naive escaping emitted a bare backslash (e.g. 'back\slash'), which either
+        // changes the value or fails to compile; the emitted script must parse cleanly.
+        assert new GroovyShell().parse(result)
+    }
+
+    @Test
+    void testGStringRoundTripsToSameValue() {
+        // Each snippet ends in a GString; both the original and the adapter's reconstruction
+        // must evaluate to the same value. These are dollar-slashy literals, which themselves
+        // interpolate, so a literal '$' meant for the *snippet* is written '$$' and '\' is kept
+        // verbatim (dollar-slashy has no backslash escapes).
+        def snippets = [
+            'plain interpolation'   : $/def name = 'Bob'; "hi $$name"/$,
+            'interp string const'   : $/"$${'y'}"/$,
+            'double-quote inside'   : $/def n = 'X'; "say \"hi\" to $$n"/$,
+            'backslash / win path'  : $/def f = 'F'; "C:\\tmp $$f"/$,
+            'literal dollar'        : $/def item = 'I'; "price \$$5 for $$item"/$,
+            'escaped interpolation' : $/def real = 'R'; "\$${notInterp} and $$real"/$,
+            'string args in interp' : $/"n=$${['a', 'b'].join(',')}"/$,
+            'slashy regex gstring'  : $/def c = 5; /\d+ = $$c//$,
+            'lazy closure interp'   : $/"$${-> 'lz'}"/$,
+            'list-in-interp'        : $/def a = 'A'; "items $${['x', 'y']}"/$,
+            'multi-line triple'     : $/def v = 'V'; """a
+b $$v"""/$,
+        ]
+
+        snippets.each { name, src ->
+            def expected = new GroovyShell().evaluate(src)
+            // free-form output (showScriptClass = false) so the reconstruction is directly evaluable
+            String rebuilt = new AstNodeToScriptAdapter().compileToScript(
+                    src, CompilePhase.SEMANTIC_ANALYSIS.phaseNumber, null, true, false)
+            def actual
+            try {
+                actual = new GroovyShell().evaluate(rebuilt)
+            } catch (Throwable t) {
+                assert false, "[$name] reconstruction did not evaluate: ${t.message}\n--- rebuilt ---\n$rebuilt"
+            }
+            assert expected?.toString() == actual?.toString(),
+                    "[$name] value changed\n  expected: ${expected?.toString()?.inspect()}\n  actual:   ${actual?.toString()?.inspect()}\n--- rebuilt ---\n$rebuilt"
+        }
+    }
+
+    @Test
     void testPackage() {
         String script = ''' package foo.bar
                             true '''
@@ -911,7 +974,8 @@ final class AstNodeToScriptAdapterTest {
         '''
         String result = compileToScript(script)
 
-        assert result.contains("assert 'abc.def' =~ '[a-z]b[a-z]\\.def' : null")
+        // the backslash in the value is now properly escaped so the literal round-trips
+        assert result.contains("assert 'abc.def' =~ '[a-z]b[a-z]\\\\.def' : null")
         assert result.contains("assert 'cheesecheese' =~ 'cheese' : null")
     }
 

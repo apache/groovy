@@ -937,9 +937,7 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
     @Override
     void visitConstantExpression(ConstantExpression expression, boolean unwrapQuotes = false) {
         if (expression.value instanceof String && !unwrapQuotes) {
-            // string reverse escaping is very naive
-            def escaped = ((String) expression.value).replaceAll('\n', '\\\\n').replaceAll("'", "\\\\'")
-            print "'$escaped'"
+            print "'" + escapeSingleQuoted((String) expression.value) + "'"
         } else {
             print expression.value
             // re-append the literal's type suffix so re-parsing yields the same type
@@ -955,6 +953,36 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
                 print 'G'
             }
         }
+    }
+
+    /**
+     * Escapes a String so it re-parses as a single-line, single-quoted Groovy literal.
+     * The former approach only handled newlines and the single quote, so a literal
+     * backslash (or a tab, carriage-return, form-feed, etc.) was emitted verbatim,
+     * either changing the string's value or producing a script that no longer compiles.
+     * '$' is intentionally left alone: it is inert inside single quotes.
+     */
+    private static String escapeSingleQuoted(String value) {
+        StringBuilder sb = new StringBuilder(value.length() + 8)
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i)
+            switch (c) {
+                case '\\' as char: sb.append('\\\\'); break   // must be first so we don't re-escape below
+                case '\'' as char: sb.append('\\\''); break
+                case '\n' as char: sb.append('\\n'); break
+                case '\r' as char: sb.append('\\r'); break
+                case '\t' as char: sb.append('\\t'); break
+                case '\b' as char: sb.append('\\b'); break
+                case '\f' as char: sb.append('\\f'); break
+                default:
+                    if ((int) c < 0x20) {
+                        sb.append(String.format('\\u%04x', (int) c))
+                    } else {
+                        sb.append(c)
+                    }
+            }
+        }
+        return sb.toString()
     }
 
     /** Renders a class literal expression. */
@@ -997,7 +1025,61 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
     /** Renders a GString expression. */
     @Override
     void visitGStringExpression(GStringExpression expression) {
-        print '"' + expression.text + '"'
+        // Rebuild from the node's parts rather than its verbatimText: verbatimText holds the
+        // *decoded* text (so a literal '"', '\\' or '$' would break re-parsing) and renders each
+        // embedded value via getText() (which is lossy, e.g. dropping string-literal quotes).
+        // Escaping the text segments and re-visiting the values keeps the emitted GString faithful.
+        List<ConstantExpression> strings = expression.strings
+        List<Expression> values = expression.values
+        print '"'
+        for (int i = 0; i < strings.size(); i++) {
+            String following = (String) strings[i].value
+            print escapeDoubleQuotedText(following)
+            if (i < values.size() && values[i] != null) {
+                Expression value = values[i]
+                String nextText = (i + 1 < strings.size()) ? (String) strings[i + 1].value : ''
+                // '$name' short form is only safe when the following text can't extend it into a
+                // different variable ('$nameX') or property ('$name.p'); otherwise use '${name}'.
+                if (value instanceof VariableExpression && !((VariableExpression) value).isThisExpression()
+                        && (nextText.isEmpty() || !(Character.isJavaIdentifierPart(nextText.charAt(0)) || nextText.charAt(0) == '.' as char))) {
+                    print '$' + ((VariableExpression) value).name
+                } else {
+                    print '${'
+                    printExpression value
+                    print '}'
+                }
+            }
+        }
+        print '"'
+    }
+
+    /**
+     * Escapes a String so it survives re-parsing inside a double-quoted GString's text segment.
+     * Beyond the usual control characters, '"' (delimiter), '\\' (escape) and '$' (interpolation
+     * trigger) must all be escaped so literal text is never mistaken for structure.
+     */
+    private static String escapeDoubleQuotedText(String value) {
+        StringBuilder sb = new StringBuilder(value.length() + 8)
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i)
+            switch (c) {
+                case '\\' as char: sb.append('\\\\'); break   // must be first
+                case '"' as char:  sb.append('\\"'); break
+                case '$' as char:  sb.append('\\$'); break
+                case '\n' as char: sb.append('\\n'); break
+                case '\r' as char: sb.append('\\r'); break
+                case '\t' as char: sb.append('\\t'); break
+                case '\b' as char: sb.append('\\b'); break
+                case '\f' as char: sb.append('\\f'); break
+                default:
+                    if ((int) c < 0x20) {
+                        sb.append(String.format('\\u%04x', (int) c))
+                    } else {
+                        sb.append(c)
+                    }
+            }
+        }
+        return sb.toString()
     }
 
     /** Renders a spread expression. */
