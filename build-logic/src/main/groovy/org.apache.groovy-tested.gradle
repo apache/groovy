@@ -43,7 +43,12 @@ dependencies {
 
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
-    def grapeDirectory = new File(temporaryDir, 'grape')
+    // Must be '.groovy': the test JVM runs with -Duser.home=<temporaryDir>, and the
+    // 'cachedGrapes' resolver in defaultGrapeConfig.xml reads ${user.home}/.groovy/grapes.
+    // Naming it anything else makes grabs download to grape.root while cachedGrapes looks
+    // elsewhere, so @GrabConfig(autoDownload=false) can only resolve from stale state that
+    // doFirst never cleans (it deletes only this directory).
+    def grapeDirectory = new File(temporaryDir, '.groovy')
     def jdk8 = ['-XX:+UseConcMarkSweepGC']
     def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
     def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en']
