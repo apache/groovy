@@ -128,6 +128,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -265,7 +266,10 @@ public class AsmClassGenerator extends ClassGenerator {
     private static final MethodCaller createPojoWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createPojoWrapper");
     private static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
-    private final Map<String,ClassNode> referencedClasses = new HashMap<>();
+    // insertion-ordered: iterated to generate the synthetic class-literal fields and their
+    // accessors, so hash order would place them in an arbitrary order in the class file
+    // rather than the order the class literals were encountered
+    private final Map<String, ClassNode> referencedClasses = new LinkedHashMap<>();
 
     /**
      * Add marker in the bytecode to show source-bytecode relationship.
