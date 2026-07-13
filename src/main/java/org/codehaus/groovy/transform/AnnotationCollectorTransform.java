@@ -45,8 +45,8 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -328,7 +328,11 @@ public class AnnotationCollectorTransform {
             if (member.isEmpty()) {
                 continue;
             }
-            Map<String, Expression> generated = new HashMap<>(member.size());
+            // insertion-ordered: copyMembers iterates this map to populate the annotation's
+            // members, which are written to the class file in that order; the incoming map
+            // preserves the order the members were declared on the collector, so hash order
+            // here would emit them in an arbitrary order
+            Map<String, Expression> generated = new LinkedHashMap<>(member.size());
             for (Map.Entry<String, Object> entry : member.entrySet()) {
                 generated.put(entry.getKey(), makeExpression(entry.getValue()));
             }
