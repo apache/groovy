@@ -460,9 +460,21 @@ public class StatementWriter {
 
     /**
      * Generates bytecode for a try/catch/finally statement.
-     * Handles exception table registration, finally-block inlining at every
-     * exit path, and a catch-all rethrow for exceptions not handled by
-     * any {@code catch} clause.
+     * <p>
+     * A {@link BlockRecorder} is always registered for the try (and catch)
+     * regions so that:
+     * <ul>
+     *   <li>a non-empty finally is inlined on every abrupt exit
+     *       ({@code return}/{@code break}/{@code continue});</li>
+     *   <li>exception-table ranges are closed before any enclosing finally is
+     *       inlined (required when an inner try/catch without its own finally
+     *       sits inside an outer try/finally — see GROOVY-8229);</li>
+     *   <li>GROOVY-9805 stack-map casts remain active for assignments in the
+     *       region ({@link CompileStack#hasBlockRecorder()}).</li>
+     * </ul>
+     * When the finally clause is empty (plain {@code try}/{@code catch}), the
+     * catch-all identity rethrow and the empty shared-finally block are omitted
+     * so the shape matches javac more closely and stays more JIT-friendly.
      *
      * @param statement the try/catch/finally statement to compile
      */
@@ -475,82 +487,99 @@ public class StatementWriter {
 
         Statement tryStatement = statement.getTryStatement();
         Statement finallyStatement = statement.getFinallyStatement();
+        boolean hasFinally = !isEmptyStatement(finallyStatement);
+        List<CatchStatement> catchStatements = statement.getCatchStatements();
+
         BlockRecorder tryBlock = makeBlockRecorder(finallyStatement);
 
         startRange(tryBlock, mv);
         tryStatement.visit(controller.getAcg());
 
-        // skip past catch block(s)
-        Label finallyStart = new Label();
-        boolean fallthroughFinally = false;
+        // Destination for normal completion: shared finally when present, else
+        // the join point after all catch handlers.
+        Label afterHandlers = new Label();
+        boolean fallthrough = false;
         if (maybeFallsThrough(tryStatement)) {
-            mv.visitJumpInsn(GOTO, finallyStart);
-            fallthroughFinally = true;
+            // Keeps an otherwise-empty try range non-empty and skips handlers.
+            mv.visitJumpInsn(GOTO, afterHandlers);
+            fallthrough = true;
         }
         closeRange(tryBlock, mv);
-        // pop for BlockRecorder
+        // pop for try BlockRecorder
         compileStack.pop();
 
-        BlockRecorder catches = makeBlockRecorder(finallyStatement);
-        for (CatchStatement catchStatement : statement.getCatchStatements()) {
-            Label catchBlock = startRange(catches, mv);
+        BlockRecorder catches = null;
+        if (!catchStatements.isEmpty()) {
+            catches = makeBlockRecorder(finallyStatement);
+            for (CatchStatement catchStatement : catchStatements) {
+                Label catchBlock = startRange(catches, mv);
 
-            // create variable for the exception
-            compileStack.pushState();
-            ClassNode type = catchStatement.getExceptionType();
-            compileStack.defineVariable(catchStatement.getVariable(), type, true);
-            // handle catch body
-            catchStatement.visit(controller.getAcg());
-            // placeholder to avoid problems with empty catch block
-            mv.visitInsn(NOP);
-            // pop for the variable
-            compileStack.pop();
+                compileStack.pushState();
+                ClassNode type = catchStatement.getExceptionType();
+                compileStack.defineVariable(catchStatement.getVariable(), type, true);
+                catchStatement.visit(controller.getAcg());
+                // Non-empty catch range / LVT span for empty catch bodies
+                // (defineVariable starts the LVT after the store).
+                mv.visitInsn(NOP);
+                compileStack.pop();
 
-            // end of catch
-            closeRange(catches, mv);
-            if (maybeFallsThrough(catchStatement.getCode())) {
-                mv.visitJumpInsn(GOTO, finallyStart);
-                fallthroughFinally = true;
+                closeRange(catches, mv);
+                if (maybeFallsThrough(catchStatement.getCode())) {
+                    mv.visitJumpInsn(GOTO, afterHandlers);
+                    fallthrough = true;
+                }
+                compileStack.writeExceptionTable(tryBlock, catchBlock, BytecodeHelper.getClassInternalName(type));
             }
-            String typeName = BytecodeHelper.getClassInternalName(type);
-            compileStack.writeExceptionTable(tryBlock, catchBlock, typeName);
         }
 
-        // used to handle exceptions in catches and regularly visited finals
-        Label catchAll = new Label(), afterCatchAll = new Label();
+        if (hasFinally) {
+            // Catch-all after typed handlers so it does not supersede them.
+            Label catchAll = new Label(), afterCatchAll = new Label();
+            compileStack.writeExceptionTable(tryBlock, catchAll, null);
+            if (catches != null) {
+                compileStack.writeExceptionTable(catches, catchAll, null);
+                compileStack.pop(); // catches BlockRecorder
+            }
 
-        // add "catch all" block to exception table for try part; we do this
-        // after the exception blocks so they are not superseded by this one
-        compileStack.writeExceptionTable(tryBlock, catchAll, null);
-        // same for the catch parts
-        compileStack.writeExceptionTable(catches , catchAll, null);
+            if (fallthrough) {
+                mv.visitLabel(afterHandlers);
+                finallyStatement.visit(controller.getAcg());
+                // Skip over the catch-all finally/rethrow path.
+                mv.visitJumpInsn(GOTO, afterCatchAll);
+            }
 
-        // pop for BlockRecorder
-        compileStack.pop();
+            mv.visitLabel(catchAll);
+            operandStack.push(ClassHelper.THROWABLE_TYPE);
+            int anyThrowable = compileStack.defineTemporaryVariable("throwable", ClassHelper.THROWABLE_TYPE, true);
 
-        if (fallthroughFinally) {
-            mv.visitLabel(finallyStart);
             finallyStatement.visit(controller.getAcg());
 
-            // skip over the catch-finally-rethrow
-            mv.visitJumpInsn(GOTO, afterCatchAll);
+            mv.visitVarInsn(ALOAD, anyThrowable);
+            mv.visitInsn(ATHROW);
+
+            if (fallthrough) {
+                mv.visitLabel(afterCatchAll);
+            }
+            compileStack.removeVar(anyThrowable);
+        } else {
+            // No catch-all identity rethrow — uncaught exceptions propagate.
+            if (catches != null) {
+                compileStack.pop(); // catches BlockRecorder
+            }
+            if (fallthrough) {
+                mv.visitLabel(afterHandlers);
+            }
         }
-
-        mv.visitLabel(catchAll);
-        operandStack.push(ClassHelper.THROWABLE_TYPE);
-        int anyThrowable = compileStack.defineTemporaryVariable("throwable", ClassHelper.THROWABLE_TYPE, true);
-
-        finallyStatement.visit(controller.getAcg());
-
-        // load the throwable and rethrow it
-        mv.visitVarInsn(ALOAD, anyThrowable);
-        mv.visitInsn(ATHROW);
-
-        if (fallthroughFinally)
-            mv.visitLabel(afterCatchAll);
-        compileStack.removeVar(anyThrowable);
     }
 
+    /**
+     * Pushes a {@link BlockRecorder} that inlines {@code finallyStatement} on
+     * abrupt exits from the protected region (return/break/continue), while
+     * excluding that inlined body from the exception table so finally is not
+     * applied twice. When the finally is empty the excluded statement is a
+     * no-op, but the recorder still splits exception-table ranges around
+     * enclosing finally inlines.
+     */
     private BlockRecorder makeBlockRecorder(final Statement finallyStatement) {
         BlockRecorder recorder = new BlockRecorder();
         final CompileStack compileStack = controller.getCompileStack();
@@ -573,7 +602,7 @@ public class StatementWriter {
         return label;
     }
 
-    private static void  closeRange(final BlockRecorder br, final MethodVisitor mv) {
+    private static void closeRange(final BlockRecorder br, final MethodVisitor mv) {
         Label label = new Label();
         mv.visitLabel(label);
         br.closeRange(label);
