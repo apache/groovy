@@ -266,9 +266,11 @@ public final class StringGroovyMethodsTest {
 
     @Test
     public void testToNumberWithLocale() {
-        assertEquals(1234.5, StringGroovyMethods.toNumber("1,234.5", Locale.US).doubleValue(), 0.0);
-        assertEquals(1234.5, StringGroovyMethods.toNumber("1.234,5", Locale.GERMANY).doubleValue(), 0.0);
-        assertEquals(42.0, StringGroovyMethods.toNumber("  42  ", Locale.US).doubleValue(), 0.0); // surrounding whitespace trimmed
+        Number us = StringGroovyMethods.toNumber("1,234.5", Locale.US);
+        assertEquals(new BigDecimal("1234.5"), us);
+        assertTrue(us instanceof BigDecimal, "should parse to an exact BigDecimal");
+        assertEquals(new BigDecimal("1234.5"), StringGroovyMethods.toNumber("1.234,5", Locale.GERMANY));
+        assertEquals(new BigDecimal("42"), StringGroovyMethods.toNumber("  42  ", Locale.US)); // surrounding whitespace trimmed
         assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toNumber("abc", Locale.US));
         // strict: the whole input must parse, trailing junk is rejected (not silently truncated)
         assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toNumber("12abc", Locale.US));
@@ -290,9 +292,11 @@ public final class StringGroovyMethodsTest {
 
     @Test
     public void testToPercentNumberWithLocale() {
-        assertEquals(0.5, StringGroovyMethods.toPercentNumber("50%", Locale.US).doubleValue(), 0.0);
+        Number us = StringGroovyMethods.toPercentNumber("50%", Locale.US);
+        assertEquals(0, new BigDecimal("0.5").compareTo((BigDecimal) us));
+        assertTrue(us instanceof BigDecimal, "percent should parse to an exact BigDecimal");
         // Turkish places the percent sign before the number
-        assertEquals(0.5, StringGroovyMethods.toPercentNumber("%50", new Locale("tr", "TR")).doubleValue(), 0.0);
+        assertEquals(0.5, StringGroovyMethods.toPercentNumber("%50", Locale.forLanguageTag("tr-TR")).doubleValue(), 0.0);
         assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toPercentNumber("x", Locale.US));
         // strict: trailing text after the percent is rejected
         assertThrows(NumberFormatException.class, () -> StringGroovyMethods.toPercentNumber("50% off", Locale.US));
