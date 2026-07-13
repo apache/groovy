@@ -223,11 +223,16 @@ public class MixinInMetaClass {
 
     /**
      * Returns the hash code based on the mixin class.
+     * <p>
+     * {@code ExpandoMetaClass} dedupes mixins (GROOVY-11775) through a
+     * {@link java.util.concurrent.CopyOnWriteArraySet}, which compares with
+     * {@link #equals} alone, so this must stay consistent with it rather than
+     * being relied upon for that deduplication.
      *
      * @return the hash code
      */
     @Override
     public int hashCode() {
-        return mixinClass.hashCode(); // GROOVY-11775
+        return mixinClass.hashCode();
     }
 }
