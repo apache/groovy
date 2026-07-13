@@ -330,7 +330,7 @@ final class PeepholeOptimizingMethodVisitorTest {
     }
 
     @Test
-    void removesStandaloneCheckcastBeforePop() {
+    void removesLoadAndAttachedCheckcastBeforePop() {
         def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
             visitVarInsn(Opcodes.ALOAD, 0)
             visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
@@ -338,7 +338,82 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        assert opcodeLines(bytecode) == ['ALOAD 0', 'POP', 'RETURN']
+        // ALOAD + CHECKCAST are both dead once the value is discarded.
+        assert opcodeLines(bytecode) == ['RETURN']
+    }
+
+    @Test
+    void removesStandaloneCheckcastBeforePop() {
+        def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitInsn(Opcodes.NOP) // force the load to flush so CHECKCAST is standalone
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ALOAD 0', 'NOP', 'POP', 'RETURN']
+    }
+
+    @Test
+    void rewritesNullComparisonsAgainstAconstNull() {
+        def nullComparisons = [
+                (Opcodes.IF_ACMPEQ): 'IFNULL',
+                (Opcodes.IF_ACMPNE): 'IFNONNULL',
+        ]
+
+        nullComparisons.each { opcode, expected ->
+            def label = new Label()
+            def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
+                visitVarInsn(Opcodes.ALOAD, 0)
+                visitInsn(Opcodes.ACONST_NULL)
+                visitJumpInsn(opcode, label)
+                visitInsn(RETURN)
+                visitLabel(label)
+                visitInsn(RETURN)
+            }
+            def lines = opcodeLines(bytecode)
+
+            assert lines.size() == 4
+            assert lines[0] == 'ALOAD 0'
+            assert lines[1].startsWith(expected)
+            assert lines[2..3] == ['RETURN', 'RETURN']
+            assert !lines[1].startsWith(Printer.OPCODES[opcode])
+        }
+    }
+
+    @Test
+    void removesBareDupBeforeMatchingPop() {
+        def bytecode = sequenceFor {
+            visitInsn(Opcodes.ICONST_1)
+            visitInsn(Opcodes.DUP)
+            visitInsn(Opcodes.POP)
+            visitLdcInsn(2L)
+            visitInsn(Opcodes.DUP2)
+            visitInsn(Opcodes.POP2)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ICONST_1',
+                'LDC 2L',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void preservesAttachedCheckcastWhenTheValueIsUsed() {
+        def bytecode = sequenceFor('(Ljava/lang/Object;)Ljava/lang/String;') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.ARETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ALOAD 0',
+                'CHECKCAST java/lang/String',
+                'ARETURN',
+        ]
     }
 
     @Test
@@ -362,6 +437,788 @@ final class PeepholeOptimizingMethodVisitorTest {
                 'NOP',
                 'LDC 3L',
                 'LSTORE 1',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void preservesStandaloneCheckcastBeforeReturn() {
+        def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitInsn(Opcodes.NOP)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        // Standalone CHECKCAST before POP is dropped; before RETURN it is flushed
+        // and the value is popped so the void return remains verifiable.
+        def returnOnly = sequenceFor('(Ljava/lang/Object;)V') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitInsn(Opcodes.NOP)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ALOAD 0', 'NOP', 'POP', 'RETURN']
+        assert opcodeLines(returnOnly) == ['ALOAD 0', 'NOP', 'CHECKCAST java/lang/String', 'POP', 'RETURN']
+    }
+
+    @Test
+    void preservesAttachedCheckcastSideEffectBeforeReturn() {
+        def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(RETURN)
+        }
+
+        // Cast is kept for its ClassCastException side effect; POP keeps void return valid.
+        assert opcodeLines(bytecode) == [
+                'ALOAD 0',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void wrapIsIdempotentAndPropagatesNull() {
+        assert PeepholeOptimizingMethodVisitor.wrap(null) == null
+
+        def methodNode = new MethodNode(CompilerConfiguration.ASM_API_VERSION, ACC_PUBLIC | ACC_STATIC, 'sample', '()V', null, null)
+        def once = PeepholeOptimizingMethodVisitor.wrap(methodNode)
+        assert once instanceof PeepholeOptimizingMethodVisitor
+        assert PeepholeOptimizingMethodVisitor.wrap(once).is(once)
+    }
+
+    @Test
+    void printTraceBytecodeFindsNestedTracer() {
+        def textifier = new Textifier()
+        def tracer = new TraceMethodVisitor(textifier)
+        def peephole = new PeepholeOptimizingMethodVisitor(tracer)
+        peephole.visitCode()
+        peephole.visitInsn(Opcodes.ICONST_1)
+        peephole.visitVarInsn(Opcodes.ISTORE, 0) // keep the constant live for tracing
+        peephole.visitInsn(RETURN)
+        peephole.visitMaxs(0, 0)
+        peephole.visitEnd()
+
+        def out = new StringWriter()
+        def printer = new PrintWriter(out)
+        assert PeepholeOptimizingMethodVisitor.printTraceBytecode(peephole, printer)
+        printer.flush()
+        assert out.toString().contains('ICONST_1')
+        assert out.toString().contains('ISTORE')
+        assert out.toString().contains('RETURN')
+
+        assert !PeepholeOptimizingMethodVisitor.printTraceBytecode(null, printer)
+        assert !PeepholeOptimizingMethodVisitor.printTraceBytecode(new MethodNode(CompilerConfiguration.ASM_API_VERSION, ACC_PUBLIC | ACC_STATIC, 'x', '()V', null, null), printer)
+    }
+
+    @Test
+    void classVisitorWrapsEveryMethodAndSkipsNullDelegates() {
+        def written = []
+        def delegate = new org.objectweb.asm.ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {
+            @Override
+            MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                if (name == 'skip') {
+                    return null
+                }
+                def mn = new MethodNode(CompilerConfiguration.ASM_API_VERSION, access, name, descriptor, signature, exceptions)
+                written << mn
+                return mn
+            }
+        }
+        def peepholeClass = new PeepholeOptimizingClassVisitor(delegate)
+
+        def optimized = peepholeClass.visitMethod(ACC_PUBLIC | ACC_STATIC, 'run', '()V', null, null)
+        assert optimized instanceof PeepholeOptimizingMethodVisitor
+        optimized.visitCode()
+        optimized.visitLdcInsn(0)
+        optimized.visitVarInsn(Opcodes.ISTORE, 0)
+        optimized.visitInsn(RETURN)
+        optimized.visitMaxs(0, 0)
+        optimized.visitEnd()
+
+        assert peepholeClass.visitMethod(ACC_PUBLIC | ACC_STATIC, 'skip', '()V', null, null) == null
+        assert written.size() == 1
+        assert opcodeLines(traceSequence(written[0])) == ['ICONST_0', 'ISTORE 0', 'RETURN']
+    }
+
+    @Test
+    void doesNotRewriteNonMatchingCompareJumps() {
+        def zeroLabel = new Label()
+        def zeroWithIfnull = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitLdcInsn(0)
+            visitJumpInsn(Opcodes.IFNULL, zeroLabel)
+            visitInsn(RETURN)
+            visitLabel(zeroLabel)
+            visitInsn(RETURN)
+        }
+        assert opcodeLines(zeroWithIfnull)[1] == 'ICONST_0'
+        assert opcodeLines(zeroWithIfnull)[2].startsWith('IFNULL')
+
+        def nullLabel = new Label()
+        def nullWithIfeq = sequenceFor('(Ljava/lang/Object;)V') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitInsn(Opcodes.ACONST_NULL)
+            visitJumpInsn(Opcodes.IFEQ, nullLabel)
+            visitInsn(RETURN)
+            visitLabel(nullLabel)
+            visitInsn(RETURN)
+        }
+        assert opcodeLines(nullWithIfeq)[1] == 'ACONST_NULL'
+        assert opcodeLines(nullWithIfeq)[2].startsWith('IFEQ')
+    }
+
+    @Test
+    void preservesMismatchedPopSizes() {
+        def bytecode = sequenceFor('(IJ)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitInsn(Opcodes.POP2)
+            visitVarInsn(Opcodes.LLOAD, 1)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ILOAD 0',
+                'POP2',
+                'LLOAD 1',
+                'POP',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void attachesCheckcastToReferenceConstantsAndDropsDeadCastChains() {
+        def type = org.objectweb.asm.Type.getType(String)
+        def handle = new Handle(Opcodes.H_INVOKESTATIC, 'Owner', 'boot', '()V', false)
+        def bytecode = sequenceFor {
+            visitLdcInsn('text')
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.POP)
+            visitLdcInsn(type)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/Class')
+            visitInsn(Opcodes.POP)
+            visitLdcInsn(handle)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/invoke/MethodHandle')
+            visitInsn(Opcodes.POP)
+            visitInsn(Opcodes.ACONST_NULL)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['RETURN']
+    }
+
+    @Test
+    void flushesBeforeMethodAndInvokeDynamicCalls() {
+        def handle = new Handle(Opcodes.H_INVOKESTATIC, 'Owner', 'bootstrap', '()Ljava/lang/invoke/CallSite;', false)
+        def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Object', 'toString', '()Ljava/lang/String;', false)
+            visitInsn(Opcodes.POP)
+            visitLdcInsn(1)
+            visitInvokeDynamicInsn('dyn', '()I', handle)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        def lines = opcodeLines(bytecode)
+        assert lines[0] == 'ALOAD 0'
+        assert lines[1] == 'INVOKEVIRTUAL java/lang/Object.toString ()Ljava/lang/String;'
+        assert lines[2] == 'POP'
+        assert lines[3] == 'ICONST_1'
+        assert lines[4].startsWith('INVOKEDYNAMIC dyn')
+        assert lines[-2] == 'POP'
+        assert lines[-1] == 'RETURN'
+    }
+
+    @Test
+    void flushesPendingLoadOnLineNumberAndNonCheckcastTypeInsn() {
+        def start = new Label()
+        def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
+            visitLabel(start)
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitLineNumber(42, start)
+            visitTypeInsn(Opcodes.INSTANCEOF, 'java/lang/String')
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ALOAD 0',
+                'INSTANCEOF java/lang/String',
+                'POP',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void doesNotAttachSecondCheckcastAndFlushesIincOnConflict() {
+        def chainedCasts = sequenceFor('(Ljava/lang/Object;)Ljava/lang/Object;') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/CharSequence')
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.ARETURN)
+        }
+        assert opcodeLines(chainedCasts) == [
+                'ALOAD 0',
+                'CHECKCAST java/lang/CharSequence',
+                'CHECKCAST java/lang/String',
+                'ARETURN',
+        ]
+
+        def secondIincFlushes = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitIincInsn(0, 1)
+            visitIincInsn(0, 2) // already has IINC → flush load+first IINC, emit second
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+        assert opcodeLines(secondIincFlushes) == [
+                'ILOAD 0',
+                'IINC 0 1',
+                'IINC 0 2',
+                'POP',
+                'RETURN',
+        ]
+
+        def differentVarIincFlushes = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitIincInsn(1, 1) // different variable → flush load, emit IINC
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+        assert opcodeLines(differentVarIincFlushes) == [
+                'ILOAD 0',
+                'IINC 1 1',
+                'POP',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void flushesPendingDupWhenStoreIsNotEligibleForCollapse() {
+        def bytecode = sequenceFor {
+            visitInsn(Opcodes.ICONST_1)
+            visitInsn(Opcodes.DUP)
+            visitFieldInsn(Opcodes.PUTFIELD, 'Owner', 'value', 'I') // not PUTSTATIC → flush dup
+            visitInsn(Opcodes.ICONST_2)
+            visitInsn(Opcodes.DUP)
+            visitVarInsn(Opcodes.ISTORE, 0)
+            visitInsn(Opcodes.NOP) // keep the duplicate
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ICONST_1',
+                'DUP',
+                'PUTFIELD Owner.value : I',
+                'ICONST_2',
+                'DUP',
+                'ISTORE 0',
+                'NOP',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void passesConstantDynamicThroughWithoutBuffering() {
+        def handle = new Handle(Opcodes.H_INVOKESTATIC, 'Owner', 'bootstrap', '()I', false)
+        def dynamic = new ConstantDynamic('answer', 'I', handle)
+        def bytecode = sequenceFor {
+            visitLdcInsn(dynamic)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        // Bootstrap side effects must not be dropped by dead-load elimination.
+        def lines = opcodeLines(bytecode)
+        assert lines.size() == 3
+        assert lines[0].startsWith('LDC')
+        assert lines[1] == 'POP'
+        assert lines[2] == 'RETURN'
+    }
+
+    @Test
+    void emitsNonSpecializedNumericConstantsViaLdc() {
+        def bytecode = sequenceFor {
+            visitLdcInsn(3L)
+            visitLdcInsn(4f)
+            visitLdcInsn(5d)
+            visitLdcInsn('literal')
+            visitVarInsn(Opcodes.ASTORE, 0)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'LDC 3L',
+                'LDC 4.0F',
+                'LDC 5.0D',
+                'LDC "literal"',
+                'ASTORE 0',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void passesThroughNewarrayIntInsn() {
+        def bytecode = sequenceFor {
+            visitLdcInsn(2)
+            visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ICONST_2',
+                'NEWARRAY T_INT',
+                'POP',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void dropsDeadFloatAndDoubleLoads() {
+        def bytecode = sequenceFor('(FD)V') {
+            visitVarInsn(Opcodes.FLOAD, 0)
+            visitInsn(Opcodes.POP)
+            visitVarInsn(Opcodes.DLOAD, 1)
+            visitInsn(Opcodes.POP2)
+            visitInsn(Opcodes.FCONST_0)
+            visitInsn(Opcodes.POP)
+            visitInsn(Opcodes.DCONST_0)
+            visitInsn(Opcodes.POP2)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['RETURN']
+    }
+
+    @Test
+    void collapsesDup2WithWideVariableStore() {
+        def bytecode = sequenceFor {
+            visitLdcInsn(9L)
+            visitInsn(Opcodes.DUP2)
+            visitVarInsn(Opcodes.LSTORE, 0)
+            visitInsn(Opcodes.POP2)
+            visitLdcInsn(8.0d)
+            visitInsn(Opcodes.DUP2)
+            visitVarInsn(Opcodes.DSTORE, 2)
+            visitInsn(Opcodes.POP2)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'LDC 9L',
+                'LSTORE 0',
+                'LDC 8.0D',
+                'DSTORE 2',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void collapsesDupStorePopForReferenceStaticField() {
+        def bytecode = sequenceFor {
+            visitLdcInsn('value')
+            visitInsn(Opcodes.DUP)
+            visitFieldInsn(Opcodes.PUTSTATIC, 'Owner', 'NAME', 'Ljava/lang/String;')
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'LDC "value"',
+                'PUTSTATIC Owner.NAME : Ljava/lang/String;',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void preservesMismatchedDupAndPopSizes() {
+        def bytecode = sequenceFor {
+            visitInsn(Opcodes.ICONST_1)
+            visitInsn(Opcodes.DUP)
+            visitInsn(Opcodes.POP2) // size mismatch → keep DUP
+            visitLdcInsn(2L)
+            visitInsn(Opcodes.DUP2)
+            visitVarInsn(Opcodes.ISTORE, 0) // wide dup + narrow store → no collapse on later pop
+            visitInsn(Opcodes.POP2)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ICONST_1',
+                'DUP',
+                'POP2',
+                'LDC 2L',
+                'DUP2',
+                'ISTORE 0',
+                'POP2',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void dropsDeadLoadWithAttachedCheckcastOnPopOnly() {
+        def withPop = sequenceFor('(Ljava/lang/Object;)V') {
+            visitLdcInsn('x')
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+        assert opcodeLines(withPop) == ['RETURN']
+
+        def standalonePop2 = sequenceFor('(Ljava/lang/Object;)V') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitInsn(Opcodes.NOP)
+            visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
+            visitInsn(Opcodes.POP2) // only POP removes standalone cast
+            visitInsn(RETURN)
+        }
+        assert opcodeLines(standalonePop2) == [
+                'ALOAD 0',
+                'NOP',
+                'CHECKCAST java/lang/String',
+                'POP2',
+                'RETURN',
+        ]
+    }
+
+    // --- box/unbox cancellation and Boolean folding (from gjit) ---
+
+    @Test
+    void foldsBooleanTrueWithBooleanUnbox() {
+        def bytecode = sequenceFor('()Z') {
+            visitFieldInsn(Opcodes.GETSTATIC, 'java/lang/Boolean', 'TRUE', 'Ljava/lang/Boolean;')
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'booleanUnbox', '(Ljava/lang/Object;)Z', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ICONST_1', 'IRETURN']
+    }
+
+    @Test
+    void foldsBooleanFalseWithBooleanValue() {
+        def bytecode = sequenceFor('()Z') {
+            visitFieldInsn(Opcodes.GETSTATIC, 'java/lang/Boolean', 'FALSE', 'Ljava/lang/Boolean;')
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Boolean', 'booleanValue', '()Z', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ICONST_0', 'IRETURN']
+    }
+
+    @Test
+    void preservesBooleanConstantWhenNotUnboxed() {
+        def bytecode = sequenceFor('()Ljava/lang/Boolean;') {
+            visitFieldInsn(Opcodes.GETSTATIC, 'java/lang/Boolean', 'TRUE', 'Ljava/lang/Boolean;')
+            visitInsn(Opcodes.ARETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'GETSTATIC java/lang/Boolean.TRUE : Ljava/lang/Boolean;',
+                'ARETURN',
+        ]
+    }
+
+    @Test
+    void dropsDeadBooleanConstantOnPop() {
+        def bytecode = sequenceFor('()V') {
+            visitFieldInsn(Opcodes.GETSTATIC, 'java/lang/Boolean', 'TRUE', 'Ljava/lang/Boolean;')
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['RETURN']
+    }
+
+    @Test
+    void cancelsIntegerValueOfWithIntValue() {
+        def bytecode = sequenceFor('(I)I') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Integer', 'intValue', '()I', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'IRETURN']
+    }
+
+    @Test
+    void cancelsLongValueOfWithLongValue() {
+        def bytecode = sequenceFor('(J)J') {
+            visitVarInsn(Opcodes.LLOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Long', 'valueOf', '(J)Ljava/lang/Long;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Long', 'longValue', '()J', false)
+            visitInsn(Opcodes.LRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['LLOAD 0', 'LRETURN']
+    }
+
+    @Test
+    void cancelsDttBoxWithMatchingUnbox() {
+        def bytecode = sequenceFor('(D)D') {
+            visitVarInsn(Opcodes.DLOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'box', '(D)Ljava/lang/Object;', false)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'doubleUnbox', '(Ljava/lang/Object;)D', false)
+            visitInsn(Opcodes.DRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['DLOAD 0', 'DRETURN']
+    }
+
+    @Test
+    void dropsBoxedValueDiscardedByPop() {
+        def bytecode = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'POP', 'RETURN']
+    }
+
+    @Test
+    void dropsWideBoxedValueDiscardedByPop() {
+        def bytecode = sequenceFor('(J)V') {
+            visitVarInsn(Opcodes.LLOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Long', 'valueOf', '(J)Ljava/lang/Long;', false)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['LLOAD 0', 'POP2', 'RETURN']
+    }
+
+    @Test
+    void dropsWideBoxedValueDiscardedByPop2() {
+        def bytecode = sequenceFor('(D)V') {
+            visitVarInsn(Opcodes.DLOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'box', '(D)Ljava/lang/Object;', false)
+            visitInsn(Opcodes.POP2)
+            visitInsn(RETURN)
+        }
+
+        // POP2 size matches the wide primitive that was boxed → drop box, pop the double.
+        assert opcodeLines(bytecode) == ['DLOAD 0', 'POP2', 'RETURN']
+    }
+
+    @Test
+    void doesNotTreatPop2AsDiscardOfNarrowBoxedValue() {
+        def bytecode = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitInsn(Opcodes.POP2)
+            visitInsn(RETURN)
+        }
+
+        // POP2 does not match a one-slot boxed reference; flush the box and keep POP2.
+        assert opcodeLines(bytecode) == [
+                'ILOAD 0',
+                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
+                'POP2',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void flushesBoxWhenValueIsStored() {
+        def bytecode = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitVarInsn(Opcodes.ASTORE, 1)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ILOAD 0',
+                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
+                'ASTORE 1',
+                'RETURN',
+        ]
+    }
+
+    @Test
+    void doesNotCancelMismatchedBoxUnboxTypes() {
+        def bytecode = sequenceFor('(I)J') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Integer', 'longValue', '()J', false)
+            visitInsn(Opcodes.LRETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ILOAD 0',
+                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
+                'INVOKEVIRTUAL java/lang/Integer.longValue ()J',
+                'LRETURN',
+        ]
+    }
+
+    @Test
+    void doesNotBufferNonPrimitiveValueOf() {
+        def bytecode = sequenceFor('(Ljava/lang/String;)Ljava/lang/Integer;') {
+            visitVarInsn(Opcodes.ALOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(Ljava/lang/String;)Ljava/lang/Integer;', false)
+            visitInsn(Opcodes.ARETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ALOAD 0',
+                'INVOKESTATIC java/lang/Integer.valueOf (Ljava/lang/String;)Ljava/lang/Integer;',
+                'ARETURN',
+        ]
+    }
+
+    @Test
+    void doesNotCancelValueOfWithMismatchedWrapperUnbox() {
+        // Integer.valueOf then Long.longValue — different owners, must not cancel.
+        def bytecode = sequenceFor('(I)J') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Long', 'longValue', '()J', false)
+            visitInsn(Opcodes.LRETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ILOAD 0',
+                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
+                'INVOKEVIRTUAL java/lang/Long.longValue ()J',
+                'LRETURN',
+        ]
+    }
+
+    @Test
+    void doesNotFoldBooleanConstantWithNonUnboxCall() {
+        def bytecode = sequenceFor('()Ljava/lang/String;') {
+            visitFieldInsn(Opcodes.GETSTATIC, 'java/lang/Boolean', 'TRUE', 'Ljava/lang/Boolean;')
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Boolean', 'toString', '()Ljava/lang/String;', false)
+            visitInsn(Opcodes.ARETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'GETSTATIC java/lang/Boolean.TRUE : Ljava/lang/Boolean;',
+                'INVOKEVIRTUAL java/lang/Boolean.toString ()Ljava/lang/String;',
+                'ARETURN',
+        ]
+    }
+
+    @Test
+    void cancelsFloatAndDoubleValueOfPairs() {
+        def floatBytecode = sequenceFor('(F)F') {
+            visitVarInsn(Opcodes.FLOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Float', 'valueOf', '(F)Ljava/lang/Float;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Float', 'floatValue', '()F', false)
+            visitInsn(Opcodes.FRETURN)
+        }
+        def doubleBytecode = sequenceFor('(D)D') {
+            visitVarInsn(Opcodes.DLOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Double', 'valueOf', '(D)Ljava/lang/Double;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Double', 'doubleValue', '()D', false)
+            visitInsn(Opcodes.DRETURN)
+        }
+
+        assert opcodeLines(floatBytecode) == ['FLOAD 0', 'FRETURN']
+        assert opcodeLines(doubleBytecode) == ['DLOAD 0', 'DRETURN']
+    }
+
+    @Test
+    void cancelsBooleanByteCharShortValueOfPairs() {
+        def cases = [
+                ['java/lang/Boolean', 'Z', 'booleanValue', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['java/lang/Byte', 'B', 'byteValue', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['java/lang/Character', 'C', 'charValue', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['java/lang/Short', 'S', 'shortValue', Opcodes.ILOAD, Opcodes.IRETURN],
+        ]
+        cases.each { owner, prim, unboxName, load, ret ->
+            def bytecode = sequenceFor("($prim)$prim") {
+                visitVarInsn(load, 0)
+                visitMethodInsn(Opcodes.INVOKESTATIC, owner, 'valueOf', "($prim)L${owner};", false)
+                visitMethodInsn(Opcodes.INVOKEVIRTUAL, owner, unboxName, "()$prim", false)
+                visitInsn(ret)
+            }
+            assert opcodeLines(bytecode) == ["${Printer.OPCODES[load]} 0", Printer.OPCODES[ret]]
+        }
+    }
+
+    @Test
+    void cancelsAllDttBoxUnboxPairs() {
+        def cases = [
+                ['Z', 'booleanUnbox', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['B', 'byteUnbox', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['C', 'charUnbox', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['S', 'shortUnbox', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['I', 'intUnbox', Opcodes.ILOAD, Opcodes.IRETURN],
+                ['J', 'longUnbox', Opcodes.LLOAD, Opcodes.LRETURN],
+                ['F', 'floatUnbox', Opcodes.FLOAD, Opcodes.FRETURN],
+                ['D', 'doubleUnbox', Opcodes.DLOAD, Opcodes.DRETURN],
+        ]
+        cases.each { prim, unboxName, load, ret ->
+            def bytecode = sequenceFor("($prim)$prim") {
+                visitVarInsn(load, 0)
+                visitMethodInsn(Opcodes.INVOKESTATIC,
+                        'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                        'box', "($prim)Ljava/lang/Object;", false)
+                visitMethodInsn(Opcodes.INVOKESTATIC,
+                        'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                        unboxName, "(Ljava/lang/Object;)$prim", false)
+                visitInsn(ret)
+            }
+            assert opcodeLines(bytecode) == ["${Printer.OPCODES[load]} 0", Printer.OPCODES[ret]]
+        }
+    }
+
+    @Test
+    void doesNotCancelDttBoxWithValueOfStyleUnbox() {
+        // DTT.box then Integer.intValue — different unbox convention, must not cancel.
+        def bytecode = sequenceFor('(I)I') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'box', '(I)Ljava/lang/Object;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Integer', 'intValue', '()I', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ILOAD 0',
+                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.box (I)Ljava/lang/Object;',
+                'INVOKEVIRTUAL java/lang/Integer.intValue ()I',
+                'IRETURN',
+        ]
+    }
+
+    @Test
+    void flushesPendingBoxBeforeStructuralBoundaries() {
+        def label = new Label()
+        def bytecode = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitLabel(label)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == [
+                'ILOAD 0',
+                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
+                'POP',
                 'RETURN',
         ]
     }

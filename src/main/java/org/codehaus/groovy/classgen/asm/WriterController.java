@@ -161,10 +161,14 @@ public class WriterController {
     }
 
     private static ClassVisitor createClassVisitor(final ClassVisitor cv, final CompilerConfiguration config) {
-        if (!config.isLogClassgen() || cv instanceof LoggableClassVisitor) {
-            return cv;
+        ClassVisitor visitor = cv;
+        if (config.isLogClassgen() && !(cv instanceof LoggableClassVisitor)) {
+            visitor = new LoggableClassVisitor(cv, config);
         }
-        return new LoggableClassVisitor(cv, config);
+        // Apply peephole compaction to every method, including synthetic helpers.
+        return visitor instanceof PeepholeOptimizingClassVisitor
+                ? visitor
+                : new PeepholeOptimizingClassVisitor(visitor);
     }
 
     //--------------------------------------------------------------------------

@@ -118,7 +118,6 @@ import org.objectweb.asm.RecordComponentVisitor;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.TypeReference;
-import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -628,13 +627,12 @@ public class AsmClassGenerator extends ClassGenerator {
             parameters = Arrays.copyOfRange(parameters, 1, parameters.length);
         }
 
-        MethodVisitor mv = new PeepholeOptimizingMethodVisitor(
-                                    classVisitor.visitMethod(
-                                        node.getModifiers() | (isVargs(parameters) ? ACC_VARARGS : 0),
-                                        node.getName(),
-                                        BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters),
-                                        BytecodeHelper.getGenericsMethodSignature(node),
-                                        buildExceptions(node.getExceptions())));
+        MethodVisitor mv = classVisitor.visitMethod(
+                node.getModifiers() | (isVargs(parameters) ? ACC_VARARGS : 0),
+                node.getName(),
+                BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters),
+                BytecodeHelper.getGenericsMethodSignature(node),
+                buildExceptions(node.getExceptions()));
 
         controller.setMethodVisitor(mv);
         controller.resetLineNumber();
@@ -687,11 +685,13 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitMaxs(0, 0);
             } catch (Throwable t) {
                 Writer writer = null;
-                if (mv instanceof TraceMethodVisitor tmv) {
-                    writer = new StringBuilderWriter();
-                    PrintWriter p = new PrintWriter(writer);
-                    tmv.p.print(p);
-                    p.flush();
+                // Method visitors are wrapped by PeepholeOptimizingClassVisitor; unwrap to
+                // reach a TraceMethodVisitor when classgen logging is enabled.
+                StringBuilderWriter buffer = new StringBuilderWriter();
+                PrintWriter printer = new PrintWriter(buffer);
+                if (PeepholeOptimizingMethodVisitor.printTraceBytecode(mv, printer)) {
+                    printer.flush();
+                    writer = buffer;
                 }
                 StringBuilder message = new StringBuilder(64);
                 message.append("ASM reporting processing error for ");
@@ -2340,12 +2340,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 while (index<size) {
                     String methodName = "$createListEntry_" + controller.getNextHelperMethodIndex();
                     methods.add(methodName);
-                    mv = new PeepholeOptimizingMethodVisitor(
-                            controller.getClassVisitor().visitMethod(
-                                    ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC,
-                                    methodName,
-                                    "([Ljava/lang/Object;)V",
-                                    null, null));
+                    mv = controller.getClassVisitor().visitMethod(
+                            ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC,
+                            methodName,
+                            "([Ljava/lang/Object;)V",
+                            null, null);
                     controller.setMethodVisitor(mv);
                     mv.visitCode();
                     int methodBlockSize = Math.min(size-index, maxInit);
