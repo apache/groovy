@@ -38,6 +38,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -155,7 +156,10 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
      * if not overridden by a concrete declared/inherited method.
      */
     static Map<String, MethodNode> getAllCorrectedMethodsMap(final ClassNode cNode) {
-        Map<String, MethodNode> result = new HashMap<>();
+        // insertion-ordered: callers iterate the values to generate methods, so hash order
+        // would place the generated methods in an arbitrary order in the class file (and in
+        // the joint-compilation stubs) rather than the order they are found
+        Map<String, MethodNode> result = new LinkedHashMap<>();
         for (MethodNode mn : getMethodsWithGenerated(cNode)) {
             result.put(methodDescriptorWithoutReturnType(mn), mn);
         }
