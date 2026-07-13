@@ -188,8 +188,7 @@ public class CallSiteWriter {
             methodIndex++;
             String methodName = "$createCallSiteArray_" + methodIndex;
             callSiteInitMethods.add(methodName);
-            MethodVisitor mv = new PeepholeOptimizingMethodVisitor(
-                    controller.getClassVisitor().visitMethod(MOD_PRIVSS, methodName, "([Ljava/lang/String;)V", null, null));
+            MethodVisitor mv = controller.getClassVisitor().visitMethod(MOD_PRIVSS, methodName, "([Ljava/lang/String;)V", null, null);
             controller.setMethodVisitor(mv);
             mv.visitCode();
             int methodLimit = size;
@@ -208,8 +207,7 @@ public class CallSiteWriter {
             mv.visitEnd();
         }
         // create base createCallSiteArray method
-        MethodVisitor mv = new PeepholeOptimizingMethodVisitor(
-                controller.getClassVisitor().visitMethod(MOD_PRIVSS, CREATE_CSA_METHOD, GET_CALLSITEARRAY_DESC, null, null));
+        MethodVisitor mv = controller.getClassVisitor().visitMethod(MOD_PRIVSS, CREATE_CSA_METHOD, GET_CALLSITEARRAY_DESC, null, null);
         controller.setMethodVisitor(mv);
         mv.visitCode();
         mv.visitLdcInsn(size);
