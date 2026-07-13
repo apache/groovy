@@ -33,9 +33,11 @@ final class Groovy11362 extends AbstractBytecodeTestCase {
                 }
             }
         '''
+        // Catch parameter must be typed Exception (GROOVY-11362), not Object.
+        // Label numbers are not stable across try/catch codegen improvements.
         assert bytecode.hasSequence([
-            'LOCALVARIABLE this Lscript; L0 L6 0',
-            'LOCALVARIABLE e Ljava/lang/Exception; L5 L3 1' // not Ljava/lang/Object;
+            'LOCALVARIABLE this Lscript;',
+            'LOCALVARIABLE e Ljava/lang/Exception;' // not Ljava/lang/Object;
         ])
     }
 }

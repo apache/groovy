@@ -931,6 +931,16 @@ public class CompileStack {
         applyBlockRecorder(blockRecorders);
     }
 
+    /**
+     * Closes protected ranges, inlines each finally/synchronized guard, then
+     * re-opens a range after the guards for any code that follows (e.g. the
+     * return-value reload).
+     * <p>
+     * A leading {@code NOP} keeps the closed range non-empty when the try body
+     * is only an abrupt exit (empty exception-table ranges are illegal). No
+     * trailing {@code NOP} is emitted; the restarted range binds to the
+     * following real instruction (load/return/goto).
+     */
     private void applyBlockRecorder(final Collection<BlockRecorder> blockRecorders) {
         if (blockRecorders.isEmpty() || blockRecorders.size() == visitedBlocks.size()) return;
 
@@ -941,19 +951,19 @@ public class CompileStack {
             if (visitedBlocks.contains(recorder)) continue;
 
             Label end = new Label();
+            // Guarantee a non-empty protected range before excluding finally.
             mv.visitInsn(NOP);
             mv.visitLabel(end);
-
             recorder.closeRange(end);
 
-            // we exclude the finally block from the exception table
-            // here to avoid double visiting of finally statements
+            // Exclude the finally body from the exception table so it is not
+            // re-entered if it throws (avoid double application of finally).
             recorder.excludedStatement.run();
 
             recorder.startRange(start);
         }
 
-        mv.visitInsn(NOP);
+        // start marks the first instruction after all inlined finally blocks.
         mv.visitLabel(start);
     }
 
