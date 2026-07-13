@@ -81,6 +81,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -1676,8 +1677,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      * @param classNode the class being enhanced
      */
     protected void addCovariantMethods(final ClassNode classNode) {
-        Map<String, MethodNode> absInterfaceMethods = new HashMap<>();
-        Map<String, MethodNode> allInterfaceMethods = new HashMap<>();
+        // insertion-ordered: these maps are iterated to decide which bridge methods
+        // to add and in what order, so hash order would put the generated methods in
+        // an arbitrary order in the class file rather than the order they are found
+        Map<String, MethodNode> absInterfaceMethods = new LinkedHashMap<>();
+        Map<String, MethodNode> allInterfaceMethods = new LinkedHashMap<>();
         Set<ClassNode> allInterfaces = getAllInterfaces(classNode);
         allInterfaces.remove(classNode);
 
@@ -1716,7 +1720,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
-        Map<String, MethodNode> methodsToAdd = new HashMap<>();
+        Map<String, MethodNode> methodsToAdd = new LinkedHashMap<>();
         Map<String, ClassNode > genericsSpec = Collections.emptyMap();
         addCovariantMethods(classNode, declaredMethods, absInterfaceMethods, methodsToAdd, genericsSpec);
 
