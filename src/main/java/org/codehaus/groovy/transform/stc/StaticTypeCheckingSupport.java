@@ -1045,7 +1045,11 @@ public abstract class StaticTypeCheckingSupport {
             return asList(methods); // GROOVY-11683: no covariants or equivalents
         }
 
-        Set<MethodNode> bestMethods = new HashSet<>(); // choose best method(s) for each possible receiver
+        // GROOVY-12156: MethodNode has identity equals/hashCode, so an unordered set would
+        // return the candidates in identity-hash order; that order varies with the compiling
+        // thread and its allocation history, and callers that accept more than one candidate
+        // (union-type receiver, method reference, macro dispatch) let it reach generated code
+        Set<MethodNode> bestMethods = new LinkedHashSet<>(); // choose best method(s) for each possible receiver
         for (ClassNode rcvr : duckType ? ((UnionTypeClassNode) receiver).getDelegates() : new ClassNode[]{receiver}) {
             bestMethods.addAll(chooseBestMethods(rcvr, methods, argumentTypes));
         }
