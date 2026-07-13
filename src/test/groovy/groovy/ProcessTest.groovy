@@ -22,14 +22,23 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+import java.nio.charset.Charset
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1
+import static java.nio.charset.StandardCharsets.UTF_8
+
 /**
  * check that groovy Process methods do their job.
  */
 class ProcessTest {
+    private static final String PROCESS_ENCODING = 'groovy.process.encoding'
+
     def myProcess
+    private String previousProcessEncoding
 
     @BeforeEach
     void setUp() {
+        previousProcessEncoding = System.getProperty(PROCESS_ENCODING)
         myProcess = new MockProcess()
     }
 
@@ -74,6 +83,69 @@ class ProcessTest {
     }
 
     @Test
+    void testProcessTextUsesSuppliedCharset() {
+        // a single 0xE9 byte is 'é' in ISO-8859-1 but is not valid UTF-8
+        def latin1 = new MockProcess([0xE9] as byte[])
+        assert "é" == latin1.getText(ISO_8859_1)
+
+        def utf8 = new MockProcess("é".getBytes(UTF_8))
+        assert "é" == utf8.getText(UTF_8)
+    }
+
+    @Test
+    void testProcessTextDefaultsToTheNativeEncoding() {
+        def bytes = [0xE9] as byte[]
+        def expected = new String(bytes, Charset.forName(System.getProperty("native.encoding")))
+        assert expected == new MockProcess(bytes).text
+    }
+
+    @Test
+    void testProcessEncodingPropertyOverridesTheNativeEncoding() {
+        System.setProperty(PROCESS_ENCODING, "ISO-8859-1")
+        assert "é" == new MockProcess([0xE9] as byte[]).text
+
+        System.setProperty(PROCESS_ENCODING, "UTF-8")
+        assert "é" == new MockProcess("é".getBytes(UTF_8)).text
+    }
+
+    @Test
+    void testProcessEncodingPropertyIgnoredWhenNotAValidCharset() {
+        System.setProperty(PROCESS_ENCODING, "no-such-charset")
+        def bytes = [0xE9] as byte[]
+        def expected = new String(bytes, Charset.forName(System.getProperty("native.encoding")))
+        assert expected == new MockProcess(bytes).text
+    }
+
+    @Test
+    void testConsumeProcessOutputUsesSuppliedCharset() {
+        def out = new StringBuilder()
+        def err = new StringBuilder()
+        def proc = new MockProcess([0xE9] as byte[], [0xE8] as byte[])
+
+        proc.waitForProcessOutput(out, err, ISO_8859_1)
+
+        assert "é\n" == out.toString()
+        assert "è\n" == err.toString()
+    }
+
+    @Test
+    void testWaitForResultUsesSuppliedCharset() {
+        def result = new MockProcess([0xE9] as byte[]).waitForResult(ISO_8859_1)
+
+        assert "é\n" == result.out
+        assert result.ok
+    }
+
+    @Test
+    void testProcessAppendEncodesUsingTheProcessEncoding() {
+        System.setProperty(PROCESS_ENCODING, "ISO-8859-1")
+
+        myProcess << "é"
+
+        assert [0xE9] as byte[] == myProcess.outputStream.toByteArray()
+    }
+
+    @Test
     void testProcessErrorStream() {
         assert myProcess.err instanceof InputStream
         assert myProcess.err != null
@@ -89,6 +161,11 @@ class ProcessTest {
 
     @AfterEach
     void tearDown() {
+        if (previousProcessEncoding == null) {
+            System.clearProperty(PROCESS_ENCODING)
+        } else {
+            System.setProperty(PROCESS_ENCODING, previousProcessEncoding)
+        }
         myProcess.destroy()
     }
 }
@@ -102,8 +179,12 @@ class MockProcess extends Process {
     private def o
 
     MockProcess() {
-        e = new AnotherMockInputStream()
-        i = new AnotherMockInputStream()
+        this(new byte[0], new byte[0])
+    }
+
+    MockProcess(byte[] stdout, byte[] stderr = new byte[0]) {
+        i = new ByteArrayInputStream(stdout)
+        e = new ByteArrayInputStream(stderr)
         o = new ByteArrayOutputStream()
     }
 
@@ -118,12 +199,4 @@ class MockProcess extends Process {
     OutputStream getOutputStream() { return o }
 
     int waitFor() { return 0 }
-}
-
-/**
- * only needed for workaround in groovy,
- *     new ByteArrayInputStream(myByteArray) doesn't work at mo... (28-Sep-2004)
- */
-class AnotherMockInputStream extends InputStream {
-    int read() { return -1 }
 }

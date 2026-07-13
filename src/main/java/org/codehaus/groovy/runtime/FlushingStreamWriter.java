@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 
 /**
  * Stream writer which flushes after each write operation.
@@ -35,6 +36,18 @@ public class FlushingStreamWriter extends OutputStreamWriter {
      */
     public FlushingStreamWriter(OutputStream out) {
         super(out);
+    }
+
+    /**
+     * Constructs a FlushingStreamWriter that flushes on every write.
+     *
+     * @param out the underlying output stream to write to
+     * @param charset the charset to encode with
+     * @throws NullPointerException if out or charset is null
+     * @since 6.0.0
+     */
+    public FlushingStreamWriter(OutputStream out, Charset charset) {
+        super(out, charset);
     }
 
     @Override

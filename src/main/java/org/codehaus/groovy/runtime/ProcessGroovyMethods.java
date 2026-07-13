@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,49 @@ import java.util.concurrent.TimeUnit;
 public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
+     * The system property naming the charset used for process streams when no explicit
+     * charset is supplied. It overrides the native encoding and is useful for a child
+     * known to emit (or expect) something other than the platform's native encoding,
+     * e.g. a UTF-8 child on a Windows host.
+     *
+     * @since 6.0.0
+     */
+    public static final String PROCESS_ENCODING_PROPERTY = "groovy.process.encoding";
+
+    /**
+     * The operating system's native encoding, as named by the {@code native.encoding}
+     * system property (JDK 17+), falling back to {@link Charset#defaultCharset()} when
+     * that property is absent or names an unsupported charset. This cannot change during
+     * the life of the JVM, so it is resolved once.
+     */
+    private static final Charset NATIVE_ENCODING =
+            charsetOrDefault(System.getProperty("native.encoding"), Charset.defaultCharset());
+
+    /**
+     * The charset used for a process's streams when no explicit charset is supplied.
+     * A child process reads and writes text in the operating system's native encoding,
+     * whereas {@link Charset#defaultCharset()} has been UTF-8 on every platform since
+     * JEP 400, so on a non-UTF-8 host the default charset no longer describes what the
+     * child emits or expects. The native encoding is used instead, matching the charset
+     * selection of {@link Process#inputReader()} and {@link Process#outputWriter()}.
+     * Setting {@value #PROCESS_ENCODING_PROPERTY} overrides it.
+     */
+    private static Charset processEncoding() {
+        return charsetOrDefault(System.getProperty(PROCESS_ENCODING_PROPERTY), NATIVE_ENCODING);
+    }
+
+    private static Charset charsetOrDefault(String name, Charset fallback) {
+        if (name != null && !name.isEmpty()) {
+            try {
+                return Charset.forName(name);
+            } catch (IllegalArgumentException ignore) {
+                // unknown or unsupported charset name
+            }
+        }
+        return fallback;
+    }
+
+    /**
      * An alias method so that a process appears similar to System.out, System.in, System.err;
      * you can use process.in, process.out, process.err in a similar fashion.
      *
@@ -70,7 +114,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Read the text of the output stream of the Process.
+     * Read the text of the output stream of the Process, decoding using the operating
+     * system's native encoding (or {@value #PROCESS_ENCODING_PROPERTY} when set).
      * Closes all the streams associated with the process after retrieving the text.
      *
      * @param self a Process instance
@@ -79,9 +124,26 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(Process self) throws IOException {
-        String text = IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
-        closeStreams(self);
-        return text;
+        return getText(self, processEncoding());
+    }
+
+    /**
+     * Read the text of the output stream of the Process using the given charset.
+     * Closes all the streams associated with the process after retrieving the text.
+     *
+     * @param self a Process instance
+     * @param charset the charset the process writes its output in, or null to use the process encoding
+     * @return the text of the output
+     * @throws java.io.IOException if an IOException occurs.
+     * @since 6.0.0
+     */
+    public static String getText(Process self, Charset charset) throws IOException {
+        if (charset == null) charset = processEncoding();
+        try {
+            return IOGroovyMethods.getText(new BufferedReader(new InputStreamReader(self.getInputStream(), charset)));
+        } finally {
+            closeStreams(self);
+        }
     }
 
     /**
@@ -110,7 +172,9 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Overloads the left shift operator (&lt;&lt;) to provide an append mechanism
-     * to pipe data to a Process.
+     * to pipe data to a Process. The value is encoded using the operating system's
+     * native encoding (or {@value #PROCESS_ENCODING_PROPERTY} when set), which is what
+     * the child process expects to read.
      *
      * @param self  a Process instance
      * @param value a value to append
@@ -119,7 +183,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Writer leftShift(Process self, Object value) throws IOException {
-        return IOGroovyMethods.leftShift(self.getOutputStream(), value);
+        return IOGroovyMethods.leftShift(new FlushingStreamWriter(self.getOutputStream(), processEncoding()), value);
     }
 
     /**
@@ -192,8 +256,27 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.5
      */
     public static void consumeProcessOutput(Process self, Appendable output, Appendable error) {
-        consumeProcessOutputStream(self, output);
-        consumeProcessErrorStream(self, error);
+        consumeProcessOutput(self, output, error, processEncoding());
+    }
+
+    /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is decoded using the given charset and appended
+     * to the supplied Appendable.
+     * For this, two Threads are started, so this method will return immediately.
+     * The threads will not be join()ed, even if waitFor() is called. To wait
+     * for the output to be fully consumed call waitForProcessOutput().
+     *
+     * @param self a Process
+     * @param output an Appendable to capture the process stdout
+     * @param error an Appendable to capture the process stderr
+     * @param charset the charset the process writes its output in
+     * @since 6.0.0
+     */
+    public static void consumeProcessOutput(Process self, Appendable output, Appendable error, Charset charset) {
+        consumeProcessOutputStream(self, output, charset);
+        consumeProcessErrorStream(self, error, charset);
     }
 
     /**
@@ -246,8 +329,27 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.5
      */
     public static void waitForProcessOutput(Process self, Appendable output, Appendable error) {
-        Thread tout = consumeProcessOutputStream(self, output);
-        Thread terr = consumeProcessErrorStream(self, error);
+        waitForProcessOutput(self, output, error, processEncoding());
+    }
+
+    /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is decoded using the given charset and appended
+     * to the supplied Appendable.
+     * For this, two Threads are started, but join()ed, so we wait.
+     * As implied by the waitFor... name, we also wait until we finish
+     * as well. Finally, the input, output and error streams are closed.
+     *
+     * @param self a Process
+     * @param output an Appendable to capture the process stdout
+     * @param error an Appendable to capture the process stderr
+     * @param charset the charset the process writes its output in
+     * @since 6.0.0
+     */
+    public static void waitForProcessOutput(Process self, Appendable output, Appendable error, Charset charset) {
+        Thread tout = consumeProcessOutputStream(self, output, charset);
+        Thread terr = consumeProcessErrorStream(self, error, charset);
         boolean interrupted = false;
         try {
             try { tout.join(); } catch (InterruptedException ignore) { interrupted = true; }
@@ -303,10 +405,25 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 6.0.0
      */
     public static ProcessResult waitForResult(Process self) throws InterruptedException {
+        return waitForResult(self, processEncoding());
+    }
+
+    /**
+     * Executes the process and waits for it to complete, capturing
+     * the standard output and standard error decoded using the given charset,
+     * plus the exit code, into a {@link ProcessResult}.
+     *
+     * @param self a Process
+     * @param charset the charset the process writes its output in
+     * @return a ProcessResult containing stdout, stderr, and exit code
+     * @throws InterruptedException if the current thread is interrupted.
+     * @since 6.0.0
+     */
+    public static ProcessResult waitForResult(Process self, Charset charset) throws InterruptedException {
         StringBuilder sout = new StringBuilder();
         StringBuilder serr = new StringBuilder();
-        Thread tout = consumeProcessOutputStream(self, sout);
-        Thread terr = consumeProcessErrorStream(self, serr);
+        Thread tout = consumeProcessOutputStream(self, sout, charset);
+        Thread terr = consumeProcessErrorStream(self, serr, charset);
         boolean interrupted = false;
         try {
             try { tout.join(); } catch (InterruptedException ignore) { interrupted = true; }
@@ -337,10 +454,28 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 6.0.0
      */
     public static ProcessResult waitForResult(Process self, long timeout, TimeUnit unit) throws InterruptedException {
+        return waitForResult(self, timeout, unit, processEncoding());
+    }
+
+    /**
+     * Executes the process and waits for it to complete within the given timeout,
+     * capturing the standard output and standard error decoded using the given charset,
+     * plus the exit code, into a {@link ProcessResult}. If the process does not complete
+     * within the timeout, it is forcibly destroyed.
+     *
+     * @param self a Process
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @param charset the charset the process writes its output in
+     * @return a ProcessResult containing stdout, stderr, and exit code
+     * @throws InterruptedException if the current thread is interrupted.
+     * @since 6.0.0
+     */
+    public static ProcessResult waitForResult(Process self, long timeout, TimeUnit unit, Charset charset) throws InterruptedException {
         StringBuilder sout = new StringBuilder();
         StringBuilder serr = new StringBuilder();
-        Thread tout = consumeProcessOutputStream(self, sout);
-        Thread terr = consumeProcessErrorStream(self, serr);
+        Thread tout = consumeProcessOutputStream(self, sout, charset);
+        Thread terr = consumeProcessErrorStream(self, serr, charset);
         boolean interrupted = false;
         try {
             try {
@@ -412,7 +547,24 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.5
      */
     public static Thread consumeProcessErrorStream(Process self, Appendable error) {
-        Thread thread = new Thread(new TextDumper(self.getErrorStream(), error));
+        return consumeProcessErrorStream(self, error, processEncoding());
+    }
+
+    /**
+     * Gets the error stream from a process and reads it
+     * to keep the process from blocking due to a full buffer.
+     * The stream data is decoded using the given charset and appended
+     * to the supplied Appendable.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param error an Appendable to capture the process stderr
+     * @param charset the charset the process writes its error output in
+     * @return the Thread
+     * @since 6.0.0
+     */
+    public static Thread consumeProcessErrorStream(Process self, Appendable error, Charset charset) {
+        Thread thread = new Thread(new TextDumper(self.getErrorStream(), error, charset));
         thread.start();
         return thread;
     }
@@ -429,7 +581,24 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.5
      */
     public static Thread consumeProcessOutputStream(Process self, Appendable output) {
-        Thread thread = new Thread(new TextDumper(self.getInputStream(), output));
+        return consumeProcessOutputStream(self, output, processEncoding());
+    }
+
+    /**
+     * Gets the output stream from a process and reads it
+     * to keep the process from blocking due to a full output buffer.
+     * The stream data is decoded using the given charset and appended
+     * to the supplied Appendable.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output an Appendable to capture the process stdout
+     * @param charset the charset the process writes its output in
+     * @return the Thread
+     * @since 6.0.0
+     */
+    public static Thread consumeProcessOutputStream(Process self, Appendable output, Charset charset) {
+        Thread thread = new Thread(new TextDumper(self.getInputStream(), output, charset));
         thread.start();
         return thread;
     }
@@ -455,6 +624,8 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates a new BufferedWriter as stdin for this process,
      * passes it to the closure, and ensures the stream is flushed
      * and closed after the closure returns.
+     * Text is encoded using the operating system's native encoding
+     * (or {@value #PROCESS_ENCODING_PROPERTY} when set).
      * A new Thread is started, so this method will return immediately.
      *
      * @param self a Process
@@ -462,9 +633,24 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.2
      */
     public static void withWriter(final Process self, final Closure closure) {
+        withWriter(self, processEncoding(), closure);
+    }
+
+    /**
+     * Creates a new BufferedWriter as stdin for this process using the given charset,
+     * passes it to the closure, and ensures the stream is flushed
+     * and closed after the closure returns.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param charset the charset the process expects to read its input in
+     * @param closure a closure
+     * @since 6.0.0
+     */
+    public static void withWriter(final Process self, final Charset charset, final Closure closure) {
         new Thread(() -> {
             try {
-                IOGroovyMethods.withWriter(new BufferedOutputStream(getOut(self)), closure);
+                IOGroovyMethods.withWriter(new BufferedOutputStream(getOut(self)), charset.name(), closure);
             } catch (IOException e) {
                 throw new GroovyRuntimeException("exception while reading process stream", e);
             }
@@ -621,15 +807,17 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     private static class TextDumper implements Runnable {
         final InputStream in;
         final Appendable app;
+        final Charset charset;
 
-        public TextDumper(InputStream in, Appendable app) {
+        public TextDumper(InputStream in, Appendable app, Charset charset) {
             this.in = in;
             this.app = app;
+            this.charset = charset;
         }
 
         @Override
         public void run() {
-            InputStreamReader isr = new InputStreamReader(in);
+            InputStreamReader isr = new InputStreamReader(in, charset);
             BufferedReader br = new BufferedReader(isr);
             String next;
             try {
