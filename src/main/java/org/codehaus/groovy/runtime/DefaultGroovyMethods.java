@@ -13378,10 +13378,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Printf to the standard output stream.
+     * Formatting is locale-sensitive and uses {@link Locale#getDefault()}. To format
+     * for an explicit locale, print the result of
+     * {@link String#format(Locale, String, Object...)} instead.
      *
      * @param self   any Object
      * @param format a format string
      * @param values values referenced by the format specifiers in the format string
+     *
+     * @see java.lang.String#format(Locale, String, Object...)
      * @since 1.0
      */
     public static void printf(Object self, String format, Object[] values) {
@@ -13394,10 +13399,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Printf 0 or more values to the standard output stream using a format string.
      * This method delegates to the owner to execute the method.
+     * Formatting is locale-sensitive and uses {@link Locale#getDefault()}. To format
+     * for an explicit locale, print the result of
+     * {@link String#format(Locale, String, Object...)} instead.
      *
      * @param self   a generated closure
      * @param format a format string
      * @param values values referenced by the format specifiers in the format string
+     *
+     * @see java.lang.String#format(Locale, String, Object...)
      * @since 3.0.0
      */
     public static void printf(Closure self, String format, Object[] values) {
@@ -13411,10 +13421,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Printf a value to the standard output stream using a format string.
      * This method delegates to the owner to execute the method.
+     * Formatting is locale-sensitive and uses {@link Locale#getDefault()}. To format
+     * for an explicit locale, print the result of
+     * {@link String#format(Locale, String, Object...)} instead.
      *
      * @param self   a generated closure
      * @param format a format string
      * @param value  value referenced by the format specifier in the format string
+     *
+     * @see java.lang.String#format(Locale, String, Object...)
      * @since 3.0.0
      */
     public static void printf(Closure self, String format, Object value) {
@@ -13444,12 +13459,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     ( 7..11 ).each { printf ( "-- %5.2f\n" , [ it ] as float[] ) }
      *     ( 7..11 ).each { printf ( "-- %5.2g\n" , [ it ] as double[] ) }
      * </pre>
+     * Formatting is locale-sensitive and uses {@link Locale#getDefault()}. To format
+     * for an explicit locale, print the result of
+     * {@link String#format(Locale, String, Object...)} instead.
      *
      * @param self   any Object
      * @param format A format string
      * @param arg    Argument which is referenced by the format specifiers in the format
      *               string.  The type of <code>arg</code> should be one of Object[], List,
      *               int[], short[], byte[], char[], boolean[], long[], float[], or double[].
+     *
+     * @see java.lang.String#format(Locale, String, Object...)
      * @since 1.0
      */
     public static void printf(Object self, String format, Object arg) {
@@ -15299,11 +15319,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sprintf to a string.
+     * Formatting is locale-sensitive and uses {@link Locale#getDefault()}. To format
+     * for an explicit locale, use {@link String#format(Locale, String, Object...)} instead.
      *
      * @param self   any Object
      * @param format a format string
      * @param values values referenced by the format specifiers in the format string
      * @return the resulting formatted string
+     *
+     * @see java.lang.String#format(Locale, String, Object...)
      * @since 1.5.0
      */
     public static String sprintf(Object self, String format, Object[] values) {
@@ -15316,6 +15340,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a formatted string using the specified format string and
      * arguments.
+     * Formatting is locale-sensitive and uses {@link Locale#getDefault()}. To format
+     * for an explicit locale, use {@link String#format(Locale, String, Object...)} instead.
      *
      * @param self   any Object
      * @param format A format string
@@ -15323,6 +15349,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *               string.  The type of <code>arg</code> should be one of Object[], List,
      *               int[], short[], byte[], char[], boolean[], long[], float[], or double[].
      * @return the resulting printf'd string
+     *
+     * @see java.lang.String#format(Locale, String, Object...)
      * @since 1.5.0
      */
     public static String sprintf(Object self, String format, Object arg) {
@@ -16509,10 +16537,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // toCurrencyString
 
     /**
-     * Formats a Number as a currency String using the default locale.
+     * Formats a Number as a currency String using {@link Locale#getDefault()}.
+     * This is intended for human-facing output in single-user contexts such as a
+     * CLI or desktop application. In a server or other multi-tenant context, the
+     * default locale is the container's, not the end user's, so prefer
+     * {@link #toCurrencyString(Number, Locale)} with an explicit locale.
      *
      * @param self a Number
      * @return the currency-formatted String
+     *
+     * @see #toCurrencyString(Number, Locale)
+     * @see java.text.NumberFormat#getCurrencyInstance()
      * @since 6.0.0
      */
     public static String toCurrencyString(Number self) {
@@ -16528,6 +16563,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a Number
      * @param locale the locale defining the currency format
      * @return the currency-formatted String
+     *
+     * @see StringGroovyMethods#toCurrencyNumber(CharSequence, Locale)
+     * @see java.text.NumberFormat#getCurrencyInstance(Locale)
      * @since 6.0.0
      */
     public static String toCurrencyString(Number self, Locale locale) {
@@ -16538,11 +16576,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // toPercentString
 
     /**
-     * Formats a Number as a percent String using the default locale.
-     * The value is scaled by 100 (e.g. {@code 0.945} becomes {@code 94.5%}).
+     * Formats a Number as a percent String using {@link Locale#getDefault()}.
+     * The value is scaled by 100 and, by default, rounded to whole percent
+     * (e.g. {@code 0.945} becomes {@code 94%}).
+     * This is intended for human-facing output in single-user contexts such as a
+     * CLI or desktop application. In a server or other multi-tenant context, the
+     * default locale is the container's, not the end user's, so prefer
+     * {@link #toPercentString(Number, Locale)} with an explicit locale.
      *
      * @param self a Number
      * @return the percent-formatted String
+     *
+     * @see #toPercentString(Number, Locale)
+     * @see java.text.NumberFormat#getPercentInstance()
      * @since 6.0.0
      */
     public static String toPercentString(Number self) {
@@ -16551,14 +16597,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Formats a Number as a percent String using the given locale.
-     * The value is scaled by 100 (e.g. {@code 0.945} becomes {@code 94.5%}).
+     * The value is scaled by 100 and, by default, rounded to whole percent.
      * <pre class="groovyTestCase">
      * assert 0.5.toPercentString(Locale.US) == '50%'
+     * assert 0.945.toPercentString(Locale.US) == '94%' // rounded, not '94.5%'
      * </pre>
+     * For fraction digits, format via {@link java.text.NumberFormat#getPercentInstance(Locale)}
+     * with {@link java.text.NumberFormat#setMaximumFractionDigits(int)}.
      *
      * @param self   a Number
      * @param locale the locale defining the percent format
      * @return the percent-formatted String
+     *
+     * @see StringGroovyMethods#toPercentNumber(CharSequence, Locale)
+     * @see java.text.NumberFormat#getPercentInstance(Locale)
      * @since 6.0.0
      */
     public static String toPercentString(Number self, Locale locale) {

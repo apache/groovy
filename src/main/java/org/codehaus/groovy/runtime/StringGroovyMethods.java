@@ -3472,16 +3472,24 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Parses a CharSequence into a Number using the given locale, honouring
      * locale-specific grouping and decimal symbols. Like {@link #toBigDecimal(CharSequence)},
-     * parsing is strict: the entire (trimmed) CharSequence must be a valid number.
+     * parsing is strict: the entire (trimmed) CharSequence must be a valid number,
+     * and the result is an exact {@link BigDecimal}.
      * <pre class="groovyTestCase">
      * assert '1.234,5'.toNumber(Locale.GERMANY) == 1234.5
      * </pre>
+     * There is no locale-aware formatting counterpart: use
+     * {@link String#format(Locale, String, Object...)}, e.g. {@code String.format(Locale.GERMANY, '%,.3f', n)}.
+     * Note that unlike this method, such formatting rounds to the given number of
+     * fraction digits; {@link Object#toString()} gives the exact, locale-free form.
      *
      * @param self   a CharSequence
      * @param locale the locale defining the number symbols
-     * @return the parsed Number
+     * @return the parsed Number (a BigDecimal)
      * @throws NumberFormatException if the CharSequence cannot be parsed in full
      *
+     * @see #toBigDecimal(CharSequence)
+     * @see java.lang.String#format(Locale, String, Object...)
+     * @see java.text.NumberFormat#getNumberInstance(Locale)
      * @since 6.0.0
      */
     public static Number toNumber(final CharSequence self, final Locale locale) {
@@ -3491,8 +3499,11 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Parses a CharSequence in full using the given format, throwing a
      * {@link NumberFormatException} if the trimmed text is not entirely consumed.
+     * The value is parsed as an exact {@link BigDecimal}, matching the decimal
+     * semantics of Groovy's own literals.
      */
-    private static Number parseFully(final NumberFormat format, final CharSequence self, final String kind) {
+    private static BigDecimal parseFully(final NumberFormat format, final CharSequence self, final String kind) {
+        if (format instanceof DecimalFormat) ((DecimalFormat) format).setParseBigDecimal(true);
         String text = self.toString().trim();
         ParsePosition pos = new ParsePosition(0);
         Number result = format.parse(text, pos);
@@ -3500,21 +3511,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             int at = result == null ? pos.getErrorIndex() : pos.getIndex();
             throw new NumberFormatException("Unparseable " + kind + ": \"" + self + "\" (at index " + at + ")");
         }
-        return result;
-    }
-
-    /**
-     * Parses a CharSequence into a Number using the currency format of the default locale.
-     * The result is an exact {@link BigDecimal}.
-     *
-     * @param self a CharSequence
-     * @return the parsed Number (a BigDecimal)
-     * @throws NumberFormatException if the CharSequence cannot be parsed
-     *
-     * @since 6.0.0
-     */
-    public static Number toCurrencyNumber(final CharSequence self) {
-        return toCurrencyNumber(self, Locale.getDefault());
+        // guarantee the documented BigDecimal type even for non-DecimalFormat providers
+        return (result instanceof BigDecimal) ? (BigDecimal) result : new BigDecimal(result.toString());
     }
 
     /**
@@ -3523,48 +3521,44 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * assert '$1,234.50'.toCurrencyNumber(Locale.US) == 1234.50g
      * </pre>
+     * No default-locale variant is provided. Input carries the locale of wherever it
+     * came from (a file, a request, a database), which is less often the JVM default
+     * than is the case for human-facing output. Where the default locale is a fair
+     * assumption, such as a console application reading what the user typed, pass
+     * {@link Locale#getDefault()} explicitly.
      *
      * @param self   a CharSequence
      * @param locale the locale defining the currency format
      * @return the parsed Number (a BigDecimal)
      * @throws NumberFormatException if the CharSequence cannot be parsed
      *
+     * @see DefaultGroovyMethods#toCurrencyString(Number, Locale)
+     * @see java.text.NumberFormat#getCurrencyInstance(Locale)
      * @since 6.0.0
      */
     public static Number toCurrencyNumber(final CharSequence self, final Locale locale) {
-        NumberFormat nf = NumberFormat.getCurrencyInstance(locale);
-        if (nf instanceof DecimalFormat) ((DecimalFormat) nf).setParseBigDecimal(true);
-        Number result = parseFully(nf, self, "currency");
-        // guarantee the documented BigDecimal type even for non-DecimalFormat providers
-        return (result instanceof BigDecimal) ? result : new BigDecimal(result.toString());
-    }
-
-    /**
-     * Parses a CharSequence into a Number using the percent format of the default locale.
-     * The percent value is unscaled (divided by 100).
-     *
-     * @param self a CharSequence
-     * @return the parsed Number
-     * @throws NumberFormatException if the CharSequence cannot be parsed
-     *
-     * @since 6.0.0
-     */
-    public static Number toPercentNumber(final CharSequence self) {
-        return toPercentNumber(self, Locale.getDefault());
+        return parseFully(NumberFormat.getCurrencyInstance(locale), self, "currency");
     }
 
     /**
      * Parses a CharSequence into a Number using the percent format of the given locale.
-     * The percent value is unscaled (divided by 100).
+     * The percent value is unscaled (divided by 100). The result is an exact {@link BigDecimal}.
      * <pre class="groovyTestCase">
      * assert '50%'.toPercentNumber(Locale.US) == 0.5
      * </pre>
+     * No default-locale variant is provided. Input carries the locale of wherever it
+     * came from (a file, a request, a database), which is less often the JVM default
+     * than is the case for human-facing output. Where the default locale is a fair
+     * assumption, such as a console application reading what the user typed, pass
+     * {@link Locale#getDefault()} explicitly.
      *
      * @param self   a CharSequence
      * @param locale the locale defining the percent format
-     * @return the parsed Number
+     * @return the parsed Number (a BigDecimal)
      * @throws NumberFormatException if the CharSequence cannot be parsed
      *
+     * @see DefaultGroovyMethods#toPercentString(Number, Locale)
+     * @see java.text.NumberFormat#getPercentInstance(Locale)
      * @since 6.0.0
      */
     public static Number toPercentNumber(final CharSequence self, final Locale locale) {
