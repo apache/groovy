@@ -45,6 +45,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -536,35 +537,48 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     @SuppressWarnings("unchecked")
     public V call(final Object... arguments) {
         Class<?> myClass = getClass();
-        if (myClass != Closure.class && arguments != null && !IN_CALL_FALLBACK.get()) {
+        if (myClass != Closure.class && arguments != null && mopUnperturbed()) {
             CallOverride override = CALL_OVERRIDES.get(myClass);
+            // call selects a doCall: the cache is keyed on the subclass's doCall declarations,
+            // arity-indexed (GROOVY-12165) so the shapes the GDK drives hard (Map#each,
+            // eachWithIndex, inject) dispatch directly. An argument that is already an instance
+            // of each declared parameter type dispatches directly; anything that needs Groovy
+            // coercion (GString -> String, number conversions, null) falls through to the
+            // metaclass below, which coerces exactly as before (GROOVY-12164). A subclass with
+            // no doCall keeps the GROOVY-11911 call()/call(Object) compatibility carve-out,
+            // whose targets alone need the re-entry latch (a custom call override may delegate
+            // back to call(...), which must not re-dispatch to the same target).
             Method target = null;
-            if (arguments.length == 1 && override.oneArg != null) {
-                target = override.oneArg;
-            } else if (arguments.length == 1 && override.oneArgTyped != null && override.oneArgGuard.isInstance(arguments[0])) {
-                // GROOVY-12164: a closure with a typed parameter declares call(T)/doCall(T) rather
-                // than call(Object), which the lookup above cannot see -- without this branch every
-                // such call pays full metaclass dispatch. An argument that is already an instance of
-                // the declared type dispatches directly; anything that needs Groovy coercion
-                // (GString -> String, number conversions, null) falls through to the metaclass below,
-                // which coerces exactly as before.
-                target = override.oneArgTyped;
-            } else if (arguments.length == 0 && override.zeroArg != null) {
-                target = override.zeroArg;
+            int arity = arguments.length;
+            if (arity < CallOverride.ARITY_LIMIT) {
+                Method m = override.byArity[arity];
+                if (m != null && CallOverride.guardsPass(override.guards[arity], arguments)) {
+                    target = m;
+                }
             }
             if (target != null) {
-                IN_CALL_FALLBACK.set(Boolean.TRUE);
-                try {
-                    return (V) (arguments.length == 0
-                            ? target.invoke(this)
-                            : target.invoke(this, arguments[0]));
-                } catch (InvocationTargetException ite) {
-                    UncheckedThrow.rethrow(ite.getCause());
-                    return null; // unreachable statement
-                } catch (IllegalAccessException iae) {
-                    throw new GroovyRuntimeException(iae);
-                } finally {
-                    IN_CALL_FALLBACK.set(Boolean.FALSE);
+                if (!override.callForm[arity]) {
+                    // a doCall body: re-entry is ordinary recursion, no latch required
+                    try {
+                        return (V) target.invoke(this, arguments);
+                    } catch (InvocationTargetException ite) {
+                        UncheckedThrow.rethrow(ite.getCause());
+                        return null; // unreachable statement
+                    } catch (IllegalAccessException iae) {
+                        throw new GroovyRuntimeException(iae);
+                    }
+                } else if (!IN_CALL_FALLBACK.get()) {
+                    IN_CALL_FALLBACK.set(Boolean.TRUE);
+                    try {
+                        return (V) target.invoke(this, arguments);
+                    } catch (InvocationTargetException ite) {
+                        UncheckedThrow.rethrow(ite.getCause());
+                        return null; // unreachable statement
+                    } catch (IllegalAccessException iae) {
+                        throw new GroovyRuntimeException(iae);
+                    } finally {
+                        IN_CALL_FALLBACK.set(Boolean.FALSE);
+                    }
                 }
             }
         }
@@ -576,6 +590,39 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         } catch (Exception e) {
             return (V) throwRuntimeException(e);
         }
+    }
+
+    /**
+     * Whether something MOP-relevant is in play for this instance: a non-stock metaclass
+     * (replaced, wrapped or Expando — it must see {@code invokeMethod}). Checked once at
+     * construction and latched by {@link #setMetaClass}, which is the only way the instance's
+     * metaclass field can change — so reading one boolean here is equivalent to re-checking
+     * the metaclass class on every call, at a fraction of the cost on the hot dispatch lanes.
+     */
+    private transient boolean mopPerturbed = nonStockMetaClass();
+
+    private boolean nonStockMetaClass() {
+        MetaClass mc = super.getMetaClass();
+        Class<?> mcClass = (mc == null) ? null : mc.getClass();
+        return mcClass != org.codehaus.groovy.runtime.metaclass.ClosureMetaClass.class && mcClass != MetaClassImpl.class;
+    }
+
+    @Override
+    public void setMetaClass(final MetaClass metaClass) {
+        super.setMetaClass(metaClass);
+        // conservative: any explicitly assigned metaclass (even a stock one) routes via the MOP
+        mopPerturbed = true;
+    }
+
+    /**
+     * Whether nothing MOP-relevant is in play for this instance, so a cached direct
+     * dispatch path is semantically invisible: the metaclass is a stock one and no
+     * category is active on the current thread — the same conditions the classic
+     * call-site caches check (see {@code AbstractCallSite}). One boolean load and one
+     * quick-exit counter read, cheap enough for per-element dispatch lanes.
+     */
+    protected final boolean mopUnperturbed() {
+        return !mopPerturbed && !org.codehaus.groovy.runtime.GroovyCategorySupport.hasCategoryInCurrentThread();
     }
 
     /**
@@ -1385,51 +1432,158 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
     private static final class CallOverride {
         /**
-         * Marker instance indicating that no call override exists.
+         * Cached arities: {@code 0..ARITY_LIMIT-1}. Sized to cover every callback shape the GDK
+         * drives (iteration and inject/withIndex variants peak at three parameters, plus slack).
          */
-        static final CallOverride NONE = new CallOverride(null, null, null);
+        static final int ARITY_LIMIT = 5;
         /**
-         * Cached zero-argument call override.
+         * Marker instance indicating that no dispatch targets exist.
          */
-        final Method zeroArg;
+        static final CallOverride NONE = new CallOverride(new Method[ARITY_LIMIT], new Class[ARITY_LIMIT][], new boolean[ARITY_LIMIT]);
         /**
-         * Cached single-argument call override.
+         * Cached {@code doCall} targets indexed by parameter count, or null where absent,
+         * ambiguous, or inaccessible — {@code call} selects a {@code doCall}, so the cache is
+         * keyed on the {@code doCall} declarations themselves. At each arity an all-{@code Object}
+         * doCall wins outright; otherwise the single unambiguous doCall with declared parameter
+         * types is cached with guards (GROOVY-12164/12165). For a subclass declaring NO doCall at
+         * all, the GROOVY-11911 compatibility carve-out caches its {@code call()}/{@code call(Object)}
+         * overrides instead (the historical Java-written adapter shape).
          */
-        final Method oneArg;
+        final Method[] byArity;
         /**
-         * Cached single-argument call override with a declared (non-Object) parameter type,
-         * used only when {@link #oneArg} is absent (GROOVY-12164). A closure literal with a
-         * typed parameter generates {@code call(T)}/{@code doCall(T)} instead of
-         * {@code call(Object)}.
+         * Per-arity instance-of guards for {@link #byArity}: the declared parameter types
+         * (boxed for primitives), with null entries for {@code Object} parameters; a wholly
+         * null guard array means no checks at all. An argument that is not already an instance
+         * of its declared type needs Groovy coercion, which only the metaclass fallback provides.
          */
-        final Method oneArgTyped;
+        final Class<?>[][] guards;
         /**
-         * Instance-of guard for {@link #oneArgTyped}: the declared parameter type (boxed for a
-         * primitive). An argument that is not already an instance needs Groovy coercion, which
-         * only the metaclass fallback provides.
+         * Which cached targets are {@code call} forms (the 11911 shapes) rather than doCall
+         * bodies. Only those need the re-entry latch: a custom {@code call} override may
+         * delegate back to {@code call(...)}, which must not re-dispatch to the same target.
+         * doCall targets are user bodies — re-entry through them is ordinary recursion — so
+         * their dispatch skips the ThreadLocal entirely (and nested closure calls inside a
+         * dispatched body keep their own fast path).
          */
-        final Class<?> oneArgGuard;
+        final boolean[] callForm;
 
-        private CallOverride(Method zeroArg, Method oneArg, Method oneArgTyped) {
-            this.zeroArg = zeroArg;
-            this.oneArg = oneArg;
-            this.oneArgTyped = oneArgTyped;
-            this.oneArgGuard = (oneArgTyped == null) ? null : wrapperOf(oneArgTyped.getParameterTypes()[0]);
+        private CallOverride(Method[] byArity, Class<?>[][] guards, boolean[] callForm) {
+            this.byArity = byArity;
+            this.guards = guards;
+            this.callForm = callForm;
+        }
+
+        static boolean guardsPass(Class<?>[] guards, Object[] args) {
+            if (guards == null) return true; // all parameters are Object
+            for (int i = 0, n = args.length; i < n; i += 1) {
+                Class<?> g = guards[i];
+                if (g != null && !g.isInstance(args[i])) return false;
+            }
+            return true;
         }
 
         /**
-         * Finds call overrides declared by the supplied closure subclass.
+         * Finds the subclass's {@code doCall} declarations, one target per arity — {@code call}
+         * selects a {@code doCall}, so the cache is keyed on the doCall declarations themselves
+         * and any visibility the MOP would dispatch is accepted (the hierarchy is walked with
+         * {@code getDeclaredMethods}; an overridden signature keeps its most-derived form).
+         * Bridge methods are skipped (their erased twin is the real declaration), as are static
+         * declarations and methods with array-typed parameters (that shape belongs to vararg
+         * collection, which is metaclass work). Same-arity overloads beyond an all-Object one
+         * are ambiguous: the metaclass performs the selection.
+         * <p>
+         * Declared {@code call()}/{@code call(Object)} overrides (the GROOVY-11911 shapes) take
+         * precedence at their arities: DGM's {@code closure.call(item)} reaches such an override
+         * through plain virtual dispatch anyway, so the varargs entry must agree, and a
+         * decorating override must not be bypassed. Typed or multi-argument {@code call}
+         * overloads are NOT honoured — per the {@code Closure} contract, only doCall carries
+         * the body.
          *
          * @param type the closure subclass
-         * @return the resolved override metadata
+         * @return the resolved dispatch metadata
          */
         static CallOverride lookup(Class<?> type) {
             if (type == Closure.class) return NONE;
+            // The cache is only valid where it mirrors the MOP's selection. MetaClassImpl's
+            // invokeMethod has dedicated dispatch for these adapter types (a method pointer
+            // invokes its target method; a curried closure uncurries and re-enters), so their
+            // doCall declarations, where present, are NOT what the MOP would select — e.g.
+            // MethodClosure's vestigial doCall would mis-dispatch a class-owner method pointer.
+            if (org.codehaus.groovy.runtime.MethodClosure.class.isAssignableFrom(type)
+                    || org.codehaus.groovy.runtime.CurriedClosure.class.isAssignableFrom(type)) {
+                return NONE;
+            }
+            Method[] exact = new Method[ARITY_LIMIT];
+            Method[] typed = new Method[ARITY_LIMIT];
+            boolean[] typedAmbiguous = new boolean[ARITY_LIMIT];
+            Set<String> seen = new HashSet<>();
+            for (Class<?> c = type; c != null && c != Closure.class; c = c.getSuperclass()) {
+                for (Method m : c.getDeclaredMethods()) {
+                    if (!"doCall".equals(m.getName()) || m.isBridge() || Modifier.isStatic(m.getModifiers())) {
+                        continue;
+                    }
+                    Class<?>[] params = m.getParameterTypes();
+                    if (!seen.add(java.util.Arrays.toString(params))) continue; // overridden below: most-derived wins
+                    int arity = m.getParameterCount();
+                    if (arity >= ARITY_LIMIT) continue;
+                    boolean allObject = true, hasArray = false;
+                    for (Class<?> p : params) {
+                        if (p != Object.class) allObject = false;
+                        if (p.isArray()) hasArray = true;
+                    }
+                    if (hasArray) continue;
+                    if (allObject) {
+                        if (exact[arity] == null) exact[arity] = m;
+                    } else if (typed[arity] != null) {
+                        typedAmbiguous[arity] = true;
+                    } else {
+                        typed[arity] = m;
+                    }
+                }
+            }
+            Method[] byArity = new Method[ARITY_LIMIT];
+            Class<?>[][] guards = new Class[ARITY_LIMIT][];
+            boolean[] callForm = new boolean[ARITY_LIMIT];
+            boolean any = false;
+            // GROOVY-11911: a declared call()/call(Object) override takes precedence at its
+            // arity even when doCall methods exist — DGM's closure.call(item) reaches such an
+            // override through plain virtual dispatch anyway, so the varargs entry must agree
+            // (a decorating override would otherwise be silently bypassed on one form only).
             Method zero = findOverride(type);
+            if (zero != null) {
+                byArity[0] = zero;
+                callForm[0] = true;
+                any = true;
+            }
             Method one = findOverride(type, Object.class);
-            Method typed = (one == null) ? findTypedOneArgOverride(type) : null;
-            if (zero == null && one == null && typed == null) return NONE;
-            return new CallOverride(zero, one, typed);
+            if (one != null) {
+                byArity[1] = one;
+                callForm[1] = true;
+                any = true;
+            }
+            for (int arity = 0; arity < ARITY_LIMIT; arity += 1) {
+                if (byArity[arity] != null) continue; // a call-form override claimed this arity
+                Method m = (exact[arity] != null) ? exact[arity]
+                        : (typedAmbiguous[arity] ? null : typed[arity]);
+                if (m == null) continue;
+                try {
+                    m.setAccessible(true);
+                } catch (RuntimeException ignored) {
+                    // module/package access denied; fall through to MOP doCall
+                    continue;
+                }
+                byArity[arity] = m;
+                if (m != exact[arity]) {
+                    Class<?>[] params = m.getParameterTypes();
+                    Class<?>[] g = new Class[arity];
+                    for (int i = 0; i < arity; i += 1) {
+                        g[i] = (params[i] == Object.class) ? null : wrapperOf(params[i]);
+                    }
+                    guards[arity] = g;
+                }
+                any = true;
+            }
+            return any ? new CallOverride(byArity, guards, callForm) : NONE;
         }
 
         private static Method findOverride(Class<?> type, Class<?>... params) {
@@ -1448,42 +1602,6 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             } catch (NoSuchMethodException ignored) {
                 return null;
             }
-        }
-
-        /**
-         * Finds the single unambiguous one-argument {@code call} override with a declared
-         * (non-Object) parameter type (GROOVY-12164). Array-typed parameters are skipped —
-         * that shape belongs to vararg collection, which is metaclass work — as are bridge
-         * methods (their erased twin is the real override) and overloaded typed overrides
-         * (ambiguous: the metaclass performs the selection).
-         *
-         * @param type the closure subclass
-         * @return the override, or null when absent, ambiguous, or inaccessible
-         */
-        private static Method findTypedOneArgOverride(Class<?> type) {
-            Method candidate = null;
-            for (Method m : type.getMethods()) {
-                // getMethods() includes public statics: a static call(T) is not an instance
-                // override (reflective invocation would ignore the receiver), so skip it and
-                // let the MOP fallback dispatch instance doCall as before
-                if (m.getParameterCount() != 1 || !"call".equals(m.getName()) || m.isBridge()
-                        || Modifier.isStatic(m.getModifiers()) || m.getDeclaringClass() == Closure.class) {
-                    continue;
-                }
-                Class<?> param = m.getParameterTypes()[0];
-                if (param == Object.class || param.isArray()) continue;
-                if (candidate != null) return null; // overloaded: leave selection to the metaclass
-                candidate = m;
-            }
-            if (candidate != null) {
-                try {
-                    candidate.setAccessible(true);
-                } catch (RuntimeException ignored) {
-                    // module/package access denied; fall through to MOP doCall
-                    return null;
-                }
-            }
-            return candidate;
         }
 
         private static Class<?> wrapperOf(Class<?> type) {

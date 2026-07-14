@@ -136,15 +136,27 @@ final class Groovy12164 {
 
     @Test
     void testTypedSubclassOverride() {
-        // a Closure subclass with a typed call override is served by the same cache
+        // call selects a doCall: a subclass declaring only a typed call(T) — and no doCall —
+        // is NOT dispatched on the Java/GDK entry (the Closure javadoc requires doCall); this
+        // matches 3.x-5.x behaviour. The dynamic path remains MOP-permissive and still finds
+        // the declared method (long-standing ClosureMetaClass behaviour).
         assertScript '''
+            import groovy.test.GroovyAssert
             class Doubler extends Closure<Integer> {
                 Doubler() { super(null) }
                 Integer call(Integer x) { x * 2 }
             }
             Closure<Integer> d = new Doubler()
-            assert d.call(21) == 42
-            assert [1, 2, 3].collect(d) == [2, 4, 6]
+            assert d.call(21) == 42 // dynamic dispatch: metaclass finds the declared method
+            GroovyAssert.shouldFail(MissingMethodException) {
+                [1, 2, 3].collect(d)  // Java entry: no doCall, no dispatch
+            }
+            // with a doCall the same shape is served by the cache on both paths
+            class Tripler extends Closure<Integer> {
+                Tripler() { super(null) }
+                Integer doCall(Integer x) { x * 3 }
+            }
+            assert [1, 2].collect(new Tripler()) == [3, 6]
         '''
     }
 
