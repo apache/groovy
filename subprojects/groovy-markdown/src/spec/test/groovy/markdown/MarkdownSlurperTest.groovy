@@ -20,6 +20,8 @@ package groovy.markdown
 
 import org.junit.jupiter.api.Test
 
+import static org.junit.jupiter.api.Assertions.assertThrows
+
 class MarkdownSlurperTest {
 
     @Test
@@ -152,5 +154,24 @@ class MarkdownSlurperTest {
         def md = '| a | b |\n|---|---|\n| 1 | 2 |\n'
         def doc = new MarkdownSlurper().parseText(md)
         assert doc.tables.isEmpty()
+    }
+
+    @Test
+    void testDeeplyNestedInputRejected() {
+        // a small (~5 KB) document nests block quotes thousands deep; the recursive
+        // document walk must not be driven into a StackOverflowError
+        def md = ('>' * 5000) + ' x'
+        def ex = assertThrows(MarkdownRuntimeException) { new MarkdownSlurper().parseText(md) }
+        assert ex.message.contains('nesting depth')
+    }
+
+    @Test
+    void testMaxNestingDepthConfigurable() {
+        def slurper = new MarkdownSlurper()
+        assert slurper.maxNestingDepth == MarkdownSlurper.DEFAULT_MAX_NESTING_DEPTH
+        slurper.maxNestingDepth = 3
+        assertThrows(MarkdownRuntimeException) { slurper.parseText(('>' * 10) + ' x') }
+        // input within the limit still parses
+        assert slurper.parseText('> quoted').nodes[0].type == 'block_quote'
     }
 }
