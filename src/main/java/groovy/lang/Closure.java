@@ -41,6 +41,7 @@ import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -540,6 +541,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             Method target = null;
             if (arguments.length == 1 && override.oneArg != null) {
                 target = override.oneArg;
+            } else if (arguments.length == 1 && override.oneArgTyped != null && override.oneArgGuard.isInstance(arguments[0])) {
+                // GROOVY-12164: a closure with a typed parameter declares call(T)/doCall(T) rather
+                // than call(Object), which the lookup above cannot see -- without this branch every
+                // such call pays full metaclass dispatch. An argument that is already an instance of
+                // the declared type dispatches directly; anything that needs Groovy coercion
+                // (GString -> String, number conversions, null) falls through to the metaclass below,
+                // which coerces exactly as before.
+                target = override.oneArgTyped;
             } else if (arguments.length == 0 && override.zeroArg != null) {
                 target = override.zeroArg;
             }
@@ -1378,7 +1387,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         /**
          * Marker instance indicating that no call override exists.
          */
-        static final CallOverride NONE = new CallOverride(null, null);
+        static final CallOverride NONE = new CallOverride(null, null, null);
         /**
          * Cached zero-argument call override.
          */
@@ -1387,10 +1396,25 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
          * Cached single-argument call override.
          */
         final Method oneArg;
+        /**
+         * Cached single-argument call override with a declared (non-Object) parameter type,
+         * used only when {@link #oneArg} is absent (GROOVY-12164). A closure literal with a
+         * typed parameter generates {@code call(T)}/{@code doCall(T)} instead of
+         * {@code call(Object)}.
+         */
+        final Method oneArgTyped;
+        /**
+         * Instance-of guard for {@link #oneArgTyped}: the declared parameter type (boxed for a
+         * primitive). An argument that is not already an instance needs Groovy coercion, which
+         * only the metaclass fallback provides.
+         */
+        final Class<?> oneArgGuard;
 
-        private CallOverride(Method zeroArg, Method oneArg) {
+        private CallOverride(Method zeroArg, Method oneArg, Method oneArgTyped) {
             this.zeroArg = zeroArg;
             this.oneArg = oneArg;
+            this.oneArgTyped = oneArgTyped;
+            this.oneArgGuard = (oneArgTyped == null) ? null : wrapperOf(oneArgTyped.getParameterTypes()[0]);
         }
 
         /**
@@ -1403,14 +1427,17 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             if (type == Closure.class) return NONE;
             Method zero = findOverride(type);
             Method one = findOverride(type, Object.class);
-            if (zero == null && one == null) return NONE;
-            return new CallOverride(zero, one);
+            Method typed = (one == null) ? findTypedOneArgOverride(type) : null;
+            if (zero == null && one == null && typed == null) return NONE;
+            return new CallOverride(zero, one, typed);
         }
 
         private static Method findOverride(Class<?> type, Class<?>... params) {
             try {
                 Method m = type.getMethod("call", params);
-                if (m.getDeclaringClass() == Closure.class) return null;
+                // a static call(...) is not an instance override: reflective invocation would
+                // silently ignore the receiver, where the MOP fallback dispatches instance doCall
+                if (m.getDeclaringClass() == Closure.class || Modifier.isStatic(m.getModifiers())) return null;
                 try {
                     m.setAccessible(true);
                 } catch (RuntimeException ignored) {
@@ -1421,6 +1448,55 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             } catch (NoSuchMethodException ignored) {
                 return null;
             }
+        }
+
+        /**
+         * Finds the single unambiguous one-argument {@code call} override with a declared
+         * (non-Object) parameter type (GROOVY-12164). Array-typed parameters are skipped —
+         * that shape belongs to vararg collection, which is metaclass work — as are bridge
+         * methods (their erased twin is the real override) and overloaded typed overrides
+         * (ambiguous: the metaclass performs the selection).
+         *
+         * @param type the closure subclass
+         * @return the override, or null when absent, ambiguous, or inaccessible
+         */
+        private static Method findTypedOneArgOverride(Class<?> type) {
+            Method candidate = null;
+            for (Method m : type.getMethods()) {
+                // getMethods() includes public statics: a static call(T) is not an instance
+                // override (reflective invocation would ignore the receiver), so skip it and
+                // let the MOP fallback dispatch instance doCall as before
+                if (m.getParameterCount() != 1 || !"call".equals(m.getName()) || m.isBridge()
+                        || Modifier.isStatic(m.getModifiers()) || m.getDeclaringClass() == Closure.class) {
+                    continue;
+                }
+                Class<?> param = m.getParameterTypes()[0];
+                if (param == Object.class || param.isArray()) continue;
+                if (candidate != null) return null; // overloaded: leave selection to the metaclass
+                candidate = m;
+            }
+            if (candidate != null) {
+                try {
+                    candidate.setAccessible(true);
+                } catch (RuntimeException ignored) {
+                    // module/package access denied; fall through to MOP doCall
+                    return null;
+                }
+            }
+            return candidate;
+        }
+
+        private static Class<?> wrapperOf(Class<?> type) {
+            if (!type.isPrimitive()) return type;
+            if (type == int.class) return Integer.class;
+            if (type == long.class) return Long.class;
+            if (type == boolean.class) return Boolean.class;
+            if (type == double.class) return Double.class;
+            if (type == char.class) return Character.class;
+            if (type == byte.class) return Byte.class;
+            if (type == short.class) return Short.class;
+            if (type == float.class) return Float.class;
+            return type; // void: unreachable for a parameter type
         }
     }
 }
