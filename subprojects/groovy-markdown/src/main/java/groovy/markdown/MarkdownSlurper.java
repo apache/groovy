@@ -77,7 +77,40 @@ public class MarkdownSlurper {
 
     private static final String TABLES_EXT_CLASS = "org.commonmark.ext.gfm.tables.TablesExtension";
 
+    /**
+     * Default maximum nesting depth of block/inline elements accepted before a
+     * {@link MarkdownRuntimeException} is thrown. Matches the default nesting cap of the
+     * sibling {@code JsonSlurper}.
+     */
+    public static final int DEFAULT_MAX_NESTING_DEPTH = 1000;
+
     private boolean tablesEnabled;
+
+    /**
+     * Maximum nesting depth permitted while converting a parsed document. A value of {@code 0}
+     * or less disables the check. Defaults to {@link #DEFAULT_MAX_NESTING_DEPTH}, overridable
+     * globally via the {@code groovy.markdown.maxNestingDepth} system property.
+     */
+    private int maxNestingDepth = Integer.getInteger("groovy.markdown.maxNestingDepth", DEFAULT_MAX_NESTING_DEPTH);
+
+    /**
+     * Returns the maximum nesting depth of block/inline elements the parser will accept.
+     *
+     * @return the maximum nesting depth, or a value {@code <= 0} when the check is disabled
+     */
+    public int getMaxNestingDepth() {
+        return maxNestingDepth;
+    }
+
+    /**
+     * Sets the maximum nesting depth of block/inline elements the parser will accept before
+     * throwing a {@link MarkdownRuntimeException}. A value of {@code 0} or less disables the check.
+     *
+     * @param maxNestingDepth maximum number of nested elements to allow
+     */
+    public void setMaxNestingDepth(int maxNestingDepth) {
+        this.maxNestingDepth = maxNestingDepth;
+    }
 
     /**
      * Enable GFM-style tables. Requires {@code commonmark-ext-gfm-tables} on the classpath.
@@ -122,6 +155,7 @@ public class MarkdownSlurper {
     public MarkdownDocument parse(Reader reader) {
         try {
             Node doc = buildParser().parseReader(reader);
+            checkNestingDepth(doc);
             return new MarkdownDocument(blocksToList(doc));
         } catch (IOException e) {
             throw new MarkdownRuntimeException(e);
@@ -169,6 +203,39 @@ public class MarkdownSlurper {
             b.extensions(TableSupport.extensions());
         }
         return b.build();
+    }
+
+    /**
+     * Verifies that no node in the parsed tree is nested deeper than {@link #maxNestingDepth}.
+     * The walk that builds the result ({@link #blocksToList}/{@link #nodeToMap}, and the text
+     * extraction in {@link #appendText}) recurses once per nesting level, so a small but deeply
+     * nested document (thousands of nested block quotes or list items) would overflow the stack.
+     * This iterative pre-check fails fast with a {@link MarkdownRuntimeException} instead, mirroring
+     * the nesting-depth cap of the sibling {@code JsonSlurper}.
+     *
+     * @param root the root node of the parsed document
+     */
+    private void checkNestingDepth(Node root) {
+        if (maxNestingDepth <= 0) {
+            return;
+        }
+        List<Node> nodes = new ArrayList<>();
+        List<Integer> depths = new ArrayList<>();
+        for (Node child = root.getFirstChild(); child != null; child = child.getNext()) {
+            nodes.add(child);
+            depths.add(1);
+        }
+        while (!nodes.isEmpty()) {
+            Node node = nodes.remove(nodes.size() - 1);
+            int depth = depths.remove(depths.size() - 1);
+            if (depth > maxNestingDepth) {
+                throw new MarkdownRuntimeException("Maximum Markdown nesting depth of " + maxNestingDepth + " exceeded");
+            }
+            for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
+                nodes.add(child);
+                depths.add(depth + 1);
+            }
+        }
     }
 
     private List<Map<String, Object>> blocksToList(Node parent) {
