@@ -457,7 +457,7 @@ final class PackedClosuresTransformTest {
             class S {
                 def m() {
                     def c = { it * 2 }
-                    assert c.getClass() == org.codehaus.groovy.runtime.PackedClosure
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
                     try {
                         new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(c.dehydrate())
                         'serialized'
@@ -472,7 +472,9 @@ final class PackedClosuresTransformTest {
         assertTrue(result.contains('PackedClosures'), "message should name the opt-out: $result")
 
         // contrast: the same closure as a class serializes via the standard dehydrate() route
+        // (DISABLED opt-out keeps it a class even when the flag is forced on globally)
         def classed = instance('''
+            @groovy.transform.PackedClosures(mode = groovy.transform.PackedClosures.PackMode.DISABLED)
             class T {
                 def m() {
                     def c = { it * 2 }
@@ -483,5 +485,67 @@ final class PackedClosuresTransformTest {
             new T().m()
         ''')
         assertEquals('serialized', classed)
+    }
+
+    @Test
+    void closuresInsideTraitsDecline() {
+        // a closure in a trait moves into a static $Trait$Helper with a synthetic $self receiver,
+        // a context packed dispatch does not reproduce (it produced invalid bytecode) -- so the
+        // closure stays a class there, and the trait works normally
+        String src = '''
+            @groovy.transform.PackedClosures
+            trait T { def doubled(List xs) { xs.collect { it * 2 } } }
+            class C implements T {}
+        '''
+        assertTrue(closureClassCount(generatedClassNames(src)) >= 1,
+                'a closure inside a trait must stay a class')
+        def c = instance(src + '\n new C()')
+        assertEquals([2, 4, 6], c.doubled([1, 2, 3]))
+    }
+
+    @Test
+    void closuresInSpecialConstructorCallsDecline() {
+        // a closure passed to this(...)/super(...) is compiled before the enclosing instance is
+        // initialised (this = uninitializedThis), so it cannot be the packed adapter's owner --
+        // packing it emitted invalid bytecode (GROOVY-3831 shape) -- so it stays a class
+        String src = '''
+            @groovy.transform.PackedClosures
+            class C {
+                def result
+                C(Closure c) { result = c() }
+                C() { this({ 40 + 2 }) }
+            }
+        '''
+        assertTrue(closureClassCount(generatedClassNames(src)) >= 1,
+                'a closure in a this(...) call must stay a class')
+        assertEquals(42, instance(src + '\n new C()').result)
+    }
+
+    @Test
+    void nestedClosureRecapturingReadOnlyCaptureGetsTheSharedReference() {
+        // a nested closure that stays a class takes the shared groovy.lang.Reference for every
+        // capture in its constructor; a read-only capture of the PACKED outer must therefore be
+        // holder-threaded, not by-value (by-value emitted invalid bytecode -- the MainJavadoc
+        // VerifyError family). The outer still packs; the inner map-literal closures keep their
+        // classes (escape gate); behaviour and mutation-through-the-shared-holder are identical.
+        String src = '''
+            @groovy.transform.PackedClosures
+            class N {
+                def m() {
+                    def items = [1, 2, 3]
+                    def iterable = { [ hasNext:{ !items.isEmpty() }, next:{ items.pop() } ] as Iterator } as Iterable
+                    def n = 0
+                    for (x in iterable) { n++ }
+                    [n, items.size()]
+                }
+            }
+        '''
+        def names = generatedClassNames(src)
+        assertTrue(names.every { !it.contains('$_m_closure') },
+                "the outer closure should pack (no method-named closure class): $names")
+        // the inner closures keep their classes, named after the hoisted method they now live in
+        assertTrue(names.count { it.contains('packed') && it.contains('_closure') } >= 2,
+                "the nested map-value closures keep their classes: $names")
+        assertEquals([3, 0], instance(src + '\n new N()').m())
     }
 }

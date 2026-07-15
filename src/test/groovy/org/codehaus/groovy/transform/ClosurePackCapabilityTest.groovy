@@ -216,6 +216,31 @@ final class ClosurePackCapabilityTest {
     }
 
     @Test
+    void fieldBoundNamesAreFreeNamesToo() {
+        // a bare name bound to an owner FIELD by VariableScopeVisitor is not a DynamicVariable,
+        // but it is still a free name at runtime: under DELEGATE_FIRST a delegate intercepts it
+        // (the ClosureResolvingTest contract). The syntactic check must decline it, keeping the
+        // closure a class so delegate resolution keeps working.
+        String src = '''class Del {
+                def foo = 'hello'
+            }
+            class Host {
+                def foo = 'bar'
+                def bar = 'foo'
+                def run() {
+                    def c = { foo + bar }
+                    def before = c()
+                    c.resolveStrategy = Closure.DELEGATE_FIRST
+                    c.delegate = new Del()   // intercepts foo; bar falls back to the owner
+                    [before, c()]
+                }
+            }'''
+        assertTrue(closureClassCount(classNames(src, true)) >= 1,
+                'a closure referencing owner fields must not be auto-packed')
+        assertEquals(['barfoo', 'hellofoo'], eval(src, 'new Host().run()', true))
+    }
+
+    @Test
     void dynamicDelegateIndependentClosuresAutoPackBySyntax() {
         // GROOVY-12151 dynamic syntactic path: a closure with NO free name -- only its parameter,
         // a constant, and a parameter receiver -- cannot be affected by any caller-set delegate, so
@@ -255,7 +280,7 @@ final class ClosurePackCapabilityTest {
         // annotation trust path, by contrast, throws, since it cannot prove independence.)
         Object result = eval('', '''
             Closure c = { x -> x + 1 }
-            assert c.getClass().name == 'org.codehaus.groovy.runtime.PackedClosure'
+            assert c.getClass().name.startsWith('org.codehaus.groovy.runtime.PackedClosure')
             c.delegate = new Object()
             c.resolveStrategy = Closure.DELEGATE_FIRST
             c(41)
@@ -278,5 +303,47 @@ final class ClosurePackCapabilityTest {
         assertEquals(0, closureClassCount(classNames(src, true)),
                 'a syntactically-independent dynamic lambda should auto-pack under the flag')
         assertEquals(42, eval(src, 'new Dyn().use()', true))
+    }
+
+    @Test
+    void fixedArityFamilyDisambiguatesSamOverloads() {
+        // MetaClassHelper's SAM-overload disambiguation reflects the argument CLASS's declared
+        // doCall to match closure arity against the SAM's method arity (GROOVY-9881) -- it cannot
+        // consult the instance. The compiler therefore instantiates the fixed-arity family member
+        // (PackedClosure$FixedN) matching the literal's parameter count, restoring class-level
+        // arity introspection exactly as on a generated closure class (the ActorTest/DGM
+        // "Ambiguous method overloading" family).
+        String src = '''import java.util.function.*
+            class Api {
+                static String take(Function f)   { 'fn1:' + f.apply(21) }
+                static String take(BiFunction f) { 'fn2:' + f.apply(20, 1) }
+            }
+            class Uses {
+                def go() {
+                    def c1 = { x -> x * 2 }
+                    def c2 = { a, b -> a + b + 21 }
+                    assert c1.getClass().simpleName == 'Fixed1'
+                    assert c2.getClass().simpleName == 'Fixed2'
+                    [Api.take(c1), Api.take(c2)]
+                }
+            }'''
+        assertEquals(0, closureClassCount(classNames(src, true)),
+                'both closures should pack (no free names)')
+        assertEquals(['fn1:42', 'fn2:42'], eval(src, 'new Uses().go()', true))
+    }
+
+    @Test
+    void intersectionTypedClosuresDecline() {
+        // a closure cast to an intersection type needs its generated class to declare the marker
+        // interfaces (StaticTypesClosureWriter#addIntersectionMarkers); the one shared adapter
+        // cannot do that per-literal, so it stays a class even with the flag on
+        String src = '''import groovy.transform.CompileStatic
+            @CompileStatic
+            class C { Runnable make() { (Runnable & java.io.Serializable) { -> } } }'''
+        assertTrue(closureClassCount(classNames(src, true)) >= 1,
+                'an intersection-typed closure must stay a class')
+        def r = eval(src, 'new C().make()', true)
+        assertTrue(r instanceof Runnable && r instanceof Serializable,
+                'the closure class must still implement both intersection interfaces')
     }
 }

@@ -37,16 +37,17 @@ import java.util.List;
  * virtual call that routes to the hosting class's dispatch tables — with no reflection
  * anywhere on the path, and, matching {@link ClosureMetaClass}, without consulting
  * categories for the closure-invocation names (categories have never applied to closure
- * {@code doCall} dispatch). Every packed closure in the process shares this one metaclass
- * (a per-class registry can only be per-adapter-class), so class-level metaclass changes
- * are global to packed closures; per-instance {@code setMetaClass} is honoured as usual —
- * the adapter's dispatch guard routes perturbed instances through the replacement's
- * {@code invokeMethod}.
+ * {@code doCall} dispatch). Each fixed-arity family member class gets its own instance of
+ * this metaclass from the registry (a per-class registry can only be per-adapter-class),
+ * so class-level metaclass changes affect every packed closure of that member's arity;
+ * per-instance {@code setMetaClass} is honoured as usual — the adapter's dispatch guard
+ * routes perturbed instances through the replacement's {@code invokeMethod}.
  * <p>
- * {@code respondsTo(Object, String, Object[])} is instance-faithful: the shared class
- * declares only the generic varargs {@code doCall(Object...)}, so the answer for the
- * closure-invocation names is filtered by the instance's declared parameter types
- * (which the adapter carries for exactly this purpose). Purely class-level introspection
+ * {@code respondsTo(Object, String, Object[])} is instance-faithful: the fixed-arity
+ * family member's {@code doCall}(s) are erased to {@code Object} parameters (and
+ * {@code FixedN}'s is varargs), so the answer for the closure-invocation names is
+ * additionally filtered by the instance's declared parameter types (which the adapter
+ * carries for exactly this purpose). Purely class-level introspection
  * ({@code pickMethod}, {@code getMetaMethods}) necessarily reflects the shared adapter
  * class, not any single literal.
  *
@@ -67,8 +68,10 @@ public final class PackedClosureMetaClass extends MetaClassImpl {
                 && ("call".equals(methodName) || "doCall".equals(methodName))) {
             // reflection-free: a plain virtual call into the adapter, which coerces and routes
             // to the hosting class's dispatch tables; user exceptions propagate unwrapped, as
-            // Closure.call's fallback expects
-            return ((PackedClosure) object).doCall((originalArguments != null) ? originalArguments : NO_ARGS);
+            // Closure.call's fallback expects. dispatchAll receives the argument array INTACT
+            // (a single Object[] argument stays one argument, as on a generated closure class),
+            // where MetaMethod selection on a varargs doCall would spread it.
+            return ((PackedClosure) object).dispatchAll((originalArguments != null) ? originalArguments : NO_ARGS);
         }
         return super.invokeMethod(sender, object, methodName, originalArguments, isCallToSuper, fromInsideClass);
     }

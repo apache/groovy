@@ -270,6 +270,8 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
     // GROOVY-11479
     @Test
+    @DisabledIfSystemProperty(named = 'groovy.target.closure.pack', matches = 'true',
+        disabledReason = 'asserts the pre-pack generated closure-class bytecode shape; superseded when GEP-27 closure packing is enabled')
     void testTypeAnnotationsForClosure() {
         def bytecode = compile(classNamePattern: 'Foo\\$_closure1', method: 'doCall', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }

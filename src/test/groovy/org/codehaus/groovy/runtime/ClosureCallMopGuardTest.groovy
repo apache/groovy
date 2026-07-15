@@ -69,7 +69,7 @@ final class ClosureCallMopGuardTest {
             class P {
                 def m(Closure interceptor) {
                     def c = { it * 2 }
-                    assert c.getClass() == org.codehaus.groovy.runtime.PackedClosure
+                    assert c instanceof org.codehaus.groovy.runtime.PackedClosure
                     assert [3].collect(c) == [6]   // unperturbed: table dispatch
                     interceptor(c)
                     [c(3), [3].collect(c)]

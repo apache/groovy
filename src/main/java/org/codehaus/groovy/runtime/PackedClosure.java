@@ -21,34 +21,140 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 
 /**
- * A single, shared {@link Closure} adapter for {@code @PackedClosures} compact closure compilation.
+ * The shared {@link Closure} adapter family for {@code @PackedClosures} compact closure
+ * compilation.
  * <p>
  * Normally the Groovy compiler generates one inner class per closure literal
  * (e.g. {@code Owner$_method_closure1}). Under {@code @PackedClosures} an <em>eligible</em>
  * closure body is instead hoisted into a synthetic method on the enclosing ("owner")
- * class, and the closure literal is replaced by an instance of this one adapter class,
- * which dispatches back to that method. This removes the per-closure generated class
- * (and the deeply-nested {@code $_closure1$_closure2$_closure3} name explosion) while
- * still yielding a real {@code groovy.lang.Closure} instance, so features that operate
- * through {@code call()} (iteration, {@code curry}, {@code memoize}, {@code trampoline})
- * continue to work.
+ * class, and the closure literal is replaced by an instance of the fixed-arity family
+ * member matching its declared parameter count ({@link Fixed0}..{@link Fixed4},
+ * {@link FixedIt} for implicit-parameter literals, {@link FixedN} for higher and vararg
+ * arities), which dispatches back to that method. This removes the per-closure generated
+ * class (and the deeply-nested {@code $_closure1$_closure2$_closure3} name explosion)
+ * while still yielding a real {@code groovy.lang.Closure} instance, so features that
+ * operate through {@code call()} (iteration, {@code curry}, {@code memoize},
+ * {@code trampoline}) continue to work — and the family member's declared {@code doCall}
+ * signature(s) give class-level introspection (SAM-overload selection, MOP method
+ * selection) exactly the view a generated closure class would present.
  * <p>
  * Dispatch goes through the hosting class's {@link GeneratedDispatcher} tables: the adapter
- * holds the class's shared dispatchers and the hoisted method's compile-time id. A target
- * taking one or two values beyond the receiver — the overwhelmingly common closure shapes —
- * dispatches through the array-free per-arity tables, passing the receiver, captured values
- * and arguments as plain parameters; anything else packs {@code [owner, captured..., args...]}
- * into one array for the general table. Either way the chain is ordinary, JIT-friendly
- * bytecode — no reflection, and no per-instance {@code MethodHandle} (which the JIT cannot
- * constant-fold, making its invoker path many times slower than a direct call). The id binds
- * the exact hoisted method, so an inherited packed closure can never misdispatch to a
- * same-named method a subclass happens to declare.
+ * holds the class's shared dispatchers, the hoisted method's compile-time id, and its own
+ * dispatch receiver (captured at construction, so {@code dehydrate()}/{@code rehydrate()}
+ * leave the closure callable). A target taking one or two values beyond the receiver — the
+ * overwhelmingly common closure shapes — dispatches through the array-free per-arity tables,
+ * passing the receiver, captured values and arguments as plain parameters; anything else
+ * packs {@code [receiver, captured..., args...]} into one array for the general table.
+ * Either way the chain is ordinary, JIT-friendly bytecode — no reflection, and no
+ * per-instance {@code MethodHandle} (which the JIT cannot constant-fold, making its invoker
+ * path many times slower than a direct call). The id binds the exact hoisted method, so an
+ * inherited packed closure can never misdispatch to a same-named method a subclass happens
+ * to declare. Argument adaptation on every route replicates metaclass dispatch on a
+ * generated closure class: arity mismatches raise {@code MissingMethodException}, a single
+ * {@code List} destructures across a non-one-parameter signature, trailing-array parameters
+ * vararg-collect, and per-parameter coercion follows the metaclass compatibility rules
+ * (including {@code Closure}-to-SAM).
  */
-public final class PackedClosure extends Closure<Object> {
+public abstract class PackedClosure extends Closure<Object> {
 
     private static final long serialVersionUID = 1L;
     private static final Object[] EMPTY = new Object[0];
 
+    /**
+     * Fixed-arity members of the adapter family: the compiler instantiates the member matching the
+     * literal's declared parameter count ({@link FixedN} serves higher arities), so a packed
+     * closure's arity is visible to class-level introspection exactly as on a generated closure
+     * class — notably {@code MetaClassHelper}'s SAM-overload disambiguation, which reflects the
+     * argument <em>class</em>'s declared {@code doCall} and cannot consult the instance. Each
+     * member declares ONLY the arity-matched {@code doCall}(s) (delegating to {@link #dispatchAll})
+     * and carries the {@link GeneratedClosure} marker that introspection keys on, so MOP method
+     * selection sees exactly the signatures a generated closure class would declare — in
+     * particular, no varargs {@code doCall(Object[])} that would exact-match a single
+     * {@code Object[]} argument and spread it. The hot entry points remain the base {@code call}
+     * lanes, which do not allocate for these shapes.
+     */
+    public static final class Fixed0 extends PackedClosure implements GeneratedClosure {
+        private static final long serialVersionUID = 1L;
+        public Fixed0(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
+            super(owner, dispatchers, id, method, captured, visibleTypes, strict);
+        }
+        public Object doCall() { return dispatchAll(EMPTY); }
+    }
+
+    public static final class Fixed1 extends PackedClosure implements GeneratedClosure {
+        private static final long serialVersionUID = 1L;
+        public Fixed1(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
+            super(owner, dispatchers, id, method, captured, visibleTypes, strict);
+        }
+        public Object doCall(final Object a) { return dispatchAll(new Object[]{a}); }
+    }
+
+    /**
+     * The implicit-parameter literal ({@code { it * 2 }}): a generated closure class declares both
+     * {@code doCall()} and {@code doCall(Object)} for it, which class-level introspection reads as
+     * the fuzzy "0 or 1" arity that lets the closure match both zero- and one-parameter SAM
+     * overloads (GROOVY-10905) — so this member declares the same pair.
+     */
+    public static final class FixedIt extends PackedClosure implements GeneratedClosure {
+        private static final long serialVersionUID = 1L;
+        public FixedIt(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
+            super(owner, dispatchers, id, method, captured, visibleTypes, strict);
+        }
+        public Object doCall() { return dispatchAll(EMPTY); }
+        public Object doCall(final Object a) { return dispatchAll(new Object[]{a}); }
+    }
+
+    public static final class Fixed2 extends PackedClosure implements GeneratedClosure {
+        private static final long serialVersionUID = 1L;
+        public Fixed2(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
+            super(owner, dispatchers, id, method, captured, visibleTypes, strict);
+        }
+        public Object doCall(final Object a, final Object b) { return dispatchAll(new Object[]{a, b}); }
+    }
+
+    public static final class Fixed3 extends PackedClosure implements GeneratedClosure {
+        private static final long serialVersionUID = 1L;
+        public Fixed3(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
+            super(owner, dispatchers, id, method, captured, visibleTypes, strict);
+        }
+        public Object doCall(final Object a, final Object b, final Object c) { return dispatchAll(new Object[]{a, b, c}); }
+    }
+
+    public static final class Fixed4 extends PackedClosure implements GeneratedClosure {
+        private static final long serialVersionUID = 1L;
+        public Fixed4(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
+            super(owner, dispatchers, id, method, captured, visibleTypes, strict);
+        }
+        public Object doCall(final Object a, final Object b, final Object c, final Object d) { return dispatchAll(new Object[]{a, b, c, d}); }
+    }
+
+    /**
+     * Arities above four (rare) and vararg-shaped literals (trailing array parameter, e.g.
+     * {@code { ...z -> }}, any arity): a varargs {@code doCall} — MOP selection packs the
+     * arguments back into one array, and {@link #dispatchAll} applies the same arity/coercion
+     * contract as the base {@code call} lanes. For the vararg shapes this varargs declaration is
+     * also the <em>faithful</em> one: their generated class declares a vararg {@code doCall},
+     * whose selection flexibility (zero arguments collect to an empty trailing array where a
+     * fixed one-parameter {@code doCall} would null-fill) a {@code Fixed*} member cannot
+     * reproduce. A single {@code Object[]} argument spreads through MOP routes here, exactly as
+     * it feeds the trailing array of a classed vararg {@code doCall}.
+     */
+    public static final class FixedN extends PackedClosure implements GeneratedClosure {
+        private static final long serialVersionUID = 1L;
+        public FixedN(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
+            super(owner, dispatchers, id, method, captured, visibleTypes, strict);
+        }
+        public Object doCall(final Object... args) { return dispatchAll(args); }
+    }
+
+    /**
+     * The hoisted method's receiver, captured at construction. Dispatch uses this — never
+     * {@code getOwner()} — so {@code dehydrate()} (which nulls the visible owner for its
+     * disconnect contract) and {@code rehydrate(...)} (which installs a different one) leave the
+     * closure callable, exactly as a generated closure class whose body never touches the owner.
+     * Serialization stays blocked either way ({@link #writeObject}).
+     */
+    private final Object receiver;
     private final GeneratedDispatcher dispatcher;
     private final GeneratedDispatcher.Arity1 arity1;
     private final GeneratedDispatcher.Arity2 arity2;
@@ -79,6 +185,7 @@ public final class PackedClosure extends Closure<Object> {
      */
     public PackedClosure(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
         super(owner, owner);
+        this.receiver = owner;
         this.dispatcher = dispatchers.dispatcher;
         this.arity1 = dispatchers.arity1;
         this.arity2 = dispatchers.arity2;
@@ -122,6 +229,17 @@ public final class PackedClosure extends Closure<Object> {
         super.setResolveStrategy(resolveStrategy);
     }
 
+    /**
+     * Names the hoisted body, so diagnostics identify the literal the way a generated class's
+     * name would ({@code Script$_run_closure1} becomes {@code Script.$packed$closure$0}).
+     */
+    @Override
+    public String toString() {
+        Object owner = getOwner();
+        Class<?> oc = (owner instanceof Class) ? (Class<?>) owner : (owner != null ? owner.getClass() : null);
+        return (oc != null ? oc.getName() : "?") + "." + method + "@" + Integer.toHexString(hashCode());
+    }
+
     private static String strategyName(final int s) {
         switch (s) {
             case DELEGATE_FIRST: return "DELEGATE_FIRST";
@@ -151,15 +269,16 @@ public final class PackedClosure extends Closure<Object> {
                 + " must be serialized.");
     }
 
-    // Dispatch call() straight to doCall: the generic varargs doCall is otherwise vararg-ambiguous
+    // Dispatch call() straight to dispatchAll: a varargs doCall would be vararg-ambiguous
     // through the metaclass when a single argument is itself an Object[] (the metaclass would treat
-    // the element as the whole argument list and spread it). Unwrap invoker exceptions exactly as
-    // Closure.call does, so user exceptions surface unwrapped.
+    // the element as the whole argument list and spread it) — which is exactly why dispatchAll is
+    // NOT named doCall. Unwrap invoker exceptions exactly as Closure.call does, so user exceptions
+    // surface unwrapped.
     @Override
-    public Object call(final Object... args) {
+    public final Object call(final Object... args) {
         if (!mopUnperturbed()) return mopCall((args != null) ? args : EMPTY);
         try {
-            return doCall(args);
+            return dispatchAll((args != null) ? args : EMPTY);
         } catch (InvokerInvocationException e) {
             org.apache.groovy.internal.util.UncheckedThrow.rethrow(e.getCause());
             return null; // unreachable
@@ -172,7 +291,7 @@ public final class PackedClosure extends Closure<Object> {
     // the hoisted body, and inlines into it when hot — with the per-arity tables there is then no
     // argument array at all on the common shapes.
     @Override
-    public Object call(final Object arguments) {
+    public final Object call(final Object arguments) {
         // one fused branch to the cold path keeps this lane small enough to inline even at
         // cool call sites (and its own standalone compilation lean): the argument-wrapping
         // fallbacks allocate, so they live out-of-line in callGeneral
@@ -190,8 +309,8 @@ public final class PackedClosure extends Closure<Object> {
         return mopCall(new Object[]{arguments});
     }
 
-    // The MOP guard (Closure#mopUnperturbed) sits on the call entry points only; doCall stays
-    // direct because it is the very method the MOP fallback dispatches to.
+    // The MOP guard (Closure#mopUnperturbed) sits on the call entry points only; dispatchAll stays
+    // direct because the subclass doCalls the MOP fallback selects delegate straight to it.
 
     /** The full MOP route for perturbed instances: interception, categories and EMC all apply. */
     private Object mopCall(final Object[] args) {
@@ -203,7 +322,16 @@ public final class PackedClosure extends Closure<Object> {
         }
     }
 
-    public Object doCall(final Object... args) {
+    /**
+     * The single dispatch entry every route funnels into: the {@code call} lanes, the
+     * {@code Fixed*} subclasses' arity-true {@code doCall}s, and the
+     * {@code PackedClosureMetaClass} short-circuit. Deliberately NOT named {@code doCall}: a
+     * public varargs {@code doCall(Object[])} inherited by every family member would, under
+     * MOP-routed dispatch, exact-match a single {@code Object[]} argument, beat
+     * {@code doCall(Object)}, and spread the array — a generated closure class declares no such
+     * method, so a classed closure never spreads.
+     */
+    public final Object dispatchAll(final Object[] args) {
         // Like call(Object), the exact-arity paths here must stay small enough to inline.
         // Anything rare lives in doCallAdapted/coerce, out of the inlining budget.
         Object[] provided = (args != null) ? args : EMPTY;
@@ -215,7 +343,7 @@ public final class PackedClosure extends Closure<Object> {
         Class<?>[] types = parameterTypes;
         if (arity == 1) return dispatchOne(coerceArg(provided[0], types[0]));
         if (arity == 2 && captured.length == 0) {
-            return arity2.dispatch2(id, getOwner(), coerceArg(provided[0], types[0]), coerceArg(provided[1], types[1]));
+            return arity2.dispatch2(id, receiver, coerceArg(provided[0], types[0]), coerceArg(provided[1], types[1]));
         }
         return dispatchArray(provided, arity);
     }
@@ -228,10 +356,10 @@ public final class PackedClosure extends Closure<Object> {
     private Object dispatchOne(final Object arg) {
         Object[] captured = this.captured;
         int caps = captured.length;
-        if (caps == 0) return arity1.dispatch1(id, getOwner(), arg);
-        if (caps == 1) return arity2.dispatch2(id, getOwner(), captured[0], arg);
+        if (caps == 0) return arity1.dispatch1(id, receiver, arg);
+        if (caps == 1) return arity2.dispatch2(id, receiver, captured[0], arg);
         Object[] all = new Object[2 + caps];
-        all[0] = getOwner();
+        all[0] = receiver;
         System.arraycopy(captured, 0, all, 1, caps);
         all[1 + caps] = arg;
         return dispatcher.dispatch(id, all);
@@ -242,7 +370,7 @@ public final class PackedClosure extends Closure<Object> {
         Object[] captured = this.captured;
         int base = 1 + captured.length;
         Object[] all = new Object[base + arity];
-        all[0] = getOwner();
+        all[0] = receiver;
         System.arraycopy(captured, 0, all, 1, captured.length);
         Class<?>[] types = parameterTypes;
         for (int i = 0; i < arity; i++) {
@@ -254,27 +382,73 @@ public final class PackedClosure extends Closure<Object> {
     // The dispatch table's case checkcasts/unboxes to the declared types; only a reference type
     // the argument is NOT already an instance of needs Groovy coercion (e.g. GString -> String),
     // matching a generated closure class. Cheapest test first: Object-typed parameters (every
-    // implicit-it and untyped param) exit on one comparison.
-    private static Object coerceArg(final Object arg, final Class<?> t) {
-        if (t != Object.class && arg != null && !t.isPrimitive() && !t.isInstance(arg)) {
-            return coerce(arg, t);
-        }
-        return arg;
+    // implicit-it and untyped param) exit on one comparison. Primitive parameters are checked
+    // against their wrapper, exactly as metaclass selection autoboxes ({ int x -> } accepts an
+    // Integer, coerces a compatible number shape, and rejects a Long with MME).
+    private Object coerceArg(final Object arg, final Class<?> t) {
+        // hot-path shape matters: this inlines into the call lanes, so it is three cheap tests
+        // with everything rare out-of-line (a primitive parameter fails isInstance and re-checks
+        // against its wrapper in the tail, exactly as metaclass selection autoboxes)
+        if (t == Object.class || arg == null || t.isInstance(arg)) return arg;
+        return coerceArgSlow(arg, t);
     }
 
-    private static Object coerce(final Object arg, final Class<?> t) {
+    private Object coerceArgSlow(final Object arg, final Class<?> t) {
+        if (t.isPrimitive()) {
+            Class<?> ct = org.codehaus.groovy.classgen.asm.util.TypeUtil.autoboxType(t);
+            return ct.isInstance(arg) ? arg : coerce(arg, ct);
+        }
+        return coerce(arg, t);
+    }
+
+    // A generated closure class accepts an argument exactly when metaclass method selection would:
+    // MetaClassHelper-compatible shapes coerce (BigDecimal literal -> double parameter, GString ->
+    // String, Closure -> SAM), an array parameter vararg-collects a single value, and anything else
+    // is a MissingMethodException -- never a quiet castToType (String -> Integer would parse, and
+    // String -> Object[] would explode into characters, where the metaclass rejects both).
+    private Object coerce(final Object arg, final Class<?> t) {
+        if (t.isArray()) {
+            Class<?> ac = arg.getClass();
+            // an array of the same dimension IS the parameter array, arriving in a different
+            // guise (Integer[] where int[] is declared -- e.g. re-boxed by an upstream varargs
+            // hop): convert it element-wise, exactly as CachedMethod invocation coerces after
+            // ParameterTypes#fitToVargs applies the same dimension rule. Anything else is a
+            // single element to vararg-wrap -- never castToType a non-array (String -> Object[]
+            // would explode into characters, where the metaclass wraps).
+            if (ac.isArray() && ArrayTypeUtils.dimension(ac) == ArrayTypeUtils.dimension(t)) {
+                try {
+                    return org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation.castToType(arg, t);
+                } catch (RuntimeException e) {
+                    throw new groovy.lang.MissingMethodException("doCall", getClass(), new Object[]{arg});
+                }
+            }
+            Object boxed = java.lang.reflect.Array.newInstance(t.getComponentType(), 1);
+            java.lang.reflect.Array.set(boxed, 0, arg);
+            return boxed;
+        }
+        // a Closure argument coerces to a SAM-interface parameter (metaclass selection accepts
+        // Closure for SAM params -- e.g. action.run({->}) into { Proc it -> it.doSomething() });
+        // castToType performs the standard proxy conversion
+        boolean closureToSam = groovy.lang.Closure.class.isAssignableFrom(arg.getClass())
+                && t.isInterface()
+                && org.codehaus.groovy.reflection.stdclasses.CachedSAMClass.getSAMMethod(t) != null;
+        if (!closureToSam && !MetaClassHelper.isAssignableFrom(t, arg.getClass())) {
+            throw new groovy.lang.MissingMethodException("doCall", getClass(), new Object[]{arg});
+        }
         try {
             return org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation.castToType(arg, t);
-        } catch (RuntimeException ignore) {
-            return arg; // leave the argument as-is; the dispatch reports the mismatch
+        } catch (RuntimeException e) {
+            throw new groovy.lang.MissingMethodException("doCall", getClass(), new Object[]{arg});
         }
     }
 
     private Object doCallAdapted(Object[] provided, final int arity) {
         int base = 1 + captured.length; // packed layout: [owner, captured..., args...]
-        // A real closure destructures a single List/Tuple argument across a multi-parameter
-        // signature ({ a, b -> } called with one Tuple2); mirror that before arity normalisation.
-        if (provided.length == 1 && arity > 1 && provided[0] instanceof java.util.List) {
+        final Object[] original = provided; // MME reports the caller's argument types, pre-adaptation
+        // A real closure destructures a single List/Tuple argument across a non-one-parameter
+        // signature ({ a, b -> } called with one Tuple2; { -> } driven with a Tuple0); mirror
+        // that before arity normalisation. A one-parameter closure keeps the list as its argument.
+        if (provided.length == 1 && arity != 1 && provided[0] instanceof java.util.List) {
             provided = ((java.util.List<?>) provided[0]).toArray();
         }
         // With the real parameter types available, adapt arguments exactly as metaclass dispatch on
@@ -288,28 +462,36 @@ public final class PackedClosure extends Closure<Object> {
             // is equivalent
             paramInfo = info = new org.codehaus.groovy.reflection.ParameterTypes(parameterTypes);
         }
+        // arguments to a zero-parameter closure are always a mismatch ({ -> } invoked by each());
+        // checked before correctArguments, which would silently drop them for a no-arg signature
+        if (arity == 0 && provided.length > 0) {
+            throw new groovy.lang.MissingMethodException("doCall", getClass(), original);
+        }
         try {
             provided = info.correctArguments(provided);
         } catch (RuntimeException ignore) {
-            // fall through to the arity normalisation below
+            // fall through to the arity check below
+        }
+        // A generated closure class accepts exactly two arity adaptations beyond the vararg
+        // collection above: zero arguments to a one-parameter closure ({ it -> }() and
+        // { x -> }() both bind null), and the single-List destructuring already applied. Any
+        // other mismatch is a MissingMethodException from metaclass method selection -- callers
+        // like MockFor depend on the failure ({ -> } invoked with arguments must not run).
+        if (provided.length != arity) {
+            if (provided.length == 0 && arity == 1) {
+                provided = new Object[]{null};
+            } else {
+                throw new groovy.lang.MissingMethodException("doCall", getClass(), original);
+            }
         }
         Class<?>[] types = parameterTypes;
         for (int i = 0; i < provided.length && i < types.length; i++) {
-            Object arg = provided[i];
-            Class<?> type = types[i];
-            if (arg != null && type != Object.class && !type.isInstance(arg)) {
-                provided[i] = coerce(arg, type);
-            }
+            provided[i] = coerceArg(provided[i], types[i]);
         }
-        // Normalise the visible arguments to the closure's declared arity: pad missing with
-        // null (implicit-it / under-application) and drop extras (over-application), matching
-        // how a normal Groovy closure tolerates arity mismatches from callers such as each().
         Object[] all = new Object[base + arity];
-        all[0] = getOwner();
+        all[0] = receiver;
         System.arraycopy(captured, 0, all, 1, captured.length);
-        for (int i = 0; i < arity; i++) {
-            all[base + i] = (i < provided.length) ? provided[i] : null;
-        }
+        System.arraycopy(provided, 0, all, base, arity);
         return dispatcher.dispatch(id, all);
     }
 }

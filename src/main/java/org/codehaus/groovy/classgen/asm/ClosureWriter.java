@@ -143,7 +143,8 @@ public class ClosureWriter {
     private final Map<MethodNode, Set<String>> writtenNamesByMethod = new HashMap<>();
 
     /** Name prefix of the synthetic methods holding hoisted closure bodies. */
-    private static final String PACKED_METHOD_PREFIX = "$packed$closure$";
+    /** Name prefix of hoisted packed-closure bodies (also consulted by the static call-site writer). */
+    public static final String PACKED_METHOD_PREFIX = "$packed$closure$";
 
     // The class's registered dispatch targets (hoisted closure bodies), in id order. Kept as node
     // metadata on the CLASS, not on this writer: in a class mixing dynamic and @CompileStatic methods
@@ -265,17 +266,77 @@ public class ClosureWriter {
      * full generated class (S0, {@link PackStrategy#FULL_CLASS}) exactly as today.
      */
     private PackStrategy chooseStrategy(final ClosureExpression expression) {
+        // The complete packability decision, in order (GEP-27 "The packability decision procedure";
+        // any decline keeps the closure a generated class, exactly as today):
+        // 1. needs real Closure semantics (owner/delegate/thisObject/resolveStrategy/metaClass/
+        //    super, default parameter values, anonymous inner class)?
         if (!isPackable(expression)) return PackStrategy.FULL_CLASS;
-        // The most-specific @PackedClosures mode in scope (method wins over class), or null if not
-        // annotated. DISABLED is a fine-grained opt-out that beats an enclosing opt-in AND the flag.
+        // 2. scope opted out? The most-specific @PackedClosures mode wins (method over class), and
+        //    DISABLED beats an enclosing opt-in AND the flag.
         PackMode mode = annotatedMode();
         if (mode == PackMode.DISABLED) return PackStrategy.FULL_CLASS;
         boolean annotated = (mode != null); // LENIENT/WARN/STRICT all opt in (DISABLED handled above)
+        // 3. triggered and sound? annotation (dynamic trust), flag + syntactic no-free-name proof
+        //    (dynamic), or flag/annotation + the type checker's delegate-independence proof (CS,
+        //    which also declines mixed-mode dynamic islands and Map-owner property semantics).
         if (!isPackTriggered(expression, annotated)) return PackStrategy.FULL_CLASS;
+        // 4. structural position: directly in a method of the owner class (nested closures await
+        //    owner-retargeting)?
         if (controller.isInGeneratedFunction()) return PackStrategy.FULL_CLASS;
+        // 5. visibly escapes (field/property/index store, return, <<, collection literal)?
         if (escapesEnclosingMethod(expression)) return PackStrategy.FULL_CLASS;
+        // 6. visibly serialization-bound (Serializable cast/coercion, writeObject directly or via
+        //    a literal-holding local)?
         if (serializationBound(expression)) return PackStrategy.FULL_CLASS;
+        // 7. a field initializer (a field store the escape walk cannot see)?
+        if (isFieldInitializer(expression)) return PackStrategy.FULL_CLASS;
+        // 8.-10. a context the adapter cannot inhabit: intersection cast (per-literal marker
+        //    interfaces), trait body ($Trait$Helper's synthetic receiver), or a this(...)/super(...)
+        //    argument (uninitializedThis cannot be the dispatch receiver)?
+        if (isIntersectionTyped(expression)) return PackStrategy.FULL_CLASS;
+        if (isInTraitContext()) return PackStrategy.FULL_CLASS;
+        if (controller.getCompileStack().isInSpecialConstructorCall()) return PackStrategy.FULL_CLASS;
         return PackStrategy.PACKED_ADAPTER;
+    }
+
+    /**
+     * A closure in a field initializer ({@code def action = { ... }} at class level) is stored
+     * into a field by definition — the same escape the escape gate declines for in-method stores —
+     * but field initializers compile outside the enclosing method's visible code, so the escape
+     * walk cannot see them. Detected directly against the class's fields (identity match).
+     */
+    private boolean isFieldInitializer(final ClosureExpression expression) {
+        for (FieldNode fn : controller.getClassNode().getFields()) {
+            if (fn.getInitialValueExpression() == expression) return true;
+        }
+        return false;
+    }
+
+    /**
+     * A closure literal cast to an intersection type (e.g. {@code (Runnable & Serializable) { }})
+     * needs its <em>generated class</em> to declare the marker interfaces (see
+     * {@code StaticTypesClosureWriter#addIntersectionMarkers}), which the one shared
+     * {@code PackedClosure} adapter cannot do per-literal — so keep it a class. The marker list is
+     * recorded by the type checker; a non-empty one is the signal.
+     */
+    private static boolean isIntersectionTyped(final ClosureExpression expression) {
+        Object markers = expression.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.LAMBDA_MARKERS);
+        return markers instanceof List && !((List<?>) markers).isEmpty();
+    }
+
+    /**
+     * Whether the closure is being compiled inside a trait. A trait's method bodies (and their
+     * closures) are moved into a static {@code $Trait$Helper} nested class whose {@code this} is a
+     * synthetic {@code $self} parameter, not an instance receiver — a shape the packed dispatch
+     * codegen does not reproduce (it produced invalid bytecode). Decline and keep the closure as a
+     * class until the trait context is supported. Detected by walking the enclosing class's outer
+     * chain to the {@code @Trait}-annotated interface.
+     */
+    private boolean isInTraitContext() {
+        for (ClassNode c = controller.getClassNode(); c != null; c = c.getOuterClass()) {
+            if (org.codehaus.groovy.transform.trait.Traits.isTrait(c)) return true;
+        }
+        return false;
     }
 
     /**
@@ -324,11 +385,26 @@ public class ClosureWriter {
                 super.visitMethodCallExpression(call);
             }
             @Override public void visitPropertyExpression(final PropertyExpression pexp) {
-                if (pexp.isImplicitThis()) dependent[0] = true; // bar -> could be a delegate property
+                // implicit-this (bar) could be a delegate property; explicit this.bar inside a
+                // dynamic closure routes through the MOP (getProperty -- where Map-owner entry
+                // semantics and metaclass interception live), which a hoisted body's direct
+                // field shortcut would bypass
+                Expression obj = pexp.getObjectExpression();
+                if (pexp.isImplicitThis()
+                        || (obj instanceof VariableExpression && ((VariableExpression) obj).isThisExpression())) {
+                    dependent[0] = true;
+                }
                 super.visitPropertyExpression(pexp);
             }
             @Override public void visitVariableExpression(final VariableExpression ve) {
-                if (ve.getAccessedVariable() instanceof DynamicVariable) dependent[0] = true; // free name
+                // only a parameter/local binding is safe: a bare name bound to an owner FIELD or
+                // PROPERTY by VariableScopeVisitor is still a free name at runtime -- a dynamic
+                // closure resolves it through the delegate chain first under DELEGATE_FIRST, and
+                // through the MOP (e.g. an ExpandoMetaClass property) -- as is a DynamicVariable
+                Variable av = ve.getAccessedVariable();
+                if (av instanceof DynamicVariable || av instanceof FieldNode || av instanceof PropertyNode) {
+                    dependent[0] = true;
+                }
                 super.visitVariableExpression(ve);
             }
         });
@@ -382,16 +458,26 @@ public class ClosureWriter {
 
     /**
      * Reports a top-level closure that was NOT packed, per the {@code mode} of the enclosing
-     * {@code @PackedClosures} annotation (WARN => compiler warning, STRICT => compiler error). Only the
-     * annotation opts in; the automatic {@code groovy.target.closure.pack} path is always lenient. A
-     * nested closure is a structural decline (its enclosing context is a generated function, not the
-     * owner class), so it is not reported.
+     * {@code @PackedClosures} annotation (WARN => compiler warning, STRICT => compiler error). The
+     * automatic {@code groovy.target.closure.pack} path is lenient by default, but setting
+     * {@code groovy.target.closure.pack.report=true} alongside it surfaces every decline (with its
+     * reason) as a warning — the operational way to see where the packability boundary falls in a
+     * real codebase before opting scopes in or out. A nested closure is a structural decline (its
+     * enclosing context is a generated function, not the owner class), so it is not reported.
      */
     private void reportUnpacked(final ClosureExpression expression) {
         if (controller.isInGeneratedFunction()) return;
         PackMode mode = annotatedMode();
+        if (mode == null) {
+            if (SystemUtil.getBooleanSafe("groovy.target.closure.pack")
+                    && SystemUtil.getBooleanSafe("groovy.target.closure.pack.report")) {
+                controller.getSourceUnit().addWarning(WarningMessage.LIKELY_ERRORS,
+                        "closure packing: closure was not packed -- " + declineReason(expression), expression);
+            }
+            return;
+        }
         // LENIENT/DISABLED are both silent -- DISABLED asked NOT to pack, so a decline is expected
-        if (mode == null || mode == PackMode.LENIENT || mode == PackMode.DISABLED) return;
+        if (mode == PackMode.LENIENT || mode == PackMode.DISABLED) return;
         String msg = "@PackedClosures: closure was not packed -- " + declineReason(expression);
         if (mode == PackMode.STRICT) {
             controller.getSourceUnit().getErrorCollector()
@@ -448,6 +534,19 @@ public class ClosureWriter {
         if (serializationBound(expression)) {
             return "it is visibly serialization-bound (cast or coerced to a Serializable type, or passed directly "
                     + "to writeObject) and packed closures are not serializable";
+        }
+        if (isFieldInitializer(expression)) {
+            return "it initialises a field (a visible escape: the closure outlives its construction context)";
+        }
+        if (isIntersectionTyped(expression)) {
+            return "it is cast to an intersection type, whose marker interfaces the shared adapter cannot declare";
+        }
+        if (isInTraitContext()) {
+            return "it is declared inside a trait, whose helper-class context packed dispatch does not yet support";
+        }
+        if (controller.getCompileStack().isInSpecialConstructorCall()) {
+            return "it is an argument to a this(...)/super(...) constructor call, where the enclosing instance "
+                    + "is not yet initialised, so it cannot be the packed adapter's owner";
         }
         return "it is not eligible for packing in this scope";
     }
@@ -527,9 +626,30 @@ public class ClosureWriter {
 
     private static Set<ClosureExpression> collectSerializationBoundClosures(final Statement code) {
         Set<ClosureExpression> bound = Collections.newSetFromMap(new IdentityHashMap<>());
+        // pass 1: locals directly assigned a closure literal, so pass 2 can follow the canonical
+        // one-hop shape `def c = { ... }; out.writeObject(c)` (a local reassigned a second literal
+        // maps to both -- conservative: either literal declines)
+        Map<String, List<ClosureExpression>> literalsByLocal = new HashMap<>();
+        code.visit(new CodeVisitorSupport() {
+            @Override public void visitBinaryExpression(final BinaryExpression be) {
+                if (Types.isAssignment(be.getOperation().getType())
+                        && be.getLeftExpression() instanceof VariableExpression
+                        && isLocalTarget(be.getLeftExpression())
+                        && be.getRightExpression() instanceof ClosureExpression) {
+                    literalsByLocal.computeIfAbsent(((VariableExpression) be.getLeftExpression()).getName(),
+                            k -> new ArrayList<>()).add((ClosureExpression) be.getRightExpression());
+                }
+                super.visitBinaryExpression(be);
+            }
+        });
         code.visit(new CodeVisitorSupport() {
             private void mark(final Expression e) {
-                if (e instanceof ClosureExpression) bound.add((ClosureExpression) e);
+                if (e instanceof ClosureExpression) {
+                    bound.add((ClosureExpression) e);
+                } else if (e instanceof VariableExpression) {
+                    List<ClosureExpression> held = literalsByLocal.get(((VariableExpression) e).getName());
+                    if (held != null) bound.addAll(held);
+                }
             }
             @Override public void visitCastExpression(final CastExpression ce) {
                 ClassNode target = ce.getType();
@@ -606,16 +726,39 @@ public class ClosureWriter {
         return captured;
     }
 
-    /** Captured variables that are written (reassigned) in the body — these need Reference threading. */
-    private Set<String> writtenCaptureNames(final ClosureExpression expression) {
+    /**
+     * Captured variables that must be threaded as the shared {@code groovy.lang.Reference} (holder)
+     * rather than by value: those written (reassigned) anywhere in the enclosing method, and those a
+     * <em>nested</em> closure inside the body also captures. The nested case is a bytecode-shape
+     * requirement, not a mutation one: a nested closure that compiles as a class takes the shared
+     * Reference in its constructor (every captured local is Reference-boxed in the class world), so a
+     * by-value slot would fail verification there; a nested closure that itself packs simply
+     * dereferences the holder. The enclosing frame always has the Reference to pass — any local
+     * captured by a closure is boxed in its declaring frame.
+     */
+    private Set<String> holderCaptureNames(final ClosureExpression expression) {
         Set<String> captured = capturedNames(expression);
-        Set<String> written = new HashSet<>(collectWrittenNames(expression.getCode()));
+        Set<String> holder = new HashSet<>(collectWrittenNames(expression.getCode()));
         MethodNode m = controller.getMethodNode();
         if (m != null && m.getCode() != null) {
-            written.addAll(writtenNamesByMethod.computeIfAbsent(m, k -> collectWrittenNames(k.getCode())));
+            holder.addAll(writtenNamesByMethod.computeIfAbsent(m, k -> collectWrittenNames(k.getCode())));
         }
-        written.retainAll(captured);
-        return written;
+        Statement code = expression.getCode();
+        if (code != null) {
+            code.visit(new CodeVisitorSupport() {
+                @Override public void visitClosureExpression(final ClosureExpression nested) {
+                    VariableScope nvs = nested.getVariableScope();
+                    if (nvs != null) {
+                        for (Iterator<Variable> it = nvs.getReferencedLocalVariablesIterator(); it.hasNext(); ) {
+                            holder.add(it.next().getName());
+                        }
+                    }
+                    super.visitClosureExpression(nested);
+                }
+            });
+        }
+        holder.retainAll(captured);
+        return holder;
     }
 
     /** Names assigned or incremented in the given code (declarations with initializers excluded). */
@@ -674,8 +817,9 @@ public class ClosureWriter {
                 Parameter p = capturedParams.get(ve.getAccessedVariable());
                 if (p != null) {
                     ve.setAccessedVariable(p);
-                    // read-only captures become plain by-value params; written captures stay
-                    // closure-shared so the ASM generator routes them through the holder
+                    // plain read-only captures become by-value params; holder-threaded captures
+                    // (written, or re-captured by a nested closure) stay closure-shared so the
+                    // ASM generator routes them through the Reference
                     ve.setClosureSharedVariable(p.isClosureSharedVariable());
                 }
             }
@@ -706,18 +850,23 @@ public class ClosureWriter {
             }
         }
 
-        Parameter[] closureParams = expression.isParameterSpecified()
-                ? expression.getParameters()
-                : new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "it")};
+        // An EMPTY parameter array is the implicit-it literal ({ ... }); null is the explicit
+        // zero-parameter form ({ -> ... }), which must report arity 0 (GString's writer-vs-call
+        // branch and SAM matching key on it), exactly as its generated class would.
+        Parameter[] declared = expression.getParameters();
+        boolean implicitParam = (declared != null && declared.length == 0);
+        Parameter[] closureParams = implicitParam
+                ? new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "it")}
+                : (declared != null ? declared : Parameter.EMPTY_ARRAY);
         int arity = closureParams.length;
 
-        Set<String> written = writtenCaptureNames(expression);
+        Set<String> holderThreaded = holderCaptureNames(expression);
         Parameter[] methodParams = new Parameter[captured.size() + closureParams.length];
         Map<Variable, Parameter> capturedByVar = new IdentityHashMap<>(); // original variable -> hoisted param
         boolean typedBody = compilesHoistedBodyStatically();
         for (int i = 0; i < captured.size(); i++) {
             String cn = captured.get(i);
-            boolean isWritten = written.contains(cn);
+            boolean isWritten = holderThreaded.contains(cn);
             Parameter p;
             if (isWritten) {
                 // A written capture arrives as the SHARED groovy.lang.Reference itself: declare the
@@ -739,7 +888,23 @@ public class ClosureWriter {
                 // For a statically-compiled body, type the read-only capture from its declared type so
                 // the loads match the STC metadata already on the body expressions (otherwise the
                 // static writer falls back to dynamic dispatch on the type mismatch).
-                p = new Parameter(typedBody ? capturedTypes.get(cn) : ClassHelper.OBJECT_TYPE, cn);
+                // an untyped capture may carry a flow-inferred type STC recorded on the original
+                // variable (e.g. an enclosing closure's inferred parameter, captured by a nested
+                // literal whose method reference expects the narrowed type). DECLARE the hoisted
+                // parameter by it: the dispatch table's case checkcasts to declared parameter
+                // types, so the body's load then carries the type the use sites were compiled
+                // against — where a plain Object parameter loads unverifiably wide (the classed
+                // emission gets the equivalent cast on its shared-Reference dereference).
+                ClassNode capturedType = typedBody ? capturedTypes.get(cn) : ClassHelper.OBJECT_TYPE;
+                Variable v = capturedVars.get(cn);
+                if (typedBody && v instanceof org.codehaus.groovy.ast.ASTNode) {
+                    Object inferred = ((org.codehaus.groovy.ast.ASTNode) v)
+                            .getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE);
+                    if (inferred instanceof ClassNode) {
+                        capturedType = erasedType((ClassNode) inferred);
+                    }
+                }
+                p = new Parameter(capturedType, cn);
             }
             methodParams[i] = p;
             capturedByVar.put(capturedVars.get(cn), p);
@@ -761,8 +926,11 @@ public class ClosureWriter {
         // dispatches to a same-named hoisted method a subclass happens to declare (GROOVY-12151 review).
         int mods = ACC_PRIVATE | ACC_SYNTHETIC | (staticContext ? ACC_STATIC : 0);
         // Same return type a generated closure class would give doCall, so implicit return-value
-        // coercion (e.g. GString -> String for a Closure<String>) happens identically.
-        ClassNode hoistedReturnType = typedBody ? inferredClosureReturnType(expression) : ClassHelper.OBJECT_TYPE;
+        // coercion (e.g. GString -> String for a Closure<String>) happens identically. This uses
+        // whatever the type checker recorded (@CompileStatic AND @TypeChecked -- the dynamically
+        // compiled body coerces at return like any declared-return dynamic method), falling back
+        // to Object when no inference ran.
+        ClassNode hoistedReturnType = inferredClosureReturnType(expression);
         MethodNode hoisted = new MethodNode(name, mods, hoistedReturnType,
                 methodParams, ClassNode.EMPTY_ARRAY, body);
         // Added after the ReturnAdder phase, so run it ourselves: it wires implicit returns through
@@ -781,7 +949,21 @@ public class ClosureWriter {
         // closure class of an unpacked closure; the trailing () distinguishes a method from a class.
         expression.putNodeMetaData(GENERATED_CLOSURE_CLASS, enclosing.getName() + "." + name + "()");
 
+        // Instantiate the fixed-arity family member matching the literal's declared parameter count
+        // (FixedN, with a varargs doCall, serves arities above four; the base class is abstract):
+        // the arity is then visible to class-level introspection — notably MetaClassHelper's
+        // SAM-overload disambiguation, which reflects the argument class's declared doCall —
+        // exactly as on a generated closure class. An implicit-parameter literal gets FixedIt
+        // (doCall() + doCall(Object)), matching the fuzzy "0 or 1" arity a generated class
+        // declares for it. A vararg-shaped literal (trailing array parameter, e.g. { ...z -> })
+        // also gets FixedN: its generated class would declare a VARARG doCall, whose selection
+        // flexibility (zero args collect to an empty array where a fixed one-param doCall would
+        // null-fill) only a varargs declaration reproduces.
+        boolean varargShape = !implicitParam && arity > 0 && closureParams[arity - 1].getType().isArray();
         String pc = "org/codehaus/groovy/runtime/PackedClosure";
+        if (implicitParam) pc = pc + "$FixedIt";
+        else if (arity <= 4 && !varargShape) pc = pc + "$Fixed" + arity;
+        else pc = pc + "$FixedN";
         mv.visitTypeInsn(NEW, pc);
         mv.visitInsn(DUP);
         if (staticContext) {
@@ -816,7 +998,7 @@ public class ClosureWriter {
                 os.push(ClassHelper.OBJECT_TYPE.makeArray());
                 BytecodeHelper.pushConstant(mv, i);
                 os.push(ClassHelper.int_TYPE);
-                if (written.contains(cn)) {
+                if (holderThreaded.contains(cn)) {
                     loadReference(cn, controller);       // shared Reference holder
                 } else {
                     new VariableExpression(cn).visit(acg); // value

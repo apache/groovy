@@ -41,34 +41,47 @@ import java.lang.annotation.Target;
  *       {@code directive}, {@code metaClass} or {@code super} — it needs a real {@code Closure};</li>
  *   <li>has default parameter values, or contains an anonymous inner class;</li>
  *   <li>is nested inside another closure, or visibly escapes its method (returned, stored to a
- *       field/property/index, appended, or placed in a collection literal);</li>
- *   <li>is visibly serialization-bound (cast or coerced to a {@code Serializable} type, or passed
- *       directly to a {@code writeObject} call) — it keeps its class so serialization works;</li>
+ *       field/property/index, initialising a field, appended, or placed in a collection literal);</li>
+ *   <li>is visibly serialization-bound (cast or coerced to a {@code Serializable} type, passed
+ *       directly to a {@code writeObject} call, or held in a local that is) — it keeps its class
+ *       so serialization works;</li>
+ *   <li>is written where the adapter cannot stand in for a generated class: as an argument to a
+ *       {@code this(...)}/{@code super(...)} constructor call, inside a trait, or cast to an
+ *       intersection type;</li>
+ *   <li>under dynamic compilation, resolves any free name — an implicit-this call, a bare
+ *       field/property-bound or dynamic variable, or an explicit {@code this}-property — that the
+ *       delegate chain or the MOP could intercept;</li>
  *   <li>under {@code @CompileStatic}, resolves a name against a delegate (e.g. via {@code @DelegatesTo}
- *       or {@code with}) — packing is otherwise proven sound from the type checker's resolution.</li>
+ *       or {@code with}), is left to runtime resolution by a type-checking extension (mixed-mode
+ *       dynamic islands), or touches {@code this}-properties of a {@code Map}-implementing owner —
+ *       packing is otherwise proven sound from the type checker's resolution.</li>
  * </ul>
  * Under dynamic compilation the annotation is a trust assertion the compiler cannot verify; the
  * {@code PackedClosure} adapter then fails fast if a delegate, or a delegate-consulting
  * {@code resolveStrategy}, is later set on a packed closure.
  * Automatic packing of provably-safe {@code @CompileStatic} closures — without this annotation — is
  * available behind the {@code groovy.target.closure.pack} flag. Use {@link #mode()} to have declines
- * reported (or to opt a scope out).
+ * reported (or to opt a scope out); on the un-annotated flag path,
+ * {@code groovy.target.closure.pack.report=true} reports every decline with its reason as a
+ * compiler warning — the operational way to see where the packability boundary falls in a codebase.
  * <p>
- * Because every packed closure is an instance of the one shared adapter class, three differences
- * from the class-based form remain that cannot, in general, be detected at compile time (the
- * visibly serialization-bound case above is the detectable exception):
+ * Because every packed closure is an instance of a small fixed-arity adapter family
+ * ({@code PackedClosure$Fixed0..4}, {@code $FixedIt}, {@code $FixedN}) rather than its own class,
+ * three differences from the class-based form remain that cannot, in general, be detected at
+ * compile time (the visibly serialization-bound cases above are the detectable exception):
  * <ul>
  *   <li><em>Serialization:</em> a packed closure is not serializable — attempting it fails fast
  *       at runtime with a message naming the closure and this opt-out (note {@code dehydrate()}
- *       cannot help: the dispatch state remains), so scopes that serialize their closures should
- *       not be packed;</li>
- *   <li><em>Class identity:</em> {@code closure.getClass()} no longer distinguishes literals, so
+ *       cannot make it serializable — the dispatch state remains — although a dehydrated packed
+ *       closure stays callable), so scopes that serialize their closures should not be packed;</li>
+ *   <li><em>Class identity:</em> {@code closure.getClass()} distinguishes arity (enough for
+ *       class-level introspection such as SAM-overload selection) but not individual literals, so
  *       code keyed on per-closure generated class names or types will not find them;</li>
- *   <li><em>Class-level metaclass changes:</em> modifying the adapter's metaclass affects every
- *       packed closure globally, where a per-closure-class change was scoped to one literal.
- *       Per-instance {@code setMetaClass} is fully honoured — a packed closure whose metaclass has
- *       been replaced or wrapped routes all dispatch through it, exactly as a generated closure
- *       class does.</li>
+ *   <li><em>Class-level metaclass changes:</em> modifying a family member's metaclass affects
+ *       every packed closure of that arity, where a per-closure-class change was scoped to one
+ *       literal. Per-instance {@code setMetaClass} is fully honoured — a packed closure whose
+ *       metaclass has been replaced or wrapped routes all dispatch through it, exactly as a
+ *       generated closure class does.</li>
  * </ul>
  *
  * @see PackMode

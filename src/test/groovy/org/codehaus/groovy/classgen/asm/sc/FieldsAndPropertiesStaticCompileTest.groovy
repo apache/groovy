@@ -757,6 +757,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
 
     // GROOVY-7705, GROOVY-10687
     @Test
+    @DisabledIfSystemProperty(named = 'groovy.target.closure.pack', matches = 'true',
+        disabledReason = 'asserts the pre-pack generated closure-class bytecode shape; superseded when GEP-27 closure packing is enabled')
     void testMultiplePrivateFieldMutatorDirectAccess() {
         assertScript '''
             class C {
@@ -781,6 +783,8 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
 
     // GROOVY-7705, GROOVY-9385, GROOVY-10687
     @Test
+    @DisabledIfSystemProperty(named = 'groovy.target.closure.pack', matches = 'true',
+        disabledReason = 'asserts the pre-pack generated closure-class bytecode shape; superseded when GEP-27 closure packing is enabled')
     void testPrivateFieldBridgeMethodsAreGeneratedAsNecessary() {
         assertScript '''
             class C {
