@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784014478118,
+  "lastUpdate": 1784101090875,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3098,6 +3098,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 498.02666666666664,
             "range": "±23.56",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "00d067fc3bce66a53adf6f6f9c9e00e0f48a7cde",
+          "message": "GROOVY-12165: note the call override cache's intended end-state (GEP-27)",
+          "timestamp": "2026-07-15T03:22:11Z",
+          "url": "https://github.com/apache/groovy/commit/00d067fc3bce66a53adf6f6f9c9e00e0f48a7cde"
+        },
+        "date": 1784101087965,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 470.18666666666667,
+            "range": "±19.55",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 592.32,
+            "range": "±202.65",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 512.9300000000001,
+            "range": "±134.1",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 429.8999999999999,
+            "range": "±20.33",
             "unit": "ms",
             "extra": "5.0.6"
           }
