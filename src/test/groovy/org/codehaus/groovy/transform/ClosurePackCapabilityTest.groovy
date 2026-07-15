@@ -228,4 +228,55 @@ final class ClosurePackCapabilityTest {
                 'a syntactically delegate-independent dynamic closure should auto-pack under the flag')
         assertEquals([2, 4, 6], eval(src, 'new Dyn().doubled([1, 2, 3])', true))
     }
+
+    @Test
+    void syntacticSubsetCoversTheCommonShapes() {
+        // the everyday delegate-independent shapes: implicit it, captured local, explicit/param
+        // receiver, multi-arg comparator -- all pack dynamically under the flag with no annotation
+        String src = '''class Dyn {
+                def implicitIt(xs)   { xs.collect { it * 2 } }
+                def capture(xs, k)   { xs.collect { x -> x + k } }
+                def paramReceiver(xs){ xs.collect { it.toString().length() } }
+                def comparator(xs)   { xs.sort(false) { a, b -> a <=> b } }
+            }'''
+        assertEquals(0, closureClassCount(classNames(src, true)),
+                'the common no-free-name shapes should all pack under the flag')
+        def d = eval(src, 'new Dyn()', true)
+        assertEquals([2, 4, 6], d.implicitIt([1, 2, 3]))
+        assertEquals([11, 12], d.capture([1, 2], 10))
+        assertEquals([2, 1], d.paramReceiver(['ab', 'c']))
+        assertEquals([1, 2, 3], d.comparator([3, 1, 2]))
+    }
+
+    @Test
+    void syntacticallyPackedClosureTreatsDelegateAsHarmlessNoOp() {
+        // the non-strict guard: a syntactically-packed closure has no free name, so a caller-set
+        // delegate must be IGNORED, not rejected -- exactly as a normal closure behaves. (The
+        // annotation trust path, by contrast, throws, since it cannot prove independence.)
+        Object result = eval('', '''
+            Closure c = { x -> x + 1 }
+            assert c.getClass().name == 'org.codehaus.groovy.runtime.PackedClosure'
+            c.delegate = new Object()
+            c.resolveStrategy = Closure.DELEGATE_FIRST
+            c(41)
+        ''', true)
+        assertEquals(42, result)
+    }
+
+    @Test
+    void dynamicLambdaOfTheSubsetIsPackedToo() {
+        // a dynamically compiled lambda is compiled as a closure, so the same syntactic path
+        // body-hoists the equivalent dynamic lambda subset (it just does not reach the
+        // LambdaMetafactory singleton form, which stays @CompileStatic-only)
+        String src = '''import java.util.function.Function
+            class Dyn {
+                def use() {
+                    Function<Integer,Integer> f = (Integer x) -> x + 1
+                    f.apply(41)
+                }
+            }'''
+        assertEquals(0, closureClassCount(classNames(src, true)),
+                'a syntactically-independent dynamic lambda should auto-pack under the flag')
+        assertEquals(42, eval(src, 'new Dyn().use()', true))
+    }
 }
