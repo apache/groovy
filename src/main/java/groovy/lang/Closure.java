@@ -1430,6 +1430,13 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         }
     }
 
+    /**
+     * NOTE: this reflective cache is a bridge, not a destination. For compiler-generated closure
+     * classes the long-term plan (GEP-27) is for the compiler to emit a {@code call(Object...)}
+     * override that arity-dispatches directly to the right {@code doCall} — plain virtual
+     * dispatch, no reflection, module-system-clean — at which point this cache serves only
+     * legacy jars and hand-written subclasses. Extend it with that destination in mind.
+     */
     private static final class CallOverride {
         /**
          * Cached arities: {@code 0..ARITY_LIMIT-1}. Sized to cover every callback shape the GDK
