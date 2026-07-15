@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784014493205,
+  "lastUpdate": 1784101105833,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -494,6 +494,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.loaded.total",
             "value": 3994,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 465,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 888,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1489,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194506,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "00d067fc3bce66a53adf6f6f9c9e00e0f48a7cde",
+          "message": "GROOVY-12165: note the call override cache's intended end-state (GEP-27)",
+          "timestamp": "2026-07-15T03:22:11Z",
+          "url": "https://github.com/apache/groovy/commit/00d067fc3bce66a53adf6f6f9c9e00e0f48a7cde"
+        },
+        "date": 1784101104672,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3995,
             "unit": "classes"
           },
           {
