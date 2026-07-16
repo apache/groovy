@@ -25,11 +25,12 @@ import static groovy.test.GroovyAssert.shouldFail
 /**
  * A leading digit or minus makes the parser enter number decoding, but a malformed exponent or a
  * lone sign/point is only rejected when the token is finally handed to {@code new BigDecimal(...)}.
- * The overlay parsers already wrap that {@link NumberFormatException} in a {@link JsonException}
- * (see {@code NumberValue.bigDecimalValue}), but the default CHAR_BUFFER path
+ * The overlay parsers already wrapped that {@link NumberFormatException} in a {@link JsonException}
+ * (see {@code NumberValue.bigDecimalValue}); the default CHAR_BUFFER path
  * ({@code CharScanner.parseJsonNumber}) and the CHARACTER_SOURCE path
- * ({@code JsonParserUsingCharacterSource.decodeNumber}) let it escape raw, so a caller guarding
- * untrusted input with {@code catch (JsonException)} would not catch it.
+ * ({@code JsonParserUsingCharacterSource.decodeNumber}) previously let it escape raw, so a caller
+ * guarding untrusted input with {@code catch (JsonException)} would not catch it. GROOVY-12168 wraps
+ * those two sites as well; these tests pin that every parser type now surfaces a {@link JsonException}.
  */
 class JsonSlurperMalformedNumberTest {
 

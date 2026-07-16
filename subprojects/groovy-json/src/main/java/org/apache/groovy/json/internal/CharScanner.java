@@ -512,6 +512,7 @@ public class CharScanner {
                 value = new BigDecimal(buffer, from, length);
             }
         } catch (NumberFormatException e) {
+            // handle always throws (JsonInternalException); the return only satisfies the compiler
             return handle(Number.class, "unable to parse number: " + new String(buffer, from, length), e);
         }
 
