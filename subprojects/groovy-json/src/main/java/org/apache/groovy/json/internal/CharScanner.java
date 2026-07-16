@@ -499,16 +499,20 @@ public class CharScanner {
 
         final int length = index - from;
 
-        if (!foundDot && simple) {
-            if (isInteger(buffer, from, length)) {
-                value = parseIntFromTo(buffer, from, index);
-            } else if (isLong(buffer, from, length)) {
-                value = parseLongFromTo(buffer, from, index);
+        try {
+            if (!foundDot && simple) {
+                if (isInteger(buffer, from, length)) {
+                    value = parseIntFromTo(buffer, from, index);
+                } else if (isLong(buffer, from, length)) {
+                    value = parseLongFromTo(buffer, from, index);
+                } else {
+                    value = new BigInteger(new String(buffer, from, length));
+                }
             } else {
-                value = new BigInteger(new String(buffer, from, length));
+                value = new BigDecimal(buffer, from, length);
             }
-        } else {
-            value = new BigDecimal(buffer, from, length);
+        } catch (NumberFormatException e) {
+            return handle(Number.class, "unable to parse number: " + new String(buffer, from, length), e);
         }
 
         if (size != null) {
