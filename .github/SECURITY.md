@@ -67,6 +67,19 @@ may arrive as a single report bundling many candidate findings: each is
 assigned one disposition from the threat model, and only confirmed issues
 enter the private reporting flow below.
 
+**Compiling untrusted Groovy is already code execution — not only
+running it.** Groovy runs code *during* compilation: global AST
+transforms on the compile classpath, static initializers, `@Grab`
+dependency resolution, and the `@ASTTest` annotation (whose closure is
+evaluated at compile time in a fresh shell). A pipeline that *compiles*
+attacker-supplied Groovy for analysis, linting, or type-checking — but
+deliberately never runs the output — is therefore **not** a safety
+boundary; it has already granted code execution. Treat "compile-only"
+as equivalent to "run": keep `@Grab` off for such input
+(`-Dgroovy.grape.enable=false`), and note that `SecureASTCustomizer` is
+a best-effort grammar filter, not a sandbox, so it does not change this.
+See [`THREAT_MODEL.md`](../THREAT_MODEL.md) §3.
+
 ## Reporting a Vulnerability
 
 Do **not** open a public JIRA issue, GitHub issue, pull request, or

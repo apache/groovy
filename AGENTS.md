@@ -199,7 +199,14 @@ restating it.
   pulls, dynamic code), the exact code and command are shown to
   a human who explicitly chooses to run / sandbox / skip, and
   dependency resolution (`@Grab`) is **off by default**
-  (`-Dgroovy.grape.enable=false`) until a human permits it. With
+  (`-Dgroovy.grape.enable=false`) until a human permits it. Note
+  that **compiling** a reproducer is not a safe halfway step
+  short of running it: Groovy executes code at compile time via
+  global AST transforms, static initializers, `@Grab`, and
+  `@ASTTest` (whose closure is evaluated during compilation), so
+  "we only compiled it, we didn't run it" is not a safety argument —
+  the pre-screen and the run / sandbox / skip gate apply to
+  compilation, not just execution. With
   no human available (a batch sweep), flagged code is **not
   run** — it is set aside for review. The pre-screen is a
   fallible aid, never a substitute for the human reading the
