@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784101090875,
+  "lastUpdate": 1784187435281,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3148,6 +3148,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 429.8999999999999,
             "range": "±20.33",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "538f618b3d817f1bb0e1035646e94e64c4d81144",
+          "message": "GROOVY-12161: pin catch-variable debug metadata for try/catch without finally\n\nBackfills the LocalVariableTable coverage relaxed in GROOVY-11362 when the\nidentity catch-all was omitted: assert the catch parameter stays named,\ntyped Exception (not Object), with a non-degenerate range — without\ndepending on brittle label numbers.",
+          "timestamp": "2026-07-16T06:14:21Z",
+          "url": "https://github.com/apache/groovy/commit/538f618b3d817f1bb0e1035646e94e64c4d81144"
+        },
+        "date": 1784187433052,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 580.3233333333334,
+            "range": "±28.6",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 667.81,
+            "range": "±210.06",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 592.7333333333333,
+            "range": "±146.8",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 502.8266666666667,
+            "range": "±22.4",
             "unit": "ms",
             "extra": "5.0.6"
           }
