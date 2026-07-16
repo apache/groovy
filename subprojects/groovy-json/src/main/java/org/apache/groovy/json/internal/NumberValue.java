@@ -216,7 +216,7 @@ public class NumberValue extends java.lang.Number implements Value {
         try {
             return new BigDecimal(buffer, startIndex, endIndex - startIndex);
         } catch (NumberFormatException e) {
-            throw new JsonException("unable to parse " + new String(buffer, startIndex, endIndex - startIndex), e);
+            throw new JsonException("unable to parse number: " + new String(buffer, startIndex, endIndex - startIndex), e);
         }
     }
 

@@ -160,7 +160,7 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
                 value = new BigInteger(new String(chars));
             }
         } catch (NumberFormatException e) {
-            throw new JsonException("unable to parse number: " + new String(chars), e);
+            throw new JsonException(exceptionDetails("unable to parse number: " + new String(chars)), e);
         }
 
         return value;
