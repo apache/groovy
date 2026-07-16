@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784101105833,
+  "lastUpdate": 1784187452504,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -566,6 +566,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "bytecode.corpus.bytes",
             "value": 194506,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "538f618b3d817f1bb0e1035646e94e64c4d81144",
+          "message": "GROOVY-12161: pin catch-variable debug metadata for try/catch without finally\n\nBackfills the LocalVariableTable coverage relaxed in GROOVY-11362 when the\nidentity catch-all was omitted: assert the catch parameter stays named,\ntyped Exception (not Object), with a non-degenerate range — without\ndepending on brittle label numbers.",
+          "timestamp": "2026-07-16T06:14:21Z",
+          "url": "https://github.com/apache/groovy/commit/538f618b3d817f1bb0e1035646e94e64c4d81144"
+        },
+        "date": 1784187451563,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3994,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 465,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 888,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1489,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
             "unit": "bytes"
           },
           {
