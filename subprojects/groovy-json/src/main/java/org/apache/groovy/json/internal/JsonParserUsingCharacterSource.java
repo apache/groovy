@@ -149,14 +149,18 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         char[] chars = characterSource.readNumber();
         Object value;
 
-        if (CharScanner.hasDecimalChar(chars, negative)) {
-            value = CharScanner.parseBigDecimal(chars);
-        } else if (CharScanner.isInteger(chars)) {
-            value = CharScanner.parseInt(chars);
-        } else if (CharScanner.isLong(chars)) {
-            value = CharScanner.parseLong(chars);
-        } else {
-            value = new BigInteger(new String(chars));
+        try {
+            if (CharScanner.hasDecimalChar(chars, negative)) {
+                value = CharScanner.parseBigDecimal(chars);
+            } else if (CharScanner.isInteger(chars)) {
+                value = CharScanner.parseInt(chars);
+            } else if (CharScanner.isLong(chars)) {
+                value = CharScanner.parseLong(chars);
+            } else {
+                value = new BigInteger(new String(chars));
+            }
+        } catch (NumberFormatException e) {
+            throw new JsonException("unable to parse number: " + new String(chars), e);
         }
 
         return value;
