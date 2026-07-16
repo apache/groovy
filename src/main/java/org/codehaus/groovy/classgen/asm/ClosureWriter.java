@@ -36,8 +36,10 @@ import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -199,8 +201,9 @@ public class ClosureWriter {
         // generating a per-closure inner class. Captured variables are threaded by value. Closures nested
         // inside another closure are left alone (their enclosing context is a generated function, not the
         // owner class), as are closures needing real Closure semantics.
-        if (chooseStrategy(expression) == PackStrategy.PACKED_ADAPTER) {
-            writePackedClosure(expression);
+        PackStrategy strategy = chooseStrategy(expression);
+        if (strategy == PackStrategy.PACKED_ADAPTER || strategy == PackStrategy.OPEN_ADAPTER) {
+            writePackedClosure(expression, strategy == PackStrategy.OPEN_ADAPTER);
             return;
         }
         reportUnpacked(expression); // @PackedClosures(mode = WARN | STRICT) diagnostics for declines
@@ -279,7 +282,18 @@ public class ClosureWriter {
         // 3. triggered and sound? annotation (dynamic trust), flag + syntactic no-free-name proof
         //    (dynamic), or flag/annotation + the type checker's delegate-independence proof (CS,
         //    which also declines mixed-mode dynamic islands and Map-owner property semantics).
-        if (!isPackTriggered(expression, annotated)) return PackStrategy.FULL_CLASS;
+        boolean open = false;
+        if (!isPackTriggered(expression, annotated)) {
+            // GEP-27 OpenClosure spike (Groovy 7 reference implementation): a dynamic closure whose
+            // only obstacle is free names takes the open path -- the free uses are rewritten into
+            // calls on a leading Resolver parameter and a ClassicResolver restores the full
+            // owner/delegate/resolveStrategy contract. packedClosureUsesDelegateGuard() limits this
+            // to the dynamic writer (the CS writer proves or declines instead).
+            open = packedClosureUsesDelegateGuard()
+                    && SystemUtil.getBooleanSafe("groovy.spike.openclosure")
+                    && isOpenRewritable(expression);
+            if (!open) return PackStrategy.FULL_CLASS;
+        }
         // 4. structural position: directly in a method of the owner class (nested closures await
         //    owner-retargeting)?
         if (controller.isInGeneratedFunction()) return PackStrategy.FULL_CLASS;
@@ -296,7 +310,7 @@ public class ClosureWriter {
         if (isIntersectionTyped(expression)) return PackStrategy.FULL_CLASS;
         if (isInTraitContext()) return PackStrategy.FULL_CLASS;
         if (controller.getCompileStack().isInSpecialConstructorCall()) return PackStrategy.FULL_CLASS;
-        return PackStrategy.PACKED_ADAPTER;
+        return open ? PackStrategy.OPEN_ADAPTER : PackStrategy.PACKED_ADAPTER;
     }
 
     /**
@@ -831,7 +845,173 @@ public class ClosureWriter {
      * variables become leading, by-value parameters) and constructs a shared {@code PackedClosure}
      * adapter that dispatches to it — no inner class.
      */
-    private void writePackedClosure(final ClosureExpression expression) {
+    // ---- GEP-27 OpenClosure spike (Groovy 7 reference implementation) ----------------------------
+
+    private static final String RESOLVER_PARAM = "$resolver";
+    private static final ClassNode RESOLVER_TYPE =
+            ClassHelper.make(org.codehaus.groovy.runtime.OpenClosure.Resolver.class);
+    private static final String CLASSIC_RESOLVER_INTERNAL = "org/codehaus/groovy/runtime/OpenClosure$ClassicResolver";
+
+    /**
+     * Whether every free-name use in the body can be rewritten into a call on the leading
+     * {@code Resolver} parameter: free reads ({@code bar}) and unqualified calls ({@code foo(x)})
+     * qualify; writes to free names, {@code this}-qualified accesses, spreads, method pointers on
+     * {@code this}, and nested closures decline (spike scope). Requires at least one free use —
+     * otherwise the closure is the ordinary packed case.
+     */
+    private static boolean isOpenRewritable(final ClosureExpression expression) {
+        Statement code = expression.getCode();
+        if (code == null) return false;
+        boolean[] free = {false};
+        boolean[] blocked = {false};
+        code.visit(new CodeVisitorSupport() {
+            private boolean isFreeName(final Expression e) {
+                if (!(e instanceof VariableExpression)) return false;
+                Variable av = ((VariableExpression) e).getAccessedVariable();
+                return av instanceof DynamicVariable || av instanceof FieldNode || av instanceof PropertyNode;
+            }
+            @Override public void visitClosureExpression(final ClosureExpression nested) {
+                blocked[0] = true; // nested literals keep today's treatment (spike scope)
+            }
+            @Override public void visitMethodCallExpression(final MethodCallExpression call) {
+                if (call.isImplicitThis()) {
+                    if (!(call.getMethod() instanceof ConstantExpression)) blocked[0] = true;
+                    else free[0] = true;
+                }
+                super.visitMethodCallExpression(call);
+            }
+            @Override public void visitVariableExpression(final VariableExpression ve) {
+                if (isFreeName(ve)) free[0] = true;
+                super.visitVariableExpression(ve);
+            }
+            @Override public void visitBinaryExpression(final BinaryExpression be) {
+                if (Types.isAssignment(be.getOperation().getType()) && isFreeName(be.getLeftExpression())) {
+                    free[0] = true; // rewritten to resolver.setProperty (compound: read-then-write)
+                }
+                super.visitBinaryExpression(be);
+            }
+            @Override public void visitPostfixExpression(final PostfixExpression pe) {
+                if (isFreeName(pe.getExpression())) blocked[0] = true;
+                super.visitPostfixExpression(pe);
+            }
+            @Override public void visitPrefixExpression(final PrefixExpression pe) {
+                if (isFreeName(pe.getExpression())) blocked[0] = true;
+                super.visitPrefixExpression(pe);
+            }
+            @Override public void visitPropertyExpression(final PropertyExpression pexp) {
+                Expression obj = pexp.getObjectExpression();
+                if (pexp.isImplicitThis()
+                        || (obj instanceof VariableExpression && ((VariableExpression) obj).isThisExpression())) {
+                    blocked[0] = true; // this-qualified property semantics: not in the spike
+                }
+                super.visitPropertyExpression(pexp);
+            }
+            @Override public void visitSpreadExpression(final org.codehaus.groovy.ast.expr.SpreadExpression se) {
+                blocked[0] = true;
+                super.visitSpreadExpression(se);
+            }
+            @Override public void visitMethodPointerExpression(final org.codehaus.groovy.ast.expr.MethodPointerExpression mpe) {
+                Expression obj = mpe.getExpression();
+                if (obj instanceof VariableExpression && ((VariableExpression) obj).isThisExpression()) blocked[0] = true;
+                super.visitMethodPointerExpression(mpe);
+            }
+        });
+        return free[0] && !blocked[0];
+    }
+
+    /**
+     * Rewrites the hoisted body's free-name uses into resolver calls: a free read {@code bar}
+     * becomes {@code $resolver.property('bar')} and an unqualified call {@code foo(a, b)} becomes
+     * {@code $resolver.invoke('foo', new Object[]{a, b})} — the single boundary through which the
+     * dynamic world reaches an open body.
+     */
+    private static final class OpenBodyRewriter extends org.codehaus.groovy.ast.ClassCodeExpressionTransformer {
+        private final org.codehaus.groovy.control.SourceUnit sourceUnit;
+        private final Parameter resolverParam;
+
+        OpenBodyRewriter(final org.codehaus.groovy.control.SourceUnit sourceUnit, final Parameter resolverParam) {
+            this.sourceUnit = sourceUnit;
+            this.resolverParam = resolverParam;
+        }
+
+        @Override
+        protected org.codehaus.groovy.control.SourceUnit getSourceUnit() {
+            return sourceUnit;
+        }
+
+        private static boolean isFreeTarget(final Expression e) {
+            if (!(e instanceof VariableExpression)) return false;
+            Variable av = ((VariableExpression) e).getAccessedVariable();
+            return av instanceof DynamicVariable || av instanceof FieldNode || av instanceof PropertyNode;
+        }
+
+        @Override
+        public Expression transform(final Expression exp) {
+            if (exp instanceof BinaryExpression
+                    && Types.isAssignment(((BinaryExpression) exp).getOperation().getType())
+                    && isFreeTarget(((BinaryExpression) exp).getLeftExpression())) {
+                BinaryExpression be = (BinaryExpression) exp;
+                String name = ((VariableExpression) be.getLeftExpression()).getName();
+                Expression rhs = transform(be.getRightExpression());
+                int op = be.getOperation().getType();
+                Expression value;
+                if (op == Types.EQUAL) {
+                    value = rhs;
+                } else {
+                    // bar OP= x  =>  setProperty('bar', property('bar') OP x) — the same
+                    // read-then-write MOP pair a classic compound assignment performs
+                    MethodCallExpression read = new MethodCallExpression(
+                            new VariableExpression(resolverParam), "property",
+                            new ArgumentListExpression(new ConstantExpression(name)));
+                    read.setImplicitThis(false);
+                    read.setSourcePosition(be.getLeftExpression());
+                    value = new BinaryExpression(read,
+                            org.codehaus.groovy.syntax.Token.newSymbol(
+                                    org.codehaus.groovy.syntax.TokenUtil.removeAssignment(op),
+                                    be.getOperation().getStartLine(), be.getOperation().getStartColumn()),
+                            rhs);
+                    value.setSourcePosition(be);
+                }
+                MethodCallExpression set = new MethodCallExpression(
+                        new VariableExpression(resolverParam), "setProperty",
+                        new ArgumentListExpression(new ConstantExpression(name), value));
+                set.setImplicitThis(false);
+                set.setSourcePosition(exp);
+                return set;
+            }
+            if (exp instanceof VariableExpression) {
+                Variable av = ((VariableExpression) exp).getAccessedVariable();
+                if (av instanceof DynamicVariable || av instanceof FieldNode || av instanceof PropertyNode) {
+                    MethodCallExpression get = new MethodCallExpression(
+                            new VariableExpression(resolverParam), "property",
+                            new ArgumentListExpression(new ConstantExpression(((VariableExpression) exp).getName())));
+                    get.setImplicitThis(false);
+                    get.setSourcePosition(exp);
+                    return get;
+                }
+                return exp;
+            }
+            if (exp instanceof MethodCallExpression && ((MethodCallExpression) exp).isImplicitThis()
+                    && ((MethodCallExpression) exp).getMethod() instanceof ConstantExpression) {
+                MethodCallExpression mce = (MethodCallExpression) exp;
+                java.util.List<Expression> rewritten = new ArrayList<>();
+                for (Expression arg : ((TupleExpression) mce.getArguments()).getExpressions()) {
+                    rewritten.add(transform(arg));
+                }
+                MethodCallExpression call = new MethodCallExpression(
+                        new VariableExpression(resolverParam), "invoke",
+                        new ArgumentListExpression(
+                                new ConstantExpression(mce.getMethodAsString()),
+                                new ArrayExpression(ClassHelper.OBJECT_TYPE, rewritten)));
+                call.setImplicitThis(false);
+                call.setSourcePosition(exp);
+                return call;
+            }
+            return exp.transformExpression(this);
+        }
+    }
+
+    private void writePackedClosure(final ClosureExpression expression, final boolean open) {
         ClassNode enclosing = controller.getClassNode();
         MethodVisitor mv = controller.getMethodVisitor();
         AsmClassGenerator acg = controller.getAcg();
@@ -861,7 +1041,12 @@ public class ClosureWriter {
         int arity = closureParams.length;
 
         Set<String> holderThreaded = holderCaptureNames(expression);
-        Parameter[] methodParams = new Parameter[captured.size() + closureParams.length];
+        // OpenClosure spike: the resolver is the hoisted body's leading parameter (and rides as
+        // captured[0] at the creation site), so the whole dispatch pipeline is unchanged.
+        int prefix = open ? 1 : 0;
+        Parameter resolverParam = open ? new Parameter(RESOLVER_TYPE, RESOLVER_PARAM) : null;
+        Parameter[] methodParams = new Parameter[prefix + captured.size() + closureParams.length];
+        if (open) methodParams[0] = resolverParam;
         Map<Variable, Parameter> capturedByVar = new IdentityHashMap<>(); // original variable -> hoisted param
         boolean typedBody = compilesHoistedBodyStatically();
         for (int i = 0; i < captured.size(); i++) {
@@ -906,10 +1091,10 @@ public class ClosureWriter {
                 }
                 p = new Parameter(capturedType, cn);
             }
-            methodParams[i] = p;
+            methodParams[prefix + i] = p;
             capturedByVar.put(capturedVars.get(cn), p);
         }
-        System.arraycopy(closureParams, 0, methodParams, captured.size(), closureParams.length);
+        System.arraycopy(closureParams, 0, methodParams, prefix + captured.size(), closureParams.length);
 
         Statement body = expression.getCode();
         rebindCaptured(body, capturedByVar);  // read-only -> plain param; written -> holder param
@@ -933,6 +1118,10 @@ public class ClosureWriter {
         ClassNode hoistedReturnType = inferredClosureReturnType(expression);
         MethodNode hoisted = new MethodNode(name, mods, hoistedReturnType,
                 methodParams, ClassNode.EMPTY_ARRAY, body);
+        if (open) {
+            // rewrite free-name uses into resolver calls; everything lexical is already bound
+            new OpenBodyRewriter(controller.getSourceUnit(), resolverParam).visitMethod(hoisted);
+        }
         // Added after the ReturnAdder phase, so run it ourselves: it wires implicit returns through
         // every statement shape (trailing expressions, if/else branches, try/catch, ...).
         new org.codehaus.groovy.classgen.ReturnAdder().visitMethod(hoisted);
@@ -960,10 +1149,15 @@ public class ClosureWriter {
         // flexibility (zero args collect to an empty array where a fixed one-param doCall would
         // null-fill) only a varargs declaration reproduces.
         boolean varargShape = !implicitParam && arity > 0 && closureParams[arity - 1].getType().isArray();
-        String pc = "org/codehaus/groovy/runtime/PackedClosure";
-        if (implicitParam) pc = pc + "$FixedIt";
-        else if (arity <= 4 && !varargShape) pc = pc + "$Fixed" + arity;
-        else pc = pc + "$FixedN";
+        String pc;
+        if (open) {
+            pc = "org/codehaus/groovy/runtime/OpenClosure$AsClosure"; // classic contract via ClassicResolver
+        } else {
+            pc = "org/codehaus/groovy/runtime/PackedClosure";
+            if (implicitParam) pc = pc + "$FixedIt";
+            else if (arity <= 4 && !varargShape) pc = pc + "$Fixed" + arity;
+            else pc = pc + "$FixedN";
+        }
         mv.visitTypeInsn(NEW, pc);
         mv.visitInsn(DUP);
         if (staticContext) {
@@ -982,21 +1176,39 @@ public class ClosureWriter {
         os.push(ClassHelper.int_TYPE);
         mv.visitLdcInsn(name);
         os.push(ClassHelper.STRING_TYPE);   // method name (diagnostics only)
-        if (captured.isEmpty()) {
+        if (captured.isEmpty() && !open) {
             mv.visitInsn(ACONST_NULL);
             os.push(ClassHelper.OBJECT_TYPE.makeArray());
         } else {
             // Build Object[] of captured values: written vars pass their shared Reference (so writes
-            // propagate), read-only vars pass their value.
-            BytecodeHelper.pushConstant(mv, captured.size());
+            // propagate), read-only vars pass their value. An open closure's ClassicResolver rides
+            // in slot 0, matching the hoisted body's leading Resolver parameter.
+            BytecodeHelper.pushConstant(mv, prefix + captured.size());
             os.push(ClassHelper.int_TYPE);
             mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
             os.replace(ClassHelper.OBJECT_TYPE.makeArray());
+            if (open) {
+                mv.visitInsn(DUP);
+                os.push(ClassHelper.OBJECT_TYPE.makeArray());
+                BytecodeHelper.pushConstant(mv, 0);
+                os.push(ClassHelper.int_TYPE);
+                mv.visitTypeInsn(NEW, CLASSIC_RESOLVER_INTERNAL);
+                mv.visitInsn(DUP);
+                if (staticContext) {
+                    new ClassExpression(enclosing).visit(acg);
+                } else {
+                    mv.visitVarInsn(ALOAD, 0);
+                    os.push(ClassHelper.OBJECT_TYPE);
+                }
+                mv.visitMethodInsn(INVOKESPECIAL, CLASSIC_RESOLVER_INTERNAL, "<init>", "(Ljava/lang/Object;)V", false);
+                mv.visitInsn(AASTORE);
+                os.remove(3);
+            }
             for (int i = 0; i < captured.size(); i++) {
                 String cn = captured.get(i);
                 mv.visitInsn(DUP);
                 os.push(ClassHelper.OBJECT_TYPE.makeArray());
-                BytecodeHelper.pushConstant(mv, i);
+                BytecodeHelper.pushConstant(mv, prefix + i);
                 os.push(ClassHelper.int_TYPE);
                 if (holderThreaded.contains(cn)) {
                     loadReference(cn, controller);       // shared Reference holder
@@ -1028,7 +1240,7 @@ public class ClosureWriter {
         // strict guard only for the dynamic trust path; a PROVEN delegate-independent closure --
         // statically (StaticTypesClosureWriter) or syntactically (SYNTACTIC_PACK, dynamic) --
         // stores-and-ignores a caller-set delegate, like a @CompileStatic closure class.
-        boolean strict = packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null;
+        boolean strict = !open && packedClosureUsesDelegateGuard() && expression.getNodeMetaData(SYNTACTIC_PACK) == null;
         mv.visitInsn(strict ? org.objectweb.asm.Opcodes.ICONST_1 : org.objectweb.asm.Opcodes.ICONST_0);
         os.push(ClassHelper.boolean_TYPE);
         mv.visitMethodInsn(INVOKESPECIAL, pc, "<init>",
