@@ -248,6 +248,29 @@ final class Groovy12161 extends AbstractBytecodeTestCase {
         ''') == 'check call count: 1'
     }
 
+    @Test
+    void testCatchVariableKeepsNamedTypedValidRangeWithoutFinally() {
+        // The plain try/catch path omits the identity catch-all, but the user's catch
+        // parameter must remain a properly named, correctly typed local with a non-degenerate
+        // LocalVariableTable range. GROOVY-11362 had to stop asserting this once label numbers
+        // became unstable; pin it here without depending on brittle label numbers.
+        compile method: 'm', '''
+            int m(int x) {
+                try {
+                    return x
+                } catch (Exception e) {
+                    return -1
+                }
+            }
+        '''
+
+        def locals = localVariables('m')
+        def e = locals.find { it.name == 'e' }
+        assert e != null: "catch variable 'e' missing from LocalVariableTable: ${locals*.name}"
+        assert e.desc == 'Ljava/lang/Exception;' // not Ljava/lang/Object;
+        assert e.start < e.end: "degenerate LVT range for 'e': [${e.start}, ${e.end})"
+    }
+
     //--------------------------------------------------------------------------
 
     private List<TryCatchBlockNode> tryCatchBlocks(final String methodName) {
@@ -277,5 +300,18 @@ final class Groovy12161 extends AbstractBytecodeTestCase {
                     def token = line.tokenize()[0]
                     token.startsWith('FRAME') ? 'FRAME' : token
                 }
+    }
+
+    /** LocalVariableTable entries as name/desc plus instruction-index start/end (valid iff start < end). */
+    private List<Map> localVariables(final String methodName) {
+        assert classBytes != null: 'compile(...) first'
+        def cn = new ClassNode()
+        new ClassReader(classBytes).accept(cn, 0) // keep debug attributes (unlike tryCatchBlocks)
+        MethodNode mn = cn.methods.find { it.name == methodName }
+        assert mn != null: "method ${methodName} not found"
+        def insns = mn.instructions
+        (mn.localVariables ?: []).collect { lv ->
+            [name: lv.name, desc: lv.desc, start: insns.indexOf(lv.start), end: insns.indexOf(lv.end)]
+        }
     }
 }
