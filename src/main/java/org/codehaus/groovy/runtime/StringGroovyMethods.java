@@ -26,6 +26,7 @@ import groovy.lang.Range;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
+import groovy.util.regex.BalancedGroup;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -4440,5 +4441,95 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return false;
 
         return self.toString().toLowerCase(Locale.ROOT).contains(searchString.toString().toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * Finds balanced (nested) groups in this CharSequence using default options
+     * (no ignore pattern; opening and closing delimiters are kept in the match text).
+     * <p>
+     * This is Groovy's structured alternative to .NET regex balancing groups
+     * ({@code (?&lt;Open&gt;…)} / {@code (?&lt;Close-Open&gt;…)} / {@code (?(Open)(?!))}).
+     * Delegates to {@link BalancedGroup#find(CharSequence, String, String)}.
+     * Java {@link java.util.regex.Pattern} cannot express capture-stack push/pop, so
+     * nesting is resolved with an explicit stack and the result is a tree of
+     * {@link BalancedGroup} nodes (with {@link BalancedGroup#getStart()}/{@link BalancedGroup#getEnd()}
+     * offsets comparable to .NET {@code Capture.Index}/{@code Length}).
+     * </p>
+     * <pre class="groovyTestCase">
+     * def text = 'Root: (A + (B * C) + (D(E)))'
+     * def roots = text.findBalancedGroups(/\(/, /\)/)
+     * assert roots.size() == 1
+     * assert roots[0].matchedString == '(A + (B * C) + (D(E)))'
+     * assert roots[0].children*.matchedString == ['(B * C)', '(D(E))']
+     * assert roots[0].children[1].children[0].matchedString == '(E)'
+     * assert text.substring(roots[0].start, roots[0].end) == roots[0].matchedString
+     * assert roots[0].children[0].depth == 1
+     * </pre>
+     * <p>
+     * Unmatched closers are ignored; unclosed openers are dropped but completed
+     * groups nested inside them are still returned (more tolerant than a strict
+     * .NET {@code (?(Open)(?!))} whole-string match).
+     * </p>
+     *
+     * @param self       a CharSequence
+     * @param openRegex  regular expression for the opening delimiter (must not be empty)
+     * @param closeRegex regular expression for the closing delimiter (must not be empty)
+     * @return an unmodifiable list of outermost {@link BalancedGroup} nodes (empty if none)
+     * @throws NullPointerException     if {@code self}, {@code openRegex}, or {@code closeRegex} is {@code null}
+     * @throws IllegalArgumentException if {@code openRegex} or {@code closeRegex} is empty
+     * @throws java.util.regex.PatternSyntaxException if a pattern is not a valid Java regex
+     *
+     * @see BalancedGroup#find(CharSequence, String, String)
+     * @see #findBalancedGroups(CharSequence, String, String, BalancedGroup.MatchOptions)
+     * @since 6.0.0
+     */
+    public static List<BalancedGroup> findBalancedGroups(final CharSequence self, final String openRegex, final String closeRegex) {
+        return BalancedGroup.find(self, openRegex, closeRegex);
+    }
+
+    /**
+     * Finds balanced (nested) groups in this CharSequence with the given options.
+     * Delegates to {@link BalancedGroup#find(CharSequence, String, String, BalancedGroup.MatchOptions)}.
+     * <pre class="groovyTestCase">
+     * import groovy.util.regex.BalancedGroup
+     * def opts = BalancedGroup.MatchOptions.defaults().withIncludeEdges(false)
+     * def g = 'func(arg1, arg2)'.findBalancedGroups(/\(/, /\)/, opts)[0]
+     * assert g.matchedString == 'arg1, arg2'
+     * assert g.start == 5 &amp;&amp; g.end == 15
+     * assert g.fullStart == 4 &amp;&amp; g.fullEnd == 16
+     *
+     * def code = 'if (true) { String s = "}"; }'
+     * def ignoreStrings = BalancedGroup.MatchOptions.defaults()
+     *     .withIgnoreRegex(/"(?:\\.|[^"\\])*"/)
+     * assert code.findBalancedGroups(/\{/, /\}/, ignoreStrings)[0].matchedString == '{ String s = "}"; }'
+     * </pre>
+     * <p>
+     * {@link BalancedGroup.MatchOptions#includeEdges()}{@code false} keeps only the
+     * interior text (like .NET's balancing capture of the interval between the
+     * open capture and the close). {@link BalancedGroup.MatchOptions#ignoreRegex()}
+     * skips spans such as string literals—the usual substitute for a hand-built
+     * “neither delimiter” class in a .NET balancing pattern.
+     * </p>
+     * <p>
+     * If {@code options} is {@code null}, {@link BalancedGroup.MatchOptions#defaults()} is used.
+     * Named groups {@code OPEN}, {@code CLOSE}, and {@code IGNORE} are reserved by the scanner.
+     * </p>
+     *
+     * @param self       a CharSequence
+     * @param openRegex  regular expression for the opening delimiter (must not be empty)
+     * @param closeRegex regular expression for the closing delimiter (must not be empty)
+     * @param options    match options, or {@code null} for defaults
+     * @return an unmodifiable list of outermost {@link BalancedGroup} nodes (empty if none)
+     * @throws NullPointerException     if {@code self}, {@code openRegex}, or {@code closeRegex} is {@code null}
+     * @throws IllegalArgumentException if {@code openRegex} or {@code closeRegex} is empty
+     * @throws java.util.regex.PatternSyntaxException if a pattern is not a valid Java regex
+     *
+     * @see BalancedGroup#find(CharSequence, String, String, BalancedGroup.MatchOptions)
+     * @see #findBalancedGroups(CharSequence, String, String)
+     * @since 6.0.0
+     */
+    public static List<BalancedGroup> findBalancedGroups(final CharSequence self, final String openRegex, final String closeRegex,
+                                                   final BalancedGroup.MatchOptions options) {
+        return BalancedGroup.find(self, openRegex, closeRegex, options);
     }
 }
