@@ -115,27 +115,37 @@ import static org.objectweb.asm.Opcodes.SIPUSH;
  *       Signed floating-point zeros ({@code -0.0f}/{@code -0.0d}) are preserved
  *       via raw-bit comparison (GROOVY-9797).</li>
  *   <li><b>Dead loads</b> — a buffered load or constant followed by a matching
- *       {@code POP}/{@code POP2}, or a void {@code RETURN}, is dropped. A
- *       buffered {@code IINC} paired with {@code ILOAD} is retained as a side
- *       effect when the loaded value itself is discarded.</li>
+ *       {@code POP}/{@code POP2}, or a void {@code RETURN}, is dropped when the
+ *       load is pure (no attached {@code CHECKCAST}). A buffered {@code IINC}
+ *       paired with {@code ILOAD} is retained as a side effect when the loaded
+ *       value itself is discarded.</li>
  *   <li><b>CHECKCAST</b> — may attach to a pending {@code ALOAD} or reference
- *       constant so {@code load}; {@code CHECKCAST}; {@code POP} collapses
- *       entirely. A standalone cast before {@code POP} is dropped; before void
- *       {@code RETURN} the cast is flushed and the value is popped so the
- *       type-check side effect is kept and the void return stays verifiable.</li>
+ *       constant so the cast is emitted immediately after the load on flush.
+ *       When the cast result is discarded ({@code POP} or void {@code RETURN}),
+ *       the cast is <em>always</em> kept so a possible {@code ClassCastException}
+ *       remains observable — matching Java and the void-return path. Pure loads
+ *       without a cast still collapse with the pop. Standalone casts of a value
+ *       already on the stack are likewise preserved before pop/return, with
+ *       {@code POP} inserted before void {@code RETURN} so the frame stays
+ *       verifiable.</li>
  *   <li><b>Compare-to-zero / null</b> —
  *       {@code ICONST_0}; {@code IF_ICMP*} → {@code IF*};
  *       {@code ACONST_NULL}; {@code IF_ACMP*} → {@code IFNULL}/{@code IFNONNULL}.</li>
  *   <li><b>DUP + store + pop</b> — {@code DUP}/{@code DUP2}; store;
  *       matching pop becomes a plain store; bare {@code DUP}/{@code DUP2} with a
  *       matching pop is eliminated.</li>
- *   <li><b>Box/unbox cancellation</b> — {@code Wrapper.valueOf(p)};
- *       {@code Wrapper.xxxValue()} and {@code DefaultTypeTransformation.box(p)};
- *       {@code DefaultTypeTransformation.xxxUnbox(...)} with matching primitive
- *       types cancel to a no-op (the primitive remains on the stack). A boxed
- *       value discarded by {@code POP}/{@code POP2} drops the box and pops the
- *       original primitive instead (using {@code POP2} when the primitive is
- *       wide). Mismatched unbox types are left intact.</li>
+ *   <li><b>Box/unbox cancellation</b> — {@code Wrapper.valueOf(p)} /
+ *       {@code DefaultTypeTransformation.box(p)} followed by a same-type unbox
+ *       ({@code Wrapper.xxxValue()} or {@code DefaultTypeTransformation.xxxUnbox})
+ *       cancel to a no-op (the primitive remains on the stack). Cross-convention
+ *       pairs of the same primitive type are included (for example
+ *       {@code DTT.box(I)} then {@code Integer.intValue()}). A boxed value
+ *       discarded by {@code POP}/{@code POP2} (or void {@code RETURN}) drops the
+ *       box and, when the primitive producer is still in the load window, drops
+ *       that producer too; otherwise it pops the original primitive
+ *       ({@code POP2} when wide). {@code POP2} on a narrow boxed value is treated
+ *       as two one-slot discards (box/primitive plus the slot underneath).
+ *       Mismatched unbox types are left intact.</li>
  *   <li><b>Boolean constant folding</b> — {@code GETSTATIC Boolean.TRUE/FALSE}
  *       followed by {@code booleanValue()} or
  *       {@code DefaultTypeTransformation.booleanUnbox} becomes
@@ -211,9 +221,11 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
      * <ul>
      *   <li>When {@link #pendingLoadKind} is {@link PendingLoadKind#VARIABLE} or
      *       {@link PendingLoadKind#CONSTANT}: optional cast attached to that load
-     *       (emitted after the load on flush, or dropped with the load on pop).</li>
+     *       (emitted after the load on flush; retained with the load when the
+     *       value is discarded so the type-check side effect is preserved).</li>
      *   <li>When the kind is {@link PendingLoadKind#CHECKCAST}: standalone cast of
-     *       a value already written to the operand stack.</li>
+     *       a value already written to the operand stack (also retained on
+     *       discard for the same reason).</li>
      * </ul>
      */
     private String pendingCheckcastDescriptor;
@@ -620,11 +632,16 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
     /**
      * Emits a buffered {@code Wrapper.valueOf} or
      * {@code DefaultTypeTransformation.box} call to the delegate.
+     * <p>
+     * The primitive operand may still be held in the load window (so that
+     * {@code load}; {@code box}; {@code POP} can collapse entirely). Flush that
+     * load first so the box always sees its argument on the operand stack.
      */
     private void flushPendingBox() {
         if (pendingBoxKind == PendingBoxKind.NONE) {
             return;
         }
+        flushPendingLoad();
         switch (pendingBoxKind) {
           case VALUE_OF:
             super.visitMethodInsn(INVOKESTATIC, pendingBoxOwner, "valueOf",
@@ -718,18 +735,21 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
     }
 
     /**
-     * Drops a dead buffered load/constant (or standalone {@code CHECKCAST}) when
-     * the next instruction is a matching {@code POP}/{@code POP2}.
+     * Handles a matching {@code POP}/{@code POP2} against the load window.
      * <p>
-     * For a standalone cast the value is already on the stack, so only the cast is
-     * removed and the pop is still emitted. For a buffered load, both the load and
-     * any attached cast are removed; a paired {@code IINC} is preserved as a side
-     * effect.
+     * Pure dead loads/constants are dropped (paired {@code IINC} kept). A
+     * {@code CHECKCAST} — whether attached to the load or standalone — is
+     * <em>not</em> dead: it is emitted so a possible {@code ClassCastException}
+     * stays observable, and the pop still discards the value. This matches the
+     * void-{@code RETURN} path ({@link #tryDropPendingLoadOnReturn}) and Java's
+     * treatment of discarded cast expressions.
      *
      * @return {@code true} if the pop was fully handled
      */
     private boolean tryRemovePendingLoad(final int opcode) {
-        if (pendingLoadKind == PendingLoadKind.NONE) {
+        // A pending box sits on top of any buffered load; only the box path may
+        // discard in that case (see tryDropPendingBoxOnPop).
+        if (pendingLoadKind == PendingLoadKind.NONE || pendingBoxKind != PendingBoxKind.NONE) {
             return false;
         }
 
@@ -739,11 +759,23 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
         }
 
         if (pendingLoadKind == PendingLoadKind.CHECKCAST) {
-            // Value already on stack: drop the dead cast, keep the pop.
+            // Value already on stack: keep the type-check, keep the pop.
             if (opcode != POP) {
                 return false;
             }
+            super.visitTypeInsn(CHECKCAST, pendingCheckcastDescriptor);
             clearPendingLoad();
+            super.visitInsn(POP);
+            return true;
+        }
+
+        // Attached CHECKCAST: same side-effect rule as the void-RETURN path.
+        if (pendingCheckcastDescriptor != null) {
+            if (opcode != POP) {
+                // Reference values occupy one slot; only POP discards them cleanly.
+                return false;
+            }
+            flushPendingLoad();
             super.visitInsn(POP);
             return true;
         }
@@ -758,8 +790,10 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
     }
 
     /**
-     * Handles void {@code RETURN} against the load window:
+     * Handles void {@code RETURN} against the load and box windows:
      * <ul>
+     *   <li>Pending box — the box is dropped; a still-buffered pure primitive
+     *       producer is dropped too, otherwise the primitive is popped.</li>
      *   <li>Pure dead load/constant — dropped (paired {@code IINC} kept).</li>
      *   <li>Load with attached {@code CHECKCAST}, or standalone cast — the cast is
      *       emitted so a type-check side effect is preserved, then {@code POP} clears
@@ -769,7 +803,17 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
      * @return {@code true} if the return was fully handled
      */
     private boolean tryDropPendingLoadOnReturn(final int opcode) {
-        if (opcode != RETURN || pendingLoadKind == PendingLoadKind.NONE) {
+        if (opcode != RETURN) {
+            return false;
+        }
+
+        if (pendingBoxKind != PendingBoxKind.NONE) {
+            dropPendingBoxDiscardingValue();
+            super.visitInsn(RETURN);
+            return true;
+        }
+
+        if (pendingLoadKind == PendingLoadKind.NONE) {
             return false;
         }
 
@@ -1013,8 +1057,14 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
 
     /**
      * {@code valueOf}/{@code box} followed by {@code POP}/{@code POP2} means the
-     * boxed reference is discarded. Drop the box and pop the original primitive
-     * instead ({@code POP2} when the primitive is {@code long} or {@code double}).
+     * boxed reference is discarded. Drop the box; if the primitive producer is
+     * still held in the load window, drop that too, otherwise pop the original
+     * primitive ({@code POP2} when wide).
+     * <p>
+     * {@code POP} after boxing a wide primitive is legal (the boxed reference is
+     * one slot) and is rewritten to {@code POP2} of the long/double.
+     * {@code POP2} after boxing a <em>narrow</em> primitive is treated as two
+     * one-slot discards: the boxed value plus the slot underneath.
      *
      * @return {@code true} if the pop was fully handled
      */
@@ -1027,17 +1077,66 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
             return false;
         }
         int primitiveSize = stackSizeForPrimitiveDescriptor(pendingBoxPrimitiveDescriptor);
-        // POP after boxing a wide primitive is legal (boxed ref is one slot) → POP2 the long/double.
-        if (popSize == 1 && primitiveSize == 2) {
+
+        // Discard only the boxed value. POP on a wide primitive uses POP2 for the
+        // long/double that remains after the box is dropped.
+        if (popSize == 1 || (popSize == 2 && primitiveSize == 2)) {
+            int slotsToRemove = (popSize == 1 && primitiveSize == 2) ? 2 : primitiveSize;
             clearPendingBox();
-            super.visitInsn(POP2);
+            if (tryCancelPendingPrimitiveProducer(slotsToRemove)) {
+                return true;
+            }
+            super.visitInsn(slotsToRemove == 2 ? POP2 : POP);
             return true;
         }
-        if (popSize != primitiveSize) {
+
+        // POP2 on a narrow boxed value: two one-slot discards (box + underneath).
+        if (popSize == 2 && primitiveSize == 1) {
+            clearPendingBox();
+            if (tryCancelPendingPrimitiveProducer(1)) {
+                super.visitInsn(POP);
+            } else {
+                super.visitInsn(POP2);
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Drops a pending box whose result is unused at a void {@code RETURN},
+     * cancelling a still-buffered pure primitive producer when possible.
+     */
+    private void dropPendingBoxDiscardingValue() {
+        int primitiveSize = stackSizeForPrimitiveDescriptor(pendingBoxPrimitiveDescriptor);
+        clearPendingBox();
+        if (!tryCancelPendingPrimitiveProducer(primitiveSize)) {
+            super.visitInsn(primitiveSize == 2 ? POP2 : POP);
+        }
+    }
+
+    /**
+     * Cancels a pure pending load/constant that produces a primitive of
+     * {@code primitiveSize} slots (the operand of a discarded box). Attached
+     * {@code CHECKCAST} and reference loads are never cancelled here.
+     *
+     * @return {@code true} if a producer was cancelled (nothing left on stack)
+     */
+    private boolean tryCancelPendingPrimitiveProducer(final int primitiveSize) {
+        if (pendingLoadKind == PendingLoadKind.NONE
+                || pendingLoadKind == PendingLoadKind.CHECKCAST
+                || pendingCheckcastDescriptor != null) {
             return false;
         }
-        clearPendingBox();
-        super.visitInsn(primitiveSize == 2 ? POP2 : POP);
+        if (pendingLoadKind == PendingLoadKind.VARIABLE && pendingLoadOpcode == ALOAD) {
+            return false;
+        }
+        if (stackSizeForPendingLoad() != primitiveSize) {
+            return false;
+        }
+        emitPreservedIincSideEffect();
+        clearPendingLoad();
         return true;
     }
 
@@ -1047,9 +1146,13 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
 
     /**
      * Buffers {@code Wrapper.valueOf(prim)} or {@code DefaultTypeTransformation.box(prim)}
-     * so a following matching unbox (or discard via pop) can collapse the pair.
-     * Any previously pending state is flushed first so the primitive producer is
-     * already on the operand stack.
+     * so a following matching unbox (or discard via pop/return) can collapse the pair.
+     * <p>
+     * When the load window already holds a pure primitive producer of the right
+     * size, that load is kept pending under the box so {@code load}; {@code box};
+     * {@code POP} can collapse to nothing. Otherwise the load (and any prior box)
+     * is flushed so the primitive is on the operand stack before the box is
+     * recorded.
      *
      * @return {@code true} if the call was buffered
      */
@@ -1062,7 +1165,7 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
             if (primitive == null) {
                 return false;
             }
-            flushPending();
+            prepareBoxBuffer(primitive);
             bufferValueOfBox(owner, primitive, isInterface);
             return true;
         }
@@ -1071,37 +1174,114 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
             if (primitive == null) {
                 return false;
             }
-            flushPending();
+            prepareBoxBuffer(primitive);
             bufferDttBox(primitive);
             return true;
         }
         return false;
     }
 
-    private boolean matchesPendingUnbox(final int opcode, final String owner, final String name, final String descriptor) {
-        String expectedPrim = pendingBoxPrimitiveDescriptor;
-        if (expectedPrim == null) {
+    /**
+     * Ensures the operand stack / load window is ready to record a new box of
+     * {@code primitiveDescriptor}. Keeps a matching pure pending load so a later
+     * discard can eliminate both; flushes everything else.
+     */
+    private void prepareBoxBuffer(final String primitiveDescriptor) {
+        if (pendingBoxKind != PendingBoxKind.NONE) {
+            // Previous box must be emitted with its operand already on the stack.
+            flushPendingLoad();
+            flushPendingDupStore();
+            flushPendingBox();
+            return;
+        }
+        if (!pendingLoadProducesPrimitive(primitiveDescriptor)) {
+            flushPendingLoad();
+        }
+        flushPendingDupStore();
+    }
+
+    /**
+     * {@code true} when the load window holds a pure primitive producer whose
+     * stack size matches {@code primitiveDescriptor} (suitable to keep under a
+     * pending box). Reference loads, casts, and size mismatches return
+     * {@code false}.
+     */
+    private boolean pendingLoadProducesPrimitive(final String primitiveDescriptor) {
+        if (pendingLoadKind == PendingLoadKind.NONE
+                || pendingLoadKind == PendingLoadKind.CHECKCAST
+                || pendingCheckcastDescriptor != null) {
             return false;
         }
-        if (pendingBoxKind == PendingBoxKind.VALUE_OF) {
-            // Wrapper.xxxValue()X — e.g. Integer.intValue()I
-            if (opcode != INVOKEVIRTUAL || !pendingBoxOwner.equals(owner)) {
-                return false;
-            }
-            String expectedName = primitiveValueMethodName(expectedPrim);
-            String expectedDesc = "()" + expectedPrim;
-            return expectedName != null && expectedName.equals(name) && expectedDesc.equals(descriptor);
+        int need = stackSizeForPrimitiveDescriptor(primitiveDescriptor);
+        return switch (pendingLoadKind) {
+          case VARIABLE -> pendingLoadOpcode != ALOAD
+                  && stackSizeForLoadOpcode(pendingLoadOpcode) == need;
+          case CONSTANT -> pendingConstant != null
+                  && stackSizeForPendingLoad() == need
+                  && constantCompatibleWithPrimitive(pendingConstant, primitiveDescriptor);
+          case BOOLEAN_CONSTANT -> "Z".equals(primitiveDescriptor);
+          default -> false;
+        };
+    }
+
+    /**
+     * Whether a buffered constant can be the operand of a box for
+     * {@code primitiveDescriptor}. Size agreement is required; floating vs
+     * integral kinds must not mix.
+     */
+    private static boolean constantCompatibleWithPrimitive(final Object value, final String primitiveDescriptor) {
+        return switch (primitiveDescriptor) {
+          case "Z", "B", "C", "S", "I" -> value instanceof Integer || value instanceof Boolean;
+          case "J" -> value instanceof Long;
+          case "F" -> value instanceof Float;
+          case "D" -> value instanceof Double;
+          default -> false;
+        };
+    }
+
+    private boolean matchesPendingUnbox(final int opcode, final String owner, final String name, final String descriptor) {
+        String expectedPrim = pendingBoxPrimitiveDescriptor;
+        if (expectedPrim == null || pendingBoxKind == PendingBoxKind.NONE) {
+            return false;
         }
-        if (pendingBoxKind == PendingBoxKind.DTT_BOX) {
-            // DefaultTypeTransformation.xxxUnbox(Object)X
-            if (opcode != INVOKESTATIC || !DTT_OWNER.equals(owner)) {
-                return false;
+        // Same-type Wrapper.xxxValue() — valid after valueOf or DTT.box.
+        if (isWrapperPrimitiveUnbox(opcode, owner, name, descriptor, expectedPrim)) {
+            if (pendingBoxKind == PendingBoxKind.VALUE_OF) {
+                return pendingBoxOwner.equals(owner);
             }
-            String expectedName = primitiveUnboxMethodName(expectedPrim);
-            String expectedDesc = "(Ljava/lang/Object;)" + expectedPrim;
-            return expectedName != null && expectedName.equals(name) && expectedDesc.equals(descriptor);
+            // DTT.box → Object at the type system, but runtime value is the wrapper.
+            return owner.equals(wrapperInternalNameForDescriptor(expectedPrim));
         }
-        return false;
+        // Same-type DTT.xxxUnbox — valid after valueOf or DTT.box.
+        return isDttPrimitiveUnbox(opcode, owner, name, descriptor, expectedPrim);
+    }
+
+    private static boolean isWrapperPrimitiveUnbox(final int opcode, final String owner, final String name,
+                                                   final String descriptor, final String primitiveDescriptor) {
+        if (opcode != INVOKEVIRTUAL) {
+            return false;
+        }
+        String expectedName = primitiveValueMethodName(primitiveDescriptor);
+        String expectedDesc = "()" + primitiveDescriptor;
+        return expectedName != null && expectedName.equals(name) && expectedDesc.equals(descriptor)
+                && owner.equals(wrapperInternalNameForDescriptor(primitiveDescriptor));
+    }
+
+    private static boolean isDttPrimitiveUnbox(final int opcode, final String owner, final String name,
+                                               final String descriptor, final String primitiveDescriptor) {
+        if (opcode != INVOKESTATIC || !DTT_OWNER.equals(owner)) {
+            return false;
+        }
+        String expectedName = primitiveUnboxMethodName(primitiveDescriptor);
+        String expectedDesc = "(Ljava/lang/Object;)" + primitiveDescriptor;
+        return expectedName != null && expectedName.equals(name) && expectedDesc.equals(descriptor);
+    }
+
+    private static String wrapperInternalNameForDescriptor(final String primitiveDescriptor) {
+        if (primitiveDescriptor == null || primitiveDescriptor.length() != 1) {
+            return null;
+        }
+        return wrapperInternalName(Type.getType(primitiveDescriptor));
     }
 
     private static boolean isBooleanTrueFalse(final String owner, final String name, final String descriptor) {
