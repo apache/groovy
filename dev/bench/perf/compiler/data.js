@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784187435281,
+  "lastUpdate": 1784274156506,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3198,6 +3198,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 502.8266666666667,
             "range": "±22.4",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "2d5770407c6450a65f6d57876e66e2afea64a483",
+          "message": "GROOVY-12168: Improve exception handling consistency for numbers during JSON parsing (additional tweaks)",
+          "timestamp": "2026-07-16T23:44:41Z",
+          "url": "https://github.com/apache/groovy/commit/2d5770407c6450a65f6d57876e66e2afea64a483"
+        },
+        "date": 1784274154328,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 576.6800000000001,
+            "range": "±25.12",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 673.79,
+            "range": "±230.91",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 599.8066666666667,
+            "range": "±153.58",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 500.68999999999994,
+            "range": "±24.02",
             "unit": "ms",
             "extra": "5.0.6"
           }
