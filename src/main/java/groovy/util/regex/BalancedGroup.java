@@ -20,7 +20,6 @@ package groovy.util.regex;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,8 +48,11 @@ import java.util.regex.Pattern;
  * knowing both the balancing capture and the open/close match positions).
  * </p>
  * <p>
- * Parent links are set when a node is constructed as a child of another node;
- * root nodes have a {@code null} parent.
+ * Parent links and nesting depth are wired when a node is attached as a child
+ * of another node during construction; root nodes have a {@code null} parent
+ * and depth {@code 0}. Prefer {@link #find} (or the GDK methods on
+ * {@link CharSequence}) as the public entry point — constructors are
+ * package-private because they perform one-shot parent wiring.
  * </p>
  *
  * @since 6.0.0
@@ -79,14 +81,14 @@ public final class BalancedGroup {
     private final int fullEnd;
     private final List<BalancedGroup> children;
     private BalancedGroup parent;
+    /** Nesting depth; set once when this node is attached as a child (O(1) {@link #getDepth()}). */
+    private int depth;
 
     /**
-     * Constructs a node with the given matched text and children.
-     * Offsets are treated as relative to {@code matchedString}
-     * ({@code start = 0}, {@code end = matchedString.length()}, and the same
-     * for the full span). Prefer
-     * {@link #BalancedGroup(String, int, int, int, int, List)} when absolute
-     * indices in a source string are known.
+     * Package-private constructor: builds a node with offsets relative to
+     * {@code matchedString} ({@code start = 0}, {@code end = matchedString.length()},
+     * and the same for the full span). Prefer {@link #find} for public use.
+     * Wires each child's parent link (one-shot: a child may not already have a parent).
      *
      * @param matchedString the text captured for this group (never {@code null})
      * @param children      immediate nested groups, or {@code null}/empty for a leaf
@@ -94,12 +96,14 @@ public final class BalancedGroup {
      *                                  {@code children} contains {@code null}
      * @throws IllegalArgumentException if any child already has a parent
      */
-    public BalancedGroup(String matchedString, List<BalancedGroup> children) {
+    BalancedGroup(String matchedString, List<BalancedGroup> children) {
         this(matchedString, 0, lengthOf(matchedString), 0, lengthOf(matchedString), children);
     }
 
     /**
-     * Constructs a node with matched text, absolute source offsets, and children.
+     * Package-private constructor: builds a node with absolute source offsets and children.
+     * Prefer {@link #find} for public use. Wires each child's parent link and depth
+     * (one-shot: a child may not already have a parent).
      *
      * @param matchedString the text captured for this group (never {@code null});
      *                      may include or exclude boundary delimiters depending on
@@ -113,8 +117,8 @@ public final class BalancedGroup {
      *                                  {@code children} contains {@code null}
      * @throws IllegalArgumentException if ranges are invalid or a child already has a parent
      */
-    public BalancedGroup(String matchedString, int start, int end, int fullStart, int fullEnd,
-                         List<BalancedGroup> children) {
+    BalancedGroup(String matchedString, int start, int end, int fullStart, int fullEnd,
+                  List<BalancedGroup> children) {
         this.matchedString = Objects.requireNonNull(matchedString, "matchedString");
         if (start < 0 || end < start) {
             throw new IllegalArgumentException("invalid match range: [" + start + ", " + end + ")");
@@ -139,7 +143,21 @@ public final class BalancedGroup {
                     throw new IllegalArgumentException("child BalancedGroup already has a parent");
                 }
                 child.parent = this;
+                // Bottom-up assembly: this node may later be attached under a grandparent,
+                // so depth is assigned (and cascaded) here and again when we are attached.
+                child.assignDepth(this.depth + 1);
             }
+        }
+    }
+
+    /**
+     * Sets this node's depth and cascades to descendants. Invoked only during the
+     * one-shot parent-wiring phase of construction (tree is not yet published).
+     */
+    private void assignDepth(int newDepth) {
+        this.depth = newDepth;
+        for (BalancedGroup child : children) {
+            child.assignDepth(newDepth + 1);
         }
     }
 
@@ -371,14 +389,11 @@ public final class BalancedGroup {
 
     /**
      * Nesting depth of this node (0 for a root).
+     * Computed once when the parent link is wired; O(1).
      *
      * @return the number of ancestors
      */
     public int getDepth() {
-        int depth = 0;
-        for (BalancedGroup p = parent; p != null; p = p.parent) {
-            depth++;
-        }
         return depth;
     }
 

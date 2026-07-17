@@ -100,23 +100,6 @@ final class Groovy12133 {
     }
 
     @Test
-    void testConstructorWiresParentAndRejectsReparenting() {
-        BalancedGroup child = new BalancedGroup('(E)', null)
-        BalancedGroup parent = new BalancedGroup('(D(E))', [child])
-
-        assertSame(parent, child.parent)
-        assertEquals(1, parent.children.size())
-        assertSame(child, parent.children[0])
-        assertEquals(0, child.start)
-        assertEquals(3, child.end)
-
-        assertThrows(IllegalArgumentException, () -> new BalancedGroup('other', [child]))
-        assertThrows(NullPointerException, () -> new BalancedGroup(null, null))
-        assertThrows(IllegalArgumentException, () -> new BalancedGroup('ab', 0, 1, 0, 1, null)) // length mismatch
-        assertThrows(IllegalArgumentException, () -> new BalancedGroup('a', -1, 1, 0, 1, null))
-    }
-
-    @Test
     void testDanglingOpenRescuesCompletedChildren() {
         // .NET strict (?(Open)(?!)) would fail the whole match; we salvage closed spans.
         List<BalancedGroup> roots = '(A (B) (C(D)'.findBalancedGroups('\\(', '\\)')
@@ -420,32 +403,6 @@ final class Groovy12133 {
         assertThrows(PatternSyntaxException,
             () -> BalancedGroup.find('{}', '\\{', '\\}',
                 BalancedGroup.MatchOptions.defaults().withIgnoreRegex('[')))
-    }
-
-    @Test
-    void testConstructorRejectsInvalidFullRangeAndEndBeforeStart() {
-        assertThrows(IllegalArgumentException, () -> new BalancedGroup('a', 3, 1, 0, 1, null))
-        assertThrows(IllegalArgumentException, () -> new BalancedGroup('a', 0, 1, 3, 1, null))
-        assertThrows(IllegalArgumentException, () -> new BalancedGroup('a', 0, 1, -1, 0, null))
-        assertThrows(NullPointerException, () -> new BalancedGroup('a', 0, 1, 0, 1, [null]))
-    }
-
-    @Test
-    void testConstructorAcceptsEmptyListAndAbsoluteOffsets() {
-        BalancedGroup leaf = new BalancedGroup('leaf', [])
-        assertTrue(leaf.children.isEmpty())
-        assertEquals(0, leaf.start)
-        assertEquals(4, leaf.end)
-        assertEquals(0, leaf.fullStart)
-        assertEquals(4, leaf.fullEnd)
-
-        BalancedGroup absolute = new BalancedGroup('xy', 10, 12, 8, 15, null)
-        assertEquals('xy', absolute.matchedString)
-        assertEquals(10, absolute.start)
-        assertEquals(12, absolute.end)
-        assertEquals(8, absolute.fullStart)
-        assertEquals(15, absolute.fullEnd)
-        assertEquals(2, absolute.length)
     }
 
     @Test
