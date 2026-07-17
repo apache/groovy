@@ -58,6 +58,16 @@ import java.util.regex.PatternSyntaxException;
  * as {@code <pre><code>} with language/id/class attributes and
  * HTML-escaped body).
  *
+ * <p>Inline-tag bodies use brace-balanced parsing (GROOVY-12095): the close
+ * of {@code {@code ...}} / {@code {@literal ...}} / {@code {@snippet ...}}
+ * / etc. is the {@code '}'} that balances the opening {@code '{'}, so nested
+ * braces in Groovy closures and map/type literals are retained. Matching is
+ * a linear character scan that also skips quoted string/character literals
+ * (including multi-line {@code """..."""} / {@code '''...'''} text blocks),
+ * with backslash escapes, {@code /* ... *}{@code /} block comments, and
+ * {@code //} line comments (to end of line), so braces inside strings, text
+ * blocks, or comments do not terminate the tag early.
+ *
  * <p>Supported block tags: {@code @see}, {@code @param}, {@code @return},
  * {@code @throws} / {@code @exception}, {@code @since}, {@code @author},
  * {@code @version}, {@code @default}, plus synthesized {@code typeparam}
@@ -304,8 +314,11 @@ final class TagRenderer {
             return renderSnippetAt(text, start, nameEnd, out, links, relPath, rootDoc, classDoc);
         }
         int bodyStart = skipWhitespace(text, nameEnd);
-        // Match the previous regex's laxness: body extends to the first '}'.
-        int close = text.indexOf('}', bodyStart);
+        // GROOVY-12095: brace-balanced close so nested `{`/`}` inside
+        // {@code ...} / {@literal ...} (and other inline tags) do not
+        // terminate the tag early; string/char literals and block comments
+        // are skipped by the linear scanner.
+        int close = findMatchingCloseBrace(text, start);
         if (close < 0) return 0;
         String body = text.substring(bodyStart, close);
         renderInlineTag(name, body, out, links, relPath, rootDoc, classDoc, memberDoc, cfg, inheritDocVisited, inheritDocContext);
@@ -394,22 +407,12 @@ final class TagRenderer {
         int endPos;
         if (text.charAt(i) == ':') {
             int bodyStart = i + 1;
-            // Brace-balanced body — consume until the matching close of the
-            // outer {@snippet ...}.
-            int depth = 1;
-            int j = bodyStart;
-            while (j < n && depth > 0) {
-                char c = text.charAt(j);
-                if (c == '{') depth++;
-                else if (c == '}') {
-                    depth--;
-                    if (depth == 0) break;
-                }
-                j++;
-            }
-            if (depth != 0) return 0; // unterminated
-            body = text.substring(bodyStart, j);
-            endPos = j + 1; // past the final '}'
+            // Brace-balanced body (literal-aware linear scan) — consume until
+            // the matching close of the outer {@snippet ...}.
+            int close = findMatchingCloseBrace(text, start);
+            if (close < 0) return 0; // unterminated
+            body = text.substring(bodyStart, close);
+            endPos = close + 1; // past the final '}'
         } else {
             // External form: {@snippet file="..." [region="..."]}
             // Read the referenced file from the current package's
@@ -1450,8 +1453,169 @@ final class TagRenderer {
         int nameStart = start + 2; // past '{@'
         int nameEnd = readTagName(text, nameStart);
         if (nameEnd == nameStart) return start;
-        int close = text.indexOf('}', nameEnd);
+        // GROOVY-12095: must balance braces (and ignore string/text-block
+        // literals) so a `}` inside {@code { ... }}, {@code println(" } ")},
+        // or {@code s = """ } """} does not end the surrounding block-tag body.
+        int close = findMatchingCloseBrace(text, start);
         if (close < 0) return start;
         return close + 1;
+    }
+
+    /**
+     * Returns the index of the {@code '}'} that balances the {@code '{'} at
+     * {@code openPos}, or {@code -1} if braces are unbalanced / truncated.
+     * <p>
+     * Linear O(n) character scan: depth starts at 1 for the opening brace,
+     * increments on each structural {@code '{'}, decrements on each structural
+     * {@code '}'}, and the match is complete when depth returns to zero.
+     * While scanning, the following spans are skipped so braces inside them
+     * do not affect depth:
+     * </p>
+     * <ul>
+     *   <li>triple-quoted text blocks {@code """..."""} / {@code '''...'''}
+     *       (may span lines; e.g. {@code """ } """}, {@code '''\n}\n'''})</li>
+     *   <li>double-quoted string literals with backslash escapes
+     *       ({@code System.out.println(" } ")}, GString {@code "value=${x}"})</li>
+     *   <li>single-quoted string/character literals ({@code char c = '}'})</li>
+     *   <li>block comments ({@code /* ... *}{@code /})</li>
+     *   <li>line comments ({@code //} to end of line, so a brace after
+     *       {@code //} does not affect depth)</li>
+     * </ul>
+     *
+     * @param text    source text
+     * @param openPos index of the opening {@code '{'}
+     * @return index of the matching close brace, or {@code -1}
+     */
+    private static int findMatchingCloseBrace(String text, int openPos) {
+        if (openPos < 0 || openPos >= text.length() || text.charAt(openPos) != '{') {
+            return -1;
+        }
+        int depth = 1;
+        final int n = text.length();
+        int j = openPos + 1;
+        while (j < n) {
+            char c = text.charAt(j);
+            if (c == '"' || c == '\'') {
+                // Prefer triple-quote text blocks over ordinary quoted literals
+                // so `""" } """` / multi-line bodies are not truncated at the
+                // first lone `}` inside the block.
+                if (isTripleQuoteAt(text, j, n, c)) {
+                    j = skipTripleQuotedLiteral(text, j, n, c);
+                } else {
+                    j = skipQuotedLiteral(text, j, n, c);
+                }
+                continue;
+            }
+            if (c == '/' && j + 1 < n) {
+                char next = text.charAt(j + 1);
+                if (next == '*') {
+                    j = skipBlockComment(text, j, n);
+                    continue;
+                }
+                if (next == '/') {
+                    // Skip // ... to end of line so `// }` does not close the tag.
+                    j = skipLineComment(text, j, n);
+                    continue;
+                }
+            }
+            if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return j;
+                }
+            }
+            j++;
+        }
+        return -1;
+    }
+
+    /** {@code true} when {@code text[pos..pos+2]} is three copies of {@code quote}. */
+    private static boolean isTripleQuoteAt(String text, int pos, int n, char quote) {
+        return pos + 2 < n
+                && text.charAt(pos) == quote
+                && text.charAt(pos + 1) == quote
+                && text.charAt(pos + 2) == quote;
+    }
+
+    /**
+     * Advances past a triple-quoted text block ({@code """..."""} or
+     * {@code '''...'''}) starting at {@code openPos} (the first quote of the
+     * opening delimiter). The body may span lines. Returns the index after the
+     * closing triple quote, or {@code n} if unterminated.
+     */
+    private static int skipTripleQuotedLiteral(String text, int openPos, int n, char quote) {
+        int j = openPos + 3; // past opening """
+        while (j + 2 < n) {
+            char c = text.charAt(j);
+            if (c == '\\') {
+                // Skip escape pair so e.g. \""" does not close early.
+                j += 2;
+                continue;
+            }
+            if (c == quote && text.charAt(j + 1) == quote && text.charAt(j + 2) == quote) {
+                return j + 3;
+            }
+            j++;
+        }
+        return n;
+    }
+
+    /**
+     * Advances past an ordinary single- or double-quoted literal starting at
+     * {@code quotePos}. Returns the index after the closing quote, or
+     * {@code n} if unterminated (remaining input treated as inside the
+     * literal, so braces there do not affect depth).
+     */
+    private static int skipQuotedLiteral(String text, int quotePos, int n, char quote) {
+        int j = quotePos + 1;
+        while (j < n) {
+            char c = text.charAt(j);
+            if (c == '\\') {
+                j += 2; // skip escaped char (may go past n; loop condition handles it)
+                continue;
+            }
+            if (c == quote) {
+                return j + 1;
+            }
+            j++;
+        }
+        return n;
+    }
+
+    /**
+     * Advances past a {@code /* ... *}{@code /} block comment starting at
+     * {@code slashPos} (the {@code '/'}). Returns the index after
+     * {@code *}/{@code}, or {@code n} if unterminated.
+     */
+    private static int skipBlockComment(String text, int slashPos, int n) {
+        int j = slashPos + 2; // past /*
+        while (j + 1 < n) {
+            if (text.charAt(j) == '*' && text.charAt(j + 1) == '/') {
+                return j + 2;
+            }
+            j++;
+        }
+        return n;
+    }
+
+    /**
+     * Advances past a {@code //} line comment starting at {@code slashPos}
+     * (the first {@code '/'}). Consumes through the last character of the
+     * comment body, stopping <em>before</em> the line terminator ({@code \n}
+     * or {@code \r}) so the outer scanner still sees the newline. Returns
+     * {@code n} when the comment runs to end of input (no newline).
+     */
+    private static int skipLineComment(String text, int slashPos, int n) {
+        int j = slashPos + 2; // past //
+        while (j < n) {
+            char c = text.charAt(j);
+            if (c == '\n' || c == '\r') {
+                return j;
+            }
+            j++;
+        }
+        return n;
     }
 }

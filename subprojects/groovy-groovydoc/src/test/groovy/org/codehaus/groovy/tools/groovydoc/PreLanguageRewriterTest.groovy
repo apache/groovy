@@ -47,6 +47,33 @@ class PreLanguageRewriterTest {
         assert out == '<pre class="language-groovy"><code class="language-groovy">assert 1 == 1</code></pre>'
     }
 
+    /**
+     * GROOVY-12095: TagRenderer historically wraps {@code {@code ...}} in
+     * uppercase {@code <CODE>}. HTML tag names are case-insensitive, so that
+     * already supplies a {@code <code>} descendant for Prism — do not nest a
+     * second lowercase {@code <code>} wrapper around it.
+     */
+    @Test
+    void testPreWithUppercaseCodeChildOnlyGetsClassOnPre() {
+        String input = '<pre><CODE>def x = { it }</CODE></pre>'
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
+        assert out == '<pre class="language-groovy"><CODE>def x = { it }</CODE></pre>'
+        assert !out.contains('<code><CODE>')
+    }
+
+    @Test
+    void testPreWithMixedCaseCodeChildOnlyGetsClassOnPre() {
+        String input = '<pre><Code class="x">body</Code></pre>'
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
+        assert out == '<pre class="language-groovy"><Code class="x">body</Code></pre>'
+    }
+
+    @Test
+    void testLanguageClassPreWithUppercaseCodeLeftAlone() {
+        String input = '<pre class="language-sql"><CODE>select 1</CODE></pre>'
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
+        assert out == input
+    }
     @Test
     void testPreWithExistingClassIsNotRewritten() {
         String input = '<pre class="groovyTestCase">assert 2 == 2</pre>'
