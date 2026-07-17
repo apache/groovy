@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm
 
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.Attribute
 import org.objectweb.asm.ConstantDynamic
@@ -42,11 +43,56 @@ import org.objectweb.asm.util.Printer
 import org.objectweb.asm.util.Textifier
 import org.objectweb.asm.util.TraceMethodVisitor
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import static org.objectweb.asm.Opcodes.ACC_STATIC
 import static org.objectweb.asm.Opcodes.RETURN
 
-final class PeepholeOptimizingMethodVisitorTest {
+final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase {
+
+    @Test
+    void discardedGroovyCastKeepsSideEffect() {
+        // SC emits invokedynamic cast (not bare CHECKCAST) for a general Groovy
+        // cast; the call must not be dropped when the result is discarded.
+        def err = shouldFail(GroovyCastException, '''
+            @groovy.transform.CompileStatic
+            void m(Object o) {
+                (Thread) o
+            }
+            m(42)
+        ''')
+        assert err.message.contains('Thread')
+    }
+
+    @Test
+    void discardedGroovyCastSucceedsWhenConversionApplies() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            void m(Object o) {
+                (String) o
+            }
+            m(42) // Integer → String via Groovy cast
+            m('ok')
+        '''
+    }
+
+    @Test
+    void discardedCheckcastAfterInstanceofIsPreservedInBytecode() {
+        // After instanceof String, SC emits a bare CHECKCAST for a discarded
+        // (String) o. The peephole must not erase that CHECKCAST (POP path).
+        def bytecode = compile(method: 'm', '''
+            @groovy.transform.CompileStatic
+            void m(Object o) {
+                if (o instanceof String) {
+                    (String) o
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+            'CHECKCAST java/lang/String',
+            'POP',
+        ])
+    }
 
     @Test
     void compactsNumericConstants() {
@@ -330,7 +376,7 @@ final class PeepholeOptimizingMethodVisitorTest {
     }
 
     @Test
-    void removesLoadAndAttachedCheckcastBeforePop() {
+    void preservesLoadAndAttachedCheckcastBeforePop() {
         def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
             visitVarInsn(Opcodes.ALOAD, 0)
             visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
@@ -338,12 +384,17 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        // ALOAD + CHECKCAST are both dead once the value is discarded.
-        assert opcodeLines(bytecode) == ['RETURN']
+        // Discarded cast must keep its ClassCastException side effect (same rule as void RETURN).
+        assert opcodeLines(bytecode) == [
+                'ALOAD 0',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'RETURN',
+        ]
     }
 
     @Test
-    void removesStandaloneCheckcastBeforePop() {
+    void preservesStandaloneCheckcastBeforePop() {
         def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
             visitVarInsn(Opcodes.ALOAD, 0)
             visitInsn(Opcodes.NOP) // force the load to flush so CHECKCAST is standalone
@@ -352,7 +403,14 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        assert opcodeLines(bytecode) == ['ALOAD 0', 'NOP', 'POP', 'RETURN']
+        // Standalone cast is preserved; ALOAD is already flushed (NOP boundary), so it stays.
+        assert opcodeLines(bytecode) == [
+                'ALOAD 0',
+                'NOP',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'RETURN',
+        ]
     }
 
     @Test
@@ -443,16 +501,14 @@ final class PeepholeOptimizingMethodVisitorTest {
 
     @Test
     void preservesStandaloneCheckcastBeforeReturn() {
-        def bytecode = sequenceFor('(Ljava/lang/Object;)V') {
+        // POP and void RETURN use the same rule: keep CHECKCAST, discard the value.
+        def withPop = sequenceFor('(Ljava/lang/Object;)V') {
             visitVarInsn(Opcodes.ALOAD, 0)
-            visitInsn(Opcodes.NOP)
+            visitInsn(Opcodes.NOP) // flush ALOAD so the cast is standalone
             visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
             visitInsn(Opcodes.POP)
             visitInsn(RETURN)
         }
-
-        // Standalone CHECKCAST before POP is dropped; before RETURN it is flushed
-        // and the value is popped so the void return remains verifiable.
         def returnOnly = sequenceFor('(Ljava/lang/Object;)V') {
             visitVarInsn(Opcodes.ALOAD, 0)
             visitInsn(Opcodes.NOP)
@@ -460,8 +516,20 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        assert opcodeLines(bytecode) == ['ALOAD 0', 'NOP', 'POP', 'RETURN']
-        assert opcodeLines(returnOnly) == ['ALOAD 0', 'NOP', 'CHECKCAST java/lang/String', 'POP', 'RETURN']
+        assert opcodeLines(withPop) == [
+                'ALOAD 0',
+                'NOP',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'RETURN',
+        ]
+        assert opcodeLines(returnOnly) == [
+                'ALOAD 0',
+                'NOP',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'RETURN',
+        ]
     }
 
     @Test
@@ -592,7 +660,7 @@ final class PeepholeOptimizingMethodVisitorTest {
     }
 
     @Test
-    void attachesCheckcastToReferenceConstantsAndDropsDeadCastChains() {
+    void attachesCheckcastToReferenceConstantsAndPreservesDiscardedCasts() {
         def type = org.objectweb.asm.Type.getType(String)
         def handle = new Handle(Opcodes.H_INVOKESTATIC, 'Owner', 'boot', '()V', false)
         def bytecode = sequenceFor {
@@ -611,7 +679,22 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        assert opcodeLines(bytecode) == ['RETURN']
+        // Casts attach to reference constants but are kept on discard (CCE side effect).
+        assert opcodeLines(bytecode) == [
+                'LDC "text"',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'LDC Ljava/lang/String;.class',
+                'CHECKCAST java/lang/Class',
+                'POP',
+                'LDC Owner.boot()V',
+                'CHECKCAST java/lang/invoke/MethodHandle',
+                'POP',
+                'ACONST_NULL',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'RETURN',
+        ]
     }
 
     @Test
@@ -865,20 +948,27 @@ final class PeepholeOptimizingMethodVisitorTest {
     }
 
     @Test
-    void dropsDeadLoadWithAttachedCheckcastOnPopOnly() {
+    void preservesAttachedCheckcastOnConstantBeforePop() {
         def withPop = sequenceFor('(Ljava/lang/Object;)V') {
             visitLdcInsn('x')
             visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
             visitInsn(Opcodes.POP)
             visitInsn(RETURN)
         }
-        assert opcodeLines(withPop) == ['RETURN']
+        // Cast side effect retained even for a reference constant (consistent with ALOAD path).
+        assert opcodeLines(withPop) == [
+                'LDC "x"',
+                'CHECKCAST java/lang/String',
+                'POP',
+                'RETURN',
+        ]
 
+        // POP2 does not match a one-slot cast result; cast is flushed unchanged with POP2.
         def standalonePop2 = sequenceFor('(Ljava/lang/Object;)V') {
             visitVarInsn(Opcodes.ALOAD, 0)
-            visitInsn(Opcodes.NOP)
+            visitInsn(Opcodes.NOP) // flush ALOAD so the cast is standalone
             visitTypeInsn(Opcodes.CHECKCAST, 'java/lang/String')
-            visitInsn(Opcodes.POP2) // only POP removes standalone cast
+            visitInsn(Opcodes.POP2)
             visitInsn(RETURN)
         }
         assert opcodeLines(standalonePop2) == [
@@ -989,7 +1079,8 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        assert opcodeLines(bytecode) == ['ILOAD 0', 'POP', 'RETURN']
+        // Box and pure ILOAD are both dead once the boxed value is discarded.
+        assert opcodeLines(bytecode) == ['RETURN']
     }
 
     @Test
@@ -1001,7 +1092,7 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        assert opcodeLines(bytecode) == ['LLOAD 0', 'POP2', 'RETURN']
+        assert opcodeLines(bytecode) == ['RETURN']
     }
 
     @Test
@@ -1015,26 +1106,115 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(RETURN)
         }
 
-        // POP2 size matches the wide primitive that was boxed → drop box, pop the double.
-        assert opcodeLines(bytecode) == ['DLOAD 0', 'POP2', 'RETURN']
+        // POP2 matches the wide primitive under the box → drop box and producer.
+        assert opcodeLines(bytecode) == ['RETURN']
     }
 
     @Test
-    void doesNotTreatPop2AsDiscardOfNarrowBoxedValue() {
+    void treatsPop2OnNarrowBoxedValueAsTwoSlotDiscard() {
+        // Stack before POP2: [underneath, boxed]. Cancel pure ILOAD under the box, POP the underneath.
         def bytecode = sequenceFor('(I)V') {
+            visitInsn(Opcodes.ICONST_0)
             visitVarInsn(Opcodes.ILOAD, 0)
             visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
             visitInsn(Opcodes.POP2)
             visitInsn(RETURN)
         }
 
-        // POP2 does not match a one-slot boxed reference; flush the box and keep POP2.
-        assert opcodeLines(bytecode) == [
-                'ILOAD 0',
-                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
-                'POP2',
-                'RETURN',
-        ]
+        assert opcodeLines(bytecode) == ['ICONST_0', 'POP', 'RETURN']
+    }
+
+    @Test
+    void dropsBoxedValueDiscardedByVoidReturn() {
+        def bytecode = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['RETURN']
+    }
+
+    @Test
+    void dropsBoxedConstantDiscardedByPop() {
+        def bytecode = sequenceFor {
+            visitInsn(Opcodes.ICONST_1)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['RETURN']
+    }
+
+    @Test
+    void preservesIincWhenBoxedLoadIsDiscarded() {
+        def bytecode = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitIincInsn(0, 1)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        // IINC is a side effect of the load window and must survive dead-box elimination.
+        assert opcodeLines(bytecode) == ['IINC 0 1', 'RETURN']
+    }
+
+    @Test
+    void popsPrimitiveWhenBoxedProducerAlreadyFlushed() {
+        // NOP flushes ILOAD before valueOf is seen, so only the box is pending.
+        def bytecode = sequenceFor('(I)V') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitInsn(Opcodes.NOP)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'NOP', 'POP', 'RETURN']
+    }
+
+    @Test
+    void popsWidePrimitiveWhenBoxedProducerAlreadyFlushed() {
+        def bytecode = sequenceFor('(J)V') {
+            visitVarInsn(Opcodes.LLOAD, 0)
+            visitInsn(Opcodes.NOP)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Long', 'valueOf', '(J)Ljava/lang/Long;', false)
+            visitInsn(Opcodes.POP)
+            visitInsn(RETURN)
+        }
+
+        // POP of boxed long → POP2 of the long still on the stack.
+        assert opcodeLines(bytecode) == ['LLOAD 0', 'NOP', 'POP2', 'RETURN']
+    }
+
+    @Test
+    void treatsPop2OnFlushedNarrowBoxAsTwoSlotDiscard() {
+        def bytecode = sequenceFor('(I)V') {
+            visitInsn(Opcodes.ICONST_0)
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitInsn(Opcodes.NOP) // flush ILOAD; int remains on stack under the later box
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitInsn(Opcodes.POP2)
+            visitInsn(RETURN)
+        }
+
+        // Drop box; POP2 removes the flushed int and the ICONST underneath.
+        assert opcodeLines(bytecode) == ['ICONST_0', 'ILOAD 0', 'NOP', 'POP2', 'RETURN']
+    }
+
+    @Test
+    void cancelsBoxUnboxAfterFlushedProducer() {
+        def bytecode = sequenceFor('(I)I') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitInsn(Opcodes.NOP)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Integer', 'intValue', '()I', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'NOP', 'IRETURN']
     }
 
     @Test
@@ -1185,8 +1365,8 @@ final class PeepholeOptimizingMethodVisitorTest {
     }
 
     @Test
-    void doesNotCancelDttBoxWithValueOfStyleUnbox() {
-        // DTT.box then Integer.intValue — different unbox convention, must not cancel.
+    void cancelsDttBoxWithMatchingWrapperUnbox() {
+        // Same primitive type: DTT.box then Integer.intValue is an identity on the int.
         def bytecode = sequenceFor('(I)I') {
             visitVarInsn(Opcodes.ILOAD, 0)
             visitMethodInsn(Opcodes.INVOKESTATIC,
@@ -1196,11 +1376,40 @@ final class PeepholeOptimizingMethodVisitorTest {
             visitInsn(Opcodes.IRETURN)
         }
 
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'IRETURN']
+    }
+
+    @Test
+    void cancelsValueOfWithMatchingDttUnbox() {
+        def bytecode = sequenceFor('(I)I') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'intUnbox', '(Ljava/lang/Object;)I', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'IRETURN']
+    }
+
+    @Test
+    void doesNotCancelDttBoxWithMismatchedWrapperUnbox() {
+        // DTT.box(int) then Long.longValue — different primitive type, must not cancel.
+        def bytecode = sequenceFor('(I)J') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'box', '(I)Ljava/lang/Object;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Long', 'longValue', '()J', false)
+            visitInsn(Opcodes.LRETURN)
+        }
+
         assert opcodeLines(bytecode) == [
                 'ILOAD 0',
                 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.box (I)Ljava/lang/Object;',
-                'INVOKEVIRTUAL java/lang/Integer.intValue ()I',
-                'IRETURN',
+                'INVOKEVIRTUAL java/lang/Long.longValue ()J',
+                'LRETURN',
         ]
     }
 
