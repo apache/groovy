@@ -188,6 +188,10 @@ public class StreamingMarkupWriter extends Writer {
     public void write(final int c) throws IOException {
         if (c >= 0XDC00 && c <= 0XDFFF) {
             // Low surrogate
+            if (!this.haveHighSurrogate) {
+                this.surrogatePair.setLength(0);
+                throw new IOException("Low Surrogate not preceded by High Surrogate");
+            }
             this.surrogatePair.append((char) c);
 
             if (this.encoder.canEncode(this.surrogatePair)) {
