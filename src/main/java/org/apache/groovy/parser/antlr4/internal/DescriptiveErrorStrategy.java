@@ -34,9 +34,16 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 /**
  * Provide friendly error messages when parsing errors occurred.
+ * <p>
+ * Extends {@link BailErrorStrategy} so the successful-parse path stays
+ * allocation-free and ATN-light (no grammar-level error alternatives —
+ * those were removed after GROOVY-9588).  Missing-delimiter diagnostics
+ * ({@code ')'}, {@code ']'}, {@code '}'}) run only after a recognition
+ * failure via {@link MissingDelimiterDiagnostic}.
+ * </p>
  */
 public class DescriptiveErrorStrategy extends BailErrorStrategy {
-    private CharStream charStream;
+    private final CharStream charStream;
 
     public DescriptiveErrorStrategy(CharStream charStream) {
         this.charStream = charStream;
@@ -69,6 +76,21 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
         return null;
     }
 
+    /**
+     * Prefer a precise "Missing …" delimiter diagnostic when the token stream
+     * clearly indicates an unclosed / incomplete construct; otherwise fall
+     * back to the generic "Unexpected input" message.
+     */
+    private void reportError(Parser recognizer, RecognitionException e, String fallbackMessage) {
+        MissingDelimiterDiagnostic.Hit hit =
+                MissingDelimiterDiagnostic.locate(recognizer.getInputStream(), e);
+        if (hit != null) {
+            recognizer.notifyErrorListeners(hit.at, hit.message, e);
+            return;
+        }
+        notifyErrorListeners(recognizer, fallbackMessage, e);
+    }
+
     protected String createNoViableAlternativeErrorMessage(Parser recognizer, NoViableAltException e) {
         TokenStream tokens = recognizer.getInputStream();
         String input;
@@ -89,7 +111,7 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
     protected void reportNoViableAlternative(Parser recognizer,
                                              NoViableAltException e) {
 
-        notifyErrorListeners(recognizer, this.createNoViableAlternativeErrorMessage(recognizer, e), e);
+        reportError(recognizer, e, this.createNoViableAlternativeErrorMessage(recognizer, e));
     }
 
     protected String createInputMismatchErrorMessage(Parser recognizer,
@@ -101,7 +123,7 @@ public class DescriptiveErrorStrategy extends BailErrorStrategy {
     protected void reportInputMismatch(Parser recognizer,
                                        InputMismatchException e) {
 
-        notifyErrorListeners(recognizer, this.createInputMismatchErrorMessage(recognizer, e), e);
+        reportError(recognizer, e, this.createInputMismatchErrorMessage(recognizer, e));
     }
 
     protected String createFailedPredicateErrorMessage(Parser recognizer,
