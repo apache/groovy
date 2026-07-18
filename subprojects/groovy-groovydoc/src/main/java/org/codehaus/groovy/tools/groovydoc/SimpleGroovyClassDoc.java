@@ -63,9 +63,14 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     // Retained for use by test helpers (SimpleGroovyClassDocTests) that pass it
     // to {@link #encodeAngleBracketsInTagBody}. No longer used internally — the
-    // tag-processing pipeline is now {@link TagRenderer}.
+    // tag-processing pipeline is now {@link TagRenderer}, which uses
+    // brace-balanced parsing (GROOVY-12095). This pattern stops at the first
+    // `}` and therefore does not match {@code {@code ...}} bodies that contain
+    // nested braces; prefer {@link TagRenderer} for full fidelity.
     /**
-     * Pattern used to locate {@code {@code ...}} style inline tags for angle-bracket escaping.
+     * Pattern used to locate simple {@code {@code ...}} style inline tags for
+     * angle-bracket escaping. Bodies with nested braces are out of scope for
+     * this regex; see {@link TagRenderer} for brace-balanced rendering.
      */
     public static final Pattern CODE_REGEX    = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
 

@@ -166,10 +166,17 @@ Inline tags appear within a comment body and are expanded in place.
 
 |`{@code <text>}`
 |Renders the text in a monospaced code style. HTML metacharacters are
-escaped.
+escaped. The body is brace-balanced with a linear scan (GROOVY-12095),
+so nested braces — Groovy closures, map/type literals, etc. — are kept
+intact, including inside `<pre>{@code ...}</pre>` examples. Braces
+inside ordinary quoted string/character literals
+(e.g. `System.out.println(" } ")`), multi-line text blocks
+(`"""..."""` / `'''...'''`), `/* ... */` block comments, and `// ...`
+line comments (e.g. `// }`) are ignored while matching.
 
 |`{@literal <text>}`
-|Renders the text verbatim without code styling.
+|Renders the text verbatim without code styling. Same brace-balanced
+body rules as `{@code}`.
 
 |`{@value #FIELD}`, `{@value Class#FIELD}`
 |Inlines the value of a compile-time-constant field. Same-class
@@ -513,36 +520,47 @@ matching closing brace is the snippet body.
 
 ==== Brace balancing in the inline form
 
-Body parsing is a simple brace counter: the parser starts at depth 1 on
-the `{` after `{@snippet`, increments on every `{` it sees, decrements on
-every `}`, and the matching close is reached when depth returns to zero.
-The counter has *no awareness* of string literals, character escapes, or
-comments, so every `{` in the body must have a matching `}`, including
-braces inside GString interpolations and string literals. Code like
-`"${x}"` or `catalog.each { book -> ... }` is fine — GString `${...}`
-blocks and closure bodies already balance. A lone `{` or `}` inside a
-plain string, however, will confuse the parser:
+Body parsing is a linear brace-depth scan: depth starts at 1 on the
+opening `{` of the tag, increments on each structural `{`, decrements
+on each structural `}`, and the matching close is reached when depth
+returns to zero. While scanning, ordinary quoted string/character
+literals (backslash escapes included), multi-line text blocks
+(`"""..."""` / `'''...'''`), `/* ... */` block comments, and `// ...`
+line comments (to end of line) are skipped so braces inside them do
+not affect depth. Nested braces in real code — closures,
+`catalog.each { book -> ... }`, GString `"value=${x}"`, and unbalanced
+braces *inside* quotes, text blocks, or comments such as
+`System.out.println(" } ")`, `"""\n}\n"""`, or `// }` — are therefore
+handled correctly and do not terminate the tag early.
 
 [source,groovy]
 ----
 /**
  * {@snippet lang="groovy" :
- * println '}'    // <-- stray literal } terminates the snippet body here
+ * System.out.println(" } ")   // } inside the string is fine
+ * // } inside a line comment is fine too
+ * def block = """
+ *   multi-line with }
+ * """
+ * if (ok) { work() }
  * }
  */
 ----
 
-Three workarounds when an example really needs an unbalanced literal
-brace:
+Because `//` comments run to end of line, put the tag-closing `}` on its
+own line (or after real code), not after a trailing `//` on the same
+line — otherwise the closer is swallowed by the comment. Braces that are
+not inside a skipped span and are not balanced will still confuse the
+parser; workarounds:
 
-* Rewrite the example so all braces balance (often trivially possible,
-  e.g. `println '${"}"}'` or a string-concatenation alternative).
+* Rewrite the example so structural braces balance, or keep unbalanced
+  braces inside quotes, text blocks, or comments (already ignored).
 * Move the sample into a file and use the external form
   (`{@snippet file="Example.groovy"}`), which reads the file verbatim
   without brace-balanced parsing.
-* Write the `}` as the HTML entity `&#125;`, which groovydoc counts as a
-  single non-brace character during body extraction but renders as `}`
-  in the output.
+* Write a problematic `}` as the HTML entity `&#125;`, which is not a
+  brace character during body extraction but renders as `}` in the
+  output.
 
 ==== External file reference
 

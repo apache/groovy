@@ -22,6 +22,7 @@ import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,10 +36,11 @@ import java.util.regex.Pattern;
  * so Prism's highlighter picks them up (Prism only walks {@code <code>}
  * descendants of language-classed elements). A {@code <pre>} whose body
  * already contains a {@code <code>} element (e.g. the canonical form
- * emitted by {@code {@snippet}}) only receives the class on its opening
- * tag, to avoid nested {@code <code><code>}. Any {@code <pre>} with an
- * existing attribute — {@code class}, {@code id}, or other — is left
- * untouched.
+ * emitted by {@code {@snippet}}, or the uppercase {@code <CODE>} historically
+ * emitted by {@code {@code ...}}) only receives the class on its opening
+ * tag, to avoid nested {@code <code><CODE>} / {@code <code><code>}. Any
+ * {@code <pre>} with an existing attribute — {@code class}, {@code id}, or
+ * other — is left untouched.
  *
  * @since 6.0.0
  */
@@ -60,8 +62,8 @@ public final class PreLanguageRewriter {
      *       {@code <pre>} without a {@code <code>} child is skipped by the
      *       highlighter).</li>
      *   <li>All other cases — {@code <pre>} with an existing {@code <code>}
-     *       descendant, or with a class that doesn't mention
-     *       {@code language-*} — are left untouched.</li>
+     *       descendant (any letter case; GROOVY-12095), or with a class that
+     *       doesn't mention {@code language-*} — are left untouched.</li>
      * </ul>
      * No-op when {@code preLanguage} is {@code null} or empty.
      */
@@ -73,7 +75,11 @@ public final class PreLanguageRewriter {
         while (m.find()) {
             String attrs = m.group(1); // null or leading-whitespace-prefixed attribute run
             String body = m.group(2);
-            boolean hasCode = body.contains("<code");
+            // GROOVY-12095: HTML tag names are case-insensitive. TagRenderer's
+            // {@code {@code ...}} path historically emits <CODE>, while
+            // {@snippet} emits <code>. Treat either as an existing code child
+            // so we never nest <code><CODE>.
+            boolean hasCode = containsCodeTag(body);
             String replacement;
             if (attrs == null || attrs.trim().isEmpty()) {
                 // Bare <pre>: add class + wrap body in <code> (unless already present).
@@ -94,6 +100,15 @@ public final class PreLanguageRewriter {
         }
         m.appendTail(sb);
         return sb.toString();
+    }
+
+    /**
+     * {@code true} when {@code body} already contains a {@code <code} start
+     * tag in any letter case (HTML is case-insensitive for element names).
+     */
+    private static boolean containsCodeTag(String body) {
+        // Locale.ROOT so Turkish dotted-I does not break the "CODE" check.
+        return body.toLowerCase(Locale.ROOT).contains("<code");
     }
 
     /**

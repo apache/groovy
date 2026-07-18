@@ -488,9 +488,18 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertNotNull(doc);
         assertTrue("Parent description should be inherited into child in:\n" + doc,
                 doc.contains("Parent-level description"));
-        // The literal `{@inheritDoc}` must not appear anymore.
-        assertFalse("{@inheritDoc} should be substituted, not left literal in:\n" + doc,
-                doc.contains("{@inheritDoc}"));
+        // Method-level {@inheritDoc} must be substituted. Restrict the check to
+        // the method detail section: the class-level narrative intentionally
+        // mentions the tag name inside {@code {@inheritDoc}}, and after
+        // GROOVY-12095 that nested form is rendered as <CODE>{@inheritDoc}</CODE>
+        // (brace-balanced {@code} body) rather than being truncated.
+        int methodDetail = doc.indexOf("transform(java.lang.String)");
+        assertTrue("Expected transform method detail section in:\n" + doc, methodDetail >= 0);
+        String methodSection = doc.substring(methodDetail);
+        assertTrue("Parent description should appear in the method detail section in:\n" + methodSection,
+                methodSection.contains("Parent-level description"));
+        assertFalse("{@inheritDoc} should be substituted in method docs, not left literal in:\n" + methodSection,
+                methodSection.contains("{@inheritDoc}"));
     }
 
     public void testInheritDocSubstitutesMatchingParentBlockTagsInGroovy() throws Exception {
