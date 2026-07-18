@@ -4351,29 +4351,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Statement visitBlockStatement(final BlockStatementContext ctx) {
-        if (asBoolean(ctx.localVariableDeclaration())) {
-            return configureAST(this.visitLocalVariableDeclaration(ctx.localVariableDeclaration()), ctx);
+        Object astNode = this.visit(ctx.statement());
+
+        if (null == astNode) {
+            return null;
         }
 
-        if (asBoolean(ctx.statement())) {
-            Object astNode = this.visit(ctx.statement()); //this.configureAST((Statement) this.visit(ctx.statement()), ctx);
-
-            if (null == astNode) {
-                return null;
-            }
-
-            if (astNode instanceof Statement) {
-                return (Statement) astNode;
-            } else if (astNode instanceof MethodNode) {
-                throw createParsingFailedException("Method definition not expected here", ctx);
-            } else if (astNode instanceof ImportNode) {
-                throw createParsingFailedException("Import statement not expected here", ctx);
-            } else {
-                throw createParsingFailedException("The statement(" + astNode.getClass() + ") not expected here", ctx);
-            }
+        if (astNode instanceof Statement) {
+            return (Statement) astNode;
+        } else if (astNode instanceof MethodNode) {
+            throw createParsingFailedException("Method definition not expected here", ctx);
+        } else if (astNode instanceof ImportNode) {
+            throw createParsingFailedException("Import statement not expected here", ctx);
+        } else {
+            throw createParsingFailedException("The statement(" + astNode.getClass() + ") not expected here", ctx);
         }
-
-        throw createParsingFailedException("Unsupported block statement: " + ctx.getText(), ctx);
     }
 
     @Override
