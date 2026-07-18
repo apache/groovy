@@ -24,7 +24,7 @@ import org.antlr.v4.runtime.TokenStream;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModifierNode;
 
-import java.util.Arrays;
+import java.util.BitSet;
 import java.util.regex.Pattern;
 
 import static org.apache.groovy.parser.antlr4.GroovyParser.ASSIGN;
@@ -147,9 +147,23 @@ public class SemanticPredicates {
                 && LPAREN == (ts.LT(2).getType());
     }
 
-    private static final int[] MODIFIER_ARRAY =
-            ModifierNode.MODIFIER_OPCODE_MAP.keySet().stream()
-                    .mapToInt(Integer::intValue).sorted().toArray();
+    private static final BitSet MODIFIER_TYPES = new BitSet();
+    static {
+        for (Integer tokenType : ModifierNode.MODIFIER_OPCODE_MAP.keySet()) {
+            if (tokenType != null && tokenType >= 0) {
+                MODIFIER_TYPES.set(tokenType);
+            }
+        }
+    }
+
+    /**
+     * O(1) modifier-token membership. Negative types (e.g. {@link Token#EOF}) are never
+     * modifiers
+     */
+    private static boolean isModifierType(final int tokenType) {
+        return tokenType >= 0 && MODIFIER_TYPES.get(tokenType);
+    }
+
     /**
      * Distinguish between local variable declaration and method call, e.g. `a b`
      */
@@ -184,7 +198,7 @@ public class SemanticPredicates {
         int nextCodePoint = token.getText().codePointAt(0);
 
         return // VOID == tokenType ||
-                !(BuiltInPrimitiveType == tokenType || Arrays.binarySearch(MODIFIER_ARRAY, tokenType) >= 0)
+                !(BuiltInPrimitiveType == tokenType || isModifierType(tokenType))
                         && !Character.isUpperCase(nextCodePoint)
                         && nextCodePoint != '@'
                         && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2))
@@ -212,7 +226,7 @@ public class SemanticPredicates {
             if (ts.LT(idx).getType() == LPAREN) {
                 idx++;
                 int depth = 1;
-                while (depth > 0 && ts.LT(idx).getType() != org.antlr.v4.runtime.Token.EOF) {
+                while (depth > 0 && ts.LT(idx).getType() != Token.EOF) {
                     int t = ts.LT(idx++).getType();
                     if (t == LPAREN) depth++;
                     else if (t == RPAREN) depth--;

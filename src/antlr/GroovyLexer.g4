@@ -79,27 +79,35 @@ options {
         super.emit(token);
     }
 
-    private static final int[] REGEX_CHECK_ARRAY = {
-        DEC,
-        INC,
-        THIS,
-        RBRACE,
-        RBRACK,
-        RPAREN,
-        GStringEnd,
-        NullLiteral,
-        StringLiteral,
-        BooleanLiteral,
-        IntegerLiteral,
-        FloatingPointLiteral,
-        Identifier, CapitalizedIdentifier
-    };
+    /**
+     * Token types after which {@code /.../} must not be treated as a slashy string
+     * (e.g. {@code a++ / b}, {@code list[i] / n}). {@link java.util.BitSet} gives
+     * O(1) membership tests on this hot decision.
+     */
+    private static final BitSet REGEX_CHECK_SET = new BitSet();
     static {
-        Arrays.sort(REGEX_CHECK_ARRAY);
+        int[] regexCheckTypes = {
+            DEC,
+            INC,
+            THIS,
+            RBRACE,
+            RBRACK,
+            RPAREN,
+            GStringEnd,
+            NullLiteral,
+            StringLiteral,
+            BooleanLiteral,
+            IntegerLiteral,
+            FloatingPointLiteral,
+            Identifier, CapitalizedIdentifier
+        };
+        for (int t : regexCheckTypes) {
+            REGEX_CHECK_SET.set(t);
+        }
     }
 
     private boolean isRegexAllowed() {
-        return (Arrays.binarySearch(REGEX_CHECK_ARRAY, this.lastTokenType) < 0);
+        return !REGEX_CHECK_SET.get(this.lastTokenType);
     }
 
     /**
