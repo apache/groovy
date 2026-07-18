@@ -835,6 +835,41 @@ final class SyntaxErrorTest {
             |'''.stripMargin()
     }
 
+    @Test
+    void 'error alternative - Missing "}" after multi-line string'() {
+        // Caret must sit on the last line of the triple-quoted string, not on
+        // the start line with an overshot column (multi-line insertion point).
+        expectParseError '''\
+            |def m() {
+            |  s = """
+            |line2
+            |line3"""
+            |'''.stripMargin(), '''\
+            |Missing '}' @ line 4, column 9.
+            |   line3"""
+            |           ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
+    void 'error alternative - Missing "}" after multi-line single-quoted string'() {
+        // Outer double-quoted long strings avoid clashing with ''' inside the source.
+        expectParseError("""\
+            |def m() {
+            |  s = '''
+            |x
+            |y'''
+            |""".stripMargin(), """\
+            |Missing '}' @ line 4, column 5.
+            |   y'''
+            |       ^
+            |
+            |1 error
+            |""".stripMargin())
+    }
+
     @NotYetImplemented @Test
     void 'CompilerErrorTest_001'() {
         unzipScriptAndShouldFail('scripts/CompilerErrorTest_001.groovy', [])

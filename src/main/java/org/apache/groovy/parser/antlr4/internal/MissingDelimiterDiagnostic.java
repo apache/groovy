@@ -18,12 +18,14 @@
  */
 package org.apache.groovy.parser.antlr4.internal;
 
+import groovy.lang.Tuple2;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.misc.IntervalSet;
+import org.apache.groovy.parser.antlr4.util.PositionConfigureUtils;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -206,10 +208,16 @@ final class MissingDelimiterDiagnostic {
         return depth;
     }
 
+    /**
+     * Last non-EOF, non-NL token.  Skipping NL keeps the caret on the last
+     * meaningful line (same idea as {@link #fromDelimiterStack}) instead of
+     * after a trailing newline that often sits alone on the next source line.
+     */
     private static Token lastNonEof(final List<Token> tokens) {
         for (int i = tokens.size() - 1; i >= 0; i--) {
             Token t = tokens.get(i);
-            if (t.getType() != Token.EOF) {
+            int type = t.getType();
+            if (type != Token.EOF && type != NL) {
                 return t;
             }
         }
@@ -231,6 +239,13 @@ final class MissingDelimiterDiagnostic {
      *   <li>the token after the type is a literal or {@code '('}
      *       (e.g. {@code (Foo)1}, {@code (Foo)(x)})</li>
      * </ul>
+     * Reporting the earliest site is intentional: with
+     * {@link org.antlr.v4.runtime.BailErrorStrategy} the parser stops at the
+     * first recognition failure, so the first incomplete cast is the relevant
+     * one.  In a hypothetical multi-error buffer the caret could theoretically
+     * point at an earlier cast-like fragment than the failure ANTLR reported;
+     * that trade-off is accepted to keep the scan linear and free of false
+     * coupling to ANTLR's sometimes-unrelated offending token.
      */
     private static Hit fromCastPattern(final List<Token> tokens) {
         final int n = tokens.size();
@@ -487,7 +502,9 @@ final class MissingDelimiterDiagnostic {
                 }
             }
         } catch (IndexOutOfBoundsException | IllegalArgumentException ignored) {
-            // Non-buffered stream: keep whatever was collected
+            // Non-buffered / partially filled streams may reject absolute get(i)
+            // (e.g. UnbufferedTokenStream outside its window).  Partial default-
+            // channel tokens are still useful for best-effort diagnostics.
         }
         return result;
     }
@@ -510,14 +527,32 @@ final class MissingDelimiterDiagnostic {
 
     /**
      * Caret sits just past {@code token} (the usual "insert closer here" point).
+     * <p>
+     * Multi-line tokens (triple-quoted strings, multi-line GString fragments,
+     * …) place the caret on the <em>last</em> line of the token, after its
+     * final content.  Adding the full code-point length to the start column
+     * alone would overshoot on the start line when the token text contains
+     * newlines.
+     * </p>
+     * <p>
+     * End line/column rules match {@link PositionConfigureUtils#endPosition}
+     * so diagnostic carets stay consistent with AST last-position handling
+     * (code-point based columns, newline counting).
+     * </p>
      */
     private static Token insertionPointAfter(final Token token) {
-        String text = token.getText();
-        int length = text != null ? text.codePointCount(0, text.length()) : 0;
         CommonToken point = new CommonToken(Token.INVALID_TYPE);
-        point.setLine(token.getLine());
-        point.setCharPositionInLine(token.getCharPositionInLine() + length);
         point.setText("");
+        String text = token.getText();
+        if (text == null) {
+            point.setLine(token.getLine());
+            point.setCharPositionInLine(token.getCharPositionInLine());
+            return point;
+        }
+        // endPosition → (line, 1-based exclusive column); ANTLR columns are 0-based
+        Tuple2<Integer, Integer> end = PositionConfigureUtils.endPosition(token);
+        point.setLine(end.getV1());
+        point.setCharPositionInLine(end.getV2() - 1);
         return point;
     }
 }

@@ -43,9 +43,11 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.LBRACE
 import static org.apache.groovy.parser.antlr4.GroovyParser.LBRACK
 import static org.apache.groovy.parser.antlr4.GroovyParser.LPAREN
 import static org.apache.groovy.parser.antlr4.GroovyParser.LT
+import static org.apache.groovy.parser.antlr4.GroovyParser.NL
 import static org.apache.groovy.parser.antlr4.GroovyParser.RBRACE
 import static org.apache.groovy.parser.antlr4.GroovyParser.RBRACK
 import static org.apache.groovy.parser.antlr4.GroovyParser.RPAREN
+import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertNotNull
 import static org.junit.jupiter.api.Assertions.assertNull
@@ -449,6 +451,70 @@ final class MissingDelimiterDiagnosticTest {
         def hit = MissingDelimiterDiagnostic.locate(tokenStream('["\uD83D\uDE00"'), null)
         assertNotNull hit
         assertEquals "Missing ']'", hit.message
+        // caret just past the string: '[' + '"' is col 0..1, string starts at 1; emoji is 1 code point + quotes
+        assertEquals 1, hit.at.line
+        assertTrue hit.at.charPositionInLine > 1
+    }
+
+    @Test
+    void 'insertion point after multi-line string does not overshoot start line'() {
+        // paulk-asert review: multi-line anchor before missing '}' must put caret on last line
+        def src = 'def m() {\n  s = """\nline2\nline3"""\n'
+        def hit = MissingDelimiterDiagnostic.locate(tokenStream(src), null)
+        assertNotNull hit
+        assertEquals "Missing '}'", hit.message
+        assertEquals 4, hit.at.line
+        // "line3""" is 8 code points → exclusive end column 8 (0-based)
+        assertEquals 8, hit.at.charPositionInLine
+    }
+
+    @Test
+    void 'insertion point after multi-line GString-like triple quote single quotes'() {
+        def src = "def m() {\n  s = '''a\nb'''\n"
+        def hit = MissingDelimiterDiagnostic.locate(tokenStream(src), null)
+        assertNotNull hit
+        assertEquals "Missing '}'", hit.message
+        assertEquals 3, hit.at.line
+        // b''' → 4 code points, 0-based exclusive end = 4
+        assertEquals 4, hit.at.charPositionInLine
+    }
+
+    @Test
+    void 'insertionPointAfter multi-line matches PositionConfigureUtils end line'() {
+        def t = tok(StringLiteral, '"""\nline2\nend"""')
+        t.line = 2
+        t.charPositionInLine = 6
+        def point = (Token) invoke('insertionPointAfter', t)
+        assertEquals 4, point.line
+        assertEquals 6, point.charPositionInLine // "end""" length 6
+    }
+
+    @Test
+    void 'lastNonEof skips trailing NL tokens'() {
+        def tokens = [
+            tok(Identifier, 'x'),
+            tok(NL, '\n'),
+            tok(Token.EOF, null)
+        ]
+        def last = (Token) invoke('lastNonEof', tokens)
+        assertEquals Identifier, last.type
+        assertEquals 'x', last.text
+    }
+
+    @Test
+    void 'sole expected EOF after multi-line string uses last line of string'() {
+        def tokens = tokenStream('def m() {\n  s = """\nline2\nline3"""\n')
+        def eof = lastToken(tokens)
+        def hit = MissingDelimiterDiagnostic.locate(tokens, stubException(setOf(RBRACE), eof))
+        assertNotNull hit
+        assertEquals "Missing '}'", hit.message
+        assertEquals 4, hit.at.line
+        assertEquals 8, hit.at.charPositionInLine
+    }
+
+    @Test
+    void 'collectDefaultChannelTokens tolerates IllegalArgumentException'() {
+        assertNull MissingDelimiterDiagnostic.locate(new IllegalArgTokenStream(), null)
     }
 
     //--------------------------------------------------------------------------
@@ -695,6 +761,57 @@ final class MissingDelimiterDiagnosticTest {
         Token getOffendingToken() {
             return offending
         }
+    }
+
+    /**
+     * Token stream that throws {@link IllegalArgumentException} on {@code get},
+     * covering the non-IndexOutOfBounds defensive catch branch.
+     */
+    private static final class IllegalArgTokenStream implements org.antlr.v4.runtime.TokenStream {
+        @Override
+        Token LT(int k) { throw new IllegalArgumentException('test') }
+
+        @Override
+        Token get(int index) { throw new IllegalArgumentException('test') }
+
+        @Override
+        org.antlr.v4.runtime.TokenSource getTokenSource() { null }
+
+        @Override
+        String getText(org.antlr.v4.runtime.misc.Interval interval) { '' }
+
+        @Override
+        String getText() { '' }
+
+        @Override
+        String getText(org.antlr.v4.runtime.RuleContext ctx) { '' }
+
+        @Override
+        String getText(Object start, Object stop) { '' }
+
+        @Override
+        void consume() {}
+
+        @Override
+        int LA(int i) { Token.EOF }
+
+        @Override
+        int mark() { 0 }
+
+        @Override
+        void release(int marker) {}
+
+        @Override
+        int index() { 0 }
+
+        @Override
+        void seek(int index) {}
+
+        @Override
+        int size() { 0 }
+
+        @Override
+        String getSourceName() { 'illegal-arg' }
     }
 
 }
