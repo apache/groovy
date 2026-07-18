@@ -132,6 +132,71 @@ final class SyntaxErrorTest {
     }
 
     @Test
+    void 'groovy core - GString illegal character after dollar'() {
+        // Trailing bare `$` in double-quoted and triple-double-quoted strings.
+        // Must name the dollar (Groovy 2 message) rather than only the closing quote.
+        expectParseError '''\
+            |def Target = "releases$"
+            |'''.stripMargin(), '''\
+            |Illegal string body character after dollar sign: '"' @ line 1, column 24.
+            |   def Target = "releases$"
+            |                          ^
+            |
+            |1 error
+            |'''.stripMargin()
+
+        expectParseError '''\
+            |def Target = """releases$"""
+            |'''.stripMargin(), '''\
+            |Illegal string body character after dollar sign: '"' @ line 1, column 26.
+            |   def Target = """releases$"""
+            |                            ^
+            |
+            |1 error
+            |'''.stripMargin()
+
+        expectParseError '''\
+            |def x = "$"
+            |'''.stripMargin(), '''\
+            |Illegal string body character after dollar sign: '"' @ line 1, column 11.
+            |   def x = "$"
+            |             ^
+            |
+            |1 error
+            |'''.stripMargin()
+
+        expectParseError '''\
+            |def x = "a$ b"
+            |'''.stripMargin(), '''\
+            |Illegal string body character after dollar sign: ' ' @ line 1, column 12.
+            |   def x = "a$ b"
+            |              ^
+            |
+            |1 error
+            |'''.stripMargin()
+
+        // newline immediately after `$` (unclosed GString line)
+        expectParseError '''\
+            |def x = "hello$
+            |'''.stripMargin(), '''\
+            |Illegal string body character after dollar sign: '\\n' @ line 1, column 16.
+            |   def x = "hello$
+            |                  ^
+            |
+            |1 error
+            |'''.stripMargin()
+
+        // true EOF immediately after `$` — no character to display in the message
+        expectParseError 'def x = "hello$', '''\
+            |Illegal string body character after dollar sign @ line 1, column 16.
+            |   def x = "hello$
+            |                  ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    @Test
     void 'groovy core - ParExpression'() {
         TestUtils.doRunAndShouldFail('fail/ParExpression_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/ParExpression_02x.groovy')
