@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.LexerNoViableAltException;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.LexerATNSimulator;
 import org.apache.groovy.parser.antlr4.internal.atnmanager.LexerAtnManager;
@@ -43,14 +44,100 @@ public class GroovyLangLexer extends GroovyLexer {
         this.setInterpreter(new PositionAdjustingLexerATNSimulator(this, LexerAtnManager.INSTANCE.getATN()));
     }
 
+    /**
+     * Returns the next token, with a special case for EOF after a bare {@code $} in a GString.
+     * <p>
+     * After {@code GStringBegin} or {@code GStringPart} matches a trailing {@code $} at the
+     * end of input, Antlr marks {@code _hitEOF} and would skip
+     * {@link #GSTRING_TYPE_SELECTOR_MODE} entirely on the subsequent call.  Detect that
+     * situation and report the dollar-body error instead of a generic unexpected-EOF parse
+     * failure.
+     *
+     * @return the next token from the input
+     */
     @Override
-    public void recover(LexerNoViableAltException e) {
-        throw e; // if some lexical error occurred, stop parsing!
+    public Token nextToken() {
+        if (_hitEOF && isGStringDollarSelectorMode()) {
+            throw new GroovySyntaxError(
+                    illegalGStringDollarMessage(Token.EOF),
+                    GroovySyntaxError.LEXER,
+                    getLine(),
+                    getCharPositionInLine() + 1);
+        }
+        return super.nextToken();
+    }
+
+    /**
+     * Report a lexical error.  When the failure is inside
+     * {@link #GSTRING_TYPE_SELECTOR_MODE} (after a {@code $} in a GString), emit the
+     * dedicated dollar-body diagnostic instead of Antlr's generic token-recognition message.
+     *
+     * @param e the recognition failure raised by the ATN simulator
+     */
+    @Override
+    public void notifyListeners(final LexerNoViableAltException e) {
+        if (isGStringDollarSelectorMode()) {
+            getErrorListenerDispatch().syntaxError(
+                    this, null, _tokenStartLine, _tokenStartCharPositionInLine,
+                    illegalGStringDollarMessage(), e);
+            return;
+        }
+        super.notifyListeners(e);
+    }
+
+    /**
+     * Abort lexing on the first lexical error.  For an invalid character after {@code $}
+     * in a GString, throw {@link GroovySyntaxError} so the parser layer can surface a
+     * source-located syntax error without retrying SLL→LL or falling back to a generic
+     * exception message.
+     *
+     * @param e the recognition failure raised by the ATN simulator
+     */
+    @Override
+    public void recover(final LexerNoViableAltException e) {
+        if (isGStringDollarSelectorMode()) {
+            // Column is 1-based; _tokenStartCharPositionInLine is 0-based (Antlr convention).
+            throw new GroovySyntaxError(
+                    illegalGStringDollarMessage(),
+                    GroovySyntaxError.LEXER,
+                    _tokenStartLine,
+                    _tokenStartCharPositionInLine + 1);
+        }
+        // if some lexical error occurred, stop parsing!
+        throw e;
     }
 
     @Override
     protected void rollbackOneChar() {
         ((PositionAdjustingLexerATNSimulator) getInterpreter()).resetAcceptPosition(getInputStream(), _tokenStartCharIndex - 1, _tokenStartLine, _tokenStartCharPositionInLine - 1);
+    }
+
+    /**
+     * Whether the lexer is choosing between {@code ${...}} and {@code $identifier} after a
+     * dollar in a GString (double-quoted, triple-double-quoted, slashy or dollar-slashy).
+     */
+    private boolean isGStringDollarSelectorMode() {
+        return GSTRING_TYPE_SELECTOR_MODE == _mode;
+    }
+
+    /**
+     * Build the user-facing message for an illegal character (or EOF) immediately after
+     * {@code $} in a GString.  When a concrete character is available it is appended so the
+     * diagnostic names both the rule and the offending input.
+     */
+    private String illegalGStringDollarMessage() {
+        return illegalGStringDollarMessage(_input.LA(1));
+    }
+
+    /**
+     * @param c the code point at the failure site, or {@link Token#EOF}
+     */
+    private String illegalGStringDollarMessage(final int c) {
+        // Antlr leaves the input index at the unrecognised character for LexerNoViableAltException.
+        if (Token.EOF == c) {
+            return "Illegal string body character after dollar sign";
+        }
+        return "Illegal string body character after dollar sign: " + getCharErrorDisplay(c);
     }
 
     private static class PositionAdjustingLexerATNSimulator extends LexerATNSimulator {
