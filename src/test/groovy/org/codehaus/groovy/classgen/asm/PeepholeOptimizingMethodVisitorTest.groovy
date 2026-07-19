@@ -1235,7 +1235,8 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
     }
 
     @Test
-    void doesNotCancelMismatchedBoxUnboxTypes() {
+    void rewritesIntegerValueOfWithIntegerLongValueToI2L() {
+        // Same-wrapper Number conversion: Integer.valueOf; Integer.longValue → I2L
         def bytecode = sequenceFor('(I)J') {
             visitVarInsn(Opcodes.ILOAD, 0)
             visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
@@ -1243,12 +1244,7 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
             visitInsn(Opcodes.LRETURN)
         }
 
-        assert opcodeLines(bytecode) == [
-                'ILOAD 0',
-                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
-                'INVOKEVIRTUAL java/lang/Integer.longValue ()J',
-                'LRETURN',
-        ]
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'I2L', 'LRETURN']
     }
 
     @Test
@@ -1267,8 +1263,11 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
     }
 
     @Test
-    void doesNotCancelValueOfWithMismatchedWrapperUnbox() {
-        // Integer.valueOf then Long.longValue — different owners, must not cancel.
+    void rewritesIntegerValueOfWithLongLongValueToI2L() {
+        // Cross-wrapper unbox after a pending box: the value is known to be a
+        // boxed int, so Integer.valueOf; Long.longValue compresses to I2L
+        // (same as long l = intExpr). Real classgen usually emits I2L directly;
+        // this recovers that shape when an intermediate box/unbox was produced.
         def bytecode = sequenceFor('(I)J') {
             visitVarInsn(Opcodes.ILOAD, 0)
             visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
@@ -1276,12 +1275,7 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
             visitInsn(Opcodes.LRETURN)
         }
 
-        assert opcodeLines(bytecode) == [
-                'ILOAD 0',
-                'INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;',
-                'INVOKEVIRTUAL java/lang/Long.longValue ()J',
-                'LRETURN',
-        ]
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'I2L', 'LRETURN']
     }
 
     @Test
@@ -1394,8 +1388,8 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
     }
 
     @Test
-    void doesNotCancelDttBoxWithMismatchedWrapperUnbox() {
-        // DTT.box(int) then Long.longValue — different primitive type, must not cancel.
+    void rewritesDttBoxIntWithLongLongValueToI2L() {
+        // DTT.box(int) then Long.longValue → I2L (known boxed int → long).
         def bytecode = sequenceFor('(I)J') {
             visitVarInsn(Opcodes.ILOAD, 0)
             visitMethodInsn(Opcodes.INVOKESTATIC,
@@ -1405,12 +1399,108 @@ final class PeepholeOptimizingMethodVisitorTest extends AbstractBytecodeTestCase
             visitInsn(Opcodes.LRETURN)
         }
 
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'I2L', 'LRETURN']
+    }
+
+    @Test
+    void rewritesNumericBoxUnboxConversions() {
+        // Widening / narrowing pairs after valueOf (covers I/J/F/D conversion tables).
+        def cases = [
+                // load, boxOwner, boxPrim, unboxOwner, unboxName, retPrim, ret, expected middle opcodes
+                [Opcodes.ILOAD, 'java/lang/Integer', 'I', 'java/lang/Double', 'doubleValue', 'D', Opcodes.DRETURN, ['I2D']],
+                [Opcodes.ILOAD, 'java/lang/Integer', 'I', 'java/lang/Float', 'floatValue', 'F', Opcodes.FRETURN, ['I2F']],
+                [Opcodes.ILOAD, 'java/lang/Integer', 'I', 'java/lang/Byte', 'byteValue', 'B', Opcodes.IRETURN, ['I2B']],
+                [Opcodes.ILOAD, 'java/lang/Integer', 'I', 'java/lang/Short', 'shortValue', 'S', Opcodes.IRETURN, ['I2S']],
+                [Opcodes.ILOAD, 'java/lang/Integer', 'I', 'java/lang/Character', 'charValue', 'C', Opcodes.IRETURN, ['I2C']],
+                [Opcodes.LLOAD, 'java/lang/Long', 'J', 'java/lang/Integer', 'intValue', 'I', Opcodes.IRETURN, ['L2I']],
+                [Opcodes.LLOAD, 'java/lang/Long', 'J', 'java/lang/Float', 'floatValue', 'F', Opcodes.FRETURN, ['L2F']],
+                [Opcodes.LLOAD, 'java/lang/Long', 'J', 'java/lang/Double', 'doubleValue', 'D', Opcodes.DRETURN, ['L2D']],
+                [Opcodes.LLOAD, 'java/lang/Long', 'J', 'java/lang/Byte', 'byteValue', 'B', Opcodes.IRETURN, ['L2I', 'I2B']],
+                [Opcodes.LLOAD, 'java/lang/Long', 'J', 'java/lang/Short', 'shortValue', 'S', Opcodes.IRETURN, ['L2I', 'I2S']],
+                [Opcodes.LLOAD, 'java/lang/Long', 'J', 'java/lang/Character', 'charValue', 'C', Opcodes.IRETURN, ['L2I', 'I2C']],
+                [Opcodes.FLOAD, 'java/lang/Float', 'F', 'java/lang/Integer', 'intValue', 'I', Opcodes.IRETURN, ['F2I']],
+                [Opcodes.FLOAD, 'java/lang/Float', 'F', 'java/lang/Long', 'longValue', 'J', Opcodes.LRETURN, ['F2L']],
+                [Opcodes.FLOAD, 'java/lang/Float', 'F', 'java/lang/Double', 'doubleValue', 'D', Opcodes.DRETURN, ['F2D']],
+                [Opcodes.FLOAD, 'java/lang/Float', 'F', 'java/lang/Byte', 'byteValue', 'B', Opcodes.IRETURN, ['F2I', 'I2B']],
+                [Opcodes.FLOAD, 'java/lang/Float', 'F', 'java/lang/Short', 'shortValue', 'S', Opcodes.IRETURN, ['F2I', 'I2S']],
+                [Opcodes.FLOAD, 'java/lang/Float', 'F', 'java/lang/Character', 'charValue', 'C', Opcodes.IRETURN, ['F2I', 'I2C']],
+                [Opcodes.DLOAD, 'java/lang/Double', 'D', 'java/lang/Integer', 'intValue', 'I', Opcodes.IRETURN, ['D2I']],
+                [Opcodes.DLOAD, 'java/lang/Double', 'D', 'java/lang/Long', 'longValue', 'J', Opcodes.LRETURN, ['D2L']],
+                [Opcodes.DLOAD, 'java/lang/Double', 'D', 'java/lang/Float', 'floatValue', 'F', Opcodes.FRETURN, ['D2F']],
+                [Opcodes.DLOAD, 'java/lang/Double', 'D', 'java/lang/Byte', 'byteValue', 'B', Opcodes.IRETURN, ['D2I', 'I2B']],
+                [Opcodes.DLOAD, 'java/lang/Double', 'D', 'java/lang/Short', 'shortValue', 'S', Opcodes.IRETURN, ['D2I', 'I2S']],
+                [Opcodes.DLOAD, 'java/lang/Double', 'D', 'java/lang/Character', 'charValue', 'C', Opcodes.IRETURN, ['D2I', 'I2C']],
+                // int-slot source (byte) widened to long
+                [Opcodes.ILOAD, 'java/lang/Byte', 'B', 'java/lang/Long', 'longValue', 'J', Opcodes.LRETURN, ['I2L']],
+                // int-slot source to int-slot target of different kind (no-op on the int slot after box drop)
+                [Opcodes.ILOAD, 'java/lang/Byte', 'B', 'java/lang/Integer', 'intValue', 'I', Opcodes.IRETURN, []],
+        ]
+        cases.each { load, boxOwner, boxPrim, unboxOwner, unboxName, retPrim, ret, middle ->
+            def bytecode = sequenceFor("($boxPrim)$retPrim") {
+                visitVarInsn(load, 0)
+                visitMethodInsn(Opcodes.INVOKESTATIC, boxOwner, 'valueOf', "($boxPrim)L${boxOwner};", false)
+                visitMethodInsn(Opcodes.INVOKEVIRTUAL, unboxOwner, unboxName, "()$retPrim", false)
+                visitInsn(ret)
+            }
+            assert opcodeLines(bytecode) == ["${Printer.OPCODES[load]} 0", *middle, Printer.OPCODES[ret]]
+        }
+
+        // DTT.box + DTT.longUnbox after int → I2L
+        def dtt = sequenceFor('(I)J') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'box', '(I)Ljava/lang/Object;', false)
+            visitMethodInsn(Opcodes.INVOKESTATIC,
+                    'org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation',
+                    'longUnbox', '(Ljava/lang/Object;)J', false)
+            visitInsn(Opcodes.LRETURN)
+        }
+        assert opcodeLines(dtt) == ['ILOAD 0', 'I2L', 'LRETURN']
+    }
+
+    @Test
+    void rewritesSameTypeWrongOwnerUnboxAsIdentity() {
+        // Integer.valueOf then Long.intValue: known boxed int, wrong owner → drop both.
+        def bytecode = sequenceFor('(I)I') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Long', 'intValue', '()I', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'IRETURN']
+    }
+
+    @Test
+    void doesNotConvertBooleanBoxToNumericUnbox() {
+        // Boolean is excluded from numeric conversion rewrites.
+        def bytecode = sequenceFor('(Z)I') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Boolean', 'valueOf', '(Z)Ljava/lang/Boolean;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Integer', 'intValue', '()I', false)
+            visitInsn(Opcodes.IRETURN)
+        }
+
         assert opcodeLines(bytecode) == [
                 'ILOAD 0',
-                'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.box (I)Ljava/lang/Object;',
-                'INVOKEVIRTUAL java/lang/Long.longValue ()J',
-                'LRETURN',
+                'INVOKESTATIC java/lang/Boolean.valueOf (Z)Ljava/lang/Boolean;',
+                'INVOKEVIRTUAL java/lang/Integer.intValue ()I',
+                'IRETURN',
         ]
+    }
+
+    @Test
+    void rewritesBoxUnboxConversionAfterFlushedProducer() {
+        def bytecode = sequenceFor('(I)J') {
+            visitVarInsn(Opcodes.ILOAD, 0)
+            visitInsn(Opcodes.NOP) // flush ILOAD; int remains on stack under the box
+            visitMethodInsn(Opcodes.INVOKESTATIC, 'java/lang/Integer', 'valueOf', '(I)Ljava/lang/Integer;', false)
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, 'java/lang/Long', 'longValue', '()J', false)
+            visitInsn(Opcodes.LRETURN)
+        }
+
+        assert opcodeLines(bytecode) == ['ILOAD 0', 'NOP', 'I2L', 'LRETURN']
     }
 
     @Test
