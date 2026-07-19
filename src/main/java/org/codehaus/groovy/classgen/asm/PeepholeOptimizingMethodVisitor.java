@@ -39,18 +39,30 @@ import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.BIPUSH;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
+import static org.objectweb.asm.Opcodes.D2F;
+import static org.objectweb.asm.Opcodes.D2I;
+import static org.objectweb.asm.Opcodes.D2L;
 import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DCONST_1;
 import static org.objectweb.asm.Opcodes.DLOAD;
 import static org.objectweb.asm.Opcodes.DSTORE;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP2;
+import static org.objectweb.asm.Opcodes.F2D;
+import static org.objectweb.asm.Opcodes.F2I;
+import static org.objectweb.asm.Opcodes.F2L;
 import static org.objectweb.asm.Opcodes.FCONST_0;
 import static org.objectweb.asm.Opcodes.FCONST_1;
 import static org.objectweb.asm.Opcodes.FCONST_2;
 import static org.objectweb.asm.Opcodes.FLOAD;
 import static org.objectweb.asm.Opcodes.FSTORE;
 import static org.objectweb.asm.Opcodes.GETSTATIC;
+import static org.objectweb.asm.Opcodes.I2B;
+import static org.objectweb.asm.Opcodes.I2C;
+import static org.objectweb.asm.Opcodes.I2D;
+import static org.objectweb.asm.Opcodes.I2F;
+import static org.objectweb.asm.Opcodes.I2L;
+import static org.objectweb.asm.Opcodes.I2S;
 import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.ICONST_2;
@@ -70,6 +82,9 @@ import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.ISTORE;
+import static org.objectweb.asm.Opcodes.L2D;
+import static org.objectweb.asm.Opcodes.L2F;
+import static org.objectweb.asm.Opcodes.L2I;
 import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.LCONST_1;
 import static org.objectweb.asm.Opcodes.LLOAD;
@@ -134,18 +149,25 @@ import static org.objectweb.asm.Opcodes.SIPUSH;
  *   <li><b>DUP + store + pop</b> — {@code DUP}/{@code DUP2}; store;
  *       matching pop becomes a plain store; bare {@code DUP}/{@code DUP2} with a
  *       matching pop is eliminated.</li>
- *   <li><b>Box/unbox cancellation</b> — {@code Wrapper.valueOf(p)} /
+ *   <li><b>Box/unbox cancellation and conversion</b> — {@code Wrapper.valueOf(p)} /
  *       {@code DefaultTypeTransformation.box(p)} followed by a same-type unbox
  *       ({@code Wrapper.xxxValue()} or {@code DefaultTypeTransformation.xxxUnbox})
  *       cancel to a no-op (the primitive remains on the stack). Cross-convention
  *       pairs of the same primitive type are included (for example
- *       {@code DTT.box(I)} then {@code Integer.intValue()}). A boxed value
- *       discarded by {@code POP}/{@code POP2} (or void {@code RETURN}) drops the
- *       box and, when the primitive producer is still in the load window, drops
- *       that producer too; otherwise it pops the original primitive
- *       ({@code POP2} when wide). {@code POP2} on a narrow boxed value is treated
- *       as two one-slot discards (box/primitive plus the slot underneath).
- *       Mismatched unbox types are left intact.</li>
+ *       {@code DTT.box(I)} then {@code Integer.intValue()}). When the unbox
+ *       targets a <em>different</em> numeric primitive, the pair is rewritten to
+ *       the matching JVM conversion ({@code I2L}, {@code L2I}, {@code I2F}, …),
+ *       including cross-wrapper forms such as {@code Integer.valueOf} then
+ *       {@code Long.longValue}: after a pending box the runtime value is known to
+ *       be a properly boxed primitive, so a wrong-owner unbox cannot express a
+ *       conditional CCE path (and real classgen uses {@code I2L} for
+ *       {@code long l = intExpr} directly). Boolean is excluded from conversion
+ *       rewrites (only same-type cancel applies). A boxed value discarded by
+ *       {@code POP}/{@code POP2} (or void {@code RETURN}) drops the box and, when
+ *       the primitive producer is still in the load window, drops that producer
+ *       too; otherwise it pops the original primitive ({@code POP2} when wide).
+ *       {@code POP2} on a narrow boxed value is treated as two one-slot discards
+ *       (box/primitive plus the slot underneath).</li>
  *   <li><b>Boolean constant folding</b> — {@code GETSTATIC Boolean.TRUE/FALSE}
  *       followed by {@code booleanValue()} or
  *       {@code DefaultTypeTransformation.booleanUnbox} becomes
@@ -461,6 +483,9 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
             return;
         }
         if (tryCancelBoxUnbox(opcode, owner, name, descriptor)) {
+            return;
+        }
+        if (tryRewriteBoxUnboxConversion(opcode, owner, name, descriptor)) {
             return;
         }
         if (tryBufferBox(opcode, owner, name, descriptor, isInterface)) {
@@ -1053,6 +1078,228 @@ public final class PeepholeOptimizingMethodVisitor extends MethodVisitor {
         }
         clearPendingBox();
         return true;
+    }
+
+    /**
+     * Rewrites {@code box(P); unbox-as-Q} to a primitive conversion when {@code P}
+     * and {@code Q} are different numeric types.
+     * <p>
+     * After a pending box the operand is known to be a properly boxed {@code P},
+     * so forms such as {@code Integer.valueOf}; {@code Long.longValue} (wrong
+     * owner for the receiver) are equivalent to {@code I2L} rather than a
+     * data-dependent CCE path. Real classgen typically emits {@code I2L} for
+     * {@code long l = intExpr} directly; this rewrite recovers the same shape
+     * when an intermediate box/unbox pair was produced instead.
+     * <p>
+     * Boolean is not converted here (only same-type cancel via
+     * {@link #tryCancelBoxUnbox}). Same-type pairs that failed the owner check
+     * in {@link #matchesPendingUnbox} are treated as identity (drop box/unbox).
+     *
+     * @return {@code true} if the unbox was fully rewritten
+     */
+    private boolean tryRewriteBoxUnboxConversion(final int opcode, final String owner, final String name, final String descriptor) {
+        if (pendingBoxKind == PendingBoxKind.NONE) {
+            return false;
+        }
+        String targetPrim = unboxTargetPrimitive(opcode, owner, name, descriptor);
+        if (targetPrim == null) {
+            return false;
+        }
+        String sourcePrim = pendingBoxPrimitiveDescriptor;
+        if (sourcePrim == null) {
+            return false;
+        }
+        // Boolean only participates in same-type cancel, not numeric conversion.
+        if ("Z".equals(sourcePrim) || "Z".equals(targetPrim)) {
+            return false;
+        }
+
+        if (sourcePrim.equals(targetPrim)) {
+            // Same primitive, but not a matchesPendingUnbox hit (e.g. wrong wrapper
+            // owner). Known boxed value → identity; leave the primitive on the stack.
+            clearPendingBox();
+            return true;
+        }
+
+        if (!canConvertPrimitive(sourcePrim, targetPrim)) {
+            return false;
+        }
+
+        // Primitive must be on the operand stack before the conversion opcode(s).
+        clearPendingBox();
+        flushPendingLoad();
+        emitPrimitiveConversion(sourcePrim, targetPrim);
+        return true;
+    }
+
+    /**
+     * Target primitive descriptor of a recognized unbox call, or {@code null}.
+     * Accepts any wrapper owner for {@code xxxValue()} and DTT {@code xxxUnbox};
+     * owner matching is not required (see {@link #tryRewriteBoxUnboxConversion}).
+     */
+    private static String unboxTargetPrimitive(final int opcode, final String owner, final String name, final String descriptor) {
+        if (opcode == INVOKEVIRTUAL && isKnownWrapperOwner(owner)) {
+            Type[] args = Type.getArgumentTypes(descriptor);
+            Type ret = Type.getReturnType(descriptor);
+            if (args.length != 0 || !isBoxablePrimitive(ret)) {
+                return null;
+            }
+            String expectedName = primitiveValueMethodName(ret.getDescriptor());
+            return expectedName != null && expectedName.equals(name) ? ret.getDescriptor() : null;
+        }
+        if (opcode == INVOKESTATIC && DTT_OWNER.equals(owner)) {
+            Type[] args = Type.getArgumentTypes(descriptor);
+            Type ret = Type.getReturnType(descriptor);
+            if (args.length != 1 || args[0].getSort() != Type.OBJECT || !isBoxablePrimitive(ret)) {
+                return null;
+            }
+            String expectedName = primitiveUnboxMethodName(ret.getDescriptor());
+            return expectedName != null && expectedName.equals(name) ? ret.getDescriptor() : null;
+        }
+        return null;
+    }
+
+    private static boolean isKnownWrapperOwner(final String owner) {
+        return "java/lang/Boolean".equals(owner)
+                || "java/lang/Byte".equals(owner)
+                || "java/lang/Character".equals(owner)
+                || "java/lang/Short".equals(owner)
+                || "java/lang/Integer".equals(owner)
+                || "java/lang/Long".equals(owner)
+                || "java/lang/Float".equals(owner)
+                || "java/lang/Double".equals(owner);
+    }
+
+    /**
+     * Whether a JVM primitive conversion from {@code fromDescriptor} to
+     * {@code toDescriptor} exists (including multi-step narrowing such as
+     * {@code long} → {@code byte} via {@code L2I}; {@code I2B}).
+     */
+    private static boolean canConvertPrimitive(final String fromDescriptor, final String toDescriptor) {
+        if (fromDescriptor == null || toDescriptor == null) {
+            return false;
+        }
+        if (fromDescriptor.equals(toDescriptor)) {
+            return true;
+        }
+        // Boolean has no numeric conversion opcodes here.
+        if ("Z".equals(fromDescriptor) || "Z".equals(toDescriptor)) {
+            return false;
+        }
+        char from = stackCategory(fromDescriptor);
+        char to = toDescriptor.charAt(0);
+        return from != 0 && (to == 'B' || to == 'C' || to == 'S' || to == 'I' || to == 'J' || to == 'F' || to == 'D');
+    }
+
+    /**
+     * Stack category used for conversion: {@code B}/{@code C}/{@code S}/{@code I}
+     * share the int slot ({@code 'I'}); {@code J}/{@code F}/{@code D} keep their
+     * own category.
+     */
+    private static char stackCategory(final String primitiveDescriptor) {
+        return switch (primitiveDescriptor) {
+          case "B", "C", "S", "I" -> 'I';
+          case "J" -> 'J';
+          case "F" -> 'F';
+          case "D" -> 'D';
+          default -> 0;
+        };
+    }
+
+    /**
+     * Emits the JVM conversion from a pending boxed primitive to {@code toDescriptor}.
+     * Caller must ensure the source primitive is already on the operand stack and
+     * that {@link #canConvertPrimitive} is true.
+     */
+    private void emitPrimitiveConversion(final String fromDescriptor, final String toDescriptor) {
+        if (fromDescriptor.equals(toDescriptor)) {
+            return;
+        }
+        char from = stackCategory(fromDescriptor);
+        char to = toDescriptor.charAt(0);
+        switch (from) {
+          case 'I' -> emitConversionFromInt(to);
+          case 'J' -> emitConversionFromLong(to);
+          case 'F' -> emitConversionFromFloat(to);
+          case 'D' -> emitConversionFromDouble(to);
+          default -> throw new IllegalStateException("unsupported conversion source: " + fromDescriptor);
+        }
+    }
+
+    private void emitConversionFromInt(final char to) {
+        switch (to) {
+          case 'B' -> super.visitInsn(I2B);
+          case 'C' -> super.visitInsn(I2C);
+          case 'S' -> super.visitInsn(I2S);
+          case 'I' -> { /* already int-slot (byte/short/char/int source) */ }
+          case 'J' -> super.visitInsn(I2L);
+          case 'F' -> super.visitInsn(I2F);
+          case 'D' -> super.visitInsn(I2D);
+          default -> throw new IllegalStateException("unsupported int conversion target: " + to);
+        }
+    }
+
+    private void emitConversionFromLong(final char to) {
+        switch (to) {
+          case 'B' -> {
+              super.visitInsn(L2I);
+              super.visitInsn(I2B);
+          }
+          case 'C' -> {
+              super.visitInsn(L2I);
+              super.visitInsn(I2C);
+          }
+          case 'S' -> {
+              super.visitInsn(L2I);
+              super.visitInsn(I2S);
+          }
+          case 'I' -> super.visitInsn(L2I);
+          case 'F' -> super.visitInsn(L2F);
+          case 'D' -> super.visitInsn(L2D);
+          default -> throw new IllegalStateException("unsupported long conversion target: " + to);
+        }
+    }
+
+    private void emitConversionFromFloat(final char to) {
+        switch (to) {
+          case 'B' -> {
+              super.visitInsn(F2I);
+              super.visitInsn(I2B);
+          }
+          case 'C' -> {
+              super.visitInsn(F2I);
+              super.visitInsn(I2C);
+          }
+          case 'S' -> {
+              super.visitInsn(F2I);
+              super.visitInsn(I2S);
+          }
+          case 'I' -> super.visitInsn(F2I);
+          case 'J' -> super.visitInsn(F2L);
+          case 'D' -> super.visitInsn(F2D);
+          default -> throw new IllegalStateException("unsupported float conversion target: " + to);
+        }
+    }
+
+    private void emitConversionFromDouble(final char to) {
+        switch (to) {
+          case 'B' -> {
+              super.visitInsn(D2I);
+              super.visitInsn(I2B);
+          }
+          case 'C' -> {
+              super.visitInsn(D2I);
+              super.visitInsn(I2C);
+          }
+          case 'S' -> {
+              super.visitInsn(D2I);
+              super.visitInsn(I2S);
+          }
+          case 'I' -> super.visitInsn(D2I);
+          case 'J' -> super.visitInsn(D2L);
+          case 'F' -> super.visitInsn(D2F);
+          default -> throw new IllegalStateException("unsupported double conversion target: " + to);
+        }
     }
 
     /**
