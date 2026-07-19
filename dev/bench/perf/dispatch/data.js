@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784359416253,
+  "lastUpdate": 1784446482298,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -717,6 +717,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1491,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "57518021924da4f4542aa6e14b903a077e4b31af",
+          "message": "Bump actions/setup-java from 5.4.0 to 5.5.0 (#2723)\n\nBumps [actions/setup-java](https://github.com/actions/setup-java) from 5.4.0 to 5.5.0.\n- [Release notes](https://github.com/actions/setup-java/releases)\n- [Commits](https://github.com/actions/setup-java/compare/v5.4.0...v5.5.0)\n\n---\nupdated-dependencies:\n- dependency-name: actions/setup-java\n  dependency-version: 5.5.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-07-19T04:29:52Z",
+          "url": "https://github.com/apache/groovy/commit/57518021924da4f4542aa6e14b903a077e4b31af"
+        },
+        "date": 1784446481440,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3983,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 465,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 886,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1490,
             "unit": "classes"
           },
           {
