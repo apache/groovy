@@ -64,6 +64,21 @@ public class CompilerConfiguration {
     /** Optimization Option for enabling parallel parsing. */
     public static final String PARALLEL_PARSE = "parallelParse";
 
+    /**
+     * Option for enabling ANTLR parser error recovery on the Parrot parser.
+     * <p>
+     * Disabled by default. When enabled (typically for IDE editing), the parser
+     * resynchronizes after recognition errors so multiple diagnostics can be
+     * collected in one pass instead of failing fast on the first error.
+     * Stored in {@link #getOptimizationOptions()} for consistency with other
+     * compiler feature flags (e.g. {@link #GROOVYDOC}).
+     * </p>
+     *
+     * @see #isErrorRecoveryEnabled()
+     * @since 5.0.0
+     */
+    public static final String ERROR_RECOVERY = "errorRecovery";
+
     /** Joint Compilation Option for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
 
@@ -456,6 +471,7 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.parallel.parse</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.attach.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      *   <tr><td><code>groovy.attach.runtime.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
+     *   <tr><td><code>groovy.parser.error.recovery</code></td><td>{@link #getOptimizationOptions} / {@link #isErrorRecoveryEnabled}</td></tr>
      * </table>
      * </blockquote>
      */
@@ -475,11 +491,12 @@ public class CompilerConfiguration {
         setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", DEFAULT_TARGET_BYTECODE));
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
 
-        optimizationOptions = new HashMap<>(4);
+        optimizationOptions = new HashMap<>(5);
         handleOptimizationOption(INVOKEDYNAMIC, getSystemPropertySafe("groovy.target.indy", "true"));
         handleOptimizationOption(GROOVYDOC, getSystemPropertySafe("groovy.attach.groovydoc"));
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
+        handleOptimizationOption(ERROR_RECOVERY, getSystemPropertySafe("groovy.parser.error.recovery"));
 
         if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);
@@ -1368,5 +1385,21 @@ public class CompilerConfiguration {
      */
     public boolean isRuntimeGroovydocEnabled() {
         return Boolean.TRUE.equals(getOptimizationOptions().get(RUNTIME_GROOVYDOC));
+    }
+
+    /**
+     * Checks if ANTLR parser error recovery is enabled.
+     * <p>
+     * Disabled by default. Enable via {@link #ERROR_RECOVERY} or the
+     * {@code groovy.parser.error.recovery} system property. Intended for IDE
+     * editing (multiple syntax diagnostics per pass). Leave off for production
+     * compilation: fail-fast is cheaper and avoids building partial trees.
+     * </p>
+     *
+     * @return {@code true} if parser error recovery is enabled
+     * @since 5.0.0
+     */
+    public boolean isErrorRecoveryEnabled() {
+        return Boolean.TRUE.equals(getOptimizationOptions().get(ERROR_RECOVERY));
     }
 }
