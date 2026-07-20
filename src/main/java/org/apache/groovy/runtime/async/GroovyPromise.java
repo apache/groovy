@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.runtime.async;
 
-// AsyncContext support reserved for future enhancement
 import groovy.concurrent.Awaitable;
 
 import java.util.Objects;
@@ -179,9 +178,7 @@ public class GroovyPromise<T> implements Awaitable<T> {
      * {@inheritDoc}
      * <p>
      * Returns a new {@code GroovyPromise} whose result is obtained by applying
-     * the given function to this promise's result.  The current
-     * {@code AsyncContext} snapshot is captured when the continuation is
-     * registered and restored when it executes.
+     * the given function to this promise's result when it completes.
      */
     @Override
     public <U> Awaitable<U> then(Function<? super T, ? extends U> fn) {
@@ -193,8 +190,6 @@ public class GroovyPromise<T> implements Awaitable<T> {
      * <p>
      * Returns a new {@code GroovyPromise} that is the result of composing this
      * promise with the async function, enabling flat-mapping of awaitables.
-     * The current {@code AsyncContext} snapshot is captured when the
-     * continuation is registered and restored when it executes.
      */
     @Override
     public <U> Awaitable<U> thenCompose(Function<? super T, ? extends Awaitable<U>> fn) {
@@ -208,8 +203,6 @@ public class GroovyPromise<T> implements Awaitable<T> {
      * Returns a new {@code GroovyPromise} that handles exceptions thrown by this promise.
      * The throwable passed to the handler is deeply unwrapped to strip JDK
      * wrapper layers ({@code CompletionException}, {@code ExecutionException}).
-     * The handler runs with the {@code AsyncContext} snapshot that was active
-     * when the recovery continuation was registered.
      */
     @Override
     public Awaitable<T> exceptionally(Function<Throwable, ? extends T> fn) {

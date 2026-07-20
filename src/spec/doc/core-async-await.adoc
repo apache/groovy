@@ -359,7 +359,9 @@ import org.apache.groovy.runtime.async.AsyncSupport
 import java.util.concurrent.Executors
 
 AsyncSupport.setExecutor(Executors.newFixedThreadPool(4))
-AsyncSupport.resetExecutor()  // restore default
+AsyncSupport.setExecutor(null)  // restore platform default
+// or equivalently:
+AsyncSupport.resetExecutor()
 ----
 
 [[async-jdk-integration]]

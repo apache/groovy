@@ -18,6 +18,24 @@
  */
 
 /**
- * Runtime support for async/await expressions. Provides continuation-passing style transformation and execution framework.
+ * Runtime support for Groovy's {@code async}/{@code await}/{@code defer}
+ * language features.
+ * <p>
+ * Layout:
+ * <ul>
+ *   <li>{@link org.apache.groovy.runtime.async.AsyncSupport} — public entry
+ *       point used by compiler-generated code and by
+ *       {@link groovy.concurrent.Awaitable}</li>
+ *   <li>{@code AsyncExecutors} — executor/scheduler configuration</li>
+ *   <li>{@code AwaitCombinators} — {@code all}/{@code any}/{@code first}/
+ *       {@code allSettled} joining algorithms</li>
+ *   <li>{@link org.apache.groovy.runtime.async.GroovyPromise} — default
+ *       {@link groovy.concurrent.Awaitable} implementation</li>
+ *   <li>{@link org.apache.groovy.runtime.async.GeneratorBridge} —
+ *       producer/consumer bridge for {@code yield return}</li>
+ *   <li>{@link org.apache.groovy.runtime.async.DefaultAsyncScope},
+ *       {@link org.apache.groovy.runtime.async.DefaultAsyncChannel} —
+ *       structured concurrency and CSP channel implementations</li>
+ * </ul>
  */
 package org.apache.groovy.runtime.async;

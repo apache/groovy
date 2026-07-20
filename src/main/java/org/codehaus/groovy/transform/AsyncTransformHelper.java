@@ -22,20 +22,22 @@ import groovy.concurrent.Awaitable;
 import org.apache.groovy.runtime.async.AsyncSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.query.AstQuery;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
@@ -44,7 +46,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 /**
  * Shared AST utilities for the {@code async}/{@code await}/{@code defer} language features.
  * <p>
- * Centralises AST node construction for the parser ({@code AstBuilder}).
+ * Centralises AST node construction and higher-level rewrites used by the
+ * parser ({@code AstBuilder}) so feature logic does not sprawl across the
+ * visitor.
  *
  * @since 6.0.0
  */
@@ -65,6 +69,9 @@ public final class AsyncTransformHelper {
     private static final String DEFER_METHOD = "defer";
     private static final String EXECUTE_DEFER_SCOPE_METHOD = "executeDeferScope";
 
+    /** Monotonic suffix for synthetic {@code for await} source variables. */
+    private static final AtomicLong FOR_AWAIT_SEQ = new AtomicLong();
+
     private AsyncTransformHelper() { }
 
     private static Expression ensureArgs(Expression expr) {
@@ -74,17 +81,25 @@ public final class AsyncTransformHelper {
     /**
      * Builds {@code AsyncSupport.await(arg)} or for multi-arg:
      * {@code AsyncSupport.await(Awaitable.all(arg1, arg2, ...))}.
+     * <p>
+     * Single-arg form casts to {@link Object} so static/dynamic overload
+     * selection targets {@link AsyncSupport#await(Object)}, avoiding
+     * ambiguity when the argument implements multiple async interfaces
+     * (e.g. {@link java.util.concurrent.CompletableFuture} implements both
+     * {@link java.util.concurrent.CompletionStage} and
+     * {@link java.util.concurrent.Future}).
      */
     public static Expression buildAwaitCall(Expression arg) {
         if (arg instanceof ArgumentListExpression args && args.getExpressions().size() > 1) {
-            Expression allCall = callX(classX(AWAITABLE_TYPE), "all", args);
+            Expression allCall = callX(AWAITABLE_TYPE, "all", args);
             return callX(ASYNC_SUPPORT_TYPE, AWAIT_METHOD, new ArgumentListExpression(allCall));
         }
-        // Cast to Object to force dynamic dispatch to the await(Object) overload,
-        // avoiding ambiguity when the argument implements multiple async interfaces
-        // (e.g., CompletableFuture implements both CompletionStage and Future)
+        Expression source = arg;
+        if (arg instanceof ArgumentListExpression args && !args.getExpressions().isEmpty()) {
+            source = args.getExpression(0);
+        }
         return callX(ASYNC_SUPPORT_TYPE, AWAIT_METHOD,
-                new ArgumentListExpression(castX(ClassHelper.OBJECT_TYPE, arg)));
+                new ArgumentListExpression(castX(ClassHelper.OBJECT_TYPE, source)));
     }
 
     /**
@@ -143,32 +158,10 @@ public final class AsyncTransformHelper {
     public static boolean containsYieldReturn(Statement stmt) {
         return AstQuery.from(stmt)
                 .descendants(StaticMethodCallExpression.class)
-                .notInto(ClosureExpression.class) // don't descend into nested closures
+                .notInto(ClosureExpression.class)
                 .where(call -> YIELD_RETURN_METHOD.equals(call.getMethod())
                         && AsyncSupport.class.getName().equals(call.getOwnerType().getName()))
                 .any();
-    }
-
-    /**
-     * Rewrites {@code yieldReturn(expr)} calls to {@code yieldReturn($__asyncGen__, expr)}
-     * by injecting the generator parameter reference.
-     */
-    public static void injectGenParamIntoYieldReturnCalls(Statement stmt, Parameter genParam) {
-        stmt.visit(new CodeVisitorSupport() {
-            @Override
-            public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
-                if (YIELD_RETURN_METHOD.equals(call.getMethod())
-                        && AsyncSupport.class.getName().equals(call.getOwnerType().getName())) {
-                    // Already built with gen param by buildYieldReturnCall — no action needed
-                    // This method is a hook point for future transformations
-                }
-                super.visitStaticMethodCallExpression(call);
-            }
-            @Override
-            public void visitClosureExpression(ClosureExpression expression) {
-                // Don't descend into nested closures
-            }
-        });
     }
 
     /**
@@ -178,7 +171,7 @@ public final class AsyncTransformHelper {
     public static boolean containsDefer(Statement stmt) {
         return AstQuery.from(stmt)
                 .descendants(StaticMethodCallExpression.class)
-                .notInto(ClosureExpression.class) // don't descend into nested closures
+                .notInto(ClosureExpression.class)
                 .where(call -> DEFER_METHOD.equals(call.getMethod())
                         && AsyncSupport.class.getName().equals(call.getOwnerType().getName()))
                 .any();
@@ -193,14 +186,80 @@ public final class AsyncTransformHelper {
      * </pre>
      */
     public static Statement wrapWithDeferScope(Statement body) {
-        // var $__deferScope__ = AsyncSupport.createDeferScope()
         Statement declStmt = declS(varX(DEFER_SCOPE_VAR),
                 callX(ASYNC_SUPPORT_TYPE, CREATE_DEFER_SCOPE_METHOD));
 
-        // try { body } finally { AsyncSupport.executeDeferScope($__deferScope__) }
         Statement finallyStmt = stmt(callX(ASYNC_SUPPORT_TYPE, EXECUTE_DEFER_SCOPE_METHOD,
                 args(varX(DEFER_SCOPE_VAR))));
 
         return block(declStmt, tryCatchS(body, finallyStmt));
+    }
+
+    /**
+     * Rewrites a {@code for await} loop into a block that materialises the
+     * source iterable, runs the loop, and closes the source in a finally block:
+     * <pre>
+     * var $__forAwaitSource_N = AsyncSupport.toIterable(collection)
+     * try {
+     *     for (... in $__forAwaitSource_N) { body }
+     * } finally {
+     *     AsyncSupport.closeIterable($__forAwaitSource_N)
+     * }
+     * </pre>
+     *
+     * @param forStatement the for statement whose collection is the await source
+     * @return the rewritten statement block
+     */
+    public static Statement wrapForAwaitLoop(ForStatement forStatement) {
+        Expression original = forStatement.getCollectionExpression();
+        String tempVar = "$__forAwaitSource_" + FOR_AWAIT_SEQ.incrementAndGet();
+        Expression toIterableCall = buildToIterableCall(original);
+
+        Statement declStmt = declS(varX(tempVar), toIterableCall);
+        forStatement.setCollectionExpression(varX(tempVar));
+
+        Statement finallyStmt = stmt(buildCloseIterableCall(varX(tempVar)));
+        TryCatchStatement tryCatch = new TryCatchStatement(forStatement, finallyStmt);
+        return block(declStmt, tryCatch);
+    }
+
+    /**
+     * Applies defer-scope wrapping and generator parameter injection to an
+     * {@code async { ... }} closure, then builds the runtime call
+     * ({@code async} or {@code asyncGenerator}).
+     *
+     * @param closure the parsed async closure expression
+     * @return the desugared runtime call expression
+     */
+    public static Expression transformAsyncClosure(ClosureExpression closure) {
+        boolean hasYieldReturn = containsYieldReturn(closure.getCode());
+        boolean hasDefer = containsDefer(closure.getCode());
+
+        if (hasDefer) {
+            Statement wrappedBody = wrapWithDeferScope(closure.getCode());
+            ClosureExpression newClosure = new ClosureExpression(closure.getParameters(), wrappedBody);
+            newClosure.setVariableScope(closure.getVariableScope());
+            newClosure.setSourcePosition(closure);
+            closure = newClosure;
+        }
+
+        if (hasYieldReturn) {
+            Parameter genParam = createGenParam();
+            Parameter[] existingParams = closure.getParameters();
+            boolean hasUserParams = existingParams != null && existingParams.length > 0;
+            Parameter[] newParams;
+            if (hasUserParams) {
+                newParams = new Parameter[existingParams.length + 1];
+                newParams[0] = genParam;
+                System.arraycopy(existingParams, 0, newParams, 1, existingParams.length);
+            } else {
+                newParams = new Parameter[]{genParam};
+            }
+            ClosureExpression genClosure = new ClosureExpression(newParams, closure.getCode());
+            genClosure.setVariableScope(closure.getVariableScope());
+            genClosure.setSourcePosition(closure);
+            return buildAsyncGeneratorCall(new ArgumentListExpression(genClosure));
+        }
+        return buildAsyncCall(new ArgumentListExpression(closure));
     }
 }

@@ -1116,8 +1116,48 @@ final class AsyncAwaitTest {
                 await Awaitable.first(f1, f2)
                 assert false : 'should have thrown'
             } catch (Exception e) {
+                // await exception transparency peels the aggregate CompletionException
                 assert e != null
             }
+        '''
+    }
+
+    @Test
+    void testSetExecutorNullResetsToDefault() {
+        assertScript '''
+            import groovy.concurrent.Awaitable
+            import org.apache.groovy.runtime.async.AsyncSupport
+            import java.util.concurrent.Executors
+
+            def original = Awaitable.getExecutor()
+            def custom = Executors.newSingleThreadExecutor()
+            try {
+                Awaitable.setExecutor(custom)
+                assert Awaitable.getExecutor().is(custom)
+                Awaitable.setExecutor(null)
+                assert Awaitable.getExecutor() != null
+                assert !Awaitable.getExecutor().is(custom)
+                // AsyncSupport path is equivalent
+                AsyncSupport.setExecutor(custom)
+                AsyncSupport.setExecutor(null)
+                assert AsyncSupport.getExecutor() != null
+            } finally {
+                Awaitable.setExecutor(original)
+                custom.shutdown()
+            }
+        '''
+    }
+
+    @Test
+    void testAwaitObjectFallbackHandlesNullAndAwaitable() {
+        assertScript '''
+            import org.apache.groovy.runtime.async.AsyncSupport
+            import groovy.concurrent.Awaitable
+
+            assert AsyncSupport.await((Object) null) == null
+            assert AsyncSupport.await((Object) Awaitable.of(42)) == 42
+            def task = async { 'x' }
+            assert AsyncSupport.await((Object) task) == 'x'
         '''
     }
 
