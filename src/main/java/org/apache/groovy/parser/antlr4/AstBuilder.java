@@ -539,20 +539,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         visitAnnotationsOpt(ctx.annotationsOpt()).forEach(forStatement::addStatementAnnotation);
 
         if (isForAwait) {
-            // Transform collection expression: wrap in AsyncSupport.toIterable()
-            // and wrap the loop in try/finally to ensure cleanup on break/exception
-            Expression original = forStatement.getCollectionExpression();
-            String tempVar = "__forAwaitSource" + ctx.hashCode();
-            Expression toIterableCall = AsyncTransformHelper.buildToIterableCall(original);
-
-            // var $temp = AsyncSupport.toIterable(original)
-            Statement declStmt = stmt(declX(varX(tempVar), toIterableCall));
-            forStatement.setCollectionExpression(varX(tempVar));
-
-            // try { for (...) { body } } finally { AsyncSupport.closeIterable($temp) }
-            Statement finallyStmt = stmt(AsyncTransformHelper.buildCloseIterableCall(varX(tempVar)));
-            TryCatchStatement tryCatch = new TryCatchStatement(forStatement, finallyStmt);
-            return configureAST(block(declStmt, tryCatch), ctx);
+            return configureAST(AsyncTransformHelper.wrapForAwaitLoop(forStatement), ctx);
         }
 
         return forStatement;
@@ -3090,39 +3077,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public Expression visitAsyncClosureExprAlt(final AsyncClosureExprAltContext ctx) {
         ClosureExpression closure = this.visitClosureOrLambdaExpression(ctx.closureOrLambdaExpression());
-        boolean hasYieldReturn = AsyncTransformHelper.containsYieldReturn(closure.getCode());
-        boolean hasDefer = AsyncTransformHelper.containsDefer(closure.getCode());
-
-        if (hasDefer) {
-            Statement wrappedBody = AsyncTransformHelper.wrapWithDeferScope(closure.getCode());
-            ClosureExpression newClosure = new ClosureExpression(closure.getParameters(), wrappedBody);
-            newClosure.setVariableScope(closure.getVariableScope());
-            newClosure.setSourcePosition(closure);
-            closure = newClosure;
-        }
-
-        if (hasYieldReturn) {
-            // Inject synthetic $__asyncGen__ as first parameter
-            Parameter genParam = AsyncTransformHelper.createGenParam();
-            Parameter[] existingParams = closure.getParameters();
-            boolean hasUserParams = existingParams != null && existingParams.length > 0;
-            Parameter[] newParams;
-            if (hasUserParams) {
-                newParams = new Parameter[existingParams.length + 1];
-                newParams[0] = genParam;
-                System.arraycopy(existingParams, 0, newParams, 1, existingParams.length);
-            } else {
-                newParams = new Parameter[]{genParam};
-            }
-            ClosureExpression genClosure = new ClosureExpression(newParams, closure.getCode());
-            genClosure.setVariableScope(closure.getVariableScope());
-            genClosure.setSourcePosition(closure);
-            return configureAST(AsyncTransformHelper.buildAsyncGeneratorCall(
-                    new ArgumentListExpression(genClosure)), ctx);
-        } else {
-            return configureAST(AsyncTransformHelper.buildAsyncCall(
-                    new ArgumentListExpression(closure)), ctx);
-        }
+        return configureAST(AsyncTransformHelper.transformAsyncClosure(closure), ctx);
     }
 
     @Override

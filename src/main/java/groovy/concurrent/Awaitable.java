@@ -439,9 +439,10 @@ public interface Awaitable<T> {
      * Returns an {@code Awaitable} that completes with the result of the first
      * source that succeeds.  Individual failures are silently absorbed; only
      * when <em>all</em> sources have failed does the returned awaitable reject
-     * with an {@link IllegalStateException} whose
-     * {@linkplain Throwable#getSuppressed() suppressed} array contains every
-     * individual error.
+     * with an aggregate {@link java.util.concurrent.CompletionException}
+     * (message {@code "All N tasks failed"}, cause = first failure, remaining
+     * failures as suppressed). Under {@code await} exception transparency the
+     * cause is rethrown.
      * <p>
      * This is the Groovy equivalent of JavaScript's {@code Promise.any()}.
      * Contrast with {@link #any(Object...)} which returns the first result to

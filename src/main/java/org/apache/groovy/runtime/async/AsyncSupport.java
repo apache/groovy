@@ -23,13 +23,9 @@ import groovy.concurrent.Awaitable;
 import groovy.concurrent.AwaitableAdapterRegistry;
 
 import java.io.Closeable;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
@@ -43,26 +39,22 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
  * Internal runtime support for the {@code async}/{@code await}/{@code defer} language features.
  * <p>
- * This class contains the actual implementation invoked by compiler-generated code.
- * User code should prefer the static methods on {@link groovy.concurrent.Awaitable}
- * for combinators and configuration.
+ * This class is the entry point invoked by compiler-generated code and also
+ * exposes the combinator and configuration surface used by
+ * {@link groovy.concurrent.Awaitable}. Combinator algorithms live in
+ * {@link AwaitCombinators}; executor/scheduler configuration lives in
+ * {@link AsyncExecutors}.
  * <p>
  * <b>Thread pool configuration:</b>
  * <ul>
@@ -71,7 +63,8 @@ import java.util.function.Supplier;
  *   <li>On JDK 17-20 the fallback is a cached daemon thread pool
  *       whose maximum size is controlled by the system property
  *       {@code groovy.async.parallelism} (default: {@code 256}).</li>
- *   <li>The executor can be overridden at any time via {@link #setExecutor}.</li>
+ *   <li>The executor can be overridden via {@link #setExecutor}; pass
+ *       {@code null} to restore the platform default.</li>
  * </ul>
  * <p>
  * <b>Exception handling</b> follows a transparency principle: the
@@ -82,82 +75,42 @@ import java.util.function.Supplier;
  */
 public class AsyncSupport {
 
-    private static final boolean VIRTUAL_THREADS_AVAILABLE;
-    private static final Executor VIRTUAL_THREAD_EXECUTOR;
-    private static final int FALLBACK_MAX_THREADS;
-    private static final Executor FALLBACK_EXECUTOR;
-
-    static {
-        Executor vtExecutor = null;
-        boolean vtAvailable = false;
-        try {
-            MethodHandle mh = MethodHandles.lookup().findStatic(
-                    Executors.class, "newVirtualThreadPerTaskExecutor",
-                    MethodType.methodType(ExecutorService.class));
-            vtExecutor = (Executor) mh.invoke();
-            vtAvailable = true;
-        } catch (Throwable ignored) {
-            // JDK < 21 — virtual threads not available
-        }
-        VIRTUAL_THREAD_EXECUTOR = vtExecutor;
-        VIRTUAL_THREADS_AVAILABLE = vtAvailable;
-
-        FALLBACK_MAX_THREADS = getIntegerSafe("groovy.async.parallelism", 256);
-        if (!VIRTUAL_THREADS_AVAILABLE) {
-            FALLBACK_EXECUTOR = new ThreadPoolExecutor(
-                    0, FALLBACK_MAX_THREADS,
-                    60L, TimeUnit.SECONDS,
-                    new SynchronousQueue<>(),
-                    r -> {
-                        Thread t = new Thread(r);
-                        t.setDaemon(true);
-                        @SuppressWarnings("deprecation")
-                        long id = t.getId();
-                        t.setName("groovy-async-" + id);
-                        return t;
-                    },
-                    new ThreadPoolExecutor.CallerRunsPolicy());
-        } else {
-            FALLBACK_EXECUTOR = null;
-        }
-    }
-
-    private static volatile Executor defaultExecutor = createDefaultExecutor();
-
-    private static final ScheduledExecutorService SCHEDULER =
-            Executors.newSingleThreadScheduledExecutor(r -> {
-                Thread t = new Thread(r, "groovy-async-scheduler");
-                t.setDaemon(true);
-                return t;
-            });
-
     private AsyncSupport() { }
 
     // ---- executor configuration -----------------------------------------
 
     /** Returns the shared scheduler for delays, timeouts, and scope deadlines. */
     public static ScheduledExecutorService getScheduler() {
-        return SCHEDULER;
+        return AsyncExecutors.getScheduler();
     }
 
     /** Returns {@code true} if running on JDK 21+ with virtual thread support. */
     public static boolean isVirtualThreadsAvailable() {
-        return VIRTUAL_THREADS_AVAILABLE;
+        return AsyncExecutors.isVirtualThreadsAvailable();
     }
 
     /** Returns the current executor used for async tasks. */
     public static Executor getExecutor() {
-        return defaultExecutor;
+        return AsyncExecutors.getExecutor();
     }
 
-    /** Sets the executor used for async tasks. */
+    /**
+     * Sets the executor used for async tasks.
+     * <p>
+     * Pass {@code null} to restore the platform default (virtual threads on
+     * JDK&nbsp;21+, cached daemon pool otherwise). The change takes effect
+     * for subsequent {@code async} launches; in-flight tasks keep the
+     * executor that started them.
+     *
+     * @param executor the executor to use, or {@code null} to reset
+     */
     public static void setExecutor(Executor executor) {
-        defaultExecutor = Objects.requireNonNull(executor, "executor must not be null");
+        AsyncExecutors.setExecutor(executor);
     }
 
-    /** Resets the executor to the default (virtual threads on JDK 21+, cached pool otherwise). */
+    /** Resets the executor to the platform default. Equivalent to {@code setExecutor(null)}. */
     public static void resetExecutor() {
-        defaultExecutor = createDefaultExecutor();
+        AsyncExecutors.resetExecutor();
     }
 
     // ---- await overloads ------------------------------------------------
@@ -211,7 +164,12 @@ public class AsyncSupport {
 
     /**
      * Awaits an arbitrary object by adapting it via {@link Awaitable#from(Object)}.
-     * This is the fallback overload called by compiler-generated await expressions.
+     * <p>
+     * This is the fallback overload called by compiler-generated {@code await}
+     * expressions. The compiler inserts a cast to {@link Object} so that
+     * overload resolution does not have to choose among {@code Awaitable},
+     * {@code CompletionStage}, and {@code Future} when a value implements more
+     * than one of them (e.g. {@link CompletableFuture}).
      */
     @SuppressWarnings("unchecked")
     public static <T> T await(Object source) {
@@ -231,7 +189,7 @@ public class AsyncSupport {
      */
     public static <T> Awaitable<T> executeAsync(Supplier<T> supplier, Executor executor) {
         Objects.requireNonNull(supplier, "supplier must not be null");
-        Executor targetExecutor = executor != null ? executor : defaultExecutor;
+        Executor targetExecutor = executor != null ? executor : AsyncExecutors.getExecutor();
         return GroovyPromise.of(CompletableFuture.supplyAsync(() -> {
             try {
                 return supplier.get();
@@ -245,11 +203,12 @@ public class AsyncSupport {
      * Executes the given supplier asynchronously using the default executor.
      */
     public static <T> Awaitable<T> async(Supplier<T> supplier) {
-        return executeAsync(supplier, defaultExecutor);
+        return executeAsync(supplier, AsyncExecutors.getExecutor());
     }
 
     /**
-     * Lightweight task spawn. Executes the supplier asynchronously using the default executor.
+     * Lightweight task spawn. Alias of {@link #async(Supplier)} for Go-style
+     * ergonomics; semantics are identical.
      */
     public static <T> Awaitable<T> go(Supplier<T> supplier) {
         return async(supplier);
@@ -286,7 +245,6 @@ public class AsyncSupport {
      * subsequent exceptions are added as suppressed. If a deferred action returns
      * a Future/Awaitable, the result is awaited before continuing.
      */
-    @SuppressWarnings("unchecked")
     public static void executeDeferScope(Deque<Callable<?>> scope) {
         if (scope == null || scope.isEmpty()) return;
         Throwable firstError = null;
@@ -349,11 +307,10 @@ public class AsyncSupport {
      * @param <T>  the element type
      * @return an Iterable that yields values from the generator
      */
-    @SuppressWarnings("unchecked")
     public static <T> Iterable<T> asyncGenerator(Consumer<Object> body) {
         Objects.requireNonNull(body, "body must not be null");
         GeneratorBridge<T> bridge = new GeneratorBridge<>();
-        defaultExecutor.execute(() -> {
+        AsyncExecutors.getExecutor().execute(() -> {
             try {
                 body.accept(bridge);
                 bridge.complete();
@@ -387,14 +344,15 @@ public class AsyncSupport {
             return () -> iter;
         }
         if (source instanceof Object[]) return (Iterable<T>) Arrays.asList((Object[]) source);
-        // Try adapter registry
         return AwaitableAdapterRegistry.toIterable(source);
     }
 
     /**
      * Closes a source if it implements {@link Closeable} or
      * {@link AutoCloseable}. Called by compiler-generated finally block
-     * in {@code for await} loops.
+     * in {@code for await} loops. Cleanup exceptions are swallowed so they
+     * cannot mask the original loop error; prefer robust {@code close()}
+     * implementations.
      */
     public static void closeIterable(Object source) {
         if (source instanceof Closeable c) {
@@ -410,31 +368,31 @@ public class AsyncSupport {
         }
     }
 
-    // ---- combinators ----------------------------------------------------
+    // ---- combinators (delegate to AwaitCombinators) ---------------------
 
     /**
      * Waits for all given sources to complete, returning their results in order.
-     * Multi-arg {@code await(a, b, c)} desugars to this.
+     * Multi-arg {@code await(a, b, c)} desugars to the non-blocking
+     * {@link #allAsync(Object...)} form, then awaits it.
      */
     public static <T> List<T> all(Object... sources) {
-        CompletableFuture<?>[] futures = toCombinatorFutures(sources);
-        CompletableFuture.allOf(futures).join();
-        return getJoinedResults(futures);
+        return AwaitCombinators.all(sources);
     }
 
     /**
      * Returns the result of the first source to complete (success or failure).
      */
     public static <T> T any(Object... sources) {
-        return AsyncSupport.await(AsyncSupport.<T>anyAsync(sources).toCompletableFuture());
+        return AwaitCombinators.any(sources);
     }
 
     /**
      * Returns the result of the first source to complete <em>successfully</em>.
-     * Only fails when all sources fail.
+     * Only fails when all sources fail (aggregate {@link CompletionException};
+     * {@code await} transparency rethrows the cause).
      */
     public static <T> T first(Object... sources) {
-        return AsyncSupport.await(AsyncSupport.<T>firstAsync(sources).toCompletableFuture());
+        return AwaitCombinators.first(sources);
     }
 
     /**
@@ -442,136 +400,27 @@ public class AsyncSupport {
      * {@link AwaitResult} without throwing.
      */
     public static List<AwaitResult<Object>> allSettled(Object... sources) {
-        return AsyncSupport.await(allSettledAsync(sources).toCompletableFuture());
+        return AwaitCombinators.allSettled(sources);
     }
-
-    // ---- async combinator variants (return Awaitable, non-blocking) ------
 
     /** Non-blocking variant of {@link #all} — returns an Awaitable. */
     public static Awaitable<List<Object>> allAsync(Object... sources) {
-        CompletableFuture<?>[] futures = toCombinatorFutures(sources);
-
-        // allOf is naturally fail-fast: it completes as soon as any
-        // source fails OR all sources succeed.  We track the first
-        // failure explicitly because allOf doesn't guarantee which
-        // exception propagates when multiple futures fail.
-        var firstError = new AtomicReference<Throwable>();
-        for (CompletableFuture<?> f : futures) {
-            f.whenComplete((v, e) -> {
-                if (e != null) firstError.compareAndSet(null, e);
-            });
-        }
-
-        CompletableFuture<List<Object>> combined = CompletableFuture.allOf(futures)
-                .thenApply(v -> getJoinedResults(futures));
-
-        // Replace allOf's arbitrary exception with the temporally-first one
-        CompletableFuture<List<Object>> withFirstError = combined.exceptionally(e -> {
-            Throwable first = firstError.get();
-            if (first != null && first != e && first != e.getCause()) {
-                throw first instanceof CompletionException ce ? ce : new CompletionException(first);
-            }
-            throw e instanceof CompletionException ce ? ce : new CompletionException(e);
-        });
-        return GroovyPromise.of(withFirstError);
+        return AwaitCombinators.allAsync(sources);
     }
 
     /** Non-blocking variant of {@link #any} — returns an Awaitable. */
-    @SuppressWarnings("unchecked")
     public static <T> Awaitable<T> anyAsync(Object... sources) {
-        return (Awaitable<T>) GroovyPromise.of(CompletableFuture.anyOf(toCombinatorFutures(sources)));
+        return AwaitCombinators.anyAsync(sources);
     }
 
     /** Non-blocking variant of {@link #first} — returns an Awaitable. */
-    @SuppressWarnings("unchecked")
     public static <T> Awaitable<T> firstAsync(Object... sources) {
-        CompletableFuture<T>[] futures = toFirstCombinatorFutures(sources);
-        CompletableFuture<T> result = new CompletableFuture<>();
-        var remainingFailures = new AtomicInteger(futures.length);
-        List<Throwable> errors = Collections.synchronizedList(new ArrayList<>(futures.length));
-        for (CompletableFuture<T> future : futures) {
-            future.whenComplete((value, error) -> {
-                if (error == null) {
-                    result.complete(value);
-                    return;
-                }
-                errors.add(error);
-                if (remainingFailures.decrementAndGet() == 0) {
-                    result.completeExceptionally(aggregateFirstFailures(futures.length, errors));
-                }
-            });
-        }
-        return GroovyPromise.of(result);
+        return AwaitCombinators.firstAsync(sources);
     }
 
     /** Non-blocking variant of {@link #allSettled} — returns an Awaitable. */
     public static Awaitable<List<AwaitResult<Object>>> allSettledAsync(Object... sources) {
-        CompletableFuture<?>[] futures = toCombinatorFutures(sources);
-        CompletableFuture<List<AwaitResult<Object>>> combined = CompletableFuture.allOf(
-                Arrays.stream(futures)
-                    .map(future -> future.handle((value, error) -> null))
-                    .toArray(CompletableFuture[]::new)
-            )
-                .thenApply(v -> getAwaitResults(futures));
-        return GroovyPromise.of(combined);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> List<T> getJoinedResults(CompletableFuture<?>[] futures) {
-        List<T> results = new ArrayList<>(futures.length);
-        for (CompletableFuture<?> future : futures) {
-            results.add((T) future.join());
-        }
-        return results;
-    }
-
-    private static List<AwaitResult<Object>> getAwaitResults(CompletableFuture<?>[] futures) {
-        List<AwaitResult<Object>> results = new ArrayList<>(futures.length);
-        for (CompletableFuture<?> f : futures) {
-            try {
-                results.add(AwaitResult.success(f.join()));
-            } catch (CompletionException e) {
-                results.add(AwaitResult.failure(unwrap(e)));
-            } catch (CancellationException e) {
-                results.add(AwaitResult.failure(e));
-            }
-        }
-        return results;
-    }
-
-    private static CompletableFuture<?>[] toCombinatorFutures(Object... sources) {
-        return Arrays.stream(sources)
-                .map(source -> Awaitable.from(source).toCompletableFuture())
-                .toArray(CompletableFuture[]::new);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> CompletableFuture<T>[] toFirstCombinatorFutures(Object... sources) {
-        validateFirstSources(sources);
-        return (CompletableFuture<T>[]) toCombinatorFutures(sources);
-    }
-
-    private static void validateFirstSources(Object[] sources) {
-        if (sources == null) {
-            throw new IllegalArgumentException("sources must not be null");
-        }
-        if (sources.length == 0) {
-            throw new IllegalArgumentException("sources must not be empty");
-        }
-        for (Object source : sources) {
-            if (source == null) {
-                throw new IllegalArgumentException("sources must not contain null elements");
-            }
-        }
-    }
-
-    private static CompletionException aggregateFirstFailures(int sourceCount, List<Throwable> errors) {
-        CompletionException aggregate = new CompletionException(
-                "All " + sourceCount + " tasks failed", errors.get(0));
-        for (int i = 1; i < errors.size(); i++) {
-            aggregate.addSuppressed(errors.get(i));
-        }
-        return aggregate;
+        return AwaitCombinators.allSettledAsync(sources);
     }
 
     // ---- delay and timeout ----------------------------------------------
@@ -580,27 +429,26 @@ public class AsyncSupport {
      * Returns an Awaitable that completes after the specified delay.
      */
     public static Awaitable<Void> delay(long millis) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
-        SCHEDULER.schedule(() -> future.complete(null), millis, TimeUnit.MILLISECONDS);
-        return GroovyPromise.of(future);
+        return delay(millis, TimeUnit.MILLISECONDS);
     }
 
     /** Delay with explicit time unit. */
     public static Awaitable<Void> delay(long duration, TimeUnit unit) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        SCHEDULER.schedule(() -> future.complete(null), duration, unit);
+        AsyncExecutors.getScheduler().schedule(() -> future.complete(null), duration, unit);
         return GroovyPromise.of(future);
     }
 
     /**
      * Wraps a source with a timeout. If the source does not complete within
-     * the specified time, the returned Awaitable fails with {@link TimeoutException}.
+     * the specified time, the returned Awaitable fails with {@link TimeoutException}
+     * and the underlying computation is cancelled.
      */
     @SuppressWarnings("unchecked")
     public static <T> Awaitable<T> orTimeout(Object source, long timeout, TimeUnit unit) {
         CompletableFuture<T> future = (CompletableFuture<T>) Awaitable.from(source).toCompletableFuture();
         CompletableFuture<T> result = new CompletableFuture<>();
-        ScheduledFuture<?> timer = SCHEDULER.schedule(() -> {
+        ScheduledFuture<?> timer = AsyncExecutors.getScheduler().schedule(() -> {
             if (!result.isDone()) {
                 result.completeExceptionally(new TimeoutException("Timed out after " + timeout + " " + unit));
                 future.cancel(true);
@@ -621,12 +469,13 @@ public class AsyncSupport {
 
     /**
      * Wraps a source with a timeout that uses a fallback value instead of throwing.
+     * On timeout the underlying computation is cancelled.
      */
     @SuppressWarnings("unchecked")
     public static <T> Awaitable<T> completeOnTimeout(Object source, T fallback, long timeout, TimeUnit unit) {
         CompletableFuture<T> future = (CompletableFuture<T>) Awaitable.from(source).toCompletableFuture();
         CompletableFuture<T> result = new CompletableFuture<>();
-        ScheduledFuture<?> timer = SCHEDULER.schedule(() -> {
+        ScheduledFuture<?> timer = AsyncExecutors.getScheduler().schedule(() -> {
             if (!result.isDone()) {
                 result.complete(fallback);
                 future.cancel(true);
@@ -658,6 +507,11 @@ public class AsyncSupport {
         return null; // unreachable
     }
 
+    /**
+     * Strips JDK wrapper layers ({@link CompletionException},
+     * {@link ExecutionException}, {@link InvocationTargetException},
+     * {@link UndeclaredThrowableException}) to expose the original cause.
+     */
     public static Throwable unwrap(Throwable t) {
         while ((t instanceof CompletionException || t instanceof ExecutionException
                 || t instanceof InvocationTargetException
@@ -675,22 +529,10 @@ public class AsyncSupport {
 
     // ---- internal utilities ---------------------------------------------
 
-    private static Executor createDefaultExecutor() {
-        return VIRTUAL_THREADS_AVAILABLE ? VIRTUAL_THREAD_EXECUTOR : FALLBACK_EXECUTOR;
-    }
-
     private static CancellationException interruptedAwait(String message, InterruptedException cause) {
         Thread.currentThread().interrupt();
         CancellationException cancellation = new CancellationException(message);
         cancellation.initCause(cause);
         return cancellation;
-    }
-
-    private static int getIntegerSafe(String name, int defaultValue) {
-        try {
-            return Integer.getInteger(name, defaultValue);
-        } catch (SecurityException ignore) {
-            return defaultValue;
-        }
     }
 }

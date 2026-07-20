@@ -69,9 +69,8 @@ public final class AwaitResult<T> {
      * @param <T>   the value type
      * @return a success result wrapping the value
      */
-    @SuppressWarnings("unchecked")
-    public static <T> AwaitResult<T> success(Object value) {
-        return new AwaitResult<>((T) value, null, true);
+    public static <T> AwaitResult<T> success(T value) {
+        return new AwaitResult<>(value, null, true);
     }
 
     /**
