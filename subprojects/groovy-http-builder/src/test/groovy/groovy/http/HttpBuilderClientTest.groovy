@@ -547,4 +547,25 @@ class HttpBuilderClientTest {
             assert slow.name == 'bob'
         """
     }
+
+    @Test
+    void confineToBaseUriRejectsTemplateThatEscapesTheBasePath() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient(value = 'http://127.0.0.1:${port}/api/', confineToBaseUri = true)
+            interface ConfinedApi {
+                @Get('/users/{username}')   // leading slash makes an absolute path, escaping /api/
+                Map getUser(String username)
+            }
+
+            def api = ConfinedApi.create()
+            try {
+                api.getUser('alice')
+                assert false : 'expected the request to be rejected as outside the base URI'
+            } catch (SecurityException expected) {
+                assert expected.message.contains('not confined')
+            }
+        """
+    }
 }
