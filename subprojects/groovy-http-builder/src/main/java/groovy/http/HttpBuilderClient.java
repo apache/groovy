@@ -61,4 +61,15 @@ public @interface HttpBuilderClient {
 
     /** Whether to follow HTTP redirects. Default is false. */
     boolean followRedirects() default false;
+
+    /**
+     * Whether requests are confined to the base URL. When {@code true}, a
+     * request whose resolved URI leaves the base URL's origin (scheme, host, or
+     * effective port) or its path prefix is rejected with a
+     * {@link SecurityException}. This covers a request template with an absolute
+     * path or {@code ..} traversal, as well as an alternate base URL supplied to
+     * the generated {@code create(String)} / {@code create(Closure)} factory that
+     * points at a different host. Default is false.
+     */
+    boolean confineToBaseUri() default false;
 }

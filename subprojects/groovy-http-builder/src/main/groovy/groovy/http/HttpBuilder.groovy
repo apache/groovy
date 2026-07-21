@@ -43,13 +43,23 @@ final class HttpBuilder {
     private final URI baseUri
     private final Map<String, String> defaultHeaders
     private final Duration defaultRequestTimeout
+    private final boolean confineToBaseUri
+    private final boolean followRedirectsManually
+
+    /** Maximum number of redirects followed when confinement handles them itself. */
+    private static final int MAX_REDIRECTS = 5
 
     private HttpBuilder(final Config config) {
         HttpClient.Builder clientBuilder = HttpClient.newBuilder()
         if (config.connectTimeout != null) {
             clientBuilder.connectTimeout(config.connectTimeout)
         }
-        if (config.followRedirects) {
+        // When confinement is active we must see every 3xx ourselves so the base-URI
+        // gate can be applied to each hop; the JDK client would otherwise follow
+        // redirects internally, escaping confinement. Only the unconfined case
+        // delegates redirect-following to the JDK.
+        followRedirectsManually = config.confineToBaseUri && config.followRedirects
+        if (config.followRedirects && !followRedirectsManually) {
             clientBuilder.followRedirects(HttpClient.Redirect.NORMAL)
         }
         if (config.clientConfigurer != null) {
@@ -62,6 +72,10 @@ final class HttpBuilder {
         baseUri = config.baseUri
         defaultHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(config.headers))
         defaultRequestTimeout = config.requestTimeout
+        confineToBaseUri = config.confineToBaseUri
+        if (confineToBaseUri && baseUri == null) {
+            throw new IllegalArgumentException('confineToBaseUri requires a baseUri to be configured')
+        }
     }
 
     /**
@@ -171,15 +185,14 @@ final class HttpBuilder {
                        final Object uri,
                        @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
                        final Closure<?> spec = null) {
-        def (HttpRequest httpRequest, HttpResponse.BodyHandler<String> bodyHandler) = buildRequest(method, uri, spec)
-        HttpResponse<String> response
-        try {
-            response = client.send(httpRequest, bodyHandler)
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt()
-            throw new RuntimeException("HTTP request " + method + " " + httpRequest.uri() + " was interrupted", e)
-        } catch (IOException e) {
-            throw new RuntimeException("I/O error during HTTP request " + method + " " + httpRequest.uri(), e)
+        RequestSpec requestSpec = evalSpec(spec)
+        URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
+        Map<String, String> headers = combinedHeaders(requestSpec)
+        HttpRequest httpRequest = buildHopRequest(method, resolvedUri, headers, requestSpec.body, requestSpec.timeout)
+        HttpResponse<String> response = send(method, httpRequest, requestSpec.bodyHandler)
+        if (followRedirectsManually) {
+            response = followRedirects(method, httpRequest.uri(), response, headers,
+                    requestSpec.body, requestSpec.timeout, requestSpec.bodyHandler)
         }
         return new HttpResult(response)
     }
@@ -196,9 +209,18 @@ final class HttpBuilder {
                                                 final Object uri,
                                                 @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
                                                 final Closure<?> spec = null) {
-        def (HttpRequest httpRequest, HttpResponse.BodyHandler<String> bodyHandler) = buildRequest(method, uri, spec)
-        return client.sendAsync(httpRequest, bodyHandler)
-                .thenApply { HttpResponse<String> response -> new HttpResult(response) }
+        RequestSpec requestSpec = evalSpec(spec)
+        URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
+        Map<String, String> headers = combinedHeaders(requestSpec)
+        HttpRequest httpRequest = buildHopRequest(method, resolvedUri, headers, requestSpec.body, requestSpec.timeout)
+        CompletableFuture<HttpResponse<String>> future = client.sendAsync(httpRequest, requestSpec.bodyHandler)
+        if (followRedirectsManually) {
+            future = future.thenCompose { HttpResponse<String> response ->
+                followRedirectsAsync(method, httpRequest.uri(), response, headers,
+                        requestSpec.body, requestSpec.timeout, requestSpec.bodyHandler, 0)
+            }
+        }
+        return future.thenApply { HttpResponse<String> response -> new HttpResult(response) }
     }
 
     /**
@@ -317,6 +339,16 @@ final class HttpBuilder {
     }
 
     private HttpRequest buildStreamRequest(final String method, final Object uri, final Closure<?> spec) {
+        // Note: streaming does not auto-follow redirects under confinement. Because
+        // the body is an unbuffered publisher, a 3xx is returned to the caller as-is
+        // rather than followed. This is safe (no bypass) but not transparent; callers
+        // who need confined streaming redirects should resolve the Location themselves.
+        RequestSpec requestSpec = evalSpec(spec)
+        URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
+        return buildHopRequest(method, resolvedUri, combinedHeaders(requestSpec), requestSpec.body, requestSpec.timeout)
+    }
+
+    private RequestSpec evalSpec(final Closure<?> spec) {
         RequestSpec requestSpec = new RequestSpec()
         if (spec != null) {
             Closure<?> code = (Closure<?>) spec.clone()
@@ -324,53 +356,149 @@ final class HttpBuilder {
             code.delegate = requestSpec
             code.call()
         }
+        return requestSpec
+    }
 
-        URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(resolvedUri)
+    private Map<String, String> combinedHeaders(final RequestSpec requestSpec) {
+        Map<String, String> headers = new LinkedHashMap<>(defaultHeaders)
+        headers.putAll(requestSpec.headers)
+        return headers
+    }
 
-        Duration timeout = requestSpec.timeout ?: defaultRequestTimeout
+    private HttpRequest buildHopRequest(final String method, final URI uri,
+                                        final Map<String, String> headers,
+                                        final Object body, final Duration requestTimeout) {
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri)
+        Duration timeout = requestTimeout ?: defaultRequestTimeout
         if (timeout != null) {
             requestBuilder.timeout(timeout)
         }
-
-        defaultHeaders.each { String name, String value ->
-            requestBuilder.header(name, value)
-        }
-        requestSpec.headers.each { String name, String value ->
+        headers.each { String name, String value ->
             requestBuilder.setHeader(name, value)
         }
-
-        requestBuilder.method(method, bodyPublisher(method, requestSpec.body))
+        requestBuilder.method(method, bodyPublisher(method, body))
         return requestBuilder.build()
     }
 
-    private List buildRequest(final String method, final Object uri, final Closure<?> spec) {
-        RequestSpec requestSpec = new RequestSpec()
-        if (spec != null) {
-            Closure<?> code = (Closure<?>) spec.clone()
-            code.resolveStrategy = Closure.DELEGATE_FIRST
-            code.delegate = requestSpec
-            code.call()
+    private <T> HttpResponse<T> send(final String method, final HttpRequest httpRequest,
+                                     final HttpResponse.BodyHandler<T> bodyHandler) {
+        try {
+            return client.send(httpRequest, bodyHandler)
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt()
+            throw new RuntimeException("HTTP request " + method + " " + httpRequest.uri() + " was interrupted", e)
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error during HTTP request " + method + " " + httpRequest.uri(), e)
         }
+    }
 
-        URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(resolvedUri)
-
-        Duration timeout = requestSpec.timeout ?: defaultRequestTimeout
-        if (timeout != null) {
-            requestBuilder.timeout(timeout)
+    /**
+     * Synchronously follows redirects while confinement is active, applying
+     * {@link #enforceConfinement} to every hop. Because a confined hop must share
+     * the base URI's origin, a redirect to another host is rejected outright — so
+     * sensitive headers can never leak across origins here.
+     */
+    private HttpResponse<String> followRedirects(String method, URI currentUri, HttpResponse<String> response,
+                                                 Map<String, String> headers, Object body,
+                                                 Duration timeout, HttpResponse.BodyHandler<String> bodyHandler) {
+        int redirects = 0
+        while (true) {
+            URI target = redirectTarget(currentUri, response)
+            if (target == null) {
+                return response
+            }
+            if (++redirects > MAX_REDIRECTS) {
+                throw new RuntimeException("Too many redirects (> " + MAX_REDIRECTS + ") for request confined to " + baseUri)
+            }
+            String nextMethod = redirectMethod(method, response.statusCode())
+            boolean sameMethod = nextMethod == method
+            Object nextBody = sameMethod ? body : null
+            Map<String, String> nextHeaders = sameMethod ? headers : withoutBodyHeaders(headers)
+            HttpRequest httpRequest = buildHopRequest(nextMethod, target, nextHeaders, nextBody, timeout)
+            response = send(nextMethod, httpRequest, bodyHandler)
+            currentUri = target
+            method = nextMethod
+            body = nextBody
+            headers = nextHeaders
         }
+    }
 
-        defaultHeaders.each { String name, String value ->
-            requestBuilder.header(name, value)
+    /**
+     * Asynchronous counterpart of {@link #followRedirects}. A confinement
+     * violation on a hop surfaces as a failed future carrying the
+     * {@link SecurityException} thrown by {@link #enforceConfinement}.
+     */
+    private CompletableFuture<HttpResponse<String>> followRedirectsAsync(
+            String method, URI currentUri, HttpResponse<String> response,
+            Map<String, String> headers, Object body, Duration timeout,
+            HttpResponse.BodyHandler<String> bodyHandler, int redirects) {
+        URI target = redirectTarget(currentUri, response)
+        if (target == null) {
+            return CompletableFuture.completedFuture(response)
         }
-        requestSpec.headers.each { String name, String value ->
-            requestBuilder.setHeader(name, value)
+        if (redirects + 1 > MAX_REDIRECTS) {
+            CompletableFuture<HttpResponse<String>> failed = new CompletableFuture<>()
+            failed.completeExceptionally(
+                    new RuntimeException("Too many redirects (> " + MAX_REDIRECTS + ") for request confined to " + baseUri))
+            return failed
         }
+        String nextMethod = redirectMethod(method, response.statusCode())
+        boolean sameMethod = nextMethod == method
+        Object nextBody = sameMethod ? body : null
+        Map<String, String> nextHeaders = sameMethod ? headers : withoutBodyHeaders(headers)
+        HttpRequest httpRequest = buildHopRequest(nextMethod, target, nextHeaders, nextBody, timeout)
+        return client.sendAsync(httpRequest, bodyHandler).thenCompose { HttpResponse<String> next ->
+            followRedirectsAsync(nextMethod, target, next, nextHeaders, nextBody, timeout, bodyHandler, redirects + 1)
+        }
+    }
 
-        requestBuilder.method(method, bodyPublisher(method, requestSpec.body))
+    /**
+     * Returns the confinement-checked redirect target for a response, or
+     * {@code null} if the response is not a followable redirect (non-3xx, or a
+     * 3xx with no {@code Location}). Throws {@link SecurityException} via
+     * {@link #enforceConfinement} if the target escapes the base URI.
+     */
+    private URI redirectTarget(final URI currentUri, final HttpResponse<?> response) {
+        int status = response.statusCode()
+        if (status != 301 && status != 302 && status != 303 && status != 307 && status != 308) {
+            return null
+        }
+        String location = response.headers().firstValue('Location').orElse(null)
+        if (location == null || location.isEmpty()) {
+            return null
+        }
+        URI target = currentUri.resolve(location).normalize()
+        enforceConfinement(target)
+        return target
+    }
 
-        return [requestBuilder.build(), requestSpec.bodyHandler]
+    /**
+     * Mirrors the JDK {@link HttpClient.Redirect#NORMAL} method-rewriting rules
+     * so that enabling confinement does not change redirect semantics: 301/302
+     * downgrade only {@code POST} to {@code GET} (other methods are preserved),
+     * 303 downgrades everything except {@code HEAD} to {@code GET}, and 307/308
+     * preserve the original method and body.
+     */
+    private static String redirectMethod(final String method, final int statusCode) {
+        switch (statusCode) {
+            case 301:
+            case 302:
+                return 'POST'.equalsIgnoreCase(method) ? 'GET' : method
+            case 303:
+                return 'HEAD'.equalsIgnoreCase(method) ? method : 'GET'
+            default:
+                return method // 307/308 preserve method and body
+        }
+    }
+
+    private static Map<String, String> withoutBodyHeaders(final Map<String, String> headers) {
+        Map<String, String> copy = new LinkedHashMap<>()
+        headers.each { String name, String value ->
+            if (!'Content-Type'.equalsIgnoreCase(name) && !'Content-Length'.equalsIgnoreCase(name)) {
+                copy.put(name, value)
+            }
+        }
+        return copy
     }
 
     private URI resolveUri(final Object uri, final Map<String, Object> query) {
@@ -381,7 +509,93 @@ final class HttpBuilder {
             }
             target = baseUri.resolve(target.toString())
         }
+        enforceConfinement(target)
         return appendQuery(target, query)
+    }
+
+    /**
+     * When {@code confineToBaseUri} is enabled, rejects any request whose
+     * resolved URI leaves the {@link Config#baseUri} namespace: a different
+     * origin (scheme, host, or effective port), or a path that escapes the base
+     * path prefix (e.g. an absolute {@code /other} path or {@code ..} traversal).
+     * <p>
+     * The permitted set is exactly the URIs reachable by resolving a
+     * non-escaping relative reference against {@code baseUri}. Comparison uses
+     * raw (percent-encoded) path segments; a server that decodes {@code %2e%2e}
+     * itself is outside the scope of this check.
+     *
+     * @param target the fully resolved request URI
+     * @throws SecurityException if the target escapes the configured base URI
+     */
+    private void enforceConfinement(final URI target) {
+        if (!confineToBaseUri || baseUri == null) {
+            return
+        }
+        URI normalized = target.normalize()
+        if (!sameOrigin(baseUri, normalized) || !isPathWithin(baseUri, normalized)) {
+            throw new SecurityException(
+                    "Request URI '" + target + "' is not confined to baseUri '" + baseUri + "'")
+        }
+    }
+
+    /**
+     * Compares two URIs by origin — scheme, host, and effective port — rather
+     * than by raw {@code authority} string. This treats an explicit default
+     * port as equivalent to an absent one (e.g. {@code http://host} and
+     * {@code http://host:80}) and ignores user-info, so a redirect that differs
+     * only in those respects is not spuriously rejected as leaving the origin.
+     */
+    private static boolean sameOrigin(final URI base, final URI target) {
+        if (!base.scheme?.equalsIgnoreCase(target.scheme)) {
+            return false
+        }
+        if (base.host == null || !base.host.equalsIgnoreCase(target.host)) {
+            return false
+        }
+        return effectivePort(base) == effectivePort(target)
+    }
+
+    /**
+     * The port a URI actually connects to: its explicit port when present,
+     * otherwise the scheme's default ({@code 80} for http, {@code 443} for
+     * https). Returns {@code -1} for a schemeless URI with no explicit port.
+     */
+    private static int effectivePort(final URI uri) {
+        int port = uri.port
+        if (port != -1) {
+            return port
+        }
+        if ('https'.equalsIgnoreCase(uri.scheme)) {
+            return 443
+        }
+        if ('http'.equalsIgnoreCase(uri.scheme)) {
+            return 80
+        }
+        return -1
+    }
+
+    private static boolean isPathWithin(final URI base, final URI target) {
+        String basePrefix = directoryPath(base.rawPath)
+        String targetPath = (target.rawPath == null || target.rawPath.isEmpty()) ? '/' : target.rawPath
+        // append '/' so a prefix match always lands on a path-segment boundary
+        return (targetPath + '/').startsWith(basePrefix)
+    }
+
+    /**
+     * Returns the "directory" portion of a path with a trailing slash — the
+     * same prefix {@link URI#resolve(String)} keeps when resolving a relative
+     * reference — so {@code /v2/x} and {@code /v2/} confine to {@code /v2/},
+     * while a slash-less {@code /v2} confines to its parent {@code /}.
+     */
+    private static String directoryPath(final String path) {
+        if (path == null || path.isEmpty()) {
+            return '/'
+        }
+        if (path.endsWith('/')) {
+            return path
+        }
+        int slash = path.lastIndexOf('/')
+        return slash >= 0 ? path.substring(0, slash + 1) : '/'
     }
 
     private static URI requireAbsoluteUriWithHost(final URI uri, final String name) {
@@ -467,6 +681,13 @@ final class HttpBuilder {
          */
         boolean followRedirects
         /**
+         * Whether request URIs are confined to {@link #baseUri}. When enabled,
+         * requests that resolve to a different origin (scheme, host, or effective
+         * port) or escape the base path prefix are rejected with a
+         * {@link SecurityException}. Requires {@code baseUri} to be configured.
+         */
+        boolean confineToBaseUri
+        /**
          * Headers added to every request created by the builder.
          */
         final Map<String, String> headers = [:]
@@ -510,6 +731,18 @@ final class HttpBuilder {
          */
         void followRedirects(final boolean value) {
             followRedirects = value
+        }
+
+        /**
+         * Confines every request to the configured {@link #baseUri}. Absolute
+         * request URIs pointing at another origin, and relative URIs that walk
+         * above the base path (e.g. via {@code ..} or a leading {@code /}), are
+         * rejected with a {@link SecurityException} instead of being executed.
+         *
+         * @param value {@code true} to reject requests that escape the base URI
+         */
+        void confineToBaseUri(final boolean value) {
+            confineToBaseUri = value
         }
 
         /**

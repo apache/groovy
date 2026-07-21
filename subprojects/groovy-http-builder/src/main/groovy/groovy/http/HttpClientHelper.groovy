@@ -41,7 +41,7 @@ final class HttpClientHelper {
      * @param defaultHeaders the headers applied to every request
      */
     HttpClientHelper(String baseUrl, Map<String, String> defaultHeaders) {
-        this(baseUrl, defaultHeaders, 0, 0, false)
+        this(baseUrl, defaultHeaders, 0, 0, false, false)
     }
 
     /**
@@ -52,15 +52,17 @@ final class HttpClientHelper {
      * @param connectTimeoutSeconds the connect timeout in seconds, or {@code 0} for none
      * @param requestTimeoutSeconds the request timeout in seconds, or {@code 0} for none
      * @param followRedirects whether redirects should be followed automatically
+     * @param confineToBaseUri whether requests are confined to the base URL
      */
     HttpClientHelper(String baseUrl, Map<String, String> defaultHeaders,
                      int connectTimeoutSeconds, int requestTimeoutSeconds,
-                     boolean followRedirects) {
+                     boolean followRedirects, boolean confineToBaseUri) {
         this.http = HttpBuilder.http {
             baseUri(baseUrl)
             if (connectTimeoutSeconds > 0) connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
             if (requestTimeoutSeconds > 0) requestTimeout(Duration.ofSeconds(requestTimeoutSeconds))
             if (followRedirects) delegate.followRedirects(true)
+            if (confineToBaseUri) delegate.confineToBaseUri(true)
         }
         this.defaultHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(defaultHeaders))
     }

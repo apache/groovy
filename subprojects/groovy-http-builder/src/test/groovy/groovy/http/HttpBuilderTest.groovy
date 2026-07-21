@@ -317,4 +317,227 @@ class HttpBuilderTest {
         assert redirected.status == 200
         assert redirected.body == 'redirect reached'
     }
+
+    @Test
+    void confineToBaseUriAllowsRequestsUnderTheBasePath() {
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+        }
+        server.createContext('/api/hello') { exchange ->
+            byte[] bytes = 'ok'.getBytes(StandardCharsets.UTF_8)
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withCloseable { it.write(bytes) }
+        }
+
+        HttpResult result = http.get('hello')
+
+        assert result.status == 200
+        assert result.body == 'ok'
+    }
+
+    @Test
+    void confineToBaseUriRejectsAbsolutePathEscapingTheBasePath() {
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+        }
+
+        // absolute path replaces the whole path, walking out of /api/
+        assertThrows(SecurityException) { http.get('/admin') }
+    }
+
+    @Test
+    void confineToBaseUriRejectsDotDotTraversal() {
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/v2/"
+            confineToBaseUri true
+        }
+
+        assertThrows(SecurityException) { http.get('../v1/secrets') }
+    }
+
+    @Test
+    void confineToBaseUriRejectsAbsoluteCrossOriginUri() {
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+        }
+
+        assertThrows(SecurityException) { http.get('http://evil.example.com/api/steal') }
+    }
+
+    @Test
+    void confineToBaseUriRequiresABaseUri() {
+        assertThrows(IllegalArgumentException) {
+            HttpBuilder.http { confineToBaseUri true }
+        }
+    }
+
+    @Test
+    void confineToBaseUriFollowsSameOriginRedirectWithinBasePath() {
+        redirect('/api/start', 302, '/api/landing')
+        text('/api/landing', 'landed')
+
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+            followRedirects true
+        }
+
+        HttpResult result = http.get('start')
+
+        assert result.status == 200
+        assert result.body == 'landed'
+    }
+
+    @Test
+    void confineToBaseUriRejectsRedirectThatEscapesTheBasePath() {
+        redirect('/api/leave', 302, '/elsewhere')
+
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+            followRedirects true
+        }
+
+        assertThrows(SecurityException) { http.get('leave') }
+    }
+
+    @Test
+    void confineToBaseUriRejectsCrossOriginRedirect() {
+        redirect('/api/away', 302, 'http://another.invalid/api/landing')
+
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+            followRedirects true
+        }
+
+        assertThrows(SecurityException) { http.get('away') }
+    }
+
+    @Test
+    void confineToBaseUriFollowsRedirectDowngradingPostToGetOn303() {
+        redirect('/api/submit', 303, '/api/result')
+        server.createContext('/api/result') { exchange ->
+            byte[] bytes = "method=${exchange.requestMethod}".getBytes(StandardCharsets.UTF_8)
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withCloseable { it.write(bytes) }
+        }
+
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+            followRedirects true
+        }
+
+        HttpResult result = http.post('submit') { json([a: 1]) }
+
+        assert result.status == 200
+        assert result.body == 'method=GET'
+    }
+
+    @Test
+    void confineToBaseUriFollowsRedirectOnAsyncPath() {
+        redirect('/api/go', 302, '/api/done')
+        text('/api/done', 'async-landed')
+
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+            followRedirects true
+        }
+
+        HttpResult result = http.getAsync('go').get()
+
+        assert result.status == 200
+        assert result.body == 'async-landed'
+    }
+
+    @Test
+    void confineToBaseUriTreatsExplicitDefaultPortAsSameOrigin() {
+        // base omits the port (implicit 80); the request states :80 explicitly.
+        // These are the same origin once ports are normalized, so confinement
+        // must NOT reject the request. We cannot reach a live server on port 80
+        // from this test, so we only assert the failure (if any) is a connection
+        // error rather than a SecurityException from the confinement check.
+        HttpBuilder http = HttpBuilder.http {
+            baseUri 'http://127.0.0.1/api/'
+            confineToBaseUri true
+            connectTimeout Duration.ofMillis(250)
+        }
+
+        Throwable thrown = null
+        try {
+            http.get('http://127.0.0.1:80/api/hello')
+        } catch (Throwable t) {
+            thrown = t
+        }
+
+        assert !(thrown instanceof SecurityException),
+                'an explicit default port must be treated as the same origin, not a confinement escape'
+    }
+
+    @Test
+    void confineToBaseUriPreservesNonPostMethodAcrossRedirectOn301() {
+        // Aligns with HttpClient.Redirect.NORMAL: 301/302 downgrade only POST to
+        // GET; other methods (here PUT) keep their method and body.
+        redirect('/api/put-src', 301, '/api/put-dst')
+        server.createContext('/api/put-dst') { exchange ->
+            String requestBody = exchange.requestBody.getText(StandardCharsets.UTF_8.name())
+            byte[] bytes = "method=${exchange.requestMethod};body=${requestBody}".getBytes(StandardCharsets.UTF_8)
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withCloseable { it.write(bytes) }
+        }
+
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+            followRedirects true
+        }
+
+        HttpResult result = http.put('put-src') { json([a: 1]) }
+
+        assert result.status == 200
+        assert result.body == 'method=PUT;body={"a":1}'
+    }
+
+    @Test
+    void confineToBaseUriDowngradesPostToGetOn302() {
+        // The POST-to-GET downgrade on 301/302 is retained, matching NORMAL.
+        redirect('/api/post-src', 302, '/api/post-dst')
+        server.createContext('/api/post-dst') { exchange ->
+            byte[] bytes = "method=${exchange.requestMethod}".getBytes(StandardCharsets.UTF_8)
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withCloseable { it.write(bytes) }
+        }
+
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/"
+            confineToBaseUri true
+            followRedirects true
+        }
+
+        HttpResult result = http.post('post-src') { json([a: 1]) }
+
+        assert result.status == 200
+        assert result.body == 'method=GET'
+    }
+
+    private void redirect(String path, int status, String location) {
+        server.createContext(path) { exchange ->
+            exchange.responseHeaders.add('Location', location)
+            exchange.sendResponseHeaders(status, -1)
+            exchange.close()
+        }
+    }
+
+    private void text(String path, String body) {
+        server.createContext(path) { exchange ->
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8)
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withCloseable { it.write(bytes) }
+        }
+    }
 }

@@ -80,13 +80,14 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
         int connectTimeout = getMemberIntValue(anno, 'connectTimeout')
         int requestTimeout = getMemberIntValue(anno, 'requestTimeout')
         boolean followRedirects = memberHasValue(anno, 'followRedirects', true)
+        boolean confineToBaseUri = memberHasValue(anno, 'confineToBaseUri', true)
 
         // Collect interface-level @Header annotations
         Map<String, String> interfaceHeaders = collectHeaders(interfaceNode)
 
         // Generate the implementation class
         ClassNode implClass = generateImplClass(interfaceNode, baseUrl, interfaceHeaders,
-                connectTimeout, requestTimeout, followRedirects)
+                connectTimeout, requestTimeout, followRedirects, confineToBaseUri)
         source.AST.addClass(implClass)
 
         // Add static create() factory method to the interface
@@ -94,7 +95,8 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
     }
 
     private ClassNode generateImplClass(ClassNode interfaceNode, String baseUrl, Map<String, String> interfaceHeaders,
-                                          int connectTimeout, int requestTimeout, boolean followRedirects) {
+                                          int connectTimeout, int requestTimeout, boolean followRedirects,
+                                          boolean confineToBaseUri) {
         String implName = interfaceNode.name + '$Client'
         ClassNode implClass = new ClassNode(implName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC,
                 OBJECT_TYPE, [interfaceNode.getPlainNodeReference()] as ClassNode[], null)
@@ -114,7 +116,8 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
                     buildHeadersMapExpression(interfaceHeaders),
                     constX(connectTimeout),
                     constX(requestTimeout),
-                    constX(followRedirects)
+                    constX(followRedirects),
+                    constX(confineToBaseUri)
                 )))
         )
         implClass.addConstructor(Opcodes.ACC_PUBLIC, params(baseUrlParam), ClassNode.EMPTY_ARRAY, ctorBody)
