@@ -96,6 +96,9 @@ final class AwaitCombinators {
 
     @SuppressWarnings("unchecked")
     static <T> Awaitable<T> anyAsync(Object... sources) {
+        // Guard against empty sources: CompletableFuture.anyOf() over an empty
+        // array returns a future that never completes, which would hang await().
+        validateNonEmptySources(sources);
         return (Awaitable<T>) GroovyPromise.of(CompletableFuture.anyOf(toFutures(sources)));
     }
 

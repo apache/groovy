@@ -116,6 +116,20 @@ final class AsyncSupportInternalsTest {
     }
 
     @Test
+    void testAnyRejectsNullArrayAndNullElementAndEmpty() {
+        // an empty anyOf() never completes, so validate rather than hang await()
+        shouldFail(IllegalArgumentException) {
+            AsyncSupport.anyAsync((Object[]) null)
+        }
+        shouldFail(IllegalArgumentException) {
+            AsyncSupport.anyAsync()
+        }
+        shouldFail(IllegalArgumentException) {
+            AsyncSupport.anyAsync(Awaitable.of(1), null)
+        }
+    }
+
+    @Test
     void testAllSettledMixed() {
         def results = AsyncSupport.allSettled(
                 Awaitable.of('ok'),

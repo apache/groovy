@@ -98,8 +98,11 @@ include::../test/AsyncAwaitSpecTest.groovy[tags=multi_arg_await,indent=0]
 
 === Racing: `Awaitable.any()`
 
-Returns the result of the first task to complete — useful for fallback
-patterns or latency-sensitive code:
+Like JavaScript's `Promise.race()` — settles as soon as the first task
+settles, returning its result _or_ propagating its error. A task that fails
+first therefore fails the whole `any`, even if a later task would have
+succeeded (use `first` if you want the first _success_ instead). Useful for
+fallback patterns or latency-sensitive code:
 
 [source,groovy]
 ----
@@ -143,8 +146,8 @@ include::../test/AsyncAwaitSpecTest.groovy[tags=all_settled,indent=0]
 | Inspect every outcome, e.g. partial-success reporting
 
 | `Awaitable.any`
-| First task completes (success or failure)
-| Propagates the first completion's result or error
+| First task settles (success or failure)
+| Propagates the first settlement's result or error (JS `Promise.race`)
 | Latency-sensitive races, fastest-response wins
 
 | `Awaitable.first`
@@ -152,6 +155,11 @@ include::../test/AsyncAwaitSpecTest.groovy[tags=all_settled,indent=0]
 | Throws only when every source fails (aggregate error)
 | Hedged requests, graceful degradation with fallbacks
 |===
+
+NOTE: `all` and `allSettled` accept an empty source list and complete with an
+empty result. `any` and `first` require at least one source (and reject `null`
+elements), throwing `IllegalArgumentException` otherwise — a "race" or "first
+success" with no participants has no meaningful result.
 
 [[async-generators]]
 == Generators and Streaming
