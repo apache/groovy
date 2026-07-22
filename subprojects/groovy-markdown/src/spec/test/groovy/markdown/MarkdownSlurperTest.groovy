@@ -160,18 +160,51 @@ class MarkdownSlurperTest {
     void testDeeplyNestedInputRejected() {
         // a small (~5 KB) document nests block quotes thousands deep; the recursive
         // document walk must not be driven into a StackOverflowError
+        def slurper = new MarkdownSlurper()
+        slurper.maxNestingDepth = 1000 // explicit, so the ambient property cannot affect the result
         def md = ('>' * 5000) + ' x'
-        def ex = assertThrows(MarkdownRuntimeException) { new MarkdownSlurper().parseText(md) }
+        def ex = assertThrows(MarkdownRuntimeException) { slurper.parseText(md) }
         assert ex.message.contains('nesting depth')
     }
 
     @Test
     void testMaxNestingDepthConfigurable() {
+        def savedDepth = System.clearProperty('groovy.markdown.maxNestingDepth')
+        try {
+            def slurper = new MarkdownSlurper()
+            assert slurper.maxNestingDepth == MarkdownSlurper.DEFAULT_MAX_NESTING_DEPTH
+            slurper.maxNestingDepth = 3
+            assertThrows(MarkdownRuntimeException) { slurper.parseText(('>' * 10) + ' x') }
+            // input within the limit still parses
+            assert slurper.parseText('> quoted').nodes[0].type == 'block_quote'
+        } finally {
+            if (savedDepth != null) System.setProperty('groovy.markdown.maxNestingDepth', savedDepth)
+        }
+    }
+
+    @Test
+    void testDeeplyNestedInlineEmphasisRejected() {
+        // second DoS vector: deeply nested inline emphasis overflows *inside* CommonMark's own
+        // inline processing, before the block-nesting pre-check can run. It must still surface as
+        // a MarkdownRuntimeException, not a raw StackOverflowError.
+        def md = ('*' * 50000) + 'a' + ('*' * 50000)
+        assertThrows(MarkdownRuntimeException) { new MarkdownSlurper().parseText(md) }
+    }
+
+    @Test
+    void testNestingDepthDoc() {
+        // tag::nesting_depth[]
         def slurper = new MarkdownSlurper()
-        assert slurper.maxNestingDepth == MarkdownSlurper.DEFAULT_MAX_NESTING_DEPTH
-        slurper.maxNestingDepth = 3
-        assertThrows(MarkdownRuntimeException) { slurper.parseText(('>' * 10) + ' x') }
-        // input within the limit still parses
-        assert slurper.parseText('> quoted').nodes[0].type == 'block_quote'
+        slurper.maxNestingDepth = 100   // cap block nesting (default 1000; 0 disables the check)
+
+        // a hostile, deeply nested document is rejected, not allowed to crash the parser
+        def rejected = false
+        try {
+            slurper.parseText(('>' * 5000) + ' text')
+        } catch (MarkdownRuntimeException ignored) {
+            rejected = true
+        }
+        assert rejected
+        // end::nesting_depth[]
     }
 }
