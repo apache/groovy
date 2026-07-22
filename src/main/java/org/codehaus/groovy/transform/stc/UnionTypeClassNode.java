@@ -220,7 +220,13 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public ClassNode getComponentType() {
-        throw new UnsupportedOperationException();
+        // GROOVY-12172: a union of instanceof types is never an array, so the
+        // component type is null (as for any non-array ClassNode). This is a
+        // query, not a structural mutation, and must answer rather than throw:
+        // it can leak into static-compilation instruction selection, e.g. the
+        // subscript path in BinaryExpressionMultiTypeDispatcher, which probes
+        // getComponentType() before checking isArray().
+        return null;
     }
 
     @Override
