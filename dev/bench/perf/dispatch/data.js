@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784620406964,
+  "lastUpdate": 1784706570669,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -868,6 +868,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 889,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1490,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "f1771e8f674108f645edc9a2e3e2c1fcd7f7a14f",
+          "message": "GROOVY-12181: Refactor async runtime and AST helpers introduced by GROOVY-9381 (tweaks)",
+          "timestamp": "2026-07-22T04:10:48Z",
+          "url": "https://github.com/apache/groovy/commit/f1771e8f674108f645edc9a2e3e2c1fcd7f7a14f"
+        },
+        "date": 1784706569728,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3982,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 470,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 891,
             "unit": "classes"
           },
           {
