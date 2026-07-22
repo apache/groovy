@@ -18,13 +18,14 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+import groovy.lang.MetaMethod;
+
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.runtime.callsite.CallSiteAwareMetaMethod;
 
 import java.lang.reflect.Modifier;
 
-public abstract class ArrayMetaMethod extends CallSiteAwareMetaMethod {
+public abstract class ArrayMetaMethod extends MetaMethod {
     protected static final CachedClass   INTEGER_CLASS = ReflectionCache.getCachedClass(Integer.class);
     protected static final CachedClass[] INTEGER_CLASS_ARR = {INTEGER_CLASS};
 

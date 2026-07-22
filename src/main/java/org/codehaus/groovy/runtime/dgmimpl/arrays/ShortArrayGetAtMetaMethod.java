@@ -18,12 +18,8 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
 public class ShortArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
     private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(short[].class);
@@ -42,28 +38,5 @@ public class ShortArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
     public Object invoke(Object object, Object[] args) {
         final short[] objects = (short[]) object;
         return objects[normaliseIndex((Integer) args[0], objects.length)];
-    }
-
-    @Override
-    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-        if (!(args[0] instanceof Integer))
-            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-        else
-            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
-    }
-
-    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
-        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
-            super(site, metaClass, metaMethod, params);
-        }
-
-        @Override
-        public Object call(Object receiver, Object arg) throws Throwable {
-            if ((receiver instanceof short[] objects && arg instanceof Integer)
-                    && checkPojoMetaClass()) {
-                return objects[normaliseIndex((Integer) arg, objects.length)];
-            } else
-                return super.call(receiver, arg);
-        }
     }
 }

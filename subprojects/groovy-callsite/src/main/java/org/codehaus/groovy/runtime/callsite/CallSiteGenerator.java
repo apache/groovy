@@ -22,6 +22,8 @@ import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import groovy.lang.MetaClassImpl;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.android.AndroidSupport;
@@ -32,10 +34,26 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 
+/**
+ * Generates specialized call-site classes for the classic (non-indy) call-site cache.
+ *
+ * @deprecated Classic call-site caching is deprecated; prefer invokedynamic.
+ */
+@Deprecated
 public class CallSiteGenerator {
 
+    private static final Map<Class<?>, CallSiteClassLoader> LOADERS =
+            Collections.synchronizedMap(new WeakHashMap<>());
+
     private CallSiteGenerator() {
+    }
+
+    private static CallSiteClassLoader loaderFor(final CachedClass declClass) {
+        return LOADERS.computeIfAbsent(declClass.getTheClass(), CallSiteClassLoader::new);
     }
 
     private static MethodVisitor writeMethod(ClassWriter cw, String name, int argumentCount, final String superClass, CachedMethod cachedMethod, String receiverType, String parameterDescription, boolean useArray) {
@@ -219,36 +237,39 @@ public class CallSiteGenerator {
         ClassWriter cw = makeClassWriter();
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
-        final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
+        final CallSiteClassLoader callSiteLoader = loaderFor(declClass);
         final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genPogoMetaMethodSite(cachedMethod, cw, name);
 
-        return callSiteLoader.defineClassAndGetConstructor(name, bytes);
+        return callSiteLoader.defineClassAndGetConstructor(name, bytes,
+                CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
     }
 
     public static Constructor compilePojoMethod(CachedMethod cachedMethod) {
         ClassWriter cw = makeClassWriter();
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
-        final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
+        final CallSiteClassLoader callSiteLoader = loaderFor(declClass);
         final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genPojoMetaMethodSite(cachedMethod, cw, name);
 
-        return callSiteLoader.defineClassAndGetConstructor(name, bytes);
+        return callSiteLoader.defineClassAndGetConstructor(name, bytes,
+                CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
     }
 
     public static Constructor compileStaticMethod(CachedMethod cachedMethod) {
         ClassWriter cw = makeClassWriter();
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
-        final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
+        final CallSiteClassLoader callSiteLoader = loaderFor(declClass);
         final String name = callSiteLoader.createClassName(cachedMethod.getName());
 
         final byte[] bytes = genStaticMetaMethodSite(cachedMethod, cw, name);
 
-        return callSiteLoader.defineClassAndGetConstructor(name, bytes);
+        return callSiteLoader.defineClassAndGetConstructor(name, bytes,
+                CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
     }
 
     public static boolean isCompilable (CachedMethod method) {

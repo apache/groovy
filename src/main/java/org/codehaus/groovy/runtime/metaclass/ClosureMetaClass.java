@@ -38,8 +38,6 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.util.FastArray;
 
@@ -811,48 +809,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
     @Override
     public Constructor retrieveConstructor(final Class[] arguments) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Creates a POJO (Plain Old Java Object) call site for this metaclass.
-     * This operation is not supported for ClosureMetaClass.
-     *
-     * @param site the call site
-     * @param receiver the receiver object
-     * @param args the arguments
-     * @return never returns; always throws UnsupportedOperationException
-     * @throws UnsupportedOperationException this method is not supported for closures
-     */
-    @Override
-    public CallSite createPojoCallSite(final CallSite site, final Object receiver, final Object[] args) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Creates a POGO (Plain Old Groovy Object) call site for this metaclass.
-     * Provides optimized method invocation for POGO objects.
-     *
-     * @param site the call site
-     * @param args the arguments
-     * @return a POGO-specific call site
-     */
-    @Override
-    public CallSite createPogoCallSite(final CallSite site, final Object[] args) {
-        return new PogoMetaClassSite(site, this);
-    }
-
-    /**
-     * Creates a POGO call site for the current class context.
-     * Provides optimized method invocation for POGO objects within a specific class context.
-     *
-     * @param site the call site
-     * @param sender the class sending the call
-     * @param args the arguments
-     * @return a POGO-specific call site
-     */
-    @Override
-    public CallSite createPogoCallCurrentSite(final CallSite site, final Class sender, final Object[] args) {
-        return new PogoMetaClassSite(site, this);
     }
 
     /**

@@ -48,16 +48,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.callsite.AbstractCallSite;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.ConstructorSite;
-import org.codehaus.groovy.runtime.callsite.MetaClassConstructorSite;
-import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
-import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaClassSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
-import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
-import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
@@ -1537,12 +1527,26 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return true;
     }
 
-    // This method should be called by CallSite only
-    private MetaMethod getMethodWithCachingInternal(final Class sender, final CallSite site, final Class<?>[] params) {
+    /**
+     * Selects a method using pre-converted parameter types and the call-site
+     * style method cache (keyed by {@code Class[]}).
+     * <p>
+     * Prefer {@link #getMethodWithCaching(Class, String, Object[], boolean)}
+     * when only runtime argument values are available. This overload exists so
+     * optional runtime modules (e.g. classic call-site dispatch) can share the
+     * same selection path without depending on package-private state.
+     *
+     * @param sender the class whose meta-method index is consulted
+     * @param methodName the method name
+     * @param params the argument types (must not be {@code null})
+     * @return the selected meta method, or {@code null} if none matches
+     * @since 6.0.0
+     */
+    public MetaMethod getMethodWithCaching(final Class sender, final String methodName, final Class<?>[] params) {
         if (GroovyCategorySupport.hasCategoryInCurrentThread())
-            return getMethodWithoutCaching(sender, site.getName(), params, false);
+            return getMethodWithoutCaching(sender, methodName, params, false);
 
-        MetaMethodIndex.Cache e = metaMethodIndex.getMethods(sender, site.getName());
+        MetaMethodIndex.Cache e = metaMethodIndex.getMethods(sender, methodName);
         if (e == null || e.methods == null)
             return null;
 
@@ -1554,6 +1558,31 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         cacheEntry = e.cachedMethod = new MetaMethodIndex.MetaMethodCache(params, (MetaMethod) chooseMethod(e.name, e.methods, params));
 
         return cacheEntry.method;
+    }
+
+    /**
+     * Selects a constructor matching the given parameter types.
+     *
+     * @param argTypes the constructor argument types
+     * @return the matching cached constructor, or {@code null}
+     * @since 6.0.0
+     */
+    public CachedConstructor chooseConstructor(final Class<?>[] argTypes) {
+        return (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argTypes);
+    }
+
+    /**
+     * Selects a no-arg (or outer-instance) constructor used for named-argument
+     * construction, after a direct map-style match has already failed.
+     *
+     * @param argTypes the original argument types including the trailing map
+     * @param args the original arguments including the trailing map
+     * @return the matching constructor as a {@link CachedConstructor}, or
+     *         another {@link ParameterTypes} result from method selection
+     * @since 6.0.0
+     */
+    public Object chooseNamedArgCompatibleConstructor(final Class<?>[] argTypes, final Object[] args) {
+        return retrieveNamedArgCompatibleConstructor(argTypes, args);
     }
 
     private MetaMethod getSuperMethodWithCaching(final Object[] arguments, final MetaMethodIndex.Cache e) {
@@ -3780,92 +3809,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     protected void dropMethodCache(String name) {
         metaMethodIndex.clearCaches(name);
-    }
-
-    /**
-     * Create a CallSite
-     */
-    public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
-        if (!(this instanceof AdaptingMetaClass)) {
-            Class[] params = MetaClassHelper.convertToTypeArray(args);
-            MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), site, params);
-            if (metaMethod != null)
-                return PojoMetaMethodSite.createPojoMetaMethodSite(site, this, metaMethod, params, receiver, args);
-        }
-        return new PojoMetaClassSite(site, this);
-    }
-
-    /**
-     * Create a CallSite
-     */
-    public CallSite createStaticSite(CallSite site, Object[] args) {
-        if (!(this instanceof AdaptingMetaClass)) {
-            Class[] params = MetaClassHelper.convertToTypeArray(args);
-            MetaMethod metaMethod = retrieveStaticMethod(site.getName(), args);
-            if (metaMethod != null)
-                return StaticMetaMethodSite.createStaticMetaMethodSite(site, this, metaMethod, params, args);
-        }
-        return new StaticMetaClassSite(site, this);
-    }
-
-    /**
-     * Create a CallSite
-     */
-    public CallSite createPogoCallSite(CallSite site, Object[] args) {
-        if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
-            Class[] params = MetaClassHelper.convertToTypeArray(args);
-            CallSite tempSite = site;
-            if (site.getName().equals(CALL_METHOD) && isGroovyFunctor()) {
-                // here, we want to point to a method named "doCall" instead of "call"
-                // but we don't want to replace the original call site name, otherwise
-                // we lose the fact that the original method name was "call" so instead
-                // we will point to a metamethod called "doCall"
-                // see GROOVY-5806 for details
-                tempSite = new AbstractCallSite(site.getArray(), site.getIndex(), DO_CALL_METHOD);
-            }
-            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, tempSite, params);
-            if (metaMethod != null)
-                return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
-        }
-        return new PogoMetaClassSite(site, this);
-    }
-
-    /**
-     * Create a CallSite
-     */
-    public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
-        if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
-            Class[] params = MetaClassHelper.convertToTypeArray(args);
-            MetaMethod metaMethod = getMethodWithCachingInternal(sender, site, params);
-            if (metaMethod != null)
-                return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
-        }
-        return new PogoMetaClassSite(site, this);
-    }
-
-    /**
-     * Create a CallSite
-     */
-    public CallSite createConstructorSite(CallSite site, Object[] args) {
-        if (!(this instanceof AdaptingMetaClass)) {
-            Class[] argTypes = MetaClassHelper.convertToTypeArray(args);
-            CachedConstructor constructor = (CachedConstructor) chooseMethod(CONSTRUCTOR_NAME, constructors, argTypes);
-            if (constructor != null) {
-                return ConstructorSite.createConstructorSite(site, this, constructor, argTypes, args);
-            }
-            if ((args.length == 1 && args[0] instanceof Map) ||
-                    (args.length == 2 && args[1] instanceof Map &&
-                            theClass.getEnclosingClass() != null &&
-                            theClass.getEnclosingClass().isAssignableFrom(argTypes[0]))) {
-                constructor = (CachedConstructor) retrieveNamedArgCompatibleConstructor(argTypes, args);
-                if (constructor != null) {
-                    return args.length == 1
-                            ? new ConstructorSite.NoParamSite(site, this, constructor, argTypes)
-                            : new ConstructorSite.NoParamSiteInnerClass(site, this, constructor, argTypes);
-                }
-            }
-        }
-        return new MetaClassConstructorSite(site, this);
     }
 
     /**

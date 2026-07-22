@@ -167,6 +167,38 @@ When you need to remove or replace public API:
 - If a behavioural change is unavoidable in the same release as the
   deprecation (rare), call it out in the release notes.
 
+### Groovy 6 — classic call-site caching (GROOVY-12185)
+
+Classic (non-`invokedynamic`) call-site classes under
+`org.codehaus.groovy.runtime.callsite` were moved out of groovy-core
+into the optional, deprecated module `groovy-callsite`.
+
+**Primary purpose:** keep **runtime binary compatibility** for classes
+compiled by **Groovy 4 and Groovy 5** (and earlier releases that always
+used classic call sites). Those classes embed
+`$getCallSiteArray` / `CallSiteArray` / `CallSite` linkage. With
+`org.apache.groovy:groovy-callsite` on the runtime classpath, that
+bytecode must still **load and execute** on Groovy 6. The published
+module preserves the same public linkage surface that Groovy 4/5
+classic bytecode depends on (`CallSiteArray(Class, String[])`, public
+`array` / `owner` fields, and the full `CallSite` method set).
+
+Core does not depend on that module; runtime dispatch uses invokedynamic
+by default (as since Groovy 4). Related helpers that existed only to
+construct classic call sites (for example `MetaClassImpl#createPojoCallSite`,
+`CachedMethod#createPojoMetaMethodSite`, `CachedClass#getCallSiteLoader`)
+were removed from core in this major version. Public method-selection
+overloads remain on `MetaClassImpl` for the optional runtime without
+package-private coupling.
+
+To **compile** with `indy` disabled, or to **run** classic-mode classes
+from older releases, add `org.apache.groovy:groovy-callsite` to the
+classpath. Compiling with `indy=false` without that module fails fast
+with a clear error rather than emitting unloadable bytecode. Valuable
+helpers that used to live beside the call-site cache
+(`BooleanClosureWrapper` and related types) remain in core under
+`org.codehaus.groovy.runtime`.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

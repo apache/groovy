@@ -27,11 +27,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.MethodKey;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.ConstructorMetaMethodSite;
-import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaClassSite;
-import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
@@ -1189,7 +1184,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-
     /**
      * Returns a list of expando MetaMethod instances added to this ExpandoMetaClass
      *
@@ -1416,47 +1410,16 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     /** {@inheritDoc} */
     @Override
-    public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
-        if (invokeMethodMethod != null)
-            return new PojoMetaClassSite(site, this);
-
-        return super.createPojoCallSite(site, receiver, args);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CallSite createStaticSite(CallSite site, Object[] args) {
-        if (invokeStaticMethodMethod != null)
-            return new StaticMetaClassSite(site, this);
-
-        return super.createStaticSite(site, args);
-    }
-
-    /** {@inheritDoc} */
-    @Override
     public boolean hasCustomStaticInvokeMethod() {return invokeStaticMethodMethod!=null; }
 
-    /** {@inheritDoc} */
-    @Override
-    public CallSite createPogoCallSite(CallSite site, Object[] args) {
-        if (invokeMethodMethod != null)
-            return new PogoMetaClassSite(site, this);
-        return super.createPogoCallSite(site, args);
-    }
-
     /**
-     * Creates a call site for current-scope POGO dispatch that honours expando {@code invokeMethod}.
+     * Whether this metaclass has a custom {@code invokeMethod} registration.
      *
-     * @param site the original call site
-     * @param sender the calling class
-     * @param name the method name being invoked
-     * @param args the invocation arguments
-     * @return the adapted call site
+     * @return {@code true} if a custom invokeMethod is registered
+     * @since 6.0.0
      */
-    public CallSite createPogoCallCurrentSite(CallSite site, Class sender, String name, Object[] args) {
-        if (invokeMethodMethod != null)
-            return new PogoMetaClassSite(site, this);
-        return super.createPogoCallCurrentSite(site, sender, args);
+    public boolean hasCustomInvokeMethod() {
+        return invokeMethodMethod != null;
     }
 
     /** {@inheritDoc} */
@@ -1466,20 +1429,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
         if (method!=null) return method;
         return super.retrieveConstructor(args);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public CallSite createConstructorSite(CallSite site, Object[] args) {
-        Class<?>[] params = MetaClassHelper.convertToTypeArray(args);
-        MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
-        if (method != null && method.getParameterTypes().length == args.length) {
-            if (method.getDeclaringClass().getTheClass().equals(getTheClass())) {
-                return new ConstructorMetaMethodSite(site, this, method, params);
-            }
-        }
-
-        return super.createConstructorSite(site, args);
     }
 
     private class SubClassDefiningClosure extends GroovyObjectSupport {

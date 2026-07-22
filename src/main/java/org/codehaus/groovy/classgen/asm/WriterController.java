@@ -126,6 +126,10 @@ public class WriterController {
             this.callSiteWriter = new IndyCallSiteWriter(this);
             this.binaryExpHelper = new IndyBinHelper(this);
         } else {
+            // Classic call-site bytecode references org.codehaus.groovy.runtime.callsite.*
+            // (optional groovy-callsite module). Fail fast at compile time rather than
+            // producing classes that blow up with NoClassDefFoundError at first invoke.
+            requireClassicCallSiteRuntime(cn);
             this.callSiteWriter = new CallSiteWriter(this);
             this.invocationWriter = new InvocationWriter(this);
             this.binaryExpHelper = new BinaryExpressionHelper(this);
@@ -169,6 +173,25 @@ public class WriterController {
         return visitor instanceof PeepholeOptimizingClassVisitor
                 ? visitor
                 : new PeepholeOptimizingClassVisitor(visitor);
+    }
+
+    /**
+     * Ensures the optional classic call-site runtime is visible to the compilation
+     * class loader before emitting non-indy call-site bytecode (GROOVY-11158).
+     */
+    private static void requireClassicCallSiteRuntime(final ClassNode cn) {
+        ClassLoader loader = cn.getCompileUnit() != null
+                ? cn.getCompileUnit().getClassLoader()
+                : WriterController.class.getClassLoader();
+        try {
+            Class.forName("org.codehaus.groovy.runtime.callsite.CallSiteArray", false, loader);
+        } catch (ClassNotFoundException e) {
+            throw new GroovyBugError(
+                    "Classic call-site bytecode generation requires the optional "
+                            + "org.apache.groovy:groovy-callsite module on the classpath. "
+                            + "Either leave invokedynamic enabled (the default since Groovy 4) "
+                            + "or add groovy-callsite. See GROOVY-11158.", e);
+        }
     }
 
     //--------------------------------------------------------------------------

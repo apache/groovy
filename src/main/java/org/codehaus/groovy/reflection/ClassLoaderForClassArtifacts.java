@@ -18,10 +18,6 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -66,12 +62,20 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
         return suffix == -1 ? name : name + "$" + suffix;
     }
 
-    public Constructor defineClassAndGetConstructor(final String name, final byte[] bytes) {
+    /**
+     * Defines a class from bytecode and returns a constructor matching {@code parameterTypes}.
+     *
+     * @param name the binary name of the class to define
+     * @param bytes the class file bytes
+     * @param parameterTypes the constructor parameter types to look up
+     * @return the matching constructor, or {@code null} if definition or lookup fails
+     */
+    public Constructor defineClassAndGetConstructor(final String name, final byte[] bytes, final Class<?>... parameterTypes) {
         final Class cls = definePrivileged(name, bytes);
 
         if (cls != null) {
             try {
-                return cls.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class, Constructor.class);
+                return cls.getConstructor(parameterTypes);
             } catch (NoSuchMethodException e) { //
             }
         }
