@@ -65,6 +65,7 @@ def subprojects = [
         'groovy-jmx',
         'groovy-json',
         'groovy-jsr223',
+        'groovy-callsite',
         'groovy-logging-test',
         'groovy-ginq',
         'groovy-http-builder',

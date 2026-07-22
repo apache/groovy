@@ -18,21 +18,13 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.CallSiteGenerator;
-import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
-import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 
 import java.lang.annotation.Annotation;
-import java.lang.ref.SoftReference;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -41,7 +33,7 @@ import java.util.Arrays;
  * Caches reflection information about a single method for fast lookup and invocation.
  * <p>
  * Extends {@link MetaMethod} and implements {@link Comparable} for method sorting.
- * Provides efficient access to method metadata and supports call site optimization.
+ * Provides efficient access to method metadata for MOP and invokedynamic dispatch.
  */
 @SuppressWarnings("rawtypes")
 public class CachedMethod extends MetaMethod implements Comparable {
@@ -81,12 +73,10 @@ public class CachedMethod extends MetaMethod implements Comparable {
     private final Method cachedMethod;
 
     private int hashCode;
-    private boolean skipCompiled;
     private Boolean callerSensitive;
 
     private boolean makeAccessibleDone;
     private CachedMethod transformedMethod;
-    private SoftReference<Constructor<CallSite>> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
 
     /**
      * Constructs a {@code CachedMethod} for the given method within a cached class.
@@ -370,121 +360,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
     }
 
     //--------------------------------------------------------------------------
-
-    /**
-     * Creates an optimized call site for invoking this method on POGO (Groovy) objects.
-     * Attempts to compile the method for maximum performance.
-     *
-     * @param site the call site being created
-     * @param metaClass the metaclass of the target object's class
-     * @param params the parameter types of the call
-     * @return a call site optimized for POGO invocation
-     */
-    public CallSite createPogoMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
-        if (!skipCompiled) {
-            Constructor<CallSite> ctor = deref(pogoCallSiteConstructor);
-            if (ctor == null) {
-                if (CallSiteGenerator.isCompilable(this)) {
-                    ctor = CallSiteGenerator.compilePogoMethod(this);
-                }
-                if (ctor != null) {
-                    pogoCallSiteConstructor = new SoftReference<>(ctor);
-                } else {
-                    skipCompiled = true;
-                }
-            }
-
-            if (ctor != null) {
-                try {
-                    return ctor.newInstance(site, metaClass, this, params, ctor);
-                } catch (Error e) {
-                    skipCompiled = true;
-                    throw e;
-                } catch (Throwable e) {
-                    skipCompiled = true;
-                }
-            }
-        }
-        return new PogoMetaMethodSite.PogoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
-    }
-
-    /**
-     * Creates an optimized call site for invoking this method on POJO (plain Java) objects.
-     * Attempts to compile the method for maximum performance.
-     *
-     * @param site the call site being created
-     * @param metaClass the metaclass of the target object's class
-     * @param params the parameter types of the call
-     * @return a call site optimized for POJO invocation
-     */
-    public CallSite createPojoMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
-        if (!skipCompiled) {
-            Constructor<CallSite> ctor = deref(pojoCallSiteConstructor);
-            if (ctor == null) {
-                if (CallSiteGenerator.isCompilable(this)) {
-                    ctor = CallSiteGenerator.compilePojoMethod(this);
-                }
-                if (ctor != null) {
-                    pojoCallSiteConstructor = new SoftReference<>(ctor);
-                } else {
-                    skipCompiled = true;
-                }
-            }
-
-            if (ctor != null) {
-                try {
-                    return ctor.newInstance(site, metaClass, this, params, ctor);
-                } catch (Error e) {
-                    skipCompiled = true;
-                    throw e;
-                } catch (Throwable e) {
-                    skipCompiled = true;
-                }
-            }
-        }
-        return new PojoMetaMethodSite.PojoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
-    }
-
-    /**
-     * Creates an optimized call site for invoking this static method.
-     * Attempts to compile the method for maximum performance.
-     *
-     * @param site the call site being created
-     * @param metaClass the metaclass associated with the static method
-     * @param params the parameter types of the call
-     * @return a call site optimized for static method invocation
-     */
-    public CallSite createStaticMetaMethodSite(final CallSite site, final MetaClassImpl metaClass, final Class[] params) {
-        if (!skipCompiled) {
-            Constructor<CallSite> ctor = deref(staticCallSiteConstructor);
-            if (ctor == null) {
-                if (CallSiteGenerator.isCompilable(this)) {
-                    ctor = CallSiteGenerator.compileStaticMethod(this);
-                }
-                if (ctor != null) {
-                    staticCallSiteConstructor = new SoftReference<>(ctor);
-                } else {
-                    skipCompiled = true;
-                }
-            }
-
-            if (ctor != null) {
-                try {
-                    return ctor.newInstance(site, metaClass, this, params, ctor);
-                } catch (Error e) {
-                    skipCompiled = true;
-                    throw e;
-                } catch (Throwable e) {
-                    skipCompiled = true;
-                }
-            }
-        }
-        return new StaticMetaMethodSite.StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
-    }
-
-    private static <T> Constructor<T> deref(final SoftReference<Constructor<T>> ref) {
-        return (ref != null ? ref.get() : null);
-    }
 
     /**
      * Invokes this method on the given object with the specified arguments.

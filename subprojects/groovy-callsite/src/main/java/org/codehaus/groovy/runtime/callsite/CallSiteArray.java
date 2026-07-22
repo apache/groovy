@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.stream.IntStream;
 
+@Deprecated
 public final class CallSiteArray {
     public static final Object[] NOPARAM = new Object[0];
     public final CallSite[] array;
@@ -65,7 +66,7 @@ public final class CallSiteArray {
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
         CallSite site =
                 metaClass instanceof MetaClassImpl
-                        ? ((MetaClassImpl) metaClass).createStaticSite(callSite, args)
+                        ? MetaClassCallSites.createStaticSite((MetaClassImpl) metaClass, callSite, args)
                         : new StaticMetaClassSite(callSite, metaClass);
 
         replaceCallSite(callSite, site);
@@ -76,7 +77,7 @@ public final class CallSiteArray {
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
         CallSite site =
                 metaClass instanceof MetaClassImpl
-                        ? ((MetaClassImpl) metaClass).createConstructorSite(callSite, args)
+                        ? MetaClassCallSites.createConstructorSite((MetaClassImpl) metaClass, callSite, args)
                         : new MetaClassConstructorSite(callSite, metaClass);
 
         replaceCallSite(callSite, site);
@@ -93,7 +94,7 @@ public final class CallSiteArray {
             if (receiver.getClass() != theClass && !theClass.isInterface()) {
                 site = new PogoInterceptableSite(callSite);
             } else if (metaClass instanceof MetaClassImpl) {
-                site = ((MetaClassImpl) metaClass).createPogoCallCurrentSite(callSite, sender, args);
+                site = MetaClassCallSites.createPogoCallCurrentSite((MetaClassImpl) metaClass, callSite, sender, args);
             } else {
                 site = new PogoMetaClassSite(callSite, metaClass);
             }
@@ -113,7 +114,7 @@ public final class CallSiteArray {
             if (info.hasPerInstanceMetaClasses()) {
                 return new PerInstancePojoMetaClassSite(callSite, info);
             } else {
-                return mci.createPojoCallSite(callSite, receiver, args);
+                return MetaClassCallSites.createPojoCallSite(mci, callSite, receiver, args);
             }
         }
 
@@ -133,7 +134,7 @@ public final class CallSiteArray {
         MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
 
         if (metaClass instanceof MetaClassImpl) {
-            return ((MetaClassImpl)metaClass).createPogoCallSite(callSite, args);
+            return MetaClassCallSites.createPogoCallSite((MetaClassImpl) metaClass, callSite, args);
         }
 
         return new PogoMetaClassSite(callSite, metaClass);

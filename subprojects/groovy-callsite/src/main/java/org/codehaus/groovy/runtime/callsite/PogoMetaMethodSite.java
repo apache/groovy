@@ -151,7 +151,7 @@ public class PogoMetaMethodSite extends PlainObjectMetaMethodSite {
                 if (noCoerce(metaMethod,args))
                     return new PogoCachedMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else {
-                    return metaMethod.createPogoMetaMethodSite(site, metaClass, params);
+                    return CachedMethodCallSites.createPogoMetaMethodSite(metaMethod, site, metaClass, params);
                 }
             }
         }

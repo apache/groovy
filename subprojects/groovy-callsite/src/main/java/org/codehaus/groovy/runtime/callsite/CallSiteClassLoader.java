@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@Deprecated
 public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
 
     private static final Set<String> KNOWN_CLASSES = new HashSet<String>();
