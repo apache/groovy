@@ -1808,6 +1808,34 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     }
                 }
 
+                // GROOVY-12184: a property/field resolved through a union receiver (x instanceof A || x instanceof B)
+                // is declared on a single delegate; binding it makes codegen cast the receiver to that delegate,
+                // throwing ClassCastException for the other. When no getter bound above (i.e. no accessor is shared
+                // by all delegates) and the member's declaring class is not shared either, fall back to dynamic
+                // property resolution (as GROOVY-8965 does for method calls) so the correct accessor runs at runtime.
+                if (readMode && receiverType instanceof UnionTypeClassNode && (property != null || field != null)) {
+                    ClassNode owner = (property != null) ? property.getDeclaringClass() : field.getDeclaringClass();
+                    ClassNode[] delegates = ((UnionTypeClassNode) receiverType).getDelegates();
+                    boolean unsound = false;
+                    ClassNode memberType = null;
+                    for (ClassNode delegate : delegates) {
+                        if (!implementsInterfaceOrIsSubclassOf(delegate, owner)) unsound = true;
+                        PropertyNode p = delegate.getProperty(propertyName);
+                        FieldNode f = delegate.getField(propertyName);
+                        ClassNode t = (p != null) ? p.getType() : (f != null) ? f.getType() : OBJECT_TYPE;
+                        memberType = (memberType == null) ? t : lowestUpperBound(memberType, t);
+                    }
+                    if (unsound) {
+                        pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
+                        storeInferredTypeForPropertyExpression(pexp, memberType != null ? memberType : OBJECT_TYPE);
+                        if (visitor != null) {
+                            if (property != null) visitor.visitProperty(property);
+                            else visitor.visitField(field);
+                        }
+                        return true;
+                    }
+                }
+
                 if (property != null && storeProperty(property, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
 
                 if (field != null && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) return true;
