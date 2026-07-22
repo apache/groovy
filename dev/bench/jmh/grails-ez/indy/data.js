@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784618740259,
+  "lastUpdate": 1784705223330,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Benchmark": [
@@ -21468,6 +21468,310 @@ window.BENCHMARK_DATA = {
           {
             "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.perInstanceWithOngoingChurn",
             "value": 556.660932125,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "f1771e8f674108f645edc9a2e3e2c1fcd7f7a14f",
+          "message": "GROOVY-12181: Refactor async runtime and AST helpers introduced by GROOVY-9381 (tweaks)",
+          "timestamp": "2026-07-22T04:10:48Z",
+          "url": "https://github.com/apache/groovy/commit/f1771e8f674108f645edc9a2e3e2c1fcd7f7a14f"
+        },
+        "date": 1784705220873,
+        "tool": "jmh",
+        "benches": [
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.configurationDsl",
+            "value": 338.74392749047615,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.controllerActionDuringMetaclassChurn",
+            "value": 3357.7019671000003,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.controllerActionPattern",
+            "value": 308.8698352571429,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.domainValidationCycle",
+            "value": 127.0183038875,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.dynamicPropertyByName",
+            "value": 33.59868245936325,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.dynamicPropertyDuringMetaclassChurn",
+            "value": 468.4352562,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.fullRequestCycleDuringMetaclassChurn",
+            "value": 512.864914925,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.fullRequestCycleSimulation",
+            "value": 86.92940143969037,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.markupBuilderPattern",
+            "value": 150.96806609285713,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.serviceChainCreateAndList",
+            "value": 231.97425718222217,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsLikePatternsBench.serviceChainWithCollections",
+            "value": 27.80325713417301,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.baselineCollectionClosureChain",
+            "value": 247.65554650138887,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.baselineDynamicPropertyByName",
+            "value": 15.501886224686862,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.baselineFullAnalysis",
+            "value": 0.03217655876824257,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.baselineGStringInterpolation",
+            "value": 6.812013306521072,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.baselineNestedClosureDelegation",
+            "value": 94.91745821623377,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.baselineProjectMetrics",
+            "value": 12.401420130638567,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.baselineSpreadOperator",
+            "value": 287.61612495714286,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.collectionClosureChainWithInvalidation",
+            "value": 1493.71766055,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.dynamicPropertyByNameWithInvalidation",
+            "value": 232.3155210222222,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.fullAnalysisWithInvalidation",
+            "value": 0.3183458817739073,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.gstringInterpolationWithInvalidation",
+            "value": 46.74557922140592,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.nestedClosureDelegationWithInvalidation",
+            "value": 251.12611909166662,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.projectMetricsWithInvalidation",
+            "value": 156.4735094313187,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.GrailsWorkloadBench.spreadOperatorWithInvalidation",
+            "value": 331.2837195,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.HostCalibrationBench.allocationChurn",
+            "value": 104.50029351734433,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.HostCalibrationBench.cpuIntegerOps",
+            "value": 381.00844434505603,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.HostCalibrationBench.memoryPointerChase",
+            "value": 397.7381983106847,
+            "unit": "us/op",
+            "extra": "iterations: 3\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.baselineClosureDispatchNoChanges",
+            "value": 0.5456597371722418,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.baselineMultiClassNoChanges",
+            "value": 1.8387934601478655,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.baselineNoMetaclassChanges",
+            "value": 0.4433408444642164,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.baselinePropertyAccessNoChanges",
+            "value": 0.860499562549011,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.burstThenSteadyState",
+            "value": 41.97123961531135,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.closureDispatchDuringMetaclassChurn",
+            "value": 264.6795687329365,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.expandoMethodAddition",
+            "value": 257.2751191744047,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.frequentExpandoChanges",
+            "value": 86.7915510665114,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.metaclassReplacement",
+            "value": 229.97521235555556,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.multiClassMetaclassChurn",
+            "value": 451.59355256,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassChangeBench.propertyAccessDuringMetaclassChurn",
+            "value": 289.9664949714286,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.baselineMultiClassNoStartup",
+            "value": 2.018857305558387,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.baselineSharedMetaclass",
+            "value": 1.3568525836068361,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.dynamicFinderCalls",
+            "value": 82.5672933638391,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.mixedCompiledAndDynamicFinders",
+            "value": 94.92059607080087,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.multiClassStartupThenSteadyState",
+            "value": 201.16722702757576,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.perInstanceInjectedMethodCalls",
+            "value": 842.6361061999999,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.perInstanceMetaclass",
+            "value": 73.32872834142037,
+            "unit": "ms/op",
+            "extra": "iterations: 5\nforks: 2\nthreads: 1"
+          },
+          {
+            "name": "org.apache.groovy.perf.grails.MetaclassVariationBench.perInstanceWithOngoingChurn",
+            "value": 531.056316525,
             "unit": "ms/op",
             "extra": "iterations: 5\nforks: 2\nthreads: 1"
           }
