@@ -107,3 +107,26 @@ Each row is returned as a `Map` keyed by header.
 | `hard_line_break`, `soft_line_break` | (no fields)
 | `table` | `headers`, `alignments`, `rows`
 |===
+
+=== Untrusted input
+
+Prefer parsing Markdown from trusted sources. Like the sibling `JsonSlurper`
+and `XmlSlurper`, `MarkdownSlurper` is a convenience parser, not a security
+boundary, so the safest choice is not to hand it attacker-controlled input. If
+you must, bound the input by size yourself before parsing and treat the parsed
+result defensively.
+
+As a backstop, `MarkdownSlurper` caps how deeply a document may nest, so that a
+small but pathologically nested input -- thousands of nested block quotes, or a
+long run of emphasis markers -- is reported as a `MarkdownRuntimeException`
+rather than being allowed to exhaust the stack with a `StackOverflowError`. The
+limit defaults to `1000` and can be set per instance or globally via the
+`groovy.markdown.maxNestingDepth` system property; a value of `0` or less
+disables the check.
+
+[source,groovy]
+----
+include::../test/groovy/markdown/MarkdownSlurperTest.groovy[tags=nesting_depth,indent=0]
+----
+
+This cap is a robustness backstop, not a licence to treat the parser as hardened.
