@@ -25,6 +25,7 @@ dependencies {
     api projects.groovyMacro
     testImplementation projects.groovyTest
     testImplementation projects.groovyContracts
+    testImplementation projects.groovySql // SqlInjectionCheckerTest compiles scripts against groovy.sql.Sql
     testImplementation 'org.jspecify:jspecify:1.0.0'
 }
 
