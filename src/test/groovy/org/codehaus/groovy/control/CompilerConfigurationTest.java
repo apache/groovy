@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -289,5 +290,70 @@ public final class CompilerConfigurationTest {
         String[] inputs = {"1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "5" , "6" , "7" , "8" , "9" , "9.0", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"};
         String[] expect = {"17" , "17" , "17" , "17" , "17" , "17" , "17" , "17", "17", "17", "17", "17", "17" , "17", "17", "17", "17", "17", "17", "17", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "27"};
         assertArrayEquals(expect, Arrays.stream(inputs).map(v -> { config.setTargetBytecode(v); return config.getTargetBytecode(); }).toArray(String[]::new));
+    }
+
+    @Test // GROOVY-11792
+    public void testForLoopCaptureEnabledByDefault() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        assertTrue(config.isForLoopCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForLoopCaptureCanBeDisabled() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setForLoopCaptureEnabled(false);
+        assertFalse(config.isForLoopCaptureEnabled());
+        config.setForLoopCaptureEnabled(true);
+        assertTrue(config.isForLoopCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForLoopCaptureNotClearedByAllFalse() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setForLoopCaptureEnabled(false);
+        config.getOptimizationOptions().put("all", Boolean.FALSE);
+        // optimization "all" must not re-enable or clear the language-compat field
+        assertFalse(config.isForLoopCaptureEnabled());
+        config.setForLoopCaptureEnabled(true);
+        config.getOptimizationOptions().put("all", Boolean.FALSE);
+        assertTrue(config.isForLoopCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForLoopCaptureCopyConstructor() {
+        CompilerConfiguration src = new CompilerConfiguration();
+        src.setForLoopCaptureEnabled(false);
+        CompilerConfiguration copy = new CompilerConfiguration(src);
+        assertFalse(copy.isForLoopCaptureEnabled());
+        src.setForLoopCaptureEnabled(true);
+        // copy is independent
+        assertFalse(copy.isForLoopCaptureEnabled());
+        assertTrue(new CompilerConfiguration(src).isForLoopCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForLoopCaptureViaConfigureProperties() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        Properties props = new Properties();
+        props.setProperty("groovy.for.loop.capture", "false");
+        config.configure(props);
+        assertFalse(config.isForLoopCaptureEnabled());
+        props.setProperty("groovy.for.loop.capture", "true");
+        config.configure(props);
+        assertTrue(config.isForLoopCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    @ForkedJvm(systemProperties = {"groovy.for.loop.capture=false"})
+    public void testForLoopCaptureDisabledViaSystemProperty() {
+        CompilerConfiguration config = new CompilerConfiguration(System.getProperties());
+        assertFalse(config.isForLoopCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testDefaultConfigurationForLoopCaptureIsImmutable() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                CompilerConfiguration.DEFAULT.setForLoopCaptureEnabled(false));
+        assertTrue(CompilerConfiguration.DEFAULT.isForLoopCaptureEnabled());
     }
 }
