@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784706554150,
+  "lastUpdate": 1784792320034,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3498,6 +3498,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 479.0733333333334,
             "range": "±24.55",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "3240fcf05ad12df667e06e673bb3ff6822961029",
+          "message": "GROOVY-12186: reject lone low surrogate in StreamingMarkupWriter.write (add another edge case - dangling surrogate on flush)",
+          "timestamp": "2026-07-23T05:24:11Z",
+          "url": "https://github.com/apache/groovy/commit/3240fcf05ad12df667e06e673bb3ff6822961029"
+        },
+        "date": 1784792318208,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 434.05666666666673,
+            "range": "±18.83",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 513.64,
+            "range": "±174.48",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 436.99333333333334,
+            "range": "±112.42",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 376.39333333333326,
+            "range": "±19.13",
             "unit": "ms",
             "extra": "5.0.6"
           }
