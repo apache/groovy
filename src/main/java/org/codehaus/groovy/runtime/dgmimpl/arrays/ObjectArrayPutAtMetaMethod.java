@@ -19,11 +19,7 @@
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
 import groovy.lang.GString;
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
@@ -64,31 +60,5 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             adjustedNewVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
         }
         return adjustedNewVal;
-    }
-
-    @Override
-    public CallSite createPojoCallSite(final CallSite site, final MetaClassImpl metaClass, final MetaMethod metaMethod, final Class[] params, final Object receiver, final Object[] args) {
-        if (!(args[0] instanceof Integer)) {
-            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-        } else {
-            return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
-                @Override
-                public Object call(final Object receiver, final Object index, final Object value) throws Throwable {
-                    if (checkPojoMetaClass()) {
-                        try {
-                            Object[] array = (Object[]) receiver;
-                            array[normaliseIndex((Integer) index, array.length)] = adjustNewValue(array, value);
-                            return null;
-                        }
-                        catch (ClassCastException e) {
-                            if ((receiver instanceof Object[]) && (index instanceof Integer)) {
-                                throw e;
-                            }
-                        }
-                    }
-                    return super.call(receiver, index, value);
-                }
-            };
-        }
     }
 }

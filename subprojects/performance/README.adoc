@@ -43,6 +43,10 @@ Groovy currently defaults to InvokeDynamic generated classes, but to get classic
 
     ./gradlew -Pindy=false :perf:jmh
 
+With `-Pindy=false`, the performance plugin automatically puts the optional
+`groovy-callsite` module on the compile and runtime classpaths (required since
+GROOVY-12185 moved classic call-site caching out of groovy-core).
+
 Groovy and Java sources placed in `src/test` will also be available to the
 benchmarks.
 

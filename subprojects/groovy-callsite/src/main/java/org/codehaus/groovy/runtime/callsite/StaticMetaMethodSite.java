@@ -111,7 +111,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
                     return new StaticMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else
                     if (metaMethod.getClass() == CachedMethod.class)
-                      return ((CachedMethod)metaMethod).createStaticMetaMethodSite(site, metaClass, params);
+                      return CachedMethodCallSites.createStaticMetaMethodSite((CachedMethod) metaMethod, site, metaClass, params);
                     else
                       return new StaticMetaMethodSiteNoUnwrapNoCoerce (site, metaClass, metaMethod, params);
             }

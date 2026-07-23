@@ -42,6 +42,12 @@ repositories {
     }
 }
 
+// -Pindy=false selects classic (non-invokedynamic) call-site bytecode for
+// compileGroovy / compileJmhGroovy. After GROOVY-12185 that runtime lives in
+// the optional groovy-callsite module and must be on the compile + runtime
+// classpaths (WriterController fails fast otherwise — see GROOVY-11158).
+var indy = (project.findProperty('indy') ?: 'true').toBoolean()
+
 dependencies {
     implementation project(':')
     jmh project(':')
@@ -51,6 +57,11 @@ dependencies {
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit6}"
 
     stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
+
+    if (!indy) {
+        implementation projects.groovyCallsite
+        jmh projects.groovyCallsite
+    }
 }
 
 jmh {
@@ -86,8 +97,6 @@ tasks.configureEach {
         mustRunAfter tasks.named('clean')
     }
 }
-
-var indy = (project.findProperty('indy') ?: 'true').toBoolean()
 
 tasks.named('compileJmhGroovy') {
     classpath += compileJmhJava.classpath

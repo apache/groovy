@@ -144,12 +144,8 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
     }
 
     public static CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-        if (metaMethod instanceof CallSiteAwareMetaMethod) {
-            return ((CallSiteAwareMetaMethod)metaMethod).createPojoCallSite(site, metaClass, metaMethod, params, receiver, args);
-        }
-
         if (metaMethod.getClass() == CachedMethod.class)
-          return createCachedMethodSite (site, metaClass, (CachedMethod) metaMethod, params, args);
+          return createCachedMethodSite(site, metaClass, (CachedMethod) metaMethod, params, args);
 
         return createNonAwareCallSite(site, metaClass, metaMethod, params, args);
     }
@@ -160,7 +156,7 @@ public class PojoMetaMethodSite extends PlainObjectMetaMethodSite {
                 if (noCoerce(metaMethod,args))
                     return new PojoCachedMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else
-                    return metaMethod.createPojoMetaMethodSite(site, metaClass, params);
+                    return CachedMethodCallSites.createPojoMetaMethodSite(metaMethod, site, metaClass, params);
             }
         }
         return new PojoCachedMethodSite(site, metaClass, metaMethod, params);
