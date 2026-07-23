@@ -26,6 +26,44 @@ import static org.junit.jupiter.api.Assertions.assertThrows
 
 class StreamingMarkupWriterTest {
 
+    // A high surrogate left dangling when the stream ends (no following low surrogate) is malformed
+    // UTF-16. It cannot be detected at write time, so it must be rejected at finalization rather
+    // than silently dropped. StreamingMarkupBuilder finalizes via flush().
+    @Test
+    void danglingHighSurrogateRejectedOnFlush() {
+        def w = new StreamingMarkupWriter(new StringWriter())
+        w.write((int) 0xD835)
+        assertThrows(IOException) { w.flush() }
+    }
+
+    // The same dangling high surrogate is also rejected at close(), for callers that close without
+    // a final flush.
+    @Test
+    void danglingHighSurrogateRejectedOnClose() {
+        def w = new StreamingMarkupWriter(new StringWriter())
+        w.write((int) 0xD835)
+        assertThrows(IOException) { w.close() }
+    }
+
+    // A lone high surrogate yielded through StreamingMarkupBuilder must fail loudly when streamed to
+    // a writer, instead of silently dropping the character. (Writable.toString() swallows IOException
+    // and returns "" by design, so this must be asserted on the writeTo/streaming path.)
+    @Test
+    void builderRejectsDanglingHighSurrogate() {
+        def writable = new StreamingMarkupBuilder().bind { mkp.yield '\uD835' }
+        assertThrows(IOException) { writable.writeTo(new StringWriter()) }
+    }
+
+    // Well-formed content still flushes cleanly.
+    @Test
+    void wellFormedContentFlushesCleanly() {
+        def sw = new StringWriter()
+        def w = new StreamingMarkupWriter(sw)
+        w.write('plain text')
+        w.flush()
+        assertEquals('plain text', sw.toString())
+    }
+
     // A well-formed surrogate pair (U+1D400) is encoded as a single numeric reference.
     @Test
     void validSurrogatePairIsEncoded() {

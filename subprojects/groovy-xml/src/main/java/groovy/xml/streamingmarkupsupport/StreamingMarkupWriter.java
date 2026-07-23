@@ -174,13 +174,29 @@ public class StreamingMarkupWriter extends Writer {
     /** {@inheritDoc} */
     @Override
     public void close() throws IOException {
+        boolean danglingHighSurrogate = this.haveHighSurrogate;
+        this.haveHighSurrogate = false;
+        this.surrogatePair.setLength(0);
         this.writer.close();
+        if (danglingHighSurrogate) {
+            throw new IOException("High Surrogate not followed by Low Surrogate");
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public void flush() throws IOException {
+        // A high surrogate is buffered awaiting its low surrogate; reaching flush/close with one
+        // still pending means the stream ended mid-pair. That is malformed UTF-16 (as unrepresentable
+        // as the write-time cases already rejected), so fail loud rather than silently drop it.
+        // StreamingMarkupBuilder finalizes via flush(), not close(), so the check must live here too.
+        boolean danglingHighSurrogate = this.haveHighSurrogate;
+        this.haveHighSurrogate = false;
+        this.surrogatePair.setLength(0);
         this.writer.flush();
+        if (danglingHighSurrogate) {
+            throw new IOException("High Surrogate not followed by Low Surrogate");
+        }
     }
 
     /** {@inheritDoc} */
