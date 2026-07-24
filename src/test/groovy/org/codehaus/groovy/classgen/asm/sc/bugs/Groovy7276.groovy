@@ -21,9 +21,13 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.codehaus.groovy.control.CompilerConfiguration;
 
+@DisabledIfSystemProperty(named = CompilerConfiguration.CLOSURE_PACKING, matches = 'true',
+    disabledReason = 'inspects private-access bridge bytecode on generated closure classes (astTrees), which do not exist when GEP-27 closure packing is enabled')
 final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     @ParameterizedTest

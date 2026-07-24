@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.control;
 
+import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
@@ -66,6 +67,28 @@ public class CompilerConfiguration {
 
     /** Joint Compilation Option for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
+
+    /**
+     * System-property name for the GEP-27 incubating option that automatically packs provably-safe
+     * {@code @CompileStatic} closures (hoisting their bodies to a shared adapter instead of a class).
+     * Incubating: this switch may change or be removed until the feature graduates.
+     */
+    @Incubating
+    public static final String CLOSURE_PACKING = "groovy.target.closure.pack";
+
+    /**
+     * System-property name for the GEP-27 incubating option that, on the {@link #CLOSURE_PACKING}
+     * path, reports (as compiler warnings) each closure that could not be packed and why.
+     */
+    @Incubating
+    public static final String CLOSURE_PACKING_REPORT = "groovy.target.closure.pack.report";
+
+    /**
+     * System-property name for the GEP-27 incubating option that hoists eligible SAM lambdas to a
+     * metafactory method instead of generating a per-lambda class.
+     */
+    @Incubating
+    public static final String LAMBDA_HOISTING = "groovy.target.lambda.hoist";
 
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
     @Deprecated public static final String JDK4 = "1.4";
