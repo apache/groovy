@@ -58,6 +58,26 @@ public final class CompilerConfigurationTest {
         assertNotNull(config.getPluginFactory());
         assertNull(config.getScriptBaseClass());
         assertNull(config.getTargetDirectory());
+        // GROOVY-9192: parser error recovery is opt-in
+        assertFalse(config.isErrorRecoveryEnabled());
+        assertEquals("errorRecovery", CompilerConfiguration.ERROR_RECOVERY);
+    }
+
+    @Test
+    public void testErrorRecoveryOptimizationOption() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        assertFalse(config.isErrorRecoveryEnabled());
+
+        config.getOptimizationOptions().put(CompilerConfiguration.ERROR_RECOVERY, Boolean.TRUE);
+        assertTrue(config.isErrorRecoveryEnabled());
+
+        config.getOptimizationOptions().put(CompilerConfiguration.ERROR_RECOVERY, Boolean.FALSE);
+        assertFalse(config.isErrorRecoveryEnabled());
+
+        CompilerConfiguration copy = new CompilerConfiguration(config);
+        assertFalse(copy.isErrorRecoveryEnabled());
+        copy.getOptimizationOptions().put(CompilerConfiguration.ERROR_RECOVERY, Boolean.TRUE);
+        assertTrue(copy.isErrorRecoveryEnabled());
     }
 
     @Test

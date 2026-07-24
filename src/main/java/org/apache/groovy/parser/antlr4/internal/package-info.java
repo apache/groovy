@@ -18,6 +18,8 @@
  */
 
 /**
- * Internal utilities and support classes for ANTLR4 parser operation. Handles parser configuration, error handling, and internal state management.
+ * Internal utilities for the ANTLR4 (Parrot) parser: ATN management, friendly
+ * error strategies ({@link DescriptiveErrorStrategy} fail-fast,
+ * {@link RecoveringDescriptiveErrorStrategy} multi-error), and related diagnostics.
  */
 package org.apache.groovy.parser.antlr4.internal;
