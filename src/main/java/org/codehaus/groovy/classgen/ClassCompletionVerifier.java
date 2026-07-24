@@ -240,6 +240,14 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 what = "Can't have an abstract method in a non-abstract class." +
                         " The " + getDescription(node) + " must be declared abstract or" +
                         " the " + getDescription(method) + " must be implemented.";
+            } else if (!sameArgsMethod.isAbstract() && !sameArgsMethod.isStatic()
+                    && !ClassHelper.isPrimitiveType(sameArgsMethod.getReturnType())
+                    && (sameArgsMethod.getReturnType().isDerivedFrom(method.getReturnType())
+                        || sameArgsMethod.getReturnType().implementsInterface(method.getReturnType()))) {
+                // GROOVY-12188: implemented with covariant return type; cannot rely on the
+                // bridge method here, since Verifier may not have processed the declaring
+                // class yet -- GROOVY-10687 emits a nest host after its member classes
+                continue;
             } else {
                 what = "Abstract " + getDescription(method) + " is not implemented but a " +
                         "method of the same name but different return type is defined: " +
