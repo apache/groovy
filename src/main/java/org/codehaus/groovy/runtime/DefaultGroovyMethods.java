@@ -43,6 +43,7 @@ import groovy.lang.PropertyValue;
 import groovy.lang.Range;
 import groovy.lang.SpreadMap;
 import groovy.lang.Tuple2;
+import groovy.transform.stc.ClassTag;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
@@ -882,7 +883,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedList
      * @since 5.0.0
      */
-    public static <T> List<T> asChecked(List<T> self, Class<T> type) {
+    public static <T> List<T> asChecked(List<T> self, @ClassTag Class<T> type) {
         return Collections.checkedList(self, type);
     }
 
@@ -892,7 +893,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedQueue
      * @since 5.0.0
      */
-    public static <T> Queue<T> asChecked(Queue<T> self, Class<T> type) {
+    public static <T> Queue<T> asChecked(Queue<T> self, @ClassTag Class<T> type) {
         return Collections.checkedQueue(self, type);
     }
 
@@ -902,7 +903,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedCollection
      * @since 5.0.0
      */
-    public static <T> Collection<T> asChecked(Collection<T> self, Class<T> type) {
+    public static <T> Collection<T> asChecked(Collection<T> self, @ClassTag Class<T> type) {
         return Collections.checkedCollection(self, type);
     }
 
@@ -912,7 +913,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedSet
      * @since 5.0.0
      */
-    public static <T> Set<T> asChecked(Set<T> self, Class<T> type) {
+    public static <T> Set<T> asChecked(Set<T> self, @ClassTag Class<T> type) {
         return Collections.checkedSet(self, type);
     }
 
@@ -922,7 +923,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedSortedSet
      * @since 5.0.0
      */
-    public static <T> SortedSet<T> asChecked(SortedSet<T> self, Class<T> type) {
+    public static <T> SortedSet<T> asChecked(SortedSet<T> self, @ClassTag Class<T> type) {
         return Collections.checkedSortedSet(self, type);
     }
 
@@ -932,7 +933,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedNavigableSet
      * @since 5.0.0
      */
-    public static <T> NavigableSet<T> asChecked(NavigableSet<T> self, Class<T> type) {
+    public static <T> NavigableSet<T> asChecked(NavigableSet<T> self, @ClassTag Class<T> type) {
         return Collections.checkedNavigableSet(self, type);
     }
 
@@ -942,7 +943,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedMap
      * @since 5.0.0
      */
-    public static <K,V> Map<K,V> asChecked(Map<K,V> self, Class<K> keyType, Class<V> valueType) {
+    public static <K,V> Map<K,V> asChecked(Map<K,V> self, @ClassTag Class<K> keyType, @ClassTag Class<V> valueType) {
         return Collections.checkedMap(self, keyType, valueType);
     }
 
@@ -952,7 +953,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedSortedMap
      * @since 5.0.0
      */
-    public static <K,V> SortedMap<K,V> asChecked(SortedMap<K,V> self, Class<K> keyType, Class<V> valueType) {
+    public static <K,V> SortedMap<K,V> asChecked(SortedMap<K,V> self, @ClassTag Class<K> keyType, @ClassTag Class<V> valueType) {
         return Collections.checkedSortedMap(self, keyType, valueType);
     }
 
@@ -962,7 +963,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Collections#checkedNavigableMap
      * @since 5.0.0
      */
-    public static <K,V> NavigableMap<K,V> asChecked(NavigableMap<K,V> self, Class<K> keyType, Class<V> valueType) {
+    public static <K,V> NavigableMap<K,V> asChecked(NavigableMap<K,V> self, @ClassTag Class<K> keyType, @ClassTag Class<V> valueType) {
         return Collections.checkedNavigableMap(self, keyType, valueType);
     }
 
@@ -19286,9 +19287,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * // m['x']                  // would throw ClassCastException (incompatible key)
      * // m[2] = 99               // would throw ClassCastException (incompatible value)
      * </pre>
-     * The {@code keyType} and {@code valueType} arguments are candidates to be supplied
-     * automatically from the map's static type under static compilation (GROOVY-12115);
-     * until then they are passed explicitly and this variant also works in dynamic code.
+     * The {@code keyType} and {@code valueType} arguments are {@link ClassTag @ClassTag}
+     * parameters (GROOVY-12115): under static compilation they are supplied automatically from
+     * the map's static type, so {@code map.withDefault{...}} on a statically-typed map selects
+     * this checked variant transparently. In dynamic code they are passed explicitly.
      *
      * @param self a Map
      * @param keyType the required runtime key type
@@ -19300,7 +19302,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 6.0.0
      */
     @Incubating
-    public static <K, V> Map<K, V> withDefault(Map<K, V> self, /* @ClassTag GROOVY-12115 */ Class<K> keyType, /* @ClassTag */ Class<V> valueType, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
+    public static <K, V> Map<K, V> withDefault(Map<K, V> self, @ClassTag Class<K> keyType, @ClassTag Class<V> valueType, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
         return withDefault(asChecked(self, keyType, valueType), init);
     }
 
@@ -19323,7 +19325,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @Incubating
     @SuppressWarnings("unchecked")
-    public static <K, V> Map<K, V> withDefault(Map<K, V> self, /* @ClassTag GROOVY-12115 */ Class<K> keyType, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
+    public static <K, V> Map<K, V> withDefault(Map<K, V> self, @ClassTag Class<K> keyType, @ClosureParams(FirstParam.FirstGenericType.class) Closure<V> init) {
         return withDefault(self, keyType, (Class<V>) (Class<?>) Object.class, init);
     }
 
