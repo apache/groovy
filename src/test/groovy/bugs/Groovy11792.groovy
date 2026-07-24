@@ -34,6 +34,9 @@ import static groovy.test.GroovyAssert.assertScript
  * {@code StaticTypesLambdaWriter} (native functional-interface bytecode) but still
  * share for-in variables via {@code groovy.lang.Reference}, so the same per-iteration
  * recapture policy applies.
+ * <p>
+ * Classgen patterns (fresh {@code Reference} vs in-place {@code Reference#set}) are
+ * asserted in {@link Groovy11792BytecodeTest}.
  */
 @CompileStatic
 final class Groovy11792 {
