@@ -23,14 +23,12 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.ClassCompletionVerifier;
 import org.codehaus.groovy.classgen.EnumCompletionVisitor;
@@ -51,6 +49,7 @@ import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.AnnotationCollectorTransform;
 import org.codehaus.groovy.transform.trait.TraitComposer;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -58,7 +57,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serial;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
@@ -67,6 +65,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -306,6 +305,17 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(verification, Phases.CLASS_GENERATION);
 
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
+
+        addPhaseOperation((final SourceUnit source) -> {
+            // GROOVY-10687: nest members include closure and anonymous inner classes
+            // materialized while bytecode is generated, so the NestMembers attribute
+            // of each nest host is completed once all of its classes are generated
+            for (ClassNode classNode : source.getAST().getClasses()) {
+                if (classNode.getOuterClass() == null && classNode.getInnerClasses().hasNext()) {
+                    addNestMembers(classNode);
+                }
+            }
+        }, Phases.CLASS_GENERATION);
 
         addPhaseOperation(groovyClass -> {
             String name = groovyClass.getName().replace('.', File.separatorChar) + ".class";
@@ -1139,6 +1149,46 @@ public class CompilationUnit extends ProcessingUnit {
         return count;
     }
 
+    private void addNestMembers(final ClassNode host) {
+        List<String> members = new ArrayList<>();
+        collectNestMembers(host, members);
+        for (int i = 0, n = generatedClasses.size(); i < n; i += 1) {
+            GroovyClass groovyClass = generatedClasses.get(i);
+            if (groovyClass.getName().equals(host.getName())) {
+                generatedClasses.set(i, new GroovyClass(groovyClass.getName(), addNestMembers(groovyClass.getBytes(), members)));
+                break;
+            }
+        }
+    }
+
+    private static void collectNestMembers(final ClassNode classNode, final List<String> names) {
+        for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
+            ClassNode innerClass = it.next();
+            names.add(innerClass.getName().replace('.', '/'));
+            collectNestMembers(innerClass, names);
+        }
+    }
+
+    private static byte[] addNestMembers(final byte[] bytes, final List<String> members) {
+        ClassReader reader = new ClassReader(bytes);
+        ClassWriter writer = new ClassWriter(0);
+        reader.accept(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, writer) {
+            private final Set<String> seen = new LinkedHashSet<>();
+            @Override
+            public void visitNestMember(final String nestMember) {
+                if (seen.add(nestMember)) super.visitNestMember(nestMember);
+            }
+            @Override
+            public void visitEnd() {
+                for (String member : members) {
+                    if (seen.add(member)) super.visitNestMember(member);
+                }
+                super.visitEnd();
+            }
+        }, 0);
+        return writer.toByteArray();
+    }
+
     private List<ClassNode> getPrimaryClassNodes(final boolean sort) {
         List<ClassNode> classes = getAST().getClasses();
 
@@ -1150,48 +1200,11 @@ public class CompilationUnit extends ProcessingUnit {
                 } else {
                     count = getSuperClassCount(cn) + 1000;
                 }
-                if (cn.getOuterClass() == null && hasInnerClassWithClosure(cn)) {
-                    count += 2000; // GROOVY-10687: nest host must follow members (with closures)
-                }
                 return count;
             }));
         }
 
         return classes;
-    }
-
-    private static boolean hasInnerClassWithClosure(final ClassNode cn) {
-        for (var it = cn.getInnerClasses(); it.hasNext(); ) {
-            class ClosureFound extends RuntimeException {
-                @Serial
-                private static final long serialVersionUID = 1;
-                @Override public Throwable fillInStackTrace() {
-                    return this;
-                }
-            }
-
-            var visitor = new ClassCodeVisitorSupport() {
-                @Override
-                public SourceUnit getSourceUnit() {
-                    return cn.getModule().getContext();
-                }
-                @Override
-                public void visitClosureExpression(final ClosureExpression ce) {
-                    throw new ClosureFound();
-                }
-            };
-
-            ClassNode innerClass = it.next();
-            try {
-                visitor.visitClass(innerClass);
-            } catch (ClosureFound done) {
-                return true;
-            }
-            if (hasInnerClassWithClosure(innerClass)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void changeBugText(final GroovyBugError e, final SourceUnit context) {

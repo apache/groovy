@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -133,7 +132,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
@@ -141,7 +139,6 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
-import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
@@ -437,11 +434,9 @@ public class AsmClassGenerator extends ClassGenerator {
                     createSyntheticStaticFields();
                 }
             }
-            // GROOVY-10687
-            if (classNode.getOuterClass() == null && classNode.getInnerClasses().hasNext()) {
-                makeNestmateEntries(classNode);
-                moreNestmateEntries(classNode);
-            }
+            // GROOVY-10687: NestMembers of a nest host is completed by CompilationUnit
+            // once all of the host's classes -- including closure and anonymous inner
+            // classes materialized during bytecode generation -- have been generated
             // GROOVY-4649, GROOVY-6750, GROOVY-6808
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
                 makeInnerClassEntry(it.next());
@@ -505,64 +500,6 @@ public class AsmClassGenerator extends ClassGenerator {
 
         int modifiers = adjustedClassModifiersForInnerClassTable(innerClass);
         classVisitor.visitInnerClass(innerClassInternalName, outerClassInternalName, innerClassName, modifiers);
-    }
-
-    private void makeNestmateEntries(final ClassNode classNode) {
-        for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
-            ClassNode innerClass = it.next();
-            classVisitor.visitNestMember(BytecodeHelper.getClassInternalName(innerClass));
-            makeNestmateEntries(innerClass);
-        }
-    }
-
-    private void moreNestmateEntries(final ClassNode classNode) {
-        // edge case: nest host closures-within-closures
-        int[] n = {this.context.getClosureClassIndex()};
-        for (ClassNode innerClass : getInnerClasses()) {
-            if (innerClass instanceof InterfaceHelperClassNode) continue;
-            var toVisit = new TreeMap<String, ClosureExpression>(); // GROOVY-11780
-            var visitor = new CodeVisitorSupport() {
-                private String name = BytecodeHelper.getClassInternalName(innerClass);
-                private void visitNested(final String kind, final ClosureExpression expr) {
-                    String nest = name + "$_" + kind + n[0]++;
-                    classVisitor.visitNestMember(nest);
-                    toVisit.put(nest, expr);
-                }
-
-                /**
-                 * Registers nested closures as additional nest members.
-                 */
-                @Override
-                public  void visitClosureExpression(final ClosureExpression expression) {
-                    visitNested("closure", expression);
-                }
-
-                /**
-                 * Registers statically compiled functional-interface lambdas as nest members.
-                 */
-                @Override
-                public  void visitLambdaExpression(final LambdaExpression expression) {
-                    if (Boolean.TRUE.equals(innerClass.getNodeMetaData(org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE))
-                            && isFunctionalInterface(expression.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE))) {
-                        visitNested("lambda", expression);
-                    } else {
-                        super.visitLambdaExpression(expression);
-                    }
-                }
-            };
-
-            MethodNode doCall = innerClass.getMethods().get(0);
-            doCall.getCode().visit(visitor);
-
-            while (!toVisit.isEmpty()) {
-                var iter = toVisit.entrySet().iterator(); // take first entry
-                var next = iter.next();
-                iter.remove();
-
-                visitor.name = next.getKey(); // traverse
-                next.getValue().getCode().visit(visitor);
-            }
-        }
     }
 
     /*

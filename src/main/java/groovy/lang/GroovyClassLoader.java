@@ -39,6 +39,7 @@ import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
 import org.codehaus.groovy.runtime.memoize.FlexibleCache;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
+import org.codehaus.groovy.tools.GroovyClass;
 import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -269,8 +270,19 @@ public class GroovyClassLoader extends URLClassLoader {
             return n;
         }));
 
+        // GROOVY-10687: prefer bytes from the unit, where the NestMembers
+        // attribute of each nest host was completed after class generation
+        var unitClasses = new LinkedHashMap<String, GroovyClass>();
+        for (GroovyClass gc : collector.unit.getClasses()) {
+            unitClasses.put(gc.getName(), gc);
+        }
         for (ClassNode cn : classes) {
-            collector.call(generatedClasses.get(cn), cn);
+            GroovyClass gc = unitClasses.get(cn.getName());
+            if (gc != null) {
+                collector.createClass(gc.getBytes(), cn);
+            } else {
+                collector.call(generatedClasses.get(cn), cn);
+            }
         }
     }
 
