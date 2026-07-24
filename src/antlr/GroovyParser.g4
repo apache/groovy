@@ -353,7 +353,8 @@ referenceType
     ;
 
 matchingType // see: instanceof
-    :   standardType identifier?
+    :   recordPattern
+    |   standardType identifier?
     ;
 
 standardType // see: returnType
@@ -793,9 +794,83 @@ switchBlockStatementExpressionGroup
     ;
 
 switchExpressionLabel
-    :   (   CASE expressionList[true]
+    :   (   CASE (casePattern | expressionList[true])
         |   DEFAULT
         ) ac=(ARROW | COLON)
+    ;
+
+// GEP-19 structural pattern matching: pattern forms usable in case labels
+casePattern
+    :   (typePattern | recordPattern | listPattern | mapPattern) (nls caseGuard)?
+    ;
+
+typePattern
+    :   standardType identifier
+    ;
+
+// components are mandatory and must be pattern-shaped so that legacy method
+// call labels such as `case foo()` and `case foo(bar)` keep isCase semantics
+recordPattern
+    :   standardType LPAREN nls recordPatternComponents nls RPAREN
+    ;
+
+recordPatternComponents
+    :   recordPatternComponent (COMMA nls recordPatternComponent)*
+    ;
+
+recordPatternComponent
+    :   recordPattern
+    |   (DEF | VAR) identifier
+    |   typePattern
+    |   { "_".equals(_input.LT(1).getText()) }? identifier
+    ;
+
+// a `[...]` label parses as a list pattern whenever its elements fit; whether it
+// is treated as a pattern or keeps legacy isCase semantics is decided in the
+// AST builder (a non-empty literal with no binding form, rest or nested pattern
+// among its elements is rebuilt as a legacy list expression label)
+listPattern
+    :   LBRACK nls (listPatternElements nls)? RBRACK
+    ;
+
+listPatternElements
+    :   listPatternElement (COMMA nls listPatternElement)*
+    ;
+
+listPatternElement
+    :   listPatternRest
+    |   recordPattern
+    |   listPattern
+    |   mapPattern
+    |   (DEF | VAR) identifier
+    |   typePattern
+    |   expression
+    ;
+
+// at most one rest binding per list pattern (validated in the AST builder);
+// `...` and `... t` are shortcuts for `var... _` and `var... t`
+listPatternRest
+    :   (DEF | VAR | standardType)? ELLIPSIS identifier?
+    ;
+
+// like listPattern, this rule over-matches: whether a `[k: v, ...]` literal is a
+// pattern or keeps legacy isCase semantics is decided in the AST builder
+mapPattern
+    :   LBRACK
+        (   mapPatternEntry (COMMA mapPatternEntry)*
+        |   COLON
+        )
+        RBRACK
+    ;
+
+// `... rest` binds the entries not named by the pattern; `...` discards them
+mapPatternEntry
+    :   mapEntryLabel COLON nls listPatternElement
+    |   ELLIPSIS identifier?
+    ;
+
+caseGuard
+    :   { "when".equals(_input.LT(1).getText()) }? identifier nls expression
     ;
 
 expression
