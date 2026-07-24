@@ -602,7 +602,31 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Invalid option: xxx. (supported options: [parallel, astWalker, optimize]) @ line 1, column 16.')
+        assert err.message.toString().contains('Invalid option: xxx. (supported options: [parallel, astWalker, optimize, provider, dataSource]) @ line 1, column 16.')
+    }
+
+    @Test
+    void "testGinq - unknown provider - 1"() {
+        def err = shouldFail '''\
+            GQ(provider:'unknown-provider') {
+                from n in [1, 2, 3]
+                select n
+            }
+        '''
+
+        assert err.message.toString().contains('Unknown GINQ provider: unknown-provider. (known providers: [collection])')
+    }
+
+    @Test
+    void "testGinq - provider conflicts with astWalker - 1"() {
+        def err = shouldFail '''\
+            GQ(provider:'sql', astWalker:'com.example.CustomAstWalker') {
+                from n in [1, 2, 3]
+                select n
+            }
+        '''
+
+        assert err.message.toString().contains('Options `provider` and `astWalker` are mutually exclusive')
     }
 
     @Test
