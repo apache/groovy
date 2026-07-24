@@ -207,6 +207,9 @@ class GenericsBytecodeTest extends GenericsTestBase {
 
     // GROOVY-10229
     void testWildcard3() {
+        // asserts generic signatures on the generated closure class, which does not exist
+        // when GEP-27 closure packing is enabled
+        if (Boolean.getBoolean('groovy.target.closure.pack')) return
         createClassInfo '''
             @groovy.transform.CompileStatic
             class C {

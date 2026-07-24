@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty
 
 final class NestHostTests {
 
@@ -85,6 +86,8 @@ final class NestHostTests {
     }
 
     @Test
+    @DisabledIfSystemProperty(named = 'groovy.target.closure.pack', matches = 'true',
+        disabledReason = 'asserts closure classes among nest members; packed closures generate no classes')
     void testNestHost4() {
         def types = compileScript '''
             class C {
@@ -121,6 +124,8 @@ final class NestHostTests {
     }
 
     @Test
+    @DisabledIfSystemProperty(named = 'groovy.target.closure.pack', matches = 'true',
+        disabledReason = 'asserts closure classes among nest members; packed closures generate no classes')
     void testNestHost6() {
         def types = compileScript '''
             @groovy.transform.CompileStatic
@@ -137,6 +142,8 @@ final class NestHostTests {
 
     // GROOVY-11780
     @Test
+    @DisabledIfSystemProperty(named = 'groovy.target.closure.pack', matches = 'true',
+        disabledReason = 'asserts closure classes among nest members; packed closures generate no classes')
     void testNestHost7() {
         def types = compileScript '''
             class C {

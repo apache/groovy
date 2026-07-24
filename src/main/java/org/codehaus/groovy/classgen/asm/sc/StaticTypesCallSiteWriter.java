@@ -380,7 +380,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
-        if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
+        // a packed closure's hoisted body keeps the closure-context contract: like the inner
+        // closure class it replaces, it falls through to the dynamic property sequence (e.g.
+        // another class's private field, reachable via the MOP) instead of a compile error
+        boolean inPackedBody = controller.getMethodNode() != null
+                && controller.getMethodNode().getName().startsWith(org.codehaus.groovy.classgen.asm.ClosureWriter.PACKED_METHOD_PREFIX);
+        if (!isScriptVariable && !inPackedBody && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
             addPropertyAccessError(receiver, propertyName, receiverType);
         }
 

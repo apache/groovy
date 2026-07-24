@@ -87,6 +87,11 @@ tasks.withType(Test).configureEach {
     if (lambdaHoist != null) {
         systemProperty 'groovy.target.lambda.hoist', lambdaHoist
     }
+    // Forward the automatic @CompileStatic closure-packing flag (GEP-27) to the test JVM. Set only when present.
+    def closurePack = findProperty('groovy.target.closure.pack') ?: System.getProperty('groovy.target.closure.pack')
+    if (closurePack != null) {
+        systemProperty 'groovy.target.closure.pack', closurePack
+    }
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperty 'groovy.testdb.props', testdb
@@ -250,6 +255,13 @@ tasks.withType(GroovyCompile).configureEach {
                 languageVersion = JavaLanguageVersion.of(feature)
             }
         }
+    }
+    // Forward the opt-in closure-packing flag (GEP-27) to the forked Groovy compiler: packing happens
+    // at compile time, so test sources are only packed when the compiler JVM sees the property (the
+    // Test-task systemProperty above covers runtime assertScript compilation). Set only when present.
+    def closurePack = findProperty('groovy.target.closure.pack') ?: System.getProperty('groovy.target.closure.pack')
+    if (closurePack != null) {
+        groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.target.closure.pack=${closurePack}" as String]
     }
 }
 

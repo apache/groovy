@@ -604,7 +604,8 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private boolean nonStockMetaClass() {
         MetaClass mc = super.getMetaClass();
         Class<?> mcClass = (mc == null) ? null : mc.getClass();
-        return mcClass != org.codehaus.groovy.runtime.metaclass.ClosureMetaClass.class && mcClass != MetaClassImpl.class;
+        return mcClass != org.codehaus.groovy.runtime.metaclass.ClosureMetaClass.class && mcClass != MetaClassImpl.class
+                && mcClass != org.codehaus.groovy.runtime.metaclass.PackedClosureMetaClass.class;
     }
 
     @Override
