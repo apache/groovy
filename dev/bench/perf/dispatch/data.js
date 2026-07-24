@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784792332877,
+  "lastUpdate": 1784878789341,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -972,6 +972,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 888,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1492,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "3240fcf05ad12df667e06e673bb3ff6822961029",
+          "message": "GROOVY-12186: reject lone low surrogate in StreamingMarkupWriter.write (add another edge case - dangling surrogate on flush)",
+          "timestamp": "2026-07-23T05:24:11Z",
+          "url": "https://github.com/apache/groovy/commit/3240fcf05ad12df667e06e673bb3ff6822961029"
+        },
+        "date": 1784878788672,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3984,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 470,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 891,
             "unit": "classes"
           },
           {
