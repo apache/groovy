@@ -901,6 +901,20 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
+    public ReturnStatement visitReturnAtStmtAlt(final ReturnAtStmtAltContext ctx) {
+        if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
+            throw createParsingFailedException("switch expression does not support `return`", ctx);
+        }
+
+        ReturnStatement returnStatement = new ReturnStatement(asBoolean(ctx.expression())
+                ? (Expression) this.visit(ctx.expression())
+                : ConstantExpression.EMPTY_EXPRESSION);
+        returnStatement.setTarget(this.visitIdentifier(ctx.identifier()));
+
+        return configureAST(returnStatement, ctx);
+    }
+
+    @Override
     public ThrowStatement visitThrowStmtAlt(final ThrowStmtAltContext ctx) {
         return configureAST(
                 new ThrowStatement((Expression) this.visit(ctx.expression())),

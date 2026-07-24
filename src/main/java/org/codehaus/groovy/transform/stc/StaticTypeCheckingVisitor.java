@@ -390,6 +390,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     protected static final ClassNode CLOSUREPARAMS_CLASSNODE = ClassHelper.make(ClosureParams.class);
     /** Cached {@link NamedParams} annotation type. */
     protected static final ClassNode NAMED_PARAMS_CLASSNODE = ClassHelper.make(NamedParams.class);
+    /** Cached {@link groovy.transform.SupportsLoopControl} annotation type. */
+    protected static final ClassNode SUPPORTS_LOOP_CONTROL = ClassHelper.make(groovy.transform.SupportsLoopControl.class);
     /** Cached {@link NamedParam} annotation type. */
     protected static final ClassNode NAMED_PARAM_CLASSNODE = ClassHelper.make(NamedParam.class);
     @Deprecated(forRemoval = true, since = "4.0.0")
@@ -3680,6 +3682,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         expression.putNodeMetaData(PARAMETER_TYPE, targetType);
                     }
                     if (expression instanceof ClosureExpression) {
+                        checkLoopControlSupported(selectedMethod, expression);
                         checkClosureWithDelegatesTo(receiver, selectedMethod, args(expressions), parameters, expression, target);
                         if (i > 0 || !(selectedMethod instanceof ExtensionMethodNode)) {
                             inferClosureParameterTypes(receiver, arguments, (ClosureExpression) expression, target, selectedMethod);
@@ -4091,6 +4094,21 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             } else {
                 signature[i] = getCombinedBoundType(gt);
             }
+        }
+    }
+
+    /**
+     * Checks that a closure using break/continue (tagged by the non-local
+     * control flow rewriter, GROOVY-12126) is passed to a method that
+     * cooperates with the loop-control protocol.
+     */
+    private void checkLoopControlSupported(final MethodNode mn, final Expression closure) {
+        if (closure.getNodeMetaData(org.codehaus.groovy.control.NonLocalControlFlowRewriter.class) == null) return;
+        MethodNode target = mn instanceof ExtensionMethodNode ? ((ExtensionMethodNode) mn).getExtensionMethodNode() : mn;
+        if (target.getAnnotations(SUPPORTS_LOOP_CONTROL).isEmpty()) {
+            addStaticTypeError("closure uses break/continue but the target method " +
+                    prettyPrintTypeName(target.getDeclaringClass()) + "#" + target.getName() +
+                    " is not marked @SupportsLoopControl", closure);
         }
     }
 

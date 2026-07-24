@@ -43,6 +43,7 @@ import groovy.lang.PropertyValue;
 import groovy.lang.Range;
 import groovy.lang.SpreadMap;
 import groovy.lang.Tuple2;
+import groovy.transform.SupportsLoopControl;
 import groovy.transform.stc.ClosureParams;
 import groovy.transform.stc.FirstParam;
 import groovy.transform.stc.FromString;
@@ -243,6 +244,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static final NumberAwareComparator<Comparable> COMPARABLE_NUMBER_AWARE_COMPARATOR = new NumberAwareComparator<>();
+
+    // internal helper method: calls the closure translating loop-control signals;
+    // returns false if the iteration should stop (LoopControl.BREAK), true otherwise
+    private static boolean callResumable(Closure<?> closure, Object arg) {
+        try {
+            closure.call(arg);
+            return true;
+        } catch (LoopControl signal) {
+            return signal != LoopControl.BREAK;
+        }
+    }
 
     // internal helper method
     protected static <T> T callClosureForLine(@ClosureParams(value=FromString.class, options={"String","String,Integer"}) Closure<T> closure, String line, int counter) {
@@ -2440,6 +2452,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 1.0
      */
+    @SupportsLoopControl
     public static <T> List<T> collect(Object self, Closure<T> transform) {
         return collect(self, new ArrayList<>(), transform);
     }
@@ -2454,6 +2467,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
+    @SupportsLoopControl
     public static <T, C extends Collection<T>> C collect(Object self, C collector, Closure<? extends T> transform) {
         return collect(InvokerHelper.asIterator(self), collector, transform);
     }
@@ -2467,6 +2481,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 2.5.0
      */
+    @SupportsLoopControl
     public static <E, T> List<T> collect(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
         return collect(self, new ArrayList<>(), transform);
     }
@@ -2621,9 +2636,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 2.5.0
      */
+    @SupportsLoopControl
     public static <E, T, C extends Collection<T>> C collect(Iterator<E> self, C collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
         while (self.hasNext()) {
-            collector.add(transform.call(self.next()));
+            T transformed;
+            try {
+                transformed = transform.call(self.next());
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+                continue;
+            }
+            collector.add(transformed);
         }
         return collector;
     }
@@ -2669,6 +2692,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of the transformed values
      * @since 2.5.0
      */
+    @SupportsLoopControl
     public static <E, T> List<T> collect(Iterable<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
         return collect(self.iterator(), transform);
     }
@@ -2701,9 +2725,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 2.5.0
      */
+    @SupportsLoopControl
     public static <E, T, C extends Collection<T>> C collect(Iterable<E> self, C collector, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends T> transform) {
         for (E element : self) {
-            collector.add(transform.call(element));
+            T transformed;
+            try {
+                transformed = transform.call(element);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+                continue;
+            }
+            collector.add(transformed);
             if (transform.getDirective() == Closure.DONE) {
                 break;
             }
@@ -2776,9 +2808,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the collector with all transformed values added to it
      * @since 1.0
      */
+    @SupportsLoopControl
     public static <T, K, V, C extends Collection<T>> C collect(Map<K, V> self, C collector, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends T> transform) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            collector.add(callClosureForMapEntry(transform, entry));
+            T transformed;
+            try {
+                transformed = callClosureForMapEntry(transform, entry);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+                continue;
+            }
+            collector.add(transformed);
         }
         return collector;
     }
@@ -2797,6 +2837,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resultant list of transformed values
      * @since 1.0
      */
+    @SupportsLoopControl
     public static <T, K, V> List<T> collect(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<T> transform) {
         return collect(self, new ArrayList<>(self.size()), transform);
     }
@@ -4259,12 +4300,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to call
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(Number self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         int self1 = self.intValue();
         int to1 = to.intValue();
         if (self1 >= to1) {
             for (int i = self1; i >= to1; i--) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -4280,11 +4322,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(long self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         long to1 = to.longValue();
         if (self >= to1) {
             for (long i = self; i >= to1; i--) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -4300,11 +4343,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(Long self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         long to1 = to.longValue();
         if (self >= to1) {
             for (long i = self; i >= to1; i--) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -4320,11 +4364,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(float self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         float to1 = to.floatValue();
         if (self >= to1) {
             for (float i = self; i >= to1; i--) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -4339,11 +4384,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(Float self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         float to1 = to.floatValue();
         if (self >= to1) {
             for (float i = self; i >= to1; i--) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -4358,11 +4404,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(double self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self >= to1) {
             for (double i = self; i >= to1; i--) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -4377,11 +4424,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(Double self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self >= to1) {
             for (double i = self; i >= to1; i--) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -4396,6 +4444,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(BigInteger self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         if (to instanceof BigDecimal to1) {
             final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
@@ -4413,7 +4462,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             final BigInteger one = BigInteger.valueOf(1);
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException(
@@ -4425,7 +4474,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             final BigInteger to1 = new BigInteger(to.toString());
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException(
@@ -4450,12 +4499,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void downto(BigDecimal self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         final BigDecimal one = BigDecimal.valueOf(10, 1);  // Quick way to get "1.0".
         if (to instanceof BigDecimal to1) {
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else {
                 throw new GroovyRuntimeException("The argument (" + to +
@@ -4465,7 +4515,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException("The argument (" + to +
@@ -4473,7 +4523,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             BigDecimal to1 = NumberMath.toBigDecimal(to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException("The argument (" + to +
@@ -5070,6 +5120,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.0
      */
+    @SupportsLoopControl
     public static <T> T each(T self, @ClosureParams(value=FromString.class, options="?") Closure closure) {
         each(InvokerHelper.asIterator(self), closure);
         return self;
@@ -5082,6 +5133,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure applied on each element found
      * @return the self Iterable
      */
+    @SupportsLoopControl
     public static <T> Iterable<T> each(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         each(self.iterator(), closure);
         return self;
@@ -5116,10 +5168,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the (now exhausted) self Iterator
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> Iterator<T> each(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         while (self.hasNext()) {
             Object arg = self.next();
-            closure.call(arg);
+            if (!callResumable(closure, arg)) break;
         }
         return self;
     }
@@ -5132,6 +5185,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Collection
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> Collection<T> each(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (Collection<T>) each((Iterable<T>) self, closure);
     }
@@ -5144,6 +5198,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self List
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> List<T> each(List<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (List<T>) each((Iterable<T>) self, closure);
     }
@@ -5156,6 +5211,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Set
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> Set<T> each(Set<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (Set<T>) each((Iterable<T>) self, closure);
     }
@@ -5168,6 +5224,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self SortedSet
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> SortedSet<T> each(SortedSet<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (SortedSet<T>) each((Iterable<T>) self, closure);
     }
@@ -5194,9 +5251,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return returns the self parameter
      * @since 1.5.0
      */
+    @SupportsLoopControl
     public static <K, V> Map<K, V> each(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<?> closure) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            callClosureForMapEntry(closure, entry);
+            try {
+                callClosureForMapEntry(closure, entry);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+            }
         }
         return self;
     }
@@ -5262,6 +5324,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.0
      */
+    @SupportsLoopControl
     public static <T> T eachWithIndex(T self, @ClosureParams(value=FromString.class, options="?,Integer") Closure closure) {
         final Object[] args = new Object[2];
         int counter = 0;
@@ -5283,6 +5346,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Iterable
      * @since 2.3.0
      */
+    @SupportsLoopControl
     public static <T> Iterable<T> eachWithIndex(Iterable<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         eachWithIndex(self.iterator(), closure);
         return self;
@@ -5321,13 +5385,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the (now exhausted) self Iterator
      * @since 2.3.0
      */
+    @SupportsLoopControl
     public static <T> Iterator<T> eachWithIndex(Iterator<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         final Object[] args = new Object[2];
         int counter = 0;
         while (self.hasNext()) {
             args[0] = self.next();
             args[1] = counter++;
-            closure.call(args);
+            try {
+                closure.call(args);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+            }
         }
         return self;
     }
@@ -5342,6 +5411,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Collection
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> Collection<T> eachWithIndex(Collection<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (Collection<T>) eachWithIndex((Iterable<T>) self, closure);
     }
@@ -5356,6 +5426,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self List
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> List<T> eachWithIndex(List<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (List<T>) eachWithIndex((Iterable<T>) self, closure);
     }
@@ -5370,6 +5441,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Set
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> Set<T> eachWithIndex(Set<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (Set<T>) eachWithIndex((Iterable<T>) self, closure);
     }
@@ -5384,6 +5456,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self SortedSet
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> SortedSet<T> eachWithIndex(SortedSet<T> self, @ClosureParams(value=FromString.class, options="T,Integer") Closure closure) {
         return (SortedSet<T>) eachWithIndex((Iterable<T>) self, closure);
     }
@@ -5406,10 +5479,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.5.0
      */
+    @SupportsLoopControl
     public static <K, V> Map<K, V> eachWithIndex(Map<K, V> self, @ClosureParams(value=MapEntryOrKeyValue.class, options="index=true") Closure<?> closure) {
         int counter = 0;
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            callClosureForMapEntryAndCounter(closure, entry, counter++);
+            try {
+                callClosureForMapEntryAndCounter(closure, entry, counter++);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+            }
         }
         return self;
     }
@@ -6039,11 +6117,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new subMap
      * @since 1.0
      */
+    @SupportsLoopControl
     public static <K, V> Map<K, V> findAll(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure closure) {
         Map<K, V> answer = createSimilarMap(self);
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (bcw.callForMap(entry)) {
+            boolean keep;
+            try {
+                keep = bcw.callForMap(entry);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+                continue;
+            }
+            if (keep) {
                 answer.put(entry.getKey(), entry.getValue());
             }
         }
@@ -6086,6 +6172,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Set of matching values
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> Set<T> findAll(Set<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (Set<T>) findAll((Collection<T>) self, closure);
     }
@@ -6144,6 +6231,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List of matching values
      * @since 2.4.0
      */
+    @SupportsLoopControl
     public static <T> List<T> findAll(List<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (List<T>) findAll((Collection<T>) self, closure);
     }
@@ -6157,6 +6245,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Collection of matching values
      * @since 1.5.6
      */
+    @SupportsLoopControl
     public static <T> Collection<T> findAll(Collection<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return findMany(createSimilarCollection(self), self.iterator(), closure);
     }
@@ -6284,6 +6373,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     @SuppressWarnings("unchecked")
+    @SupportsLoopControl
     public static List findAll(Object self, Closure closure) {
         return findMany(new ArrayList(), InvokerHelper.asIterator(self), closure);
     }
@@ -6310,7 +6400,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         BooleanClosureWrapper test = new BooleanClosureWrapper(closure);
         while (iter.hasNext()) {
             T value = iter.next();
-            if (test.call(value)) {
+            boolean keep;
+            try {
+                keep = test.call(value);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+                continue;
+            }
+            if (keep) {
                 collector.add(value);
             }
         }
@@ -9541,6 +9638,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Object, Object, Closure)
      * @since 1.8.7
      */
+    @SupportsLoopControl
     public static <T, V extends T> T inject(Object self, @ClosureParams(value=FromString.class,options="T,?") Closure<V> closure) {
         Iterator<?> iter = InvokerHelper.asIterator(self);
         if (!iter.hasNext()) {
@@ -9575,6 +9673,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Iterable, Object, Closure)
      * @since 5.0.0
      */
+    @SupportsLoopControl
     public static <E extends T, T, V extends T> T inject(Iterable<E> self, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         Iterator<E> iter = self.iterator();
         if (!iter.hasNext()) {
@@ -9631,6 +9730,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #inject(Iterator, Object, Closure)
      * @since 1.5.0
      */
+    @SupportsLoopControl
     public static <T, U extends T, V extends T> T inject(Object self, U initialValue, @ClosureParams(value=FromString.class,options="T,?") Closure<V> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
         return (T) inject(iter, initialValue, closure);
@@ -9678,6 +9778,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @since 5.0.0
      */
+    @SupportsLoopControl
     public static <E, T, U extends T, V extends T> T inject(Iterable<E> self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         return inject(self.iterator(), initialValue, closure);
     }
@@ -9727,13 +9828,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @since 1.5.0
      */
+    @SupportsLoopControl
     public static <E, T, U extends T, V extends T> T inject(Iterator<E> self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         T value = initialValue;
         Object[] params = new Object[2];
         while (self.hasNext()) {
             params[0] = value;
             params[1] = self.next();
-            value = closure.call(params);
+            try {
+                value = closure.call(params);
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+                // CONTINUE: keep the prior accumulator value
+            }
         }
         return value;
     }
@@ -9762,13 +9869,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the last closure call
      * @since 1.8.1
      */
+    @SupportsLoopControl
     public static <K, V, T, U extends T, W extends T> T inject(Map<K, V> self, U initialValue, @ClosureParams(value=FromString.class,options={"T,Map.Entry<K,V>","T,K,V"}) Closure<W> closure) {
         T value = initialValue;
         for (Map.Entry<K, V> entry : self.entrySet()) {
-            if (closure.getMaximumNumberOfParameters() == 3) {
-                value = closure.call(value, entry.getKey(), entry.getValue());
-            } else {
-                value = closure.call(value, entry);
+            try {
+                if (closure.getMaximumNumberOfParameters() == 3) {
+                    value = closure.call(value, entry.getKey(), entry.getValue());
+                } else {
+                    value = closure.call(value, entry);
+                }
+            } catch (LoopControl signal) {
+                if (signal == LoopControl.BREAK) break;
+                // CONTINUE: keep the prior accumulator value
             }
         }
         return value;
@@ -15452,6 +15565,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure    the closure to call
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void step(Number self, Number to, Number stepNumber, Closure closure) {
         if (self instanceof BigDecimal || to instanceof BigDecimal || stepNumber instanceof BigDecimal) {
             final BigDecimal zero = BigDecimal.valueOf(0, 1);  // Same as "0.0".
@@ -15460,11 +15574,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             BigDecimal stepNumber1 = NumberMath.toBigDecimal(stepNumber);
             if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else if(self1.compareTo(to1) != 0)
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
@@ -15475,11 +15589,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             BigInteger stepNumber1 = (stepNumber instanceof BigInteger) ? (BigInteger) stepNumber : new BigInteger(stepNumber.toString());
             if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
                 for (BigInteger i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
                 for (BigInteger i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else if(self1.compareTo(to1) != 0)
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
@@ -15489,11 +15603,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             int stepNumber1 = stepNumber.intValue();
             if (stepNumber1 > 0 && to1 > self1) {
                 for (int i = self1; i < to1; i += stepNumber1) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else if (stepNumber1 < 0 && to1 < self1) {
                 for (int i = self1; i > to1; i += stepNumber1) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else if(self1 != to1)
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
@@ -16482,9 +16596,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to call a number of times
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void times(Number self, @ClosureParams(value=SimpleType.class,options="int")  Closure closure) {
         for (int i = 0, size = self.intValue(); i < size; i++) {
-            closure.call(i);
+            if (!callResumable(closure, i)) break;
             if (closure.getDirective() == Closure.DONE) {
                 break;
             }
@@ -18651,12 +18766,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to call
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(Number self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         int self1 = self.intValue();
         int to1 = to.intValue();
         if (self1 <= to1) {
             for (int i = self1; i <= to1; i++) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -18672,11 +18788,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(long self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         long to1 = to.longValue();
         if (self <= to1) {
             for (long i = self; i <= to1; i++) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -18692,11 +18809,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(Long self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         long to1 = to.longValue();
         if (self <= to1) {
             for (long i = self; i <= to1; i++) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -18712,11 +18830,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(float self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         float to1 = to.floatValue();
         if (self <= to1) {
             for (float i = self; i <= to1; i++) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -18732,11 +18851,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(Float self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         float to1 = to.floatValue();
         if (self <= to1) {
             for (float i = self; i <= to1; i++) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -18752,11 +18872,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(double self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self <= to1) {
             for (double i = self; i <= to1; i++) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -18772,11 +18893,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(Double self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         double to1 = to.doubleValue();
         if (self <= to1) {
             for (double i = self; i <= to1; i++) {
-                closure.call(i);
+                if (!callResumable(closure, i)) break;
             }
         } else
             throw new GroovyRuntimeException("The argument (" + to +
@@ -18796,13 +18918,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(BigInteger self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         if (to instanceof BigDecimal to1) {
             final BigDecimal one = BigDecimal.valueOf(10, 1);
             BigDecimal self1 = new BigDecimal(self);
             if (self1.compareTo(to1) <= 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException(
@@ -18813,7 +18936,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             final BigInteger one = BigInteger.valueOf(1);
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException(
@@ -18824,7 +18947,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             BigInteger to1 = new BigInteger(to.toString());
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException(MessageFormat.format(
@@ -18846,12 +18969,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      * @since 1.0
      */
+    @SupportsLoopControl
     public static void upto(BigDecimal self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
         if (to instanceof BigDecimal to1) {
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException("The argument (" + to +
@@ -18860,7 +18984,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException("The argument (" + to +
@@ -18869,7 +18993,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             BigDecimal to1 = NumberMath.toBigDecimal(to);
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    if (!callResumable(closure, i)) break;
                 }
             } else
                 throw new GroovyRuntimeException("The argument (" + to +

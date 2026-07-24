@@ -343,6 +343,11 @@ final class GroovyParserTest {
     }
 
     @Test
+    void 'groovy core - ReturnAt'() {
+        doTest('core/ReturnAt_01.groovy')
+    }
+
+    @Test
     void 'groovy core - Throw'() {
         doTest('core/Throw_01.groovy')
     }
