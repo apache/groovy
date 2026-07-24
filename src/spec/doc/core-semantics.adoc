@@ -272,6 +272,21 @@ include::../test/SemanticsTest.groovy[tags=groovy_for_loop_example,indent=0]
 [NOTE]
 Groovy also supports the Java colon variation with colons: `for (char c : text) {}`
 
+[NOTE]
+====
+*Closure, lambda, and AIC capture of for-in variables (GROOVY-11792).*
+When a for-in loop variable is shared with a deferred closure, lambda, or
+anonymous inner class, each iteration uses a fresh binding so the capture
+observes the value from the iteration that created it (similar in spirit to
+Java enhanced-for / lambda capture for deferred use). Assignments to the loop
+variable within the same iteration remain visible to captures created in that
+iteration. Classic `for` / `while` loops are unchanged. To restore the
+historical single shared binding (every capture sees the final loop value), set
+system property `groovy.for.loop.capture=false` or call
+`CompilerConfiguration.setForLoopCaptureEnabled(false)` (language-compatibility
+switch, independent of optimization options including `"all" -> false`).
+====
+
 ===== while loop
 
 Groovy supports the usual while {...} loops like Java:

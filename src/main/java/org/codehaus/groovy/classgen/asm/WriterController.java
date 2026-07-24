@@ -78,6 +78,14 @@ public class WriterController {
      * comparable or better optimization.
      */
     public boolean optimizeForInt = true;
+    /**
+     * Language-compatibility flag (GROOVY-11792): when {@code true} (the default),
+     * for-in loop variables shared with closures, lambdas, or anonymous inner
+     * classes get a fresh {@link groovy.lang.Reference} each iteration. Cached
+     * from {@link CompilerConfiguration#isForLoopCaptureEnabled()} at
+     * {@link #init}. Independent of optimization options (including {@code "all"}).
+     */
+    private boolean forLoopCapture = true;
     private StatementWriter statementWriter;
     private boolean fastPath;
     private TypeChooser typeChooser;
@@ -103,6 +111,7 @@ public class WriterController {
         CompilerConfiguration config = cn.getCompileUnit().getConfig();
         Map<String,Boolean> optOptions = config.getOptimizationOptions();
         boolean invokedynamic = true;
+        this.forLoopCapture = config.isForLoopCaptureEnabled();
         if (optOptions.isEmpty()) {
             // IGNORE
         } else if (Boolean.FALSE.equals(optOptions.get("all"))) {
@@ -233,6 +242,17 @@ public class WriterController {
      */
     public CompileStack getCompileStack() {
         return compileStack;
+    }
+
+    /**
+     * Whether for-in loop variables shared with closures, lambdas, or AICs
+     * should be re-captured each iteration (language-compat flag, GROOVY-11792).
+     *
+     * @return {@code true} when per-iteration capture is enabled
+     * @see CompilerConfiguration#isForLoopCaptureEnabled()
+     */
+    public boolean isForLoopCaptureEnabled() {
+        return forLoopCapture;
     }
 
     /**

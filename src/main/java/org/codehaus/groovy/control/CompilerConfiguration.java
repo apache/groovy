@@ -223,6 +223,11 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public void setForLoopCaptureEnabled(final boolean forLoopCapture) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setJointCompilationOptions(final Map<String, Object> options) {
             throw new UnsupportedOperationException();
         }
@@ -421,6 +426,18 @@ public class CompilerConfiguration {
      */
     private Map<String, Boolean> optimizationOptions;
 
+    /**
+     * Language-compatibility flag (GROOVY-11792): when {@code true} (the default),
+     * for-in loop variables shared with closures, lambdas, or anonymous inner
+     * classes receive a fresh {@link groovy.lang.Reference} each iteration.
+     * Classic {@code for} / {@code while} loops are unaffected. Independent of
+     * {@link #getOptimizationOptions()} (including {@code "all"} → false).
+     *
+     * @see #isForLoopCaptureEnabled()
+     * @see #setForLoopCaptureEnabled(boolean)
+     */
+    private boolean forLoopCapture = true;
+
     private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<>();
 
     /**
@@ -458,6 +475,13 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.attach.runtime.groovydoc</code></td><td>{@link #getOptimizationOptions}</td></tr>
      * </table>
      * </blockquote>
+     * Additional language-compatibility system properties (not optimization options):
+     * <blockquote>
+     * <table summary="Groovy Language Compatibility Properties">
+     *   <tr><th>Property Key</th><th>Related Property Getter</th></tr>
+     *   <tr><td><code>groovy.for.loop.capture</code></td><td>{@link #isForLoopCaptureEnabled}</td></tr>
+     * </table>
+     * </blockquote>
      */
     public CompilerConfiguration() {
         classpath = new LinkedList<>();
@@ -474,6 +498,7 @@ public class CompilerConfiguration {
         setTargetDirectorySafe(getSystemPropertySafe("groovy.target.directory"));
         setTargetBytecodeIfValid(getSystemPropertySafe("groovy.target.bytecode", DEFAULT_TARGET_BYTECODE));
         defaultScriptExtension = getSystemPropertySafe("groovy.default.scriptExtension", ".groovy");
+        forLoopCapture = getBooleanSafe("groovy.for.loop.capture", true);
 
         optimizationOptions = new HashMap<>(4);
         handleOptimizationOption(INVOKEDYNAMIC, getSystemPropertySafe("groovy.target.indy", "true"));
@@ -528,6 +553,7 @@ public class CompilerConfiguration {
         setDisabledGlobalASTTransformations(configuration.getDisabledGlobalASTTransformations());
         setScriptExtensions(new LinkedHashSet<>(configuration.getScriptExtensions()));
         setOptimizationOptions(new HashMap<>(configuration.getOptimizationOptions()));
+        setForLoopCaptureEnabled(configuration.isForLoopCaptureEnabled());
         setBytecodePostprocessor(configuration.getBytecodePostprocessor());
 
         Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
@@ -583,6 +609,7 @@ public class CompilerConfiguration {
      *   <tr><td><code>groovy.recompile</code></td><td>{@link #getRecompileGroovySource}</td></tr>
      *   <tr><td><code>groovy.recompile.minimumInterval</code></td><td>{@link #getMinimumRecompilationInterval}</td></tr>
      *   <tr><td><code>groovy.disabled.global.ast.transformations</code></td><td>{@link #getDisabledGlobalASTTransformations}</td></tr>
+     *   <tr><td><code>groovy.for.loop.capture</code></td><td>{@link #isForLoopCaptureEnabled}</td></tr>
      * </table>
      * </blockquote>
      *
@@ -777,6 +804,9 @@ public class CompilerConfiguration {
 
         text = configuration.getProperty("groovy.parameters");
         if (text != null) setParameters("true".equalsIgnoreCase(text));
+
+        text = configuration.getProperty("groovy.for.loop.capture");
+        if (text != null) setForLoopCaptureEnabled("true".equalsIgnoreCase(text));
 
         text = configuration.getProperty("groovy.preview.features");
         if (text != null) setPreviewFeatures("true".equalsIgnoreCase(text));
@@ -1272,7 +1302,10 @@ public class CompilerConfiguration {
      * Sets the optimization options for this configuration.
      * No entry or a true for that entry means to enable that optimization,
      * a false means the optimization is disabled.
-     * Valid keys are "all" and "int".
+     * Valid keys include {@code "all"}, {@code "int"}, {@link #INVOKEDYNAMIC},
+     * {@link #PARALLEL_PARSE}, {@link #GROOVYDOC}, and {@link #RUNTIME_GROOVYDOC}.
+     * For-in loop capture (GROOVY-11792) is not an optimization option; use
+     * {@link #setForLoopCaptureEnabled(boolean)} instead.
      * @param options the options.
      * @throws IllegalArgumentException if the options are null
      */
@@ -1368,5 +1401,41 @@ public class CompilerConfiguration {
      */
     public boolean isRuntimeGroovydocEnabled() {
         return Boolean.TRUE.equals(getOptimizationOptions().get(RUNTIME_GROOVYDOC));
+    }
+
+    /**
+     * Checks if per-iteration capture of for-in (enhanced for-each) loop
+     * variables is enabled (GROOVY-11792). Classic {@code for} and
+     * {@code while} loops are not affected by this flag.
+     * <p>
+     * This is a language-compatibility switch (not a performance optimization)
+     * and is independent of {@link #getOptimizationOptions()}. Enabled by
+     * default. Disable via system property {@code groovy.for.loop.capture=false}
+     * or {@link #setForLoopCaptureEnabled(boolean) setForLoopCaptureEnabled(false)},
+     * which restores the historical behaviour where a single shared
+     * {@link groovy.lang.Reference} is updated across for-in iterations.
+     *
+     * @return {@code true} if each for-in iteration should allocate a fresh
+     *         reference for loop variables shared with closures, lambdas, or
+     *         anonymous inner classes
+     * @see #setForLoopCaptureEnabled(boolean)
+     */
+    public boolean isForLoopCaptureEnabled() {
+        return forLoopCapture;
+    }
+
+    /**
+     * Enables or disables per-iteration capture of for-in (enhanced for-each)
+     * loop variables shared with closures, lambdas, or anonymous inner classes
+     * (GROOVY-11792). Classic {@code for} and {@code while} loops are not
+     * affected. Default is {@code true}. Setting {@code false} restores the
+     * historical single shared {@link groovy.lang.Reference} across iterations.
+     *
+     * @param forLoopCapture {@code true} to allocate a fresh reference each
+     *        for-in iteration for shared loop variables
+     * @see #isForLoopCaptureEnabled()
+     */
+    public void setForLoopCaptureEnabled(final boolean forLoopCapture) {
+        this.forLoopCapture = forLoopCapture;
     }
 }
