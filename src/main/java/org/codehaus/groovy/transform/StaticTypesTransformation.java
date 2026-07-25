@@ -118,9 +118,11 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
                 return super.transform(expression);
             }
         };
-        if (node instanceof ClassNode classNode) {
+        if (node instanceof ClassNode) {
+            ClassNode classNode = (ClassNode) node;
             transformer.visitClass(classNode);
-        } else if (node instanceof MethodNode methodNode) {
+        } else if (node instanceof MethodNode) {
+            MethodNode methodNode = (MethodNode) node;
             transformer.visitMethod(methodNode);
         }
     }
