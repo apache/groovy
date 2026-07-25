@@ -20,10 +20,7 @@ package groovy.concurrent
 
 import org.junit.jupiter.api.Test
 
-import java.util.concurrent.ForkJoinPool
-
 import static groovy.test.GroovyAssert.assertScript
-import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 final class ParallelAnnotationTest {
 
@@ -124,35 +121,44 @@ final class ParallelAnnotationTest {
 
     @Test
     void testParallelForRunsConcurrently() {
-        // Single-core containers (common in CI) set the fork-join common
-        // pool parallelism to 1. A concurrency assertion is meaningless in
-        // that environment — skip.
-        int parallelism = ForkJoinPool.commonPool().parallelism
-        assumeTrue(parallelism >= 2,
-                "common pool parallelism is $parallelism — skipping concurrency check")
-
         // Force deterministic concurrent execution via a barrier: each
         // iteration must rendezvous with another before proceeding. If the
         // @Parallel loop runs on a single thread, the first await() will
         // time out — eliminating the split-heuristic flakiness of simply
         // counting thread names over a small data set.
+        //
+        // Use ParallelScope.withPool(parties) rather than the common pool:
+        // CyclicBarrier.await is unmanaged blocking, so a contended
+        // ForkJoinPool.commonPool() (other tests / background FJP work)
+        // can leave only one free worker. That worker hits the barrier and
+        // never runs the second party → TimeoutException wrapped as
+        // UndeclaredThrowableException through the SAM Consumer proxy.
+        // A dedicated pool of size == parties isolates the check and works
+        // even on single-core hosts (two worker threads time-share; blocking
+        // on the barrier frees the core for the other party).
         assertScript '''
             import groovy.transform.Parallel
+            import groovy.concurrent.ParallelScope
             import java.util.concurrent.CopyOnWriteArraySet
             import java.util.concurrent.CyclicBarrier
             import java.util.concurrent.TimeUnit
 
             int parties = 2
-            def threadNames = new CopyOnWriteArraySet()
-            def barrier = new CyclicBarrier(parties)
+            ParallelScope.withPool(parties) { scope ->
+                def threadNames = new CopyOnWriteArraySet()
+                def barrier = new CyclicBarrier(parties)
 
-            @Parallel
-            for (item in 1..parties) {
-                threadNames << Thread.currentThread().name
-                barrier.await(5, TimeUnit.SECONDS)
+                // Real product shape: `@Parallel for (i in 1..n)` on IntRange.
+                // Pool isolation (above) is what makes the barrier rendezvous safe;
+                // RandomAccess on IntRange improves parallelStream split quality.
+                @Parallel
+                for (item in 1..parties) {
+                    threadNames << Thread.currentThread().name
+                    barrier.await(5, TimeUnit.SECONDS)
+                }
+
+                assert threadNames.size() == parties
             }
-
-            assert threadNames.size() == parties
         '''
     }
 }

@@ -40,6 +40,32 @@ final class ParallelCollectionTest {
     }
 
     @Test
+    void testEachParallelRunsConcurrently() {
+        // Same rationale as ParallelAnnotationTest.testParallelForRunsConcurrently:
+        // dedicated pool isolates the barrier rendezvous from commonPool contention.
+        assertScript '''
+            import groovy.concurrent.ParallelScope
+            import java.util.concurrent.CopyOnWriteArraySet
+            import java.util.concurrent.CyclicBarrier
+            import java.util.concurrent.TimeUnit
+
+            int parties = 2
+            ParallelScope.withPool(parties) { scope ->
+                def threadNames = new CopyOnWriteArraySet()
+                def barrier = new CyclicBarrier(parties)
+
+                // IntRange path: same collection shape as `@Parallel for (i in 1..n)`
+                (1..parties).eachParallel { item ->
+                    threadNames << Thread.currentThread().name
+                    barrier.await(5, TimeUnit.SECONDS)
+                }
+
+                assert threadNames.size() == parties
+            }
+        '''
+    }
+
+    @Test
     void testCollectParallel() {
         assertScript '''
             import groovy.concurrent.ParallelScope

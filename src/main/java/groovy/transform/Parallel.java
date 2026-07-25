@@ -40,6 +40,11 @@ import java.lang.annotation.RetentionPolicy;
  * (e.g. {@code collectParallel}, {@code eachParallel}) directly may
  * offer a better debugging experience, as {@code @Parallel} performs
  * internal variable renaming in its generated code.
+ * <p>
+ * Blocking loop bodies should run inside
+ * {@link groovy.concurrent.ParallelScope#withPool(int, java.util.function.Function)
+ * ParallelScope.withPool(n)} (or an I/O pool); see
+ * {@link org.codehaus.groovy.runtime.ParallelCollectionExtensions}.
  *
  * @since 6.0.0
  * @see org.codehaus.groovy.transform.ParallelASTTransformation

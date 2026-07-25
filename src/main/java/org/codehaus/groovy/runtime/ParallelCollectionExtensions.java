@@ -47,6 +47,14 @@ import java.util.stream.IntStream;
  * the stream operations run on the current pool's {@link ForkJoinPool},
  * not the common pool.
  * <p>
+ * <b>Blocking work:</b> closures that block (I/O, locks, barriers, timed waits)
+ * hold ForkJoin worker threads. Prefer a dedicated
+ * {@link groovy.concurrent.ParallelScope#withPool(int, java.util.function.Function)
+ * ParallelScope.withPool(n)} with {@code n} large enough for the expected
+ * concurrent blockers, or an I/O-oriented pool ({@link Pool#io()},
+ * {@link Pool#virtual()}) for blocking workloads. Relying on the shared
+ * common pool for blocking bodies can stall under contention.
+ * <p>
  * Inspired by GPars' {@code GParsPoolUtil} category methods.
  *
  * @since 6.0.0
