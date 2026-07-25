@@ -19,6 +19,7 @@
 package org.apache.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.transform.Monadic;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -46,7 +47,7 @@ import java.util.function.Function;
  * <ol>
  *   <li>standard allow-list ({@link MonadicCarrierRegistry});</li>
  *   <li>structural ({@code flatMap}/{@code map} present);</li>
- *   <li>{@code @Monadic} opt-in (matched by simple name; honours {@code bind}/{@code map} overrides).</li>
+ *   <li>{@code @Monadic} opt-in (honours {@code bind}/{@code map} overrides).</li>
  * </ol>
  * A configured marker interface is a further opt-in mechanism that is not yet
  * implemented.
@@ -125,23 +126,14 @@ public final class Comprehensions {
 
     private static String readMonadicMember(Annotation[] annotations, boolean bindRole) {
         for (Annotation a : annotations) {
-            if (!"Monadic".equals(a.annotationType().getSimpleName())) continue;
-            String configured = invokeStringMember(a, bindRole ? "bind" : "map");
+            if (!(a instanceof Monadic monadic)) continue;
+            String configured = bindRole ? monadic.bind() : monadic.map();
             if (configured == null || configured.isEmpty()) {
                 return bindRole ? "flatMap" : "map"; // opted in, structural defaults
             }
             return configured;
         }
         return null;
-    }
-
-    private static String invokeStringMember(Annotation a, String member) {
-        try {
-            Object v = a.annotationType().getMethod(member).invoke(a);
-            return v == null ? null : v.toString();
-        } catch (ReflectiveOperationException ignored) {
-            return null;
-        }
     }
 
     private static Method findSingleArgMethod(Class<?> type, String name) {

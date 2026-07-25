@@ -55,6 +55,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1335,7 +1336,20 @@ public class Groovyc extends MatchingTask {
         // 32767 is the command line length limit on Windows
         if (fork && (count > 32767)) {
             try {
-                File tempFile = Files.createTempFile("groovyc-files-", ".txt").toFile();
+                // Restrict permissions so the arg-file in the public temp dir is
+                // not world-readable/writable (java:S5443 / CWE-377). Prefer
+                // atomic owner-only perms at creation time on POSIX filesystems.
+                // FQCN: org.apache.tools.ant.types.Path is already imported as Path.
+                java.nio.file.Path tempPath;
+                try {
+                    tempPath = Files.createTempFile("groovyc-files-", ".txt",
+                            PosixFilePermissions.asFileAttribute(
+                                    PosixFilePermissions.fromString("rw-------")));
+                } catch (UnsupportedOperationException e) {
+                    // non-POSIX filesystems (e.g. Windows)
+                    tempPath = Files.createTempFile("groovyc-files-", ".txt");
+                }
+                File tempFile = tempPath.toFile();
                 temporaryFiles.add(tempFile);
                 PrintWriter pw = printWriter(tempFile);
                 for (File srcFile : compileList) {

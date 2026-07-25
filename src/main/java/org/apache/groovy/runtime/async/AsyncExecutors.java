@@ -28,6 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Executor and scheduler configuration for the async runtime.
@@ -79,7 +80,11 @@ final class AsyncExecutors {
         }
     }
 
-    private static volatile Executor defaultExecutor = createDefaultExecutor();
+    // AtomicReference: a plain volatile reference is not considered thread-safe for
+    // non-atomic compound types by static analysis (java:S3077), and AtomicReference
+    // documents the intended concurrent publication of the executor override.
+    private static final AtomicReference<Executor> defaultExecutor =
+            new AtomicReference<>(createDefaultExecutor());
 
     private static final ScheduledExecutorService SCHEDULER =
             Executors.newSingleThreadScheduledExecutor(r -> {
@@ -95,7 +100,7 @@ final class AsyncExecutors {
     }
 
     static Executor getExecutor() {
-        return defaultExecutor;
+        return defaultExecutor.get();
     }
 
     /**
@@ -103,11 +108,11 @@ final class AsyncExecutors {
      * platform default (virtual threads on JDK&nbsp;21+, cached pool otherwise).
      */
     static void setExecutor(Executor executor) {
-        defaultExecutor = executor != null ? executor : createDefaultExecutor();
+        defaultExecutor.set(executor != null ? executor : createDefaultExecutor());
     }
 
     static void resetExecutor() {
-        defaultExecutor = createDefaultExecutor();
+        defaultExecutor.set(createDefaultExecutor());
     }
 
     static ScheduledExecutorService getScheduler() {

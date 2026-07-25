@@ -90,7 +90,8 @@ jobs:
         id: baseline
         run: |
           URL="https://apache.github.io/groovy/dev/bench/jmh/${{ matrix.suite }}/indy/data.js"
-          if curl -fsSL "$URL" -o data.js; then
+          # --proto / --proto-redir pin HTTPS so a redirect cannot downgrade to HTTP (githubactions:S6506)
+          if curl -fsSL --proto '=https' --proto-redir '=https' "$URL" -o data.js; then
             sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' data.js > prev.json
             echo 'found=true' >> "$GITHUB_OUTPUT"
           else

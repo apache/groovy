@@ -88,11 +88,14 @@ public final class DefaultActor<T> implements Actor<T> {
     // Distinguishes "draining" (!active, !terminated) from "fully shut
     // down" (!active, terminated) for callers of isTerminated().
     private volatile boolean terminated;
-    private volatile TriConsumer<ActorContext<T>, Throwable, ? super T> errorHandler;
+    // AtomicReference rather than volatile: S3077 flags volatile fields of
+    // non-atomic reference types as insufficient for concurrent publication.
+    private final AtomicReference<TriConsumer<ActorContext<T>, Throwable, ? super T>> errorHandler =
+            new AtomicReference<>();
     // Identifies the thread running processLoop; used both to police
     // context-mutating calls (become/stash/unstashAll) and to detect
     // self-sends that would deadlock a bounded BLOCK mailbox.
-    private volatile Thread workerThread;
+    private final AtomicReference<Thread> workerThread = new AtomicReference<>();
 
     // ---- Worker-thread-only state (no synchronisation needed) ----------
 
@@ -217,14 +220,14 @@ public final class DefaultActor<T> implements Actor<T> {
     @Override
     public Actor<T> onError(BiConsumer<Throwable, ? super T> handler) {
         Objects.requireNonNull(handler, "handler must not be null");
-        this.errorHandler = (ctx, t, msg) -> handler.accept(t, msg);
+        this.errorHandler.set((ctx, t, msg) -> handler.accept(t, msg));
         return this;
     }
 
     @Override
     public Actor<T> onError(TriConsumer<ActorContext<T>, Throwable, ? super T> handler) {
         Objects.requireNonNull(handler, "handler must not be null");
-        this.errorHandler = handler;
+        this.errorHandler.set(handler);
         return this;
     }
 
@@ -251,7 +254,7 @@ public final class DefaultActor<T> implements Actor<T> {
                 // last permit between an availablePermits() check and
                 // the acquire() (a multi-sender TOCTOU that would
                 // otherwise re-introduce the same deadlock).
-                if (Thread.currentThread() == workerThread) {
+                if (Thread.currentThread() == workerThread.get()) {
                     if (!capacity.tryAcquire()) {
                         throw new IllegalStateException(
                                 "send from the actor's own handler would deadlock "
@@ -302,7 +305,7 @@ public final class DefaultActor<T> implements Actor<T> {
     // ---- Receive-side --------------------------------------------------
 
     private void processLoop() {
-        workerThread = Thread.currentThread();
+        workerThread.set(Thread.currentThread());
         while (true) {
             try {
                 Envelope<T> envelope = queue.takeFirst();
@@ -378,7 +381,7 @@ public final class DefaultActor<T> implements Actor<T> {
             // ctx.become(...) / ctx.stash() / ctx.unstashAll() and those
             // calls take effect normally.
             if (thrown != null) {
-                TriConsumer<ActorContext<T>, Throwable, ? super T> handler = errorHandler;
+                TriConsumer<ActorContext<T>, Throwable, ? super T> handler = errorHandler.get();
                 if (handler != null) {
                     try {
                         handler.accept(context, thrown, msg);
@@ -442,7 +445,7 @@ public final class DefaultActor<T> implements Actor<T> {
     // ---- Helpers shared with the per-shape context implementations -----
 
     private void checkOnWorkerThread(String op) {
-        if (Thread.currentThread() != workerThread) {
+        if (Thread.currentThread() != workerThread.get()) {
             throw new IllegalStateException(
                     op + " must be called from a handler invocation on the actor's worker thread");
         }

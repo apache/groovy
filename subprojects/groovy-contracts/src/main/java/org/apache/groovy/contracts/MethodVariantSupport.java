@@ -92,5 +92,9 @@ public final class MethodVariantSupport {
         } else {
             map.put(key, prev);
         }
+        // Drop the ThreadLocal when empty so pooled threads do not retain the map (java:S5164).
+        if (map.isEmpty()) {
+            CURRENT.remove();
+        }
     }
 }

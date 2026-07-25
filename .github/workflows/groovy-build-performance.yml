@@ -82,7 +82,8 @@ jobs:
         id: dispatch-baseline
         run: |
           URL="https://apache.github.io/groovy/dev/bench/perf/dispatch/data.js"
-          if curl -fsSL "$URL" -o dispatch-data.js; then
+          # --proto / --proto-redir pin HTTPS so a redirect cannot downgrade to HTTP (githubactions:S6506)
+          if curl -fsSL --proto '=https' --proto-redir '=https' "$URL" -o dispatch-data.js; then
             sed -e 's/^window\.BENCHMARK_DATA = //' -e 's/;[[:space:]]*$//' dispatch-data.js > dispatch-prev.json
             echo 'found=true' >> "$GITHUB_OUTPUT"
           else
