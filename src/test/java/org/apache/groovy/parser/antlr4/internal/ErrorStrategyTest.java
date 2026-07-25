@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,7 +77,7 @@ final class ErrorStrategyTest {
         ParseCancellationException pce = assertThrows(ParseCancellationException.class,
                 () -> strategy.recover(parser, cause));
         assertInstanceOf(InputMismatchException.class, pce.getCause());
-        assertTrue(pce.getCause() == cause);
+        assertSame(cause, pce.getCause());
     }
 
     @Test
@@ -134,8 +135,9 @@ final class ErrorStrategyTest {
         attachListener(parser, messages);
         parser.setContext(new ParserRuleContext());
 
+        InputMismatchException cause = new InputMismatchException(parser);
         ParseCancellationException pce = assertThrows(ParseCancellationException.class,
-                () -> strategy.recover(parser, new InputMismatchException(parser)));
+                () -> strategy.recover(parser, cause));
         assertInstanceOf(InputMismatchException.class, pce.getCause());
         assertFalse(messages.isEmpty(), "LL IME recover must report before cancel: " + messages);
         assertTrue(messages.stream().anyMatch(m ->
@@ -172,8 +174,8 @@ final class ErrorStrategyTest {
         attachListener(parser, messages);
         parser.setContext(new ParserRuleContext());
 
-        assertThrows(ParseCancellationException.class,
-                () -> strategy.recover(parser, new InputMismatchException(parser)));
+        InputMismatchException cause = new InputMismatchException(parser);
+        assertThrows(ParseCancellationException.class, () -> strategy.recover(parser, cause));
         assertTrue(messages.isEmpty(), "SLL recover must not report: " + messages);
     }
 
@@ -191,7 +193,7 @@ final class ErrorStrategyTest {
         RecognitionException other = new RecognitionException(parser, parser.getInputStream(), parser.getContext());
         ParseCancellationException pce = assertThrows(ParseCancellationException.class,
                 () -> strategy.recover(parser, other));
-        assertTrue(pce.getCause() == other);
+        assertSame(other, pce.getCause());
         assertTrue(messages.isEmpty(), "no specialized report for generic RE: " + messages);
     }
 
@@ -291,9 +293,19 @@ final class ErrorStrategyTest {
     }
 
     @Test
-    void reportFriendlyErrorFallsBackWhenLocateThrows() {
+    void reportFriendlyErrorFallsBackWhenLocateThrowsIndexOutOfBounds() {
         // locate() walks the token stream; a throwing stream must not escape the
         // strategy — fall back to the generic mismatch message instead.
+        assertFriendlyFallbackAfterLocateFailure(new ThrowingTokenStream());
+    }
+
+    @Test
+    void reportFriendlyErrorFallsBackWhenLocateThrowsIllegalArgument() {
+        // Same defensive catch as IndexOutOfBoundsException (IllegalArgumentException).
+        assertFriendlyFallbackAfterLocateFailure(new ThrowingTokenStream(new IllegalArgumentException("test")));
+    }
+
+    private static void assertFriendlyFallbackAfterLocateFailure(TokenStream throwingStream) {
         var charStream = CharStreams.fromString("}");
         var strategy = new StrategyProbe(charStream);
         var messages = new ArrayList<String>();
@@ -307,7 +319,7 @@ final class ErrorStrategyTest {
         // Build the exception while the stream is still valid, then swap in a
         // throwing stream so locate() fails defensively during reporting.
         InputMismatchException ime = new InputMismatchException(parser);
-        parser.setInputStream(new ThrowingTokenStream());
+        parser.setInputStream(throwingStream);
         strategy.exposeReportInputMismatch(parser, ime);
 
         assertFalse(messages.isEmpty(), "fallback report must still notify: " + messages);
@@ -343,7 +355,11 @@ final class ErrorStrategyTest {
         var parser = parser(charStream, strategy, PredictionMode.LL);
         parser.setState(0);
         parser.setContext(new ParserRuleContext());
+        int indexBefore = parser.getInputStream().index();
         strategy.sync(parser);
+        // DefaultErrorStrategy.sync may advance for recovery; just assert it completes
+        // and leaves a well-defined stream index (regression: no throw / no cancel).
+        assertTrue(parser.getInputStream().index() >= indexBefore);
     }
 
     // --- helpers ----------------------------------------------------------------

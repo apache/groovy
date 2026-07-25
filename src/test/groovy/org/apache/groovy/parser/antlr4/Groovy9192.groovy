@@ -33,7 +33,9 @@ import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.io.StringReaderSource
+import org.codehaus.groovy.control.messages.Message
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.codehaus.groovy.syntax.SyntaxException
 import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.control.CompilerConfiguration.ERROR_RECOVERY
@@ -304,6 +306,78 @@ final class Groovy9192 {
         assertNotNull module
         assertTrue sourceUnit.errorCollector.hasErrors()
         assertTrue sourceUnit.errorCollector.errorCount >= 1
+    }
+
+    @Test
+    void 'recovery rethrows when collector has no diagnostics'() {
+        // Belt-and-braces guard: under recovery, a CFE with an empty
+        // ErrorCollector must not look like silent success. Swallow recording so
+        // createParsingFailedException throws CFE without populating the collector.
+        //
+        // Note: Groovy call sites unwrap CompilationFailedException to its cause
+        // (ScriptBytecodeAdapter.unwrap / Indy cold reflective path), so the
+        // observable type here is the SyntaxException cause, not the CFE wrapper.
+        def config = recoveryConfig()
+        def collector = new ErrorCollector(config) {
+            @Override
+            void addErrorAndContinue(Message message) {
+                // intentionally do not record
+            }
+        }
+        // Visit-time failure (void return on annotation method): parse succeeds,
+        // AST building throws CFE after collectSyntaxError.
+        def sourceUnit = new SourceUnit(
+                'broken.groovy',
+                new StringReaderSource('@interface A { void m() {} }', config),
+                config,
+                null,
+                collector
+        )
+        def thrown = assertThrows(SyntaxException) {
+            new AstBuilder(sourceUnit, false, false).buildAST()
+        }
+        assertTrue thrown.message.toLowerCase().contains('void'), thrown.message
+        assertFalse sourceUnit.errorCollector.hasErrors(),
+                'empty collector is the precondition for the rethrow guard'
+    }
+
+    @Test
+    void 'recovery returns partial module when visit throws after recording diagnostics'() {
+        // Same visit-time failure as above, but with a normal collector: diagnostics
+        // are recorded and buildAST returns the partial module instead of throwing.
+        def config = recoveryConfig()
+        def sourceUnit = new SourceUnit(
+                'broken.groovy',
+                new StringReaderSource('@interface A { void m() {} }', config),
+                config,
+                null,
+                new ErrorCollector(config)
+        )
+        def module = new AstBuilder(sourceUnit, false, false).buildAST()
+        assertNotNull module
+        assertTrue sourceUnit.errorCollector.hasErrors()
+        assertTrue sourceUnit.errorCollector.errors.any {
+            it instanceof SyntaxErrorMessage &&
+                    ((SyntaxErrorMessage) it).cause.message.toLowerCase().contains('void')
+        }, String.valueOf(sourceUnit.errorCollector.errors)
+    }
+
+    @Test
+    void 'fail-fast still aborts when recovery is disabled'() {
+        // Guard is recovery-only: fail-fast must always surface failure
+        // (MultipleCompilationErrorsException via addFatalError).
+        def config = new CompilerConfiguration()
+        def sourceUnit = new SourceUnit(
+                'broken.groovy',
+                new StringReaderSource('@interface A { void m() {} }', config),
+                config,
+                null,
+                new ErrorCollector(config)
+        )
+        assertThrows(CompilationFailedException) {
+            new AstBuilder(sourceUnit, false, false).buildAST()
+        }
+        assertTrue sourceUnit.errorCollector.hasErrors()
     }
 
     //--------------------------------------------------------------------------

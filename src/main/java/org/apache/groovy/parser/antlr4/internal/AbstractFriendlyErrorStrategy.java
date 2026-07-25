@@ -29,6 +29,8 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.misc.Interval;
 
+import java.util.Objects;
+
 /**
  * Shared friendly recognition diagnostics for Parrot error strategies.
  * <p>
@@ -97,7 +99,18 @@ abstract class AbstractFriendlyErrorStrategy extends DefaultErrorStrategy {
         reportFriendlyError(recognizer, e, createInputMismatchErrorMessage(recognizer, e));
     }
 
+    /**
+     * Format a failed-predicate diagnostic.
+     * <p>
+     * {@code recognizer} is part of the protected hook surface (parity with
+     * {@link #createNoViableAlternativeErrorMessage} /
+     * {@link #createInputMismatchErrorMessage}) so subclasses can include
+     * parser state when customising the message.
+     * </p>
+     */
     protected String createFailedPredicateErrorMessage(final Parser recognizer, final FailedPredicateException e) {
+        // Non-null contract only; default message is already complete on the exception.
+        Objects.requireNonNull(recognizer, "recognizer");
         return e.getMessage();
     }
 

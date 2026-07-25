@@ -283,23 +283,31 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ModuleNode buildAST() {
         try {
             return (ModuleNode) this.visit(this.buildCST());
-        } catch (CompilationFailedException e) {
-            // Recovery records diagnostics via addErrorAndContinue and must not depend on
-            // SourceUnit swallowing CFE. Return the partially built module; CompilationUnit
-            // fails the phase via ErrorCollector.failIfErrors() with all diagnostics.
-            if (errorRecovery) {
-                return this.moduleNode;
-            }
-            throw e;
         } catch (Throwable t) {
-            // convertException may throw under fail-fast (addFatalError) or return a CFE
-            // after recording under recovery.
+            // convertException is a no-op for an existing CompilationFailedException and
+            // otherwise records (recovery) or fatally fails (default) before wrapping.
+            // Under recovery, return the partial module only when diagnostics were actually
+            // recorded — an empty collector with a CFE would otherwise look like silent success
+            // (belt-and-braces guard suggested in PR review).
             CompilationFailedException cfe = convertException(t);
-            if (errorRecovery) {
+            if (shouldReturnPartialModuleOnFailure()) {
                 return this.moduleNode;
             }
             throw cfe;
         }
+    }
+
+    /**
+     * Whether recovery should return the partially built {@link #moduleNode} after a
+     * {@link CompilationFailedException} instead of rethrowing.
+     * <p>
+     * Requires both recovery mode and at least one recorded diagnostic. An empty
+     * collector with recovery enabled is treated as a real failure (rethrow) so a
+     * programming error in an error path cannot surface as silent success.
+     * </p>
+     */
+    private boolean shouldReturnPartialModuleOnFailure() {
+        return errorRecovery && sourceUnit.getErrorCollector().hasErrors();
     }
 
     @Override
