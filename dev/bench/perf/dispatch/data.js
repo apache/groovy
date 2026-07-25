@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784878789341,
+  "lastUpdate": 1784964981141,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -1034,6 +1034,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "bytecode.corpus.bytes",
             "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c513a3ade4e64d4b10531af3697be0fd1fdc5587",
+          "message": "GROOVY-9192: Implement optional parser error recovery for Parrot parser (#2724)\n\n* GROOVY-9192: Implement optional parser error recovery for Parrot parser\n\n* GROOVY-9192: Harden recovery empty-collector guard and address review nits\n\nReturn a partial module under error recovery only when ErrorCollector has\ndiagnostics, so a CompilationFailedException with an empty collector cannot\nsurface as silent success. Also clear Sonar minor issues from the PR review\nand add regression coverage for the guard and defensive reporting paths.",
+          "timestamp": "2026-07-25T06:38:17Z",
+          "url": "https://github.com/apache/groovy/commit/c513a3ade4e64d4b10531af3697be0fd1fdc5587"
+        },
+        "date": 1784964979713,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3972,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 453,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 875,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1498,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194254,
             "unit": "bytes"
           },
           {
