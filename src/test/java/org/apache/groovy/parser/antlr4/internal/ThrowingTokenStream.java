@@ -26,17 +26,33 @@ import org.antlr.v4.runtime.misc.Interval;
 
 /**
  * Token stream that fails on every access — used to exercise defensive
- * catch paths in {@link MissingDelimiterDiagnostic}.
+ * catch paths in {@link MissingDelimiterDiagnostic} and
+ * {@link AbstractFriendlyErrorStrategy}.
  */
 final class ThrowingTokenStream implements TokenStream {
+
+    private final RuntimeException failure;
+
+    ThrowingTokenStream() {
+        this(new IndexOutOfBoundsException("test"));
+    }
+
+    /**
+     * @param failure exception thrown from every access (e.g. {@link IndexOutOfBoundsException}
+     *                or {@link IllegalArgumentException} for strategy catch coverage)
+     */
+    ThrowingTokenStream(final RuntimeException failure) {
+        this.failure = failure;
+    }
+
     @Override
     public Token LT(int k) {
-        throw new IndexOutOfBoundsException("test");
+        throw failure;
     }
 
     @Override
     public Token get(int index) {
-        throw new IndexOutOfBoundsException("test");
+        throw failure;
     }
 
     @Override

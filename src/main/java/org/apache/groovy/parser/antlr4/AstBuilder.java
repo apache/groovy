@@ -188,7 +188,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         this.lexer = new GroovyLangLexer(charStream);
         this.parser = new GroovyLangParser(new CommonTokenStream(this.lexer));
-        this.parser.setErrorHandler(new DescriptiveErrorStrategy(charStream));
+
+        // Opt-in recovery (CompilerConfiguration.ERROR_RECOVERY): resync after syntax
+        // errors so IDEs can collect multiple diagnostics in one pass. Default is fail-fast.
+        // Multi-error truth for hosts is ErrorCollector; recovery may still yield a partial tree.
+        this.errorRecovery = sourceUnit.getConfiguration().isErrorRecoveryEnabled();
+        this.parser.setErrorHandler(DescriptiveErrorStrategy.create(charStream, this.errorRecovery));
 
         this.groovydocManager = new GroovydocManager(groovydocEnabled, runtimeGroovydocEnabled);
         this.tryWithResourcesASTTransformation = new TryWithResourcesASTTransformation(this);
@@ -216,7 +221,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             AtnManager.READ_LOCK.lock();
             try {
                 final TokenStream tokenStream = parser.getInputStream();
-                if (SLL_THRESHOLD >= 0 && tokenStream.size() > SLL_THRESHOLD) {
+                if (errorRecovery) {
+                    // Recovery needs LL + listeners so every syntax error is reported.
+                    // Skip SLL: recovering under SLL can "succeed" with a degraded tree
+                    // and never re-run LL.
+                    result = buildCST(PredictionMode.LL);
+                } else if (SLL_THRESHOLD >= 0 && tokenStream.size() > SLL_THRESHOLD) {
                     // The more tokens to parse, the more possibility SLL will fail and the more parsing time will waste.
                     // The option `groovy.antlr4.sll.threshold` could be tuned for better parsing performance, but it is disabled by default.
                     // If the token count is greater than `groovy.antlr4.sll.threshold`, use LL directly.
@@ -274,8 +284,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         try {
             return (ModuleNode) this.visit(this.buildCST());
         } catch (Throwable t) {
-            throw convertException(t);
+            // convertException is a no-op for an existing CompilationFailedException and
+            // otherwise records (recovery) or fatally fails (default) before wrapping.
+            // Under recovery, return the partial module only when diagnostics were actually
+            // recorded — an empty collector with a CFE would otherwise look like silent success
+            // (belt-and-braces guard suggested in PR review).
+            CompilationFailedException cfe = convertException(t);
+            if (shouldReturnPartialModuleOnFailure()) {
+                return this.moduleNode;
+            }
+            throw cfe;
         }
+    }
+
+    /**
+     * Whether recovery should return the partially built {@link #moduleNode} after a
+     * {@link CompilationFailedException} instead of rethrowing.
+     * <p>
+     * Requires both recovery mode and at least one recorded diagnostic. An empty
+     * collector with recovery enabled is treated as a real failure (rethrow) so a
+     * programming error in an error path cannot surface as silent success.
+     * </p>
+     */
+    private boolean shouldReturnPartialModuleOnFailure() {
+        return errorRecovery && sourceUnit.getErrorCollector().hasErrors();
     }
 
     @Override
@@ -4829,7 +4861,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (t instanceof SyntaxException) {
             this.collectSyntaxError((SyntaxException) t);
         } else if (t instanceof GroovySyntaxError groovySyntaxError) {
-
             this.collectSyntaxError(
                     new SyntaxException(
                             groovySyntaxError.getMessage(),
@@ -4847,7 +4878,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private void collectSyntaxError(final SyntaxException e) {
-        sourceUnit.getErrorCollector().addFatalError(new SyntaxErrorMessage(e, sourceUnit));
+        SyntaxErrorMessage message = new SyntaxErrorMessage(e, sourceUnit);
+        if (errorRecovery) {
+            // Accumulate diagnostics so ANTLR resync can surface further errors in one pass.
+            // Fail-fast still uses addFatalError so the first error stops compilation immediately.
+            sourceUnit.getErrorCollector().addErrorAndContinue(message);
+        } else {
+            sourceUnit.getErrorCollector().addFatalError(message);
+        }
     }
 
     private void collectException(final Exception e) {
@@ -4923,6 +4961,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final GroovyLangParser parser;
     private final GroovydocManager groovydocManager;
     private final TryWithResourcesASTTransformation tryWithResourcesASTTransformation;
+    /** {@code true} when {@link org.codehaus.groovy.control.CompilerConfiguration#ERROR_RECOVERY} is enabled. */
+    private final boolean errorRecovery;
 
     private final List<ClassNode> classNodeList = new ArrayList<>();
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
