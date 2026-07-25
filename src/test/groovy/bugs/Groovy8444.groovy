@@ -433,4 +433,91 @@ final class Groovy8444 {
             assert 2.2 == meth(SomeEnum.B, OtherEnum.D)
         '''
     }
+
+    // GROOVY-12190
+    @Test
+    void testAccessingEnumConstantInSwitchCaseWithTypeChecked() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.TypeChecked
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case A: return 1
+                    case B: return 2
+                }
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
+
+    // GROOVY-12190
+    @Test
+    void testAccessingEnumConstantInSwitchExprCaseWithTypeChecked() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.TypeChecked
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case A -> 1
+                    case B -> 2
+                }
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
+
+    // GROOVY-12190
+    @Test
+    void testAccessingEnumConstantInNestedSwitchExprCaseWithTypeChecked() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.TypeChecked
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case A ->
+                        switch(e) {
+                            case A -> 1.1
+                            case B -> 1.2
+                        }
+                    case B ->
+                        switch(e) {
+                            case A -> 2.1
+                            case B -> 2.2
+                        }
+                }
+            }
+            assert 1.1 == meth(SomeEnum.A)
+            assert 2.2 == meth(SomeEnum.B)
+        '''
+    }
+
+    // GROOVY-12190
+    @Test
+    void testAccessingEnumConstantInSwitchCaseInClosureWithTypeChecked() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.TypeChecked
+            def meth(SomeEnum e) {
+                def c = {
+                    switch (e) {
+                        case A: return 1
+                        case B: return 2
+                    }
+                }
+                c()
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
 }

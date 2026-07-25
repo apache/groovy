@@ -22,21 +22,29 @@ import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
+import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
 import java.util.Collections;
 import java.util.Map;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 
 /**
  * Handles the implementation of the {@link groovy.transform.TypeChecked} transformation.
@@ -75,6 +83,45 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
         }
         if (visitor != null) {
             visitor.performSecondPass();
+            resolveEnumConstantsInSwitchCases(node, source);
+        }
+    }
+
+    /**
+     * GROOVY-8444, GROOVY-11614, GROOVY-12190: replaces "CONST" expressions resolved by the
+     * type checker in enum switch case labels with "EnumType.CONST" expressions;
+     * without static compilation they would otherwise be dynamic property lookups
+     * on the enclosing class, failing at runtime.
+     */
+    private static void resolveEnumConstantsInSwitchCases(final AnnotatedNode node, final SourceUnit source) {
+        ClassCodeExpressionTransformer transformer = new ClassCodeExpressionTransformer() {
+            @Override
+            protected SourceUnit getSourceUnit() {
+                return source;
+            }
+
+            @Override
+            public Expression transform(final Expression expression) {
+                if (expression instanceof ClosureExpression) { // switch expressions are desugared to closures
+                    expression.visit(this);
+                    return expression;
+                }
+                if (expression instanceof VariableExpression) {
+                    ClassNode enumType = expression.getNodeMetaData(StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE);
+                    if (enumType != null) {
+                        PropertyExpression pe = propX(classX(enumType), expression.getText());
+                        setSourcePosition(pe, expression);
+                        return pe;
+                    }
+                    return expression;
+                }
+                return super.transform(expression);
+            }
+        };
+        if (node instanceof ClassNode classNode) {
+            transformer.visitClass(classNode);
+        } else if (node instanceof MethodNode methodNode) {
+            transformer.visitMethod(methodNode);
         }
     }
 
