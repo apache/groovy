@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784878774640,
+  "lastUpdate": 1784964963946,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3598,6 +3598,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 474.4133333333333,
             "range": "±19.57",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c513a3ade4e64d4b10531af3697be0fd1fdc5587",
+          "message": "GROOVY-9192: Implement optional parser error recovery for Parrot parser (#2724)\n\n* GROOVY-9192: Implement optional parser error recovery for Parrot parser\n\n* GROOVY-9192: Harden recovery empty-collector guard and address review nits\n\nReturn a partial module under error recovery only when ErrorCollector has\ndiagnostics, so a CompilationFailedException with an empty collector cannot\nsurface as silent success. Also clear Sonar minor issues from the PR review\nand add regression coverage for the guard and defensive reporting paths.",
+          "timestamp": "2026-07-25T06:38:17Z",
+          "url": "https://github.com/apache/groovy/commit/c513a3ade4e64d4b10531af3697be0fd1fdc5587"
+        },
+        "date": 1784964961201,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 594.9166666666667,
+            "range": "±23.23",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 684.7733333333333,
+            "range": "±221.42",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 602.6533333333334,
+            "range": "±153.55",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 502.1366666666666,
+            "range": "±26.07",
             "unit": "ms",
             "extra": "5.0.6"
           }
