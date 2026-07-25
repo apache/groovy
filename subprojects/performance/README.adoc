@@ -134,6 +134,15 @@ threshold (`groovy.indy.optimize.threshold`, default 1000). Static and
 instance dispatch take different cold paths (static sites promote on first
 hit, GROOVY-11935), hence the two benches.
 
+== Scoped invalidation (GROOVY-12191)
+
+`ScopedInvalidationBench` measures per-class SwitchPoint scoping: unrelated
+MetaClass churn must not deoptimize a hot monomorphic site; same-type re-link,
+category enter/leave (bulk class-domain invalidation), and hierarchy fan-out
+must still force re-link. Steady-state monomorphic sites carry a single
+SwitchPoint guard. Complements the Grails-oriented `CallSiteInvalidationBench`
+under `org.apache.groovy.perf.grails`.
+
 == Dashboard pages
 
 The `dashboard/` directory is the source of truth for the hand-crafted pages

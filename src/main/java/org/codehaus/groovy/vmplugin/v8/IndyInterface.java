@@ -20,6 +20,7 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
+import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.GeneratedClosure;
@@ -215,27 +216,73 @@ public class IndyInterface {
     }
 
     /**
-     * Shared switch point invalidated when metaclass state changes.
+     * Legacy process-wide SwitchPoint retained for binary compatibility.
+     * <p>
+     * <strong>Behavioral change in 6.0 (GROOVY-12191):</strong> MetaClass changes
+     * are scoped per {@link org.codehaus.groovy.reflection.ClassInfo}. This field
+     * is no longer used as the MOP guard on linked call sites. It is rotated when
+     * {@link #invalidateSwitchPoints()} runs (category enter/leave /
+     * {@code VMPlugin.invalidateCallSites()}) so external readers that still
+     * observe the field see an invalidation. Call sites must use
+     * {@link IndyInvalidation#guardWithMopSwitchPoints} instead.
+     *
+     * @see IndyInvalidation
+     * @deprecated Use {@link IndyInvalidation#guardWithMopSwitchPoints}; this field
+     *             is not the call-site MOP guard.
      */
-    protected static SwitchPoint switchPoint = new SwitchPoint();
+    @Deprecated
+    protected static volatile SwitchPoint switchPoint = new SwitchPoint();
 
     static {
-        GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> invalidateSwitchPoints());
+        // MetaClass registry changes invalidate the affected class + subtypes (GROOVY-12191).
+        // Hierarchy fan-out is owned here (not duplicated in setStrongMetaClass beyond a
+        // local retire of the exact class for paths that never fire the registry).
+        GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> {
+            Class<?> type = cmcu.getClassToUpdate();
+            if (type != null) {
+                IndyInvalidation.invalidateClass(type);
+                if (LOG_ENABLED) {
+                    LOG.info("invalidating class SwitchPoint hierarchy for " + type.getName());
+                }
+            } else {
+                IndyInvalidation.invalidateUnscoped();
+                if (LOG_ENABLED) {
+                    LOG.info("unscoped SwitchPoint invalidation (unattributed MetaClass change)");
+                }
+            }
+        });
     }
 
     /**
-     * Callback for constant metaclass update change
+     * Category enter/leave and {@code VMPlugin.invalidateCallSites()}.
+     * Bulk-invalidates every loaded class SwitchPoint so sites re-link under the
+     * new category state, and rotates the legacy {@link #switchPoint} field.
+     * Per-class MetaClass changes use {@link IndyInvalidation#invalidateClass(Class)}
+     * (or {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()}) instead.
      */
     protected static void invalidateSwitchPoints() {
         if (LOG_ENABLED) {
-            LOG.info("invalidating switch point");
+            LOG.info("invalidating class SwitchPoints for category / invalidateCallSites");
         }
-
-        synchronized (IndyInterface.class) {
-            SwitchPoint old = switchPoint;
-            switchPoint = new SwitchPoint();
+        IndyInvalidation.invalidateCategory();
+        // Binary-compat: rotate the legacy field so external observers still see a change.
+        SwitchPoint old = switchPoint;
+        switchPoint = new SwitchPoint();
+        if (old != null && !old.hasBeenInvalidated()) {
             SwitchPoint.invalidateAll(new SwitchPoint[]{old});
         }
+    }
+
+    /**
+     * Installs the per-class MOP SwitchPoint guard on a linked handle.
+     *
+     * @param handle   fast-path handle
+     * @param fallback re-link handle
+     * @param receiver call receiver (may be {@code null})
+     * @return guarded handle
+     */
+    static MethodHandle applyMopSwitchPoints(final MethodHandle handle, final MethodHandle fallback, final Object receiver) {
+        return IndyInvalidation.guardWithMopSwitchPoints(handle, fallback, receiver);
     }
 
     /**
@@ -472,9 +519,14 @@ public class IndyInterface {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         }
-        MethodHandle mh = selectMethodHandle(cold.callSite, cold.sender, cold.methodName, cold.callID,
-                cold.safeNavigation, cold.thisCall, cold.spreadCall, 1, arguments);
-        return mh.invokeExact(arguments);
+        // Re-select without the cold tier so an always-invalid SwitchPoint (or any
+        // permanent cold miss after class-domain failover) cannot recurse through
+        // tryBuild → invokeColdReflective (GROOVY-12191).
+        MethodHandleWrapper full = fallback(cold.callSite, cold.sender, cold.methodName, cold.callID,
+                cold.safeNavigation, cold.thisCall, cold.spreadCall, 1, arguments, false);
+        cold.callSite.put(receiverCacheKey(arguments[0]),
+                full.isCanSetTarget() ? full : NULL_METHOD_HANDLE_WRAPPER);
+        return full.getCachedMethodHandle().invokeExact(arguments);
     }
 
     /**

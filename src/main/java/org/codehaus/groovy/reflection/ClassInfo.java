@@ -25,6 +25,9 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
+import groovy.transform.Internal;
+import org.apache.groovy.runtime.indy.IndyInvalidation;
+import org.apache.groovy.runtime.indy.SwitchPointInvalidator;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.stdclasses.ArrayCachedClass;
@@ -49,9 +52,9 @@ import org.codehaus.groovy.util.LockableObject;
 import org.codehaus.groovy.util.ManagedConcurrentLinkedQueue;
 import org.codehaus.groovy.util.ManagedReference;
 import org.codehaus.groovy.util.ReferenceBundle;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.io.Serial;
+import java.lang.invoke.SwitchPoint;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -77,6 +80,11 @@ public class ClassInfo implements Finalizable {
     public final int hash = -1;
     private final WeakReference<Class<?>> classRef;
     private final AtomicInteger version = new AtomicInteger();
+    /**
+     * Per-class SwitchPoint domain for indy call sites (GROOVY-12191).
+     * Invalidated on MetaClass / version changes for this class only.
+     */
+    private final SwitchPointInvalidator indySwitchPoint = IndyInvalidation.newClassInvalidator();
     private MetaClass strongMetaClass;
     private ManagedReference<MetaClass> weakMetaClass;
     MetaMethod[] dgmMetaMethods = MetaMethod.EMPTY_ARRAY;
@@ -124,12 +132,88 @@ public class ClassInfo implements Finalizable {
     }
 
     /**
-     * Increments the version number and invalidates call sites.
+     * Increments the version number and invalidates this class's indy SwitchPoint
+     * (and subtype SwitchPoints via hierarchy fan-out).
      * Called when metaclass modifications occur (e.g., adding methods to an {@code ExpandoMetaClass}).
+     * <p>
+     * Call sites linked against this class or its subtypes re-link (GROOVY-12191);
+     * unrelated classes keep their optimized targets. Category enter/leave bulk-invalidates
+     * class SwitchPoints via {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()}.
+     * <p>
+     * SwitchPoint policy is owned by {@link IndyInvalidation}; this method only bumps
+     * generation then delegates hierarchy invalidation.
      */
     public void incVersion() {
         version.incrementAndGet();
-        VMPluginFactory.getPlugin().invalidateCallSites();
+        Class<?> type = getTheClass();
+        if (type != null) {
+            IndyInvalidation.invalidateClass(type);
+        } else {
+            invalidateIndySwitchPoint();
+        }
+    }
+
+    /**
+     * Bumps {@link #getVersion()} and, when {@code retireSwitchPoint} is true,
+     * retires this class's SwitchPoint only (no subtype fan-out). Used by
+     * strong/weak MetaClass install paths; hierarchy fan-out is applied by the
+     * MetaClass registry listener via {@link IndyInvalidation#invalidateClass(Class)}.
+     * <p>
+     * First MetaClass install ({@code null →} default MC) only bumps version.
+     * Replacement and clear retire the SwitchPoint so any already-linked sites re-link.
+     */
+    private void bumpGenerationLocal(final boolean retireSwitchPoint) {
+        version.incrementAndGet();
+        if (retireSwitchPoint) {
+            // Local only: registry listener will fan out to subtypes when present.
+            invalidateIndySwitchPoint();
+        }
+    }
+
+    /**
+     * Whether this class currently has a class-level MetaClass (strong or weak).
+     */
+    private boolean hasClassLevelMetaClass() {
+        if (strongMetaClass != null) {
+            return true;
+        }
+        ManagedReference<MetaClass> weakRef = weakMetaClass;
+        return weakRef != null && weakRef.get() != null;
+    }
+
+    /**
+     * Returns the SwitchPoint that guards indy targets for this class's MetaClass state.
+     *
+     * @return the class-domain SwitchPoint for indy
+     * @since 6.0.0
+     */
+    @Internal
+    public SwitchPoint getIndySwitchPoint() {
+        return indySwitchPoint.getSwitchPoint();
+    }
+
+    /**
+     * Invalidates this class's indy SwitchPoint without bumping {@link #getVersion()}.
+     * Prefer {@link #incVersion()} when the MetaClass actually changed.
+     *
+     * @since 6.0.0
+     */
+    @Internal
+    public void invalidateIndySwitchPoint() {
+        indySwitchPoint.invalidate();
+    }
+
+    /**
+     * Detaches the live indy SwitchPoint for bulk {@link SwitchPoint#invalidateAll}
+     * without invalidating it yet. Package policy lives in {@link IndyInvalidation};
+     * the caller must invalidate any non-null return value.
+     *
+     * @return the detached live SwitchPoint, or {@code null} if none was live
+     * @since 6.0.0
+     */
+    @Internal
+    public SwitchPoint detachLiveIndySwitchPoint() {
+        return indySwitchPoint.detachLive();
     }
 
     /**
@@ -254,11 +338,20 @@ public class ClassInfo implements Finalizable {
     /**
      * Sets the strong (immutable) metaclass for this class.
      * Increments the version number and manages ExpandoMetaClass registry.
+     * <p>
+     * On replacement or clear, also invalidates this class's indy SwitchPoint
+     * (GROOVY-12191). First install ({@code null →} MC) only bumps version;
+     * hierarchy fan-out for subtypes is applied by MetaClass registry listeners
+     * or {@link #incVersion()}.
      *
      * @param answer the metaclass to set, or {@code null} to clear
      */
     public void setStrongMetaClass(MetaClass answer) {
-        version.incrementAndGet();
+        // Version always; SwitchPoint when replacing/clearing an established MC.
+        // Hierarchy fan-out for subtypes is applied by registry listeners / incVersion
+        // (GROOVY-12191). First install (null → MC) only bumps version.
+        boolean replaceOrClear = hasClassLevelMetaClass() || answer == null;
+        bumpGenerationLocal(replaceOrClear);
 
         // safe value here to avoid multiple reads with possibly
         // differing values due to concurrency
@@ -300,11 +393,16 @@ public class ClassInfo implements Finalizable {
     /**
      * Sets the weak (mutable) metaclass for this class.
      * Clears the strong metaclass and increments the version number.
+     * <p>
+     * On replacement or clear, also invalidates this class's indy SwitchPoint
+     * (GROOVY-12191). First install only bumps version.
      *
      * @param answer the metaclass to set, or {@code null} to clear
      */
     public void setWeakMetaClass(MetaClass answer) {
-        version.incrementAndGet();
+        // Version always; SwitchPoint when replacing/clearing (GROOVY-12191).
+        boolean replaceOrClear = hasClassLevelMetaClass() || answer == null;
+        bumpGenerationLocal(replaceOrClear);
 
         strongMetaClass = null;
         ManagedReference<MetaClass> newRef = null;
@@ -527,7 +625,9 @@ public class ClassInfo implements Finalizable {
      * @param metaClass the metaclass to set, or {@code null} to remove the association
      */
     public void setPerInstanceMetaClass(Object obj, MetaClass metaClass) {
-        version.incrementAndGet();
+        // Per-instance MetaClass changes always retire the class SwitchPoint so
+        // sites that may observe instance-level dispatch re-link (GROOVY-12191).
+        bumpGenerationLocal(true);
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
