@@ -192,6 +192,7 @@ ruleset {
         exclude 'ClassSize'  // too many to worry about, review later
         exclude 'MethodSizeCount'  // too many to worry about, review later
         exclude 'NestedBlockDepth'  // too many to worry about, review later
+        exclude 'CrapMetric'  // needs a Cobertura XML file; this build uses JaCoCo, so the rule only logs "not accessible" warnings
     }
     ruleset('rulesets/junit.xml') {
         exclude 'JUnitStyleAssertions'      // too many to worry about, review later
