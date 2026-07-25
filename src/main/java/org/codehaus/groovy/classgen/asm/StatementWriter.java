@@ -223,20 +223,9 @@ public class StatementWriter {
         mv.visitVarInsn(ALOAD, iterator);
         writeIteratorNext(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
-        operandStack.storeVar(valueVariable);
+        storeForLoopVariable(valueVariable);
         if (indexVariable != null) {
-            if (!indexVariable.isHolder()) {
-                mv.visitIincInsn(indexVariable.getIndex(), 1);
-            } else { // GROOVY-11751: shared variable reference
-                mv.visitVarInsn(ALOAD, indexVariable.getIndex());
-                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
-                mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
-                mv.visitInsn(ICONST_1);
-                mv.visitInsn(IADD);
-                operandStack.push(ClassHelper.int_TYPE);
-                operandStack.storeVar(indexVariable);
-            }
+            incrementForLoopIndexVariable(indexVariable);
         }
 
         // generate the loop body
@@ -245,6 +234,55 @@ public class StatementWriter {
 
         mv.visitLabel(breakLabel);
         compileStack.removeVar(iterator);
+    }
+
+    /**
+     * Stores the top-of-stack value into a for-in loop variable slot.
+     * <p>
+     * Applies the for-in per-iteration capture policy
+     * ({@link WriterController#isForLoopCaptureEnabled()}, GROOVY-11792): when
+     * enabled, a shared (holder) loop variable receives a fresh
+     * {@link groovy.lang.Reference} so deferred closures, lambdas, and
+     * anonymous inner classes observe this iteration's value. When disabled,
+     * the historical in-place {@code Reference#set} path is used. Non-holder
+     * variables always take the plain store path.
+     * <p>
+     * Bytecode emission is delegated to
+     * {@link CompileStack#storeVar(BytecodeVariable, boolean)}.
+     *
+     * @param variable the for-in value (or similarly stored) loop variable
+     */
+    protected final void storeForLoopVariable(final BytecodeVariable variable) {
+        controller.getCompileStack().storeVar(variable, controller.isForLoopCaptureEnabled());
+    }
+
+    /**
+     * Increments the for-in index variable by one.
+     * <p>
+     * Plain (non-shared) indexes use {@code IINC}. Shared indexes are loaded
+     * from their {@link groovy.lang.Reference}, unboxed, incremented, then
+     * stored via {@link #storeForLoopVariable(BytecodeVariable)} so the same
+     * per-iteration capture policy applies as for value variables
+     * (GROOVY-11751, GROOVY-11792).
+     *
+     * @param indexVariable the for-in index variable; must not be {@code null}
+     */
+    protected final void incrementForLoopIndexVariable(final BytecodeVariable indexVariable) {
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (!indexVariable.isHolder()) {
+            mv.visitIincInsn(indexVariable.getIndex(), 1);
+            return;
+        }
+        // GROOVY-11751: shared Reference — load, unbox, add 1, then store with
+        // the for-in recapture policy (storeForLoopVariable / GROOVY-11792).
+        mv.visitVarInsn(ALOAD, indexVariable.getIndex());
+        mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
+        mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+        mv.visitInsn(ICONST_1);
+        mv.visitInsn(IADD);
+        controller.getOperandStack().push(ClassHelper.int_TYPE);
+        storeForLoopVariable(indexVariable);
     }
 
     protected final BytecodeVariable defineLoopIndexVariable(final ForStatement statement) {

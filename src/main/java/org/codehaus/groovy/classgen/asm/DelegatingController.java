@@ -402,6 +402,14 @@ public class DelegatingController extends WriterController {
      * {@inheritDoc}
      */
     @Override
+    public boolean isForLoopCaptureEnabled() {
+        return delegationController.isForLoopCaptureEnabled();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void switchToFastPath() {
         delegationController.switchToFastPath();
     }
