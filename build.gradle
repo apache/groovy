@@ -90,6 +90,8 @@ afterEvaluate {
 */
 
 dependencies {
+    // Classic call-site runtime for tests that compile with indy=false (GROOVY-11158)
+    testRuntimeOnly projects.groovyCallsite
     // for internal CLI usage
     api "info.picocli:picocli:${versions.picocli}" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
     // for internal usage of things like Opcode

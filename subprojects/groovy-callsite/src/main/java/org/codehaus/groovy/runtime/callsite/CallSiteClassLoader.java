@@ -24,6 +24,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Class loader used when generating specialized classic call-site classes.
+ * <p>
+ * Prefer invokedynamic call sites for new code. Planned for
+ * deprecation/removal in a future Groovy version.
+ */
 public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
 
     private static final Set<String> KNOWN_CLASSES = new HashSet<String>();

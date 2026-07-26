@@ -25,7 +25,6 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.LazyReference;
@@ -139,16 +138,6 @@ public class CachedClass {
             CachedClass.this.mopMethods = mopMethods.toArray(CachedMethod.EMPTY_ARRAY);
 
             return methods.toArray(CachedMethod.EMPTY_ARRAY);
-        }
-    };
-
-    private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
-        @Serial
-        private static final long serialVersionUID = 4410385968428074090L;
-
-        @Override
-        public CallSiteClassLoader initValue() {
-            return new CallSiteClassLoader(CachedClass.this.cachedClass);
         }
     };
 
@@ -658,15 +647,6 @@ public class CachedClass {
      */
     public boolean isDirectlyAssignable(Object argument) {
         return getTheClass().isAssignableFrom(argument.getClass());
-    }
-
-    /**
-     * Returns the class loader used for generating call site classes for this cached class.
-     *
-     * @return a call site class loader
-     */
-    public CallSiteClassLoader getCallSiteLoader() {
-        return callSiteClassLoader.get();
     }
 
     /**

@@ -20,7 +20,12 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyObject;
 
-
+/**
+ * Classic (non-{@code invokedynamic}) call site.
+ * <p>
+ * Prefer invokedynamic call sites for new code. Planned for
+ * deprecation/removal in a future Groovy version.
+ */
 public interface CallSite {
     CallSiteArray getArray();
     int getIndex();

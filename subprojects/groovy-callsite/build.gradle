@@ -16,12 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.callsite;
+plugins {
+    id 'org.apache.groovy-library'
+}
 
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
+dependencies {
+    // Classic call-site caching runtime; depends on core, never the reverse.
+    api rootProject
+    testImplementation projects.groovyTest
+}
 
-public abstract class CallSiteAwareMetaMethod extends MetaMethod{
+groovyLibrary {
+    // Optional compatibility module for classic call sites — not part of groovy-all.
+    optionalModule()
+    // Classes lived in core before Groovy 6; japicmp against 5.x is not applicable.
+    withoutBinaryCompatibilityChecks()
+}
 
-    public abstract CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args);
+// Stub types that redirect to core (BooleanClosure*) remain @Deprecated;
+// suppress noisy self-deprecation compile warnings within this module.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-Xlint:-deprecation'
 }

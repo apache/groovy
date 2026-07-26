@@ -19,12 +19,8 @@
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
 import groovy.lang.GString;
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
@@ -51,45 +47,5 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         } else
             objects[index] = (Short) args[1];
         return null;
-    }
-
-    @Override
-    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-        if (!(args[0] instanceof Integer) || !(args[1] instanceof Short))
-            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-        else
-            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
-    }
-
-    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
-        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
-            super(site, metaClass, metaMethod, params);
-        }
-
-        @Override
-        public Object call(Object receiver, Object[] args) throws Throwable {
-            if ((receiver instanceof short[] objects && args[0] instanceof Integer && args[1] instanceof Short)
-                    && checkPojoMetaClass()) {
-                objects[normaliseIndex((Integer) args[0], objects.length)] = (Short) args[1];
-                return null;
-            } else
-                return super.call(receiver, args);
-        }
-
-        @Override
-        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
-            if (checkPojoMetaClass()) {
-                try {
-                    final short[] objects = (short[]) receiver;
-                    objects[normaliseIndex((Integer) arg1, objects.length)] = (Short) arg2;
-                    return null;
-                }
-                catch (ClassCastException e) {
-                    if ((receiver instanceof short[]) && (arg1 instanceof Integer))
-                        throw e;
-                }
-            }
-            return super.call(receiver, arg1, arg2);
-        }
     }
 }

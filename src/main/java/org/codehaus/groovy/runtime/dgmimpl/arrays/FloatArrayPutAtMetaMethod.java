@@ -19,12 +19,8 @@
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
 import groovy.lang.GString;
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.runtime.callsite.CallSite;
-import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
@@ -51,45 +47,5 @@ public class FloatArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         } else
             objects[index] = (Float) args[1];
         return null;
-    }
-
-    @Override
-    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
-        if (!(args[0] instanceof Integer) || !(args[1] instanceof Float))
-            return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
-        else
-            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
-    }
-
-    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
-        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
-            super(site, metaClass, metaMethod, params);
-        }
-
-        @Override
-        public Object call(Object receiver, Object[] args) throws Throwable {
-            if ((receiver instanceof float[] objects && args[0] instanceof Integer && args[1] instanceof Float)
-                    && checkPojoMetaClass()) {
-                objects[normaliseIndex((Integer) args[0], objects.length)] = (Float) args[1];
-                return null;
-            } else
-                return super.call(receiver, args);
-        }
-
-        @Override
-        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
-            if (checkPojoMetaClass()) {
-                try {
-                    final float[] objects = (float[]) receiver;
-                    objects[normaliseIndex((Integer) arg1, objects.length)] = (Float) arg2;
-                    return null;
-                }
-                catch (ClassCastException e) {
-                    if ((receiver instanceof float[]) && (arg1 instanceof Integer))
-                        throw e;
-                }
-            }
-            return super.call(receiver, arg1, arg2);
-        }
     }
 }
