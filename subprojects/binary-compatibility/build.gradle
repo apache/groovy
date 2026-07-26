@@ -47,7 +47,7 @@ rootProject.allprojects {
             }
             def singleProjectCheck = thisProject.tasks.register(taskName, JapicmpTask) {
                 oldArchives.from(baseline)
-                newArchives.from(files(tasks.named("jarjar")))
+                newArchives.from(files(tasks.named("repackageJar")))
                 oldClasspath.from(files())
                 newClasspath.from(files())
                 accessModifier = "protected"

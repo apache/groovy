@@ -34,10 +34,10 @@ sourceSets {
 // Break circular dependency: this module doesn't need the Groovy compiler
 configurations.groovyCompilerClasspath.dependencies.clear()
 
-// The jar is built by filtering core's jarjar output
+// The jar is built by filtering core's repackageJar (shadow) output
 tasks.named('jar') {
-    dependsOn rootProject.tasks.named('jarjar')
-    from(zipTree(rootProject.tasks.named('jarjar').flatMap { it.outputFile })) {
+    dependsOn rootProject.tasks.named('repackageJar')
+    from(zipTree(rootProject.tasks.named('repackageJar').flatMap { it.archiveFile })) {
         include 'groovy/concurrent/**'
         include 'org/apache/groovy/runtime/async/**'
         include 'org/apache/groovy/util/concurrent/ThreadHelper*'

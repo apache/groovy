@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-import org.apache.groovy.gradle.JarJarTask
+import org.apache.groovy.gradle.RepackageJarTask
 
 plugins {
     id 'org.apache.groovy-common'
@@ -30,9 +30,9 @@ dependencies {
     testImplementation testFixtures(project(":"))
 }
 
-tasks.named('jarjar') { JarJarTask jjt ->
+tasks.named('repackageJar') { RepackageJarTask task ->
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
-    jjt.withManifest {
+    task.withManifest {
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
         instruction 'Fragment-Host', 'groovy' // GROOVY-9402, GROOVY-11570

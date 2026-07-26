@@ -1,4 +1,4 @@
-import org.apache.groovy.gradle.JarJarTask
+import org.apache.groovy.gradle.RepackageJarTask
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -40,19 +40,15 @@ dependencies {
     testImplementation projects.groovyTest
 }
 
-tasks.register("javaxJar", JarJarTask) {
-    def jarjar = tasks.named("jarjar", JarJarTask)
-    it.dependsOn(jarjar)
-    it.from.set(jarjar.flatMap { it.outputFile })
+tasks.register("javaxJar", RepackageJarTask) {
+    def repackageJar = tasks.named("repackageJar", RepackageJarTask)
+    it.dependsOn(repackageJar)
+    it.inputJar.set(repackageJar.flatMap { it.archiveFile })
     it.patterns = [
         'jakarta.servlet.**': 'javax.servlet.@1'
     ]
-    it.createManifest = false
-    it.outputFile.set(layout.buildDirectory.file(
-        tasks.named('jar', Jar).map { jar ->
-            "libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-javax.jar"
-        }
-    ))
+    it.generateOsgiManifest = false
+    it.archiveClassifier.set('javax')
 }
 
 afterEvaluate {

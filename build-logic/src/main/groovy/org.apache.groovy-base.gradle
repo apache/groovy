@@ -19,7 +19,7 @@
 
 import groovy.transform.CompileStatic
 import org.apache.groovy.gradle.GroovyLibraryExtension
-import org.apache.groovy.gradle.JarJarTask
+import org.apache.groovy.gradle.RepackageJarTask
 import org.apache.groovy.gradle.ReleaseInfoGenerator
 import com.github.spotbugs.snom.Effort
 import org.gradle.api.attributes.java.TargetJvmVersion
@@ -160,6 +160,11 @@ tasks.withType(AbstractArchiveTask).configureEach {
 }
 
 tasks.withType(Jar).configureEach { jar ->
+    // RepackageJarTask extends ShadowJar extends Jar but already merges the raw jar
+    // (which includes LICENSE/NOTICE/release-info); do not double-add metaInf.
+    if (jar instanceof RepackageJarTask) {
+        return
+    }
     metaInf {
         // root project provides its own JARJAR license/notice in its jar task
         if (jar.name in ['jar', 'sourcesJar'] && project != rootProject) {
@@ -182,10 +187,13 @@ tasks.withType(Jar).configureEach { jar ->
     }
 }
 
-tasks.register('jarjar', JarJarTask) {
+tasks.register('repackageJar', RepackageJarTask) {
     String projectName = project.name
-    from = jar.archiveFile
-    repackagedLibraries.from configurations.runtimeClasspath.incoming.artifactView {
+    // Shadow-based relocation (com.gradleup.shadow).
+    // NOTE: ShadowJar defines a `configurations` property, so always qualify project.configurations.
+    def runtimeCp = project.configurations.runtimeClasspath
+    inputJar = jar.archiveFile
+    repackagedLibraries.from runtimeCp.incoming.artifactView {
         componentFilter { component ->
             if (component instanceof ModuleComponentIdentifier) {
                 return component.module in groovyLibrary.repackagedDependencies.get()
@@ -197,6 +205,7 @@ tasks.register('jarjar', JarJarTask) {
             'groovy/cli/picocli/CliBuilder*.class',
             'groovy/cli/picocli/OptionAccessor*.class'
     ]
+    // Destination packages (groovyjarjar*) are part of the published artefact surface.
     patterns = [
             'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
             'org.objectweb.**': 'groovyjarjarasm.@1',
@@ -211,13 +220,13 @@ tasks.register('jarjar', JarJarTask) {
                          'org/objectweb/asm/util/ASMifier.class',
                          'org/objectweb/asm/util/Trace*']
     ]
-    outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${(it.archiveClassifier.get() && it.archiveClassifier.get() != 'raw') ? '-' + it.archiveClassifier.get() : ''}.jar") }
+    // Shaded artefact: build/libs/<archivesName>-<version>.jar (no raw classifier/appendix)
 
     withManifest {
         String autoModName = "org.apache.${projectName.replace('-','.')}"
         attributes('Automatic-Module-Name': autoModName, 'Bundle-Name': "Groovy module: $projectName")
         groovyLibrary.configureManifest(it, excludedFromManifest)
-        classpath = configurations.runtimeClasspath
+        classpath = runtimeCp
     }
 }
 
@@ -319,8 +328,8 @@ List<String> capabilities = [
 ]
 int targetJvmVersion = Integer.valueOf(sharedConfiguration.targetJavaVersion.get())
 // First we create the "API" and "runtime" variants of Groovy for publication
-def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'jarjar', capabilities, targetJvmVersion)
-def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'jarjar', capabilities, targetJvmVersion)
+def shadowApi = createConsumableConfiguration(objects, tasks, configurations, 'groovyApiElements', Usage.JAVA_API, 'repackageJar', capabilities, targetJvmVersion)
+def shadowRuntime = createConsumableConfiguration(objects, tasks, configurations, 'groovyRuntimeElements', Usage.JAVA_RUNTIME, 'repackageJar', capabilities, targetJvmVersion)
 dependencies {
     // All Groovy modules depend on the Groovy BOM which itself has constraints on all
     // Groovy modules, which brings nice alignment features!
