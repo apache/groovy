@@ -402,8 +402,8 @@ public class DelegatingController extends WriterController {
      * {@inheritDoc}
      */
     @Override
-    public boolean isForLoopCaptureEnabled() {
-        return delegationController.isForLoopCaptureEnabled();
+    public boolean isForInPerIterationCaptureEnabled() {
+        return delegationController.isForInPerIterationCaptureEnabled();
     }
 
     /**

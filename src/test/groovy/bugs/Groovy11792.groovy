@@ -43,11 +43,11 @@ final class Groovy11792 {
 
     /**
      * Evaluates {@code script} with historical for-in capture
-     * ({@link CompilerConfiguration#setForLoopCaptureEnabled(boolean) setForLoopCaptureEnabled(false)}).
+     * ({@link CompilerConfiguration#setForInPerIterationCaptureEnabled(boolean) setForInPerIterationCaptureEnabled(false)}).
      */
     private static void evaluateWithLegacyCapture(final String script) {
         CompilerConfiguration config = new CompilerConfiguration()
-        config.setForLoopCaptureEnabled(false)
+        config.setForInPerIterationCaptureEnabled(false)
         new GroovyShell(config).evaluate(script)
     }
 
@@ -694,11 +694,11 @@ final class Groovy11792 {
     }
 
     @Test
-    void testAllOptimizationsOffDoesNotDisableForLoopCapture() {
+    void testAllOptimizationsOffDoesNotDisableForInPerIterationCapture() {
         // "all" -> false is a performance switch; for-in recapture stays on
         def config = new CompilerConfiguration()
         config.optimizationOptions['all'] = Boolean.FALSE
-        assert config.isForLoopCaptureEnabled()
+        assert config.isForInPerIterationCaptureEnabled()
         def shell = new GroovyShell(config)
         shell.evaluate '''
             def closures = []
@@ -732,7 +732,7 @@ final class Groovy11792 {
     }
 
     @Test
-    void testClassicForLoopCaptureStillShared() {
+    void testClassicForLoopStillSharedBinding() {
         // Classic C-style for is intentionally unchanged (single shared binding).
         assertScript '''
             def closures = []

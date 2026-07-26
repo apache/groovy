@@ -78,9 +78,9 @@ for (n in [1, 2, 3]) {
             'INVOKEVIRTUAL groovy/lang/Reference.set (Ljava/lang/Object;)V',
     ]
 
-    private InstructionSequence compileForInCapture(final boolean forLoopCaptureEnabled) {
+    private InstructionSequence compileForInCapture(final boolean forInPerIterationCaptureEnabled) {
         CompilerConfiguration config = new CompilerConfiguration()
-        config.setForLoopCaptureEnabled(forLoopCaptureEnabled)
+        config.setForInPerIterationCaptureEnabled(forInPerIterationCaptureEnabled)
         CompilationUnit cu = new CompilationUnit(config)
         cu.addSource('script', FOR_IN_CAPTURE_SCRIPT)
         cu.compile(Phases.CLASS_GENERATION)
@@ -89,7 +89,7 @@ for (n in [1, 2, 3]) {
     }
 
     @Test
-    void testNewBytecodePatternWhenForLoopCaptureEnabled() {
+    void testNewBytecodePatternWhenForInPerIterationCaptureEnabled() {
         // Default language-compat: per-iteration fresh Reference after next()
         InstructionSequence bytecode = compileForInCapture(true)
 
@@ -104,7 +104,7 @@ for (n in [1, 2, 3]) {
     }
 
     @Test
-    void testOldBytecodePatternWhenForLoopCaptureDisabled() {
+    void testOldBytecodePatternWhenForInPerIterationCaptureDisabled() {
         // Historical opt-out: single Reference updated with set() after next()
         InstructionSequence bytecode = compileForInCapture(false)
 

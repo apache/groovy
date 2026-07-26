@@ -313,67 +313,67 @@ public final class CompilerConfigurationTest {
     }
 
     @Test // GROOVY-11792
-    public void testForLoopCaptureEnabledByDefault() {
+    public void testForInPerIterationCaptureEnabledByDefault() {
         CompilerConfiguration config = new CompilerConfiguration();
-        assertTrue(config.isForLoopCaptureEnabled());
+        assertTrue(config.isForInPerIterationCaptureEnabled());
     }
 
     @Test // GROOVY-11792
-    public void testForLoopCaptureCanBeDisabled() {
+    public void testForInPerIterationCaptureCanBeDisabled() {
         CompilerConfiguration config = new CompilerConfiguration();
-        config.setForLoopCaptureEnabled(false);
-        assertFalse(config.isForLoopCaptureEnabled());
-        config.setForLoopCaptureEnabled(true);
-        assertTrue(config.isForLoopCaptureEnabled());
+        config.setForInPerIterationCaptureEnabled(false);
+        assertFalse(config.isForInPerIterationCaptureEnabled());
+        config.setForInPerIterationCaptureEnabled(true);
+        assertTrue(config.isForInPerIterationCaptureEnabled());
     }
 
     @Test // GROOVY-11792
-    public void testForLoopCaptureNotClearedByAllFalse() {
+    public void testForInPerIterationCaptureNotClearedByAllFalse() {
         CompilerConfiguration config = new CompilerConfiguration();
-        config.setForLoopCaptureEnabled(false);
+        config.setForInPerIterationCaptureEnabled(false);
         config.getOptimizationOptions().put("all", Boolean.FALSE);
         // optimization "all" must not re-enable or clear the language-compat field
-        assertFalse(config.isForLoopCaptureEnabled());
-        config.setForLoopCaptureEnabled(true);
+        assertFalse(config.isForInPerIterationCaptureEnabled());
+        config.setForInPerIterationCaptureEnabled(true);
         config.getOptimizationOptions().put("all", Boolean.FALSE);
-        assertTrue(config.isForLoopCaptureEnabled());
+        assertTrue(config.isForInPerIterationCaptureEnabled());
     }
 
     @Test // GROOVY-11792
-    public void testForLoopCaptureCopyConstructor() {
+    public void testForInPerIterationCaptureCopyConstructor() {
         CompilerConfiguration src = new CompilerConfiguration();
-        src.setForLoopCaptureEnabled(false);
+        src.setForInPerIterationCaptureEnabled(false);
         CompilerConfiguration copy = new CompilerConfiguration(src);
-        assertFalse(copy.isForLoopCaptureEnabled());
-        src.setForLoopCaptureEnabled(true);
+        assertFalse(copy.isForInPerIterationCaptureEnabled());
+        src.setForInPerIterationCaptureEnabled(true);
         // copy is independent
-        assertFalse(copy.isForLoopCaptureEnabled());
-        assertTrue(new CompilerConfiguration(src).isForLoopCaptureEnabled());
+        assertFalse(copy.isForInPerIterationCaptureEnabled());
+        assertTrue(new CompilerConfiguration(src).isForInPerIterationCaptureEnabled());
     }
 
     @Test // GROOVY-11792
-    public void testForLoopCaptureViaConfigureProperties() {
+    public void testForInPerIterationCaptureViaConfigureProperties() {
         CompilerConfiguration config = new CompilerConfiguration();
         Properties props = new Properties();
-        props.setProperty("groovy.for.loop.capture", "false");
+        props.setProperty("groovy.forin.per.iteration.capture", "false");
         config.configure(props);
-        assertFalse(config.isForLoopCaptureEnabled());
-        props.setProperty("groovy.for.loop.capture", "true");
+        assertFalse(config.isForInPerIterationCaptureEnabled());
+        props.setProperty("groovy.forin.per.iteration.capture", "true");
         config.configure(props);
-        assertTrue(config.isForLoopCaptureEnabled());
+        assertTrue(config.isForInPerIterationCaptureEnabled());
     }
 
     @Test // GROOVY-11792
-    @ForkedJvm(systemProperties = {"groovy.for.loop.capture=false"})
-    public void testForLoopCaptureDisabledViaSystemProperty() {
+    @ForkedJvm(systemProperties = {"groovy.forin.per.iteration.capture=false"})
+    public void testForInPerIterationCaptureDisabledViaSystemProperty() {
         CompilerConfiguration config = new CompilerConfiguration(System.getProperties());
-        assertFalse(config.isForLoopCaptureEnabled());
+        assertFalse(config.isForInPerIterationCaptureEnabled());
     }
 
     @Test // GROOVY-11792
-    public void testDefaultConfigurationForLoopCaptureIsImmutable() {
+    public void testDefaultConfigurationForInPerIterationCaptureIsImmutable() {
         assertThrows(UnsupportedOperationException.class, () ->
-                CompilerConfiguration.DEFAULT.setForLoopCaptureEnabled(false));
-        assertTrue(CompilerConfiguration.DEFAULT.isForLoopCaptureEnabled());
+                CompilerConfiguration.DEFAULT.setForInPerIterationCaptureEnabled(false));
+        assertTrue(CompilerConfiguration.DEFAULT.isForInPerIterationCaptureEnabled());
     }
 }

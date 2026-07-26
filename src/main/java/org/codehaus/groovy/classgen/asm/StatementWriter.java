@@ -240,7 +240,7 @@ public class StatementWriter {
      * Stores the top-of-stack value into a for-in loop variable slot.
      * <p>
      * Applies the for-in per-iteration capture policy
-     * ({@link WriterController#isForLoopCaptureEnabled()}, GROOVY-11792): when
+     * ({@link WriterController#isForInPerIterationCaptureEnabled()}, GROOVY-11792): when
      * enabled, a shared (holder) loop variable receives a fresh
      * {@link groovy.lang.Reference} so deferred closures, lambdas, and
      * anonymous inner classes observe this iteration's value. When disabled,
@@ -253,7 +253,7 @@ public class StatementWriter {
      * @param variable the for-in value (or similarly stored) loop variable
      */
     protected final void storeForLoopVariable(final BytecodeVariable variable) {
-        controller.getCompileStack().storeVar(variable, controller.isForLoopCaptureEnabled());
+        controller.getCompileStack().storeVar(variable, controller.isForInPerIterationCaptureEnabled());
     }
 
     /**
