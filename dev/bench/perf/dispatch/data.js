@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784964981141,
+  "lastUpdate": 1785051729594,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -1076,6 +1076,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 875,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1498,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194254,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "19db4fdf9359fcb7850cc16cf8e2e7c4053383c8",
+          "message": "GROOVY-11792: for-in loop variable captured by closure/AIC sees final value, not per-iteration value (#2732)\n\n* GROOVY-11792: for-in loop variable captured by closure/AIC sees final value, not per-iteration value\n\n* GROOVY-11792: rename for-in capture flag to groovy.forin.per.iteration.capture\n\nMake the language-compat switch self-describing: it only affects for-in\nloops, and true means per-iteration capture (false is legacy shared binding).",
+          "timestamp": "2026-07-26T07:41:59Z",
+          "url": "https://github.com/apache/groovy/commit/19db4fdf9359fcb7850cc16cf8e2e7c4053383c8"
+        },
+        "date": 1785051729107,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3973,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 454,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 876,
             "unit": "classes"
           },
           {
