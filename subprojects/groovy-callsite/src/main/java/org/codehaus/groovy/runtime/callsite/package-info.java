@@ -33,11 +33,9 @@
  * does not depend on this package. Add {@code groovy-callsite} only when
  * classic bytecode must still be produced or executed.
  * <p>
- * This entire package is deprecated and planned for removal in a future
- * major version.
+ * Prefer invokedynamic call sites for new code. This entire package is
+ * planned for deprecation/removal in a future Groovy version.
  *
- * @deprecated Prefer invokedynamic call sites; do not use for new code.
  * @since 1.5 (relocated to the {@code groovy-callsite} module in 6.0)
  */
-@Deprecated
 package org.codehaus.groovy.runtime.callsite;

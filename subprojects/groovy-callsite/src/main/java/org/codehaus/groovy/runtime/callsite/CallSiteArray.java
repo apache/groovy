@@ -28,7 +28,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.stream.IntStream;
 
-@Deprecated
+/**
+ * Array of classic (non-{@code invokedynamic}) call sites for a compiled class.
+ * <p>
+ * Prefer invokedynamic call sites for new code. Planned for
+ * deprecation/removal in a future Groovy version.
+ */
 public final class CallSiteArray {
     public static final Object[] NOPARAM = new Object[0];
     public final CallSite[] array;

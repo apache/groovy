@@ -37,9 +37,11 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import java.lang.reflect.Method;
 
 /**
- * Base class for all call sites.
+ * Base class for all classic (non-{@code invokedynamic}) call sites.
+ * <p>
+ * Prefer invokedynamic call sites for new code. Planned for
+ * deprecation/removal in a future Groovy version.
  */
-@Deprecated
 public class AbstractCallSite implements CallSite {
 
     protected final int index;

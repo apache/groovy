@@ -34,11 +34,12 @@ import java.util.function.Function;
  * so groovy-core reflection metadata stays free of classic call-site concerns.
  * State mutations for a given method are synchronized on that method's state
  * object.
+ * <p>
+ * Prefer invokedynamic call sites for new code. Planned for
+ * deprecation/removal in a future Groovy version.
  *
  * @since 6.0.0
- * @deprecated Classic call-site caching is deprecated; prefer invokedynamic.
  */
-@Deprecated
 public final class CachedMethodCallSites {
 
     private static final ConcurrentHashMap<CachedMethod, State> STATES = new ConcurrentHashMap<>();

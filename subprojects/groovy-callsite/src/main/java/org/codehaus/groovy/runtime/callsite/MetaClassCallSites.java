@@ -37,11 +37,12 @@ import java.util.Map;
  * {@link MetaClassImpl} / {@link ExpandoMetaClass} / {@link ClosureMetaClass}.
  * It uses only public MetaClass APIs so this class can live with the rest of
  * the classic call-site runtime without a split-package on {@code groovy.lang}.
+ * <p>
+ * Prefer invokedynamic call sites for new code. Planned for
+ * deprecation/removal in a future Groovy version.
  *
  * @since 6.0.0
- * @deprecated Prefer invokedynamic call sites; this class will be removed in a future major version.
  */
-@Deprecated
 public final class MetaClassCallSites {
 
     private static final String CALL_METHOD = "call";

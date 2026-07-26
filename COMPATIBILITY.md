@@ -171,7 +171,7 @@ When you need to remove or replace public API:
 
 Classic (non-`invokedynamic`) call-site classes under
 `org.codehaus.groovy.runtime.callsite` were moved out of groovy-core
-into the optional, deprecated module `groovy-callsite`.
+into the optional module `groovy-callsite`.
 
 **Primary purpose:** keep **runtime binary compatibility** for classes
 compiled by **Groovy 4 and Groovy 5** (and earlier releases that always
@@ -198,6 +198,13 @@ with a clear error rather than emitting unloadable bytecode. Valuable
 helpers that used to live beside the call-site cache
 (`BooleanClosureWrapper` and related types) remain in core under
 `org.codehaus.groovy.runtime`.
+
+The classic call-site types are **not** marked `@Deprecated` in 6.0.0
+beta releases so downstream (notably Grails) can validate invokedynamic
+performance without formal deprecation noise. Javadoc states they are
+planned for deprecation/removal in a future Groovy version. Formal
+`@Deprecated` may be restored before 6 GA once beta feedback confirms
+indy remains acceptable for those use cases.
 
 ## The binary-compatibility check
 

@@ -40,10 +40,10 @@ import java.util.WeakHashMap;
 
 /**
  * Generates specialized call-site classes for the classic (non-indy) call-site cache.
- *
- * @deprecated Classic call-site caching is deprecated; prefer invokedynamic.
+ * <p>
+ * Prefer invokedynamic call sites for new code. Planned for
+ * deprecation/removal in a future Groovy version.
  */
-@Deprecated
 public class CallSiteGenerator {
 
     private static final Map<Class<?>, CallSiteClassLoader> LOADERS =
