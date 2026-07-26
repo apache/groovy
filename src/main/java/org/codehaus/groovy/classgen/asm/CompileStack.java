@@ -776,6 +776,10 @@ public class CompileStack {
 
     /**
      * Wraps the current stack value in a {@code groovy.lang.Reference} for the given variable slot.
+     * <p>
+     * Expects a boxed/object value already on the JVM operand stack. Prefer
+     * {@link #storeVar(BytecodeVariable, boolean)} when the value still needs
+     * casting and boxing.
      *
      * @param reference the variable that will receive the created reference
      */
@@ -786,6 +790,35 @@ public class CompileStack {
         mv.visitInsn(SWAP);
         mv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "(Ljava/lang/Object;)V", false);
         mv.visitVarInsn(ASTORE, reference.getIndex());
+    }
+
+    /**
+     * Stores the top-of-stack value into {@code variable}.
+     * <p>
+     * When {@code variable} is a {@linkplain BytecodeVariable#isHolder() holder}
+     * and {@code freshReferenceIfHolder} is {@code true}, the value is cast and
+     * boxed and a <em>new</em> {@link groovy.lang.Reference} is written to the
+     * slot (for-in per-iteration recapture, GROOVY-11792). Callers that already
+     * hold a boxed object on the JVM stack and do not need casting may call
+     * {@link #createReference(BytecodeVariable)} directly.
+     * <p>
+     * Otherwise delegates to {@link OperandStack#storeVar(BytecodeVariable)},
+     * which for an existing holder performs an in-place {@code Reference#set}.
+     *
+     * @param variable the target local slot
+     * @param freshReferenceIfHolder if {@code true} and the variable is a holder,
+     *        allocate a new {@code Reference} rather than updating the existing one
+     */
+    void storeVar(final BytecodeVariable variable, final boolean freshReferenceIfHolder) {
+        OperandStack operandStack = controller.getOperandStack();
+        if (variable.isHolder() && freshReferenceIfHolder) {
+            operandStack.doGroovyCast(variable.getType());
+            operandStack.box();
+            operandStack.remove(1);
+            createReference(variable);
+        } else {
+            operandStack.storeVar(variable);
+        }
     }
 
     /**

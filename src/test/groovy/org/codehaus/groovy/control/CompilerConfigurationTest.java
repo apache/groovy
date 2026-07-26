@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -309,5 +310,70 @@ public final class CompilerConfigurationTest {
         String[] inputs = {"1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "5" , "6" , "7" , "8" , "9" , "9.0", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28"};
         String[] expect = {"17" , "17" , "17" , "17" , "17" , "17" , "17" , "17", "17", "17", "17", "17", "17" , "17", "17", "17", "17", "17", "17", "17", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "27"};
         assertArrayEquals(expect, Arrays.stream(inputs).map(v -> { config.setTargetBytecode(v); return config.getTargetBytecode(); }).toArray(String[]::new));
+    }
+
+    @Test // GROOVY-11792
+    public void testForInPerIterationCaptureEnabledByDefault() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        assertTrue(config.isForInPerIterationCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForInPerIterationCaptureCanBeDisabled() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setForInPerIterationCaptureEnabled(false);
+        assertFalse(config.isForInPerIterationCaptureEnabled());
+        config.setForInPerIterationCaptureEnabled(true);
+        assertTrue(config.isForInPerIterationCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForInPerIterationCaptureNotClearedByAllFalse() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setForInPerIterationCaptureEnabled(false);
+        config.getOptimizationOptions().put("all", Boolean.FALSE);
+        // optimization "all" must not re-enable or clear the language-compat field
+        assertFalse(config.isForInPerIterationCaptureEnabled());
+        config.setForInPerIterationCaptureEnabled(true);
+        config.getOptimizationOptions().put("all", Boolean.FALSE);
+        assertTrue(config.isForInPerIterationCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForInPerIterationCaptureCopyConstructor() {
+        CompilerConfiguration src = new CompilerConfiguration();
+        src.setForInPerIterationCaptureEnabled(false);
+        CompilerConfiguration copy = new CompilerConfiguration(src);
+        assertFalse(copy.isForInPerIterationCaptureEnabled());
+        src.setForInPerIterationCaptureEnabled(true);
+        // copy is independent
+        assertFalse(copy.isForInPerIterationCaptureEnabled());
+        assertTrue(new CompilerConfiguration(src).isForInPerIterationCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testForInPerIterationCaptureViaConfigureProperties() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        Properties props = new Properties();
+        props.setProperty("groovy.forin.per.iteration.capture", "false");
+        config.configure(props);
+        assertFalse(config.isForInPerIterationCaptureEnabled());
+        props.setProperty("groovy.forin.per.iteration.capture", "true");
+        config.configure(props);
+        assertTrue(config.isForInPerIterationCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    @ForkedJvm(systemProperties = {"groovy.forin.per.iteration.capture=false"})
+    public void testForInPerIterationCaptureDisabledViaSystemProperty() {
+        CompilerConfiguration config = new CompilerConfiguration(System.getProperties());
+        assertFalse(config.isForInPerIterationCaptureEnabled());
+    }
+
+    @Test // GROOVY-11792
+    public void testDefaultConfigurationForInPerIterationCaptureIsImmutable() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                CompilerConfiguration.DEFAULT.setForInPerIterationCaptureEnabled(false));
+        assertTrue(CompilerConfiguration.DEFAULT.isForInPerIterationCaptureEnabled());
     }
 }

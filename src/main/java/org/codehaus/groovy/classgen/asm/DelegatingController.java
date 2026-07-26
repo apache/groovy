@@ -402,6 +402,14 @@ public class DelegatingController extends WriterController {
      * {@inheritDoc}
      */
     @Override
+    public boolean isForInPerIterationCaptureEnabled() {
+        return delegationController.isForInPerIterationCaptureEnabled();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void switchToFastPath() {
         delegationController.switchToFastPath();
     }

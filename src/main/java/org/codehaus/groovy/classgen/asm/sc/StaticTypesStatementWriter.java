@@ -151,7 +151,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         // $idx += 1
         mv.visitIincInsn(loopIdx, 1);
         if (indexVariable != null) {
-            mv.visitIincInsn(indexVariable.getIndex(), 1);
+            incrementForLoopIndexVariable(indexVariable);
         }
 
         // loop body
@@ -166,7 +166,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
         compileStack.removeVar(array);
     }
 
-    private static void loadFromArray(final MethodVisitor mv, final OperandStack os, final BytecodeVariable variable, final int array, final int index) {
+    private void loadFromArray(final MethodVisitor mv, final OperandStack os, final BytecodeVariable variable, final int array, final int index) {
         mv.visitVarInsn(ALOAD, array);
         mv.visitVarInsn(ILOAD, index);
         ClassNode varType = variable.getType();
@@ -190,7 +190,7 @@ public class StaticTypesStatementWriter extends StatementWriter {
             mv.visitInsn(AALOAD);
         }
         os.push(varType);
-        os.storeVar(variable);
+        storeForLoopVariable(variable);
     }
 
     private void writeEnumerationBasedForEachLoop(final ForStatement loop, final Expression collectionExpression, final ClassNode collectionType) {
@@ -220,9 +220,9 @@ public class StaticTypesStatementWriter extends StatementWriter {
         mv.visitVarInsn(ALOAD, enumeration);
         ENUMERATION_NEXT_METHOD.call(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
-        operandStack.storeVar(valueVariable);
+        storeForLoopVariable(valueVariable);
         if (indexVariable != null) {
-            mv.visitIincInsn(indexVariable.getIndex(), 1);
+            incrementForLoopIndexVariable(indexVariable);
         }
 
         loop.getLoopBlock().visit(controller.getAcg());
