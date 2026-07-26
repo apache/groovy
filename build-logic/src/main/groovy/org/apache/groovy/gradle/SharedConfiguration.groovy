@@ -89,9 +89,30 @@ class SharedConfiguration {
     }
 
     private static boolean detectCi(File file, Logger logger) {
-        // home/runner/work is path for Github actions
-        def isCi = file.absolutePath =~ $/teamcity|jenkins|hudson|/home/runner/work/|travis/$
-        logger.lifecycle "Detected ${isCi ? 'Continuous Integration environment' : 'development environment'}"
+        // Prefer standard CI environment variables. GitHub Actions sets CI=true and
+        // GITHUB_ACTIONS=true on every OS; path-only detection historically matched only
+        // Linux (/home/runner/work/) and silently treated Windows (D:\a\...) and macOS
+        // (/Users/runner/work/...) runners as local dev. That left maxParallelForks at
+        // processors/2 on Windows CI, amplifying intermittent Gradle test-worker
+        // MessageIOException ("Could not write '/127.0.0.1:…'" / Connection reset by peer)
+        // races during worker teardown after suites that had already passed.
+        // Keep path heuristics as a fallback for older/self-hosted agents that may not
+        // export CI=true (mirrors gradle/build-scans.gradle's env-based isCI).
+        Map<String, String> env = System.getenv()
+        boolean envCi = 'true'.equalsIgnoreCase(env.get('CI')) ||
+                'true'.equalsIgnoreCase(env.get('GITHUB_ACTIONS')) ||
+                env.get('TEAMCITY_VERSION') != null ||
+                env.get('JENKINS_URL') != null ||
+                env.get('HUDSON_URL') != null ||
+                'true'.equalsIgnoreCase(env.get('TRAVIS')) ||
+                'true'.equalsIgnoreCase(env.get('CIRCLECI')) ||
+                'true'.equalsIgnoreCase(env.get('GITLAB_CI'))
+        // Path fallbacks: Linux GHA, macOS GHA, Windows GHA (D:\a\repo\repo → D:/a/…), classic CI homes
+        String path = file.absolutePath.replace('\\', '/')
+        boolean pathCi = path.find(/(?i)(?:teamcity|jenkins|hudson|travis)|\/home\/runner\/work\/|\/Users\/runner\/work\/|[A-Za-z]:\/a\//) != null
+        boolean isCi = envCi || pathCi
+        logger.lifecycle "Detected ${isCi ? 'Continuous Integration environment' : 'development environment'}" +
+                (isCi ? " (via ${envCi ? 'env' : 'path'})" : '')
         isCi
     }
 
