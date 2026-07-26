@@ -108,12 +108,13 @@ class GroovyLibraryExtension {
                     Map<String, String> resources
     ) {
         grooid.set(true)
-        def grooidJar = tasks.register("grooidJar", JarJarTask) {
-            def jarjar = tasks.named("jarjar", JarJarTask)
-            it.dependsOn(jarjar)
-            it.from.set(jarjar.flatMap { it.outputFile })
+        def grooidJar = tasks.register("grooidJar", RepackageJarTask) {
+            def repackageJar = tasks.named("repackageJar", RepackageJarTask)
+            it.dependsOn(repackageJar)
+            it.inputJar.set(repackageJar.flatMap { it.archiveFile })
             if (librariesToRepackage) {
-                it.repackagedLibraries.from configurations.getByName('runtimeClasspath').incoming.artifactView { view ->
+                // Use this.configurations (project) — RepackageJarTask/ShadowJar also exposes `configurations`.
+                it.repackagedLibraries.from this.configurations.getByName('runtimeClasspath').incoming.artifactView { view ->
                     view.componentFilter { ComponentIdentifier component ->
                         if (component instanceof ModuleComponentIdentifier) {
                             return component.module in librariesToRepackage
@@ -124,14 +125,10 @@ class GroovyLibraryExtension {
             }
             it.patterns = mappingPatterns
             it.excludesPerLibrary = libraryExcludes
-            it.excludes = allExcludes
-            it.createManifest = false
+            it.sourceExcludes = allExcludes
+            it.generateOsgiManifest = false
             it.includedResources = resources
-            it.outputFile.set(layout.buildDirectory.file(
-                    tasks.named('jar', Jar).map { jar ->
-                        "libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-grooid.jar"
-                    }
-            ))
+            it.archiveClassifier.set('grooid')
         }
         def androidRuntime = configurations.create("androidRuntimeElements") { Configuration it ->
             it.canBeConsumed = true

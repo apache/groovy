@@ -36,7 +36,7 @@ def jsonJar = project(':groovy-json').file("build/libs/groovy-json-${v}.jar")
 
 test {
     useJUnitPlatform()
-    dependsOn ':jarjar', ':groovy-json:jar'
+    dependsOn ':repackageJar', ':groovy-json:jar'
     systemProperty 'groovy.bundle.path', groovyJar.absolutePath
     systemProperty 'groovy.json.bundle.path', jsonJar.absolutePath
 }

@@ -348,8 +348,9 @@ A few build-side conventions:
   build. See the *Dependency verification* section of
   [`CONTRIBUTING.md`](CONTRIBUTING.md) for the regeneration
   recipe, and inspect the diff before committing.
-- **ASM, ANTLR runtime, and picocli are jarjar-relocated** into
-  `groovyjarjar*` packages, configured via
+- **ASM, ANTLR runtime, and picocli are shadow-relocated** into
+  `groovyjarjar*` packages (via `com.gradleup.shadow`, task
+  `repackageJar` / `RepackageJarTask`), configured via
   `groovyLibrary { repackagedDependencies = ... }`. A wrong
   repackaging rule produces a jar that compiles fine but fails
   at runtime — run `./gradlew :groovy-binary:installGroovy` and

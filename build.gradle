@@ -138,7 +138,6 @@ dependencies {
     testFixturesImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit6}"
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
-    tools "com.eed3si9n.jarjar:ant-jarjar:${versions.jarjar}"
     tools "org.apache.ant:ant:${versions.ant}"
     tools "org.jboss.bridger:bridger:${versions.bridger}"
     // updated bridger dependencies to remove vulnerabilities:
@@ -172,8 +171,14 @@ configurations {
 }
 
 allprojects {
-    tasks.withType(AbstractCopyTask).configureEach {
-        it.duplicatesStrategy = DuplicatesStrategy.WARN
+    tasks.withType(AbstractCopyTask).configureEach { task ->
+        // RepackageJarTask (Shadow-based) needs EXCLUDE so overlapping shaded deps
+        // (e.g. antlr4-runtime vs antlr4-annotations) do not warn/duplicate.
+        if (task instanceof org.apache.groovy.gradle.RepackageJarTask) {
+            task.duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        } else {
+            task.duplicatesStrategy = DuplicatesStrategy.WARN
+        }
     }
 }
 

@@ -19,7 +19,7 @@
 
 import org.apache.groovy.gradle.CoreExtension
 import org.apache.groovy.gradle.DgmConverter
-import org.apache.groovy.gradle.JarJarTask
+import org.apache.groovy.gradle.RepackageJarTask
 
 plugins {
     id 'org.apache.groovy-common'
@@ -70,9 +70,9 @@ tasks.named('jar') {
     from dgmConverter
 }
 
-tasks.named('jarjar') { JarJarTask jjt ->
+tasks.named('repackageJar') { RepackageJarTask task ->
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
-    jjt.withManifest {
+    task.withManifest {
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
         instruction 'Eclipse-ExtensibleAPI', 'true' // GROOVY-8713, GROOVY-11582
@@ -98,12 +98,6 @@ tasks.withType(GroovyCompile).configureEach {
         classpath = files(bootstrapJar, classpath)
     }
     options.incremental = true
-}
-
-allprojects {
-    tasks.withType(JarJarTask).configureEach {
-        jarjarToolClasspath.from(rootProject.configurations.tools)
-    }
 }
 
 interface CoreServices {

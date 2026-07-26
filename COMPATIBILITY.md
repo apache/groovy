@@ -211,9 +211,9 @@ indy remains acceptable for those use cases.
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)
 module wires
 [`japicmp`](https://github.com/siom79/japicmp) into the build. For
-each library subproject, it compares the current `jarjar` output
-against the published artefact of a baseline version and produces an
-HTML report.
+each library subproject, it compares the current `repackageJar` output
+(shadow-relocated published jar) against the published artefact of a
+baseline version and produces an HTML report.
 
 | Aspect | Detail |
 |---|---|
