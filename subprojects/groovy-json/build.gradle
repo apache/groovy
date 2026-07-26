@@ -26,7 +26,12 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation projects.groovyDateutil
-    testImplementation 'net.javacrumbs.json-unit:json-unit:2.38.0' // 3.0.0 requires JDK17
+    testImplementation('net.javacrumbs.json-unit:json-unit:6.0.1') {
+        // hamcrest-core 3.0 is an empty deprecation stub; exclude it to avoid pinning a
+        // verification checksum for it. JUnit already supplies hamcrest-core and the tests
+        // here only use JsonAssert.assertJsonEquals (no hamcrest matchers).
+        exclude group: 'org.hamcrest', module: 'hamcrest-core'
+    }
 
     testRuntimeOnly project(':'), {
         because "Tests are using Grapes"
@@ -36,7 +41,7 @@ dependencies {
     }
     testRuntimeOnly projects.groovyGrapeIvy
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
-    testRuntimeOnly 'com.google.code.gson:gson:2.14.0' // json-unit requires gson, jackson1 or jackson2
+    testRuntimeOnly 'com.google.code.gson:gson:2.14.0' // json-unit requires a backend: gson, jackson2 or jackson3
 }
 
 plugins.withId('eclipse') {
