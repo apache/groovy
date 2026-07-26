@@ -55,9 +55,11 @@ public final class SwitchPointInvalidator {
     private final AtomicInteger retirementCount = new AtomicInteger();
 
     /**
-     * Creates an invalidator.
+     * Creates an invalidator with no live SwitchPoint until the first
+     * {@link #getSwitchPoint()} call. Field initializers own all state.
      */
     public SwitchPointInvalidator() {
+        // Intentionally empty: AtomicReference / AtomicInteger fields are ready.
     }
 
     /**

@@ -26,6 +26,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import groovy.transform.Internal;
+import org.apache.groovy.runtime.indy.ClassHierarchyIndex;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.runtime.indy.SwitchPointInvalidator;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
@@ -119,6 +120,9 @@ public class ClassInfo implements Finalizable {
         this.classRef = new WeakReference<Class<?>>(klazz);
         cachedClassRef = new LazyCachedClassRef(softBundle, this);
         artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
+        // Index under MOP-relevant ancestors so hierarchy SwitchPoint fan-out is
+        // O(descendants) rather than O(all loaded ClassInfos) (GROOVY-12191).
+        ClassHierarchyIndex.register(this);
     }
 
     /**
@@ -136,12 +140,18 @@ public class ClassInfo implements Finalizable {
      * (and subtype SwitchPoints via hierarchy fan-out).
      * Called when metaclass modifications occur (e.g., adding methods to an {@code ExpandoMetaClass}).
      * <p>
-     * Call sites linked against this class or its subtypes re-link (GROOVY-12191);
-     * unrelated classes keep their optimized targets. Category enter/leave bulk-invalidates
-     * class SwitchPoints via {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()}.
+     * <strong>Behavioral change in 6.0 (GROOVY-12191):</strong> this method no longer
+     * triggers a process-wide call-site flush. It scopes invalidation to this class
+     * and loaded subtypes/implementors only. Callers that previously relied on
+     * {@code incVersion()} as a global “flush everything” hammer should invoke
+     * {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()} (or
+     * {@link IndyInvalidation#invalidateCategory()}) explicitly when a bulk flush
+     * is required. Unrelated classes keep their optimized targets.
      * <p>
-     * SwitchPoint policy is owned by {@link IndyInvalidation}; this method only bumps
-     * generation then delegates hierarchy invalidation.
+     * Category enter/leave still bulk-invalidates class SwitchPoints via
+     * {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()}.
+     * SwitchPoint policy is owned by {@link IndyInvalidation}; this method only
+     * bumps generation then delegates hierarchy invalidation.
      */
     public void incVersion() {
         version.incrementAndGet();

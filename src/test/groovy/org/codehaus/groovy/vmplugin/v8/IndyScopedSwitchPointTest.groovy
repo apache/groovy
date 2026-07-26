@@ -95,6 +95,69 @@ final class IndyScopedSwitchPointTest {
     }
 
     @Test
+    void perClassMetaClassChange_doesNotRotateLegacySwitchPoint() {
+        // Legacy IndyInterface.switchPoint is only rotated on category /
+        // invalidateCallSites bulk paths — not on type-scoped MetaClass changes
+        // (GROOVY-12191 review: external guards on the field miss per-class events).
+        SwitchPoint legacyBefore = IndyInterface.switchPoint
+        SwitchPoint classSp = ClassInfo.getClassInfo(LegacyMissHost).indySwitchPoint
+        assertFalse(legacyBefore.hasBeenInvalidated())
+        assertFalse(classSp.hasBeenInvalidated())
+
+        def mc = new ExpandoMetaClass(LegacyMissHost, true, true)
+        mc.initialize()
+        GroovySystem.metaClassRegistry.setMetaClass(LegacyMissHost, mc)
+        try {
+            assertTrue(classSp.hasBeenInvalidated())
+            assertTrue(legacyBefore.is(IndyInterface.switchPoint),
+                    'legacy field must not rotate on per-class MetaClass change')
+            assertFalse(legacyBefore.hasBeenInvalidated(),
+                    'legacy field must stay valid across type-scoped invalidation')
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(LegacyMissHost)
+        }
+    }
+
+    @Test
+    void invalidateSwitchPoints_concurrentRotation_doesNotOrphanLiveSwitchPoint() {
+        // Restore of synchronized (IndyInterface.class) around legacy rotation:
+        // concurrent bulk invalidations must not leave a reader-held SP live forever.
+        int threads = 8
+        def start = new java.util.concurrent.CyclicBarrier(threads)
+        def done = new java.util.concurrent.CountDownLatch(threads)
+        def errors = new java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
+        def observed = java.util.Collections.synchronizedList(new ArrayList<SwitchPoint>())
+
+        threads.times {
+            Thread.start {
+                try {
+                    start.await()
+                    SwitchPoint seen = IndyInterface.switchPoint
+                    observed.add(seen)
+                    IndyInterface.invalidateSwitchPoints()
+                } catch (Throwable t) {
+                    errors.add(t)
+                } finally {
+                    done.countDown()
+                }
+            }
+        }
+        assertTrue(done.await(30, java.util.concurrent.TimeUnit.SECONDS))
+        assertTrue(errors.isEmpty(), "concurrent invalidate failed: $errors")
+
+        // Every SwitchPoint a thread observed before/during rotation must end
+        // invalidated, or equal the final live field (if observed after last write).
+        SwitchPoint live = IndyInterface.switchPoint
+        assertFalse(live.hasBeenInvalidated())
+        for (SwitchPoint sp : observed) {
+            if (sp !== live) {
+                assertTrue(sp.hasBeenInvalidated(),
+                        'orphaned legacy SwitchPoint left live after concurrent rotation')
+            }
+        }
+    }
+
+    @Test
     void vmPlugin_invalidateCallSites_routesToScopedCategoryPath() {
         SwitchPoint classSp = ClassInfo.getClassInfo(PluginHost).indySwitchPoint
         VMPluginFactory.plugin.invalidateCallSites()
@@ -154,6 +217,7 @@ final class IndyScopedSwitchPointTest {
 
     static class ApplyHost {}
     static class LegacyHost {}
+    static class LegacyMissHost {}
     static class PluginHost {}
     static class UnscopedHost {}
     static class RegistryHost {}

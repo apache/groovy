@@ -21,9 +21,20 @@
  * Scoped invokedynamic SwitchPoint utilities for the Groovy MOP (GROOVY-12191).
  * <p>
  * One SwitchPoint per class (on {@link org.codehaus.groovy.reflection.ClassInfo}):
- * MetaClass changes retire that class and loaded subtypes; category enter/leave
- * bulk-retires all loaded class SwitchPoints. Linked call sites carry a single
- * guard — no process-wide MOP SwitchPoint on the hot path.
+ * MetaClass changes retire that class and loaded subtypes (including array-type
+ * fan-out for {@code Object[]} and similar); category enter/leave bulk-retires
+ * loaded class SwitchPoints. Linked call sites carry a single guard — no
+ * process-wide MOP SwitchPoint on the hot path.
+ * <p>
+ * Hierarchy fan-out is indexed by {@link ClassHierarchyIndex} so typed MetaClass
+ * invalidation cost is proportional to the number of loaded subtypes of the
+ * changed type, not to the total number of loaded classes.
+ * <p>
+ * External code that previously guarded on
+ * {@link org.codehaus.groovy.vmplugin.v8.IndyInterface#switchPoint} must migrate
+ * to {@link org.apache.groovy.runtime.indy.IndyInvalidation#guardWithMopSwitchPoints}:
+ * the legacy field is rotated only on category / {@code invalidateCallSites()}
+ * bulk events, not on per-class MetaClass changes.
  *
  * @since 6.0.0
  */

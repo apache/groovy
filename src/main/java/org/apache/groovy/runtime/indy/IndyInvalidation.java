@@ -24,9 +24,7 @@ import org.codehaus.groovy.runtime.NullObject;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -44,6 +42,11 @@ import java.util.logging.Logger;
  * SwitchPoint on the hot path. Linked handles therefore always carry a single
  * guard, matching the pre-6.0 monomorphic shape while avoiding global deopt on
  * unrelated MetaClass churn.
+ * <p>
+ * <b>Scalability:</b> hierarchy fan-out is {@code O(|loaded subtypes of T|)}
+ * via {@link ClassHierarchyIndex} (built once per {@link ClassInfo}), not
+ * {@code O(|all loaded classes|)}. Category bulk remains a full ClassInfo walk
+ * with cheap no-op detaches for domains that never allocated a SwitchPoint.
  * <p>
  * Install guards with
  * {@link #guardWithMopSwitchPoints(MethodHandle, MethodHandle, Object)}.
@@ -111,36 +114,33 @@ public final class IndyInvalidation {
 
     /**
      * Invalidates SwitchPoints for {@code type} and all loaded classes assignable
-     * from {@code type}. Final classes short-circuit to a single invalidation.
-     * Non-final types batch via {@link SwitchPoint#invalidateAll(SwitchPoint[])}.
+     * from {@code type}. One path for every kind of type: detach the root domain,
+     * then detach every descendant registered in {@link ClassHierarchyIndex}
+     * (empty for leaves such as finals and primitives; non-empty for classes,
+     * interfaces, and array covariance including {@code Object[]} /
+     * interface-component arrays). Batched through
+     * {@link SwitchPoint#invalidateAll(SwitchPoint[])}.
      *
      * @param type the root of the invalidation fan-out
      */
     public static void invalidateClassHierarchy(final Class<?> type) {
         ClassInfo root = ClassInfo.getClassInfo(type);
-        if (cannotHaveLoadedSubtypes(type)) {
-            root.invalidateIndySwitchPoint();
-            return;
-        }
-
         List<SwitchPoint> batch = new ArrayList<>();
         try {
             SwitchPoint rootSp = root.detachLiveIndySwitchPoint();
             if (rootSp != null) {
                 batch.add(rootSp);
             }
-            Collection<ClassInfo> all = ClassInfo.getAllClassInfo();
-            for (ClassInfo info : all) {
-                Class<?> loaded = info.getTheClass();
-                if (loaded != null && loaded != type && type.isAssignableFrom(loaded)) {
-                    SwitchPoint sp = info.detachLiveIndySwitchPoint();
-                    if (sp != null) {
-                        batch.add(sp);
-                    }
+            List<ClassInfo> descendants = new ArrayList<>();
+            ClassHierarchyIndex.collectDescendants(type, descendants);
+            for (ClassInfo info : descendants) {
+                SwitchPoint sp = info.detachLiveIndySwitchPoint();
+                if (sp != null) {
+                    batch.add(sp);
                 }
             }
         } finally {
-            // Always invalidate detached SPs even if the scan fails mid-way.
+            // Always invalidate detached SPs even if the walk fails mid-way.
             invalidateBatch(batch);
         }
     }
@@ -148,6 +148,8 @@ public final class IndyInvalidation {
     /**
      * Detaches and invalidates every live per-class SwitchPoint.
      * Used for category enter/leave and unattributed MetaClass changes.
+     * Walks all loaded {@link ClassInfo} instances; {@code detachLive} is a
+     * cheap no-op when a domain never allocated a SwitchPoint.
      */
     public static void invalidateAllLoadedClassSwitchPoints() {
         List<SwitchPoint> batch = new ArrayList<>();
@@ -180,14 +182,6 @@ public final class IndyInvalidation {
             return;
         }
         SwitchPoint.invalidateAll(batch.toArray(EMPTY_SWITCH_POINTS));
-    }
-
-    /**
-     * {@code final} classes and primitives cannot have subclasses. Interfaces
-     * and non-final classes may have loaded implementors/subtypes.
-     */
-    private static boolean cannotHaveLoadedSubtypes(final Class<?> type) {
-        return type.isPrimitive() || (Modifier.isFinal(type.getModifiers()) && !type.isInterface());
     }
 
     /**

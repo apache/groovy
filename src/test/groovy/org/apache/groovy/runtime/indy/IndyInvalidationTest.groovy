@@ -91,12 +91,113 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateClassHierarchy_finalClass_skipsSubtypeScan() {
+    void invalidateClassHierarchy_finalClass_emptyDescendantsStillRetiresRoot() {
+        // Finals have no indexed subtypes; single-path fan-out still retires only the root.
         SwitchPoint stringSp = ClassInfo.getClassInfo(String).indySwitchPoint
         SwitchPoint siblingSp = ClassInfo.getClassInfo(ClassB).indySwitchPoint
         IndyInvalidation.invalidateClassHierarchy(String)
         assertTrue(stringSp.hasBeenInvalidated())
         assertFalse(siblingSp.hasBeenInvalidated())
+    }
+
+    @Test
+    void invalidateClassHierarchy_objectArray_fansOutToReferenceArrays() {
+        // Arrays are final per Class.getModifiers(), but Object[] is still a
+        // MOP-relevant supertype of every reference array (GROOVY-12191 review).
+        SwitchPoint objectArraySp = ClassInfo.getClassInfo(Object[]).indySwitchPoint
+        SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
+        SwitchPoint integerArraySp = ClassInfo.getClassInfo(Integer[]).indySwitchPoint
+        SwitchPoint siblingSp = ClassInfo.getClassInfo(ClassB).indySwitchPoint
+        assertFalse(objectArraySp.hasBeenInvalidated())
+        assertFalse(stringArraySp.hasBeenInvalidated())
+
+        IndyInvalidation.invalidateClassHierarchy(Object[])
+
+        assertTrue(objectArraySp.hasBeenInvalidated())
+        assertTrue(stringArraySp.hasBeenInvalidated(), 'String[] must retire when Object[] domain is invalidated')
+        assertTrue(integerArraySp.hasBeenInvalidated(), 'Integer[] must retire when Object[] domain is invalidated')
+        assertFalse(siblingSp.hasBeenInvalidated())
+    }
+
+    @Test
+    void invalidateClassHierarchy_stringArray_doesNotRetireUnrelatedArrays() {
+        // String[] has no array subtypes; sibling array types must stay live.
+        SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
+        SwitchPoint integerArraySp = ClassInfo.getClassInfo(Integer[]).indySwitchPoint
+        SwitchPoint objectArraySp = ClassInfo.getClassInfo(Object[]).indySwitchPoint
+
+        IndyInvalidation.invalidateClassHierarchy(String[])
+
+        assertTrue(stringArraySp.hasBeenInvalidated())
+        assertFalse(integerArraySp.hasBeenInvalidated())
+        assertFalse(objectArraySp.hasBeenInvalidated(), 'supertype Object[] must not be retired by String[] invalidation')
+    }
+
+    @Test
+    void invalidateClassHierarchy_primitiveArray_retiresOnlyThatArrayType() {
+        // Primitive arrays are final and have no subtypes, but must not take the
+        // non-array final short-circuit incorrectly relative to Object[] handling.
+        SwitchPoint intArraySp = ClassInfo.getClassInfo(int[]).indySwitchPoint
+        SwitchPoint longArraySp = ClassInfo.getClassInfo(long[]).indySwitchPoint
+        SwitchPoint objectArraySp = ClassInfo.getClassInfo(Object[]).indySwitchPoint
+
+        IndyInvalidation.invalidateClassHierarchy(int[])
+
+        assertTrue(intArraySp.hasBeenInvalidated())
+        assertFalse(longArraySp.hasBeenInvalidated())
+        assertFalse(objectArraySp.hasBeenInvalidated())
+    }
+
+    @Test
+    void invalidateClass_objectArray_viaApi_fansOut() {
+        SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
+        IndyInvalidation.invalidateClass(Object[])
+        assertTrue(stringArraySp.hasBeenInvalidated())
+    }
+
+    @Test
+    void guardWithMopSwitchPoints_stringArrayFallsBackOnObjectArrayInvalidate() {
+        def target = MethodHandles.constant(int, 11)
+        def fallback = MethodHandles.constant(int, 12)
+        def receiver = new String[0]
+        def guarded = IndyInvalidation.guardWithMopSwitchPoints(target, fallback, receiver)
+        assertEquals(11, guarded.invokeWithArguments())
+
+        IndyInvalidation.invalidateClass(Object[])
+        assertEquals(12, guarded.invokeWithArguments(),
+                'String[]-linked site must fall back after Object[] MetaClass-domain invalidation')
+    }
+
+    @Test
+    void invalidateClassHierarchy_interfaceArray_fansOutToImplementorArrays() {
+        // Same final-array trap as Object[]: CharSequence[] is final yet
+        // assignable-from String[] (interface-array covariance).
+        SwitchPoint charSeqArraySp = ClassInfo.getClassInfo(CharSequence[]).indySwitchPoint
+        SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
+        SwitchPoint integerArraySp = ClassInfo.getClassInfo(Integer[]).indySwitchPoint
+
+        IndyInvalidation.invalidateClassHierarchy(CharSequence[])
+
+        assertTrue(charSeqArraySp.hasBeenInvalidated())
+        assertTrue(stringArraySp.hasBeenInvalidated(),
+                'String[] must retire when CharSequence[] domain is invalidated')
+        assertFalse(integerArraySp.hasBeenInvalidated())
+    }
+
+    @Test
+    void invalidateClassHierarchy_multiDimObjectArray_fansOut() {
+        // Multi-dim arrays are also final classes; Object[][] still fans out to String[][].
+        SwitchPoint object2dSp = ClassInfo.getClassInfo(Object[][]).indySwitchPoint
+        SwitchPoint string2dSp = ClassInfo.getClassInfo(String[][]).indySwitchPoint
+        SwitchPoint string1dSp = ClassInfo.getClassInfo(String[]).indySwitchPoint
+
+        IndyInvalidation.invalidateClassHierarchy(Object[][])
+
+        assertTrue(object2dSp.hasBeenInvalidated())
+        assertTrue(string2dSp.hasBeenInvalidated(),
+                'String[][] must retire when Object[][] domain is invalidated')
+        assertFalse(string1dSp.hasBeenInvalidated(),
+                '1-D String[] is not assignable-from Object[][]')
     }
 
     @Test
@@ -261,8 +362,8 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateClassHierarchy_primitive_shortCircuits() {
-        // Primitives cannot have subtypes — hits cannotHaveLoadedSubtypes early path.
+    void invalidateClassHierarchy_primitive_emptyDescendantsStillRetiresRoot() {
+        // Primitives have no indexed subtypes; single-path fan-out still retires the root.
         SwitchPoint intSp = ClassInfo.getClassInfo(int).indySwitchPoint
         SwitchPoint sibling = ClassInfo.getClassInfo(ClassB).indySwitchPoint
         IndyInvalidation.invalidateClassHierarchy(int)

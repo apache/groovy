@@ -216,21 +216,24 @@ public class IndyInterface {
     }
 
     /**
-     * Legacy process-wide SwitchPoint retained for binary compatibility.
+     * Legacy process-wide SwitchPoint retained for binary compatibility only.
      * <p>
      * <strong>Behavioral change in 6.0 (GROOVY-12191):</strong> MetaClass changes
      * are scoped per {@link org.codehaus.groovy.reflection.ClassInfo}. This field
-     * is no longer used as the MOP guard on linked call sites. It is rotated when
-     * {@link #invalidateSwitchPoints()} runs (category enter/leave /
-     * {@code VMPlugin.invalidateCallSites()}) so external readers that still
-     * observe the field see an invalidation. Call sites must use
-     * {@link IndyInvalidation#guardWithMopSwitchPoints} instead.
+     * is <em>not</em> the MOP guard on linked call sites and is <em>not</em>
+     * rotated on per-class MetaClass changes. It is rotated only when
+     * {@link #invalidateSwitchPoints()} runs — i.e. category enter/leave and
+     * {@code VMPlugin.invalidateCallSites()} — so external observers of this
+     * field still see those bulk events. Guarding a site on this field alone
+     * will <strong>silently miss</strong> type-scoped MetaClass invalidations;
+     * migrate to {@link IndyInvalidation#guardWithMopSwitchPoints}.
      *
      * @see IndyInvalidation
-     * @deprecated Use {@link IndyInvalidation#guardWithMopSwitchPoints}; this field
-     *             is not the call-site MOP guard.
+     * @deprecated since 6.0.0 — use {@link IndyInvalidation#guardWithMopSwitchPoints};
+     *             this field is not the call-site MOP guard and is not rotated on
+     *             per-class MetaClass changes.
      */
-    @Deprecated
+    @Deprecated(since = "6.0.0", forRemoval = false)
     protected static volatile SwitchPoint switchPoint = new SwitchPoint();
 
     static {
@@ -256,20 +259,28 @@ public class IndyInterface {
     /**
      * Category enter/leave and {@code VMPlugin.invalidateCallSites()}.
      * Bulk-invalidates every loaded class SwitchPoint so sites re-link under the
-     * new category state, and rotates the legacy {@link #switchPoint} field.
+     * new category state, and rotates the legacy {@link #switchPoint} field under
+     * {@code synchronized (IndyInterface.class)} so concurrent bulk invalidations
+     * cannot orphan a live SwitchPoint an external reader just observed.
      * Per-class MetaClass changes use {@link IndyInvalidation#invalidateClass(Class)}
-     * (or {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()}) instead.
+     * (or {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()}) instead
+     * and do <em>not</em> rotate {@link #switchPoint}.
      */
     protected static void invalidateSwitchPoints() {
         if (LOG_ENABLED) {
             LOG.info("invalidating class SwitchPoints for category / invalidateCallSites");
         }
         IndyInvalidation.invalidateCategory();
-        // Binary-compat: rotate the legacy field so external observers still see a change.
-        SwitchPoint old = switchPoint;
-        switchPoint = new SwitchPoint();
-        if (old != null && !old.hasBeenInvalidated()) {
-            SwitchPoint.invalidateAll(new SwitchPoint[]{old});
+        // Binary-compat: rotate the legacy field so external observers of bulk
+        // invalidation still see a change. Synchronized so two concurrent callers
+        // cannot leave a reader holding a live SwitchPoint that will never be
+        // invalidated again (pre-6.0 shape; addresses Sonar S3077 / GROOVY-12191).
+        synchronized (IndyInterface.class) {
+            SwitchPoint old = switchPoint;
+            switchPoint = new SwitchPoint();
+            if (old != null && !old.hasBeenInvalidated()) {
+                SwitchPoint.invalidateAll(new SwitchPoint[]{old});
+            }
         }
     }
 
@@ -491,9 +502,16 @@ public class IndyInterface {
      * via {@code doMethodInvoke}, {@code GroovyRuntimeException} unwrapping via
      * {@code ScriptBytecodeAdapter}). The handle bound to the wrapper has the
      * same {@code (Object[])Object} shape for every call site, arity, and
-     * primitive pattern, so cold dispatch spins no per-shape LambdaForms. On a
-     * failed validity check it takes the standard re-selection route, exactly
-     * like a failed guard in the full chain.
+     * primitive pattern, so cold dispatch spins no per-shape LambdaForms.
+     * <p>
+     * On a failed validity check (or after the reflective-hit promotion
+     * threshold), re-selection uses {@code fallback(..., allowColdReflection=false)}
+     * and writes the full wrapper (or {@link #NULL_METHOD_HANDLE_WRAPPER}) into
+     * the callsite PIC. That prevents an always-invalid class-domain SwitchPoint
+     * from recursing through cold {@code tryBuild → invokeColdReflective}
+     * (GROOVY-12191). This is a deliberate cold-tier promotion change beyond
+     * pure SwitchPoint scoping: validity failure no longer re-enters the cold
+     * reflective path on the same miss.
      */
     private static Object invokeColdReflective(ColdReflectiveMethodHandleWrapper cold, Object[] arguments) throws Throwable {
         if (cold.isValidFor(arguments)) {

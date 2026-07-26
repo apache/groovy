@@ -18,7 +18,6 @@
  */
 package bugs
 
-import org.apache.groovy.runtime.indy.IndyInvalidation
 import org.codehaus.groovy.reflection.ClassInfo
 import org.junit.jupiter.api.Test
 
@@ -156,6 +155,38 @@ final class Groovy12191 {
             TypeC.metaClass."dyn${i}" = { -> i }
         }
         assertFalse(hotSp.hasBeenInvalidated())
+    }
+
+    @Test
+    void objectArrayMetaClassChange_invalidatesStringArraySwitchPoint() {
+        // Array types are final, yet Object[] is the MOP supertype of reference
+        // arrays — scoped invalidation must fan out (GROOVY-12191 review).
+        SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
+        assertFalse(stringArraySp.hasBeenInvalidated())
+
+        def emc = new ExpandoMetaClass(Object[], true, true)
+        emc.initialize()
+        GroovySystem.metaClassRegistry.setMetaClass(Object[], emc)
+        try {
+            assertTrue(stringArraySp.hasBeenInvalidated(),
+                    'Object[] MetaClass change must retire String[] SwitchPoint')
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(Object[])
+        }
+    }
+
+    @Test
+    void incVersion_scopesToClassHierarchy_notGlobal() {
+        SwitchPoint hotSp = ClassInfo.getClassInfo(TypeD).indySwitchPoint
+        SwitchPoint targetSp = ClassInfo.getClassInfo(TypeC).indySwitchPoint
+        assertFalse(hotSp.hasBeenInvalidated())
+        assertFalse(targetSp.hasBeenInvalidated())
+
+        ClassInfo.getClassInfo(TypeC).incVersion()
+
+        assertTrue(targetSp.hasBeenInvalidated())
+        assertFalse(hotSp.hasBeenInvalidated(),
+                'incVersion must not act as a process-wide flush (GROOVY-12191)')
     }
 
     static class TypeA {}
