@@ -45,6 +45,10 @@ final class Groovy11046 {
         '''
         assert err instanceof NoClassDefFoundError // CompilationFailedException (previously)
         assert err =~ /com.lmax.disruptor.EventTranslatorVararg/
-        assert err.asString() =~ /at org.apache.logging.log4j.LogManager.getLogger\(/ : 'script should have failed at runtime'
+        // Note: we deliberately don't assert the failing stack frame here. Tests share a
+        // forked JVM (forkEvery), so the log4j class whose init needs the disruptor may
+        // already be marked erroneous by a prior test; the JVM then throws a bare
+        // NoClassDefFoundError without the LogManager.getLogger frame. The two assertions
+        // above already confirm the missing-dependency behaviour.
     }
 }
