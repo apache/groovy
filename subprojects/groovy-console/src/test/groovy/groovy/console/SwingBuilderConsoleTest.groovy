@@ -25,7 +25,15 @@ import groovy.console.ui.view.MacOSXMenuBar
 import groovy.swing.GroovySwingTestCase
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeTrue
 
 import javax.swing.JTextPane
 import javax.swing.SwingUtilities
@@ -33,14 +41,20 @@ import java.awt.Color
 import java.awt.event.ActionEvent
 import java.util.prefs.Preferences
 
+@RunWith(JUnit4)
 class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     TemporaryFolder temporaryFolder
     Preferences testPreferences
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp()
+    @Before
+    void setUp() {
+        // javax.swing.JApplet was removed in JDK 26 (JEP 504). groovy.console.ui.Console
+        // retains a deprecated run(JApplet) method for backwards compatibility on earlier
+        // JDKs, so any metaclass introspection of Console (as these tests do) fails to load
+        // on JDK 26+. Skip these tests there; later Groovy versions remove the method
+        // (GROOVY-11912) and re-enable them.
+        assumeTrue('javax.swing.JApplet was removed in JDK 26; Console cannot be introspected there', !isAtLeastJdk('26'))
         temporaryFolder = new TemporaryFolder()
         temporaryFolder.create()
 
@@ -51,13 +65,12 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        temporaryFolder.delete()
-
-        super.tearDown()
+    @After
+    void tearDown() {
+        temporaryFolder?.delete()
     }
 
+    @Test
     void testTabbedPane() {
         testInEDT {
 
@@ -141,6 +154,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testTabbedPaneRenamedProperties() {
         testInEDT {
 
@@ -191,6 +205,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testImageIcon() {
         testInEDT {
             def swing = new SwingBuilder()
@@ -343,6 +358,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testMacOSXMenuBarHasBasicMenuBarSubElements() {
         testInEDT {
             def binding = new Binding()
@@ -374,6 +390,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testAutoSaveOnRunMenuBarCheckbox() {
         testInEDT {
             def binding = new Binding()
@@ -403,6 +420,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testDoNotShowOriginalStackTrace() {
         testInEDT {
             SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
@@ -442,6 +460,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSelectBlock() {
         testInEDT {
             final consoleActions = new ConsoleActions()
@@ -515,6 +534,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testSystemOutputAndErrorRedirectedToCorrectConsole() {
         testInEDT {
             SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
@@ -571,6 +591,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         }
     }
 
+    @Test
     void testWithIndyCompilation() {
         testInEDT {
             SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->

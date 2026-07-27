@@ -97,6 +97,20 @@ class SwingBuilder extends FactoryBuilderSupport {
 
     private static final Random random = new Random()
 
+    // javax.swing.JApplet was deprecated since JDK 9 and removed in JDK 26.
+    // Resolve it lazily so SwingBuilder keeps treating applet widgets as
+    // top-level containers on JDKs where the class still exists, while simply
+    // skipping that check (rather than failing to initialise) where it does not.
+    private static final Class<?> JAPPLET_CLASS = loadClassOrNull('javax.swing.JApplet')
+
+    private static Class<?> loadClassOrNull(String name) {
+        try {
+            Class.forName(name)
+        } catch (Throwable ignore) {
+            null
+        }
+    }
+
     SwingBuilder(boolean init = true) {
         super(init)
         headless = GraphicsEnvironment.isHeadless()
@@ -300,7 +314,7 @@ class SwingBuilder extends FactoryBuilderSupport {
         } else if (JTable.isAssignableFrom(klass)) {
             registerFactory(nodeName, groupName, new TableFactory(klass))
         } else if (JComponent.isAssignableFrom(klass)
-            || JApplet.isAssignableFrom(klass)
+            || (JAPPLET_CLASS != null && JAPPLET_CLASS.isAssignableFrom(klass))
             || JDialog.isAssignableFrom(klass)
             || JFrame.isAssignableFrom(klass)
             || JWindow.isAssignableFrom(klass)
