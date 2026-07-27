@@ -70,6 +70,16 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         temporaryFolder?.delete()
     }
 
+    // Console runs scripts on a background thread (Console.runThread) and populates the
+    // output document from it; assertions on that output must wait for the thread to
+    // finish, otherwise they race it and can see empty/partial output. Joining the
+    // thread is deterministic (unlike a fixed sleep).
+    private static void waitForScriptCompletion(Console console) {
+        Thread thread = console.runThread
+        thread?.join(5000)
+        assert thread == null || !thread.alive
+    }
+
     @Test
     void testTabbedPane() {
         testInEDT {
@@ -416,6 +426,8 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
             console.runScript(new EventObject([:]))
 
+            waitForScriptCompletion(console)
+
             assert scriptFile.text == console.inputEditor.textEditor.text
         }
     }
@@ -448,6 +460,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
                 console.inputArea.text = 'throw new Exception()'
                 console.runScript(new EventObject([:]))
+                waitForScriptCompletion(console)
 
                 def doc = console.outputArea.document
                 assert doc.getText(0, doc.length) =~ /java.lang.Exception/
@@ -564,18 +577,21 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
                 console.inputArea.text = 'println "test1"'
                 console.runScript()
+                waitForScriptCompletion(console)
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert '' == doc2.getText(0, doc2.length).trim()
 
                 console2.inputArea.text = 'println "test2"'
                 console2.runScript()
+                waitForScriptCompletion(console2)
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert 'test2' == doc2.getText(0, doc2.length).trim()
 
                 console2.inputArea.text = 'System.err.println "error2"'
                 console2.runScript()
+                waitForScriptCompletion(console2)
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
@@ -612,11 +628,14 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 console.inputEditor.textEditor.text = scriptSource
 
                 console.runScript(new EventObject([:]))
+
+                waitForScriptCompletion(console)
                 assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
 
                 console.outputArea.text = ''
                 console.runScript(new EventObject([:]))
+                waitForScriptCompletion(console)
                 assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
             } finally {
