@@ -33,7 +33,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.function.Function;
@@ -215,31 +214,14 @@ public class IndyInterface {
         }
     }
 
-    /**
-     * Legacy process-wide SwitchPoint retained for binary compatibility only.
-     * <p>
-     * <strong>Behavioral change in 6.0 (GROOVY-12191):</strong> MetaClass changes
-     * are scoped per {@link org.codehaus.groovy.reflection.ClassInfo}. This field
-     * is <em>not</em> the MOP guard on linked call sites and is <em>not</em>
-     * rotated on per-class MetaClass changes. It is rotated only when
-     * {@link #invalidateSwitchPoints()} runs — i.e. category enter/leave and
-     * {@code VMPlugin.invalidateCallSites()} — so external observers of this
-     * field still see those bulk events. Guarding a site on this field alone
-     * will <strong>silently miss</strong> type-scoped MetaClass invalidations;
-     * migrate to {@link IndyInvalidation#guardWithMopSwitchPoints}.
-     *
-     * @see IndyInvalidation
-     * @deprecated since 6.0.0 — use {@link IndyInvalidation#guardWithMopSwitchPoints};
-     *             this field is not the call-site MOP guard and is not rotated on
-     *             per-class MetaClass changes.
-     */
-    @Deprecated(since = "6.0.0", forRemoval = false)
-    protected static volatile SwitchPoint switchPoint = new SwitchPoint();
-
     static {
         // MetaClass registry changes invalidate the affected class + subtypes (GROOVY-12191).
         // Hierarchy fan-out is owned here (not duplicated in setStrongMetaClass beyond a
         // local retire of the exact class for paths that never fire the registry).
+        //
+        // Pre-6.0 this listener rotated a process-wide SwitchPoint field on this class.
+        // That field is removed (vmplugin is internal-by-intent): call sites now guard on
+        // per-ClassInfo domains via applyMopSwitchPoints.
         GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> {
             Class<?> type = cmcu.getClassToUpdate();
             if (type != null) {
@@ -259,33 +241,30 @@ public class IndyInterface {
     /**
      * Category enter/leave and {@code VMPlugin.invalidateCallSites()}.
      * Bulk-invalidates every loaded class SwitchPoint so sites re-link under the
-     * new category state, and rotates the legacy {@link #switchPoint} field under
-     * {@code synchronized (IndyInterface.class)} so concurrent bulk invalidations
-     * cannot orphan a live SwitchPoint an external reader just observed.
-     * Per-class MetaClass changes use {@link IndyInvalidation#invalidateClass(Class)}
-     * (or {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()}) instead
-     * and do <em>not</em> rotate {@link #switchPoint}.
+     * new category state. Per-class MetaClass changes use
+     * {@link IndyInvalidation#invalidateClass(Class)} (or
+     * {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()}) instead.
+     * <p>
+     * Pre-6.0 this method also rotated a process-wide {@code switchPoint} field.
+     * That field is gone; bulk policy lives entirely in {@link IndyInvalidation}.
      */
     protected static void invalidateSwitchPoints() {
         if (LOG_ENABLED) {
             LOG.info("invalidating class SwitchPoints for category / invalidateCallSites");
         }
         IndyInvalidation.invalidateCategory();
-        // Binary-compat: rotate the legacy field so external observers of bulk
-        // invalidation still see a change. Synchronized so two concurrent callers
-        // cannot leave a reader holding a live SwitchPoint that will never be
-        // invalidated again (pre-6.0 shape; addresses Sonar S3077 / GROOVY-12191).
-        synchronized (IndyInterface.class) {
-            SwitchPoint old = switchPoint;
-            switchPoint = new SwitchPoint();
-            if (old != null && !old.hasBeenInvalidated()) {
-                SwitchPoint.invalidateAll(new SwitchPoint[]{old});
-            }
-        }
     }
 
     /**
-     * Installs the per-class MOP SwitchPoint guard on a linked handle.
+     * Link-time install of the per-class MOP SwitchPoint guard.
+     * Production call-site wiring ({@link Selector}, {@link IndyCompoundAssign})
+     * enters here so the bytecode bootstrap surface owns how handles are guarded.
+     * <p>
+     * Domain resolution (receiver → class → {@code ClassInfo} SwitchPoint) and
+     * invalidation policy stay in {@link IndyInvalidation}; this method only
+     * binds the resolved SwitchPoint with {@code guardWithTest}. External or
+     * test code that needs the same guard without package access should use
+     * {@link IndyInvalidation#guardWithMopSwitchPoints}.
      *
      * @param handle   fast-path handle
      * @param fallback re-link handle
@@ -293,7 +272,7 @@ public class IndyInterface {
      * @return guarded handle
      */
     static MethodHandle applyMopSwitchPoints(final MethodHandle handle, final MethodHandle fallback, final Object receiver) {
-        return IndyInvalidation.guardWithMopSwitchPoints(handle, fallback, receiver);
+        return IndyInvalidation.classSwitchPointFor(receiver).guardWithTest(handle, fallback);
     }
 
     /**
@@ -506,9 +485,9 @@ public class IndyInterface {
      * <p>
      * On a failed validity check (or after the reflective-hit promotion
      * threshold), re-selection uses {@code fallback(..., allowColdReflection=false)}
-     * and writes the full wrapper (or {@link #NULL_METHOD_HANDLE_WRAPPER}) into
-     * the callsite PIC. That prevents an always-invalid class-domain SwitchPoint
-     * from recursing through cold {@code tryBuild → invokeColdReflective}
+     * and may write the full wrapper — or {@link #NULL_METHOD_HANDLE_WRAPPER} —
+     * into the callsite PIC. That prevents an always-invalid class-domain
+     * SwitchPoint from recursing through cold {@code tryBuild → invokeColdReflective}
      * (GROOVY-12191). This is a deliberate cold-tier promotion change beyond
      * pure SwitchPoint scoping: validity failure no longer re-enters the cold
      * reflective path on the same miss.
@@ -542,6 +521,22 @@ public class IndyInterface {
         // tryBuild → invokeColdReflective (GROOVY-12191).
         MethodHandleWrapper full = fallback(cold.callSite, cold.sender, cold.methodName, cold.callID,
                 cold.safeNavigation, cold.thisCall, cold.spreadCall, 1, arguments, false);
+        // PIC write policy — same as fromCacheHandle / selectMethodHandle:
+        //
+        // • canSetTarget == true  → store the full wrapper so the next hit for
+        //   this receiver class reuses the linked chain (and can promote the
+        //   call-site target).
+        // • canSetTarget == false → store NULL_METHOD_HANDLE_WRAPPER, the PIC
+        //   sentinel meaning "this receiver shape is not cacheable". Typical
+        //   causes: per-instance MetaClass, spread-call (selector.cache=false).
+        //   Storing the real uncacheable wrapper would pin a selection that is
+        //   only valid for one instance / one spread shape and would skip
+        //   re-selection on the next PIC hit. The sentinel forces
+        //   fromCacheHandle to re-run fallback while this invocation still
+        //   uses full.getCachedMethodHandle() for the current call.
+        //
+        // NULL_METHOD_HANDLE_WRAPPER is therefore the only safe PIC value when
+        // the re-selected wrapper must not become a class-keyed cache entry.
         cold.callSite.put(receiverCacheKey(arguments[0]),
                 full.isCanSetTarget() ? full : NULL_METHOD_HANDLE_WRAPPER);
         return full.getCachedMethodHandle().invokeExact(arguments);

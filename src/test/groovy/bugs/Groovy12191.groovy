@@ -114,6 +114,10 @@ final class Groovy12191 {
 
     @Test
     void parentMetaClassChange_invalidatesSubclassSwitchPoint() {
+        // Hierarchy fan-out is required for cross-class MOP visibility:
+        // Parent.metaClass (EMC) mutations must retire Child-linked sites so
+        // new Child().hello() re-selects. This is not MetaClassImpl sharing a
+        // table up the hierarchy — each class keeps its own MetaClass.
         SwitchPoint childSp = ClassInfo.getClassInfo(HierChild).indySwitchPoint
         assertFalse(childSp.hasBeenInvalidated())
 
@@ -126,6 +130,36 @@ final class Groovy12191 {
             HierParent.metaClass.hello = { -> 'from-parent' }
             assert new HierChild().hello() == 'from-parent'
         '''
+    }
+
+    @Test
+    void parentMetaClassImplReplace_stillFansOutToSubclassSwitchPoint() {
+        // Even without EMC method tables, replacing Parent's MetaClass can
+        // change what Child dispatch observes; hierarchy fan-out still applies.
+        SwitchPoint childSp = ClassInfo.getClassInfo(HierChildMcImpl).indySwitchPoint
+        assertFalse(childSp.hasBeenInvalidated())
+
+        def mc = new MetaClassImpl(HierParentMcImpl)
+        mc.initialize()
+        GroovySystem.metaClassRegistry.setMetaClass(HierParentMcImpl, mc)
+        try {
+            assertTrue(childSp.hasBeenInvalidated(),
+                    'MetaClassImpl replacement on parent must retire subclass SwitchPoint')
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(HierParentMcImpl)
+        }
+    }
+
+    @Test
+    void unrelatedTypeMetaClassChange_doesNotInvalidateSiblingHierarchy() {
+        // Hierarchy fan-out is only to subtypes of the changed type — not global.
+        SwitchPoint hotSp = ClassInfo.getClassInfo(HierChildScope).indySwitchPoint
+        assertFalse(hotSp.hasBeenInvalidated())
+
+        TypeC.metaClass.siblingOnly = { -> 1 }
+
+        assertFalse(hotSp.hasBeenInvalidated(),
+                'MetaClass change on an unrelated type must not retire HierChildScope')
     }
 
     @Test
@@ -202,4 +236,8 @@ final class Groovy12191 {
     }
     static class HierParent {}
     static class HierChild extends HierParent {}
+    static class HierParentMcImpl {}
+    static class HierChildMcImpl extends HierParentMcImpl {}
+    static class HierParentScope {}
+    static class HierChildScope extends HierParentScope {}
 }

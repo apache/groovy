@@ -30,7 +30,7 @@ import java.lang.invoke.SwitchPoint
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.junit.jupiter.api.Assertions.assertFalse
-import static org.junit.jupiter.api.Assertions.assertNotSame
+import static org.junit.jupiter.api.Assertions.assertSame
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
@@ -81,59 +81,47 @@ final class IndyScopedSwitchPointTest {
     }
 
     @Test
-    void invalidateSwitchPoints_bulkInvalidatesAndRotatesLegacyField() {
+    void applyMopSwitchPoints_matchesPublicGuardApi() {
+        // Production path (applyMopSwitchPoints) and public IndyInvalidation API
+        // must install the same class-domain SwitchPoint.
+        def target = MethodHandles.constant(int, 7)
+        def fallback = MethodHandles.constant(int, 8)
+        def receiver = new ApplyHost()
+        def viaInterface = IndyInterface.applyMopSwitchPoints(target, fallback, receiver)
+        def viaInvalidation = IndyInvalidation.guardWithMopSwitchPoints(target, fallback, receiver)
+        assertEquals(7, viaInterface.invokeWithArguments())
+        assertEquals(7, viaInvalidation.invokeWithArguments())
+        IndyInvalidation.invalidateClass(ApplyHost)
+        assertEquals(8, viaInterface.invokeWithArguments())
+        assertEquals(8, viaInvalidation.invokeWithArguments())
+    }
+
+    @Test
+    void invalidateSwitchPoints_bulkInvalidatesClassDomains() {
+        // Legacy process-wide IndyInterface.switchPoint is removed; bulk path
+        // only retires per-class domains (GROOVY-12191 / blackdrag review).
         SwitchPoint classSp = ClassInfo.getClassInfo(LegacyHost).indySwitchPoint
-        SwitchPoint legacyBefore = IndyInterface.switchPoint
         assertFalse(classSp.hasBeenInvalidated())
 
         IndyInterface.invalidateSwitchPoints()
 
         assertTrue(classSp.hasBeenInvalidated())
-        assertNotSame(legacyBefore, IndyInterface.switchPoint)
-        assertTrue(legacyBefore.hasBeenInvalidated())
-        assertFalse(IndyInterface.switchPoint.hasBeenInvalidated())
+        SwitchPoint fresh = ClassInfo.getClassInfo(LegacyHost).indySwitchPoint
+        assertFalse(fresh.hasBeenInvalidated())
     }
 
     @Test
-    void perClassMetaClassChange_doesNotRotateLegacySwitchPoint() {
-        // Legacy IndyInterface.switchPoint is only rotated on category /
-        // invalidateCallSites bulk paths — not on type-scoped MetaClass changes
-        // (GROOVY-12191 review: external guards on the field miss per-class events).
-        SwitchPoint legacyBefore = IndyInterface.switchPoint
-        SwitchPoint classSp = ClassInfo.getClassInfo(LegacyMissHost).indySwitchPoint
-        assertFalse(legacyBefore.hasBeenInvalidated())
-        assertFalse(classSp.hasBeenInvalidated())
-
-        def mc = new ExpandoMetaClass(LegacyMissHost, true, true)
-        mc.initialize()
-        GroovySystem.metaClassRegistry.setMetaClass(LegacyMissHost, mc)
-        try {
-            assertTrue(classSp.hasBeenInvalidated())
-            assertTrue(legacyBefore.is(IndyInterface.switchPoint),
-                    'legacy field must not rotate on per-class MetaClass change')
-            assertFalse(legacyBefore.hasBeenInvalidated(),
-                    'legacy field must stay valid across type-scoped invalidation')
-        } finally {
-            GroovySystem.metaClassRegistry.removeMetaClass(LegacyMissHost)
-        }
-    }
-
-    @Test
-    void invalidateSwitchPoints_concurrentRotation_doesNotOrphanLiveSwitchPoint() {
-        // Restore of synchronized (IndyInterface.class) around legacy rotation:
-        // concurrent bulk invalidations must not leave a reader-held SP live forever.
+    void invalidateSwitchPoints_concurrentBulk_isSafe() {
         int threads = 8
         def start = new java.util.concurrent.CyclicBarrier(threads)
         def done = new java.util.concurrent.CountDownLatch(threads)
         def errors = new java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
-        def observed = java.util.Collections.synchronizedList(new ArrayList<SwitchPoint>())
+        SwitchPoint before = ClassInfo.getClassInfo(LegacyHost).indySwitchPoint
 
         threads.times {
             Thread.start {
                 try {
                     start.await()
-                    SwitchPoint seen = IndyInterface.switchPoint
-                    observed.add(seen)
                     IndyInterface.invalidateSwitchPoints()
                 } catch (Throwable t) {
                     errors.add(t)
@@ -144,17 +132,7 @@ final class IndyScopedSwitchPointTest {
         }
         assertTrue(done.await(30, java.util.concurrent.TimeUnit.SECONDS))
         assertTrue(errors.isEmpty(), "concurrent invalidate failed: $errors")
-
-        // Every SwitchPoint a thread observed before/during rotation must end
-        // invalidated, or equal the final live field (if observed after last write).
-        SwitchPoint live = IndyInterface.switchPoint
-        assertFalse(live.hasBeenInvalidated())
-        for (SwitchPoint sp : observed) {
-            if (sp !== live) {
-                assertTrue(sp.hasBeenInvalidated(),
-                        'orphaned legacy SwitchPoint left live after concurrent rotation')
-            }
-        }
+        assertTrue(before.hasBeenInvalidated())
     }
 
     @Test
@@ -196,6 +174,26 @@ final class IndyScopedSwitchPointTest {
         assertFalse(cold.isValidFor(['not-a-ColdHost'] as Object[]))
     }
 
+    @Test
+    void coldReflective_picWrite_usesNullSentinelWhenUncacheable() {
+        // Mirrors invokeColdReflective / selectMethodHandle PIC policy:
+        // uncacheable wrappers must not be stored under the receiver class key.
+        def type = MethodType.methodType(Object, Object)
+        def site = new CacheableCallSite(type, MethodHandles.lookup())
+        def uncacheable = new MethodHandleWrapper(
+                MethodHandles.constant(Object, 'cached'),
+                MethodHandles.identity(Object).asType(type),
+                null,
+                false)
+        assertFalse(uncacheable.isCanSetTarget())
+        def key = ColdHost.name
+        def sentinel = MethodHandleWrapper.nullMethodHandleWrapper
+        site.put(key, uncacheable.isCanSetTarget() ? uncacheable : sentinel)
+        // Next PIC hit must observe the sentinel, not the uncacheable wrapper.
+        def fromPic = site.getAndPut(key, { k -> uncacheable })
+        assertSame(sentinel, fromPic)
+    }
+
     /**
      * Minimal cold wrapper for validity tests (same package as production class).
      */
@@ -217,7 +215,6 @@ final class IndyScopedSwitchPointTest {
 
     static class ApplyHost {}
     static class LegacyHost {}
-    static class LegacyMissHost {}
     static class PluginHost {}
     static class UnscopedHost {}
     static class RegistryHost {}

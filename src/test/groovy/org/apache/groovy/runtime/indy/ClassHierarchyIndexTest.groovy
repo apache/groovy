@@ -146,6 +146,35 @@ final class ClassHierarchyIndexTest {
         assertFalse(siblingSp.hasBeenInvalidated())
     }
 
+    @Test
+    void collectStrictSupertypes_objectAndPrimitive_areEmpty() {
+        def objectSupers = new LinkedHashSet<Class<?>>()
+        ClassHierarchyIndex.collectStrictSupertypes(Object, objectSupers)
+        assertTrue(objectSupers.isEmpty())
+
+        def intSupers = new LinkedHashSet<Class<?>>()
+        ClassHierarchyIndex.collectStrictSupertypes(int, intSupers)
+        assertTrue(intSupers.isEmpty())
+
+        def nullSupers = new LinkedHashSet<Class<?>>()
+        ClassHierarchyIndex.collectStrictSupertypes(null, nullSupers)
+        assertTrue(nullSupers.isEmpty())
+    }
+
+    @Test
+    void collectDescendants_unknownAncestor_isEmpty() {
+        def out = []
+        ClassHierarchyIndex.collectDescendants(NeverRegisteredAncestor, out)
+        assertTrue(out.isEmpty())
+    }
+
+    @Test
+    void collectStrictSupertypes_interface_includesObject() {
+        def supers = new LinkedHashSet<Class<?>>()
+        ClassHierarchyIndex.collectStrictSupertypes(IndexMarker, supers)
+        assertTrue(supers.contains(Object))
+    }
+
     // --- fixtures ---
 
     private static class IndexParent {}
@@ -157,4 +186,6 @@ final class ClassHierarchyIndexTest {
     private static class IndexFanParent {}
     private static final class IndexFanChild extends IndexFanParent {}
     private static final class IndexFanOther {}
+    /** Never passed to ClassInfo.getClassInfo — no index entry. */
+    private static final class NeverRegisteredAncestor {}
 }

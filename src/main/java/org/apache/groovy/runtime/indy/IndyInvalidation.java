@@ -43,13 +43,35 @@ import java.util.logging.Logger;
  * guard, matching the pre-6.0 monomorphic shape while avoiding global deopt on
  * unrelated MetaClass churn.
  * <p>
+ * <b>Why hierarchy fan-out (not only the changed class):</b> a per-class domain
+ * is enough for the <em>owner</em> of a {@code MetaClassImpl} table, but Groovy
+ * MOP dispatch is not closed under a single class. Supertype MetaClass changes
+ * become visible to subtypes:
+ * <ul>
+ *   <li><b>ExpandoMetaClass / registry mutations on a parent</b> —
+ *       {@code Parent.metaClass.foo = …} must force already-linked sites on
+ *       {@code Child} to re-select so {@code new Child().foo()} sees the method.
+ *       That path is not a {@code MetaClassImpl}-internal rewrite of Child's
+ *       own method table; it is cross-class MOP visibility.</li>
+ *   <li><b>Interface MetaClass changes</b> — same rule for implementors.</li>
+ *   <li><b>Array covariance</b> — {@code Object[]} (and interface arrays) are
+ *       MOP-relevant supertypes of reference arrays even though array classes
+ *       are {@code final}.</li>
+ * </ul>
+ * Fan-out is therefore required for correctness of <em>inherited / covariant
+ * MOP state</em>, not because {@code MetaClassImpl} shares one table up the
+ * hierarchy. Category enter/leave remains bulk (separate path).
+ * <p>
  * <b>Scalability:</b> hierarchy fan-out is {@code O(|loaded subtypes of T|)}
  * via {@link ClassHierarchyIndex} (built once per {@link ClassInfo}), not
  * {@code O(|all loaded classes|)}. Category bulk remains a full ClassInfo walk
  * with cheap no-op detaches for domains that never allocated a SwitchPoint.
  * <p>
  * Install guards with
- * {@link #guardWithMopSwitchPoints(MethodHandle, MethodHandle, Object)}.
+ * {@link #guardWithMopSwitchPoints(MethodHandle, MethodHandle, Object)}
+ * (public / test entry). Production Selector wiring uses
+ * {@code IndyInterface.applyMopSwitchPoints}, which performs the same
+ * {@code guardWithTest} bind after domain resolution here.
  * Optional stats logging: {@code -Dgroovy.indy.invalidation.stats=true}.
  *
  * @since 6.0.0
@@ -225,6 +247,10 @@ public final class IndyInvalidation {
      * Installs a per-class SwitchPoint guard on {@code handle}.
      * MetaClass or category changes that retire that class's SwitchPoint cause
      * the site to take {@code fallback}.
+     * <p>
+     * Public entry for tests and any code outside {@code vmplugin.v8}. Production
+     * call-site linking goes through {@code IndyInterface.applyMopSwitchPoints}
+     * (same {@code guardWithTest} after {@link #classSwitchPointFor(Object)}).
      *
      * @param handle   the fast-path handle
      * @param fallback the re-link / fallback handle
@@ -238,6 +264,7 @@ public final class IndyInvalidation {
 
     /**
      * Installs a per-class SwitchPoint guard on {@code handle}.
+     * See {@link #guardWithMopSwitchPoints(MethodHandle, MethodHandle, Object)}.
      *
      * @param handle        the fast-path handle
      * @param fallback      the re-link / fallback handle

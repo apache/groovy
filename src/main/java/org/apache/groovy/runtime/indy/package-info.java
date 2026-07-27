@@ -28,13 +28,14 @@
  * <p>
  * Hierarchy fan-out is indexed by {@link ClassHierarchyIndex} so typed MetaClass
  * invalidation cost is proportional to the number of loaded subtypes of the
- * changed type, not to the total number of loaded classes.
+ * changed type, not to the total number of loaded classes. Fan-out covers
+ * cross-class MOP visibility (parent ExpandoMetaClass, interface MetaClass,
+ * array covariance), not a shared {@code MetaClassImpl} table.
  * <p>
- * External code that previously guarded on
- * {@link org.codehaus.groovy.vmplugin.v8.IndyInterface#switchPoint} must migrate
- * to {@link org.apache.groovy.runtime.indy.IndyInvalidation#guardWithMopSwitchPoints}:
- * the legacy field is rotated only on category / {@code invalidateCallSites()}
- * bulk events, not on per-class MetaClass changes.
+ * Install guards via {@link IndyInvalidation#guardWithMopSwitchPoints} (public)
+ * or {@code IndyInterface.applyMopSwitchPoints} (production link path). The
+ * pre-6.0 process-wide {@code IndyInterface.switchPoint} field has been removed
+ * ({@code vmplugin} is internal-by-intent).
  *
  * @since 6.0.0
  */
