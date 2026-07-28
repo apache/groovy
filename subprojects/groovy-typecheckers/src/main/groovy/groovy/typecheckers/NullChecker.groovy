@@ -21,8 +21,10 @@ package groovy.typecheckers
 import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.AnnotatedNode
+import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.CastExpression
@@ -355,16 +357,36 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     //--------------------------------------------------------------------------
 
     private static boolean hasNullableAnno(AnnotatedNode node) {
-        node.annotations?.any { it.classNode?.nameWithoutPackage in NULLABLE_ANNOS } ?: false
+        hasAnno(node, NULLABLE_ANNOS)
     }
 
     private static boolean hasNonNullAnno(AnnotatedNode node) {
         if (node.getNodeMetaData(StaticTypesMarker.INFERRED_NON_NULL) == Boolean.TRUE) return true
-        node.annotations?.any { it.classNode?.nameWithoutPackage in NONNULL_ANNOS } ?: false
+        hasAnno(node, NONNULL_ANNOS)
     }
 
     private static boolean hasMonotonicAnno(AnnotatedNode node) {
-        node.annotations?.any { it.classNode?.nameWithoutPackage in MONOTONIC_ANNOS } ?: false
+        hasAnno(node, MONOTONIC_ANNOS)
+    }
+
+    /**
+     * Checks the node's declaration annotations and, for methods, parameters and fields,
+     * also the type-use annotations of the declared type. Type-use only annotations
+     * (e.g. JSpecify's) appear on the type rather than the declaration, in particular
+     * for classes read from bytecode or via reflection.
+     */
+    private static boolean hasAnno(AnnotatedNode node, Set<String> annoNames) {
+        if (node.annotations?.any { it.classNode?.nameWithoutPackage in annoNames }) return true
+        typeOf(node)?.typeAnnotations?.any { it.classNode?.nameWithoutPackage in annoNames } ?: false
+    }
+
+    private static ClassNode typeOf(AnnotatedNode node) {
+        switch (node) {
+            case MethodNode: return ((MethodNode) node).returnType
+            case Parameter: return ((Parameter) node).type
+            case FieldNode: return ((FieldNode) node).type
+            default: return null
+        }
     }
 
     private static boolean hasNullCheckAnno(AnnotatedNode node) {

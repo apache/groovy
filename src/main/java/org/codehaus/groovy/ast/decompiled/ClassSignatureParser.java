@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.TypeReference;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureVisitor;
 
@@ -77,12 +78,13 @@ class ClassSignatureParser {
      */
     static void configureClass(final ClassNode classNode, final ClassStub stub, final AsmReferenceResolver resolver) {
         if (stub.signature != null) {
-            parseClassSignature(classNode, stub.signature, resolver);
+            parseClassSignature(classNode, stub, resolver);
             return;
         }
 
         if (stub.superName != null) {
             ClassNode sc = resolver.resolveClass(AsmDecompiler.fromInternalName(stub.superName));
+            sc = Annotations.applyTypeAnnotations(stub.typeAnnotations, TypeReference.CLASS_EXTENDS, -1, sc, resolver);
             classNode.setSuperClass(sc);
         }
 
@@ -91,6 +93,7 @@ class ClassSignatureParser {
             ClassNode[] interfaces = new ClassNode[nInterfaces];
             for (int i = 0; i < nInterfaces; i += 1) { String name = stub.interfaceNames[i];
                 interfaces[i] = resolver.resolveClass(AsmDecompiler.fromInternalName(name));
+                interfaces[i] = Annotations.applyTypeAnnotations(stub.typeAnnotations, TypeReference.CLASS_EXTENDS, i, interfaces[i], resolver);
             }
             classNode.setInterfaces(interfaces);
         }
@@ -119,9 +122,10 @@ class ClassSignatureParser {
                     type[0] = type[0].getPlainNodeReference();
                 }
 
+                type[0] = Annotations.applyTypeAnnotations(rc.typeAnnotations, TypeReference.FIELD, -1, type[0], resolver);
+
                 RecordComponentNode recordComponent = new RecordComponentNode(classNode, rc.name, type[0]);
                 Annotations.addAnnotations(rc, recordComponent, resolver);
-                Annotations.addTypeAnnotations(rc, type[0], resolver);
                 recordComponents.add(recordComponent);
             }
             classNode.setRecordComponents(recordComponents);
@@ -143,7 +147,7 @@ class ClassSignatureParser {
      * represents: {@code <T extends Number> extends AbstractList<T> implements Serializable}
      *
      * @param classNode the class node to configure (modified in place with superclass, interfaces, and generics)
-     * @param signature the generic signature string from the class's Signature attribute, in JVMS format
+     * @param stub the ASM-derived class metadata containing the generic signature and type annotations
      * @param resolver used to resolve class types from internal names to ClassNodes
      *
      * @see FormalParameterParser for parsing type parameter declarations
@@ -151,7 +155,7 @@ class ClassSignatureParser {
      * @see <a href="https://docs.oracle.com/javase/specs/jvms/se19/html/jvms-4.html#jvms-ClassSignature">
      *      JVMS §4.7.9.1 ClassSignature Production</a>
      */
-    private static void parseClassSignature(final ClassNode classNode, final String signature, final AsmReferenceResolver resolver) {
+    private static void parseClassSignature(final ClassNode classNode, final ClassStub stub, final AsmReferenceResolver resolver) {
         List<ClassNode> interfaces = new ArrayList<>();
 
         FormalParameterParser parser = new FormalParameterParser(resolver) {
@@ -161,7 +165,8 @@ class ClassSignatureParser {
                 return new TypeSignatureParser(resolver) {
                     @Override
                     void finished(final ClassNode superClass) {
-                        classNode.setSuperClass(superClass);
+                        classNode.setSuperClass(Annotations.applyTypeAnnotations(
+                                stub.typeAnnotations, TypeReference.CLASS_EXTENDS, -1, superClass, resolver));
                     }
                 };
             }
@@ -171,17 +176,26 @@ class ClassSignatureParser {
                 return new TypeSignatureParser(resolver) {
                     @Override
                     void finished(final ClassNode superInterface) {
-                        interfaces.add(superInterface);
+                        interfaces.add(Annotations.applyTypeAnnotations(
+                                stub.typeAnnotations, TypeReference.CLASS_EXTENDS, interfaces.size(), superInterface, resolver));
                     }
                 };
             }
         };
-        new SignatureReader(signature).accept(parser);
+        new SignatureReader(stub.signature).accept(parser);
 
         classNode.setInterfaces(interfaces.isEmpty() ? ClassNode.EMPTY_ARRAY :
                                     interfaces.toArray(ClassNode.EMPTY_ARRAY));
 
         GenericsType[] typeParameters = parser.getTypeParameters();
-        if (typeParameters.length > 0) classNode.setGenericsTypes(typeParameters);
+        if (typeParameters.length > 0) {
+            if (stub.typeAnnotations != null) {
+                for (int i = 0, n = typeParameters.length; i < n; i += 1) {
+                    typeParameters[i].setType(Annotations.applyTypeAnnotations(
+                            stub.typeAnnotations, TypeReference.CLASS_TYPE_PARAMETER, i, typeParameters[i].getType(), resolver));
+                }
+            }
+            classNode.setGenericsTypes(typeParameters);
+        }
     }
 }

@@ -219,6 +219,11 @@ public abstract class AsmDecompiler {
                 }
 
                 @Override
+                public AnnotationVisitor visitTypeAnnotation(final int typeRef, final TypePath typePath, final String desc, final boolean visible) {
+                    return readAnnotationMembers(stub.addTypeAnnotation(desc, typeRef, typePath));
+                }
+
+                @Override
                 public AnnotationVisitor visitParameterAnnotation(final int parameter, final String desc, final boolean visible) {
                     if (stub.parameterAnnotations == null) stub.parameterAnnotations = new HashMap<>(1);
                     List<AnnotationStub> list = stub.parameterAnnotations.computeIfAbsent(parameter, k -> new ArrayList<>());
@@ -258,6 +263,21 @@ public abstract class AsmDecompiler {
         }
 
         /**
+         * Visits class-level type annotations (JSR 308), such as annotations on the
+         * superclass, superinterfaces or type parameters of the class declaration.
+         *
+         * @param typeRef the annotated type position (ASM {@link org.objectweb.asm.TypeReference} value)
+         * @param typePath the path to the annotated type within the type given by {@code typeRef}, or {@code null}
+         * @param desc the annotation type descriptor
+         * @param visible {@code true} for runtime-visible annotations
+         * @return an annotation visitor to collect member values
+         */
+        @Override
+        public AnnotationVisitor visitTypeAnnotation(final int typeRef, final TypePath typePath, final String desc, final boolean visible) {
+            return readAnnotationMembers(result.addTypeAnnotation(desc, typeRef, typePath));
+        }
+
+        /**
          * Visits permitted subclasses declared in a sealed class.
          *
          * @param permittedSubclass the fully qualified internal name of a permitted subclass
@@ -290,7 +310,7 @@ public abstract class AsmDecompiler {
 
                 @Override
                 public AnnotationVisitor visitTypeAnnotation(final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
-                    return readAnnotationMembers(recordComponentStub.addTypeAnnotation(descriptor));
+                    return readAnnotationMembers(recordComponentStub.addTypeAnnotation(descriptor, typeRef, typePath));
                 }
             };
         }
@@ -315,6 +335,11 @@ public abstract class AsmDecompiler {
                 @Override
                 public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
                     return readAnnotationMembers(stub.addAnnotation(desc));
+                }
+
+                @Override
+                public AnnotationVisitor visitTypeAnnotation(final int typeRef, final TypePath typePath, final String desc, final boolean visible) {
+                    return readAnnotationMembers(stub.addTypeAnnotation(desc, typeRef, typePath));
                 }
             };
         }

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.decompiled;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.decompiled.support.WhereAnno;
 
 import java.io.IOException;
 import java.lang.annotation.ElementType;
@@ -124,4 +125,23 @@ abstract class WithTypeAnnotations extends @TypeAnno Object implements @TypeAnno
     @TypeAnno WithTypeAnnotations() {
     }
     @TypeAnno Object field;
+}
+
+@SuppressWarnings("unused")
+abstract class MoreTypeAnnotations<@WhereAnno("tp") T> extends @WhereAnno("super") SuperClass implements @WhereAnno("intf") Intf<@WhereAnno("intfArg") String> {
+    @WhereAnno("field") String annotatedField;
+    List<@WhereAnno("fieldArg") String> genericField;
+    Map<String, List<@WhereAnno("nested") Integer>> nestedGenericField;
+    @WhereAnno("elem") String @WhereAnno("arr") [] arrayField;
+    int @WhereAnno("primArr") [] primitiveArrayField;
+    List<? extends @WhereAnno("upper") Number> upperBoundField;
+    List<? super @WhereAnno("lower") Number> lowerBoundField;
+    List<@WhereAnno("wild") ?> wildcardField;
+    List<@WhereAnno("arrayArg") String[]> genericArrayField;
+
+    abstract @WhereAnno("return") String returnAnnotated();
+    abstract List<@WhereAnno("returnArg") String> returnGenericAnnotated();
+    abstract void params(@WhereAnno("p0") String p0, int i, List<@WhereAnno("p2") String> p2);
+    abstract void throwsAnnotated() throws IOException, @WhereAnno("ex") ClassNotFoundException;
+    abstract <@WhereAnno("mtp") M> M typeParamAnnotated(M m);
 }
