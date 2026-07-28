@@ -475,7 +475,9 @@ public class GenericsType extends ASTNode {
                                     GenericsType gt = new GenericsType(redirectBoundType.getLowerBound());
                                     if (gt.isPlaceholder()) {
                                         // check for recursive generic typedef, like in <T extends Comparable<? super T>>
-                                        gt = classNodePlaceholders.getOrDefault(new GenericsTypeName(gt.getName()), gt);
+                                        GenericsType argument = classNodePlaceholders.get(new GenericsTypeName(gt.getName()));
+                                        // GROOVY-12203: a wildcard argument does not instantiate the type variable
+                                        if (argument != null && !argument.isWildcard()) gt = argument;
                                     }
                                     // GROOVY-6095, GROOVY-9338
                                     if (classNodeType.isWildcard()) {
@@ -494,7 +496,9 @@ public class GenericsType extends ASTNode {
                                         GenericsType gt = new GenericsType(upperBound);
                                         if (gt.isPlaceholder()) {
                                             // check for recursive generic typedef, like in <T extends Comparable<? super T>>
-                                            gt = classNodePlaceholders.getOrDefault(new GenericsTypeName(gt.getName()), gt);
+                                            GenericsType argument = classNodePlaceholders.get(new GenericsTypeName(gt.getName()));
+                                            // GROOVY-12203: a wildcard argument does not instantiate the type variable
+                                            if (argument != null && !argument.isWildcard()) gt = argument;
                                         }
                                         // GROOVY-6095, GROOVY-9338
                                         if (classNodeType.isWildcard()) {

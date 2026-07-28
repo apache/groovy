@@ -229,6 +229,28 @@ final class OverrideTest {
         assert err.message.contains("name clash: m(I<java.lang.String>) in class 'C' and m(I<java.lang.Object>) in interface 'I' have the same erasure, yet neither overrides the other")
     }
 
+    // GROOVY-12203
+    @Test
+    void testCovariantParameterType7() {
+        assertScript '''
+            interface Box<T> { }
+
+            interface Spec {
+                def <T extends Number> void m(Box<? super T> b)
+                def <T extends Number> void n(Box<? extends T> b)
+            }
+
+            class Impl implements Spec {
+                @Override
+                <T extends Number> void m(Box<? super T> b) { }
+                @Override
+                <T extends Number> void n(Box<? extends T> b) { }
+            }
+
+            new Impl()
+        '''
+    }
+
     @Test
     void testOverrideOnMethodWithDefaultParameters() {
         assertScript '''
