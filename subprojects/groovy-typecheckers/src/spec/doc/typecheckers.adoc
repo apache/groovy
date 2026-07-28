@@ -644,6 +644,9 @@ any package are supported. The following annotation names are recognized:
 |===
 
 The annotation classes must be on the compile classpath so the Groovy compiler can resolve them.
+Both declaration-targeted and type-use (`ElementType.TYPE_USE`) annotations are recognized,
+including type-use annotations found in already compiled Java or Groovy classes on the classpath,
+where they reside in type-annotation bytecode attributes rather than on the member declarations.
 Since the checker matches by simple name, you are free to choose any annotation library:
 
 * https://jspecify.dev/[JSpecify]: `@Nullable` / `@NullMarked` / `@NullUnmarked`

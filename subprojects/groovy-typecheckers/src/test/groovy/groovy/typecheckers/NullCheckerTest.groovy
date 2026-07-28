@@ -644,6 +644,51 @@ final class NullCheckerTest {
         '''
     }
 
+    // === JSpecify annotations from precompiled Java (GROOVY-12206) ===
+
+    @Test
+    void testJSpecifyNullableReturnFromPrecompiledClass() {
+        def err = shouldFail shell, '''
+            import groovy.typecheckers.support.JSpecifyExample
+
+            class Foo {
+                static void bar() {
+                    JSpecifyExample.findValue('missing').toUpperCase()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'findValue()' may return null")
+    }
+
+    @Test
+    void testJSpecifyNonNullParameterOfPrecompiledClass() {
+        def err = shouldFail shell, '''
+            import groovy.typecheckers.support.JSpecifyExample
+
+            class Foo {
+                static void bar() {
+                    JSpecifyExample.requireValue(null)
+                }
+            }
+        '''
+        assert err.message.contains('Cannot pass null to @NonNull parameter')
+    }
+
+    @Test
+    void testJSpecifyNullableResultPassedToNonNullParameterOfPrecompiledClass() {
+        def err = shouldFail strictShell, '''
+            import groovy.typecheckers.support.JSpecifyExample
+
+            class Foo {
+                static void bar() {
+                    def v = JSpecifyExample.findValue('missing')
+                    JSpecifyExample.requireValue(v)
+                }
+            }
+        '''
+        assert err.message.contains('Cannot pass @Nullable value to @NonNull parameter')
+    }
+
     // === Unannotated code ===
 
     @Test

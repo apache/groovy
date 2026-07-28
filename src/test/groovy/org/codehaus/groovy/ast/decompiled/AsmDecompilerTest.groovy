@@ -387,6 +387,90 @@ final class AsmDecompilerTest {
         assert !ClassHelper.VOID_TYPE.annotated
     }
 
+    // GROOVY-12206
+    @Test
+    void "type use annotations on member types"() {
+        def node = decompile(MoreTypeAnnotations)
+
+        assert annos(node.getDeclaredField('annotatedField').type) == ['field']
+        assert annos(node.getDeclaredField('genericField').type) == []
+        assert annos(node.getDeclaredField('genericField').type.genericsTypes[0].type) == ['fieldArg']
+        assert annos(node.getDeclaredField('nestedGenericField').type.genericsTypes[1].type.genericsTypes[0].type) == ['nested']
+
+        def method = node.getDeclaredMethods('returnAnnotated')[0]
+        assert annos(method.returnType) == ['return']
+        assert annos(node.getDeclaredMethods('returnGenericAnnotated')[0].returnType.genericsTypes[0].type) == ['returnArg']
+
+        def params = node.getDeclaredMethods('params')[0].parameters
+        assert annos(params[0].type) == ['p0']
+        assert annos(params[1].type) == []
+        assert annos(params[2].type.genericsTypes[0].type) == ['p2']
+
+        def exceptions = node.getDeclaredMethods('throwsAnnotated')[0].exceptions
+        assert annos(exceptions[0]) == []
+        assert annos(exceptions[1]) == ['ex']
+
+        assert annos(node.getDeclaredMethods('typeParamAnnotated')[0].genericsTypes[0].type) == ['mtp']
+    }
+
+    // GROOVY-12206
+    @Test
+    void "type use annotations on array member types"() {
+        def node = decompile(MoreTypeAnnotations)
+
+        def arrayType = node.getDeclaredField('arrayField').type
+        assert arrayType.array
+        assert annos(arrayType) == ['arr']
+        assert annos(arrayType.componentType) == ['elem']
+
+        def primitiveArrayType = node.getDeclaredField('primitiveArrayField').type
+        assert annos(primitiveArrayType) == ['primArr']
+        assert annos(primitiveArrayType.componentType) == []
+        assert primitiveArrayType.componentType == ClassHelper.int_TYPE
+
+        assert annos(node.getDeclaredField('genericArrayField').type.genericsTypes[0].type.componentType) == ['arrayArg']
+    }
+
+    // GROOVY-12206
+    @Test
+    void "type use annotations on wildcard bounds"() {
+        def node = decompile(MoreTypeAnnotations)
+
+        def upper = node.getDeclaredField('upperBoundField').type.genericsTypes[0]
+        assert upper.wildcard
+        assert annos(upper.upperBounds[0]) == ['upper']
+
+        def lower = node.getDeclaredField('lowerBoundField').type.genericsTypes[0]
+        assert lower.wildcard
+        assert annos(lower.lowerBound) == ['lower']
+
+        def wild = node.getDeclaredField('wildcardField').type.genericsTypes[0]
+        assert wild.wildcard
+        assert annos(wild.type) == ['wild']
+    }
+
+    // GROOVY-12206
+    @Test
+    void "type use annotations on supertypes and type parameters"() {
+        def node = decompile(MoreTypeAnnotations)
+
+        assert annos(node.unresolvedSuperClass) == ['super']
+        def intf = node.interfaces[0]
+        assert annos(intf) == ['intf']
+        assert annos(intf.genericsTypes[0].type) == ['intfArg']
+        assert annos(node.genericsTypes[0].type) == ['tp']
+
+        // shared nodes must not pick up the per-use annotations
+        assert !ClassHelper.STRING_TYPE.annotated
+        assert ClassHelper.STRING_TYPE.typeAnnotations.isEmpty()
+        assert ClassHelper.int_TYPE.typeAnnotations.isEmpty()
+        assert decompile(SuperClass).typeAnnotations.isEmpty()
+    }
+
+    private static List<String> annos(ClassNode type) {
+        type.typeAnnotations.collect { ((ConstantExpression) it.getMember('value')).text }
+    }
+
     //--------------------------------------------------------------------------
 
     private static ClassNode decompile(Class clazz = AsmDecompilerTestData) {

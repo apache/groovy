@@ -21,6 +21,7 @@ package org.codehaus.groovy.ast.decompiled;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -29,6 +30,8 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.TypePath;
+import org.objectweb.asm.TypeReference;
 
 import java.lang.reflect.Array;
 import java.util.List;
@@ -197,30 +200,148 @@ class Annotations {
     }
 
     /**
-     * Applies type annotations (JSR 308) extracted from bytecode to a {@link ClassNode}.
-     * Type annotations provide runtime metadata about generic type usages and are stored separately
-     * from declaration annotations according to JVMS §4.7.20-4.7.21.
+     * Applies the type annotations (JSR 308) targeting the given position to the given type,
+     * walking each annotation's type path (JVMS §4.7.20.2) to locate the exact annotated type
+     * within the possibly generic or array type.
      *
-     * <p>Like regular annotations, type annotations whose classes cannot be resolved are silently skipped.
+     * <p>The returned node may differ from the input node: type annotations may only be attached
+     * to per-use redirect nodes, so shared (cached) nodes are replaced by an annotated
+     * {@link ClassNode#getPlainNodeReference(boolean) plain node reference} when required.
+     * A type annotation lands in {@link ClassNode#getTypeAnnotations()} of the per-use node at
+     * the exact JVMS position: an empty type path denotes the outermost type at the given site,
+     * so for {@code String @A []} the annotation ends up on the array node while for
+     * {@code @A String []} (type path "[") it ends up on the component node.
      *
-     * @param <T> the class node type parameter
-     * @param stub the {@link AnnotatedTypeStub} containing bytecode type annotations
-     * @param node the target {@link ClassNode} to attach type annotations to
+     * <p>Like regular annotations, type annotations whose classes cannot be resolved are silently
+     * skipped, as are annotations whose position cannot be mapped onto the AST (e.g. type
+     * arguments of a raw type use).
+     *
+     * @param stubs the type annotations of the enclosing class or member, or {@code null}
+     * @param sort the {@link TypeReference} sort identifying the targeted position
+     * @param index the position index (formal parameter, exception, supertype or type parameter
+     *        index) or {@code -1} for positions without an index (fields, method return types,
+     *        the superclass)
+     * @param type the resolved type at that position
      * @param resolver the {@link AsmReferenceResolver} used to resolve annotation class types
-     * @return the input node with type annotations applied (for method chaining)
-     * @see org.codehaus.groovy.ast.ClassNode#addTypeAnnotation(AnnotationNode)
+     * @return the annotated type: either the input node or a per-use replacement for it
+     * @see ClassNode#addTypeAnnotation(AnnotationNode)
      */
-    static <T extends ClassNode> T addTypeAnnotations(AnnotatedTypeStub stub, T node, AsmReferenceResolver resolver) {
-        List<TypeAnnotationStub> annotations = stub.getTypeAnnotations();
-        if (annotations != null) {
-            for (TypeAnnotationStub annotation : annotations) {
-                AnnotationNode annotationNode = createAnnotationNode(annotation, resolver);
+    static ClassNode applyTypeAnnotations(List<TypeAnnotationStub> stubs, int sort, int index, ClassNode type, AsmReferenceResolver resolver) {
+        if (stubs != null) {
+            for (TypeAnnotationStub stub : stubs) {
+                TypeReference reference = new TypeReference(stub.typeRef);
+                if (reference.getSort() != sort || positionIndex(reference) != index) continue;
+                AnnotationNode annotationNode = createAnnotationNode(stub, resolver);
                 if (annotationNode != null) {
-                    node.addTypeAnnotation(annotationNode);
+                    TypePath typePath = stub.typePath == null ? null : TypePath.fromString(stub.typePath);
+                    type = attach(type, typePath, 0, annotationNode);
                 }
             }
         }
-        return node;
+        return type;
+    }
+
+    /**
+     * Extracts the position index from a type reference for sorts that carry one,
+     * mirroring the {@code index} parameter of
+     * {@link #applyTypeAnnotations(List, int, int, ClassNode, AsmReferenceResolver)}.
+     *
+     * @param reference the type reference
+     * @return the formal parameter, exception, supertype ({@code -1} for the superclass) or
+     *         type parameter index, or {@code -1} for sorts without an index
+     */
+    private static int positionIndex(TypeReference reference) {
+        switch (reference.getSort()) {
+            case TypeReference.CLASS_EXTENDS:
+                return reference.getSuperTypeIndex();
+            case TypeReference.METHOD_FORMAL_PARAMETER:
+                return reference.getFormalParameterIndex();
+            case TypeReference.THROWS:
+                return reference.getExceptionIndex();
+            case TypeReference.CLASS_TYPE_PARAMETER:
+            case TypeReference.METHOD_TYPE_PARAMETER:
+                return reference.getTypeParameterIndex();
+            default:
+                return -1;
+        }
+    }
+
+    /**
+     * Walks the remaining type path steps into the structure of the given type and attaches
+     * the annotation to the addressed type. Steps that cannot be mapped onto the AST cause
+     * the annotation to be dropped silently, so that reading arbitrary bytecode never fails.
+     *
+     * @param type the type to walk into
+     * @param typePath the type path, or {@code null} for the type itself
+     * @param step the current step within the type path
+     * @param annotation the annotation to attach
+     * @return the annotated type: either the input node or a per-use replacement for it
+     */
+    private static ClassNode attach(ClassNode type, TypePath typePath, int step, AnnotationNode annotation) {
+        if (typePath == null || step >= typePath.getLength()) {
+            return annotate(type, annotation);
+        }
+        switch (typePath.getStep(step)) {
+          case TypePath.ARRAY_ELEMENT: {
+            if (!type.isArray()) return type;
+            ClassNode componentType = type.getComponentType();
+            ClassNode newComponentType = attach(componentType, typePath, step + 1, annotation);
+            if (newComponentType == componentType) return type;
+            ClassNode newType = newComponentType.makeArray();
+            for (AnnotationNode existing : type.getTypeAnnotations()) {
+                newType = annotate(newType, existing);
+            }
+            return newType;
+          }
+          case TypePath.TYPE_ARGUMENT: {
+            GenericsType[] genericsTypes = type.getGenericsTypes();
+            int i = typePath.getStepArgument(step);
+            if (genericsTypes == null || i >= genericsTypes.length) return type; // raw type use
+            GenericsType genericsType = genericsTypes[i];
+            if (step + 1 < typePath.getLength() && typePath.getStep(step + 1) == TypePath.WILDCARD_BOUND) {
+                ClassNode[] upperBounds = genericsType.getUpperBounds();
+                ClassNode lowerBound = genericsType.getLowerBound();
+                if (upperBounds != null && upperBounds.length > 0) {
+                    upperBounds[0] = attach(upperBounds[0], typePath, step + 2, annotation);
+                } else if (lowerBound != null) {
+                    ClassNode newLowerBound = attach(lowerBound, typePath, step + 2, annotation);
+                    if (newLowerBound != lowerBound) {
+                        GenericsType newGenericsType = new GenericsType(genericsType.getType(), null, newLowerBound);
+                        newGenericsType.setWildcard(genericsType.isWildcard());
+                        genericsTypes[i] = newGenericsType;
+                    }
+                }
+            } else {
+                genericsType.setType(attach(genericsType.getType(), typePath, step + 1, annotation));
+            }
+            return type;
+          }
+          case TypePath.INNER_TYPE:
+            // Groovy models a nested type use with a single ClassNode, so annotations on
+            // the nested type are treated as annotations on the whole type
+            return attach(type, typePath, step + 1, annotation);
+          default: // WILDCARD_BOUND without a preceding TYPE_ARGUMENT step: malformed
+            return type;
+        }
+    }
+
+    /**
+     * Attaches the annotation to the given type, first substituting a per-use
+     * {@link ClassNode#getPlainNodeReference(boolean) plain node reference} if the type is a
+     * shared node: type annotations belong to a single use of a type and must never be attached
+     * to the globally shared (cached or resolved) nodes; see
+     * {@link ClassNode#addTypeAnnotation(AnnotationNode)}.
+     *
+     * @param type the type to annotate
+     * @param annotation the annotation to attach
+     * @return the annotated type: either the input node or a per-use replacement for it
+     */
+    private static ClassNode annotate(ClassNode type, AnnotationNode annotation) {
+        if (!type.isRedirectNode()) {
+            type = type.getPlainNodeReference(false);
+        }
+        type.addTypeAnnotation(annotation);
+        return type;
     }
 
     /**

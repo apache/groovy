@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.ast.decompiled;
 
+import org.objectweb.asm.TypePath;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -162,13 +164,18 @@ interface AnnotatedTypeStub {
 
 /**
  * Bytecode stub for a class member carrying annotation metadata.
- * Base class for {@link MethodStub} and {@link FieldStub}.
+ * Base class for {@link ClassStub}, {@link MethodStub}, {@link FieldStub} and {@link RecordComponentStub}.
  */
-class MemberStub implements AnnotatedStub {
+class MemberStub implements AnnotatedStub, AnnotatedTypeStub {
     /**
      * List of annotations, lazily initialized when the first annotation is added.
      */
     List<AnnotationStub> annotations = null;
+
+    /**
+     * List of type annotations (JSR 308), lazily initialized when the first type annotation is added.
+     */
+    List<TypeAnnotationStub> typeAnnotations = null;
 
     /**
      * Adds an annotation to this member stub.
@@ -183,9 +190,29 @@ class MemberStub implements AnnotatedStub {
         return stub;
     }
 
+    /**
+     * Adds a type annotation to this member stub, preserving its position information.
+     *
+     * @param desc the annotation descriptor (JVMS format)
+     * @param typeRef the ASM {@link org.objectweb.asm.TypeReference} value
+     * @param typePath the {@link org.objectweb.asm.TypePath} or {@code null} for the type itself
+     * @return the newly created {@link TypeAnnotationStub}
+     */
+    TypeAnnotationStub addTypeAnnotation(String desc, int typeRef, TypePath typePath) {
+        TypeAnnotationStub stub = new TypeAnnotationStub(desc, typeRef, typePath == null ? null : typePath.toString());
+        if (typeAnnotations == null) typeAnnotations = new ArrayList<TypeAnnotationStub>(1);
+        typeAnnotations.add(stub);
+        return stub;
+    }
+
     @Override
     public List<AnnotationStub> getAnnotations() {
         return annotations;
+    }
+
+    @Override
+    public List<TypeAnnotationStub> getTypeAnnotations() {
+        return typeAnnotations;
     }
 }
 
@@ -355,12 +382,29 @@ class AnnotationStub {
  */
 class TypeAnnotationStub extends AnnotationStub {
     /**
-     * Creates a type annotation stub from its type.
+     * The annotated type position as an ASM {@link org.objectweb.asm.TypeReference} value
+     * (JVMS 4.7.20 target_type and target_info).
+     */
+    final int typeRef;
+
+    /**
+     * The path to the annotated type argument, wildcard bound, array element type or static
+     * inner type within the type given by {@link #typeRef}, in {@link org.objectweb.asm.TypePath}
+     * string format, or {@code null} if the annotation targets the type itself (JVMS 4.7.20.2).
+     */
+    final String typePath;
+
+    /**
+     * Creates a type annotation stub from its type and position information.
      *
      * @param className the fully qualified annotation class name
+     * @param typeRef the ASM {@link org.objectweb.asm.TypeReference} value
+     * @param typePath the type path in string format, or {@code null} for the type itself
      */
-    public TypeAnnotationStub(String className) {
+    public TypeAnnotationStub(String className, int typeRef, String typePath) {
         super(className);
+        this.typeRef = typeRef;
+        this.typePath = typePath;
     }
 }
 
@@ -417,7 +461,7 @@ class EnumConstantWrapper {
  *
  * @see RecordComponentNode
  */
-class RecordComponentStub implements AnnotatedStub, AnnotatedTypeStub {
+class RecordComponentStub extends MemberStub {
     /**
      * Component name, corresponding to both the field and the accessor method name.
      */
@@ -435,16 +479,6 @@ class RecordComponentStub implements AnnotatedStub, AnnotatedTypeStub {
     final String signature;
 
     /**
-     * List of annotations attached to this record component, lazily initialized.
-     */
-    List<AnnotationStub> annotations;
-
-    /**
-     * List of type annotations (JSR 308) attached to this record component, lazily initialized.
-     */
-    List<TypeAnnotationStub> typeAnnotations;
-
-    /**
      * Creates a record component stub from bytecode metadata.
      *
      * @param name the component name
@@ -455,41 +489,5 @@ class RecordComponentStub implements AnnotatedStub, AnnotatedTypeStub {
         this.name = name;
         this.descriptor = descriptor;
         this.signature = signature;
-    }
-
-    /**
-     * Adds an annotation to this record component.
-     *
-     * @param desc the annotation descriptor (JVMS format)
-     * @return the newly created {@link AnnotationStub}
-     */
-    AnnotationStub addAnnotation(String desc) {
-        AnnotationStub stub = new AnnotationStub(desc);
-        if (annotations == null) annotations = new ArrayList<AnnotationStub>(1);
-        annotations.add(stub);
-        return stub;
-    }
-
-    @Override
-    public List<AnnotationStub> getAnnotations() {
-        return annotations;
-    }
-
-    /**
-     * Adds a type annotation to this record component.
-     *
-     * @param desc the annotation descriptor (JVMS format)
-     * @return the newly created {@link TypeAnnotationStub}
-     */
-    public TypeAnnotationStub addTypeAnnotation(String desc) {
-        TypeAnnotationStub stub = new TypeAnnotationStub(desc);
-        if (typeAnnotations == null) typeAnnotations = new ArrayList<TypeAnnotationStub>(1);
-        typeAnnotations.add(stub);
-        return stub;
-    }
-
-    @Override
-    public List<TypeAnnotationStub> getTypeAnnotations() {
-        return typeAnnotations;
     }
 }
