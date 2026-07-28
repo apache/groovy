@@ -66,7 +66,13 @@ public class IndyInterface {
      */
     public static final int SAFE_NAVIGATION=1, THIS_CALL=2, GROOVY_OBJECT=4, IMPLICIT_THIS=8, SPREAD_CALL=16, UNCACHED_CALL=32;
 
-    private static final MethodHandleWrapper NULL_METHOD_HANDLE_WRAPPER = MethodHandleWrapper.getNullMethodHandleWrapper();
+    /**
+     * PIC sentinel meaning "this receiver shape is not class-keyed-cacheable".
+     * Written when {@code canSetTarget} is false (per-instance MetaClass, spread
+     * call, …). Not a real method handle — {@code fromCacheHandle} re-runs
+     * selection when it observes this value.
+     */
+    private static final MethodHandleWrapper UNCACHEABLE_PIC_SENTINEL = MethodHandleWrapper.getUncacheablePicSentinel();
     private static final String NULL_OBJECT_CLASS_NAME = "org.codehaus.groovy.runtime.NullObject";
 
     /**
@@ -223,15 +229,16 @@ public class IndyInterface {
         // That field is removed (vmplugin is internal-by-intent): call sites now guard on
         // per-ClassInfo domains via applyMopSwitchPoints.
         GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> {
-            Class<?> type = cmcu.getClassToUpdate();
-            if (type != null) {
-                IndyInvalidation.invalidateClass(type);
-                if (LOG_ENABLED) {
-                    LOG.info("invalidating class SwitchPoint hierarchy for " + type.getName());
-                }
-            } else {
-                IndyInvalidation.invalidateUnscoped();
-                if (LOG_ENABLED) {
+            // MetaClass-aware fan-out: EMC / interface / array / global-EMC → hierarchy;
+            // pure MetaClassImpl class replace and per-instance MC → exact class only.
+            // See IndyInvalidation class javadoc for the decision matrix (GROOVY-12191).
+            IndyInvalidation.invalidateForMetaClassChange(cmcu);
+            if (LOG_ENABLED) {
+                Class<?> type = cmcu.getClassToUpdate();
+                if (type != null) {
+                    LOG.info("MetaClass registry change invalidation for " + type.getName()
+                            + (cmcu.isPerInstanceMetaClassChange() ? " (per-instance)" : ""));
+                } else {
                     LOG.info("unscoped SwitchPoint invalidation (unattributed MetaClass change)");
                 }
             }
@@ -241,9 +248,10 @@ public class IndyInterface {
     /**
      * Category enter/leave and {@code VMPlugin.invalidateCallSites()}.
      * Bulk-invalidates every loaded class SwitchPoint so sites re-link under the
-     * new category state. Per-class MetaClass changes use
-     * {@link IndyInvalidation#invalidateClass(Class)} (or
-     * {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()}) instead.
+     * new category state. Per-class MetaClass changes use the MetaClass-aware
+     * registry path ({@link IndyInvalidation#invalidateForMetaClassChange}) or
+     * {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()} (hierarchy
+     * fan-out for in-place EMC updates).
      * <p>
      * Pre-6.0 this method also rotated a process-wide {@code switchPoint} field.
      * That field is gone; bulk policy lives entirely in {@link IndyInvalidation}.
@@ -425,10 +433,10 @@ public class IndyInterface {
         MethodHandleWrapper mhw = callSite.getAndPut(receiverClassName, (theName) -> {
             MethodHandleWrapper fallback = fallbackSupplier.get();
             if (fallback.isCanSetTarget()) return fallback;
-            return NULL_METHOD_HANDLE_WRAPPER;
+            return UNCACHEABLE_PIC_SENTINEL;
         });
 
-        if (mhw == NULL_METHOD_HANDLE_WRAPPER) {
+        if (mhw == UNCACHEABLE_PIC_SENTINEL) {
             // The PIC stores a sentinel to remember "do not relink this receiver shape";
             // execution still needs a real handle for the current invocation.
             mhw = fallbackSupplier.get();
@@ -485,7 +493,7 @@ public class IndyInterface {
      * <p>
      * On a failed validity check (or after the reflective-hit promotion
      * threshold), re-selection uses {@code fallback(..., allowColdReflection=false)}
-     * and may write the full wrapper — or {@link #NULL_METHOD_HANDLE_WRAPPER} —
+     * and may write the full wrapper — or {@link #UNCACHEABLE_PIC_SENTINEL} —
      * into the callsite PIC. That prevents an always-invalid class-domain
      * SwitchPoint from recursing through cold {@code tryBuild → invokeColdReflective}
      * (GROOVY-12191). This is a deliberate cold-tier promotion change beyond
@@ -526,19 +534,19 @@ public class IndyInterface {
         // • canSetTarget == true  → store the full wrapper so the next hit for
         //   this receiver class reuses the linked chain (and can promote the
         //   call-site target).
-        // • canSetTarget == false → store NULL_METHOD_HANDLE_WRAPPER, the PIC
-        //   sentinel meaning "this receiver shape is not cacheable". Typical
-        //   causes: per-instance MetaClass, spread-call (selector.cache=false).
+        // • canSetTarget == false → store UNCACHEABLE_PIC_SENTINEL, meaning
+        //   "this receiver shape is not class-keyed-cacheable". Typical causes:
+        //   per-instance MetaClass, spread-call (selector.cache=false).
         //   Storing the real uncacheable wrapper would pin a selection that is
         //   only valid for one instance / one spread shape and would skip
         //   re-selection on the next PIC hit. The sentinel forces
         //   fromCacheHandle to re-run fallback while this invocation still
         //   uses full.getCachedMethodHandle() for the current call.
         //
-        // NULL_METHOD_HANDLE_WRAPPER is therefore the only safe PIC value when
+        // UNCACHEABLE_PIC_SENTINEL is therefore the only safe PIC value when
         // the re-selected wrapper must not become a class-keyed cache entry.
         cold.callSite.put(receiverCacheKey(arguments[0]),
-                full.isCanSetTarget() ? full : NULL_METHOD_HANDLE_WRAPPER);
+                full.isCanSetTarget() ? full : UNCACHEABLE_PIC_SENTINEL);
         return full.getCachedMethodHandle().invokeExact(arguments);
     }
 
@@ -572,7 +580,7 @@ public class IndyInterface {
             Object receiver = arguments[0];
 
             // Avoid PIC pollution: don't write back uncached wrappers, e.g. for instance-level metaClass dispatches.
-            callSite.put(receiverCacheKey(receiver), mhw.isCanSetTarget() ? mhw : NULL_METHOD_HANDLE_WRAPPER);
+            callSite.put(receiverCacheKey(receiver), mhw.isCanSetTarget() ? mhw : UNCACHEABLE_PIC_SENTINEL);
         }
 
         return mhw.getCachedMethodHandle();

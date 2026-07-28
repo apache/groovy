@@ -140,6 +140,14 @@ public class ClassInfo implements Finalizable {
      * (and subtype SwitchPoints via hierarchy fan-out).
      * Called when metaclass modifications occur (e.g., adding methods to an {@code ExpandoMetaClass}).
      * <p>
+     * Hierarchy fan-out is intentional here: {@code incVersion} is the path used
+     * when an existing MetaClass is <em>updated in place</em> (EMC method/property
+     * add). Parent EMC methods are visible to subtype receivers through
+     * {@code MetaClassImpl.findMethodInClassHierarchy}, so already-linked subtype
+     * sites must re-select. Registry-driven full MetaClass <em>replacements</em>
+     * use MetaClass-aware policy instead (pure {@code MetaClassImpl} replace stays
+     * exact-class; see {@link IndyInvalidation#invalidateForMetaClassChange}).
+     * <p>
      * <strong>Behavioral change in 6.0 (GROOVY-12191):</strong> this method no longer
      * triggers a process-wide call-site flush. It scopes invalidation to this class
      * and loaded subtypes/implementors only. Callers that previously relied on
@@ -166,8 +174,11 @@ public class ClassInfo implements Finalizable {
     /**
      * Bumps {@link #getVersion()} and, when {@code retireSwitchPoint} is true,
      * retires this class's SwitchPoint only (no subtype fan-out). Used by
-     * strong/weak MetaClass install paths; hierarchy fan-out is applied by the
-     * MetaClass registry listener via {@link IndyInvalidation#invalidateClass(Class)}.
+     * strong/weak MetaClass install paths; MetaClass-aware hierarchy fan-out is
+     * applied by the MetaClass registry listener via
+     * {@link IndyInvalidation#invalidateForMetaClassChange}
+     * (exact-class for hierarchy-local {@code MetaClassImpl} replaces; hierarchy
+     * for EMC / interface / array / custom MetaClass).
      * <p>
      * First MetaClass install ({@code null →} default MC) only bumps version.
      * Replacement and clear retire the SwitchPoint so any already-linked sites re-link.

@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.runtime.indy
 
+import groovy.lang.ExpandoMetaClass
+import groovy.lang.GroovySystem
 import org.codehaus.groovy.reflection.ClassInfo
 import org.codehaus.groovy.runtime.NullObject
 import org.junit.jupiter.api.BeforeEach
@@ -289,11 +291,149 @@ final class IndyInvalidationTest {
     void resetCountersForTesting_zerosCounters() {
         IndyInvalidation.invalidateClass(ClassA)
         IndyInvalidation.invalidateCategory()
+        IndyInvalidation.invalidateClassExact(ClassB)
         assertTrue(IndyInvalidation.classInvalidationCount() > 0)
         assertTrue(IndyInvalidation.categoryInvalidationCount() > 0)
+        assertTrue(IndyInvalidation.hierarchyInvalidationCount() > 0)
+        assertTrue(IndyInvalidation.exactOnlyInvalidationCount() > 0)
         IndyInvalidation.resetCountersForTesting()
         assertEquals(0, IndyInvalidation.classInvalidationCount())
         assertEquals(0, IndyInvalidation.categoryInvalidationCount())
+        assertEquals(0, IndyInvalidation.hierarchyInvalidationCount())
+        assertEquals(0, IndyInvalidation.exactOnlyInvalidationCount())
+    }
+
+    @Test
+    void invalidateClassExact_doesNotFanOutToSubtypes() {
+        SwitchPoint parentSp = ClassInfo.getClassInfo(Parent).indySwitchPoint
+        SwitchPoint childSp = ClassInfo.getClassInfo(Child).indySwitchPoint
+        IndyInvalidation.invalidateClassExact(Parent)
+        assertTrue(parentSp.hasBeenInvalidated())
+        assertFalse(childSp.hasBeenInvalidated())
+    }
+
+    @Test
+    void needsHierarchyFanOut_emcVsMetaClassImpl() {
+        def mcImpl = new groovy.lang.MetaClassImpl(ClassA)
+        mcImpl.initialize()
+        def emc = new ExpandoMetaClass(ClassA, true, true)
+        emc.initialize()
+
+        assertTrue(IndyInvalidation.isHierarchyLocalMetaClass(mcImpl))
+        assertTrue(IndyInvalidation.isHierarchyLocalMetaClass(null))
+        assertFalse(IndyInvalidation.isHierarchyLocalMetaClass(emc))
+
+        assertFalse(IndyInvalidation.needsHierarchyFanOut(ClassA, mcImpl, mcImpl),
+                'pure MetaClassImpl replace must not require fan-out')
+        assertFalse(IndyInvalidation.needsHierarchyFanOut(ClassA, null, mcImpl),
+                'first MetaClassImpl install must not require fan-out')
+        assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, null, emc),
+                'EMC install must require fan-out')
+        assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, emc, mcImpl),
+                'EMC remove must require fan-out')
+        assertTrue(IndyInvalidation.needsHierarchyFanOut(Marker, mcImpl, mcImpl),
+                'interface MetaClass change must require fan-out')
+        assertTrue(IndyInvalidation.needsHierarchyFanOut(String[], mcImpl, mcImpl),
+                'array MetaClass change must require fan-out')
+    }
+
+    @Test
+    void needsHierarchyFanOut_modifiedCustomMetaClass_fansOut() {
+        // MetaClassImpl subclass with isModified()==true is not hierarchy-local
+        // (same gate as findMethodInClassHierarchy).
+        def custom = new ModifiedCustomMetaClass(ClassA)
+        custom.initialize()
+        assertFalse(IndyInvalidation.isHierarchyLocalMetaClass(custom))
+        def mcImpl = new groovy.lang.MetaClassImpl(ClassA)
+        mcImpl.initialize()
+        assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, mcImpl, custom),
+                'modified custom MetaClass must fan out (correctness-first)')
+    }
+
+    @Test
+    void needsHierarchyFanOut_globalEmcEnabled() {
+        def mcImpl = new groovy.lang.MetaClassImpl(ClassA)
+        mcImpl.initialize()
+        try {
+            ExpandoMetaClass.enableGlobally()
+            assertTrue(IndyInvalidation.isGlobalEmcEnabled())
+            assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, mcImpl, mcImpl),
+                    'global EMC must force hierarchy fan-out even for MetaClassImpl pair')
+        } finally {
+            ExpandoMetaClass.disableGlobally()
+            assertFalse(IndyInvalidation.isGlobalEmcEnabled())
+        }
+    }
+
+    @Test
+    void isExpandoMetaClass_detectsDirectAndWrapped() {
+        def emc = new ExpandoMetaClass(ClassA, true, true)
+        emc.initialize()
+        assertTrue(IndyInvalidation.isExpandoMetaClass(emc))
+        assertFalse(IndyInvalidation.isExpandoMetaClass(new groovy.lang.MetaClassImpl(ClassA)))
+        assertFalse(IndyInvalidation.isExpandoMetaClass(null))
+        def handle = new org.codehaus.groovy.runtime.HandleMetaClass(emc)
+        assertTrue(IndyInvalidation.isExpandoMetaClass(handle),
+                'HandleMetaClass wrapping EMC must be recognised')
+    }
+
+    @Test
+    void invalidateForMetaClassChange_exactForPureMetaClassImpl() {
+        SwitchPoint parentSp = ClassInfo.getClassInfo(PolicyParent).indySwitchPoint
+        SwitchPoint childSp = ClassInfo.getClassInfo(PolicyChild).indySwitchPoint
+        def oldMc = new groovy.lang.MetaClassImpl(PolicyParent)
+        oldMc.initialize()
+        def newMc = new groovy.lang.MetaClassImpl(PolicyParent)
+        newMc.initialize()
+        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+                GroovySystem.metaClassRegistry, null, PolicyParent, oldMc, newMc)
+
+        IndyInvalidation.invalidateForMetaClassChange(event)
+
+        assertTrue(parentSp.hasBeenInvalidated())
+        assertFalse(childSp.hasBeenInvalidated(),
+                'pure MetaClassImpl replace must stay exact-class')
+    }
+
+    @Test
+    void invalidateForMetaClassChange_hierarchyForEmc() {
+        SwitchPoint childSp = ClassInfo.getClassInfo(PolicyChildEmc).indySwitchPoint
+        def emc = new ExpandoMetaClass(PolicyParentEmc, true, true)
+        emc.initialize()
+        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+                GroovySystem.metaClassRegistry, null, PolicyParentEmc, null, emc)
+
+        IndyInvalidation.invalidateForMetaClassChange(event)
+
+        assertTrue(childSp.hasBeenInvalidated(),
+                'EMC install on parent must fan out to child')
+    }
+
+    @Test
+    void invalidateForMetaClassChange_perInstance_exactOnly() {
+        SwitchPoint parentSp = ClassInfo.getClassInfo(PolicyParentPerInst).indySwitchPoint
+        SwitchPoint childSp = ClassInfo.getClassInfo(PolicyChildPerInst).indySwitchPoint
+        def instance = new PolicyParentPerInst()
+        def emc = new ExpandoMetaClass(PolicyParentPerInst, false, true)
+        emc.initialize()
+        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+                GroovySystem.metaClassRegistry, instance, PolicyParentPerInst, null, emc)
+
+        assertTrue(event.isPerInstanceMetaClassChange())
+        IndyInvalidation.invalidateForMetaClassChange(event)
+
+        assertTrue(parentSp.hasBeenInvalidated())
+        assertFalse(childSp.hasBeenInvalidated(),
+                'per-instance MetaClass must not fan out to subtypes')
+    }
+
+    @Test
+    void invalidateForMetaClassChange_nullType_unscoped() {
+        SwitchPoint sp = ClassInfo.getClassInfo(ClassA).indySwitchPoint
+        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+                GroovySystem.metaClassRegistry, null, null, null, null)
+        IndyInvalidation.invalidateForMetaClassChange(event)
+        assertTrue(sp.hasBeenInvalidated())
     }
 
     @Test
@@ -503,8 +643,21 @@ final class IndyInvalidationTest {
     private static final class ClearedIncVersionHost {}
     private static interface Marker {}
     private static final class MarkerImpl implements Marker {}
+    private static class PolicyParent {}
+    private static final class PolicyChild extends PolicyParent {}
+    private static class PolicyParentEmc {}
+    private static final class PolicyChildEmc extends PolicyParentEmc {}
+    private static class PolicyParentPerInst {}
+    private static final class PolicyChildPerInst extends PolicyParentPerInst {}
 }
 
 /** Top-level host for per-instance MetaClass SwitchPoint coverage. */
 class Groovy12191PerInstHost {}
+
+/** MetaClassImpl subclass that reports modified, forcing hierarchy fan-out. */
+class ModifiedCustomMetaClass extends groovy.lang.MetaClassImpl {
+    ModifiedCustomMetaClass(Class theClass) { super(theClass) }
+    @Override
+    boolean isModified() { true }
+}
 

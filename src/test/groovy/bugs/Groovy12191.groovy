@@ -133,20 +133,43 @@ final class Groovy12191 {
     }
 
     @Test
-    void parentMetaClassImplReplace_stillFansOutToSubclassSwitchPoint() {
-        // Even without EMC method tables, replacing Parent's MetaClass can
-        // change what Child dispatch observes; hierarchy fan-out still applies.
+    void parentMetaClassImplReplace_doesNotFanOutToSubclassSwitchPoint() {
+        // Pure MetaClassImpl ↔ MetaClassImpl replace has no cross-class EMC
+        // visibility: each class owns its own tables. Hierarchy fan-out would
+        // only re-link subtype sites without a MOP reason (blackdrag review).
+        SwitchPoint parentSp = ClassInfo.getClassInfo(HierParentMcImpl).indySwitchPoint
         SwitchPoint childSp = ClassInfo.getClassInfo(HierChildMcImpl).indySwitchPoint
+        assertFalse(parentSp.hasBeenInvalidated())
         assertFalse(childSp.hasBeenInvalidated())
 
         def mc = new MetaClassImpl(HierParentMcImpl)
         mc.initialize()
         GroovySystem.metaClassRegistry.setMetaClass(HierParentMcImpl, mc)
         try {
-            assertTrue(childSp.hasBeenInvalidated(),
-                    'MetaClassImpl replacement on parent must retire subclass SwitchPoint')
+            assertTrue(parentSp.hasBeenInvalidated(),
+                    'MetaClassImpl replacement must retire the exact class domain')
+            assertFalse(childSp.hasBeenInvalidated(),
+                    'pure MetaClassImpl parent replace must not retire subclass SwitchPoint')
         } finally {
             GroovySystem.metaClassRegistry.removeMetaClass(HierParentMcImpl)
+        }
+    }
+
+    @Test
+    void parentEmcReplace_fansOutToSubclassSwitchPoint() {
+        // Installing EMC on Parent publishes methods into Child via hierarchy
+        // walk — subtype sites must re-link.
+        SwitchPoint childSp = ClassInfo.getClassInfo(HierChildEmc).indySwitchPoint
+        assertFalse(childSp.hasBeenInvalidated())
+
+        def emc = new ExpandoMetaClass(HierParentEmc, true, true)
+        emc.initialize()
+        GroovySystem.metaClassRegistry.setMetaClass(HierParentEmc, emc)
+        try {
+            assertTrue(childSp.hasBeenInvalidated(),
+                    'EMC install on parent must retire subclass SwitchPoint')
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(HierParentEmc)
         }
     }
 
@@ -223,6 +246,90 @@ final class Groovy12191 {
                 'incVersion must not act as a process-wide flush (GROOVY-12191)')
     }
 
+    /**
+     * Blackdrag scenario matrix (PR #2736): {@code call(c)} uses receiver class C.
+     * Mutations on B/A must not retire C's domain; methods added on B/A must not
+     * become visible on a pure C instance. Documents old-vs-new blast radius and
+     * actual MOP visibility.
+     */
+    @Test
+    void blackdragScenario_callOnC_notInvalidatedBySubclassMetaClassChurn() {
+        SwitchPoint spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
+        SwitchPoint spB = ClassInfo.getClassInfo(BdB).indySwitchPoint
+        SwitchPoint spA = ClassInfo.getClassInfo(BdA).indySwitchPoint
+        assertFalse(spC.hasBeenInvalidated())
+        assertFalse(spB.hasBeenInvalidated())
+        assertFalse(spA.hasBeenInvalidated())
+
+        def c = new BdC()
+        assert c.fooC() == 'fooC'
+
+        // B.metaClass = EMC + method — fans out to A (subtype of B), not to C (supertype).
+        def emcB = new ExpandoMetaClass(BdB, true, true)
+        emcB.initialize()
+        GroovySystem.metaClassRegistry.setMetaClass(BdB, emcB)
+        try {
+            assertTrue(spB.hasBeenInvalidated())
+            assertTrue(spA.hasBeenInvalidated(), 'EMC on B must fan out to A')
+            assertFalse(spC.hasBeenInvalidated(), 'EMC on B must not retire C (supertype)')
+            assert c.fooC() == 'fooC'
+            assert !c.metaClass.respondsTo(c, 'fooB0')
+
+            spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
+            spA = ClassInfo.getClassInfo(BdA).indySwitchPoint
+            BdB.metaClass.fooB0 = { -> 'fooB0' }
+            assertTrue(spA.hasBeenInvalidated(), 'B EMC update (incVersion) fans out to A')
+            assertFalse(spC.hasBeenInvalidated())
+            assert new BdB().fooB0() == 'fooB0'
+            assert new BdA().fooB0() == 'fooB0'
+            assert !c.metaClass.respondsTo(c, 'fooB0')
+            assert c.fooC() == 'fooC'
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(BdB)
+        }
+
+        // A.fooA = {} — exact class A (+ subtypes of A if any), not C.
+        spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
+        BdA.metaClass.fooA = { -> 'fooA' }
+        try {
+            assertFalse(spC.hasBeenInvalidated())
+            assert new BdA().fooA() == 'fooA'
+            assert !c.metaClass.respondsTo(c, 'fooA')
+            assert c.fooC() == 'fooC'
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(BdA)
+        }
+
+        // Per-instance EMC on a B instance — does not affect C domain or visibility on c.
+        spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
+        def b = new BdB()
+        def emcInst = new ExpandoMetaClass(BdB, false, true)
+        emcInst.initialize()
+        emcInst.fooB2 = { -> 'fooB2' }
+        b.metaClass = emcInst
+        assertFalse(spC.hasBeenInvalidated(),
+                'per-instance MetaClass on B must not retire C SwitchPoint')
+        assert b.fooB2() == 'fooB2'
+        assert b.fooC() == 'fooC'
+        assert !c.metaClass.respondsTo(c, 'fooB2')
+        assert c.fooC() == 'fooC'
+        b.metaClass = null
+    }
+
+    @Test
+    void objectArrayEmcMethod_visibleOnStringArray() {
+        // Empirical MOP fact that justifies array lattice fan-out for EMC.
+        assertScript '''
+            Object[].metaClass.arrHello = { -> 'arr' }
+            try {
+                assert (new Object[0]).arrHello() == 'arr'
+                assert (new String[0]).arrHello() == 'arr'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Object[])
+            }
+        '''
+    }
+
     static class TypeA {}
     static class TypeB {
         String id() { 'B' }
@@ -238,6 +345,14 @@ final class Groovy12191 {
     static class HierChild extends HierParent {}
     static class HierParentMcImpl {}
     static class HierChildMcImpl extends HierParentMcImpl {}
+    static class HierParentEmc {}
+    static class HierChildEmc extends HierParentEmc {}
     static class HierParentScope {}
     static class HierChildScope extends HierParentScope {}
+    /** blackdrag scenario types: A extends B extends C */
+    static class BdC {
+        String fooC() { 'fooC' }
+    }
+    static class BdB extends BdC {}
+    static class BdA extends BdB {}
 }

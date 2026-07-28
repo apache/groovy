@@ -20,17 +20,24 @@
 /**
  * Scoped invokedynamic SwitchPoint utilities for the Groovy MOP (GROOVY-12191).
  * <p>
- * One SwitchPoint per class (on {@link org.codehaus.groovy.reflection.ClassInfo}):
- * MetaClass changes retire that class and loaded subtypes (including array-type
- * fan-out for {@code Object[]} and similar); category enter/leave bulk-retires
- * loaded class SwitchPoints. Linked call sites carry a single guard — no
- * process-wide MOP SwitchPoint on the hot path.
+ * One SwitchPoint per class (on {@link org.codehaus.groovy.reflection.ClassInfo})
+ * models the class-level MetaClass generation used by monomorphic indy sites.
+ * MetaClass-aware policy decides exact-class vs hierarchy fan-out
+ * (exact-class is an allow-list):
+ * <ul>
+ *   <li>EMC, modified custom MetaClass, global EMC, interface and array types
+ *       → class + loaded subtypes (incl. array lattice)</li>
+ *   <li>hierarchy-local {@code MetaClassImpl} pair, per-instance MetaClass
+ *       → exact class only</li>
+ *   <li>category enter/leave and unscoped events → bulk retire all class domains</li>
+ * </ul>
+ * Linked call sites carry a single guard — no process-wide MOP SwitchPoint on
+ * the hot path. See {@link IndyInvalidation} for the full decision matrix and
+ * the relationship to a future MetaClass-owned SwitchPoint design.
  * <p>
  * Hierarchy fan-out is indexed by {@link ClassHierarchyIndex} so typed MetaClass
  * invalidation cost is proportional to the number of loaded subtypes of the
- * changed type, not to the total number of loaded classes. Fan-out covers
- * cross-class MOP visibility (parent ExpandoMetaClass, interface MetaClass,
- * array covariance), not a shared {@code MetaClassImpl} table.
+ * changed type, not to the total number of loaded classes.
  * <p>
  * Install guards via {@link IndyInvalidation#guardWithMopSwitchPoints} (public)
  * or {@code IndyInterface.applyMopSwitchPoints} (production link path). The

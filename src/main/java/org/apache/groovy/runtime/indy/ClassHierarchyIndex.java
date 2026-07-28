@@ -41,12 +41,13 @@ import java.util.Set;
  * {@code O(|subtypes of T|)} — instead of scanning every loaded
  * {@code ClassInfo} with {@code isAssignableFrom}.
  * <p>
- * The index exists so that <em>supertype</em> MetaClass / registry changes can
- * retire already-linked sites on subtypes (ExpandoMetaClass inheritance,
- * interface MetaClass, array covariance). It is not modelling a shared
- * {@code MetaClassImpl} table up the hierarchy — each class still has its own
- * MetaClass — but dispatch for a subtype can observe MOP state installed on
- * ancestors. See {@link IndyInvalidation} class javadoc for the full rationale.
+ * The index is consulted when MetaClass-aware policy chooses hierarchy fan-out
+ * (EMC install/update, global EMC, interface / array MetaClass changes). It is
+ * not modelling a shared {@code MetaClassImpl} table — each class still has its
+ * own MetaClass — but {@code MetaClassImpl.findMethodInClassHierarchy} can
+ * observe expando methods installed on ancestors, so subtype sites must re-link
+ * when those ancestors change. Pure {@code MetaClassImpl} class replaces do not
+ * walk this index (exact-class invalidation only). See {@link IndyInvalidation}.
  * <p>
  * Keys and values are weakly held so the index does not pin classes or
  * {@code ClassInfo} instances after they become unreachable.

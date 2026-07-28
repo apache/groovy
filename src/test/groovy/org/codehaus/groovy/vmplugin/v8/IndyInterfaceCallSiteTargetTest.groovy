@@ -385,7 +385,7 @@ final class IndyInterfaceCallSiteTargetTest {
         )
 
         assertEquals(staticEcho('bar'), methodHandle.invokeWithArguments([args] as Object[]))
-        assertSame(MethodHandleWrapper.getNullMethodHandleWrapper(), requireCachedWrapper(callSite, IndyInterfaceCallSiteTargetTest))
+        assertSame(MethodHandleWrapper.getUncacheablePicSentinel(), requireCachedWrapper(callSite, IndyInterfaceCallSiteTargetTest))
         assertSame(callSite.defaultTarget, callSite.target)
     }
 
@@ -451,7 +451,7 @@ final class IndyInterfaceCallSiteTargetTest {
         AtomicInteger providerCalls = new AtomicInteger()
         MethodHandleWrapper wrapper = callSite.getAndPut(receiverClassName(receiver), { key ->
             providerCalls.incrementAndGet()
-            MethodHandleWrapper.getNullMethodHandleWrapper()
+            MethodHandleWrapper.getUncacheablePicSentinel()
         })
         assertEquals(0, providerCalls.get())
         wrapper

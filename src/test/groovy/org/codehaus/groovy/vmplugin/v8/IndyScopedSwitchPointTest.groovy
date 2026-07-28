@@ -175,7 +175,7 @@ final class IndyScopedSwitchPointTest {
     }
 
     @Test
-    void coldReflective_picWrite_usesNullSentinelWhenUncacheable() {
+    void coldReflective_picWrite_usesUncacheableSentinelWhenUncacheable() {
         // Mirrors invokeColdReflective / selectMethodHandle PIC policy:
         // uncacheable wrappers must not be stored under the receiver class key.
         def type = MethodType.methodType(Object, Object)
@@ -187,7 +187,7 @@ final class IndyScopedSwitchPointTest {
                 false)
         assertFalse(uncacheable.isCanSetTarget())
         def key = ColdHost.name
-        def sentinel = MethodHandleWrapper.nullMethodHandleWrapper
+        def sentinel = MethodHandleWrapper.uncacheablePicSentinel
         site.put(key, uncacheable.isCanSetTarget() ? uncacheable : sentinel)
         // Next PIC hit must observe the sentinel, not the uncacheable wrapper.
         def fromPic = site.getAndPut(key, { k -> uncacheable })
