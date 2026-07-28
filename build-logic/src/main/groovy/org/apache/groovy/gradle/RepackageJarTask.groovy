@@ -212,11 +212,34 @@ abstract class RepackageJarTask extends ShadowJar {
         // registration are honoured, without accumulating across re-runs.
         relocators.empty()
         for (Map.Entry<String, String> e : patterns.entrySet()) {
-            relocate(toRelocationPrefix(e.key), toRelocationDestination(e.value))
+            String pattern = e.key
+            String prefix = toRelocationPrefix(pattern)
+            String destination = toRelocationDestination(e.value)
+            // Shadow matches package prefixes with startsWith, so a rule for
+            // java.beans.** also rewrites the bare string "java.beans". jarjar's
+            // ".**" wildcard required a child segment and left bare package names
+            // alone. That matters for Java9.JAVA8_PACKAGES(): those entries are
+            // real JDK package names looked up via ModuleFinder.ofSystem() — if
+            // rewritten to groovyjarjaropenbeans the lookup no-ops. Type/descriptor
+            // remapping is unaffected (skipStringConstants only gates LDC strings).
+            // See GROOVY-12199 / Bucket 4a.
+            if (shouldSkipStringConstants(prefix)) {
+                relocate(prefix, destination) { it.skipStringConstants = true }
+            } else {
+                relocate(prefix, destination)
+            }
         }
 
         super.copy()
         postProcess()
+    }
+
+    /**
+     * JDK packages that may appear as bare package-name string constants (not
+     * Class.forName targets) and must stay as real platform names after shading.
+     */
+    private static boolean shouldSkipStringConstants(String packagePrefix) {
+        return packagePrefix == 'java.beans' || packagePrefix.startsWith('java.beans.')
     }
 
     private void postProcess() {
