@@ -2966,7 +2966,7 @@ the source code
 * _Semantic Analysis_: Performs consistency and validity checks that the
 grammar can’t check for, and resolves classes.
 * _Canonicalization_: Complete building the AST
-* _Instruction Selection_: instruction set is chosen, for example Java 6 or Java 7 bytecode level
+* _Instruction Selection_: Prepare for class generation, for example static type checking is performed in this phase
 * _Class Generation_: creates the bytecode of the class in memory
 * _Output_: write the binary output to the file system
 * _Finalization_: Perform any last cleanup

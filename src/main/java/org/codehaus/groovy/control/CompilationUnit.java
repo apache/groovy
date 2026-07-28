@@ -708,10 +708,12 @@ public class CompilationUnit extends ProcessingUnit {
     // ACTIONS
 
     /**
-     * Synonym for {@code compile(Phases.ALL)}.
+     * Compiles the compilation unit from sources through the configured target
+     * phase; a synonym for {@code compile(Phases.ALL)} unless an earlier phase
+     * is set via {@link CompilerConfiguration#setTargetPhase(int)} (GROOVY-12204).
      */
     public void compile() throws CompilationFailedException {
-        compile(Phases.ALL);
+        compile(configuration.getTargetPhase());
     }
 
     /**

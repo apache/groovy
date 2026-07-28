@@ -332,6 +332,16 @@ public class CompilerConfiguration {
         }
 
         @Override
+        public void setTargetPhase(final int targetPhase) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setTargetPhase(final CompilePhase targetPhase) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setTargetDirectory(final String directory) {
             throw new UnsupportedOperationException();
         }
@@ -476,6 +486,16 @@ public class CompilerConfiguration {
      */
     private boolean forInPerIterationCapture = true;
 
+    /**
+     * The target compile phase: the last phase to be processed when
+     * {@link CompilationUnit#compile()} is called without an explicit phase
+     * (GROOVY-12204). Defaults to {@link Phases#ALL}. An earlier phase, such as
+     * {@link Phases#INSTRUCTION_SELECTION}, gives a check-only compilation
+     * which reports parse, resolution, and static type-checking errors without
+     * generating class files.
+     */
+    private int targetPhase = Phases.ALL;
+
     private final List<CompilationCustomizer> compilationCustomizers = new LinkedList<>();
 
     /**
@@ -584,6 +604,7 @@ public class CompilerConfiguration {
         setRecompileGroovySource(configuration.getRecompileGroovySource());
         setMinimumRecompilationInterval(configuration.getMinimumRecompilationInterval());
         setTargetBytecode(configuration.getTargetBytecode());
+        setTargetPhase(configuration.getTargetPhase());
         setPreviewFeatures(configuration.isPreviewFeatures());
         setLogClassgen(configuration.isLogClassgen());
         setLogClassgenStackTraceMaxDepth(configuration.getLogClassgenStackTraceMaxDepth());
@@ -1496,5 +1517,50 @@ public class CompilerConfiguration {
      */
     public void setForInPerIterationCaptureEnabled(final boolean forInPerIterationCapture) {
         this.forInPerIterationCapture = forInPerIterationCapture;
+    }
+
+    /**
+     * Gets the target compile phase: the last phase to be processed when
+     * {@link CompilationUnit#compile()} is called without an explicit phase
+     * (GROOVY-12204). Defaults to {@link Phases#ALL}.
+     *
+     * @return the target phase number, one of the {@link Phases} constants
+     * @see #setTargetPhase(int)
+     * @since 6.0.0
+     */
+    public int getTargetPhase() {
+        return targetPhase;
+    }
+
+    /**
+     * Sets the target compile phase: the last phase to be processed when
+     * {@link CompilationUnit#compile()} is called without an explicit phase
+     * (GROOVY-12204). Values outside
+     * the range of the {@link Phases} constants are clamped into range.
+     * Setting {@link Phases#INSTRUCTION_SELECTION} gives a check-only
+     * compilation, as used by the {@code groovyc --check} option: parse,
+     * resolution, and static type-checking errors are reported but no class
+     * files are generated. Callers that pass an explicit phase to
+     * {@link CompilationUnit#compile(int)}, such as the AST browser, are
+     * unaffected by this setting.
+     *
+     * @param targetPhase the target phase number, one of the {@link Phases} constants
+     * @see #getTargetPhase()
+     * @since 6.0.0
+     */
+    public void setTargetPhase(final int targetPhase) {
+        this.targetPhase = Math.max(Phases.INITIALIZATION, Math.min(targetPhase, Phases.ALL));
+    }
+
+    /**
+     * Convenience overload of {@link #setTargetPhase(int)} taking the
+     * {@link CompilePhase} enum, e.g. for configuration scripts:
+     * {@code configuration.targetPhase = CompilePhase.INSTRUCTION_SELECTION}.
+     *
+     * @param targetPhase the target phase
+     * @since 6.0.0
+     */
+    public void setTargetPhase(final CompilePhase targetPhase) {
+        setTargetPhase(targetPhase.getPhaseNumber());
     }
 }

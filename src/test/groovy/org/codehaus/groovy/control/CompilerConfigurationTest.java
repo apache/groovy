@@ -376,4 +376,43 @@ public final class CompilerConfigurationTest {
                 CompilerConfiguration.DEFAULT.setForInPerIterationCaptureEnabled(false));
         assertTrue(CompilerConfiguration.DEFAULT.isForInPerIterationCaptureEnabled());
     }
+
+    @Test // GROOVY-12204
+    public void testTargetPhaseDefaultsToAll() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        assertEquals(Phases.ALL, config.getTargetPhase());
+    }
+
+    @Test // GROOVY-12204
+    public void testTargetPhaseSetterAndClamping() {
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setTargetPhase(Phases.INSTRUCTION_SELECTION);
+        assertEquals(Phases.INSTRUCTION_SELECTION, config.getTargetPhase());
+        config.setTargetPhase(CompilePhase.CANONICALIZATION);
+        assertEquals(Phases.CANONICALIZATION, config.getTargetPhase());
+        config.setTargetPhase(0); // below INITIALIZATION: clamped
+        assertEquals(Phases.INITIALIZATION, config.getTargetPhase());
+        config.setTargetPhase(42); // above ALL: clamped
+        assertEquals(Phases.ALL, config.getTargetPhase());
+    }
+
+    @Test // GROOVY-12204
+    public void testTargetPhaseCopyConstructor() {
+        CompilerConfiguration src = new CompilerConfiguration();
+        src.setTargetPhase(Phases.INSTRUCTION_SELECTION);
+        CompilerConfiguration copy = new CompilerConfiguration(src);
+        assertEquals(Phases.INSTRUCTION_SELECTION, copy.getTargetPhase());
+        src.setTargetPhase(Phases.ALL);
+        // copy is independent
+        assertEquals(Phases.INSTRUCTION_SELECTION, copy.getTargetPhase());
+    }
+
+    @Test // GROOVY-12204
+    public void testDefaultConfigurationTargetPhaseIsImmutable() {
+        assertThrows(UnsupportedOperationException.class, () ->
+                CompilerConfiguration.DEFAULT.setTargetPhase(Phases.INSTRUCTION_SELECTION));
+        assertThrows(UnsupportedOperationException.class, () ->
+                CompilerConfiguration.DEFAULT.setTargetPhase(CompilePhase.INSTRUCTION_SELECTION));
+        assertEquals(Phases.ALL, CompilerConfiguration.DEFAULT.getTargetPhase());
+    }
 }
