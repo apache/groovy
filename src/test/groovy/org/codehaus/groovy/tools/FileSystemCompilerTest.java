@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.customizers.CompilationCustomizer;
 import org.codehaus.groovy.control.messages.WarningMessage;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -172,6 +174,42 @@ public class FileSystemCompilerTest {
         }
         configuration.setTargetDirectory(dir.toFile());
         FileSystemCompiler.doCompilation(configuration, null, new String[]{file.getPath()}, false, warningWriter);
+    }
+
+    // GROOVY-12204: a target phase before CLASS_GENERATION must suppress class file output
+    @Test
+    public void testCheckOnlyCompileProducesNoClassFiles(@TempDir Path dir) throws Exception {
+        CompilerConfiguration configuration = new CompilerConfiguration();
+        configuration.setTargetPhase(Phases.INSTRUCTION_SELECTION);
+        compile(dir, "CheckDemo", "class CheckDemo { }", configuration, null);
+        assertFalse(Files.exists(dir.resolve("CheckDemo.class")), "check-only compile must not write class files");
+
+        // control: the same shape of source with the default configuration does produce a class file
+        compile(dir, "FullDemo", "class FullDemo { }", null, null);
+        assertTrue(Files.exists(dir.resolve("FullDemo.class")), "sanity: full compile writes class files");
+    }
+
+    // GROOVY-12204: check-only compilation still surfaces static type-checking errors
+    @Test
+    public void testCheckOnlyCompileReportsTypeErrors(@TempDir Path dir) throws Exception {
+        CompilerConfiguration configuration = new CompilerConfiguration();
+        configuration.setTargetPhase(Phases.INSTRUCTION_SELECTION);
+        Exception e = assertThrows(Exception.class, () ->
+                compile(dir, "CheckError", "@groovy.transform.CompileStatic\nclass CheckError { int f() { int x = 'oops'; x } }", configuration, null));
+        assertTrue(e.getMessage().contains("Cannot assign value of type"), "expected a static type-checking error but got: " + e.getMessage());
+        assertFalse(Files.exists(dir.resolve("CheckError.class")));
+    }
+
+    // GROOVY-12204: --check command-line sugar for a check-only compile
+    @Test
+    public void testCheckCommandLineOption(@TempDir Path dir) throws Exception {
+        File file = dir.resolve("CliCheckDemo.groovy").toFile();
+        Files.write(file.toPath(), "class CliCheckDemo { }".getBytes(StandardCharsets.UTF_8));
+        FileSystemCompiler.commandLineCompile(new String[] {"--check", "-d", dir.toString(), file.getPath()});
+        assertFalse(Files.exists(dir.resolve("CliCheckDemo.class")), "--check must not write class files");
+
+        FileSystemCompiler.commandLineCompile(new String[] {"-d", dir.toString(), file.getPath()});
+        assertTrue(Files.exists(dir.resolve("CliCheckDemo.class")), "sanity: without --check the class file is written");
     }
 
     @Test

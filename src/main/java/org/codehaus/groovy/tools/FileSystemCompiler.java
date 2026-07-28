@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.Janitor;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.messages.WarningMessage;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
@@ -556,6 +557,9 @@ public class FileSystemCompiler {
         @Option(names = {"--type-checked"}, description = "Use TypeChecked")
         private boolean typeChecked;
 
+        @Option(names = {"--check"}, description = "Check sources for errors without generating class files (stops compilation after static analysis)")
+        private boolean checkOnly;
+
         /**
          * Builds a compiler configuration from the parsed command-line options.
          *
@@ -578,6 +582,9 @@ public class FileSystemCompiler {
             configuration.setPreviewFeatures(previewFeatures);
             configuration.setSourceEncoding(encoding);
             configuration.setScriptBaseClass(scriptBaseClass);
+            if (checkOnly) {
+                configuration.setTargetPhase(Phases.INSTRUCTION_SELECTION);
+            }
             if (tolerance > 0) {
                 configuration.setTolerance(tolerance);
             }

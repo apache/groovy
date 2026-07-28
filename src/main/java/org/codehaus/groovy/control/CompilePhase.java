@@ -50,7 +50,7 @@ public enum CompilePhase {
     CANONICALIZATION(Phases.CANONICALIZATION),
 
     /**
-    * instruction set is chosen, for example java5 or pre java5
+    * Prepare for class generation, for example static type checking is performed in this phase
     */
     INSTRUCTION_SELECTION(Phases.INSTRUCTION_SELECTION),
 

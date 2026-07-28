@@ -46,6 +46,7 @@ a number of command line switches:
 | | --encoding | Encoding of the source files | groovyc --encoding utf-8 script.groovy
 | | --help | Displays help for the command line groovyc tool | groovyc --help
 | -d | | Specify where to place generated class files. | groovyc -d target Person.groovy
+| | --check | Check sources for errors without generating class files (stops compilation after static analysis) | groovyc --check Person.groovy
 | -v | --version | Displays the compiler version | groovyc -v
 | -e | --exception | Displays the stack trace in case of compilation error | groovyc -e script.groovy
 | -w | --warningLevel | Sets how many warnings are reported after a successful compile: `0` (none), `1` (likely errors, the default), `2` (possible errors) or `3` (all). See <<section-groovyc-warnings,Compiler warnings>>. | groovyc -w 2 MyClass.groovy
