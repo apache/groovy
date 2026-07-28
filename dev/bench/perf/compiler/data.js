@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785139373043,
+  "lastUpdate": 1785224956929,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3748,6 +3748,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 500.98,
             "range": "±21.56",
+            "unit": "ms",
+            "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "id": "023b9f5e319d1ecf12d89fb7fb5491a0f56e5fd1",
+          "message": "GROOVY-12202: Bump antlr to 4.13.2.10",
+          "timestamp": "2026-07-27T17:17:41Z",
+          "url": "https://github.com/apache/groovy/commit/023b9f5e319d1ecf12d89fb7fb5491a0f56e5fd1"
+        },
+        "date": 1785224955266,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 561.8666666666666,
+            "range": "±26.16",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 655.14,
+            "range": "±212.81",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 575.3133333333333,
+            "range": "±139.13",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 478.89333333333326,
+            "range": "±28.41",
             "unit": "ms",
             "extra": "5.0.6"
           }
