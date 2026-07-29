@@ -62,4 +62,18 @@ public @interface GQ {
      */
     @Incubating
     String astWalker() default "org.apache.groovy.ginq.provider.collection.GinqAstWalker";
+
+    /**
+     * Specify the GINQ provider by name, e.g. {@code collection} (the default) or a
+     * provider registered via the {@link org.apache.groovy.ginq.provider.GinqProvider}
+     * SPI such as {@code native-sql}.
+     * <p>
+     * Note that database-backed providers also require a {@code dataSource}, which
+     * cannot be supplied via an annotation; use the macro form instead, e.g.
+     * {@code GQ(provider: 'native-sql', dataSource: db) {...}}.
+     *
+     * @since 6.0.0
+     */
+    @Incubating
+    String provider() default "collection";
 }

@@ -68,6 +68,7 @@ def subprojects = [
         'groovy-callsite',
         'groovy-logging-test',
         'groovy-ginq',
+        'groovy-ginq-sql',
         'groovy-http-builder',
         'groovy-markdown',
         'groovy-macro',
