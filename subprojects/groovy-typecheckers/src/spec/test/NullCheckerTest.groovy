@@ -149,6 +149,37 @@ class NullCheckerTest {
     }
 
     @Test
+    void testBroaderGuards() {
+        assertScript('''
+        import groovy.transform.TypeChecked
+        import java.lang.annotation.*
+
+        @Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+        @Retention(RetentionPolicy.RUNTIME)
+        @interface Nullable {}
+
+        // tag::broader_guards[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        int firstWordLength(@Nullable String phrase) {
+            if (phrase == null || phrase.isEmpty()) {  // ok: short-circuit guard
+                return 0
+            }
+            phrase.split(' ')[0].length()              // ok: phrase is non-null here
+        }
+
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        String shout(@Nullable String word) {
+            word ? word.toUpperCase() + '!' : 'nothing' // ok: Groovy-truth ternary guard
+        }
+        // end::broader_guards[]
+        assert firstWordLength('hello world') == 5
+        assert firstWordLength(null) == 0
+        assert shout('hi') == 'HI!'
+        assert shout(null) == 'nothing'
+        ''')
+    }
+
+    @Test
     void testNullPassedToNonNull() {
         def err = shouldFail('''
         import groovy.transform.TypeChecked
