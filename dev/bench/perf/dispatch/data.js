@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785224969155,
+  "lastUpdate": 1785312610419,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -1242,6 +1242,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "bytecode.corpus.bytes",
             "value": 194254,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "ab94313eb012baf52722dae51f4575808a5b4315",
+          "message": "GROOVY-12207: Consult package-info.class of dependencies during resolution",
+          "timestamp": "2026-07-29T00:46:50Z",
+          "url": "https://github.com/apache/groovy/commit/ab94313eb012baf52722dae51f4575808a5b4315"
+        },
+        "date": 1785312609899,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3990,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 453,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 875,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1494,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
             "unit": "bytes"
           },
           {
