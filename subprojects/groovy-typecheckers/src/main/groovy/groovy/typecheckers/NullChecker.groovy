@@ -27,23 +27,26 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.Variable
 import org.codehaus.groovy.ast.expr.BinaryExpression
+import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.ast.expr.NotExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.BlockStatement
-import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.ThrowStatement
+import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
@@ -80,8 +83,19 @@ import static org.codehaus.groovy.syntax.Types.isAssignment
  *     <li>Dereferencing a variable known to be null through flow analysis ({@code strict} mode only)</li>
  * </ul>
  * <p>
- * The checker recognizes null guards ({@code if (x != null)}), early exit patterns
- * ({@code if (x == null) return/throw}), and safe navigation ({@code ?.}).
+ * The checker recognizes a range of null-guard patterns:
+ * <ul>
+ *     <li>Null comparisons: {@code if (x != null)}, {@code if (x == null)}</li>
+ *     <li>Early exit patterns: {@code if (x == null) return/throw}</li>
+ *     <li>Safe navigation: {@code ?.}</li>
+ *     <li>Groovy-truth guards: {@code if (x)}, {@code if (!x) return}</li>
+ *     <li>Boolean conjunctions and disjunctions with short-circuit semantics:
+ *         {@code if (x != null && x.length() > 0)}, {@code if (x == null || x.isEmpty()) return}</li>
+ *     <li>Type checks: {@code if (x instanceof Foo)}, {@code if (x !instanceof Foo) return}</li>
+ *     <li>Utility methods: {@code Objects.nonNull(x)}, {@code Objects.isNull(x)}</li>
+ *     <li>Assert statements: {@code assert x}, {@code assert x != null}</li>
+ *     <li>Guard conditions of while loops and ternary expressions</li>
+ * </ul>
  *
  * <pre>
  * {@code @TypeChecked(extensions = 'groovy.typecheckers.NullChecker')}
@@ -161,6 +175,12 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
             @Override
             void visitBinaryExpression(BinaryExpression expression) {
+                int op = expression.operation.type
+                if (op == Types.LOGICAL_AND || op == Types.LOGICAL_OR) {
+                    // apply short-circuit guard semantics wherever the expression appears
+                    visitCondition(expression)
+                    return
+                }
                 super.visitBinaryExpression(expression)
                 if (isAssignment(expression.operation.type) && expression.leftExpression instanceof VariableExpression) {
                     def target = findTargetVariable(expression.leftExpression)
@@ -231,42 +251,145 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
             @Override
             void visitIfElse(IfStatement ifElse) {
-                ifElse.booleanExpression.visit(this)
-                def guard = findNullGuard(ifElse.booleanExpression.expression)
-                if (guard != null) {
-                    handleNullGuard(ifElse, guard.v1, guard.v2)
-                } else {
-                    ifElse.ifBlock.visit(this)
-                    ifElse.elseBlock.visit(this)
+                def facts = visitCondition(ifElse.booleanExpression.expression)
+                withGuards(facts.whenTrue) { ifElse.ifBlock.visit(this) }
+                withGuards(facts.whenFalse) { ifElse.elseBlock.visit(this) }
+                // Early exit: if (x == null) return/throw → x is non-null after (and vice versa)
+                if (isEarlyExit(ifElse.ifBlock)) {
+                    applyFacts(facts.whenFalse)
                 }
+                if (isEarlyExit(ifElse.elseBlock)) {
+                    applyFacts(facts.whenTrue)
+                }
+            }
+
+            @Override
+            void visitWhileLoop(WhileStatement loop) {
+                def facts = visitCondition(loop.booleanExpression.expression)
+                withGuards(facts.whenTrue) { loop.loopBlock.visit(this) }
+            }
+
+            @Override
+            void visitTernaryExpression(TernaryExpression expression) {
+                def condition = expression.booleanExpression.expression
+                def facts = visitCondition(condition)
+                // for elvis, the true expression is the (already visited) condition
+                if (!condition.is(expression.trueExpression) && !expression.booleanExpression.is(expression.trueExpression)) {
+                    withGuards(facts.whenTrue) { expression.trueExpression.visit(this) }
+                }
+                withGuards(facts.whenFalse) { expression.falseExpression.visit(this) }
+            }
+
+            @Override
+            void visitAssertStatement(AssertStatement statement) {
+                def facts = visitCondition(statement.booleanExpression.expression)
+                statement.messageExpression?.visit(this)
+                // assert x/assert x != null → x is non-null for the rest of the block
+                applyFacts(facts.whenTrue)
             }
 
             //------------------------------------------------------------------
 
-            private void handleNullGuard(IfStatement ifElse, Variable guardVar, boolean isNotNull) {
-                if (isNotNull) {
-                    // if (x != null) { ... } else { ... }
-                    def saved = new HashSet<>(guardedVars)
-                    guardedVars.add(guardVar)
-                    ifElse.ifBlock.visit(this)
-                    guardedVars.clear()
-                    guardedVars.addAll(saved)
-                    ifElse.elseBlock.visit(this)
+            /**
+             * Visits a condition applying short-circuit guard semantics: in
+             * {@code x != null && x.foo()} the right operand is protected by the
+             * left operand's null check (and similarly after {@code x == null ||}).
+             * Returns the sets of variables known to be non-null when the condition
+             * evaluates true and when it evaluates false.
+             */
+            private GuardFacts visitCondition(Expression condition) {
+                def facts = new GuardFacts()
+                if (condition instanceof NotExpression) {
+                    def inner = visitCondition(condition.expression)
+                    facts.whenTrue = inner.whenFalse
+                    facts.whenFalse = inner.whenTrue
+                } else if (condition instanceof BooleanExpression) {
+                    facts = visitCondition(condition.expression)
+                } else if (condition instanceof BinaryExpression && condition.operation.type == Types.LOGICAL_AND) {
+                    def left = visitCondition(condition.leftExpression)
+                    def right = withGuards(left.whenTrue) { visitCondition(condition.rightExpression) }
+                    facts.whenTrue = left.whenTrue + right.whenTrue
+                    facts.whenFalse = left.whenFalse.intersect(right.whenFalse)
+                } else if (condition instanceof BinaryExpression && condition.operation.type == Types.LOGICAL_OR) {
+                    def left = visitCondition(condition.leftExpression)
+                    def right = withGuards(left.whenFalse) { visitCondition(condition.rightExpression) }
+                    facts.whenTrue = left.whenTrue.intersect(right.whenTrue)
+                    facts.whenFalse = left.whenFalse + right.whenFalse
                 } else {
-                    // if (x == null) { ... } else { ... }
-                    ifElse.ifBlock.visit(this)
-                    if (!(ifElse.elseBlock instanceof EmptyStatement)) {
-                        def saved = new HashSet<>(guardedVars)
-                        guardedVars.add(guardVar)
-                        ifElse.elseBlock.visit(this)
-                        guardedVars.clear()
-                        guardedVars.addAll(saved)
+                    condition.visit(this)
+                    facts = analyzeLeafCondition(condition)
+                }
+                facts
+            }
+
+            /**
+             * Analyzes a leaf condition (null comparison, instanceof check, Groovy-truth
+             * variable, or {@code Objects.nonNull/isNull} call) into guard facts.
+             */
+            private GuardFacts analyzeLeafCondition(Expression condition) {
+                def facts = new GuardFacts()
+                if (condition instanceof BinaryExpression) {
+                    int op = condition.operation.type
+                    if (op == Types.KEYWORD_INSTANCEOF) {
+                        def var = guardableVariable(condition.leftExpression)
+                        if (var != null) facts.whenTrue.add(var)
+                    } else if (op == Types.COMPARE_NOT_INSTANCEOF) {
+                        def var = guardableVariable(condition.leftExpression)
+                        if (var != null) facts.whenFalse.add(var)
+                    } else {
+                        boolean isNotEqual = (op == Types.COMPARE_NOT_EQUAL || op == Types.COMPARE_NOT_IDENTICAL)
+                        boolean isEqual = (op == Types.COMPARE_EQUAL || op == Types.COMPARE_IDENTICAL)
+                        if (isNotEqual || isEqual) {
+                            Variable var = null
+                            if (isNullExpr(condition.rightExpression)) {
+                                var = guardableVariable(condition.leftExpression)
+                            } else if (isNullExpr(condition.leftExpression)) {
+                                var = guardableVariable(condition.rightExpression)
+                            }
+                            if (var != null) (isNotEqual ? facts.whenTrue : facts.whenFalse).add(var)
+                        }
                     }
-                    // Early exit: if (x == null) return/throw → x is non-null after
-                    if (isEarlyExit(ifElse.ifBlock)) {
-                        nullableVars.remove(guardVar)
-                        guardedVars.add(guardVar)
+                } else if (condition instanceof VariableExpression) {
+                    // Groovy truth: a truthy reference is non-null
+                    def var = guardableVariable(condition)
+                    if (var != null) facts.whenTrue.add(var)
+                } else if (condition instanceof MethodCallExpression || condition instanceof StaticMethodCallExpression) {
+                    def target = condition.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
+                    if (target instanceof MethodNode && target.declaringClass?.name == 'java.util.Objects'
+                            && target.name in ['nonNull', 'isNull']) {
+                        def args = condition.arguments
+                        if (args instanceof TupleExpression && args.expressions.size() == 1) {
+                            def var = guardableVariable(args.getExpression(0))
+                            if (var != null) (target.name == 'nonNull' ? facts.whenTrue : facts.whenFalse).add(var)
+                        }
                     }
+                }
+                facts
+            }
+
+            private Variable guardableVariable(Expression expr) {
+                if (expr instanceof VariableExpression && !expr.isThisExpression() && !expr.isSuperExpression()) {
+                    return findTargetVariable(expr)
+                }
+                null
+            }
+
+            private <T> T withGuards(Set<Variable> vars, Closure<T> body) {
+                if (!vars) {
+                    return body()
+                }
+                def saved = new HashSet<>(guardedVars)
+                guardedVars.addAll(vars)
+                def result = body()
+                guardedVars.clear()
+                guardedVars.addAll(saved)
+                result
+            }
+
+            private void applyFacts(Set<Variable> vars) {
+                for (var in vars) {
+                    nullableVars.remove(var)
+                    guardedVars.add(var)
                 }
             }
 
@@ -334,23 +457,6 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 }
             }
 
-            private Tuple2<Variable, Boolean> findNullGuard(Expression condition) {
-                if (condition instanceof BinaryExpression) {
-                    def op = condition.operation.type
-                    boolean isNotEqual = (op == Types.COMPARE_NOT_EQUAL || op == Types.COMPARE_NOT_IDENTICAL)
-                    boolean isEqual = (op == Types.COMPARE_EQUAL || op == Types.COMPARE_IDENTICAL)
-                    if (isNotEqual || isEqual) {
-                        Variable var = null
-                        if (isNullExpr(condition.rightExpression) && condition.leftExpression instanceof VariableExpression) {
-                            var = findTargetVariable(condition.leftExpression)
-                        } else if (isNullExpr(condition.leftExpression) && condition.rightExpression instanceof VariableExpression) {
-                            var = findTargetVariable(condition.rightExpression)
-                        }
-                        if (var != null) return new Tuple2<>(var, isNotEqual)
-                    }
-                }
-                null
-            }
         }
     }
 
@@ -423,5 +529,13 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             return stmts && isEarlyExit(stmts.last())
         }
         false
+    }
+
+    /**
+     * The variables known to be non-null when a condition evaluates true and when it evaluates false.
+     */
+    private static class GuardFacts {
+        Set<Variable> whenTrue = new HashSet<>()
+        Set<Variable> whenFalse = new HashSet<>()
     }
 }

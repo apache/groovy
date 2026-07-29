@@ -707,6 +707,20 @@ include::../test/NullCheckerTest.groovy[tags=null_guard,indent=0]
 include::../test/NullCheckerTest.groovy[tags=early_return,indent=0]
 ----
 
+*Broader guard patterns* are also recognized: Groovy-truth guards (`if (x)`),
+`instanceof` checks, `Objects.nonNull(x)`/`Objects.isNull(x)`, assert statements
+(`assert x`, `assert x != null`), negated forms (`!x`, `x !instanceof Foo`), and
+boolean conjunctions and disjunctions with short-circuit semantics
+(`x != null && x.length() > 0`, `x == null || x.isEmpty()`). Each of these
+patterns also combines with the early-exit form, e.g.
+`if (x == null || x.isEmpty()) return`. Guard conditions are honored in
+`if` statements, `while` loops, and ternary expressions:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=broader_guards,indent=0]
+----
+
 *Ternary and elvis expressions*: in flow-sensitive mode (`NullChecker(strict: true)`), the checker
 examines both branches of ternary (`condition ? a : b`) and elvis (`x ?: fallback`) expressions.
 If either branch can be null, the result is treated as nullable. The elvis assignment

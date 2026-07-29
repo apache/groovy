@@ -306,6 +306,375 @@ final class NullCheckerTest {
         '''
     }
 
+    // === Broader null guards (GROOVY-12208) ===
+
+    @Test
+    void testGroovyTruthGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (s) {
+                        return s.length()
+                    }
+                    return -1
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testGroovyTruthGuardElseBranchStillChecked() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (s) {
+                        return s.length()
+                    } else {
+                        return s.length()
+                    }
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
+    @Test
+    void testNegatedGroovyTruthEarlyExit() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (!s) return -1
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testConjunctionGuardsRightOperandAndThenBlock() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static String bar(@Nullable String s) {
+                    if (s != null && s.length() > 0) {
+                        return s.toUpperCase()
+                    }
+                    return 'empty'
+                }
+            }
+            assert Foo.bar('hi') == 'HI'
+            assert Foo.bar(null) == 'empty'
+        '''
+    }
+
+    @Test
+    void testConjunctionElseBranchStillChecked() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (s != null && s.length() > 0) {
+                        return s.length()
+                    } else {
+                        return s.length()
+                    }
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
+    @Test
+    void testConjunctionInBooleanExpression() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static boolean bar(@Nullable String s) {
+                    boolean ok = s != null && s.length() > 0
+                    return ok
+                }
+            }
+            assert Foo.bar('hi')
+            assert !Foo.bar(null)
+        '''
+    }
+
+    @Test
+    void testDisjunctionGuardsRightOperandAndEarlyExit() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (s == null || s.isEmpty()) return -1
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar('') == -1
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testDisjunctionThenBlockStillChecked() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s, @Nullable String t) {
+                    if (s != null || t != null) {
+                        return s.length()
+                    }
+                    return -1
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
+    @Test
+    void testNegatedDisjunctionGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (!(s == null || s.isEmpty())) {
+                        return s.length()
+                    }
+                    return -1
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testInstanceofGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable Object o) {
+                    if (o instanceof String) {
+                        return o.length()
+                    }
+                    return -1
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testInstanceofElseBranchStillChecked() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable Object o) {
+                    if (o instanceof String) {
+                        return o.length()
+                    } else {
+                        return o.hashCode()
+                    }
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'o' is @Nullable")
+    }
+
+    @Test
+    void testNegatedInstanceofEarlyExit() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable Object o) {
+                    if (o !instanceof String) return -1
+                    o.hashCode()
+                }
+            }
+            assert Foo.bar('hi') == 'hi'.hashCode()
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testObjectsNonNullGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (Objects.nonNull(s)) {
+                        return s.length()
+                    }
+                    return -1
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testObjectsIsNullEarlyExit() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (Objects.isNull(s)) return -1
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testObjectsIsNullElseGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    if (Objects.isNull(s)) {
+                        return -1
+                    } else {
+                        return s.length()
+                    }
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testAssertNotNullGuards() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    assert s != null
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testAssertGroovyTruthGuards() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    assert s
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testAssertWithMessageGuards() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    assert s != null : 'must not be null'
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testAssertNullDoesNotGuard() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    assert s == null
+                    s.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
+    @Test
+    void testWhileGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    int total = 0
+                    while (s != null) {
+                        total += s.length()
+                        s = null
+                    }
+                    total
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == 0
+        '''
+    }
+
+    @Test
+    void testWhileGuardDoesNotExtendPastLoop() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    while (s != null) {
+                        s = null
+                    }
+                    s.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
+    @Test
+    void testTernaryGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    return s != null ? s.length() : -1
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testTernaryReversedGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    return s == null ? -1 : s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testTernaryGroovyTruthGuard() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    return s ? s.length() : -1
+                }
+            }
+            assert Foo.bar('hi') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testTernaryUnguardedBranchStillChecked() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    return s == null ? s.length() : -1
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
     // === @NullCheck integration ===
 
     @Test
@@ -950,6 +1319,35 @@ final class NullCheckerTest {
                 }
             }
             Foo.bar()
+        '''
+    }
+
+    @Test
+    void testStrictFlowTruthGuardProtects() {
+        assertScript strictShell, '''
+            class Foo {
+                static void bar() {
+                    def x = (String) null
+                    if (x) {
+                        x.toString()
+                    }
+                }
+            }
+            Foo.bar()
+        '''
+    }
+
+    @Test
+    void testStrictFlowAssertProtects() {
+        assertScript strictShell, '''
+            class Foo {
+                static int bar(boolean flag) {
+                    def x = flag ? 'hello' : null
+                    assert x != null
+                    x.length()
+                }
+            }
+            assert Foo.bar(true) == 5
         '''
     }
 
