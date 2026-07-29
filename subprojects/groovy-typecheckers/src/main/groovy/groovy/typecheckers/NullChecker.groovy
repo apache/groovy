@@ -121,7 +121,7 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     }
 
     private CheckingVisitor makeVisitor(boolean flowSensitive, MethodNode method) {
-        boolean classNonNullByDefault = method.declaringClass != null && hasNonNullByDefaultAnno(method.declaringClass)
+        boolean classNonNullByDefault = method.declaringClass != null && isNonNullByDefault(method.declaringClass)
         boolean methodNonNull = method.returnType != VOID_TYPE && (hasNonNullAnno(method) || (classNonNullByDefault && !hasNullableAnno(method)))
         if (methodNonNull) {
             def stash = method.getNodeMetaData(StaticTypesMarker.INFERRED_NON_NULL_RETURN_VIOLATIONS)
@@ -166,7 +166,7 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     def target = findTargetVariable(expression.leftExpression)
                     boolean fieldNonNull = target instanceof AnnotatedNode && hasNonNullAnno(target)
                     if (!fieldNonNull && target instanceof FieldNode && !hasNullableAnno(target)) {
-                        fieldNonNull = target.declaringClass != null && hasNonNullByDefaultAnno(target.declaringClass)
+                        fieldNonNull = target.declaringClass != null && isNonNullByDefault(target.declaringClass)
                     }
                     if (fieldNonNull && isNullExpr(expression.rightExpression)) {
                         addStaticTypeError("Cannot assign null to @NonNull variable '${expression.leftExpression.name}'", expression)
@@ -301,7 +301,7 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 // @NullCheck/@ParametersAreNonnullByDefault/@NonNullByDefault on method or class makes non-primitive params effectively @NonNull
                 def declaringClass = target.declaringClass
                 boolean nullChecked = hasNullCheckAnno(target) || hasNonNullByDefaultAnno(target) ||
-                    (declaringClass != null && (hasNullCheckAnno(declaringClass) || hasNonNullByDefaultAnno(declaringClass)))
+                    (declaringClass != null && (hasNullCheckAnno(declaringClass) || isNonNullByDefault(declaringClass)))
                 int limit = Math.min(args.expressions.size(), params.length)
                 for (int i = 0; i < limit; i++) {
                     def arg = args.getExpression(i)
@@ -395,11 +395,36 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
 
     private static boolean hasNonNullByDefaultAnno(AnnotatedNode node) {
         if (hasNullUnmarkedAnno(node)) return false
+        declaresNonNullByDefault(node)
+    }
+
+    private static boolean declaresNonNullByDefault(AnnotatedNode node) {
         node.annotations?.any { it.classNode?.nameWithoutPackage in NONNULL_BY_DEFAULT_ANNOS } ?: false
     }
 
     private static boolean hasNullUnmarkedAnno(AnnotatedNode node) {
         node.annotations?.any { it.classNode?.nameWithoutPackage in NULL_UNMARKED_ANNOS } ?: false
+    }
+
+    /**
+     * Determines whether a class is non-null-by-default, honouring JSpecify-style
+     * nearest-scope-wins semantics: the class and each enclosing (outer) class are consulted from
+     * innermost to outermost, then the package (whose annotations, for precompiled dependencies,
+     * come from {@code package-info.class} — see GROOVY-12207). At each scope an {@code @NullUnmarked}
+     * opt-out short-circuits to {@code false} and an {@code @NullMarked}/{@code @NonNullByDefault}
+     * marking to {@code true}; scopes with neither are transparent so the search continues outward.
+     */
+    private static boolean isNonNullByDefault(ClassNode cn) {
+        for (ClassNode c = cn; c != null; c = c.outerClass) {
+            if (hasNullUnmarkedAnno(c)) return false
+            if (declaresNonNullByDefault(c)) return true
+        }
+        def pkg = cn?.package
+        if (pkg != null) {
+            if (hasNullUnmarkedAnno(pkg)) return false
+            if (declaresNonNullByDefault(pkg)) return true
+        }
+        false
     }
 
     private static boolean isNullExpr(Expression expr) {

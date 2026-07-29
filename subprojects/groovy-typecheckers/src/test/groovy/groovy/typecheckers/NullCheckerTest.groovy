@@ -689,6 +689,50 @@ final class NullCheckerTest {
         assert err.message.contains('Cannot pass @Nullable value to @NonNull parameter')
     }
 
+    // === Package-level @NullMarked from precompiled package-info.class (GROOVY-12207) ===
+
+    @Test
+    void testPackageNullMarkedNullParameterOfPrecompiledClass() {
+        def err = shouldFail shell, '''
+            import groovy.typecheckers.support.nullmarked.PackageMarkedExample
+
+            class Foo {
+                static void bar() {
+                    PackageMarkedExample.greet(null)
+                }
+            }
+        '''
+        assert err.message.contains('Cannot pass null to @NonNull parameter')
+    }
+
+    @Test
+    void testPackageNullMarkedNonNullParameterOfPrecompiledClassOk() {
+        assertScript shell, '''
+            import groovy.typecheckers.support.nullmarked.PackageMarkedExample
+
+            class Foo {
+                static String bar() {
+                    PackageMarkedExample.greet('world')
+                }
+            }
+            assert new Foo().bar() == 'hi world'
+        '''
+    }
+
+    @Test
+    void testPackageNullMarkedNullableReturnStillNullable() {
+        def err = shouldFail shell, '''
+            import groovy.typecheckers.support.nullmarked.PackageMarkedExample
+
+            class Foo {
+                static void bar() {
+                    PackageMarkedExample.find('missing').toUpperCase()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'find()' may return null")
+    }
+
     // === Unannotated code ===
 
     @Test

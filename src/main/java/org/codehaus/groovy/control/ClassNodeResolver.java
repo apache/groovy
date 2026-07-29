@@ -20,8 +20,10 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.decompiled.AsmDecompiler;
 import org.codehaus.groovy.ast.decompiled.AsmReferenceResolver;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
@@ -34,6 +36,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -105,6 +108,17 @@ public class ClassNodeResolver {
         }
     };
 
+    // Map to store the package-info of resolved packages (GROOVY-12207)
+    private final Map<String, PackageNode> cachedPackages = new HashMap<>();
+    /**
+     * Internal helper used to indicate a cache hit for a package that has no
+     * {@code package-info.class} (or none carrying annotations). This provides
+     * negative caching so a missing/annotation-free package-info is looked up
+     * from the class loader only once.
+     * WARNING: This node is not to be used outside of ClassNodeResolver.
+     */
+    private static final PackageNode NO_PACKAGE = new PackageNode("NO_PACKAGE");
+
     /**
      * Resolves the name of a class to a SourceUnit or ClassNode. If no
      * class or source is found this method returns null. A lookup is done
@@ -158,6 +172,79 @@ public class ClassNodeResolver {
         // cause a major performance hit.
         ClassNode cached = cachedClasses.get(name);
         return cached;
+    }
+
+    /**
+     * Resolves a package name to a {@link PackageNode} carrying the annotations found on the
+     * package's compiled {@code package-info.class}, if any (GROOVY-12207). This makes
+     * package-level annotations of precompiled dependencies (e.g. JSpecify's {@code @NullMarked})
+     * visible to type checkers and AST transforms.
+     * <p>
+     * The {@code package-info.class} is located on the compilation unit's class path and decompiled
+     * on demand using the same ASM infrastructure as ordinary classes; results are cached per
+     * resolver, including a negative cache for packages that have no (annotation-bearing)
+     * package-info. Returns {@code null} if the package has no such metadata.
+     *
+     * @param packageName the fully qualified package name (no trailing dot), e.g. {@code "foo.bar"}
+     * @param compilationUnit the current {@link CompilationUnit}
+     * @return a {@link PackageNode} with the package's annotations, or {@code null} if none
+     */
+    public synchronized PackageNode resolvePackage(final String packageName, final CompilationUnit compilationUnit) {
+        if (packageName == null || packageName.isEmpty() || compilationUnit == null) {
+            return null;
+        }
+        PackageNode cached = cachedPackages.get(packageName);
+        if (cached != null) {
+            return cached == NO_PACKAGE ? null : cached;
+        }
+        PackageNode result = findPackageInfo(packageName, compilationUnit);
+        cachedPackages.put(packageName, result == null ? NO_PACKAGE : result);
+        return result;
+    }
+
+    /**
+     * Loads and decompiles {@code <packageName>/package-info.class} from the compilation unit's
+     * class loader, copying its (class-level) annotations onto a fresh {@link PackageNode}. The
+     * annotations of a {@code package-info} type are stored as ordinary class annotations in the
+     * bytecode, so the existing decompiler pipeline reads them without special handling.
+     *
+     * @return a populated {@link PackageNode}, or {@code null} if there is no package-info, it has
+     *         no annotations, or it could not be read
+     */
+    private PackageNode findPackageInfo(final String packageName, final CompilationUnit compilationUnit) {
+        GroovyClassLoader loader = compilationUnit.getClassLoader();
+        if (loader == null) {
+            return null;
+        }
+        String fileName = packageName.replace('.', '/') + "/package-info.class";
+        URL resource = loader.getResource(fileName);
+        if (resource == null) {
+            return null;
+        }
+        try {
+            DecompiledClassNode packageInfo = new DecompiledClassNode(
+                    AsmDecompiler.parseClass(resource), new AsmReferenceResolver(this, compilationUnit));
+            if (!packageInfo.getName().equals(packageName + ".package-info")) {
+                // this may happen under Windows/macOS because getResource is case-insensitive there!
+                return null;
+            }
+            List<AnnotationNode> annotations = packageInfo.getAnnotations();
+            if (annotations == null || annotations.isEmpty()) {
+                return null;
+            }
+            // the trailing dot matches the naming convention used for source-compiled packages
+            // (see AstBuilder.visitPackageDeclaration / ASTHelper.setPackage), so a decompiled
+            // package and its source equivalent share the same PackageNode.getName()
+            PackageNode packageNode = new PackageNode(packageName + ".");
+            packageNode.addAnnotations(annotations);
+            return packageNode;
+        } catch (IOException e) {
+            // fall through; treat as no package metadata available
+            return null;
+        } catch (IllegalArgumentException e) {
+            // very likely a class format error or similar; ignore for resolution purposes
+            return null;
+        }
     }
 
     /**

@@ -94,6 +94,24 @@ public class AsmReferenceResolver {
     }
 
     /**
+     * Returns the {@link ClassNodeResolver} backing this reference resolver.
+     *
+     * @return the class node resolver
+     */
+    ClassNodeResolver getResolver() {
+        return resolver;
+    }
+
+    /**
+     * Returns the {@link CompilationUnit} this reference resolver operates within.
+     *
+     * @return the compilation unit
+     */
+    CompilationUnit getCompilationUnit() {
+        return unit;
+    }
+
+    /**
      * Resolves a fully qualified class name to a {@link ClassNode}.
      * First checks classes being compiled in this unit, then consults the resolver for already-loaded classes.
      *

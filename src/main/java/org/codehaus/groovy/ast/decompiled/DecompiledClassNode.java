@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MixinNode;
+import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.Opcodes;
@@ -167,6 +168,23 @@ public class DecompiledClassNode extends ClassNode {
     @Override
     public Class getTypeClass() {
         return resolver.resolveJvmClass(getName());
+    }
+
+    /**
+     * Returns the {@link PackageNode} for this decompiled class, carrying any annotations declared
+     * on the package's compiled {@code package-info.class} (GROOVY-12207). Unlike a source-based
+     * {@link ClassNode}, a decompiled class has no owning module, so the package (and its
+     * annotations) is resolved on demand from the class path via the reference resolver's
+     * {@code ClassNodeResolver.resolvePackage} and cached there. Returns {@code null} for the
+     * default package or when the package has no such metadata.
+     *
+     * @return the package node with package-level annotations, or {@code null} if none
+     */
+    @Override
+    public PackageNode getPackage() {
+        String packageName = getPackageName();
+        return packageName == null ? null
+                : resolver.getResolver().resolvePackage(packageName, resolver.getCompilationUnit());
     }
 
     /**
