@@ -293,6 +293,62 @@ class NullCheckerTest {
     }
 
     @Test
+    void testSafeNavResultDereference() {
+        def err = shouldFail('''
+        import groovy.transform.TypeChecked
+        import java.lang.annotation.*
+
+        @Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+        @Retention(RetentionPolicy.RUNTIME)
+        @interface Nullable {}
+
+        // tag::safe_nav_result_deref[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        String shorten(@Nullable String text) {
+            text?.trim().substring(0, 1)              // text?.trim() may be null
+        }
+        // end::safe_nav_result_deref[]
+        ''')
+        def expectedError = '''\
+        # tag::safe_nav_result_deref_message[]
+        [Static type checking] - Potential null dereference: 'text?.trim()' may be null
+        # end::safe_nav_result_deref_message[]
+        '''
+        assert err.message.contains(expectedError.readLines()[1].trim())
+    }
+
+    @Test
+    void testNullableExpressions() {
+        assertScript('''
+        import groovy.transform.TypeChecked
+        import java.lang.annotation.*
+
+        @Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+        @Retention(RetentionPolicy.RUNTIME)
+        @interface Nullable {}
+
+        @Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+        @Retention(RetentionPolicy.RUNTIME)
+        @interface NonNull {}
+
+        // tag::nullable_expressions[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        class Greeter {
+            static String greet(@NonNull String name) { 'Hello ' + name }
+
+            static String welcome(@Nullable String visitor) {
+                // greet(visitor)                     // error: visitor may be null
+                // greet(visitor?.trim())            // error: safe navigation may yield null
+                greet(visitor ?: 'guest')             // ok: elvis fallback is non-null
+            }
+        }
+        // end::nullable_expressions[]
+        assert Greeter.welcome('Alice') == 'Hello Alice'
+        assert Greeter.welcome(null) == 'Hello guest'
+        ''')
+    }
+
+    @Test
     void testMonotonicNonNull() {
         assertScript('''
         import groovy.transform.TypeChecked

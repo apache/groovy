@@ -675,6 +675,317 @@ final class NullCheckerTest {
         assert err.message.contains("Potential null dereference: 's' is @Nullable")
     }
 
+    // === Nullable expression results (GROOVY-12209) ===
+
+    @Test
+    void testSafeNavResultDereference() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    s?.trim().length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's?.trim()' may be null")
+    }
+
+    @Test
+    void testSafeNavResultSafeDereference() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static Integer bar(@Nullable String s) {
+                    s?.trim()?.length()
+                }
+            }
+            assert Foo.bar(' hi ') == 2
+            assert Foo.bar(null) == null
+        '''
+    }
+
+    @Test
+    void testSafeNavPropertyResultDereference() {
+        def err = shouldFail shell, ANNOS + '''
+            class Address {
+                String city
+            }
+            class Person {
+                Address address
+            }
+            class Foo {
+                static String bar(@Nullable Person p) {
+                    p?.address.city
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'p?.address' may be null")
+    }
+
+    @Test
+    void testSafeNavPropertyResultSafeDereference() {
+        assertScript shell, ANNOS + '''
+            class Address {
+                String city
+            }
+            class Person {
+                Address address
+            }
+            class Foo {
+                static String bar(@Nullable Person p) {
+                    p?.address?.city
+                }
+            }
+            assert Foo.bar(null) == null
+            assert Foo.bar(new Person(address: new Address(city: 'Perth'))) == 'Perth'
+        '''
+    }
+
+    @Test
+    void testNullableCallResultPassedToNonNullParameter() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                @Nullable static String find() { null }
+                static void bar(@NonNull String s) { }
+                static void baz() {
+                    bar(find())
+                }
+            }
+        '''
+        assert err.message.contains("Cannot pass @Nullable value to @NonNull parameter 's' of 'bar'")
+    }
+
+    @Test
+    void testSafeNavResultPassedToNonNullParameter() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(@Nullable String x) {
+                    bar(x?.trim())
+                }
+            }
+        '''
+        assert err.message.contains("Cannot pass @Nullable value to @NonNull parameter 's' of 'bar'")
+    }
+
+    @Test
+    void testGuardedNullablePassedToNonNullParameter() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(@Nullable String x) {
+                    if (x != null) {
+                        bar(x)
+                    }
+                }
+            }
+            Foo.baz('hi')
+            Foo.baz(null)
+        '''
+    }
+
+    @Test
+    void testTernaryWithNullBranchPassedToNonNullParameter() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(boolean flag) {
+                    bar(flag ? 'a' : null)
+                }
+            }
+        '''
+        assert err.message.contains("Cannot pass @Nullable value to @NonNull parameter 's' of 'bar'")
+    }
+
+    @Test
+    void testTernaryWithNullableVarBranchPassedToNonNullParameter() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(boolean flag, @Nullable String x) {
+                    bar(flag ? x : 'a')
+                }
+            }
+        '''
+        assert err.message.contains("Cannot pass @Nullable value to @NonNull parameter 's' of 'bar'")
+    }
+
+    @Test
+    void testGuardedTernaryPassedToNonNullParameter() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(@Nullable String x) {
+                    bar(x != null ? x : 'default')
+                }
+            }
+            Foo.baz('hi')
+            Foo.baz(null)
+        '''
+    }
+
+    @Test
+    void testElvisWithSafeFallbackPassedToNonNullParameter() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(@Nullable String x) {
+                    bar(x ?: 'default')
+                }
+            }
+            Foo.baz('hi')
+            Foo.baz(null)
+        '''
+    }
+
+    @Test
+    void testElvisWithNullFallbackPassedToNonNullParameter() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(@Nullable String x) {
+                    bar(x ?: null)
+                }
+            }
+        '''
+        assert err.message.contains("Cannot pass @Nullable value to @NonNull parameter 's' of 'bar'")
+    }
+
+    @Test
+    void testCastNullablePassedToNonNullParameter() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static void bar(@NonNull String s) { }
+                static void baz(@Nullable String x) {
+                    bar((String) x)
+                }
+            }
+        '''
+        assert err.message.contains("Cannot pass @Nullable value to @NonNull parameter 's' of 'bar'")
+    }
+
+    @Test
+    void testTernaryWithNullableBranchReturnedFromNonNullMethod() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                @NonNull static String bar(boolean flag, @Nullable String s) {
+                    return flag ? s : 'default'
+                }
+            }
+        '''
+        assert err.message.contains("Cannot return @Nullable value from @NonNull method 'bar'")
+    }
+
+    @Test
+    void testSafeNavResultReturnedFromNonNullMethod() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                @NonNull static String bar(@Nullable String s) {
+                    return s?.trim()
+                }
+            }
+        '''
+        assert err.message.contains("Cannot return @Nullable value from @NonNull method 'bar'")
+    }
+
+    @Test
+    void testGuardedNullableReturnedFromNonNullMethod() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                @NonNull static String bar(@Nullable String s) {
+                    if (s != null) return s
+                    return 'default'
+                }
+            }
+            assert Foo.bar('hi') == 'hi'
+            assert Foo.bar(null) == 'default'
+        '''
+    }
+
+    @Test
+    void testElvisWithSafeFallbackReturnedFromNonNullMethod() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                @NonNull static String bar(@Nullable String s) {
+                    return s ?: 'default'
+                }
+            }
+            assert Foo.bar('hi') == 'hi'
+            assert Foo.bar(null) == 'default'
+        '''
+    }
+
+    @Test
+    void testNullablePropertyDereference() {
+        def err = shouldFail shell, ANNOS + '''
+            class Person {
+                @Nullable String nickname
+            }
+            class Foo {
+                static int bar(Person p) {
+                    p.nickname.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'nickname' may be null")
+    }
+
+    @Test
+    void testNullableGetterPropertyDereference() {
+        def err = shouldFail shell, ANNOS + '''
+            class Person {
+                @Nullable String getNickname() { null }
+            }
+            class Foo {
+                static int bar(Person p) {
+                    p.nickname.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'nickname' may be null")
+    }
+
+    @Test
+    void testNullablePropertySafeDereference() {
+        assertScript shell, ANNOS + '''
+            class Person {
+                @Nullable String nickname
+            }
+            class Foo {
+                static Integer bar(Person p) {
+                    p.nickname?.length()
+                }
+            }
+            assert Foo.bar(new Person()) == null
+            assert Foo.bar(new Person(nickname: 'Ace')) == 3
+        '''
+    }
+
+    @Test
+    void testNonNullablePropertyDereference() {
+        assertScript shell, ANNOS + '''
+            class Person {
+                String name = 'Anon'
+            }
+            class Foo {
+                static int bar(Person p) {
+                    p.name.length()
+                }
+            }
+            assert Foo.bar(new Person()) == 4
+        '''
+    }
+
+    @Test
+    void testCastNullableDereference() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    ((String) s).length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
     // === @NullCheck integration ===
 
     @Test
@@ -1407,6 +1718,47 @@ final class NullCheckerTest {
             }
         '''
         assert err.message.contains("'name' may be null")
+    }
+
+    @Test
+    void testStrictFlowSafeNavResultTracked() {
+        def err = shouldFail strictShell, '''
+            class Foo {
+                static int bar(String s) {
+                    def x = s?.trim()
+                    x.length()
+                }
+            }
+        '''
+        assert err.message.contains("'x' may be null")
+    }
+
+    @Test
+    void testStrictFlowSafeNavResultGuarded() {
+        assertScript strictShell, '''
+            class Foo {
+                static int bar(String s) {
+                    def x = s?.trim()
+                    if (x == null) return -1
+                    x.length()
+                }
+            }
+            assert Foo.bar(' hi ') == 2
+            assert Foo.bar(null) == -1
+        '''
+    }
+
+    @Test
+    void testStrictFlowTernaryWithNullableVarBranchTracked() {
+        def err = shouldFail strictShell, ANNOS + '''
+            class Foo {
+                static int bar(boolean flag, @Nullable String s) {
+                    def x = flag ? s : 'default'
+                    x.length()
+                }
+            }
+        '''
+        assert err.message.contains("'x' may be null")
     }
 
     @Test

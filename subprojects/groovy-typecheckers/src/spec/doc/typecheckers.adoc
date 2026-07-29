@@ -721,9 +721,22 @@ patterns also combines with the early-exit form, e.g.
 include::../test/NullCheckerTest.groovy[tags=broader_guards,indent=0]
 ----
 
-*Ternary and elvis expressions*: in flow-sensitive mode (`NullChecker(strict: true)`), the checker
-examines both branches of ternary (`condition ? a : b`) and elvis (`x ?: fallback`) expressions.
-If either branch can be null, the result is treated as nullable. The elvis assignment
+*Ternary and elvis expressions*: the checker examines the branches of ternary
+(`condition ? a : b`) and elvis (`x ?: fallback`) expressions. A ternary is treated as
+nullable if either branch can be null, judging each branch under the condition's own
+guard facts, so `s != null ? s : 'default'` is not considered nullable. An elvis
+expression is nullable only if its fallback is, since a Groovy-truthy value is never
+null — making `x ?: 'default'` a recognized way to pass a `@Nullable` value where a
+non-null value is required:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_expressions,indent=0]
+----
+
+In flow-sensitive mode (`NullChecker(strict: true)`), nullable expression results
+(safe-navigation results, `@Nullable`-returning calls, nullable ternaries) are also
+tracked through assignments to unannotated variables. The elvis assignment
 `x ?= nonNullValue` clears any nullable state on `x`.
 
 === Errors detected
@@ -799,6 +812,26 @@ We would see the following error at compile-time:
 ----
 include::../test/NullCheckerTest.groovy[tags=nullable_return_deref_message,indent=0]
 ----
++
+The same applies when a `@Nullable` getter is accessed using property syntax,
+e.g. `user.name` for a `@Nullable` `getName()` method.
+
+* Dereferencing a safe-navigation result without a further guard:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=safe_nav_result_deref,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=safe_nav_result_deref_message,indent=0]
+----
++
+Since the safe navigation propagates a possible null onwards, the subsequent
+unguarded dereference should use safe navigation too: `text?.trim()?.substring(0, 1)`.
 
 === @MonotonicNonNull and @Lazy
 
