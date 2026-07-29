@@ -624,8 +624,8 @@ final class HttpBuilder {
         }
 
         List<String> pairs = new ArrayList<>()
-        if (uri.query != null && !uri.query.isEmpty()) {
-            pairs.add(uri.query)
+        if (uri.rawQuery != null && !uri.rawQuery.isEmpty()) {
+            pairs.add(uri.rawQuery)
         }
 
         queryValues.each { String key, Object value ->
@@ -635,7 +635,24 @@ final class HttpBuilder {
         }
 
         String query = pairs.join('&')
-        return new URI(uri.scheme, uri.authority, uri.path, query, uri.fragment)
+        // reassemble from the encoded components: the multi-argument URI constructor
+        // takes decoded ones, which would turn a %2F or %2E in the original path back
+        // into a separator or a dot segment
+        StringBuilder rebuilt = new StringBuilder()
+        if (uri.scheme != null) {
+            rebuilt.append(uri.scheme).append(':')
+        }
+        if (uri.rawAuthority != null) {
+            rebuilt.append('//').append(uri.rawAuthority)
+        }
+        if (uri.rawPath != null) {
+            rebuilt.append(uri.rawPath)
+        }
+        rebuilt.append('?').append(query)
+        if (uri.rawFragment != null) {
+            rebuilt.append('#').append(uri.rawFragment)
+        }
+        return URI.create(rebuilt.toString())
     }
 
     private static String encodeQueryComponent(final String value) {

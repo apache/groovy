@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows
 
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
 
 class HttpBuilderTest {
 
@@ -37,7 +38,7 @@ class HttpBuilderTest {
     void setup() {
         server = HttpServer.create(new InetSocketAddress('127.0.0.1', 0), 0)
         server.createContext('/hello') { exchange ->
-            String body = "method=${exchange.requestMethod};query=${exchange.requestURI.query};ua=${exchange.requestHeaders.getFirst('User-Agent')}"
+            String body = "method=${exchange.requestMethod};query=${exchange.requestURI.rawQuery};ua=${exchange.requestHeaders.getFirst('User-Agent')}"
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8)
             exchange.sendResponseHeaders(200, bytes.length)
             exchange.responseBody.withCloseable { it.write(bytes) }
@@ -523,6 +524,50 @@ class HttpBuilderTest {
 
         assert result.status == 200
         assert result.body == 'method=GET'
+    }
+
+    @Test
+    void appendedQueryKeepsPercentEncodedPathSegments() {
+        AtomicReference<URI> seen = capture('/encoded')
+        HttpBuilder http = HttpBuilder.http { baseUri rootUri }
+
+        http.get('/encoded/a%2Fb') { query page: 1 }
+
+        assert seen.get().rawPath == '/encoded/a%2Fb'
+    }
+
+    @Test
+    void appendedQueryKeepsExistingEncodedQueryValues() {
+        AtomicReference<URI> seen = capture('/existing')
+        HttpBuilder http = HttpBuilder.http { baseUri rootUri }
+
+        http.get('/existing?filter=a%26admin%3D1') { query page: 1 }
+
+        assert seen.get().rawQuery == 'filter=a%26admin%3D1&page=1'
+    }
+
+    @Test
+    void confinedRequestWithQueryStaysInsideTheBasePath() {
+        AtomicReference<URI> seen = capture('/api')
+        HttpBuilder http = HttpBuilder.http {
+            baseUri "${rootUri}api/v2/"
+            confineToBaseUri true
+        }
+
+        http.get('..%2Fadmin') { query page: 1 }
+
+        assert seen.get().rawPath == '/api/v2/..%2Fadmin'
+    }
+
+    private AtomicReference<URI> capture(String path) {
+        AtomicReference<URI> seen = new AtomicReference<>()
+        server.createContext(path) { exchange ->
+            seen.set(exchange.requestURI)
+            byte[] bytes = 'ok'.getBytes(StandardCharsets.UTF_8)
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withCloseable { it.write(bytes) }
+        }
+        seen
     }
 
     private void redirect(String path, int status, String location) {
