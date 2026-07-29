@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
+import org.codehaus.groovy.ast.expr.ElvisOperatorExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
@@ -78,7 +79,13 @@ import static org.codehaus.groovy.syntax.Types.isAssignment
  *     <li>Passing {@code null} or a {@code @Nullable} value to a {@code @NonNull} parameter</li>
  *     <li>Returning {@code null} or a {@code @Nullable} value from a {@code @NonNull} method</li>
  *     <li>Dereferencing a {@code @Nullable} variable without a null check or safe navigation ({@code ?.})</li>
- *     <li>Dereferencing the result of a {@code @Nullable}-returning method without a null check</li>
+ *     <li>Dereferencing the result of a {@code @Nullable}-returning method without a null check,
+ *         whether called explicitly ({@code x.getA().b}) or via property syntax ({@code x.a.b})</li>
+ *     <li>Dereferencing a safe-navigation result without a further guard ({@code a?.b.c};
+ *         use {@code a?.b?.c} instead)</li>
+ *     <li>Passing other nullable expressions (safe-navigation results, {@code @Nullable}-returning
+ *         calls, ternaries with a nullable branch) to {@code @NonNull} parameters, or returning
+ *         them from {@code @NonNull} methods</li>
  *     <li>Re-assigning {@code null} to a {@code @MonotonicNonNull} field after initialization</li>
  *     <li>Dereferencing a variable known to be null through flow analysis ({@code strict} mode only)</li>
  * </ul>
@@ -168,9 +175,6 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 if (hasNullableAnno(ve) || isNullExpr(decl.rightExpression) || (flowSensitive && (implicitlyNull || canBeNull(decl.rightExpression) || isKnownNullable(decl.rightExpression)))) {
                     nullableVars.add(ve)
                 }
-                if (flowSensitive) {
-                    trackNullableReturn(ve, decl.rightExpression)
-                }
             }
 
             @Override
@@ -207,9 +211,6 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         guardedVars.remove(target)
                     } else {
                         nullableVars.remove(target)
-                        if (flowSensitive) {
-                            trackNullableReturn(target, expression.rightExpression)
-                        }
                     }
                 }
             }
@@ -298,25 +299,40 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
              * evaluates true and when it evaluates false.
              */
             private GuardFacts visitCondition(Expression condition) {
+                analyzeCondition(condition, true)
+            }
+
+            /**
+             * Analyzes a condition into guard facts, optionally visiting its nodes
+             * along the way ({@code visiting: false} re-analyzes an already visited
+             * condition, e.g. when judging ternary branch nullness).
+             */
+            private GuardFacts analyzeCondition(Expression condition, boolean visiting) {
                 def facts = new GuardFacts()
                 if (condition instanceof NotExpression) {
-                    def inner = visitCondition(condition.expression)
+                    def inner = analyzeCondition(condition.expression, visiting)
                     facts.whenTrue = inner.whenFalse
                     facts.whenFalse = inner.whenTrue
                 } else if (condition instanceof BooleanExpression) {
-                    facts = visitCondition(condition.expression)
+                    facts = analyzeCondition(condition.expression, visiting)
                 } else if (condition instanceof BinaryExpression && condition.operation.type == Types.LOGICAL_AND) {
-                    def left = visitCondition(condition.leftExpression)
-                    def right = withGuards(left.whenTrue) { visitCondition(condition.rightExpression) }
+                    def left = analyzeCondition(condition.leftExpression, visiting)
+                    def right = visiting
+                        ? withGuards(left.whenTrue) { analyzeCondition(condition.rightExpression, true) }
+                        : analyzeCondition(condition.rightExpression, false)
                     facts.whenTrue = left.whenTrue + right.whenTrue
                     facts.whenFalse = left.whenFalse.intersect(right.whenFalse)
                 } else if (condition instanceof BinaryExpression && condition.operation.type == Types.LOGICAL_OR) {
-                    def left = visitCondition(condition.leftExpression)
-                    def right = withGuards(left.whenFalse) { visitCondition(condition.rightExpression) }
+                    def left = analyzeCondition(condition.leftExpression, visiting)
+                    def right = visiting
+                        ? withGuards(left.whenFalse) { analyzeCondition(condition.rightExpression, true) }
+                        : analyzeCondition(condition.rightExpression, false)
                     facts.whenTrue = left.whenTrue.intersect(right.whenTrue)
                     facts.whenFalse = left.whenFalse + right.whenFalse
                 } else {
-                    condition.visit(this)
+                    if (visiting) {
+                        condition.visit(this)
+                    }
                     facts = analyzeLeafCondition(condition)
                 }
                 facts
@@ -407,11 +423,20 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     } else if (flowSensitive && nullableVars.contains(target) && !guardedVars.contains(target)) {
                         addStaticTypeError("Potential null dereference: '${receiver.name}' may be null", context)
                     }
+                } else if (isSafeNavResult(receiver)) {
+                    addStaticTypeError("Potential null dereference: '${receiver.text}' may be null", context)
                 } else if (receiver instanceof MethodCallExpression || receiver instanceof StaticMethodCallExpression) {
                     def targetMethod = receiver.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
                     if (targetMethod instanceof MethodNode && hasNullableAnno(targetMethod)) {
                         addStaticTypeError("Potential null dereference: '${targetMethod.name}()' may return null", context)
                     }
+                } else if (receiver instanceof PropertyExpression) {
+                    if (nullableProperty(receiver)) {
+                        addStaticTypeError("Potential null dereference: '${receiver.propertyAsString}' may be null", context)
+                    }
+                } else if (receiver instanceof CastExpression) {
+                    // casts are transparent to nullness
+                    checkDereference(receiver.expression, context)
                 }
             }
 
@@ -439,22 +464,42 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 }
             }
 
+            /**
+             * Determines whether an expression is known to produce a possibly-null value:
+             * a {@code @Nullable} (or flow-inferred nullable) unguarded variable, a safe-navigation
+             * result, a {@code @Nullable}-returning method call or property read, or a
+             * ternary/elvis with a nullable branch. Casts are transparent to nullness.
+             */
             private boolean isKnownNullable(Expression expr) {
                 if (expr instanceof VariableExpression) {
                     def target = findTargetVariable(expr)
+                    if (guardedVars.contains(target)) return false
                     if (target instanceof AnnotatedNode && hasNullableAnno(target)) return true
-                    if (nullableVars.contains(target)) return true
+                    return nullableVars.contains(target)
+                }
+                if (expr instanceof CastExpression) {
+                    return isKnownNullable(expr.expression)
+                }
+                if (isSafeNavResult(expr)) return true
+                if (expr instanceof MethodCallExpression || expr instanceof StaticMethodCallExpression) {
+                    def target = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
+                    return target instanceof MethodNode && hasNullableAnno(target)
+                }
+                if (expr instanceof PropertyExpression) {
+                    return nullableProperty(expr)
+                }
+                if (expr instanceof TernaryExpression) {
+                    // judge each branch under the condition's guard facts, so that
+                    // e.g. "s != null ? s : 'default'" is not considered nullable
+                    def facts = analyzeCondition(expr.booleanExpression.expression, false)
+                    // elvis (x ?: y) is null only if its fallback is: a truthy x is non-null
+                    boolean trueNullable = !(expr instanceof ElvisOperatorExpression) &&
+                        withGuards(facts.whenTrue) { isNullExpr(expr.trueExpression) || isKnownNullable(expr.trueExpression) }
+                    boolean falseNullable =
+                        withGuards(facts.whenFalse) { isNullExpr(expr.falseExpression) || isKnownNullable(expr.falseExpression) }
+                    return trueNullable || falseNullable
                 }
                 false
-            }
-
-            private void trackNullableReturn(Variable variable, Expression rhs) {
-                if (rhs instanceof MethodCallExpression || rhs instanceof StaticMethodCallExpression) {
-                    def target = rhs.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
-                    if (target instanceof MethodNode && hasNullableAnno(target)) {
-                        nullableVars.add(variable)
-                    }
-                }
             }
 
         }
@@ -537,6 +582,32 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         if (expr instanceof ConstantExpression) return ((ConstantExpression) expr).isNullExpression()
         if (expr instanceof CastExpression) return isNullExpr(((CastExpression) expr).expression)
         false
+    }
+
+    /**
+     * A safe-navigation result ({@code a?.b} or {@code a?.b()}) may be null: at minimum
+     * whenever its receiver is, but also if the accessed property or method yields null.
+     */
+    private static boolean isSafeNavResult(Expression expr) {
+        (expr instanceof PropertyExpression && expr.safe) || (expr instanceof MethodCallExpression && expr.safe)
+    }
+
+    /**
+     * Determines whether a property read produces a {@code @Nullable} value, consulting the
+     * accessor resolved during type checking and falling back to the property or field
+     * declaration (where the annotations reside for Groovy properties, whose resolved
+     * accessor is a synthetic node).
+     */
+    private static boolean nullableProperty(PropertyExpression pexp) {
+        def target = pexp.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
+        if (target instanceof MethodNode && hasNullableAnno(target)) return true
+        def name = pexp.propertyAsString
+        if (name == null) return false
+        def receiverType = pexp.objectExpression.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) ?: pexp.objectExpression.type
+        def prop = receiverType?.getProperty(name)
+        if (prop != null && (hasNullableAnno(prop) || (prop.field != null && hasNullableAnno(prop.field)))) return true
+        def field = receiverType?.getField(name)
+        field != null && hasNullableAnno(field)
     }
 
     private static boolean canBeNull(Expression expr) {
