@@ -104,6 +104,15 @@ final class WorkingWithArraysTest {
         assert nums.sum() == 6
         assert nums.indices == [0, 1, 2]
         assert nums.swap(0, 2) == [3, 2, 1] as int[]
+
+        Integer[] moreNums = [10, 20, 30, 40]
+        assert moreNums.find { it > 15 } == 20              // first matching element
+        assert moreNums.findAll { it > 15 } == [20, 30, 40] // all matching elements (as a List)
+        assert moreNums[1..2] == [20, 30]                   // slice an array with a range (returns a List)
+        assert moreNums[-1] == 40                            // negative indices count from the end
+
+        int[][] pairs = [[1, 2], [3, 4]]
+        assert pairs.flatten() == [1, 2, 3, 4]              // flatten nested arrays into a single List
         // end::array_gdk[]
     }
 }

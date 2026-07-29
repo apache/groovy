@@ -186,6 +186,51 @@ final class WorkingWithCollectionsTest {
     }
 
     @Test
+    void testListCollectMany() {
+        // tag::list_collectMany[]
+        def words = ['a', 'bb', 'ccc']
+        // collectMany transforms each element into a collection, then flattens one level;
+        // it is the idiomatic (and more efficient) alternative to collect {}.flatten()
+        assert words.collectMany { [it, it.size()] } == ['a', 1, 'bb', 2, 'ccc', 3]
+
+        // handy for expanding each element into zero, one or many results
+        assert [1, 2, 3].collectMany { it % 2 == 0 ? [it, it] : [] } == [2, 2]
+        // end::list_collectMany[]
+    }
+
+    @Test
+    void testListCollectEntries() {
+        // tag::list_collectEntries[]
+        def languages = ['Groovy', 'Java', 'Kotlin']
+        // collectEntries builds a map from a list; the closure returns a [key, value] pair per element
+        assert languages.collectEntries { [it, it.size()] } == [Groovy: 6, Java: 4, Kotlin: 6]
+
+        // a map literal can be returned instead of a two-element list
+        assert languages.collectEntries { [(it): it.toUpperCase()] } ==
+                [Groovy: 'GROOVY', Java: 'JAVA', Kotlin: 'KOTLIN']
+        // end::list_collectEntries[]
+    }
+
+    @Test
+    void testListWithIndex() {
+        // tag::list_withIndex[]
+        def vowels = ['a', 'e', 'i', 'o', 'u']
+
+        // withIndex pairs each element with its index (starting at 0 by default)
+        assert vowels.withIndex() == [['a', 0], ['e', 1], ['i', 2], ['o', 3], ['u', 4]]
+
+        // an optional offset sets the starting index
+        assert vowels.withIndex(1) == [['a', 1], ['e', 2], ['i', 3], ['o', 4], ['u', 5]]
+
+        // often chained with collect for a cleaner alternative to eachWithIndex
+        assert vowels.withIndex().collect { v, i -> "$i:$v" } == ['0:a', '1:e', '2:i', '3:o', '4:u']
+
+        // indexed returns a map from index to element
+        assert vowels.indexed(1) == [1: 'a', 2: 'e', 3: 'i', 4: 'o', 5: 'u']
+        // end::list_withIndex[]
+    }
+
+    @Test
     void testListGDK() {
         // tag::list_gdk1[]
         assert [1, 2, 3].find { it > 1 } == 2           // find 1st element matching criteria
@@ -365,6 +410,42 @@ final class WorkingWithCollectionsTest {
         Collections.sort(list3, mc)
         assert list3 == [1, 2, -3, 5, 6, -7, 9]
         // end::list_sort[]
+    }
+
+    @Test
+    void testListUnique() {
+        // tag::list_unique[]
+        // unique removes duplicates IN PLACE and returns the (now mutated) list
+        def list = [3, 2, 1, 3, 3, 2]
+        assert list.unique() == [3, 2, 1]
+        assert list == [3, 2, 1]                            // the original list was mutated
+
+        // toUnique returns a NEW list, leaving the original untouched
+        def fruits = ['apple', 'apricot', 'banana', 'blueberry']
+        assert fruits.toUnique { it[0] } == ['apple', 'banana']  // uniqueness by first letter
+        assert fruits.size() == 4                           // original list unchanged
+        // end::list_unique[]
+    }
+
+    @Test
+    void testListTakeDrop() {
+        // tag::list_take_drop[]
+        def list = [1, 2, 3, 4, 5]
+
+        // take/drop select or discard a number of leading elements
+        assert list.take(2) == [1, 2]
+        assert list.drop(2) == [3, 4, 5]
+
+        // takeRight/dropRight work from the end of the list
+        assert list.takeRight(2) == [4, 5]
+        assert list.dropRight(2) == [1, 2, 3]
+
+        // takeWhile/dropWhile use a predicate instead of a count, stopping at the first mismatch
+        assert list.takeWhile { it < 3 } == [1, 2]
+        assert list.dropWhile { it < 3 } == [3, 4, 5]
+
+        assert list == [1, 2, 3, 4, 5]                      // none of the above mutate the original
+        // end::list_take_drop[]
     }
 
     @Test
@@ -775,6 +856,22 @@ final class WorkingWithCollectionsTest {
             ]
             // end::map_gdk3[]
         '''
+    }
+
+    @Test
+    void testMapWithDefault() {
+        // tag::map_withDefault[]
+        // withDefault wraps a map so that missing keys are computed on demand
+        def wordsByLetter = [:].withDefault { [] }
+        ['apple', 'banana', 'avocado', 'cherry'].each { word ->
+            wordsByLetter[word[0]] << word          // no need to pre-populate the per-letter lists
+        }
+        assert wordsByLetter == [a: ['apple', 'avocado'], b: ['banana'], c: ['cherry']]
+
+        // reading an absent key returns (and stores) the computed default
+        def counts = [:].withDefault { 0 }
+        assert counts['missing'] == 0
+        // end::map_withDefault[]
     }
 
     @Test

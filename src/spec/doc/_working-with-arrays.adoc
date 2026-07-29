@@ -38,10 +38,10 @@ expression when given an explicit array type.
 include::../test/gdk/WorkingWithArraysTest.groovy[tags=array_literals,indent=0]
 -------------------------------------
 
-=== Iterating on a list
+=== Iterating on an array
 
-Iterating on elements of a list is usually done calling the `each` and `eachWithIndex` methods, which execute code on each
-item of a list:
+Iterating on elements of an array is usually done calling the `each` and `eachWithIndex` methods, which execute code on each
+item of an array:
 
 [source,groovy]
 ----------------------------------------------------------------------------

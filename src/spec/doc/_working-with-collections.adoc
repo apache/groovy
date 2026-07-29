@@ -85,6 +85,29 @@ something else. This operation, often called mapping, is done in Groovy thanks t
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_collect,indent=0]
 ----------------------------------------------------------------------------
 
+When each element maps to a collection of results, `collectMany` transforms and flattens in a single step.
+It is the idiomatic (and more efficient) alternative to `collect { ... }.flatten()`:
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_collectMany,indent=0]
+----------------------------------------------------------------------------
+
+To build a `Map` from a list, `collectEntries` collects a key/value pair for each element:
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_collectEntries,indent=0]
+----------------------------------------------------------------------------
+
+When you need each element together with its position, `withIndex` provides a more composable alternative
+to `eachWithIndex`, while `indexed` returns a map from index to element:
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_withIndex,indent=0]
+----------------------------------------------------------------------------
+
 === Manipulating lists
 
 [[List-Filtering]]
@@ -189,6 +212,26 @@ from using closures to comparators, as in the following examples:
 [source,groovy]
 ----------------------------------------------------------------------------
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_sort,indent=0]
+----------------------------------------------------------------------------
+
+==== Removing duplicates
+
+The `unique` method removes duplicate elements *in place*, while `toUnique` returns a *new* list, leaving the
+original untouched. Both accept an optional closure or comparator to define what "the same" means:
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_unique,indent=0]
+----------------------------------------------------------------------------
+
+==== Taking and dropping elements
+
+Groovy can select or discard elements from either end of a list, either by count (`take`, `drop`, `takeRight`,
+`dropRight`) or by predicate (`takeWhile`, `dropWhile`). None of these methods mutate the original list:
+
+[source,groovy]
+----------------------------------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=list_take_drop,indent=0]
 ----------------------------------------------------------------------------
 
 ==== Duplicating elements
@@ -434,6 +477,18 @@ We can group a list into a map using some criteria:
 [source,groovy]
 ----------------------------------------------------------------
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_gdk3,indent=0]
+----------------------------------------------------------------
+
+[[Maps-WithDefault]]
+==== Maps with a default value
+
+The `withDefault` method wraps a map so that reading a missing key returns (and stores) a value computed by
+a closure. This is particularly handy for accumulating into per-key collections without having to pre-populate
+them:
+
+[source,groovy]
+----------------------------------------------------------------
+include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=map_withDefault,indent=0]
 ----------------------------------------------------------------
 
 [[Collections-Ranges]]
