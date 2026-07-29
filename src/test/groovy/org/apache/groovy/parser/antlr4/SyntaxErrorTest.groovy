@@ -79,6 +79,12 @@ final class SyntaxErrorTest {
     }
 
     @Test
+    void 'groovy core - ReturnAt'() {
+        TestUtils.doRunAndShouldFail('fail/ReturnAt_01x.groovy')
+        TestUtils.doRunAndShouldFail('fail/ReturnAt_02x.groovy')
+    }
+
+    @Test
     void 'groovy core - UnexpectedCharacter 1'() {
         TestUtils.doRunAndShouldFail('fail/UnexpectedCharacter_01x.groovy')
     }

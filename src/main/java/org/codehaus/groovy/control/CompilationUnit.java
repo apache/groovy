@@ -353,6 +353,10 @@ public class CompilationUnit extends ProcessingUnit {
         }, Phases.CANONICALIZATION);
 
         addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
+            new NonLocalControlFlowRewriter(source).rewrite(classNode);
+        }, Phases.CANONICALIZATION);
+
+        addPhaseOperation((final SourceUnit source, final GeneratorContext context, final ClassNode classNode) -> {
             Object callback = classNode.getNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK);
             if (callback instanceof IPrimaryClassNodeOperation) {
                 ((IPrimaryClassNodeOperation) callback).call(source, context, classNode);
