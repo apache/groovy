@@ -142,11 +142,14 @@ public class ClassInfo implements Finalizable {
      * <p>
      * Hierarchy fan-out is intentional here: {@code incVersion} is the path used
      * when an existing MetaClass is <em>updated in place</em> (EMC method/property
-     * add). Parent EMC methods are visible to subtype receivers through
-     * {@code MetaClassImpl.findMethodInClassHierarchy}, so already-linked subtype
-     * sites must re-select. Registry-driven full MetaClass <em>replacements</em>
-     * use MetaClass-aware policy instead (pure {@code MetaClassImpl} replace stays
-     * exact-class; see {@link IndyInvalidation#invalidateForMetaClassChange}).
+     * add). That update can make a previously <em>missing</em> name resolvable on
+     * subtype receivers via {@code MetaClassImpl.findMethodInClassHierarchy}
+     * (opens only when a modified {@code MutableMetaClass} exists in the
+     * hierarchy), so already-linked subtype miss sites must re-select. Present
+     * methods on the child keep winning after re-link. Registry-driven full
+     * MetaClass <em>replacements</em> use MetaClass-aware policy instead (pure
+     * {@code MetaClassImpl} replace stays exact-class; see
+     * {@link IndyInvalidation#invalidateForMetaClassChange}).
      * <p>
      * <strong>Behavioral change in 6.0 (GROOVY-12191):</strong> this method no longer
      * triggers a process-wide call-site flush. It scopes invalidation to this class

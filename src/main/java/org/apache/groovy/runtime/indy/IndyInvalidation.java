@@ -54,11 +54,49 @@ import java.util.logging.Logger;
  * <b>What this is not (yet):</b> SwitchPoints do not live on {@link MetaClass}
  * instances themselves. A MetaClass-owned guard would be the natural place for
  * MetaClass-specific logic (including custom MetaClass implementations and
- * true per-instance domains). That is a larger redesign: today per-instance
- * MetaClass already forces uncacheable PIC entries ({@code canSetTarget=false}),
- * and class-level generation is retired through {@link ClassInfo}. The policy
- * below is the conservative, MetaClass-<em>aware</em> approximation on top of
- * the class-domain model.
+ * true per-instance domains). That is a larger redesign tracked as a follow-up
+ * JIRA to GROOVY-12191 (MetaClass-owned SwitchPoints; to be filed on the PR):
+ * today per-instance MetaClass already forces uncacheable PIC entries
+ * ({@code canSetTarget=false}), and class-level generation is retired through
+ * {@link ClassInfo}. The policy below is the conservative, MetaClass-<em>aware</em>
+ * approximation on top of the class-domain model.
+ *
+ * <h2>Why hierarchy fan-out exists (and what it is not)</h2>
+ * <p>
+ * Hierarchy fan-out is <em>not</em> “{@code MetaClassImpl} shares one method table
+ * up the hierarchy”. Each class still has its own MetaClass / {@code ClassInfo}
+ * domain. Fan-out exists because <em>selection</em> can observe <em>ancestor</em>
+ * MetaClass state in two distinct ways:
+ * <ol>
+ *   <li><b>Missing-method path only (live):</b>
+ *       {@code MetaClassImpl.findMethodInClassHierarchy} returns immediately
+ *       unless some strong MetaClass in the receiver hierarchy is a
+ *       <em>modified</em> {@link MutableMetaClass} (EMC is the common case).
+ *       When that gate opens, a method that was a miss on the receiver class
+ *       can be found on a parent / interface / array-lattice ancestor.
+ *       Already-linked subtype sites that cached a miss (or an older target)
+ *       must re-select — that is the SwitchPoint hierarchy case.
+ *       Present methods on a {@code MetaClassImpl} child keep winning for
+ *       applicable arguments after hierarchy re-link (the walk does not rebuild
+ *       MetaClass tables). An {@link ExpandoMetaClass} child can still select a
+ *       more specific ancestor overload for a signature the child does not
+ *       declare (e.g. child {@code m2(Object)} vs parent {@code m2(Integer)}).</li>
+ *   <li><b>Construction-time snapshot (MetaClassImpl init):</b>
+ *       when a {@code MetaClassImpl} is first built <em>after</em> an ancestor
+ *       already carries expando / “new” meta methods, those methods can be
+ *       copied into the child’s method index. A sibling class whose MetaClass
+ *       was built <em>before</em> the ancestor change keeps the older view.
+ *       That timing gap is pre-existing MOP behaviour; retiring a SwitchPoint
+ *       re-links against the <em>same</em> MetaClass instance and does not
+ *       rebuild its method tables. Fixing the gap (making {@code MetaClassImpl}
+ *       immune to other MetaClasses / removing the hierarchy walk) is a
+ *       separate semantic redesign, not this PR’s SwitchPoint scoping.</li>
+ * </ol>
+ * Pure {@code MetaClassImpl} ↔ {@code MetaClassImpl} (or null) class replace
+ * therefore stays <b>exact-class</b>: it does not open the missing-method walk
+ * and must not fan out. Most “metaclass changed on the receiver” cases are
+ * likewise exact-class — the SwitchPoint retires because <em>that</em> class’s
+ * MetaClass changed, not because of hierarchy versioning.
  *
  * <h2>When do we invalidate, and how wide?</h2>
  *
@@ -67,15 +105,16 @@ import java.util.logging.Logger;
  *   <tr>
  *     <td>EMC method/property update ({@link ClassInfo#incVersion()})</td>
  *     <td>class + loaded subtypes / implementors / array lattice</td>
- *     <td>{@code MetaClassImpl} method selection walks super MetaClasses
- *         ({@code findMethodInClassHierarchy}); parent EMC methods are visible
- *         on children even without {@link ExpandoMetaClass#enableGlobally()}.</td>
+ *     <td>In-place EMC update can make a previously missing name resolvable on
+ *         subtypes via the missing-method hierarchy walk (and can change
+ *         already-linked miss targets). Present methods on the child keep
+ *         winning after re-link.</td>
  *   </tr>
  *   <tr>
  *     <td>Registry replace where old or new MC is {@link ExpandoMetaClass}</td>
  *     <td>class + hierarchy</td>
  *     <td>Installing / removing EMC changes cross-class MOP visibility for
- *         already-linked subtype sites.</td>
+ *         already-linked subtype sites (miss path / EMC children).</td>
  *   </tr>
  *   <tr>
  *     <td>Registry replace while global EMC creation handle is active</td>
@@ -123,7 +162,10 @@ import java.util.logging.Logger;
  * out. {@link #invalidateClass(Class)} / {@code incVersion} always fan out
  * (EMC in-place updates). Linked sites for a method that did not change may
  * still re-link when their receiver class domain is retired — that is the
- * monomorphic SwitchPoint trade-off (same as pre-6.0, but scoped).
+ * monomorphic SwitchPoint trade-off (same as pre-6.0, but scoped). Hierarchy
+ * fan-out deliberately over-invalidates subtype sites whose present methods
+ * are unchanged, so that sites which previously linked a <em>miss</em> cannot
+ * stay stale; the registry cannot cheaply know which names were linked.
  * <p>
  * <b>Scalability:</b> hierarchy fan-out is {@code O(|loaded subtypes of T|)}
  * via {@link ClassHierarchyIndex}. Category bulk remains a full ClassInfo walk
@@ -260,6 +302,15 @@ public final class IndyInvalidation {
      * hierarchy-local}, and {@code type} must not be an interface/array, and
      * global EMC must be off. Unknown / custom MetaClass kinds therefore fan
      * out (correctness-first).
+     * <p>
+     * Aligns with {@code MetaClassImpl.findMethodInClassHierarchy}: the live
+     * hierarchy walk opens only when a modified {@link MutableMetaClass} is
+     * present (EMC install/remove/update). Pure unmodified
+     * {@code MetaClassImpl} pairs never open that walk, so they stay
+     * exact-class. Fan-out is still required for the missing-method case even
+     * when a subtype already has <em>other</em> methods of the same name with
+     * different signatures — a previously unlinked {@code child.m2("")} has no
+     * site to invalidate, but a previously linked miss must re-select.
      *
      * @param type  the class being updated (not {@code null})
      * @param oldMc previous MetaClass (may be {@code null})
@@ -280,7 +331,8 @@ public final class IndyInvalidation {
 
     /**
      * Whether {@code mc} cannot publish cross-class MOP state into subtype
-     * selection. Hierarchy-local means:
+     * selection via the live missing-method hierarchy walk (or EMC inheritance).
+     * Hierarchy-local means:
      * <ul>
      *   <li>{@code null} (absent / removed), or</li>
      *   <li>unwrapped {@code MetaClassImpl} that is not an
@@ -288,6 +340,11 @@ public final class IndyInvalidation {
      * </ul>
      * EMC, modified mutable MetaClasses, and unknown MetaClass kinds return
      * {@code false} so fan-out remains correctness-first.
+     * <p>
+     * Note: a hierarchy-local {@code MetaClassImpl} may still <em>contain</em>
+     * methods snapshotted from an ancestor at construction time; that snapshot
+     * is fixed for the MetaClass instance’s lifetime and is not refreshed by
+     * SwitchPoint retirement. See class javadoc.
      *
      * @param mc MetaClass to classify (may be {@code null})
      * @return {@code true} if a replace involving only this kind needs no fan-out

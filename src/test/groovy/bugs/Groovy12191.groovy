@@ -330,6 +330,315 @@ final class Groovy12191 {
         '''
     }
 
+    /**
+     * Blackdrag PR #2736 comment (corrected parent→child direction): hierarchy
+     * walk is for <em>missing</em> methods only. Present methods on the child
+     * keep winning; a new overload on the parent is found without needing a
+     * prior site; MetaClassImpl construction timing yields C vs D divergence
+     * (pre-existing MOP, not fixed by SwitchPoint scoping).
+     *
+     * @see <a href="https://github.com/apache/groovy/pull/2736#issuecomment-5108446270">PR comment</a>
+     */
+    @Test
+    void blackdragScenario_missingMethodOnly_andMetaClassImplTiming() {
+        assertScript '''
+            class A {}
+            class B extends A {
+                def m1() { 1 }
+                def m2(Integer x) { 2 }
+            }
+            class C extends A {
+                def m2(x) { 40 }
+            }
+            // Declared at script level (not inside try): construction-time snapshot
+            // of A is taken when D's MetaClass is first built *after* A has EMC.
+            class D extends A {
+                def m2(x) { 50 }
+            }
+            def c = new C()
+            def b = new B()
+            assert b.m1() == 1
+            assert b.m2(0) == 2
+
+            A.metaClass.m1 = { -> -1 }
+            A.metaClass.m2 = { Integer x -> -2 }
+            A.metaClass.m2 = { String x -> -3 }
+            try {
+                def a = new A()
+                assert a.m1() == -1
+                assert a.m2(0) == -2
+                assert a.m2('') == -3
+
+                // Present methods on B are unchanged (not replaced by parent EMC).
+                b.metaClass = null
+                assert b.m1() == 1
+                assert b.m2(0) == 2
+                // Missing m2(String) on B is found via hierarchy walk — first call,
+                // so no prior monomorphic site needed invalidation for this name.
+                assert b.m2('') == -3
+
+                // C was MetaClassImpl-initialized before A gained EMC methods:
+                // present m2(Object) handles Integer/String/null; parent overloads
+                // are not selected for this MetaClass instance.
+                assert c.m2(null) == 40
+                assert c.m2(0) == 40
+                assert c.m2('') == 40
+                c = new C()
+                assert c.m2(null) == 40
+                assert c.m2(0) == 40
+                assert c.m2('') == 40
+
+                // Promote C to EMC: missing-method / EMC inheritance sees A.
+                c.metaClass.m1 = { -> -40 }
+                assert c.m1() == -40
+                assert c.m2(null) == 40
+                assert c.m2(0) == -2
+                assert c.m2('') == -3
+
+                // D first used after A was modified: MetaClassImpl construction can
+                // snapshot ancestor expando methods (timing gap vs C).
+                def d = new D()
+                assert d.m2(null) == 50
+                assert d.m2(0) == -2
+                assert d.m2('') == -3
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(A)
+                GroovySystem.metaClassRegistry.removeMetaClass(B)
+                GroovySystem.metaClassRegistry.removeMetaClass(C)
+                GroovySystem.metaClassRegistry.removeMetaClass(D)
+            }
+        '''
+    }
+
+    /**
+     * Blackdrag callsite-caching matrix: receiver MetaClass change (exact class)
+     * drives re-link; parent EMC remove does not rewrite a child MetaClassImpl
+     * snapshot; hierarchy SwitchPoint on parent EMC is for miss re-select, not
+     * for rebuilding MetaClassImpl tables.
+     */
+    @Test
+    void blackdragScenario_callsiteCaching_metaClassChangeNotHierarchyVersion() {
+        assertScript '''
+            import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
+            import groovy.lang.MetaClassImpl
+            import groovy.lang.ExpandoMetaClass
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            class A {}
+            class C extends A {
+                def m2(x) { 40 }
+            }
+            def call(x, y) { x.m2(y) }
+            def c = new C()
+
+            A.metaClass.m2 = { Integer x -> -2 }
+            A.metaClass.m2 = { String x -> -3 }
+            try {
+                // C MetaClassImpl from before / without snapshot of A overloads.
+                assert call(c, 0) == 40
+                c = new C()
+                assert call(c, 0) == 40
+
+                def mc = C.metaClass.delegate
+                assert mc instanceof MetaClassImpl
+
+                SwitchPoint spC = ClassInfo.getClassInfo(C).indySwitchPoint
+                // Receiver class becomes EMC → class-domain retire (MC changed).
+                c.metaClass.m1 = { -> -40 }
+                assert spC.hasBeenInvalidated()
+                assert call(c, 0) == -2
+
+                def emc = c.metaClass.delegate
+                assert emc instanceof ExpandoMetaClass
+
+                // Restore old MetaClassImpl via registry (class-level replace).
+                // Instance-only metaClass= may clear a per-instance MC without a
+                // class-domain SwitchPoint event; class-level replace always does.
+                spC = ClassInfo.getClassInfo(C).indySwitchPoint
+                GroovySystem.metaClassRegistry.setMetaClass(C, mc)
+                c.metaClass = null
+                assert spC.hasBeenInvalidated()
+                assert call(c, 0) == 40
+
+                // Late init: remove C's MetaClass so a fresh MetaClassImpl is built
+                // while A still has EMC → construction-time snapshot sees A.
+                def registry = MetaClassRegistryImpl.getInstance(0)
+                spC = ClassInfo.getClassInfo(C).indySwitchPoint
+                registry.removeMetaClass(C)
+                c.metaClass = null
+                assert spC.hasBeenInvalidated()
+                assert call(c, 0) == -2
+                def newMc = c.metaClass.delegate
+                assert newMc instanceof MetaClassImpl
+                assert newMc != mc
+
+                // Reset A: hierarchy fans out and re-links, but child MetaClassImpl
+                // still holds the construction-time snapshot — SP does not rebuild MC.
+                SwitchPoint spAfterA = ClassInfo.getClassInfo(C).indySwitchPoint
+                A.metaClass = null
+                assert spAfterA.hasBeenInvalidated()
+                assert call(c, 0) == -2
+
+                def catched = false
+                try {
+                    new A().m2(0)
+                } catch (MissingMethodException ignored) {
+                    catched = true
+                }
+                assert catched
+
+                // Re-install the EMC that was created while A still had methods.
+                // blackdrag's draft expected "clueless about A" → 40, but measured
+                // EMC retains ClosureMetaMethods copied from A (m2 Integer/String),
+                // so resolution stays -2 — similar retention to MetaClassImpl
+                // construction-time snapshot, not live super lookup.
+                spC = ClassInfo.getClassInfo(C).indySwitchPoint
+                GroovySystem.metaClassRegistry.setMetaClass(C, emc)
+                c.metaClass = null
+                assert spC.hasBeenInvalidated()
+                assert call(c, 0) == -2
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(A)
+                GroovySystem.metaClassRegistry.removeMetaClass(C)
+            }
+        '''
+    }
+
+    /**
+     * Hierarchy fan-out is required so a previously linked hit on a parent EMC
+     * method re-selects after that parent EMC is removed (miss path inverse).
+     */
+    @Test
+    void parentEmcRemoveAfterLinkedHit_childCallSiteMissesAgain() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            class ParentHit {}
+            class ChildHit extends ParentHit {}
+            def call(x) { x.hello() }
+            def c = new ChildHit()
+            ParentHit.metaClass.hello = { -> 'from-parent' }
+            try {
+                assert call(c) == 'from-parent'
+                SwitchPoint childSp = ClassInfo.getClassInfo(ChildHit).indySwitchPoint
+                GroovySystem.metaClassRegistry.removeMetaClass(ParentHit)
+                assert childSp.hasBeenInvalidated()
+                def missed = false
+                try {
+                    call(c)
+                } catch (MissingMethodException ignored) {
+                    missed = true
+                }
+                assert missed
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(ParentHit)
+                GroovySystem.metaClassRegistry.removeMetaClass(ChildHit)
+            }
+        '''
+    }
+
+    /**
+     * Hierarchy fan-out is required so a previously linked miss on the child
+     * re-selects after parent EMC install (missing-method path).
+     */
+    @Test
+    void parentEmcAfterLinkedMiss_childCallSiteSeesNewMethod() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            class ParentMiss {}
+            class ChildMiss extends ParentMiss {}
+            def call(x) { x.hello() }
+            def c = new ChildMiss()
+            def missed = false
+            try {
+                call(c)
+            } catch (MissingMethodException ignored) {
+                missed = true
+            }
+            assert missed
+
+            SwitchPoint childSp = ClassInfo.getClassInfo(ChildMiss).indySwitchPoint
+            ParentMiss.metaClass.hello = { -> 'from-parent' }
+            try {
+                assert childSp.hasBeenInvalidated()
+                assert call(c) == 'from-parent'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(ParentMiss)
+                GroovySystem.metaClassRegistry.removeMetaClass(ChildMiss)
+            }
+        '''
+    }
+
+    /**
+     * Hierarchy SwitchPoint re-link must not change present-method resolution on
+     * a MetaClassImpl child when the parent later gains EMC overloads.
+     */
+    @Test
+    void parentEmc_doesNotReplacePresentChildMethod_afterHierarchyRelink() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            class ParentPresent {}
+            class ChildPresent extends ParentPresent {
+                def m2(x) { 40 }
+            }
+            def call(x, y) { x.m2(y) }
+            def c = new ChildPresent()
+            assert call(c, 0) == 40
+
+            SwitchPoint childSp = ClassInfo.getClassInfo(ChildPresent).indySwitchPoint
+            ParentPresent.metaClass.m2 = { Integer x -> -2 }
+            try {
+                assert childSp.hasBeenInvalidated() // hierarchy fan-out (over-invalidate OK)
+                // Present m2(Object) still wins for Integer after re-link.
+                assert call(c, 0) == 40
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(ParentPresent)
+                GroovySystem.metaClassRegistry.removeMetaClass(ChildPresent)
+            }
+        '''
+    }
+
+    /**
+     * Pure Java inheritance matches Groovy for parent EMC visibility
+     * ({@code LinkedHashMap} extends {@code HashMap}): hierarchy fan-out is
+     * required so already-linked subtype sites re-select (blackdrag: same for
+     * Java-based classes).
+     */
+    @Test
+    void javaSubtype_seesParentEmc_andHierarchyFanOut() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            def lhm = new LinkedHashMap()
+            def call(x) { x.jHello() }
+            def missed = false
+            try {
+                call(lhm)
+            } catch (MissingMethodException ignored) {
+                missed = true
+            }
+            assert missed
+
+            SwitchPoint lhmSp = ClassInfo.getClassInfo(LinkedHashMap).indySwitchPoint
+            HashMap.metaClass.jHello = { -> 'jh' }
+            try {
+                assert new HashMap().jHello() == 'jh'
+                assert lhmSp.hasBeenInvalidated()
+                assert call(lhm) == 'jh'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(HashMap)
+                GroovySystem.metaClassRegistry.removeMetaClass(LinkedHashMap)
+            }
+        '''
+    }
+
     static class TypeA {}
     static class TypeB {
         String id() { 'B' }
