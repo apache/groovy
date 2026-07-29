@@ -1173,7 +1173,9 @@ public class CompilationUnit extends ProcessingUnit {
 
     private static byte[] addNestMembers(final byte[] bytes, final List<String> members) {
         ClassReader reader = new ClassReader(bytes);
-        ClassWriter writer = new ClassWriter(0);
+        // share the constant pool so unmodified methods are copied as raw bytes
+        // instead of being re-parsed and re-serialized (GROOVY-10687 hot path)
+        ClassWriter writer = new ClassWriter(reader, 0);
         reader.accept(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION, writer) {
             private final Set<String> seen = new LinkedHashSet<>();
             @Override
