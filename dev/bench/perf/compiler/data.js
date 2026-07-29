@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785224956929,
+  "lastUpdate": 1785312598982,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3800,6 +3800,56 @@ window.BENCHMARK_DATA = {
             "range": "±28.41",
             "unit": "ms",
             "extra": "5.0.6"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "ab94313eb012baf52722dae51f4575808a5b4315",
+          "message": "GROOVY-12207: Consult package-info.class of dependencies during resolution",
+          "timestamp": "2026-07-29T00:46:50Z",
+          "url": "https://github.com/apache/groovy/commit/ab94313eb012baf52722dae51f4575808a5b4315"
+        },
+        "date": 1785312596796,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 368.07000000000005,
+            "range": "±20.35",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 465.59000000000003,
+            "range": "±163.07",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 399.43666666666667,
+            "range": "±103.54",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 328.6366666666666,
+            "range": "±24.66",
+            "unit": "ms",
+            "extra": "5.0.7"
           }
         ]
       }
