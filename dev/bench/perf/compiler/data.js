@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785312598982,
+  "lastUpdate": 1785397923706,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3848,6 +3848,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 328.6366666666666,
             "range": "±24.66",
+            "unit": "ms",
+            "extra": "5.0.7"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Kartik Kenchi",
+            "username": "netliomax25-code",
+            "email": "netliomax25@gmail.com"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "00f74897126a3959fd8e47ef0ace2df7f1a89234",
+          "message": "GROOVY-12213: avoid decoding the request URI in HttpBuilder.appendQuery",
+          "timestamp": "2026-07-29T11:14:35Z",
+          "url": "https://github.com/apache/groovy/commit/00f74897126a3959fd8e47ef0ace2df7f1a89234"
+        },
+        "date": 1785397920524,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 578.53,
+            "range": "±19.74",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 674.4566666666667,
+            "range": "±222.89",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 591.1566666666666,
+            "range": "±142.58",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 514.3900000000001,
+            "range": "±23.08",
             "unit": "ms",
             "extra": "5.0.7"
           }
