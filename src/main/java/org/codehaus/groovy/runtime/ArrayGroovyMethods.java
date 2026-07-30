@@ -79,6 +79,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoublePredicate;
@@ -5453,6 +5454,36 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through the given array, passing the first two elements to the
+     * operator. The result is passed back (injected) to the operator along with
+     * the third element and so on until all array elements have been consumed.
+     * A "fat-free" variant of {@link #inject(Object[], Closure)} accepting a {@link BinaryOperator}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BinaryOperator
+     * Number[] array = [1, 2, 3, 4]
+     * BinaryOperator&lt;Number&gt; mult = (acc, val) -&gt; acc * val
+     * assert array.inject(mult) == 24
+     * </pre>
+     *
+     * @param self     an array
+     * @param operator a binary operator combining the running result with each element
+     * @return first value for single-element array or the result of the last operator call
+     * @throws NoSuchElementException if the array is empty
+     * @since 6.0.0
+     */
+    public static <T> T inject(T[] self, BinaryOperator<T> operator) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot call inject() on an empty array without passing an initial value.");
+        }
+        T value = self[0];
+        for (int i = 1; i < self.length; i += 1) {
+            value = operator.apply(value, self[i]);
+        }
+        return value;
+    }
+
+    /**
      * Iterates through the given array, passing in the initial value and the
      * first element to the closure. The result is sent back (injected) with the
      * second element. The new result is injected back into the closure with the
@@ -5489,6 +5520,33 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return value;
     }
 
+    /**
+     * Iterates through the given array, passing in the initial value and the first
+     * element to the function. The result is sent back (injected) with the second
+     * element and so on until all elements have been consumed.
+     * A "fat-free" variant of {@link #inject(Object[], Object, Closure)} accepting a {@link BiFunction}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * Number[] array = [2, 3, 4]
+     * BiFunction&lt;Number, Number, Number&gt; mult = (acc, val) -&gt; acc * val
+     * assert array.inject(1, mult) == 24
+     * </pre>
+     *
+     * @param self         an array
+     * @param initialValue base value
+     * @param function     a function combining the running result with each element
+     * @return base value for empty array or the result of the last function call
+     * @since 6.0.0
+     */
+    public static <E, U> U inject(E[] self, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+        U value = initialValue;
+        for (E e : self) {
+            value = function.apply(value, e);
+        }
+        return value;
+    }
+
     //--------------------------------------------------------------------------
     // injectAll
 
@@ -5517,6 +5575,36 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through the given array, injecting values as per <tt>inject</tt>
      * but returns the list of all calculated values instead of just the final result.
+     * A "fat-free" variant of {@link #injectAll(Object[], Closure)} accepting a {@link BinaryOperator}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BinaryOperator
+     * Integer[] nums = 1..5
+     * BinaryOperator&lt;Integer&gt; add = (a, b) -&gt; a + b
+     * assert nums.injectAll(add) == [3, 6, 10, 15]
+     * </pre>
+     *
+     * @param self     an array
+     * @param operator a binary operator combining the running result with each element
+     * @return the list of all calculated values
+     * @throws NoSuchElementException if the array is empty
+     * @since 6.0.0
+     */
+    public static <T> List<T> injectAll(T[] self, BinaryOperator<T> operator) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot call injectAll() on an empty array without passing an initial value.");
+        }
+        List<T> result = new ArrayList<>();
+        T value = self[0];
+        for (int i = 1; i < self.length; i += 1) {
+            value = operator.apply(value, self[i]);
+            result.add(value);
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through the given array, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
      *
      * <pre class="language-groovy groovyTestCase">
      * Integer[] nums = 1..5
@@ -5535,6 +5623,33 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             params[0] = value;
             params[1] = e;
             value = closure.call(params);
+            result.add(value);
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through the given array, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
+     * A "fat-free" variant of {@link #injectAll(Object[], Object, Closure)} accepting a {@link BiFunction}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * Integer[] nums = [1, 2, 3]
+     * BiFunction&lt;Integer, Integer, Integer&gt; add = (a, b) -&gt; a + b
+     * assert nums.injectAll(0, add) == [1, 3, 6]
+     * </pre>
+     *
+     * @param self         an array
+     * @param initialValue base value
+     * @param function     a function combining the running result with each element
+     * @return the list of all calculated values
+     * @since 6.0.0
+     */
+    public static <E, U> List<U> injectAll(E[] self, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+        List<U> result = new ArrayList<>();
+        U value = initialValue;
+        for (E e : self) {
+            value = function.apply(value, e);
             result.add(value);
         }
         return result;

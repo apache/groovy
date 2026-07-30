@@ -9927,6 +9927,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through the given object, passing the first two elements to the
+     * operator. The result is passed back (injected) to the operator along with
+     * the third element and so on until all elements have been consumed.
+     * A "fat-free" variant of {@link #inject(Object, Closure)} accepting a {@link BinaryOperator}.
+     *
+     * @param self     an object
+     * @param operator a binary operator combining the running result with each element
+     * @return the result of the last operator call
+     * @throws NoSuchElementException if the iterator is empty
+     * @since 6.0.0
+     */
+    public static <T> T inject(Object self, BinaryOperator<T> operator) {
+        Iterator<?> iter = InvokerHelper.asIterator(self);
+        if (!iter.hasNext()) {
+            throw new NoSuchElementException("Cannot call inject() on an empty iterable without passing an initial value.");
+        }
+        T value = (T) iter.next();
+        while (iter.hasNext()) {
+            value = operator.apply(value, (T) iter.next());
+        }
+        return value;
+    }
+
+    /**
+     * Iterates through the given object, passing the first two elements to the
      * closure. The result is passed back (injected) to the closure along with
      * the third element and so on until all elements have been consumed.
      *
@@ -10010,6 +10034,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T, U extends T, V extends T> T inject(Object self, U initialValue, @ClosureParams(value=FromString.class,options="T,?") Closure<V> closure) {
         Iterator iter = InvokerHelper.asIterator(self);
         return (T) inject(iter, initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given object, passing in the initial value to the function
+     * along with the first item. The result is passed back (injected) into the function
+     * along with the second item and so on until all elements have been consumed.
+     * A "fat-free" variant of {@link #inject(Object, Object, Closure)} accepting a {@link BiFunction}.
+     *
+     * @param self         an object
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each element
+     * @return the result of the last function call
+     * @since 6.0.0
+     */
+    public static <U> U inject(Object self, U initialValue, BiFunction<? super U, Object, ? extends U> function) {
+        Iterator<?> iter = InvokerHelper.asIterator(self);
+        U value = initialValue;
+        while (iter.hasNext()) {
+            value = function.apply(value, iter.next());
+        }
+        return value;
     }
 
     /**
@@ -10115,6 +10160,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through the given iterator, passing in the initial value to the function
+     * along with the first item. The result is passed back (injected) into the function
+     * along with the second item and so on until all elements have been consumed.
+     * A "fat-free" variant of {@link #inject(Iterator, Object, Closure)} accepting a {@link BiFunction}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;Integer, Integer, Integer&gt; add = (acc, val) -&gt; acc + val
+     * assert [1, 2, 3, 4].iterator().inject(0, add) == 0 + 1 + 2 + 3 + 4
+     * </pre>
+     *
+     * @param self         an iterator
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each element
+     * @return the result of the last function call
+     * @since 6.0.0
+     */
+    public static <E, U> U inject(Iterator<E> self, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+        U value = initialValue;
+        while (self.hasNext()) {
+            value = function.apply(value, self.next());
+        }
+        return value;
+    }
+
+    /**
      * Iterates through the given map, passing in the initial value to
      * the 2-arg Closure along with the first item (or 3-arg Closure along with the first key and value).
      * The result is passed back (injected) into
@@ -10146,6 +10217,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 value = closure.call(value, entry);
             }
+        }
+        return value;
+    }
+
+    /**
+     * Iterates through the given map, passing in the initial value to the function
+     * along with the first entry. The result is passed back (injected) into the function
+     * along with the second entry and so on until all entries have been consumed.
+     * A "fat-free" variant of {@link #inject(Map, Object, Closure)} accepting a {@link BiFunction}.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;List, Map.Entry, List&gt; acc = (list, e) -&gt; list + [e.key] * e.value
+     * assert [a: 1, b: 2, c: 3].inject([], acc) == ['a', 'b', 'b', 'c', 'c', 'c']
+     * </pre>
+     *
+     * @param self         a map
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each entry
+     * @return the result of the last function call
+     * @since 6.0.0
+     */
+    public static <K, V, U> U inject(Map<K, V> self, U initialValue, BiFunction<? super U, ? super Map.Entry<K, V>, ? extends U> function) {
+        U value = initialValue;
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            value = function.apply(value, entry);
         }
         return value;
     }
@@ -10185,6 +10282,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through the given iterable, injecting values as per <tt>inject</tt>
      * but returns the list of all calculated values instead of just the final result.
+     * A "fat-free" variant of {@link #injectAll(Iterable, Object, Closure)} accepting a {@link BiFunction}.
+     * <p>
+     * Also known as <em>prefix sum</em> or <em>scan</em> in functional parlance.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;String, Integer, String&gt; concat = (carry, next) -&gt; carry + next
+     * assert (1..3).injectAll('', concat) == ['1', '12', '123']
+     * </pre>
+     *
+     * @param self         an iterable
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each element
+     * @return the list of all calculated values
+     * @since 6.0.0
+     */
+    public static <E, U> List<U> injectAll(Iterable<E> self, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+        List<U> result = new ArrayList<>();
+        addAll(result, injectAll(self.iterator(), initialValue, function));
+        return result;
+    }
+
+    /**
+     * Iterates through the given iterable, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
      * <p>
      * Example:
      * <pre class="language-groovy groovyTestCase">
@@ -10202,6 +10323,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         List<T> result = new ArrayList<>();
         addAll(result, injectAll(iter, iter.next(), closure));
+        return result;
+    }
+
+    /**
+     * Iterates through the given iterable, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
+     * A "fat-free" variant of {@link #injectAll(Iterable, Closure)} accepting a {@link BinaryOperator}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BinaryOperator
+     * BinaryOperator&lt;Integer&gt; add = (a, b) -&gt; a + b
+     * assert (1..5).injectAll(add) == [3, 6, 10, 15]
+     * </pre>
+     *
+     * @param self     an iterable
+     * @param operator a binary operator combining the running result with each element
+     * @return the list of all calculated values
+     * @throws NoSuchElementException if the iterable is empty
+     * @since 6.0.0
+     */
+    public static <T> List<T> injectAll(Iterable<T> self, BinaryOperator<T> operator) {
+        Iterator<T> iter = self.iterator();
+        if (!iter.hasNext()) {
+            throw new NoSuchElementException("Cannot call injectAll() on an empty iterable without passing an initial value.");
+        }
+        List<T> result = new ArrayList<>();
+        addAll(result, injectAll(iter, iter.next(), operator));
         return result;
     }
 
@@ -10226,6 +10373,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through the given iterator, injecting values as per <tt>inject</tt>
+     * but returns an iterator of all calculated values instead of just the final result.
+     * A "fat-free" variant of {@link #injectAll(Iterator, Object, Closure)} accepting a {@link BiFunction}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;String, Integer, String&gt; concat = (carry, next) -&gt; carry + next
+     * assert (1..3).iterator().injectAll('', concat).toList() == ['1', '12', '123']
+     * </pre>
+     *
+     * @param self         an iterator
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each element
+     * @return an iterator of all calculated values
+     * @since 6.0.0
+     */
+    public static <E, U> Iterator<U> injectAll(Iterator<E> self, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+        return new InjectAllFunctionIterator<>(self, initialValue, function);
+    }
+
+    /**
+     * Iterates through the given iterator, injecting values as per <tt>inject</tt>
      * but returns the list of all calculated values instead of just the final result.
      * <p>
      * Example:
@@ -10237,9 +10404,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E, T, V extends T> Iterator<T> injectAll(Iterator<E> self, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         if (!self.hasNext()) {
-            throw new NoSuchElementException("Cannot call injectAll() on an empty iterable without passing an initial value.");
+            throw new NoSuchElementException("Cannot call injectAll() on an empty iterator without passing an initial value.");
         }
         return (Iterator<T>) injectAll(self, self.next(), closure);
+    }
+
+    /**
+     * Iterates through the given iterator, injecting values as per <tt>inject</tt>
+     * but returns an iterator of all calculated values instead of just the final result.
+     * A "fat-free" variant of {@link #injectAll(Iterator, Closure)} accepting a {@link BinaryOperator}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BinaryOperator
+     * BinaryOperator&lt;Integer&gt; add = (a, b) -&gt; a + b
+     * assert (1..5).iterator().injectAll(add).toList() == [3, 6, 10, 15]
+     * </pre>
+     *
+     * @param self     an iterator
+     * @param operator a binary operator combining the running result with each element
+     * @return an iterator of all calculated values
+     * @throws NoSuchElementException if the iterator is empty
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> injectAll(Iterator<T> self, BinaryOperator<T> operator) {
+        if (!self.hasNext()) {
+            throw new NoSuchElementException("Cannot call injectAll() on an empty iterator without passing an initial value.");
+        }
+        return injectAll(self, self.next(), operator);
     }
 
     private static final class InjectAllIterator<E, T, U, V> implements Iterator<T> {
@@ -10267,6 +10457,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             params[1] = delegate.next();
             value = (U) closure.call(params);
             return (T) value;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class InjectAllFunctionIterator<E, U> implements Iterator<U> {
+        private final Iterator<E> delegate;
+        private final BiFunction<? super U, ? super E, ? extends U> function;
+        private U value;
+
+        private InjectAllFunctionIterator(Iterator<E> delegate, U initialValue, BiFunction<? super U, ? super E, ? extends U> function) {
+            this.delegate = delegate;
+            this.value = initialValue;
+            this.function = function;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public U next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            value = function.apply(value, delegate.next());
+            return value;
         }
 
         @Override
@@ -10303,6 +10522,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else {
                 value = closure.call(value, entry);
             }
+            result.add(value);
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through the given map, passing in the initial value to the function
+     * along with the first entry and so on for the other entries, collecting the results in a list.
+     * A "fat-free" variant of {@link #injectAll(Map, Object, Closure)} accepting a {@link BiFunction}.
+     * <pre class="language-groovy groovyTestCase">
+     * import java.util.function.BiFunction
+     * BiFunction&lt;String, Map.Entry, String&gt; acc = (carry, e) -&gt; carry + e.key * e.value
+     * assert [a: 1, b: 2, c: 3].injectAll('', acc) == ['a', 'abb', 'abbccc']
+     * </pre>
+     *
+     * @param self         a map
+     * @param initialValue some initial value
+     * @param function     a function combining the running result with each entry
+     * @return the accumulated results from each function call
+     * @since 6.0.0
+     */
+    public static <K, V, U> List<U> injectAll(Map<K, V> self, U initialValue, BiFunction<? super U, ? super Map.Entry<K, V>, ? extends U> function) {
+        List<U> result = new ArrayList<>();
+        U value = initialValue;
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            value = function.apply(value, entry);
             result.add(value);
         }
         return result;
