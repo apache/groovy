@@ -91,6 +91,7 @@ import java.util.function.IntUnaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
 import java.util.function.LongUnaryOperator;
+import java.util.function.ObjIntConsumer;
 import java.util.function.Predicate;
 
 /**
@@ -264,6 +265,27 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns true if any element of the int array matches the given predicate.
+     * A "fat-free" variant of {@link #any(int[], Closure)} accepting an {@link IntPredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * int[] nums = [1, 2, 3]
+     * assert nums.any(n -&gt; n &gt; 2)
+     * </pre>
+     *
+     * @param self      an int array
+     * @param predicate the predicate evaluated against each element
+     * @return true if any element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static boolean any(int[] self, IntPredicate predicate) {
+        Objects.requireNonNull(self);
+        for (int item : self) {
+            if (predicate.test(item)) return true;
+        }
+        return false;
+    }
+
+    /**
      * Iterates over the contents of a long Array, and checks whether a
      * predicate is valid for at least one element.
      * <pre class="language-groovy groovyTestCase">
@@ -282,6 +304,27 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (long item : self) {
             if (bcw.call(item)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if any element of the long array matches the given predicate.
+     * A "fat-free" variant of {@link #any(long[], Closure)} accepting a {@link LongPredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * long[] nums = [1L, 2L, 3L]
+     * assert nums.any(n -&gt; n &gt; 2)
+     * </pre>
+     *
+     * @param self      a long array
+     * @param predicate the predicate evaluated against each element
+     * @return true if any element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static boolean any(long[] self, LongPredicate predicate) {
+        Objects.requireNonNull(self);
+        for (long item : self) {
+            if (predicate.test(item)) return true;
         }
         return false;
     }
@@ -333,6 +376,27 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns true if any element of the double array matches the given predicate.
+     * A "fat-free" variant of {@link #any(double[], Closure)} accepting a {@link DoublePredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * double[] nums = [1.0d, 2.0d, 3.0d]
+     * assert nums.any(n -&gt; n &gt; 2)
+     * </pre>
+     *
+     * @param self      a double array
+     * @param predicate the predicate evaluated against each element
+     * @return true if any element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static boolean any(double[] self, DoublePredicate predicate) {
+        Objects.requireNonNull(self);
+        for (double item : self) {
+            if (predicate.test(item)) return true;
+        }
+        return false;
+    }
+
+    /**
      * Iterates over the contents of an Array, and checks whether a
      * predicate is valid for at least one element.
      *
@@ -346,6 +410,28 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (T item : self) {
             if (bcw.call(item)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if any element of the array matches the given predicate.
+     * A "fat-free" variant of {@link #any(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3]
+     * assert nums.any(n -&gt; n &gt; 2)
+     * assert !nums.any(n -&gt; n &gt; 5)
+     * </pre>
+     *
+     * @param self      an array
+     * @param predicate the predicate evaluated against each element
+     * @return true if any element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static <T> boolean any(T[] self, Predicate<? super T> predicate) {
+        Objects.requireNonNull(self);
+        for (T item : self) {
+            if (predicate.test(item)) return true;
         }
         return false;
     }
@@ -893,6 +979,23 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through an array transforming each element using the transform function.
+     * A "fat-free" variant of {@link #collect(Object[], Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3]
+     * assert nums.collect(n -&gt; n * 2) == [2, 4, 6]
+     * </pre>
+     *
+     * @param self      an array
+     * @param transform the transform function applied to each element
+     * @return a List of the transformed values
+     * @since 6.0.0
+     */
+    public static <E, T> List<T> collect(E[] self, Function<? super E, ? extends T> transform) {
+        return DefaultGroovyMethods.collect(new ArrayIterator<>(self), transform);
+    }
+
+    /**
      * Iterates through this Array transforming each item into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
@@ -911,6 +1014,25 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <E, T, C extends Collection<T>> C collect(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends T> transform) {
         return DefaultGroovyMethods.collect(new ArrayIterator<>(self), collector, transform);
+    }
+
+    /**
+     * Iterates through an array transforming each element using the transform function
+     * and adding it to the collector. A "fat-free" variant of
+     * {@link #collect(Object[], Collection, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3]
+     * assert nums.collect(['x'], n -&gt; n * 2) == ['x', 2, 4, 6]
+     * </pre>
+     *
+     * @param self      an array
+     * @param collector an initial collection to add the transformed values to
+     * @param transform the transform function applied to each element
+     * @return the collector with the transformed values added to it
+     * @since 6.0.0
+     */
+    public static <E, T, C extends Collection<T>> C collect(E[] self, C collector, Function<? super E, ? extends T> transform) {
+        return DefaultGroovyMethods.collect(new ArrayIterable<>(self), collector, transform);
     }
 
     //--------------------------------------------------------------------------
@@ -970,6 +1092,24 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through an array transforming each element into a map entry using the
+     * transform function. A "fat-free" variant of {@link #collectEntries(Object[], Closure)}
+     * accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * String[] words = ['a', 'bb', 'ccc']
+     * assert words.collectEntries(w -&gt; new MapEntry(w, w.size())) == [a: 1, bb: 2, ccc: 3]
+     * </pre>
+     *
+     * @param self      an array
+     * @param transform the transform function applied to each element, returning a map entry
+     * @return a Map of the collected entries
+     * @since 6.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Function<? super E, ? extends Map.Entry<K, V>> transform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterable<>(self), transform);
+    }
+
+    /**
      * Iterates through this array transforming each item using the <code>transform</code> closure
      * and returning a map of the resulting transformed entries.
      *
@@ -996,6 +1136,25 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, @ClosureParams(FirstParam.Component.class) Closure<?> transform) {
         return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(self), collector, transform);
+    }
+
+    /**
+     * Iterates through an array transforming each element into a map entry using the
+     * transform function and adding it to the collector. A "fat-free" variant of
+     * {@link #collectEntries(Object[], Map, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * String[] words = ['bb', 'ccc']
+     * assert words.collectEntries([a: 1], w -&gt; new MapEntry(w, w.size())) == [a: 1, bb: 2, ccc: 3]
+     * </pre>
+     *
+     * @param self      an array
+     * @param collector an initial map to add the collected entries to
+     * @param transform the transform function applied to each element, returning a map entry
+     * @return the collector with the collected entries added to it
+     * @since 6.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(E[] self, Map<K, V> collector, Function<? super E, ? extends Map.Entry<K, V>> transform) {
+        return DefaultGroovyMethods.collectEntries(new ArrayIterable<>(self), collector, transform);
     }
 
     /**
@@ -1494,6 +1653,31 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of elements in the int array matching the given predicate.
+     * The primitive-array counterpart of {@link #count(Object[], Predicate)}, accepting an {@link IntPredicate}.
+     * A value passed instead of a predicate selects {@link #count(int[], Object)} (value equality).
+     * <pre class="language-groovy groovyTestCase">
+     * int[] nums = [1, 2, 3, 4, 5]
+     * assert nums.count(n -&gt; n % 2 == 0) == 2
+     * </pre>
+     *
+     * @param self      an int array
+     * @param predicate the predicate evaluated against each element
+     * @return the number of elements matching the predicate
+     * @since 6.0.0
+     */
+    public static Number count(int[] self, IntPredicate predicate) {
+        Objects.requireNonNull(self);
+        long answer = 0;
+        for (int item : self) {
+            if (predicate.test(item)) answer += 1;
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
+        return answer;
+    }
+
+    /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
@@ -1510,6 +1694,31 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number count(long[] self, Object value) {
         return DefaultGroovyMethods.count(new LongArrayIterator(self), value);
+    }
+
+    /**
+     * Counts the number of elements in the long array matching the given predicate.
+     * The primitive-array counterpart of {@link #count(Object[], Predicate)}, accepting a {@link LongPredicate}.
+     * A value passed instead of a predicate selects {@link #count(long[], Object)} (value equality).
+     * <pre class="language-groovy groovyTestCase">
+     * long[] nums = [1L, 2L, 3L, 4L, 5L]
+     * assert nums.count(n -&gt; n % 2 == 0) == 2
+     * </pre>
+     *
+     * @param self      a long array
+     * @param predicate the predicate evaluated against each element
+     * @return the number of elements matching the predicate
+     * @since 6.0.0
+     */
+    public static Number count(long[] self, LongPredicate predicate) {
+        Objects.requireNonNull(self);
+        long answer = 0;
+        for (long item : self) {
+            if (predicate.test(item)) answer += 1;
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
+        return answer;
     }
 
     /**
@@ -1551,6 +1760,31 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of elements in the double array matching the given predicate.
+     * The primitive-array counterpart of {@link #count(Object[], Predicate)}, accepting a {@link DoublePredicate}.
+     * A value passed instead of a predicate selects {@link #count(double[], Object)} (value equality).
+     * <pre class="language-groovy groovyTestCase">
+     * double[] nums = [1.0d, 2.0d, 3.0d, 4.0d]
+     * assert nums.count(n -&gt; n &gt; 2) == 2
+     * </pre>
+     *
+     * @param self      a double array
+     * @param predicate the predicate evaluated against each element
+     * @return the number of elements matching the predicate
+     * @since 6.0.0
+     */
+    public static Number count(double[] self, DoublePredicate predicate) {
+        Objects.requireNonNull(self);
+        long answer = 0;
+        for (double item : self) {
+            if (predicate.test(item)) answer += 1;
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return (int) answer;
+        return answer;
+    }
+
+    /**
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
@@ -1573,6 +1807,23 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.0
      */
     public static <T> Number count(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> predicate) {
+        return DefaultGroovyMethods.count(Arrays.asList(self), predicate);
+    }
+
+    /**
+     * Counts the number of array elements matching the given predicate.
+     * A "fat-free" variant of {@link #count(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4, 5]
+     * assert nums.count(n -&gt; n % 2 == 0) == 2
+     * </pre>
+     *
+     * @param self      an array
+     * @param predicate the predicate evaluated against each element
+     * @return the number of elements matching the predicate
+     * @since 6.0.0
+     */
+    public static <T> Number count(T[] self, Predicate<? super T> predicate) {
         return DefaultGroovyMethods.count(Arrays.asList(self), predicate);
     }
 
@@ -2155,6 +2406,27 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
+    /**
+     * Iterates through an array, passing each element to the given consumer.
+     * A "fat-free" variant of {@link #each(Object[], Closure)} accepting a {@link Consumer}.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = []
+     * assert (['a', 'b', 'c'] as String[]).each(result::add).length == 3
+     * assert result == ['a', 'b', 'c']
+     * </pre>
+     *
+     * @param self     the array over which we iterate
+     * @param consumer the consumer applied on each element found
+     * @return the self array
+     * @since 6.0.0
+     */
+    public static <T> T[] each(T[] self, Consumer<? super T> consumer) {
+        for (T item : self) {
+            consumer.accept(item);
+        }
+        return self;
+    }
+
     //--------------------------------------------------------------------------
     // eachByte
 
@@ -2507,6 +2779,28 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
+    /**
+     * Iterates through an array, passing each element and its index to the given consumer.
+     * A "fat-free" variant of {@link #eachWithIndex(Object[], Closure)} accepting an {@link ObjIntConsumer}.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = [:]
+     * (['a', 'b', 'c'] as String[]).eachWithIndex((item, index) -&gt; result[index] = item)
+     * assert result == [0: 'a', 1: 'b', 2: 'c']
+     * </pre>
+     *
+     * @param self     the array over which we iterate
+     * @param consumer the consumer applied on each element and its index
+     * @return the self array
+     * @since 6.0.0
+     */
+    public static <T> T[] eachWithIndex(T[] self, ObjIntConsumer<? super T> consumer) {
+        int counter = 0;
+        for (T item : self) {
+            consumer.accept(item, counter++);
+        }
+        return self;
+    }
+
     //--------------------------------------------------------------------------
     // equals
 
@@ -2825,6 +3119,27 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns true if every element of the int array matches the given predicate.
+     * A "fat-free" variant of {@link #every(int[], Closure)} accepting an {@link IntPredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * int[] nums = [2, 4, 6]
+     * assert nums.every(n -&gt; n % 2 == 0)
+     * </pre>
+     *
+     * @param self      an int array
+     * @param predicate the predicate evaluated against each element
+     * @return true if every element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static boolean every(int[] self, IntPredicate predicate) {
+        Objects.requireNonNull(self);
+        for (int item : self) {
+            if (!predicate.test(item)) return false;
+        }
+        return true;
+    }
+
+    /**
      * Iterates over the contents of a long Array, and checks whether a
      * predicate is valid for all elements.
      * <pre class="language-groovy groovyTestCase">
@@ -2843,6 +3158,27 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (long item : self) {
             if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if every element of the long array matches the given predicate.
+     * A "fat-free" variant of {@link #every(long[], Closure)} accepting a {@link LongPredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * long[] nums = [2L, 4L, 6L]
+     * assert nums.every(n -&gt; n % 2 == 0)
+     * </pre>
+     *
+     * @param self      a long array
+     * @param predicate the predicate evaluated against each element
+     * @return true if every element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static boolean every(long[] self, LongPredicate predicate) {
+        Objects.requireNonNull(self);
+        for (long item : self) {
+            if (!predicate.test(item)) return false;
         }
         return true;
     }
@@ -2894,6 +3230,27 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns true if every element of the double array matches the given predicate.
+     * A "fat-free" variant of {@link #every(double[], Closure)} accepting a {@link DoublePredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * double[] nums = [2.0d, 4.0d, 6.0d]
+     * assert nums.every(n -&gt; n % 2 == 0)
+     * </pre>
+     *
+     * @param self      a double array
+     * @param predicate the predicate evaluated against each element
+     * @return true if every element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static boolean every(double[] self, DoublePredicate predicate) {
+        Objects.requireNonNull(self);
+        for (double item : self) {
+            if (!predicate.test(item)) return false;
+        }
+        return true;
+    }
+
+    /**
      * Used to determine if the given predicate closure is valid (i.e. returns
      * <code>true</code> for all items in this Array).
      *
@@ -2907,6 +3264,28 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
         for (T item : self) {
             if (!bcw.call(item)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if every element of the array matches the given predicate.
+     * A "fat-free" variant of {@link #every(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [2, 4, 6]
+     * assert nums.every(n -&gt; n % 2 == 0)
+     * assert !nums.every(n -&gt; n &gt; 2)
+     * </pre>
+     *
+     * @param self      an array
+     * @param predicate the predicate evaluated against each element
+     * @return true if every element satisfies the predicate
+     * @since 6.0.0
+     */
+    public static <T> boolean every(T[] self, Predicate<? super T> predicate) {
+        Objects.requireNonNull(self);
+        for (T item : self) {
+            if (!predicate.test(item)) return false;
         }
         return true;
     }
@@ -2932,6 +3311,29 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         for (T element : self) {
             if (bcw.call(element)) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first element in the array that matches the given predicate, or null if none match.
+     * A "fat-free" variant of {@link #find(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4]
+     * assert nums.find(n -&gt; n &gt; 2) == 3
+     * assert nums.find(n -&gt; n &gt; 5) == null
+     * </pre>
+     *
+     * @param self      an array
+     * @param condition the predicate evaluated against each element
+     * @return the first element matching the predicate, in iteration order, or null if none matches
+     * @since 6.0.0
+     */
+    public static <T> T find(T[] self, Predicate<? super T> condition) {
+        for (T element : self) {
+            if (condition.test(element)) {
                 return element;
             }
         }
@@ -2970,6 +3372,23 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.0
      */
     public static <T> List<T> findAll(T[] self, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
+        return DefaultGroovyMethods.findMany(new ArrayList<>(), new ArrayIterator<>(self), condition);
+    }
+
+    /**
+     * Finds all elements of the array matching the given predicate.
+     * A "fat-free" variant of {@link #findAll(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4, 5, 6]
+     * assert nums.findAll(n -&gt; n % 2 == 0) == [2, 4, 6]
+     * </pre>
+     *
+     * @param self      an array
+     * @param condition the predicate evaluated against each element
+     * @return a list of the elements matching the predicate
+     * @since 6.0.0
+     */
+    public static <T> List<T> findAll(T[] self, Predicate<? super T> condition) {
         return DefaultGroovyMethods.findMany(new ArrayList<>(), new ArrayIterator<>(self), condition);
     }
 

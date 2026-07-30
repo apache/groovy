@@ -26,7 +26,11 @@ import java.util.function.BiFunction
 import java.util.function.BiPredicate
 import java.util.function.BinaryOperator
 import java.util.function.Consumer
+import java.util.function.DoublePredicate
 import java.util.function.Function
+import java.util.function.IntPredicate
+import java.util.function.LongPredicate
+import java.util.function.ObjIntConsumer
 import java.util.function.Predicate
 import java.util.stream.Stream
 
@@ -234,6 +238,68 @@ class LambdasTest {
     }
 
     @Test
+    void fatFreeArrayObjectTwinsMatchClosure() {
+        Integer[] nums = [1, 2, 3, 4, 5, 6]
+        Function<Integer, Integer> dbl = n -> n * 2
+        assert nums.collect(dbl) == nums.collect { it * 2 }
+        assert nums.collect(['x'], dbl) == nums.collect(['x']) { it * 2 }
+
+        Predicate<Integer> even = n -> n % 2 == 0
+        assert nums.any(even) == nums.any { it % 2 == 0 }
+        assert nums.every(even) == nums.every { it % 2 == 0 }
+        assert nums.find(even) == nums.find { it % 2 == 0 }
+        assert nums.findAll(even) == nums.findAll { it % 2 == 0 }
+        assert nums.count(even) == nums.count { it % 2 == 0 }
+
+        def acc = []
+        (['a', 'b', 'c'] as String[]).each(acc::add)
+        assert acc == ['a', 'b', 'c']
+        def indexed = [:]
+        ObjIntConsumer<String> rec = (item, i) -> { indexed[i] = item }
+        (['a', 'b'] as String[]).eachWithIndex(rec)
+        assert indexed == [0: 'a', 1: 'b']
+
+        Function<String, Map.Entry> entry = w -> new MapEntry(w, w.size())
+        assert (['a', 'bb'] as String[]).collectEntries(entry) == [a: 1, bb: 2]
+        assert (['bb'] as String[]).collectEntries([a: 1], entry) == [a: 1, bb: 2]
+
+        // GROOVY-10893: a null-returning transform inserts nothing (matches the Closure form)
+        Function<String, Map.Entry> maybeEntry = w -> w.size() > 1 ? new MapEntry(w, w.size()) : null
+        assert (['a', 'bb', 'ccc'] as String[]).collectEntries(maybeEntry) == [bb: 2, ccc: 3]
+        assert (['a', 'bb'] as String[]).collectEntries([z: 0], maybeEntry) == [z: 0, bb: 2]
+
+        // DGM collectEntries(Iterable, Map, Function) collector twin (skips null entries too)
+        assert [1, 2, 3].collectEntries([z: 0], n -> n > 1 ? new MapEntry(n, n * n) : null) == [z: 0, 2: 4, 3: 9]
+    }
+
+    @Test
+    void fatFreeArrayPrimitivePredicates() {
+        int[] ints = [1, 2, 3, 4, 5]
+        IntPredicate ie = n -> n % 2 == 0
+        assert ints.any(ie)
+        assert !ints.every(ie)
+        assert ints.count(ie) == 2
+
+        long[] longs = [1L, 2L, 3L, 4L]
+        LongPredicate lg = n -> n > 2
+        assert longs.any(lg)
+        assert longs.count(lg) == 2
+
+        double[] dbls = [1.0d, 2.0d, 3.0d, 4.0d]
+        DoublePredicate dg = n -> n > 2
+        assert dbls.count(dg) == 2
+
+        // the value-count overload still works alongside the predicate twin
+        assert ([1, 2, 2, 3, 2] as int[]).count(2) == 3
+    }
+
+    @Test
+    void fatFreeArrayMethodReferenceUnderCompileStatic() {
+        assert CompileStaticUsage.upperViaCollect(['a', 'bb'] as String[]) == ['A', 'BB']
+        assert CompileStaticUsage.countEvenInts([1, 2, 3, 4] as int[]) == 2
+    }
+
+    @Test
     void fatFreeInjectMatchClosureVariants() {
         BinaryOperator<Integer> mult = (a, b) -> a * b
         BiFunction<Integer, Integer, Integer> add = (a, b) -> a + b
@@ -357,6 +423,14 @@ class LambdasTest {
 
         static Map<Integer, Integer> countByLength(List<String> input) {
             input.countBy(String::length)
+        }
+
+        static List<String> upperViaCollect(String[] input) {
+            input.collect(String::toUpperCase)
+        }
+
+        static Number countEvenInts(int[] input) {
+            input.count((int n) -> n % 2 == 0)
         }
     }
 }
