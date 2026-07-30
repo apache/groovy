@@ -403,6 +403,13 @@ public abstract class StaticTypeCheckingSupport {
             ClassNode aType = argumentTypes[i], pType = parameters[i].getType();
             if (!isAssignableTo(aType, pType)) {
                 return -1;
+            } else if (Boolean.TRUE.equals(aType.getNodeMetaData(StaticTypesMarker.METHOD_REFERENCE_TYPE))
+                    && CLOSURE_TYPE.getName().equals(pType.getName())) {
+                // as a call argument, a method reference (::) targets a functional interface, not
+                // a Closure parameter; strongly disfavour a Closure parameter so a functional-
+                // interface overload is preferred (otherwise the Closure overload wins the
+                // distance tie-break and the method reference then fails to coerce)
+                dist += 256;
             } else if (!aType.equals(pType)) {
                 dist += getDistance(aType, pType);
             }
