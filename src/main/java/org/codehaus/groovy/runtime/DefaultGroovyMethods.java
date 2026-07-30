@@ -3318,6 +3318,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Projects each item from a source Iterable to a collection and concatenates
+     * (flattens) the resulting collections into a single list. A "fat-free" variant of
+     * {@link #collectMany(Iterable, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * def nums = 1..10
+     * def squaresAndCubesOfEvens = nums.collectMany(n -&gt; n % 2 ? [] : [n**2, n**3])
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216, 64, 512, 100, 1000]
+     * </pre>
+     *
+     * @param self       an Iterable
+     * @param projection a projecting function returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
+     * @since 6.0.0
+     */
+    public static <T, E> List<T> collectMany(Iterable<E> self, Function<? super E, ? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
+    }
+
+    /**
      * Flattens an iterable of collections into a list.
      *
      * @param self an iterable of iterables
@@ -3359,6 +3378,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Projects each item from a source collection to a result collection and concatenates
+     * (flattens) the resulting collections adding them into the <code>collector</code>.
+     * A "fat-free" variant of {@link #collectMany(Iterable, Collection, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * def animals = ['CAT', 'DOG', 'ELEPHANT']
+     * def smallAnimals = animals.collectMany(['ant', 'bee'], a -&gt; a.size() &gt; 3 ? [] : [a.toLowerCase()])
+     * assert smallAnimals == ['ant', 'bee', 'cat', 'dog']
+     * </pre>
+     *
+     * @param self       an Iterable
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting function returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) into it
+     * @since 6.0.0
+     */
+    public static <T, E, C extends Collection<T>> C collectMany(Iterable<E> self, C collector, Function<? super E, ? extends Collection<? extends T>> projection) {
+        return collectMany(self.iterator(), collector, projection);
+    }
+
+    /**
      * Projects each item from a source map to a result collection and concatenates (flattens) the resulting
      * collections adding them into the <code>collector</code>.
      * <p>
@@ -3383,6 +3422,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Projects each entry from a source map to a result collection and concatenates
+     * (flattens) the resulting collections adding them into the <code>collector</code>.
+     * A "fat-free" variant of {@link #collectMany(Map, Collection, Closure)} accepting a {@link BiFunction}.
+     * <pre class="language-groovy groovyTestCase">
+     * def map = [bread: 3, milk: 5, butter: 2]
+     * def result = map.collectMany(['x'], (k, v) -&gt; k.startsWith('b') ? k.toList() : [])
+     * assert result == ['x', 'b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
+     * </pre>
+     *
+     * @param self       a map
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting function returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) to it
+     * @since 6.0.0
+     */
+    public static <T, K, V, C extends Collection<T>> C collectMany(Map<K, V> self, C collector, BiFunction<? super K, ? super V, ? extends Collection<? extends T>> projection) {
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            var items = projection.apply(entry.getKey(), entry.getValue());
+            if (items != null && !items.isEmpty()) collector.addAll(items);
+        }
+        return collector;
+    }
+
+    /**
      * Projects each item from a source map to a result collection and concatenates (flattens) the resulting
      * collections adding them into a collection.
      * <p>
@@ -3398,6 +3461,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.8
      */
     public static <T, K, V> List<T> collectMany(Map<K, V> self, @ClosureParams(MapEntryOrKeyValue.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
+    }
+
+    /**
+     * Projects each entry from a source map to a result collection and concatenates
+     * (flattens) the resulting collections into a single list. A "fat-free" variant of
+     * {@link #collectMany(Map, Closure)} accepting a {@link BiFunction}.
+     * <pre class="language-groovy groovyTestCase">
+     * def map = [bread: 3, milk: 5, butter: 2]
+     * def result = map.collectMany((k, v) -&gt; k.startsWith('b') ? k.toList() : [])
+     * assert result == ['b', 'r', 'e', 'a', 'd', 'b', 'u', 't', 't', 'e', 'r']
+     * </pre>
+     *
+     * @param self       a map
+     * @param projection a projecting function returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
+     * @since 6.0.0
+     */
+    public static <T, K, V> List<T> collectMany(Map<K, V> self, BiFunction<? super K, ? super V, ? extends Collection<? extends T>> projection) {
         return collectMany(self, new ArrayList<>(), projection);
     }
 
@@ -3437,6 +3519,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Projects each item from a source iterator to a collection and concatenates
+     * (flattens) the resulting collections adding them into the <code>collector</code>.
+     * A "fat-free" variant of {@link #collectMany(Iterator, Collection, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
+     * def squaresAndCubesOfEvens = numsIter.collectMany([], n -&gt; n % 2 == 0 ? [n**2, n**3] : [])
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self       an iterator
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting function returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) to it
+     * @since 6.0.0
+     */
+    public static <T, E, C extends Collection<T>> C collectMany(Iterator<E> self, C collector, Function<? super E, ? extends Collection<? extends T>> projection) {
+        while (self.hasNext()) {
+            E element = self.next();
+            var items = projection.apply(element);
+            if (items != null) collector.addAll(items);
+        }
+        return collector;
+    }
+
+    /**
      * Iterates through the elements produced by projecting and flattening the elements from a source iterator.
      * <p>
      * <pre class="language-groovy groovyTestCase">
@@ -3465,6 +3572,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         @DelegatesTo(genericTypeIndex = 0)
         @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
         return new CollectManyIterator<>(self, projection);
+    }
+
+    /**
+     * Iterates lazily through the elements produced by projecting and flattening the
+     * elements from a source iterator. A "fat-free" variant of
+     * {@link #collectingMany(Iterator, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
+     * def squaresAndCubesOfEvens = numsIter.collectingMany(n -&gt; n % 2 == 0 ? [n**2, n**3] : []).collect()
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self       a source iterator
+     * @param projection a projecting function returning a collection of items
+     * @return an iterator of the projected collections flattened
+     * @since 6.0.0
+     */
+    public static <T, E> Iterator<T> collectingMany(Iterator<E> self, Function<? super E, ? extends Collection<? extends T>> projection) {
+        return new CollectManyFunctionIterator<>(self, projection);
     }
 
     private static final class CollectManyIterator<E, T> implements Iterator<T> {
@@ -3511,6 +3637,50 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    private static final class CollectManyFunctionIterator<E, T> implements Iterator<T> {
+        private final Iterator<E> source;
+        private final Function<? super E, ? extends Collection<? extends T>> transform;
+        private final Queue<T> buffer = new LinkedList<>();
+        private boolean ready = false;
+
+        private CollectManyFunctionIterator(Iterator<E> source, Function<? super E, ? extends Collection<? extends T>> transform) {
+            this.source = source;
+            this.transform = transform;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ready;
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("CollectManyFunctionIterator has been exhausted and contains no more elements");
+            }
+            T result = buffer.poll();
+            ready = !buffer.isEmpty();
+            advance();
+            return result;
+        }
+
+        private void advance() {
+            while (!ready && source.hasNext()) {
+                Collection<? extends T> result = transform.apply(source.next());
+                if (result != null) {
+                    buffer.addAll(result);
+                }
+                ready = !buffer.isEmpty();
+            }
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     /**
      * Projects each item from a source iterator to a collection and concatenates (flattens) the resulting collections into a single list.
      * <p>
@@ -3527,6 +3697,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T, E> List<T> collectMany(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
+    }
+
+    /**
+     * Projects each item from a source iterator to a collection and concatenates
+     * (flattens) the resulting collections into a single list. A "fat-free" variant of
+     * {@link #collectMany(Iterator, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
+     * def squaresAndCubesOfEvens = numsIter.collectMany(n -&gt; n % 2 ? [] : [n**2, n**3])
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self       an iterator
+     * @param projection a projecting function returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
+     * @since 6.0.0
+     */
+    public static <T, E> List<T> collectMany(Iterator<E> self, Function<? super E, ? extends Collection<? extends T>> projection) {
         return collectMany(self, new ArrayList<>(), projection);
     }
 
@@ -4085,6 +4274,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all collection members into groups determined by the supplied mapping
+     * function and counts the group size. A "fat-free" variant of
+     * {@link #countBy(Iterable, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [0: 2, 1: 3] == [1, 2, 3, 4, 5].countBy(n -&gt; n % 2)
+     * </pre>
+     *
+     * @param self     a collection to group and count
+     * @param function a function mapping items to the frequency keys
+     * @return a new Map grouped by keys with frequency counts
+     * @since 6.0.0
+     */
+    public static <K, E> Map<K, Integer> countBy(Iterable<E> self, Function<? super E, ? extends K> function) {
+        return countBy(self.iterator(), function);
+    }
+
+    /**
      * Creates a multiset-like map of the collection members.
      * <p>
      * Example usage:
@@ -4117,6 +4323,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Map<K, Integer> answer = new LinkedHashMap<>();
         while (self.hasNext()) {
             K value = closure.call(self.next());
+            countAnswer(answer, value);
+        }
+        return answer;
+    }
+
+    /**
+     * Sorts all iterator items into groups determined by the supplied mapping
+     * function and counts the group size. A "fat-free" variant of
+     * {@link #countBy(Iterator, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1: 2, 0: 1] == [1, 2, 2, 2, 3].toSet().iterator().countBy(n -&gt; n % 2)
+     * </pre>
+     *
+     * @param self     an iterator to group and count
+     * @param function a function mapping items to the frequency keys
+     * @return a new Map grouped by keys with frequency counts
+     * @since 6.0.0
+     */
+    public static <K, E> Map<K, Integer> countBy(Iterator<E> self, Function<? super E, ? extends K> function) {
+        Map<K, Integer> answer = new LinkedHashMap<>();
+        while (self.hasNext()) {
+            K value = function.apply(self.next());
             countAnswer(answer, value);
         }
         return answer;
@@ -4157,6 +4385,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Map<K, Integer> answer = new LinkedHashMap<>();
         for (Map.Entry<U,V> entry : self.entrySet()) {
             countAnswer(answer, callClosureForMapEntry(closure, entry));
+        }
+        return answer;
+    }
+
+    /**
+     * Groups the members of a map into groups determined by the supplied mapping
+     * function and counts the frequency of the created groups. A "fat-free" variant of
+     * {@link #countBy(Map, Closure)} accepting a {@link BiFunction}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [0: 2, 1: 3] == [a: 1, b: 2, c: 3, d: 4, e: 5].countBy((k, v) -&gt; v % 2)
+     * </pre>
+     *
+     * @param self     a map to group and count
+     * @param function a function mapping entries to frequency count keys
+     * @return a new Map grouped by keys with frequency counts
+     * @since 6.0.0
+     */
+    public static <K, U, V> Map<K, Integer> countBy(Map<U, V> self, BiFunction<? super U, ? super V, ? extends K> function) {
+        Map<K, Integer> answer = new LinkedHashMap<>();
+        for (Map.Entry<U, V> entry : self.entrySet()) {
+            countAnswer(answer, function.apply(entry.getKey(), entry.getValue()));
         }
         return answer;
     }
@@ -4816,6 +5065,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns a suffix of a SortedSet where elements are dropped from the front while the predicate is satisfied.
+     * A "fat-free" variant of {@link #dropWhile(SortedSet, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ([1, 2, 3] as SortedSet).dropWhile(n -&gt; n &lt; 3).toList() == [3]
+     * </pre>
+     *
+     * @param self      the original SortedSet
+     * @param condition the predicate that must evaluate to true to continue dropping elements
+     * @return the shortest suffix of the given SortedSet such that its first element does not pass the given predicate
+     * @since 6.0.0
+     */
+    public static <T> SortedSet<T> dropWhile(SortedSet<T> self, Predicate<? super T> condition) {
+        return (SortedSet<T>) dropWhile((Iterable<T>) self, condition);
+    }
+
+    /**
      * Returns a suffix of this List where elements are dropped from the front
      * while the given Closure evaluates to true.
      * Similar to {@link #dropWhile(Iterable, groovy.lang.Closure)}
@@ -4848,6 +5113,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns a suffix of a List where elements are dropped from the front while the predicate is satisfied.
+     * A "fat-free" variant of {@link #dropWhile(List, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 0, 4].dropWhile(n -&gt; n &lt; 3) == [3, 0, 4]
+     * </pre>
+     *
+     * @param self      the original list
+     * @param condition the predicate that must evaluate to true to continue dropping elements
+     * @return the shortest suffix of the given List such that its first element does not pass the given predicate
+     * @since 6.0.0
+     */
+    public static <T> List<T> dropWhile(List<T> self, Predicate<? super T> condition) {
+        int num = 0;
+        for (T value : self) {
+            if (condition.test(value)) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return drop(self, num);
+    }
+
+    /**
      * Returns a suffix of this Iterable where elements are dropped from the front
      * while the given closure evaluates to true.
      * <pre class="language-groovy groovyTestCase">
@@ -4866,6 +5155,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.7
      */
     public static <T> Collection<T> dropWhile(Iterable<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        Collection<T> selfCol = self instanceof Collection ? (Collection<T>) self : toList(self);
+        Collection<T> result = createSimilarCollection(selfCol);
+        addAll(result, dropWhile(self.iterator(), condition));
+        return result;
+    }
+
+    /**
+     * Returns a suffix of an Iterable where elements are dropped from the front while the predicate is satisfied.
+     * A "fat-free" variant of {@link #dropWhile(Iterable, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert (1..5).dropWhile(n -&gt; n &lt; 3) == [3, 4, 5]
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition the predicate that must evaluate to true to continue dropping elements
+     * @return the shortest suffix of the given Iterable such that its first element does not pass the given predicate
+     * @since 6.0.0
+     */
+    public static <T> Collection<T> dropWhile(Iterable<T> self, Predicate<? super T> condition) {
         Collection<T> selfCol = self instanceof Collection ? (Collection<T>) self : toList(self);
         Collection<T> result = createSimilarCollection(selfCol);
         addAll(result, dropWhile(self.iterator(), condition));
@@ -4907,6 +5215,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns a new map containing the entries from the map after dropping the leading entries that satisfy the predicate.
+     * A "fat-free" variant of {@link #dropWhile(Map, Closure)} accepting a {@link BiPredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [a: 1, b: 2, c: 3].dropWhile((k, v) -&gt; v &lt; 3) == [c: 3]
+     * </pre>
+     *
+     * @param self      the original map
+     * @param condition the predicate on entry key and value that must evaluate to true to continue dropping entries
+     * @return the shortest suffix of the given map whose first entry does not pass the given predicate
+     * @since 6.0.0
+     */
+    public static <K, V> Map<K, V> dropWhile(Map<K, V> self, BiPredicate<? super K, ? super V> condition) {
+        if (self.isEmpty()) {
+            return createSimilarMap(self);
+        }
+        Map<K, V> ret = createSimilarMap(self);
+        boolean dropping = true;
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (dropping && !condition.test(entry.getKey(), entry.getValue())) dropping = false;
+            if (!dropping) ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
+    }
+
+    /**
      * Creates an Iterator that returns a suffix of the elements from an original Iterator. As many elements
      * as possible are dropped from the front of the original Iterator such that calling the given closure
      * condition evaluates to true when passed each of the dropped elements.
@@ -4928,13 +5261,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new DropWhileIterator<>(self, condition);
     }
 
+    /**
+     * Creates an Iterator that returns the remaining items after dropping a prefix of elements that satisfy the predicate.
+     * A "fat-free" variant of {@link #dropWhile(Iterator, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 0, 4].iterator().dropWhile(n -&gt; n &lt; 3).toList() == [3, 0, 4]
+     * </pre>
+     *
+     * @param self      the Iterator
+     * @param condition the predicate that must evaluate to true to continue dropping elements
+     * @return an Iterator with the elements remaining after dropping the longest prefix passing the given predicate
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> dropWhile(Iterator<T> self, Predicate<? super T> condition) {
+        return new DropWhileIterator<>(self, condition);
+    }
+
     private static final class DropWhileIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
-        private final Closure condition;
+        private final Predicate<? super E> condition;
         private boolean buffering = false;
         private E buffer = null;
 
         private DropWhileIterator(Iterator<E> delegate, Closure condition) {
+            this(delegate, toPredicate(condition));
+        }
+
+        private DropWhileIterator(Iterator<E> delegate, Predicate<? super E> condition) {
             this.delegate = delegate;
             this.condition = condition;
             prepare();
@@ -4968,10 +5321,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         private void prepare() {
-            BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
             while (delegate.hasNext()) {
                 E next = delegate.next();
-                if (!bcw.call(next)) {
+                if (!condition.test(next)) {
                     buffer = next;
                     buffering = true;
                     break;
@@ -8839,6 +9191,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             Map<K, V> target = createSimilarMap(self);
             putAll(target, entries);
             answer.put(key, target);
+        }
+        return answer;
+    }
+
+    /**
+     * Groups the members of a map into sub-maps determined by the supplied mapping
+     * function. A "fat-free" variant of {@link #groupBy(Map, Closure)} accepting a {@link BiFunction}.
+     * <pre class="language-groovy groovyTestCase">
+     * def result = [a: 1, b: 2, c: 3, d: 4].groupBy((k, v) -&gt; v % 2)
+     * assert result == [1: [a: 1, c: 3], 0: [b: 2, d: 4]]
+     * </pre>
+     *
+     * @param self     a map to group
+     * @param function a function mapping entries on keys
+     * @return a new Map grouped by keys
+     * @since 6.0.0
+     */
+    public static <G, K, V> Map<G, Map<K, V>> groupBy(Map<K, V> self, BiFunction<? super K, ? super V, ? extends G> function) {
+        final Map<G, Map<K, V>> answer = new LinkedHashMap<>();
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            G key = function.apply(entry.getKey(), entry.getValue());
+            Map<K, V> target = answer.computeIfAbsent(key, k -> createSimilarMap(self));
+            target.put(entry.getKey(), entry.getValue());
         }
         return answer;
     }
@@ -15249,12 +15624,46 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return split(closure, accept, reject, iter);
     }
 
+    /**
+     * Splits all items into two collections based on the predicate.
+     * A "fat-free" variant of {@link #split(Collection, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [[2, 4], [1, 3]] == [1, 2, 3, 4].split(n -&gt; n % 2 == 0)
+     * </pre>
+     *
+     * @param self      a Collection of values
+     * @param predicate a predicate used to determine the target collection
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
+     * @since 6.0.0
+     */
+    public static <T> Collection<Collection<T>> split(Collection<T> self, Predicate<? super T> predicate) {
+        Collection<T> accept = createSimilarCollection(self);
+        Collection<T> reject = createSimilarCollection(self);
+        Iterator<T> iter = self.iterator();
+        return split(predicate, accept, reject, iter);
+    }
+
     static <T> Collection<Collection<T>> split(Closure closure, Collection<T> accept, Collection<T> reject, Iterator<T> iter) {
         List<Collection<T>> answer = new ArrayList<>();
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
         while (iter.hasNext()) {
             T value = iter.next();
             if (bcw.call(value)) {
+                accept.add(value);
+            } else {
+                reject.add(value);
+            }
+        }
+        answer.add(accept);
+        answer.add(reject);
+        return answer;
+    }
+
+    static <T> Collection<Collection<T>> split(Predicate<? super T> predicate, Collection<T> accept, Collection<T> reject, Iterator<T> iter) {
+        List<Collection<T>> answer = new ArrayList<>();
+        while (iter.hasNext()) {
+            T value = iter.next();
+            if (predicate.test(value)) {
                 accept.add(value);
             } else {
                 reject.add(value);
@@ -15284,6 +15693,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Splits all items into two lists based on the predicate.
+     * A "fat-free" variant of {@link #split(List, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [[2, 4], [1, 3]] == [1, 2, 3, 4].split(n -&gt; n % 2 == 0)
+     * </pre>
+     *
+     * @param self      a List of values
+     * @param predicate a predicate used to determine the target list
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<List<T>> split(List<T> self, Predicate<? super T> predicate) {
+        return (List<List<T>>) (List<?>) split((Collection<T>) self, predicate);
+    }
+
+    /**
      * Splits all items into two collections based on the closure condition.
      * The first list contains all items which match the closure expression.
      * The second list all those that don't.
@@ -15299,6 +15725,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <T> List<Set<T>> split(Set<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure closure) {
         return (List<Set<T>>) (List<?>) split((Collection<T>) self, closure);
+    }
+
+    /**
+     * Splits all items into two sets based on the predicate.
+     * A "fat-free" variant of {@link #split(Set, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [[2, 4], [1, 3]] == ([1, 2, 3, 4] as Set).split(n -&gt; n % 2 == 0)*.toList()
+     * </pre>
+     *
+     * @param self      a Set of values
+     * @param predicate a predicate used to determine the target set
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<Set<T>> split(Set<T> self, Predicate<? super T> predicate) {
+        return (List<Set<T>>) (List<?>) split((Collection<T>) self, predicate);
     }
 
     //--------------------------------------------------------------------------
@@ -16189,6 +16632,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the longest prefix of a List where each element passes the given predicate.
+     * A "fat-free" variant of {@link #takeWhile(List, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 0, 4].takeWhile(n -&gt; n &lt; 3) == [1, 2]
+     * </pre>
+     *
+     * @param self      the original list
+     * @param condition the predicate that must evaluate to true to continue taking elements
+     * @return a prefix of the given list where each element passes the given predicate
+     * @since 6.0.0
+     */
+    public static <T> List<T> takeWhile(List<T> self, Predicate<? super T> condition) {
+        int num = 0;
+        for (T value : self) {
+            if (condition.test(value)) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
+
+    /**
      * Returns a Collection containing the longest prefix of the elements from this Iterable
      * where each element passed to the given closure evaluates to true.
      * <pre class="language-groovy groovyTestCase">
@@ -16214,6 +16681,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns the longest prefix of an Iterable where each element passes the given predicate.
+     * A "fat-free" variant of {@link #takeWhile(Iterable, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert (1..5).takeWhile(n -&gt; n &lt; 3) == [1, 2]
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param condition the predicate that must evaluate to true to continue taking elements
+     * @return a prefix of the given Iterable where each element passes the given predicate
+     * @since 6.0.0
+     */
+    public static <T> Collection<T> takeWhile(Iterable<T> self, Predicate<? super T> condition) {
+        Collection<T> result = createSimilarCollection(self);
+        addAll(result, takeWhile(self.iterator(), condition));
+        return result;
+    }
+
+    /**
      * Returns the longest prefix of this SortedSet where each element
      * passed to the given closure condition evaluates to true.
      * Similar to {@link #takeWhile(Iterable, groovy.lang.Closure)}
@@ -16233,6 +16718,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.4.0
      */
     public static <T> SortedSet<T> takeWhile(SortedSet<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return (SortedSet<T>) takeWhile((Iterable<T>) self, condition);
+    }
+
+    /**
+     * Returns the longest prefix of a SortedSet where each element passes the given predicate.
+     * A "fat-free" variant of {@link #takeWhile(SortedSet, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert ([1, 2, 3] as SortedSet).takeWhile(n -&gt; n &lt; 3).toList() == [1, 2]
+     * </pre>
+     *
+     * @param self      the original SortedSet
+     * @param condition the predicate that must evaluate to true to continue taking elements
+     * @return a prefix of the given SortedSet where each element passes the given predicate
+     * @since 6.0.0
+     */
+    public static <T> SortedSet<T> takeWhile(SortedSet<T> self, Predicate<? super T> condition) {
         return (SortedSet<T>) takeWhile((Iterable<T>) self, condition);
     }
 
@@ -16269,6 +16770,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns a new map containing the first entries from the map that satisfy the given predicate.
+     * A "fat-free" variant of {@link #takeWhile(Map, Closure)} accepting a {@link BiPredicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [a: 1, b: 2, c: 3].takeWhile((k, v) -&gt; v &lt; 3) == [a: 1, b: 2]
+     * </pre>
+     *
+     * @param self      the original map
+     * @param condition the predicate on entry key and value that must evaluate to true to continue taking entries
+     * @return a prefix of the given map whose entries all pass the given predicate
+     * @since 6.0.0
+     */
+    public static <K, V> Map<K, V> takeWhile(Map<K, V> self, BiPredicate<? super K, ? super V> condition) {
+        if (self.isEmpty()) {
+            return createSimilarMap(self);
+        }
+        Map<K, V> ret = createSimilarMap(self);
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (!condition.test(entry.getKey(), entry.getValue())) break;
+            ret.put(entry.getKey(), entry.getValue());
+        }
+        return ret;
+    }
+
+    /**
      * Returns the longest prefix of elements in this iterator where
      * each element passed to the given condition closure evaluates to true.
      * <p>
@@ -16292,15 +16817,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new TakeWhileIterator<>(self, condition);
     }
 
+    /**
+     * Returns the longest prefix of elements in this iterator where each element passes the given predicate.
+     * A "fat-free" variant of {@link #takeWhile(Iterator, Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * assert [1, 2, 3, 0, 4].iterator().takeWhile(n -&gt; n &lt; 3).toList() == [1, 2]
+     * </pre>
+     *
+     * @param self      the Iterator
+     * @param condition the predicate that must evaluate to true to continue taking elements
+     * @return an Iterator with the longest prefix of elements passing the given predicate
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> takeWhile(Iterator<T> self, Predicate<? super T> condition) {
+        return new TakeWhileIterator<>(self, condition);
+    }
+
+    private static Predicate<Object> toPredicate(Closure<?> condition) {
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        return value -> bcw.call(value);
+    }
+
     private static final class TakeWhileIterator<E> implements Iterator<E> {
         private final Iterator<E> delegate;
-        private final BooleanClosureWrapper condition;
+        private final Predicate<? super E> condition;
         private boolean exhausted;
         private E next;
 
         private TakeWhileIterator(Iterator<E> delegate, Closure condition) {
+            this(delegate, toPredicate(condition));
+        }
+
+        private TakeWhileIterator(Iterator<E> delegate, Predicate<? super E> condition) {
             this.delegate = delegate;
-            this.condition = new BooleanClosureWrapper(condition);
+            this.condition = condition;
             advance();
         }
 
@@ -16319,15 +16869,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         @Override
         public void remove() {
-            if (exhausted) throw new NoSuchElementException();
-            delegate.remove();
+            // unsupported: advance() prefetches the next element, so delegate.remove() would remove the wrong one
+            throw new UnsupportedOperationException();
         }
 
         private void advance() {
             exhausted = !delegate.hasNext();
             if (!exhausted) {
                 next = delegate.next();
-                if (!condition.call(next)) {
+                if (!condition.test(next)) {
                     exhausted = true;
                     next = null;
                 }

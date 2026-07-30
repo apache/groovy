@@ -1052,6 +1052,25 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Projects each item from a source array to a collection and concatenates
+     * (flattens) the resulting collections into a single list. A "fat-free" variant of
+     * {@link #collectMany(Object[], Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = 1..10
+     * def squaresAndCubesOfEvens = nums.collectMany(n -&gt; n % 2 ? [] : [n**2, n**3])
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216, 64, 512, 100, 1000]
+     * </pre>
+     *
+     * @param self       an array
+     * @param projection a projecting function returning a collection of items
+     * @return a list created from the projected collections concatenated (flattened) together
+     * @since 6.0.0
+     */
+    public static <T, E> List<T> collectMany(E[] self, Function<? super E, ? extends Collection<? extends T>> projection) {
+        return collectMany(self, new ArrayList<>(), projection);
+    }
+
+    /**
      * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
      * <pre class="language-groovy groovyTestCase">
      * def nums = [1, 2, 3, 4, 5, 6] as Object[]
@@ -1066,6 +1085,26 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.1
      */
     public static <T, E, C extends Collection<T>> C collectMany(E[] self, C collector, @ClosureParams(FirstParam.Component.class) Closure<? extends Collection<? extends T>> projection) {
+        return DefaultGroovyMethods.collectMany(new ArrayIterable<>(self), collector, projection);
+    }
+
+    /**
+     * Projects each item from a source array to a result collection and concatenates
+     * (flattens) the resulting collections adding them into the <code>collector</code>.
+     * A "fat-free" variant of {@link #collectMany(Object[], Collection, Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4, 5]
+     * def origPlusIncrements = nums.collectMany([] as Set, n -&gt; [n, n + 1])
+     * assert origPlusIncrements.size() == nums.size() + 1
+     * </pre>
+     *
+     * @param self       an array
+     * @param collector  an initial collection to add the projected items to
+     * @param projection a projecting function returning a collection of items
+     * @return the collector with the projected collections concatenated (flattened) into it
+     * @since 6.0.0
+     */
+    public static <T, E, C extends Collection<T>> C collectMany(E[] self, C collector, Function<? super E, ? extends Collection<? extends T>> projection) {
         return DefaultGroovyMethods.collectMany(new ArrayIterable<>(self), collector, projection);
     }
 
@@ -1560,6 +1599,24 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts all array members into groups determined by the supplied mapping function
+     * and counts the group size. A "fat-free" variant of
+     * {@link #countBy(Object[], Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4, 5]
+     * assert [1: 3, 0: 2] == nums.countBy(n -&gt; n % 2)
+     * </pre>
+     *
+     * @param self     an array to group and count
+     * @param function a function mapping items to the frequency keys
+     * @return a new Map grouped by keys with frequency counts
+     * @since 6.0.0
+     */
+    public static <K, E> Map<K, Integer> countBy(E[] self, Function<? super E, ? extends K> function) {
+        return DefaultGroovyMethods.countBy(new ArrayIterator<>(self), function);
+    }
+
+    /**
      * Creates a multiset-like map of the array members.
      * <p>
      * Example usage:
@@ -1672,6 +1729,31 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
         while (num < self.length) {
             if (bcw.call(self[num])) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return drop(self, num);
+    }
+
+    /**
+     * Returns a suffix of an array where elements are dropped from the front while the predicate is satisfied.
+     * A "fat-free" variant of {@link #dropWhile(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 0, 4]
+     * assert nums.dropWhile(n -&gt; n &lt; 3).toList() == [3, 0, 4]
+     * </pre>
+     *
+     * @param self      the original array
+     * @param condition the predicate that must evaluate to true to continue dropping elements
+     * @return the shortest suffix of the given array such that its first element does not pass the given predicate
+     * @since 6.0.0
+     */
+    public static <T> T[] dropWhile(T[] self, Predicate<? super T> condition) {
+        int num = 0;
+        while (num < self.length) {
+            if (condition.test(self[num])) {
                 num += 1;
             } else {
                 break;
@@ -4533,6 +4615,23 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, T> Map<K, List<T>> groupBy(T[] self, @ClosureParams(FirstParam.Component.class) Closure<K> closure) {
         return DefaultGroovyMethods.groupBy(Arrays.asList(self), closure);
+    }
+
+    /**
+     * Sorts all array members into groups determined by the supplied mapping function.
+     * A "fat-free" variant of {@link #groupBy(Object[], Closure)} accepting a {@link Function}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4, 5, 6]
+     * assert [1: [1, 3, 5], 0: [2, 4, 6]] == nums.groupBy(n -&gt; n % 2)
+     * </pre>
+     *
+     * @param self     an array to group
+     * @param function a function mapping entries on keys
+     * @return a new Map grouped by keys
+     * @since 6.0.0
+     */
+    public static <K, T> Map<K, List<T>> groupBy(T[] self, Function<? super T, ? extends K> function) {
+        return DefaultGroovyMethods.groupBy(Arrays.asList(self), function);
     }
 
     /**
@@ -9200,6 +9299,24 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return DefaultGroovyMethods.split(closure, accept, reject, new ArrayIterator<>(self));
     }
 
+    /**
+     * Splits all array items into two collections based on the predicate.
+     * A "fat-free" variant of {@link #split(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 4]
+     * assert [[2, 4], [1, 3]] == nums.split(n -&gt; n % 2 == 0)
+     * </pre>
+     *
+     * @param self      an array
+     * @param predicate a predicate used to determine the target collection
+     * @return a List whose first item is the accepted values and whose second item is the rejected values
+     * @since 6.0.0
+     */
+    public static <T> Collection<Collection<T>> split(T[] self, Predicate<? super T> predicate) {
+        List<T> accept = new ArrayList<>(), reject = new ArrayList<>();
+        return DefaultGroovyMethods.split(predicate, accept, reject, new ArrayIterator<>(self));
+    }
+
     //--------------------------------------------------------------------------
     // sum
 
@@ -10062,6 +10179,32 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         while (num < self.length) {
             T value = self[num];
             if (bcw.call(value)) {
+                num += 1;
+            } else {
+                break;
+            }
+        }
+        return take(self, num);
+    }
+
+    /**
+     * Returns the longest prefix of an array where each element passes the given predicate.
+     * A "fat-free" variant of {@link #takeWhile(Object[], Closure)} accepting a {@link Predicate}.
+     * <pre class="language-groovy groovyTestCase">
+     * Integer[] nums = [1, 2, 3, 0, 4]
+     * assert nums.takeWhile(n -&gt; n &lt; 3).toList() == [1, 2]
+     * </pre>
+     *
+     * @param self      the original array
+     * @param condition the predicate that must evaluate to true to continue taking elements
+     * @return a prefix of the given array where each element passes the given predicate
+     * @since 6.0.0
+     */
+    public static <T> T[] takeWhile(T[] self, Predicate<? super T> condition) {
+        int num = 0;
+        while (num < self.length) {
+            T value = self[num];
+            if (condition.test(value)) {
                 num += 1;
             } else {
                 break;
