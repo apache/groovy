@@ -205,7 +205,7 @@ class HttpBuilderSpecTest {
         import static groovy.http.HttpBuilder.http
 
         // tag::html_jsoup[]
-        // @Grab('org.jsoup:jsoup:1.22.1') // needed if running as standalone script
+        // @Grab('org.jsoup:jsoup:1.23.1') // needed if running as standalone script
         def client = http('${mvnrepositoryUri}')
         def res = client.get('/artifact/org.apache.groovy/groovy-all') {
             header 'User-Agent', 'Mozilla/5.0 (Macintosh)'
