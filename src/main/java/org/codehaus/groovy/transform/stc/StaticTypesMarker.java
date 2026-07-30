@@ -67,5 +67,7 @@ public enum StaticTypesMarker {
     /** GROOVY-11998: for an intersection-cast lambda or method reference, the SAM-bearing component picked from the intersection */
     PRIMARY_FUNCTIONAL_TYPE,
     /** GROOVY-11998: for an intersection cast on a lambda, method reference or closure, the additional marker interfaces to thread to {@code LambdaMetafactory.altMetafactory} */
-    LAMBDA_MARKERS
+    LAMBDA_MARKERS,
+    /** marks a method-reference ({@code ::}) argument type so overload selection prefers a functional-interface parameter over a {@code Closure} parameter: as a call argument a method reference is coerced only to a functional interface, so a {@code Closure} overload does not apply (unlike assignment, where {@code Closure<?> c = Foo::bar} is valid) */
+    METHOD_REFERENCE_TYPE
 }

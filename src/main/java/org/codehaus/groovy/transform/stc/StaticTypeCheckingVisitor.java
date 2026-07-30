@@ -3105,9 +3105,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * Returns the inferred argument types for the supplied argument list.
      */
     protected ClassNode[] getArgumentTypes(final ArgumentListExpression argumentList) {
-        return argumentList.getExpressions().stream().map(exp ->
-            isNullConstant(exp) ? UNKNOWN_PARAMETER_TYPE : getType(exp)
-        ).toArray(ClassNode[]::new);
+        return argumentList.getExpressions().stream().map(exp -> {
+            if (isNullConstant(exp)) return UNKNOWN_PARAMETER_TYPE;
+            ClassNode type = getType(exp);
+            if (exp instanceof MethodReferenceExpression && type != null) {
+                // as a call argument, a method reference (::) is coerced only to a functional
+                // interface (unlike assignment to a Closure-typed variable); mark it so overload
+                // selection prefers a functional-interface parameter over a Closure parameter,
+                // which would otherwise win the distance tie-break and then fail to coerce
+                type.putNodeMetaData(StaticTypesMarker.METHOD_REFERENCE_TYPE, Boolean.TRUE);
+            }
+            return type;
+        }).toArray(ClassNode[]::new);
     }
 
     private Map<VariableExpression, ClassNode> scanVars(final ClosureExpression expr) {

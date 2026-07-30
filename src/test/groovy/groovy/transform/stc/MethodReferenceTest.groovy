@@ -2564,6 +2564,40 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // GROOVY-12214
+    void testMethodRefSelectsFunctionalInterfaceOverloadOfClosureMethod() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                // collect/each carry both a Closure overload and a functional-interface twin;
+                // a method reference must select the functional-interface twin, not the Closure one
+                assert ['a', 'bb'].collect(String::toUpperCase) == ['A', 'BB']
+                def acc = []
+                [1, 2, 3].each(acc::add)
+                assert acc == [1, 2, 3]
+            }
+            test()
+        '''
+    }
+
+    @Test // GROOVY-12214
+    void testMethodRefPrefersFunctionalInterfaceOverClosureOverload() {
+        assertScript shell, '''
+            @CompileStatic
+            class C {
+                static String m(Closure c)  { 'closure' }
+                static String m(Function f) { 'function' }
+            }
+            @CompileStatic
+            void test() {
+                assert C.m(String::toUpperCase) == 'function' // method reference -> functional-interface overload
+                assert C.m({ it })             == 'closure'   // closure literal -> Closure overload (unchanged)
+                assert C.m(s -> s)             == 'closure'   // lambda literal  -> Closure overload (unchanged)
+            }
+            test()
+        '''
+    }
+
     @Nested
     class NativeMethodReferenceBytecodeTest extends AbstractBytecodeTestCase {
         @Test
