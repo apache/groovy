@@ -3122,6 +3122,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * A "fat-free" variant of {@link #collectEntries(Iterable, Map, Closure)} which transforms
+     * each element of the Iterable into a {@link Map.Entry} using the supplied function,
+     * adding the transformed entries to the supplied collector map. A {@code null} entry inserts nothing.
+     *
+     * <pre class="language-groovy groovyTestCase">
+     * def languages = ['Java', 'Kotlin']
+     * assert languages.collectEntries([groovy: 6], s -&gt; Map.entry(s.toLowerCase(), s.size())) ==
+     *     [groovy: 6, java: 4, kotlin: 6]
+     * </pre>
+     *
+     * @param self      an Iterable
+     * @param collector the Map into which the transformed entries are put
+     * @param transform a function for transforming Iterable elements into a Map.Entry
+     * @return the collector with all transformed entries added to it
+     * @since 6.0.0
+     */
+    public static <K, V, E> Map<K, V> collectEntries(Iterable<E> self, Map<K, V> collector, Function<? super E, ? extends Map.Entry<K, V>> transform) {
+        for (E element : self) {
+            addEntry(collector, transform.apply(element));
+        }
+        return collector;
+    }
+
+    /**
      * A variant of collectEntries for Maps with separate functions for transforming the keys and values.
      * The supplied collector map is used as the destination for transformed entries.
      *
