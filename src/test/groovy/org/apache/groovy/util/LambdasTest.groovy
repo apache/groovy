@@ -232,6 +232,60 @@ class LambdasTest {
         assert CompileStaticUsage.tripledViaStream(['a', 'b']) == ['aaa', 'bbb']
     }
 
+    @Test
+    void fatFreeGroupAMatchClosureVariants() {
+        Function<Integer, List<Integer>> pair = n -> [n, n * 10]
+        assert [1, 2, 3].collectMany(pair) == [1, 2, 3].collectMany { [it, it * 10] }
+        assert [1, 2, 3].iterator().collectMany(pair).toList() == [1, 10, 2, 20, 3, 30]
+        assert [1, 2, 3].iterator().collectingMany(pair).toList() == [1, 10, 2, 20, 3, 30]
+
+        Function<Integer, Integer> parity = n -> n % 2
+        assert [1, 2, 3, 4, 5].countBy(parity) == [1, 2, 3, 4, 5].countBy { it % 2 }
+        assert [1, 2, 3, 4, 5, 6].groupBy(parity) == [1, 2, 3, 4, 5, 6].groupBy { it % 2 }
+
+        Predicate<Integer> isEven = n -> n % 2 == 0
+        assert [1, 2, 3, 4].split(isEven) == [1, 2, 3, 4].split { it % 2 == 0 }
+
+        Predicate<Integer> lessThan3 = n -> n < 3
+        assert [1, 2, 3, 0, 4].takeWhile(lessThan3) == [1, 2, 3, 0, 4].takeWhile { it < 3 }
+        assert [1, 2, 3, 0, 4].dropWhile(lessThan3) == [1, 2, 3, 0, 4].dropWhile { it < 3 }
+        assert [1, 2, 3, 0, 4].iterator().takeWhile(lessThan3).toList() == [1, 2]
+        assert [1, 2, 3, 0, 4].iterator().dropWhile(lessThan3).toList() == [3, 0, 4]
+    }
+
+    @Test
+    void fatFreeGroupAMapVariants() {
+        BiFunction<String, Integer, Integer> valueParity = (k, v) -> v % 2
+        assert [a: 1, b: 2, c: 3].countBy(valueParity) == [a: 1, b: 2, c: 3].countBy { k, v -> v % 2 }
+        assert [a: 1, b: 2, c: 3].groupBy(valueParity) == [a: 1, b: 2, c: 3].groupBy { k, v -> v % 2 }
+        assert [a: 1, b: 2, c: 3].collectMany((String k, Integer v) -> v < 3 ? [k] : []) == ['a', 'b']
+
+        BiPredicate<String, Integer> valueLessThan3 = (k, v) -> v < 3
+        assert [a: 1, b: 2, c: 3].takeWhile(valueLessThan3) == [a: 1, b: 2]
+        assert [a: 1, b: 2, c: 3].dropWhile(valueLessThan3) == [c: 3]
+    }
+
+    @Test
+    void fatFreeGroupAArrayVariants() {
+        Integer[] nums = [1, 2, 3, 4, 5, 6]
+        Function<Integer, Integer> parity = n -> n % 2
+        assert nums.countBy(parity) == [1: 3, 0: 3]
+        assert nums.groupBy(parity) == [1: [1, 3, 5], 0: [2, 4, 6]]
+        assert nums.collectMany(n -> n % 2 ? [] : [n]) == [2, 4, 6]
+
+        Predicate<Integer> isEven = n -> n % 2 == 0
+        assert nums.split(isEven) == [[2, 4, 6], [1, 3, 5]]
+        Predicate<Integer> lessThan3 = n -> n < 3
+        assert nums.takeWhile(lessThan3).toList() == [1, 2]
+        assert nums.dropWhile(lessThan3).toList() == [3, 4, 5, 6]
+    }
+
+    @Test
+    void fatFreeGroupAMethodReferenceUnderCompileStatic() {
+        // method reference selects the new countBy(Iterable, Function) twin under @CompileStatic (GROOVY-12214)
+        assert CompileStaticUsage.countByLength(['a', 'bb', 'cc', 'ddd']) == [1: 1, 2: 2, 3: 1]
+    }
+
     @CompileStatic
     static class CompileStaticUsage {
         static List<Integer> evensViaStream(List<Integer> input) {
@@ -242,6 +296,10 @@ class LambdasTest {
         static List<String> tripledViaStream(List<String> input) {
             BiFunction<String, Integer, String> repeat = (s, n) -> s * n
             input.stream().map(curryWith(repeat, 3)).toList()
+        }
+
+        static Map<Integer, Integer> countByLength(List<String> input) {
+            input.countBy(String::length)
         }
     }
 }
