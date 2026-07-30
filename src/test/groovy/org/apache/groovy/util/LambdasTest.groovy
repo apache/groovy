@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test
 import java.util.function.BiConsumer
 import java.util.function.BiFunction
 import java.util.function.BiPredicate
+import java.util.function.BinaryOperator
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.function.Predicate
@@ -233,6 +234,54 @@ class LambdasTest {
     }
 
     @Test
+    void fatFreeInjectMatchClosureVariants() {
+        BinaryOperator<Integer> mult = (a, b) -> a * b
+        BiFunction<Integer, Integer, Integer> add = (a, b) -> a + b
+
+        // inject(Object, BinaryOperator) catches an Iterator (which is not Iterable)
+        assert [1, 2, 3, 4].iterator().inject(mult) == 24
+        // inject(Iterator, initial, BiFunction)
+        assert [1, 2, 3, 4].iterator().inject(0, add) == 10
+        assert [1, 2, 3, 4].iterator().inject(0, add) == [1, 2, 3, 4].inject(0) { a, b -> a + b }
+        // inject(Map, initial, BiFunction) folds over entries
+        BiFunction<List, Map.Entry, List> collect = (list, e) -> list + [e.key] * e.value
+        assert [a: 1, b: 2, c: 3].inject([], collect) == ['a', 'b', 'b', 'c', 'c', 'c']
+    }
+
+    @Test
+    void fatFreeInjectAllMatchClosureVariants() {
+        BinaryOperator<Integer> add = (a, b) -> a + b
+        BiFunction<String, Integer, String> concat = (carry, next) -> carry + next
+
+        assert (1..5).injectAll(add) == [3, 6, 10, 15]
+        assert (1..5).injectAll(add) == (1..5).injectAll { a, b -> a + b }
+        assert (1..3).injectAll('', concat) == ['1', '12', '123']
+        assert (1..5).iterator().injectAll(add).toList() == [3, 6, 10, 15]
+        assert (1..3).iterator().injectAll('', concat).toList() == ['1', '12', '123']
+
+        BiFunction<String, Map.Entry, String> acc = (carry, e) -> carry + e.key * e.value
+        assert [a: 1, b: 2, c: 3].injectAll('', acc) == ['a', 'abb', 'abbccc']
+    }
+
+    @Test
+    void fatFreeInjectArrayVariants() {
+        Integer[] nums = [1, 2, 3, 4]
+        BinaryOperator<Integer> mult = (a, b) -> a * b
+        BiFunction<Integer, Integer, Integer> add = (a, b) -> a + b
+        assert nums.inject(mult) == 24
+        assert nums.inject(0, add) == 10
+        assert nums.injectAll(mult) == [2, 6, 24]        // no-init uses a BinaryOperator
+        assert nums.injectAll(0, add) == [1, 3, 6, 10]   // with-init uses a BiFunction
+    }
+
+    @Test
+    void fatFreeInjectMethodReferenceUnderCompileStatic() {
+        // method reference selects the BinaryOperator twins under @CompileStatic (GROOVY-12214)
+        assert CompileStaticUsage.sumViaInject([1, 2, 3, 4]) == 10
+        assert CompileStaticUsage.prefixSumViaInjectAll([1, 2, 3, 4, 5]) == [3, 6, 10, 15]
+    }
+
+    @Test
     void fatFreeGroupAMatchClosureVariants() {
         Function<Integer, List<Integer>> pair = n -> [n, n * 10]
         assert [1, 2, 3].collectMany(pair) == [1, 2, 3].collectMany { [it, it * 10] }
@@ -296,6 +345,14 @@ class LambdasTest {
         static List<String> tripledViaStream(List<String> input) {
             BiFunction<String, Integer, String> repeat = (s, n) -> s * n
             input.stream().map(curryWith(repeat, 3)).toList()
+        }
+
+        static Integer sumViaInject(List<Integer> input) {
+            input.inject(Integer::sum)
+        }
+
+        static List<Integer> prefixSumViaInjectAll(List<Integer> input) {
+            input.injectAll(Integer::sum)
         }
 
         static Map<Integer, Integer> countByLength(List<String> input) {
