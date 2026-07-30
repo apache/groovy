@@ -4775,8 +4775,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         @Override
         public void remove() {
-            if (exhausted) throw new NoSuchElementException();
-            delegate.remove();
+            // unsupported: advance() reads ahead into the discards buffer, so delegate.remove() would remove the wrong element
+            throw new UnsupportedOperationException();
         }
 
         private void advance() {
@@ -17693,8 +17693,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         @Override
         public void remove() {
-            if (exhausted) throw new NoSuchElementException();
-            delegate.remove();
+            // unsupported: advance() prefetches the next unique element, so delegate.remove() would remove the wrong one
+            throw new UnsupportedOperationException();
         }
 
         private void advance() {
