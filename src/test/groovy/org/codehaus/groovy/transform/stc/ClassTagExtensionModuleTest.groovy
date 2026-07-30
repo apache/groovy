@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -86,6 +87,8 @@ final class ClassTagExtensionModuleTest {
 
     private static File moduleJar
 
+    private static final List<GroovyClassLoader> createdLoaders = []
+
     @BeforeAll
     static void buildFixtureJar() {
         File classesDir = new File(tempDir, 'classes')
@@ -112,9 +115,18 @@ final class ClassTagExtensionModuleTest {
         }
     }
 
+    @AfterAll
+    static void closeLoaders() {
+        // GROOVY-12115: release the module jar's file handles before the @TempDir is deleted;
+        // on Windows an open URLClassLoader keeps the jar locked, failing temp-dir cleanup
+        createdLoaders.each { it.close() }
+        createdLoaders.clear()
+    }
+
     private static GroovyClassLoader loaderWithModule() {
         def loader = new GroovyClassLoader(ClassTagExtensionModuleTest.classLoader)
         loader.addURL(moduleJar.toURI().toURL())
+        createdLoaders << loader
         loader
     }
 
