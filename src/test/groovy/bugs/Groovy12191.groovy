@@ -18,6 +18,8 @@
  */
 package bugs
 
+import groovy.lang.MetaClassImpl
+import org.apache.groovy.runtime.indy.IndyInvalidation
 import org.codehaus.groovy.reflection.ClassInfo
 import org.junit.jupiter.api.Test
 
@@ -25,6 +27,7 @@ import java.lang.invoke.SwitchPoint
 
 import static groovy.test.GroovyAssert.assertScript
 import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertSame
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
@@ -254,15 +257,17 @@ final class Groovy12191 {
      */
     @Test
     void blackdragScenario_callOnC_notInvalidatedBySubclassMetaClassChurn() {
+        // Touch receivers first so MetaClass-owned domains exist; capture SPs after.
+        def c = new BdC()
+        assert c.fooC() == 'fooC'
+        new BdB()
+        new BdA()
         SwitchPoint spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
         SwitchPoint spB = ClassInfo.getClassInfo(BdB).indySwitchPoint
         SwitchPoint spA = ClassInfo.getClassInfo(BdA).indySwitchPoint
         assertFalse(spC.hasBeenInvalidated())
         assertFalse(spB.hasBeenInvalidated())
         assertFalse(spA.hasBeenInvalidated())
-
-        def c = new BdC()
-        assert c.fooC() == 'fooC'
 
         // B.metaClass = EMC + method — fans out to A (subtype of B), not to C (supertype).
         def emcB = new ExpandoMetaClass(BdB, true, true)
@@ -664,4 +669,88 @@ final class Groovy12191 {
     }
     static class BdB extends BdC {}
     static class BdA extends BdB {}
+
+    /**
+     * Follow-up 1: SwitchPoint domain is owned by the MetaClass instance, not
+     * solely by ClassInfo. ClassInfo.getIndySwitchPoint delegates to the
+     * installed MetaClassImpl when present.
+     */
+    @Test
+    void metaClassOwnsSwitchPoint_singleDomainViaIdentityMap() {
+        def info = ClassInfo.getClassInfo(McOwnerHost)
+        try {
+            info.strongMetaClass = null
+            info.weakMetaClass = null
+            def mc = new MetaClassImpl(McOwnerHost)
+            mc.initialize()
+            SwitchPoint onMc = IndyInvalidation.switchPointForMetaClass(mc)
+            info.strongMetaClass = mc
+            assertSame(onMc, info.indySwitchPoint)
+            assertSame(onMc, IndyInvalidation.classSwitchPointFor(McOwnerHost))
+            // Custom non-MetaClassImpl also uses the same map (identity domain).
+            def custom = new groovy.lang.DelegatingMetaClass(mc) {}
+            assertSame(onMc, IndyInvalidation.switchPointForMetaClass(custom))
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(McOwnerHost)
+        }
+    }
+
+    /**
+     * Follow-up 2 decision: MetaClassImpl continues to observe ancestor MetaClass
+     * state on the missing-method path ({@code Object.metaClass.foo} visible on
+     * subtypes). Hierarchy SwitchPoint fan-out remains necessary for linked miss
+     * → parent EMC add (and the inverse remove).
+     */
+    @Test
+    void followUp2_metaClassImplStillObservesAncestorEmc_objectMetaClassPattern() {
+        assertScript '''
+            class FollowUp2Child {}
+            try {
+                Object.metaClass.followUp2Marker = { -> 'from-object' }
+                assert new Object().followUp2Marker() == 'from-object'
+                assert new FollowUp2Child().followUp2Marker() == 'from-object'
+                assert 'x'.followUp2Marker() == 'from-object'
+            } finally {
+                Object.metaClass = null
+                GroovySystem.metaClassRegistry.removeMetaClass(FollowUp2Child)
+            }
+        '''
+    }
+
+    /**
+     * Precise hierarchy case blackdrag asked for: receiver MetaClass unchanged,
+     * parent EMC add must re-link an already-linked miss on the child.
+     */
+    @Test
+    void hierarchySwitchPoint_requiredOnlyForLinkedMissThenParentEmcAdd() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            class HParent {}
+            class HChild extends HParent {}
+            def call(x) {
+                try {
+                    x.onlyOnParent()
+                    return 'hit'
+                } catch (MissingMethodException e) {
+                    return 'miss'
+                }
+            }
+            def c = new HChild()
+            assert call(c) == 'miss' // monomorphic miss linked against child MetaClass
+            SwitchPoint childSp = ClassInfo.getClassInfo(HChild).indySwitchPoint
+            try {
+                HParent.metaClass.onlyOnParent = { -> 'now-visible' }
+                assert childSp.hasBeenInvalidated()
+                assert call(c) == 'hit'
+                assert call(c) == 'hit'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(HParent)
+                GroovySystem.metaClassRegistry.removeMetaClass(HChild)
+            }
+        '''
+    }
+
+    static class McOwnerHost {}
 }

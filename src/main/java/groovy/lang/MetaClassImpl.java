@@ -3974,7 +3974,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Searches a meta-class hierarchy for the most specific visible method.
+     * Searches a meta-class hierarchy for the most specific visible method on the
+     * <em>missing-method</em> path.
+     * <p>
+     * For a starting {@link MetaClassImpl}, the walk opens only when some strong
+     * MetaClass in the receiver hierarchy is a modified {@link MutableMetaClass}
+     * (typically {@link ExpandoMetaClass}). This is how patterns such as
+     * {@code Object.metaClass.foo = …} / parent EMC methods become visible on
+     * subclass receivers without giving every subtype its own EMC.
+     * <p>
+     * <b>6.0 decision (GROOVY-12191):</b> {@code MetaClassImpl} continues to
+     * observe ancestor MetaClass state here. Making {@code MetaClassImpl} immune
+     * to other MetaClasses would remove this walk and the construction-time
+     * snapshot of ancestor expando methods, but would also break the inheritance
+     * patterns above. Indy hierarchy SwitchPoint fan-out exists solely so
+     * already-linked subtype sites re-select when this walk’s result can change
+     * while the receiver’s own MetaClass stays unchanged.
      *
      * @param instanceKlazz the runtime receiver class
      * @param methodName the method name

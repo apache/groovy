@@ -59,8 +59,10 @@ import java.lang.invoke.SwitchPoint;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -82,10 +84,13 @@ public class ClassInfo implements Finalizable {
     private final WeakReference<Class<?>> classRef;
     private final AtomicInteger version = new AtomicInteger();
     /**
-     * Per-class SwitchPoint domain for indy call sites (GROOVY-12191).
-     * Invalidated on MetaClass / version changes for this class only.
+     * Pending indy domain used only while no class-level MetaClass is installed
+     * (defineClass / pre-MC link). Retired on first MetaClass install. Once a
+     * MetaClass exists, domains live in {@link IndyInvalidation}'s MetaClass
+     * identity map only — this field is not used for post-MC generations.
      */
-    private final SwitchPointInvalidator indySwitchPoint = IndyInvalidation.newClassInvalidator();
+    private final SwitchPointInvalidator pendingIndySwitchPoint =
+            IndyInvalidation.newPendingInvalidator();
     private MetaClass strongMetaClass;
     private ManagedReference<MetaClass> weakMetaClass;
     MetaMethod[] dgmMetaMethods = MetaMethod.EMPTY_ARRAY;
@@ -136,8 +141,8 @@ public class ClassInfo implements Finalizable {
     }
 
     /**
-     * Increments the version number and invalidates this class's indy SwitchPoint
-     * (and subtype SwitchPoints via hierarchy fan-out).
+     * Increments the version number and invalidates this class's MetaClass
+     * SwitchPoint (and subtype MetaClass SwitchPoints via hierarchy fan-out).
      * Called when metaclass modifications occur (e.g., adding methods to an {@code ExpandoMetaClass}).
      * <p>
      * Hierarchy fan-out is intentional here: {@code incVersion} is the path used
@@ -159,7 +164,7 @@ public class ClassInfo implements Finalizable {
      * {@link IndyInvalidation#invalidateCategory()}) explicitly when a bulk flush
      * is required. Unrelated classes keep their optimized targets.
      * <p>
-     * Category enter/leave still bulk-invalidates class SwitchPoints via
+     * Category enter/leave still bulk-invalidates MetaClass SwitchPoints via
      * {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()}.
      * SwitchPoint policy is owned by {@link IndyInvalidation}; this method only
      * bumps generation then delegates hierarchy invalidation.
@@ -175,22 +180,23 @@ public class ClassInfo implements Finalizable {
     }
 
     /**
-     * Bumps {@link #getVersion()} and, when {@code retireSwitchPoint} is true,
-     * retires this class's SwitchPoint only (no subtype fan-out). Used by
-     * strong/weak MetaClass install paths; MetaClass-aware hierarchy fan-out is
-     * applied by the MetaClass registry listener via
-     * {@link IndyInvalidation#invalidateForMetaClassChange}
-     * (exact-class for hierarchy-local {@code MetaClassImpl} replaces; hierarchy
-     * for EMC / interface / array / custom MetaClass).
-     * <p>
-     * First MetaClass install ({@code null →} default MC) only bumps version.
-     * Replacement and clear retire the SwitchPoint so any already-linked sites re-link.
+     * Bumps {@link #getVersion()} and retires SwitchPoint domains as needed.
+     * <ul>
+     *   <li>First MetaClass install: retire pending domain only (sites linked
+     *       pre-MC re-select onto the MetaClass domain).</li>
+     *   <li>Replace/clear: retire the current MetaClass domain (and any leftover
+     *       pending). Hierarchy fan-out is applied by the registry listener.</li>
+     * </ul>
      */
     private void bumpGenerationLocal(final boolean retireSwitchPoint) {
         version.incrementAndGet();
         if (retireSwitchPoint) {
             // Local only: registry listener will fan out to subtypes when present.
             invalidateIndySwitchPoint();
+        } else {
+            // First MetaClass install — retire pending pre-MC domain only.
+            SwitchPoint pending = pendingIndySwitchPoint.detachLive();
+            SwitchPointInvalidator.invalidateIfLive(pending);
         }
     }
 
@@ -206,38 +212,85 @@ public class ClassInfo implements Finalizable {
     }
 
     /**
-     * Returns the SwitchPoint that guards indy targets for this class's MetaClass state.
+     * Returns the SwitchPoint for monomorphic indy MOP guards on this class
+     * (GROOVY-12191). Delegates to {@link IndyInvalidation#classSwitchPointFor}.
      *
-     * @return the class-domain SwitchPoint for indy
+     * @return MetaClass domain if installed, otherwise pending domain
      * @since 6.0.0
      */
     @Internal
     public SwitchPoint getIndySwitchPoint() {
-        return indySwitchPoint.getSwitchPoint();
+        Class<?> type = getTheClass();
+        if (type == null) {
+            return getPendingIndySwitchPoint();
+        }
+        return IndyInvalidation.classSwitchPointFor(type);
     }
 
     /**
-     * Invalidates this class's indy SwitchPoint without bumping {@link #getVersion()}.
-     * Prefer {@link #incVersion()} when the MetaClass actually changed.
+     * Pending domain for pre-MetaClass link. Live SwitchPoint allocated lazily.
+     *
+     * @return pending SwitchPoint
+     * @since 6.0.0
+     */
+    @Internal
+    public SwitchPoint getPendingIndySwitchPoint() {
+        return pendingIndySwitchPoint.getSwitchPoint();
+    }
+
+    /**
+     * Invalidates this class's class-level MetaClass domain and pending domain
+     * without bumping {@link #getVersion()}. Prefer {@link #incVersion()} when
+     * the MetaClass actually changed.
      *
      * @since 6.0.0
      */
     @Internal
     public void invalidateIndySwitchPoint() {
-        indySwitchPoint.invalidate();
+        List<SwitchPoint> batch = new ArrayList<>(2);
+        collectLiveIndySwitchPoints(batch);
+        if (!batch.isEmpty()) {
+            SwitchPoint.invalidateAll(batch.toArray(new SwitchPoint[0]));
+        }
     }
 
     /**
-     * Detaches the live indy SwitchPoint for bulk {@link SwitchPoint#invalidateAll}
-     * without invalidating it yet. Package policy lives in {@link IndyInvalidation};
-     * the caller must invalidate any non-null return value.
+     * Detaches live SwitchPoint(s) for this class into {@code out}: the installed
+     * MetaClass domain (if any) and the pending domain (if live). Does not create
+     * a MetaClass.
      *
-     * @return the detached live SwitchPoint, or {@code null} if none was live
+     * @param out destination list (must not be {@code null})
+     * @since 6.0.0
+     */
+    @Internal
+    public void collectLiveIndySwitchPoints(final List<SwitchPoint> out) {
+        IndyInvalidation.collectLiveForMetaClass(getMetaClassForClass(), out);
+        SwitchPoint pending = pendingIndySwitchPoint.detachLive();
+        if (pending != null) {
+            out.add(pending);
+        }
+    }
+
+    /**
+     * Detaches live SwitchPoint(s) for this class. Prefer
+     * {@link #collectLiveIndySwitchPoints} for bulk paths.
+     *
+     * @return one detached SwitchPoint, or {@code null}; additional live domains
+     *         are invalidated immediately so they are not orphaned
      * @since 6.0.0
      */
     @Internal
     public SwitchPoint detachLiveIndySwitchPoint() {
-        return indySwitchPoint.detachLive();
+        List<SwitchPoint> batch = new ArrayList<>(2);
+        collectLiveIndySwitchPoints(batch);
+        if (batch.isEmpty()) {
+            return null;
+        }
+        SwitchPoint first = batch.get(0);
+        for (int i = 1; i < batch.size(); i++) {
+            SwitchPointInvalidator.invalidateIfLive(batch.get(i));
+        }
+        return first;
     }
 
     /**
@@ -458,7 +511,13 @@ public class ClassInfo implements Finalizable {
         MetaClass strongMc = strongMetaClass;
         if (strongMc!=null) return strongMc;
         MetaClass weakMc = getWeakMetaClass();
-        if (isValidWeakMetaClass(weakMc)) {
+        // During GroovySystem bootstrap the registry is not yet published;
+        // treat a non-null weak MC as valid rather than querying the handler.
+        MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
+        if (registry == null) {
+            return weakMc;
+        }
+        if (isValidWeakMetaClass(weakMc, registry.getMetaClassCreationHandler())) {
             return weakMc;
         }
         return null;

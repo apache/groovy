@@ -44,11 +44,10 @@ import java.util.Set;
  * The index is consulted when MetaClass-aware policy chooses hierarchy fan-out
  * (EMC install/update, global EMC, interface / array MetaClass changes). It is
  * not modelling a shared {@code MetaClassImpl} table — each class still has its
- * own MetaClass. Subtype sites re-link so the live <em>missing-method</em>
- * hierarchy walk ({@code MetaClassImpl.findMethodInClassHierarchy}) can observe
- * expando methods installed on ancestors; present methods on the child are not
- * replaced by that walk. Pure {@code MetaClassImpl} class replaces do not walk
- * this index (exact-class invalidation only). See {@link IndyInvalidation}.
+ * own MetaClass instance domain (weak identity map in {@link IndyInvalidation}).
+ * Subtype domains re-link so the live <em>missing-method</em> hierarchy walk
+ * can observe ancestor expando methods. Pure {@code MetaClassImpl} replaces do
+ * not walk this index (exact-class only).
  * <p>
  * Keys and values are weakly held so the index does not pin classes or
  * {@code ClassInfo} instances after they become unreachable.

@@ -36,7 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertSame
 import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
- * Unit tests for {@link IndyInvalidation} — single class-domain SwitchPoint model.
+ * Unit tests for {@link IndyInvalidation} — MetaClass-owned SwitchPoint model
+ * with MetaClass-aware exact-class vs hierarchy fan-out (GROOVY-12191).
  */
 final class IndyInvalidationTest {
 
@@ -441,16 +442,18 @@ final class IndyInvalidationTest {
         def info = ClassInfo.getClassInfo(LocalGen)
         info.setStrongMetaClass(null)
         info.setWeakMetaClass(null)
-        SwitchPoint sp = info.indySwitchPoint
-        assertFalse(sp.hasBeenInvalidated())
         int versionBefore = info.version
 
         def mc = new groovy.lang.MetaClassImpl(LocalGen)
         mc.initialize()
+        // Domain is per MetaClass identity; first install must not retire it.
+        SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
+        assertFalse(sp.hasBeenInvalidated())
         info.setStrongMetaClass(mc)
 
         assertEquals(versionBefore + 1, info.version)
-        assertFalse(sp.hasBeenInvalidated(), 'first install must not invalidate SwitchPoint')
+        assertFalse(sp.hasBeenInvalidated(), 'first install must not invalidate MetaClass SwitchPoint')
+        assertSame(sp, info.indySwitchPoint)
         info.setStrongMetaClass(null)
     }
 
@@ -536,9 +539,9 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void newClassInvalidator_createsIndependentDomain() {
-        def a = IndyInvalidation.newClassInvalidator()
-        def b = IndyInvalidation.newClassInvalidator()
+    void newPendingInvalidator_createsIndependentDomain() {
+        def a = IndyInvalidation.newPendingInvalidator()
+        def b = IndyInvalidation.newPendingInvalidator()
         SwitchPoint spa = a.switchPoint
         SwitchPoint spb = b.switchPoint
         a.invalidate()
@@ -613,9 +616,10 @@ final class IndyInvalidationTest {
         info.setWeakMetaClass(null)
         def mc = new groovy.lang.MetaClassImpl(WeakOnlyHost)
         mc.initialize()
-        SwitchPoint sp = info.indySwitchPoint
+        SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
         info.setWeakMetaClass(mc) // first weak install
         assertFalse(sp.hasBeenInvalidated())
+        assertSame(sp, info.indySwitchPoint)
         info.setWeakMetaClass(null)
     }
 
@@ -627,6 +631,61 @@ final class IndyInvalidationTest {
         assertEquals(5, guarded.invokeWithArguments())
         IndyInvalidation.invalidateClass(NullObject)
         assertEquals(6, guarded.invokeWithArguments())
+    }
+
+    @Test
+    void switchPointForMetaClass_identityMapDomain() {
+        def mc = new groovy.lang.MetaClassImpl(ClassA)
+        mc.initialize()
+        SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
+        assertSame(sp, IndyInvalidation.switchPointForMetaClass(mc))
+        assertFalse(sp.hasBeenInvalidated())
+        IndyInvalidation.invalidateMetaClass(mc)
+        assertTrue(sp.hasBeenInvalidated())
+        // Fresh domain after retirement.
+        assertFalse(IndyInvalidation.switchPointForMetaClass(mc).hasBeenInvalidated())
+    }
+
+    @Test
+    void classSwitchPointFor_pendingUntilMetaClassInstalled() {
+        def type = FreshMcHost
+        def info = ClassInfo.getClassInfo(type)
+        GroovySystem.metaClassRegistry.removeMetaClass(type)
+        SwitchPoint pending = IndyInvalidation.classSwitchPointFor(type)
+        assertSame(info.pendingIndySwitchPoint, pending)
+        assertFalse(pending.hasBeenInvalidated())
+        def mc = new groovy.lang.MetaClassImpl(type)
+        mc.initialize()
+        info.strongMetaClass = mc // first install retires pending
+        assertTrue(pending.hasBeenInvalidated())
+        SwitchPoint post = IndyInvalidation.classSwitchPointFor(type)
+        assertSame(IndyInvalidation.switchPointForMetaClass(mc), post)
+        assertFalse(post.hasBeenInvalidated())
+        GroovySystem.metaClassRegistry.removeMetaClass(type)
+    }
+
+    @Test
+    void classSwitchPointFor_doesNotForceMetaClassDuringLink() {
+        // Regression for script+closure defineClass order: classSwitchPointFor
+        // must not call getMetaClass() which loads nested classes early.
+        def type = NoForceMcHost
+        GroovySystem.metaClassRegistry.removeMetaClass(type)
+        assertEquals(null, ClassInfo.getClassInfo(type).metaClassForClass)
+        IndyInvalidation.classSwitchPointFor(type)
+        assertEquals(null, ClassInfo.getClassInfo(type).metaClassForClass)
+        GroovySystem.metaClassRegistry.removeMetaClass(type)
+    }
+
+    @Test
+    void customNonMetaClassImpl_usesSameIdentityDomain() {
+        def impl = new groovy.lang.MetaClassImpl(ClassB)
+        impl.initialize()
+        def custom = new groovy.lang.DelegatingMetaClass(impl) {}
+        SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(custom)
+        // Unwraps to adaptee MetaClassImpl — same domain key.
+        assertSame(sp, IndyInvalidation.switchPointForMetaClass(impl))
+        IndyInvalidation.invalidateMetaClass(impl)
+        assertTrue(sp.hasBeenInvalidated())
     }
 
     private static final class ClassA {}
@@ -649,6 +708,8 @@ final class IndyInvalidationTest {
     private static final class PolicyChildEmc extends PolicyParentEmc {}
     private static class PolicyParentPerInst {}
     private static final class PolicyChildPerInst extends PolicyParentPerInst {}
+    private static final class FreshMcHost {}
+    private static final class NoForceMcHost {}
 }
 
 /** Top-level host for per-instance MetaClass SwitchPoint coverage. */

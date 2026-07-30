@@ -115,13 +115,11 @@ public final class SwitchPointInvalidator {
     }
 
     /**
-     * Invalidates a single live switch point, reusing a process-wide one-element
-     * buffer under a short lock to avoid allocating {@code SwitchPoint[]} on the
-     * rare invalidation path.
+     * Invalidates {@code sp} when non-null and still valid.
      *
      * @param sp candidate switch point (may be {@code null})
      */
-    static void invalidateIfLive(final SwitchPoint sp) {
+    public static void invalidateIfLive(final SwitchPoint sp) {
         if (sp != null && !sp.hasBeenInvalidated()) {
             synchronized (SINGLE_INVALIDATE_LOCK) {
                 SINGLE_INVALIDATE_BUF[0] = sp;

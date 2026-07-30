@@ -227,7 +227,7 @@ public class IndyInterface {
         //
         // Pre-6.0 this listener rotated a process-wide SwitchPoint field on this class.
         // That field is removed (vmplugin is internal-by-intent): call sites now guard on
-        // per-ClassInfo domains via applyMopSwitchPoints.
+        // MetaClass-owned domains via applyMopSwitchPoints.
         GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> {
             // MetaClass-aware fan-out: EMC / interface / array / global-EMC → hierarchy;
             // pure MetaClassImpl class replace and per-instance MC → exact class only.
@@ -264,15 +264,14 @@ public class IndyInterface {
     }
 
     /**
-     * Link-time install of the per-class MOP SwitchPoint guard.
+     * Link-time install of the MetaClass MOP SwitchPoint guard.
      * Production call-site wiring ({@link Selector}, {@link IndyCompoundAssign})
      * enters here so the bytecode bootstrap surface owns how handles are guarded.
      * <p>
-     * Domain resolution (receiver → class → {@code ClassInfo} SwitchPoint) and
-     * invalidation policy stay in {@link IndyInvalidation}; this method only
-     * binds the resolved SwitchPoint with {@code guardWithTest}. External or
-     * test code that needs the same guard without package access should use
-     * {@link IndyInvalidation#guardWithMopSwitchPoints}.
+     * Domain resolution (receiver → class → class-level MetaClass instance
+     * SwitchPoint, or always-relink when none is installed) and invalidation
+     * policy stay in {@link IndyInvalidation}; this method only binds the
+     * resolved SwitchPoint with {@code guardWithTest}.
      *
      * @param handle   fast-path handle
      * @param fallback re-link handle
