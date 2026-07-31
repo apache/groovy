@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785397923706,
+  "lastUpdate": 1785486978858,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3898,6 +3898,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 514.3900000000001,
             "range": "±23.08",
+            "unit": "ms",
+            "extra": "5.0.7"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "b30bd9951c944e6caedf35408ab79c26ebfc238c",
+          "message": "minor refactor: slight additions to fat-free benchmark",
+          "timestamp": "2026-07-31T03:09:31Z",
+          "url": "https://github.com/apache/groovy/commit/b30bd9951c944e6caedf35408ab79c26ebfc238c"
+        },
+        "date": 1785486975862,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 584.8166666666667,
+            "range": "±20.18",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 663.17,
+            "range": "±208.78",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 594.08,
+            "range": "±150.35",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 498.3500000000001,
+            "range": "±23.97",
             "unit": "ms",
             "extra": "5.0.7"
           }
