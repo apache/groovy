@@ -56,10 +56,12 @@ def findJira = { String term ->
 }
 
 def findJiraForDep = { String name ->
-    def hit = findJira(name)
-    if (!hit && name.contains('-')) {
-        hit = findJira(name.substring(0, name.indexOf('-')))
-    }
+    // Search the version-catalog alias first (e.g. 'logback' for artifact
+    // 'logback-classic'): bumps live in versions.properties keyed by the short
+    // alias, so the full artifact id preferentially matches verification-metadata
+    // churn over the actual bump commit. Fall back to the full name.
+    def hit = name.contains('-') ? findJira(name.substring(0, name.indexOf('-'))) : null
+    if (!hit) hit = findJira(name)
     return hit
 }
 
