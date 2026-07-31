@@ -34,7 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue
  * GROOVY-12191: scoped indy SwitchPoint invalidation.
  * Metaclass changes for class A must not invalidate class B's SwitchPoint;
  * category enter/leave bulk-invalidates class SwitchPoints so category methods
- * become visible to previously linked sites.
+ * become visible to previously linked sites. Stock MetaClassImpl/EMC changes
+ * are exact-class only — no parent→child SwitchPoint fan-out (PR #2736).
  */
 final class Groovy12191 {
 
@@ -77,7 +78,6 @@ final class Groovy12191 {
             assert 'decorated' == new TypeD().label()
         }
 
-        // Category enter/leave bulk-invalidates class domains (single-guard model).
         assertTrue(classSp.hasBeenInvalidated())
     }
 
@@ -116,17 +116,16 @@ final class Groovy12191 {
     }
 
     @Test
-    void parentMetaClassChange_invalidatesSubclassSwitchPoint() {
-        // Hierarchy fan-out is required for cross-class MOP visibility:
-        // Parent.metaClass (EMC) mutations must retire Child-linked sites so
-        // new Child().hello() re-selects. This is not MetaClassImpl sharing a
-        // table up the hierarchy — each class keeps its own MetaClass.
+    void parentMetaClassChange_doesNotInvalidateSubclassSwitchPoint() {
+        // Stock policy: parent EMC mutation retires only the parent's domain.
+        // Child sites stay warm; the live miss route observes the new method.
         SwitchPoint childSp = ClassInfo.getClassInfo(HierChild).indySwitchPoint
         assertFalse(childSp.hasBeenInvalidated())
 
         HierParent.metaClass.hello = { -> 'from-parent' }
 
-        assertTrue(childSp.hasBeenInvalidated())
+        assertFalse(childSp.hasBeenInvalidated(),
+                'parent EMC must not retire subclass SwitchPoint (stock exact-class)')
         assertScript '''
             class HierParent {}
             class HierChild extends HierParent {}
@@ -137,9 +136,6 @@ final class Groovy12191 {
 
     @Test
     void parentMetaClassImplReplace_doesNotFanOutToSubclassSwitchPoint() {
-        // Pure MetaClassImpl ↔ MetaClassImpl replace has no cross-class EMC
-        // visibility: each class owns its own tables. Hierarchy fan-out would
-        // only re-link subtype sites without a MOP reason (blackdrag review).
         SwitchPoint parentSp = ClassInfo.getClassInfo(HierParentMcImpl).indySwitchPoint
         SwitchPoint childSp = ClassInfo.getClassInfo(HierChildMcImpl).indySwitchPoint
         assertFalse(parentSp.hasBeenInvalidated())
@@ -159,9 +155,7 @@ final class Groovy12191 {
     }
 
     @Test
-    void parentEmcReplace_fansOutToSubclassSwitchPoint() {
-        // Installing EMC on Parent publishes methods into Child via hierarchy
-        // walk — subtype sites must re-link.
+    void parentEmcReplace_doesNotFanOutToSubclassSwitchPoint() {
         SwitchPoint childSp = ClassInfo.getClassInfo(HierChildEmc).indySwitchPoint
         assertFalse(childSp.hasBeenInvalidated())
 
@@ -169,8 +163,8 @@ final class Groovy12191 {
         emc.initialize()
         GroovySystem.metaClassRegistry.setMetaClass(HierParentEmc, emc)
         try {
-            assertTrue(childSp.hasBeenInvalidated(),
-                    'EMC install on parent must retire subclass SwitchPoint')
+            assertFalse(childSp.hasBeenInvalidated(),
+                    'EMC install on parent must not retire subclass SwitchPoint')
         } finally {
             GroovySystem.metaClassRegistry.removeMetaClass(HierParentEmc)
         }
@@ -178,7 +172,6 @@ final class Groovy12191 {
 
     @Test
     void unrelatedTypeMetaClassChange_doesNotInvalidateSiblingHierarchy() {
-        // Hierarchy fan-out is only to subtypes of the changed type — not global.
         SwitchPoint hotSp = ClassInfo.getClassInfo(HierChildScope).indySwitchPoint
         assertFalse(hotSp.hasBeenInvalidated())
 
@@ -210,7 +203,6 @@ final class Groovy12191 {
         SwitchPoint hotSp = ClassInfo.getClassInfo(TypeD).indySwitchPoint
         assertFalse(hotSp.hasBeenInvalidated())
 
-        // Churn an unrelated type — scoped invalidation must leave TypeD alone.
         10.times { i ->
             TypeC.metaClass."dyn${i}" = { -> i }
         }
@@ -218,9 +210,9 @@ final class Groovy12191 {
     }
 
     @Test
-    void objectArrayMetaClassChange_invalidatesStringArraySwitchPoint() {
-        // Array types are final, yet Object[] is the MOP supertype of reference
-        // arrays — scoped invalidation must fan out (GROOVY-12191 review).
+    void objectArrayMetaClassChange_doesNotInvalidateStringArraySwitchPoint() {
+        // Stock exact-class: Object[] EMC does not retire String[] domain.
+        // Dispatch still sees the method via the live miss hierarchy walk.
         SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
         assertFalse(stringArraySp.hasBeenInvalidated())
 
@@ -228,15 +220,15 @@ final class Groovy12191 {
         emc.initialize()
         GroovySystem.metaClassRegistry.setMetaClass(Object[], emc)
         try {
-            assertTrue(stringArraySp.hasBeenInvalidated(),
-                    'Object[] MetaClass change must retire String[] SwitchPoint')
+            assertFalse(stringArraySp.hasBeenInvalidated(),
+                    'Object[] MetaClass change must not retire String[] SwitchPoint')
         } finally {
             GroovySystem.metaClassRegistry.removeMetaClass(Object[])
         }
     }
 
     @Test
-    void incVersion_scopesToClassHierarchy_notGlobal() {
+    void incVersion_scopesToExactClass_notGlobal() {
         SwitchPoint hotSp = ClassInfo.getClassInfo(TypeD).indySwitchPoint
         SwitchPoint targetSp = ClassInfo.getClassInfo(TypeC).indySwitchPoint
         assertFalse(hotSp.hasBeenInvalidated())
@@ -252,12 +244,10 @@ final class Groovy12191 {
     /**
      * Blackdrag scenario matrix (PR #2736): {@code call(c)} uses receiver class C.
      * Mutations on B/A must not retire C's domain; methods added on B/A must not
-     * become visible on a pure C instance. Documents old-vs-new blast radius and
-     * actual MOP visibility.
+     * become visible on a pure C instance. Stock policy is exact-class throughout.
      */
     @Test
     void blackdragScenario_callOnC_notInvalidatedBySubclassMetaClassChurn() {
-        // Touch receivers first so MetaClass-owned domains exist; capture SPs after.
         def c = new BdC()
         assert c.fooC() == 'fooC'
         new BdB()
@@ -269,13 +259,13 @@ final class Groovy12191 {
         assertFalse(spB.hasBeenInvalidated())
         assertFalse(spA.hasBeenInvalidated())
 
-        // B.metaClass = EMC + method — fans out to A (subtype of B), not to C (supertype).
+        // B.metaClass = EMC + method — exact-class B only (not A, not C).
         def emcB = new ExpandoMetaClass(BdB, true, true)
         emcB.initialize()
         GroovySystem.metaClassRegistry.setMetaClass(BdB, emcB)
         try {
             assertTrue(spB.hasBeenInvalidated())
-            assertTrue(spA.hasBeenInvalidated(), 'EMC on B must fan out to A')
+            assertFalse(spA.hasBeenInvalidated(), 'EMC on B must not fan out to A')
             assertFalse(spC.hasBeenInvalidated(), 'EMC on B must not retire C (supertype)')
             assert c.fooC() == 'fooC'
             assert !c.metaClass.respondsTo(c, 'fooB0')
@@ -283,17 +273,17 @@ final class Groovy12191 {
             spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
             spA = ClassInfo.getClassInfo(BdA).indySwitchPoint
             BdB.metaClass.fooB0 = { -> 'fooB0' }
-            assertTrue(spA.hasBeenInvalidated(), 'B EMC update (incVersion) fans out to A')
+            // in-place EMC update retires B's domain again; A/C stay warm
+            assertFalse(spA.hasBeenInvalidated(), 'B EMC update must not fan out to A')
             assertFalse(spC.hasBeenInvalidated())
             assert new BdB().fooB0() == 'fooB0'
-            assert new BdA().fooB0() == 'fooB0'
+            assert new BdA().fooB0() == 'fooB0' // live hierarchy walk
             assert !c.metaClass.respondsTo(c, 'fooB0')
             assert c.fooC() == 'fooC'
         } finally {
             GroovySystem.metaClassRegistry.removeMetaClass(BdB)
         }
 
-        // A.fooA = {} — exact class A (+ subtypes of A if any), not C.
         spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
         BdA.metaClass.fooA = { -> 'fooA' }
         try {
@@ -305,7 +295,6 @@ final class Groovy12191 {
             GroovySystem.metaClassRegistry.removeMetaClass(BdA)
         }
 
-        // Per-instance EMC on a B instance — does not affect C domain or visibility on c.
         spC = ClassInfo.getClassInfo(BdC).indySwitchPoint
         def b = new BdB()
         def emcInst = new ExpandoMetaClass(BdB, false, true)
@@ -323,7 +312,6 @@ final class Groovy12191 {
 
     @Test
     void objectArrayEmcMethod_visibleOnStringArray() {
-        // Empirical MOP fact that justifies array lattice fan-out for EMC.
         assertScript '''
             Object[].metaClass.arrHello = { -> 'arr' }
             try {
@@ -331,6 +319,28 @@ final class Groovy12191 {
                 assert (new String[0]).arrHello() == 'arr'
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(Object[])
+            }
+        '''
+    }
+
+    /**
+     * Behaviour-only: linked miss on String[] then Object[] EMC add must become
+     * visible without String[] SwitchPoint retirement (PR #2736 experiment).
+     */
+    @Test
+    void linkedMiss_stringArray_thenObjectArrayEmcAdd_isVisible() {
+        assertScript '''
+            def probe(x) {
+                try { return x.arrHello() } catch (MissingMethodException e) { return 'miss' }
+            }
+            String[] arr = ['a', 'b']
+            200.times { assert probe(arr) == 'miss' }
+            try {
+                Object[].metaClass.arrHello = { -> 'array-visible' }
+                assert probe(arr) == 'array-visible'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Object[])
+                GroovySystem.metaClassRegistry.removeMetaClass(String[])
             }
         '''
     }
@@ -355,8 +365,6 @@ final class Groovy12191 {
             class C extends A {
                 def m2(x) { 40 }
             }
-            // Declared at script level (not inside try): construction-time snapshot
-            // of A is taken when D's MetaClass is first built *after* A has EMC.
             class D extends A {
                 def m2(x) { 50 }
             }
@@ -374,17 +382,11 @@ final class Groovy12191 {
                 assert a.m2(0) == -2
                 assert a.m2('') == -3
 
-                // Present methods on B are unchanged (not replaced by parent EMC).
                 b.metaClass = null
                 assert b.m1() == 1
                 assert b.m2(0) == 2
-                // Missing m2(String) on B is found via hierarchy walk — first call,
-                // so no prior monomorphic site needed invalidation for this name.
                 assert b.m2('') == -3
 
-                // C was MetaClassImpl-initialized before A gained EMC methods:
-                // present m2(Object) handles Integer/String/null; parent overloads
-                // are not selected for this MetaClass instance.
                 assert c.m2(null) == 40
                 assert c.m2(0) == 40
                 assert c.m2('') == 40
@@ -393,15 +395,12 @@ final class Groovy12191 {
                 assert c.m2(0) == 40
                 assert c.m2('') == 40
 
-                // Promote C to EMC: missing-method / EMC inheritance sees A.
                 c.metaClass.m1 = { -> -40 }
                 assert c.m1() == -40
                 assert c.m2(null) == 40
                 assert c.m2(0) == -2
                 assert c.m2('') == -3
 
-                // D first used after A was modified: MetaClassImpl construction can
-                // snapshot ancestor expando methods (timing gap vs C).
                 def d = new D()
                 assert d.m2(null) == 50
                 assert d.m2(0) == -2
@@ -418,8 +417,8 @@ final class Groovy12191 {
     /**
      * Blackdrag callsite-caching matrix: receiver MetaClass change (exact class)
      * drives re-link; parent EMC remove does not rewrite a child MetaClassImpl
-     * snapshot; hierarchy SwitchPoint on parent EMC is for miss re-select, not
-     * for rebuilding MetaClassImpl tables.
+     * snapshot. Stock policy does not require hierarchy SwitchPoint for the
+     * miss path.
      */
     @Test
     void blackdragScenario_callsiteCaching_metaClassChangeNotHierarchyVersion() {
@@ -440,7 +439,6 @@ final class Groovy12191 {
             A.metaClass.m2 = { Integer x -> -2 }
             A.metaClass.m2 = { String x -> -3 }
             try {
-                // C MetaClassImpl from before / without snapshot of A overloads.
                 assert call(c, 0) == 40
                 c = new C()
                 assert call(c, 0) == 40
@@ -449,7 +447,6 @@ final class Groovy12191 {
                 assert mc instanceof MetaClassImpl
 
                 SwitchPoint spC = ClassInfo.getClassInfo(C).indySwitchPoint
-                // Receiver class becomes EMC → class-domain retire (MC changed).
                 c.metaClass.m1 = { -> -40 }
                 assert spC.hasBeenInvalidated()
                 assert call(c, 0) == -2
@@ -457,17 +454,12 @@ final class Groovy12191 {
                 def emc = c.metaClass.delegate
                 assert emc instanceof ExpandoMetaClass
 
-                // Restore old MetaClassImpl via registry (class-level replace).
-                // Instance-only metaClass= may clear a per-instance MC without a
-                // class-domain SwitchPoint event; class-level replace always does.
                 spC = ClassInfo.getClassInfo(C).indySwitchPoint
                 GroovySystem.metaClassRegistry.setMetaClass(C, mc)
                 c.metaClass = null
                 assert spC.hasBeenInvalidated()
                 assert call(c, 0) == 40
 
-                // Late init: remove C's MetaClass so a fresh MetaClassImpl is built
-                // while A still has EMC → construction-time snapshot sees A.
                 def registry = MetaClassRegistryImpl.getInstance(0)
                 spC = ClassInfo.getClassInfo(C).indySwitchPoint
                 registry.removeMetaClass(C)
@@ -478,11 +470,12 @@ final class Groovy12191 {
                 assert newMc instanceof MetaClassImpl
                 assert newMc != mc
 
-                // Reset A: hierarchy fans out and re-links, but child MetaClassImpl
-                // still holds the construction-time snapshot — SP does not rebuild MC.
+                // Reset A: stock exact-class — C's SwitchPoint is NOT retired.
+                // Child MetaClassImpl still holds the construction-time snapshot.
                 SwitchPoint spAfterA = ClassInfo.getClassInfo(C).indySwitchPoint
                 A.metaClass = null
-                assert spAfterA.hasBeenInvalidated()
+                assert !spAfterA.hasBeenInvalidated() :
+                        'parent EMC remove must not retire child SwitchPoint'
                 assert call(c, 0) == -2
 
                 def catched = false
@@ -493,11 +486,6 @@ final class Groovy12191 {
                 }
                 assert catched
 
-                // Re-install the EMC that was created while A still had methods.
-                // blackdrag's draft expected "clueless about A" → 40, but measured
-                // EMC retains ClosureMetaMethods copied from A (m2 Integer/String),
-                // so resolution stays -2 — similar retention to MetaClassImpl
-                // construction-time snapshot, not live super lookup.
                 spC = ClassInfo.getClassInfo(C).indySwitchPoint
                 GroovySystem.metaClassRegistry.setMetaClass(C, emc)
                 c.metaClass = null
@@ -511,8 +499,8 @@ final class Groovy12191 {
     }
 
     /**
-     * Hierarchy fan-out is required so a previously linked hit on a parent EMC
-     * method re-selects after that parent EMC is removed (miss path inverse).
+     * Linked hit via live miss route: after parent EMC is removed, the next
+     * call misses again — without requiring child SwitchPoint retirement.
      */
     @Test
     void parentEmcRemoveAfterLinkedHit_childCallSiteMissesAgain() {
@@ -529,7 +517,8 @@ final class Groovy12191 {
                 assert call(c) == 'from-parent'
                 SwitchPoint childSp = ClassInfo.getClassInfo(ChildHit).indySwitchPoint
                 GroovySystem.metaClassRegistry.removeMetaClass(ParentHit)
-                assert childSp.hasBeenInvalidated()
+                assert !childSp.hasBeenInvalidated() :
+                        'parent remove must not retire child SwitchPoint'
                 def missed = false
                 try {
                     call(c)
@@ -545,8 +534,8 @@ final class Groovy12191 {
     }
 
     /**
-     * Hierarchy fan-out is required so a previously linked miss on the child
-     * re-selects after parent EMC install (missing-method path).
+     * Linked miss then parent EMC add: live miss route observes the new method
+     * without child SwitchPoint retirement.
      */
     @Test
     void parentEmcAfterLinkedMiss_childCallSiteSeesNewMethod() {
@@ -569,7 +558,7 @@ final class Groovy12191 {
             SwitchPoint childSp = ClassInfo.getClassInfo(ChildMiss).indySwitchPoint
             ParentMiss.metaClass.hello = { -> 'from-parent' }
             try {
-                assert childSp.hasBeenInvalidated()
+                assert !childSp.hasBeenInvalidated()
                 assert call(c) == 'from-parent'
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(ParentMiss)
@@ -579,11 +568,11 @@ final class Groovy12191 {
     }
 
     /**
-     * Hierarchy SwitchPoint re-link must not change present-method resolution on
-     * a MetaClassImpl child when the parent later gains EMC overloads.
+     * Present child method must keep winning after parent EMC add (no SP
+     * fan-out needed; re-link would not change the outcome either).
      */
     @Test
-    void parentEmc_doesNotReplacePresentChildMethod_afterHierarchyRelink() {
+    void parentEmc_doesNotReplacePresentChildMethod() {
         assertScript '''
             import org.codehaus.groovy.reflection.ClassInfo
             import java.lang.invoke.SwitchPoint
@@ -599,8 +588,7 @@ final class Groovy12191 {
             SwitchPoint childSp = ClassInfo.getClassInfo(ChildPresent).indySwitchPoint
             ParentPresent.metaClass.m2 = { Integer x -> -2 }
             try {
-                assert childSp.hasBeenInvalidated() // hierarchy fan-out (over-invalidate OK)
-                // Present m2(Object) still wins for Integer after re-link.
+                assert !childSp.hasBeenInvalidated()
                 assert call(c, 0) == 40
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(ParentPresent)
@@ -610,13 +598,11 @@ final class Groovy12191 {
     }
 
     /**
-     * Pure Java inheritance matches Groovy for parent EMC visibility
-     * ({@code LinkedHashMap} extends {@code HashMap}): hierarchy fan-out is
-     * required so already-linked subtype sites re-select (blackdrag: same for
-     * Java-based classes).
+     * Pure Java inheritance: parent EMC visible on subtype via live hierarchy
+     * walk, without subtype SwitchPoint retirement.
      */
     @Test
-    void javaSubtype_seesParentEmc_andHierarchyFanOut() {
+    void javaSubtype_seesParentEmc_withoutHierarchyFanOut() {
         assertScript '''
             import org.codehaus.groovy.reflection.ClassInfo
             import java.lang.invoke.SwitchPoint
@@ -635,7 +621,7 @@ final class Groovy12191 {
             HashMap.metaClass.jHello = { -> 'jh' }
             try {
                 assert new HashMap().jHello() == 'jh'
-                assert lhmSp.hasBeenInvalidated()
+                assert !lhmSp.hasBeenInvalidated()
                 assert call(lhm) == 'jh'
             } finally {
                 GroovySystem.metaClassRegistry.removeMetaClass(HashMap)
@@ -671,9 +657,9 @@ final class Groovy12191 {
     static class BdA extends BdB {}
 
     /**
-     * Follow-up 1: SwitchPoint domain is owned by the MetaClass instance, not
-     * solely by ClassInfo. ClassInfo.getIndySwitchPoint delegates to the
-     * installed MetaClassImpl when present.
+     * SwitchPoint domain is owned by the MetaClass instance, not solely by
+     * ClassInfo. ClassInfo.getIndySwitchPoint delegates to the installed
+     * MetaClass when present.
      */
     @Test
     void metaClassOwnsSwitchPoint_singleDomainViaIdentityMap() {
@@ -687,7 +673,6 @@ final class Groovy12191 {
             info.strongMetaClass = mc
             assertSame(onMc, info.indySwitchPoint)
             assertSame(onMc, IndyInvalidation.classSwitchPointFor(McOwnerHost))
-            // Custom non-MetaClassImpl also uses the same map (identity domain).
             def custom = new groovy.lang.DelegatingMetaClass(mc) {}
             assertSame(onMc, IndyInvalidation.switchPointForMetaClass(custom))
         } finally {
@@ -696,13 +681,11 @@ final class Groovy12191 {
     }
 
     /**
-     * Follow-up 2 decision: MetaClassImpl continues to observe ancestor MetaClass
-     * state on the missing-method path ({@code Object.metaClass.foo} visible on
-     * subtypes). Hierarchy SwitchPoint fan-out remains necessary for linked miss
-     * → parent EMC add (and the inverse remove).
+     * MetaClassImpl continues to observe ancestor MetaClass state on the
+     * missing-method path ({@code Object.metaClass.foo} visible on subtypes).
      */
     @Test
-    void followUp2_metaClassImplStillObservesAncestorEmc_objectMetaClassPattern() {
+    void metaClassImplStillObservesAncestorEmc_objectMetaClassPattern() {
         assertScript '''
             class FollowUp2Child {}
             try {
@@ -717,40 +700,148 @@ final class Groovy12191 {
         '''
     }
 
+    // ------------------------------------------------------------------
+    // Property-site probes (blackdrag: "True we need to be sure the
+    // property case is covered." — PR #2736 follow-up)
+    // ------------------------------------------------------------------
+
     /**
-     * Precise hierarchy case blackdrag asked for: receiver MetaClass unchanged,
-     * parent EMC add must re-link an already-linked miss on the child.
+     * Linked property miss on child, then parent EMC property add: live property
+     * miss walk observes the new property without child SwitchPoint retirement.
      */
     @Test
-    void hierarchySwitchPoint_requiredOnlyForLinkedMissThenParentEmcAdd() {
+    void property_linkedMissThenParentEmcAdd_isVisible() {
         assertScript '''
             import org.codehaus.groovy.reflection.ClassInfo
             import java.lang.invoke.SwitchPoint
 
-            class HParent {}
-            class HChild extends HParent {}
-            def call(x) {
-                try {
-                    x.onlyOnParent()
-                    return 'hit'
-                } catch (MissingMethodException e) {
-                    return 'miss'
-                }
+            class PropParent {}
+            class PropChild extends PropParent {}
+            def probe(x) {
+                try { return x.onlyOnParentProp } catch (MissingPropertyException e) { return 'miss' }
             }
-            def c = new HChild()
-            assert call(c) == 'miss' // monomorphic miss linked against child MetaClass
-            SwitchPoint childSp = ClassInfo.getClassInfo(HChild).indySwitchPoint
+            def c = new PropChild()
+            200.times { assert probe(c) == 'miss' }
+            SwitchPoint childSp = ClassInfo.getClassInfo(PropChild).indySwitchPoint
             try {
-                HParent.metaClass.onlyOnParent = { -> 'now-visible' }
-                assert childSp.hasBeenInvalidated()
-                assert call(c) == 'hit'
-                assert call(c) == 'hit'
+                PropParent.metaClass.onlyOnParentProp = 'now-visible'
+                assert !childSp.hasBeenInvalidated() :
+                        'parent property EMC must not retire child SwitchPoint'
+                assert probe(c) == 'now-visible'
             } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(HParent)
-                GroovySystem.metaClassRegistry.removeMetaClass(HChild)
+                GroovySystem.metaClassRegistry.removeMetaClass(PropParent)
+                GroovySystem.metaClassRegistry.removeMetaClass(PropChild)
             }
         '''
     }
 
+    /**
+     * Linked property hit via live miss route, then parent EMC remove: next
+     * access misses again without child SwitchPoint retirement.
+     */
+    @Test
+    void property_parentEmcRemoveAfterLinkedHit_missesAgain() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            class PropParentHit {}
+            class PropChildHit extends PropParentHit {}
+            def probe(x) {
+                try { return x.helloProp } catch (MissingPropertyException e) { return 'miss' }
+            }
+            def c = new PropChildHit()
+            PropParentHit.metaClass.helloProp = 'from-parent'
+            try {
+                assert probe(c) == 'from-parent'
+                SwitchPoint childSp = ClassInfo.getClassInfo(PropChildHit).indySwitchPoint
+                GroovySystem.metaClassRegistry.removeMetaClass(PropParentHit)
+                assert !childSp.hasBeenInvalidated()
+                assert probe(c) == 'miss'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(PropParentHit)
+                GroovySystem.metaClassRegistry.removeMetaClass(PropChildHit)
+            }
+        '''
+    }
+
+    /**
+     * Array-lattice <em>method</em> form of a property getter on Object[] is
+     * visible on String[] via the live miss route (same as
+     * {@link #linkedMiss_stringArray_thenObjectArrayEmcAdd_isVisible}). Plain
+     * {@code arr.foo} on a Java array is GPath collect, not MetaClass property
+     * miss — so property-style EMC on arrays is exercised through getXxx.
+     */
+    @Test
+    void propertyGetter_linkedMiss_stringArray_thenObjectArrayEmcAdd_isVisible() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            def probe(x) {
+                try { return x.getArrOnlyProp() } catch (MissingMethodException e) { return 'miss' }
+            }
+            def arr = new String[0]
+            50.times { assert probe(arr) == 'miss' }
+            SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
+            try {
+                Object[].metaClass.getArrOnlyProp = { -> 'array-visible' }
+                assert !stringArraySp.hasBeenInvalidated()
+                assert probe(arr) == 'array-visible'
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(Object[])
+                GroovySystem.metaClassRegistry.removeMetaClass(String[])
+            }
+        '''
+    }
+
+    /**
+     * Present child property keeps winning after parent EMC adds a same-name
+     * property (construction-time / present-property selection).
+     */
+    @Test
+    void property_parentEmc_doesNotReplacePresentChildProperty() {
+        assertScript '''
+            import org.codehaus.groovy.reflection.ClassInfo
+            import java.lang.invoke.SwitchPoint
+
+            class PropParentPresent {}
+            class PropChildPresent extends PropParentPresent {
+                def getM2() { 40 }
+            }
+            def probe(x) { x.m2 }
+            def c = new PropChildPresent()
+            assert probe(c) == 40
+
+            SwitchPoint childSp = ClassInfo.getClassInfo(PropChildPresent).indySwitchPoint
+            PropParentPresent.metaClass.m2 = -2
+            try {
+                assert !childSp.hasBeenInvalidated()
+                assert probe(c) == 40
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(PropParentPresent)
+                GroovySystem.metaClassRegistry.removeMetaClass(PropChildPresent)
+            }
+        '''
+    }
+
+    /**
+     * Exact-class property update on the receiver class itself must retire that
+     * class domain and make the property visible (same as methods).
+     */
+    @Test
+    void property_receiverEmcAdd_invalidatesOwnSwitchPointAndIsVisible() {
+        SwitchPoint sp = ClassInfo.getClassInfo(PropOwnHost).indySwitchPoint
+        assertFalse(sp.hasBeenInvalidated())
+        PropOwnHost.metaClass.ownProp = 'yes'
+        try {
+            assertTrue(sp.hasBeenInvalidated())
+            assert new PropOwnHost().ownProp == 'yes'
+        } finally {
+            GroovySystem.metaClassRegistry.removeMetaClass(PropOwnHost)
+        }
+    }
+
     static class McOwnerHost {}
+    static class PropOwnHost {}
 }

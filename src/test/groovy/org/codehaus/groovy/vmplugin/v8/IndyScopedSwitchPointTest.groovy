@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 final class IndyScopedSwitchPointTest {
 
     @Test
-    void registryListener_withClass_invalidatesHierarchy() {
+    void registryListener_withClass_invalidatesClassDomain() {
         // Ensure the MetaClass registry listener path (type != null) runs.
         SwitchPoint sp = ClassInfo.getClassInfo(RegistryHost).indySwitchPoint
         def mc = new ExpandoMetaClass(RegistryHost, true, true)

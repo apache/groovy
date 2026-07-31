@@ -30,13 +30,13 @@ import java.util.concurrent.atomic.AtomicReference;
  * point so linked sites fall back and re-link; the next {@link #getSwitchPoint()}
  * allocates a fresh one.
  * <p>
- * Hierarchy fan-out and other bulk paths should prefer {@link #detachLive()} and a
- * single {@link SwitchPoint#invalidateAll(SwitchPoint[])} over many individual
- * {@link #invalidate()} calls (GROOVY-12191).
+ * Bulk paths (category enter/leave, custom MetaClass events) should prefer
+ * {@link #detachLive()} and a single {@link SwitchPoint#invalidateAll(SwitchPoint[])}
+ * over many individual {@link #invalidate()} calls (GROOVY-12191).
  * <p>
- * There is no permanent failover: after scoping invalidation to a single class
- * (plus subtypes), deopt storms from a process-wide SwitchPoint no longer apply,
- * so a simpler replace-on-invalidate model is sufficient.
+ * There is no permanent failover: after scoping stock invalidation to a single
+ * class, deopt storms from a process-wide SwitchPoint no longer apply, so a
+ * simpler replace-on-invalidate model is sufficient.
  *
  * @since 6.0.0
  */

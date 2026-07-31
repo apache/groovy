@@ -26,7 +26,6 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import groovy.transform.Internal;
-import org.apache.groovy.runtime.indy.ClassHierarchyIndex;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.runtime.indy.SwitchPointInvalidator;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
@@ -125,9 +124,6 @@ public class ClassInfo implements Finalizable {
         this.classRef = new WeakReference<Class<?>>(klazz);
         cachedClassRef = new LazyCachedClassRef(softBundle, this);
         artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
-        // Index under MOP-relevant ancestors so hierarchy SwitchPoint fan-out is
-        // O(descendants) rather than O(all loaded ClassInfos) (GROOVY-12191).
-        ClassHierarchyIndex.register(this);
     }
 
     /**
@@ -142,23 +138,14 @@ public class ClassInfo implements Finalizable {
 
     /**
      * Increments the version number and invalidates this class's MetaClass
-     * SwitchPoint (and subtype MetaClass SwitchPoints via hierarchy fan-out).
-     * Called when metaclass modifications occur (e.g., adding methods to an {@code ExpandoMetaClass}).
-     * <p>
-     * Hierarchy fan-out is intentional here: {@code incVersion} is the path used
-     * when an existing MetaClass is <em>updated in place</em> (EMC method/property
-     * add). That update can make a previously <em>missing</em> name resolvable on
-     * subtype receivers via {@code MetaClassImpl.findMethodInClassHierarchy}
-     * (opens only when a modified {@code MutableMetaClass} exists in the
-     * hierarchy), so already-linked subtype miss sites must re-select. Present
-     * methods on the child keep winning after re-link. Registry-driven full
-     * MetaClass <em>replacements</em> use MetaClass-aware policy instead (pure
-     * {@code MetaClassImpl} replace stays exact-class; see
-     * {@link IndyInvalidation#invalidateForMetaClassChange}).
+     * SwitchPoint domain (exact class only). Called when metaclass modifications
+     * occur (e.g., adding methods to an {@code ExpandoMetaClass}).
      * <p>
      * <strong>Behavioral change in 6.0 (GROOVY-12191):</strong> this method no longer
      * triggers a process-wide call-site flush. It scopes invalidation to this class
-     * and loaded subtypes/implementors only. Callers that previously relied on
+     * only. Subtype sites are not retired: stock missing-method / missing-property
+     * hierarchy walks re-resolve live on the dynamic route (see
+     * {@link IndyInvalidation}). Callers that previously relied on
      * {@code incVersion()} as a global “flush everything” hammer should invoke
      * {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()} (or
      * {@link IndyInvalidation#invalidateCategory()}) explicitly when a bulk flush
@@ -167,7 +154,7 @@ public class ClassInfo implements Finalizable {
      * Category enter/leave still bulk-invalidates MetaClass SwitchPoints via
      * {@link org.codehaus.groovy.vmplugin.VMPlugin#invalidateCallSites()}.
      * SwitchPoint policy is owned by {@link IndyInvalidation}; this method only
-     * bumps generation then delegates hierarchy invalidation.
+     * bumps generation then delegates exact-class invalidation.
      */
     public void incVersion() {
         version.incrementAndGet();
@@ -184,14 +171,16 @@ public class ClassInfo implements Finalizable {
      * <ul>
      *   <li>First MetaClass install: retire pending domain only (sites linked
      *       pre-MC re-select onto the MetaClass domain).</li>
-     *   <li>Replace/clear: retire the current MetaClass domain (and any leftover
-     *       pending). Hierarchy fan-out is applied by the registry listener.</li>
+     *   <li>Replace/clear: retire this ClassInfo’s domains locally. When the
+     *       change also fires a MetaClass registry event, the listener applies
+     *       width policy ({@link IndyInvalidation#invalidateForMetaClassChange})
+     *       — often a second detach of an already-empty domain (idempotent).</li>
      * </ul>
      */
     private void bumpGenerationLocal(final boolean retireSwitchPoint) {
         version.incrementAndGet();
         if (retireSwitchPoint) {
-            // Local only: registry listener will fan out to subtypes when present.
+            // Local domain ownership: width policy is IndyInvalidation's job.
             invalidateIndySwitchPoint();
         } else {
             // First MetaClass install — retire pending pre-MC domain only.
@@ -418,15 +407,16 @@ public class ClassInfo implements Finalizable {
      * <p>
      * On replacement or clear, also invalidates this class's indy SwitchPoint
      * (GROOVY-12191). First install ({@code null →} MC) only bumps version;
-     * hierarchy fan-out for subtypes is applied by MetaClass registry listeners
-     * or {@link #incVersion()}.
+     * exact-class invalidation for the registry event is applied by MetaClass
+     * registry listeners or {@link #incVersion()}.
      *
      * @param answer the metaclass to set, or {@code null} to clear
      */
     public void setStrongMetaClass(MetaClass answer) {
         // Version always; SwitchPoint when replacing/clearing an established MC.
-        // Hierarchy fan-out for subtypes is applied by registry listeners / incVersion
-        // (GROOVY-12191). First install (null → MC) only bumps version.
+        // Exact-class (stock) or bulk (custom) policy is applied by registry
+        // listeners / incVersion (GROOVY-12191). First install (null → MC) only
+        // bumps version.
         boolean replaceOrClear = hasClassLevelMetaClass() || answer == null;
         bumpGenerationLocal(replaceOrClear);
 

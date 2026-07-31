@@ -3903,7 +3903,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Searches the class hierarchy for a mutable meta-class bean property.
+     * Searches the class hierarchy for a mutable meta-class bean property on the
+     * missing-property path. Linked miss sites re-enter this walk live (no
+     * SwitchPoint fan-out); see {@link org.apache.groovy.runtime.indy.IndyInvalidation}.
      *
      * @param propertyName the property name
      * @param theClass the class to start searching from
@@ -3983,13 +3985,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * {@code Object.metaClass.foo = …} / parent EMC methods become visible on
      * subclass receivers without giving every subtype its own EMC.
      * <p>
-     * <b>6.0 decision (GROOVY-12191):</b> {@code MetaClassImpl} continues to
-     * observe ancestor MetaClass state here. Making {@code MetaClassImpl} immune
-     * to other MetaClasses would remove this walk and the construction-time
-     * snapshot of ancestor expando methods, but would also break the inheritance
-     * patterns above. Indy hierarchy SwitchPoint fan-out exists solely so
-     * already-linked subtype sites re-select when this walk’s result can change
-     * while the receiver’s own MetaClass stays unchanged.
+     * <b>6.0 (GROOVY-12191):</b> this walk is retained. Linked miss sites re-enter
+     * it live without SwitchPoint fan-out — see
+     * {@link org.apache.groovy.runtime.indy.IndyInvalidation}.
      *
      * @param instanceKlazz the runtime receiver class
      * @param methodName the method name

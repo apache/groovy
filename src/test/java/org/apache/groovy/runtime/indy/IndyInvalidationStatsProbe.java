@@ -41,6 +41,7 @@ public final class IndyInvalidationStatsProbe {
         }
 
         IndyInvalidation.invalidateClass(ProbeHost.class);
+        IndyInvalidation.invalidateBulk();
         IndyInvalidation.invalidateCategory();
         IndyInvalidation.invalidateUnscoped();
         System.out.println("OK");

@@ -20,6 +20,7 @@ package org.apache.groovy.runtime.indy
 
 import groovy.lang.ExpandoMetaClass
 import groovy.lang.GroovySystem
+import groovy.lang.MetaClass
 import org.codehaus.groovy.reflection.ClassInfo
 import org.codehaus.groovy.runtime.NullObject
 import org.junit.jupiter.api.BeforeEach
@@ -37,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * Unit tests for {@link IndyInvalidation} — MetaClass-owned SwitchPoint model
- * with MetaClass-aware exact-class vs hierarchy fan-out (GROOVY-12191).
+ * with exact-class stock policy and bulk invalidation for custom MetaClasses
+ * (GROOVY-12191).
  */
 final class IndyInvalidationTest {
 
@@ -74,7 +76,8 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateClass_fansOutToSubtypes() {
+    void invalidateClass_doesNotFanOutToSubtypes() {
+        // Stock policy: parent invalidation is exact-class only (PR #2736).
         SwitchPoint parentSp = ClassInfo.getClassInfo(Parent).indySwitchPoint
         SwitchPoint childSp = ClassInfo.getClassInfo(Child).indySwitchPoint
         SwitchPoint siblingSp = ClassInfo.getClassInfo(ClassB).indySwitchPoint
@@ -82,7 +85,8 @@ final class IndyInvalidationTest {
         IndyInvalidation.invalidateClass(Parent)
 
         assertTrue(parentSp.hasBeenInvalidated())
-        assertTrue(childSp.hasBeenInvalidated())
+        assertFalse(childSp.hasBeenInvalidated(),
+                'stock invalidateClass must not retire subtype SwitchPoints')
         assertFalse(siblingSp.hasBeenInvalidated())
     }
 
@@ -94,57 +98,39 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateClassHierarchy_finalClass_emptyDescendantsStillRetiresRoot() {
-        // Finals have no indexed subtypes; single-path fan-out still retires only the root.
-        SwitchPoint stringSp = ClassInfo.getClassInfo(String).indySwitchPoint
-        SwitchPoint siblingSp = ClassInfo.getClassInfo(ClassB).indySwitchPoint
-        IndyInvalidation.invalidateClassHierarchy(String)
-        assertTrue(stringSp.hasBeenInvalidated())
-        assertFalse(siblingSp.hasBeenInvalidated())
-    }
-
-    @Test
-    void invalidateClassHierarchy_objectArray_fansOutToReferenceArrays() {
-        // Arrays are final per Class.getModifiers(), but Object[] is still a
-        // MOP-relevant supertype of every reference array (GROOVY-12191 review).
+    void invalidateClass_objectArray_doesNotRetireStringArray() {
         SwitchPoint objectArraySp = ClassInfo.getClassInfo(Object[]).indySwitchPoint
         SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
-        SwitchPoint integerArraySp = ClassInfo.getClassInfo(Integer[]).indySwitchPoint
         SwitchPoint siblingSp = ClassInfo.getClassInfo(ClassB).indySwitchPoint
-        assertFalse(objectArraySp.hasBeenInvalidated())
-        assertFalse(stringArraySp.hasBeenInvalidated())
 
-        IndyInvalidation.invalidateClassHierarchy(Object[])
+        IndyInvalidation.invalidateClass(Object[])
 
         assertTrue(objectArraySp.hasBeenInvalidated())
-        assertTrue(stringArraySp.hasBeenInvalidated(), 'String[] must retire when Object[] domain is invalidated')
-        assertTrue(integerArraySp.hasBeenInvalidated(), 'Integer[] must retire when Object[] domain is invalidated')
+        assertFalse(stringArraySp.hasBeenInvalidated(),
+                'array lattice fan-out is not required; miss path is live')
         assertFalse(siblingSp.hasBeenInvalidated())
     }
 
     @Test
-    void invalidateClassHierarchy_stringArray_doesNotRetireUnrelatedArrays() {
-        // String[] has no array subtypes; sibling array types must stay live.
+    void invalidateClass_stringArray_doesNotRetireUnrelatedArrays() {
         SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
         SwitchPoint integerArraySp = ClassInfo.getClassInfo(Integer[]).indySwitchPoint
         SwitchPoint objectArraySp = ClassInfo.getClassInfo(Object[]).indySwitchPoint
 
-        IndyInvalidation.invalidateClassHierarchy(String[])
+        IndyInvalidation.invalidateClass(String[])
 
         assertTrue(stringArraySp.hasBeenInvalidated())
         assertFalse(integerArraySp.hasBeenInvalidated())
-        assertFalse(objectArraySp.hasBeenInvalidated(), 'supertype Object[] must not be retired by String[] invalidation')
+        assertFalse(objectArraySp.hasBeenInvalidated())
     }
 
     @Test
-    void invalidateClassHierarchy_primitiveArray_retiresOnlyThatArrayType() {
-        // Primitive arrays are final and have no subtypes, but must not take the
-        // non-array final short-circuit incorrectly relative to Object[] handling.
+    void invalidateClass_primitiveArray_retiresOnlyThatArrayType() {
         SwitchPoint intArraySp = ClassInfo.getClassInfo(int[]).indySwitchPoint
         SwitchPoint longArraySp = ClassInfo.getClassInfo(long[]).indySwitchPoint
         SwitchPoint objectArraySp = ClassInfo.getClassInfo(Object[]).indySwitchPoint
 
-        IndyInvalidation.invalidateClassHierarchy(int[])
+        IndyInvalidation.invalidateClass(int[])
 
         assertTrue(intArraySp.hasBeenInvalidated())
         assertFalse(longArraySp.hasBeenInvalidated())
@@ -152,55 +138,34 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateClass_objectArray_viaApi_fansOut() {
-        SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
-        IndyInvalidation.invalidateClass(Object[])
-        assertTrue(stringArraySp.hasBeenInvalidated())
+    void invalidateClass_interface_doesNotFanOutToImplementors() {
+        SwitchPoint ifaceSp = ClassInfo.getClassInfo(Marker).indySwitchPoint
+        SwitchPoint implSp = ClassInfo.getClassInfo(MarkerImpl).indySwitchPoint
+        SwitchPoint otherSp = ClassInfo.getClassInfo(ClassB).indySwitchPoint
+
+        IndyInvalidation.invalidateClass(Marker)
+
+        assertTrue(ifaceSp.hasBeenInvalidated())
+        assertFalse(implSp.hasBeenInvalidated())
+        assertFalse(otherSp.hasBeenInvalidated())
     }
 
     @Test
-    void guardWithMopSwitchPoints_stringArrayFallsBackOnObjectArrayInvalidate() {
+    void guardWithMopSwitchPoints_stringArrayFallsBackOnOwnInvalidateOnly() {
         def target = MethodHandles.constant(int, 11)
         def fallback = MethodHandles.constant(int, 12)
         def receiver = new String[0]
         def guarded = IndyInvalidation.guardWithMopSwitchPoints(target, fallback, receiver)
         assertEquals(11, guarded.invokeWithArguments())
 
+        // Parent array-type invalidation must not deopt String[] sites.
         IndyInvalidation.invalidateClass(Object[])
+        assertEquals(11, guarded.invokeWithArguments(),
+                'String[] site must stay linked when only Object[] domain retires')
+
+        IndyInvalidation.invalidateClass(String[])
         assertEquals(12, guarded.invokeWithArguments(),
-                'String[]-linked site must fall back after Object[] MetaClass-domain invalidation')
-    }
-
-    @Test
-    void invalidateClassHierarchy_interfaceArray_fansOutToImplementorArrays() {
-        // Same final-array trap as Object[]: CharSequence[] is final yet
-        // assignable-from String[] (interface-array covariance).
-        SwitchPoint charSeqArraySp = ClassInfo.getClassInfo(CharSequence[]).indySwitchPoint
-        SwitchPoint stringArraySp = ClassInfo.getClassInfo(String[]).indySwitchPoint
-        SwitchPoint integerArraySp = ClassInfo.getClassInfo(Integer[]).indySwitchPoint
-
-        IndyInvalidation.invalidateClassHierarchy(CharSequence[])
-
-        assertTrue(charSeqArraySp.hasBeenInvalidated())
-        assertTrue(stringArraySp.hasBeenInvalidated(),
-                'String[] must retire when CharSequence[] domain is invalidated')
-        assertFalse(integerArraySp.hasBeenInvalidated())
-    }
-
-    @Test
-    void invalidateClassHierarchy_multiDimObjectArray_fansOut() {
-        // Multi-dim arrays are also final classes; Object[][] still fans out to String[][].
-        SwitchPoint object2dSp = ClassInfo.getClassInfo(Object[][]).indySwitchPoint
-        SwitchPoint string2dSp = ClassInfo.getClassInfo(String[][]).indySwitchPoint
-        SwitchPoint string1dSp = ClassInfo.getClassInfo(String[]).indySwitchPoint
-
-        IndyInvalidation.invalidateClassHierarchy(Object[][])
-
-        assertTrue(object2dSp.hasBeenInvalidated())
-        assertTrue(string2dSp.hasBeenInvalidated(),
-                'String[][] must retire when Object[][] domain is invalidated')
-        assertFalse(string1dSp.hasBeenInvalidated(),
-                '1-D String[] is not assignable-from Object[][]')
+                'String[] site must fall back after its own domain retires')
     }
 
     @Test
@@ -212,7 +177,6 @@ final class IndyInvalidationTest {
 
         assertTrue(classSp.hasBeenInvalidated())
         assertEquals(catCount + 1, IndyInvalidation.categoryInvalidationCount())
-        // Fresh SP available after bulk retire
         SwitchPoint fresh = ClassInfo.getClassInfo(ClassA).indySwitchPoint
         assertFalse(fresh.hasBeenInvalidated())
     }
@@ -221,23 +185,54 @@ final class IndyInvalidationTest {
     void invalidateUnscoped_retiresLoadedClassSwitchPoints() {
         SwitchPoint spA = ClassInfo.getClassInfo(ClassA).indySwitchPoint
         SwitchPoint spB = ClassInfo.getClassInfo(ClassB).indySwitchPoint
-        long before = IndyInvalidation.classInvalidationCount()
+        long bulkBefore = IndyInvalidation.bulkInvalidationCount()
+        long classBefore = IndyInvalidation.classInvalidationCount()
         IndyInvalidation.invalidateUnscoped()
         assertTrue(spA.hasBeenInvalidated())
         assertTrue(spB.hasBeenInvalidated())
-        assertEquals(before + 1, IndyInvalidation.classInvalidationCount())
+        assertEquals(bulkBefore + 1, IndyInvalidation.bulkInvalidationCount(),
+                'unscoped is process-wide bulk (non-category)')
+        assertEquals(classBefore, IndyInvalidation.classInvalidationCount(),
+                'unscoped must not increment exact-class counter')
     }
 
     @Test
-    void classInfoIncVersion_invalidatesClassDomain_notSiblings() {
+    void invalidateBulk_retiresAllLoadedClassDomains() {
         SwitchPoint spA = ClassInfo.getClassInfo(ClassA).indySwitchPoint
         SwitchPoint spB = ClassInfo.getClassInfo(ClassB).indySwitchPoint
-        int versionBefore = ClassInfo.getClassInfo(ClassA).version
+        long bulkBefore = IndyInvalidation.bulkInvalidationCount()
+        long classBefore = IndyInvalidation.classInvalidationCount()
+        long catBefore = IndyInvalidation.categoryInvalidationCount()
 
-        ClassInfo.getClassInfo(ClassA).incVersion()
+        IndyInvalidation.invalidateBulk()
 
-        assertEquals(versionBefore + 1, ClassInfo.getClassInfo(ClassA).version)
         assertTrue(spA.hasBeenInvalidated())
+        assertTrue(spB.hasBeenInvalidated())
+        assertEquals(bulkBefore + 1, IndyInvalidation.bulkInvalidationCount())
+        assertEquals(classBefore, IndyInvalidation.classInvalidationCount())
+        assertEquals(catBefore, IndyInvalidation.categoryInvalidationCount())
+    }
+
+    @Test
+    void invalidateCategory_doesNotIncrementBulkCounter() {
+        long bulkBefore = IndyInvalidation.bulkInvalidationCount()
+        IndyInvalidation.invalidateCategory()
+        assertEquals(bulkBefore, IndyInvalidation.bulkInvalidationCount(),
+                'category has its own counter; must not share bulk tally')
+    }
+
+    @Test
+    void classInfoIncVersion_invalidatesClassDomain_notSiblingsOrSubtypes() {
+        SwitchPoint spA = ClassInfo.getClassInfo(Parent).indySwitchPoint
+        SwitchPoint childSp = ClassInfo.getClassInfo(Child).indySwitchPoint
+        SwitchPoint spB = ClassInfo.getClassInfo(ClassB).indySwitchPoint
+        int versionBefore = ClassInfo.getClassInfo(Parent).version
+
+        ClassInfo.getClassInfo(Parent).incVersion()
+
+        assertEquals(versionBefore + 1, ClassInfo.getClassInfo(Parent).version)
+        assertTrue(spA.hasBeenInvalidated())
+        assertFalse(childSp.hasBeenInvalidated())
         assertFalse(spB.hasBeenInvalidated())
     }
 
@@ -263,7 +258,6 @@ final class IndyInvalidationTest {
         def guarded = IndyInvalidation.guardWithMopSwitchPoints(target, fallback, receiver)
         assertEquals(1, guarded.invokeWithArguments())
 
-        // Category maps to bulk class-domain invalidation (single-guard model).
         IndyInvalidation.invalidateCategory()
         assertEquals(2, guarded.invokeWithArguments())
     }
@@ -292,90 +286,51 @@ final class IndyInvalidationTest {
     void resetCountersForTesting_zerosCounters() {
         IndyInvalidation.invalidateClass(ClassA)
         IndyInvalidation.invalidateCategory()
-        IndyInvalidation.invalidateClassExact(ClassB)
+        IndyInvalidation.invalidateBulk()
+        IndyInvalidation.invalidateUnscoped()
         assertTrue(IndyInvalidation.classInvalidationCount() > 0)
         assertTrue(IndyInvalidation.categoryInvalidationCount() > 0)
-        assertTrue(IndyInvalidation.hierarchyInvalidationCount() > 0)
-        assertTrue(IndyInvalidation.exactOnlyInvalidationCount() > 0)
+        assertTrue(IndyInvalidation.bulkInvalidationCount() > 0)
         IndyInvalidation.resetCountersForTesting()
         assertEquals(0, IndyInvalidation.classInvalidationCount())
         assertEquals(0, IndyInvalidation.categoryInvalidationCount())
-        assertEquals(0, IndyInvalidation.hierarchyInvalidationCount())
-        assertEquals(0, IndyInvalidation.exactOnlyInvalidationCount())
+        assertEquals(0, IndyInvalidation.bulkInvalidationCount())
     }
 
     @Test
-    void invalidateClassExact_doesNotFanOutToSubtypes() {
-        SwitchPoint parentSp = ClassInfo.getClassInfo(Parent).indySwitchPoint
-        SwitchPoint childSp = ClassInfo.getClassInfo(Child).indySwitchPoint
-        IndyInvalidation.invalidateClassExact(Parent)
-        assertTrue(parentSp.hasBeenInvalidated())
-        assertFalse(childSp.hasBeenInvalidated())
-    }
-
-    @Test
-    void needsHierarchyFanOut_emcVsMetaClassImpl() {
+    void isStockMetaClass_andNeedsBulkInvalidation() {
         def mcImpl = new groovy.lang.MetaClassImpl(ClassA)
         mcImpl.initialize()
         def emc = new ExpandoMetaClass(ClassA, true, true)
         emc.initialize()
+        def custom = new PureCustomMetaClass(ClassA)
 
-        assertTrue(IndyInvalidation.isHierarchyLocalMetaClass(mcImpl))
-        assertTrue(IndyInvalidation.isHierarchyLocalMetaClass(null))
-        assertFalse(IndyInvalidation.isHierarchyLocalMetaClass(emc))
+        assertTrue(IndyInvalidation.isStockMetaClass(mcImpl))
+        assertTrue(IndyInvalidation.isStockMetaClass(null))
+        assertTrue(IndyInvalidation.isStockMetaClass(emc),
+                'EMC is stock MetaClassImpl; exact-class is sufficient')
+        assertFalse(IndyInvalidation.isStockMetaClass(custom),
+                'non-MetaClassImpl custom kinds require bulk')
 
-        assertFalse(IndyInvalidation.needsHierarchyFanOut(ClassA, mcImpl, mcImpl),
-                'pure MetaClassImpl replace must not require fan-out')
-        assertFalse(IndyInvalidation.needsHierarchyFanOut(ClassA, null, mcImpl),
-                'first MetaClassImpl install must not require fan-out')
-        assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, null, emc),
-                'EMC install must require fan-out')
-        assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, emc, mcImpl),
-                'EMC remove must require fan-out')
-        assertTrue(IndyInvalidation.needsHierarchyFanOut(Marker, mcImpl, mcImpl),
-                'interface MetaClass change must require fan-out')
-        assertTrue(IndyInvalidation.needsHierarchyFanOut(String[], mcImpl, mcImpl),
-                'array MetaClass change must require fan-out')
+        assertFalse(IndyInvalidation.needsBulkInvalidation(mcImpl, mcImpl))
+        assertFalse(IndyInvalidation.needsBulkInvalidation(null, mcImpl))
+        assertFalse(IndyInvalidation.needsBulkInvalidation(null, emc),
+                'EMC install is stock → exact-class')
+        assertFalse(IndyInvalidation.needsBulkInvalidation(emc, mcImpl))
+        assertFalse(IndyInvalidation.needsBulkInvalidation(mcImpl, mcImpl))
+        assertTrue(IndyInvalidation.needsBulkInvalidation(mcImpl, custom),
+                'custom MetaClass must bulk-invalidate')
+        assertTrue(IndyInvalidation.needsBulkInvalidation(custom, null))
     }
 
     @Test
-    void needsHierarchyFanOut_modifiedCustomMetaClass_fansOut() {
-        // MetaClassImpl subclass with isModified()==true is not hierarchy-local
-        // (same gate as findMethodInClassHierarchy).
-        def custom = new ModifiedCustomMetaClass(ClassA)
-        custom.initialize()
-        assertFalse(IndyInvalidation.isHierarchyLocalMetaClass(custom))
-        def mcImpl = new groovy.lang.MetaClassImpl(ClassA)
-        mcImpl.initialize()
-        assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, mcImpl, custom),
-                'modified custom MetaClass must fan out (correctness-first)')
-    }
-
-    @Test
-    void needsHierarchyFanOut_globalEmcEnabled() {
-        def mcImpl = new groovy.lang.MetaClassImpl(ClassA)
-        mcImpl.initialize()
-        try {
-            ExpandoMetaClass.enableGlobally()
-            assertTrue(IndyInvalidation.isGlobalEmcEnabled())
-            assertTrue(IndyInvalidation.needsHierarchyFanOut(ClassA, mcImpl, mcImpl),
-                    'global EMC must force hierarchy fan-out even for MetaClassImpl pair')
-        } finally {
-            ExpandoMetaClass.disableGlobally()
-            assertFalse(IndyInvalidation.isGlobalEmcEnabled())
-        }
-    }
-
-    @Test
-    void isExpandoMetaClass_detectsDirectAndWrapped() {
+    void isStockMetaClass_unwrapsHandleMetaClass() {
         def emc = new ExpandoMetaClass(ClassA, true, true)
         emc.initialize()
-        assertTrue(IndyInvalidation.isExpandoMetaClass(emc))
-        assertFalse(IndyInvalidation.isExpandoMetaClass(new groovy.lang.MetaClassImpl(ClassA)))
-        assertFalse(IndyInvalidation.isExpandoMetaClass(null))
         def handle = new org.codehaus.groovy.runtime.HandleMetaClass(emc)
-        assertTrue(IndyInvalidation.isExpandoMetaClass(handle),
-                'HandleMetaClass wrapping EMC must be recognised')
+        assertTrue(IndyInvalidation.isStockMetaClass(handle),
+                'HandleMetaClass wrapping EMC must unwrap to stock MetaClassImpl')
+        assertFalse(IndyInvalidation.needsBulkInvalidation(null, handle))
     }
 
     @Test
@@ -397,7 +352,8 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateForMetaClassChange_hierarchyForEmc() {
+    void invalidateForMetaClassChange_exactForEmc() {
+        SwitchPoint parentSp = ClassInfo.getClassInfo(PolicyParentEmc).indySwitchPoint
         SwitchPoint childSp = ClassInfo.getClassInfo(PolicyChildEmc).indySwitchPoint
         def emc = new ExpandoMetaClass(PolicyParentEmc, true, true)
         emc.initialize()
@@ -406,8 +362,26 @@ final class IndyInvalidationTest {
 
         IndyInvalidation.invalidateForMetaClassChange(event)
 
-        assertTrue(childSp.hasBeenInvalidated(),
-                'EMC install on parent must fan out to child')
+        assertTrue(parentSp.hasBeenInvalidated())
+        assertFalse(childSp.hasBeenInvalidated(),
+                'EMC install is stock → exact-class, no subtype fan-out')
+    }
+
+    @Test
+    void invalidateForMetaClassChange_bulkForCustomMetaClass() {
+        SwitchPoint spA = ClassInfo.getClassInfo(ClassA).indySwitchPoint
+        SwitchPoint spB = ClassInfo.getClassInfo(ClassB).indySwitchPoint
+        def custom = new PureCustomMetaClass(ClassA)
+        def event = new groovy.lang.MetaClassRegistryChangeEvent(
+                GroovySystem.metaClassRegistry, null, ClassA, null, custom)
+
+        long bulkBefore = IndyInvalidation.bulkInvalidationCount()
+        IndyInvalidation.invalidateForMetaClassChange(event)
+
+        assertTrue(spA.hasBeenInvalidated())
+        assertTrue(spB.hasBeenInvalidated(),
+                'custom MetaClass must bulk-retire loaded class domains')
+        assertEquals(bulkBefore + 1, IndyInvalidation.bulkInvalidationCount())
     }
 
     @Test
@@ -446,7 +420,6 @@ final class IndyInvalidationTest {
 
         def mc = new groovy.lang.MetaClassImpl(LocalGen)
         mc.initialize()
-        // Domain is per MetaClass identity; first install must not retire it.
         SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
         assertFalse(sp.hasBeenInvalidated())
         info.setStrongMetaClass(mc)
@@ -492,50 +465,13 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateClassHierarchy_interface_fansOutToImplementors() {
-        SwitchPoint ifaceSp = ClassInfo.getClassInfo(Marker).indySwitchPoint
-        SwitchPoint implSp = ClassInfo.getClassInfo(MarkerImpl).indySwitchPoint
-        SwitchPoint otherSp = ClassInfo.getClassInfo(ClassB).indySwitchPoint
-
-        IndyInvalidation.invalidateClassHierarchy(Marker)
-
-        assertTrue(ifaceSp.hasBeenInvalidated())
-        assertTrue(implSp.hasBeenInvalidated())
-        assertFalse(otherSp.hasBeenInvalidated())
-    }
-
-    @Test
-    void invalidateClassHierarchy_primitive_emptyDescendantsStillRetiresRoot() {
-        // Primitives have no indexed subtypes; single-path fan-out still retires the root.
-        SwitchPoint intSp = ClassInfo.getClassInfo(int).indySwitchPoint
-        SwitchPoint sibling = ClassInfo.getClassInfo(ClassB).indySwitchPoint
-        IndyInvalidation.invalidateClassHierarchy(int)
-        assertTrue(intSp.hasBeenInvalidated())
-        assertFalse(sibling.hasBeenInvalidated())
-    }
-
-    @Test
-    void invalidateClassHierarchy_whenRootAlreadyDetached_stillFansOut() {
-        // Root detach returns null; subtypes still retire (covers rootSp == null branch).
-        def parentInfo = ClassInfo.getClassInfo(ParentAlreadyDetached)
-        def childInfo = ClassInfo.getClassInfo(ChildAlreadyDetached)
-        SwitchPoint parentSp = parentInfo.indySwitchPoint
-        SwitchPoint childSp = childInfo.indySwitchPoint
-        parentInfo.detachLiveIndySwitchPoint() // retire without invalidateAll
-        assertTrue(parentSp != null)
-        IndyInvalidation.invalidateClassHierarchy(ParentAlreadyDetached)
-        // parent was already detached (not necessarily invalidated); child must be retired
-        assertTrue(childSp.hasBeenInvalidated())
-    }
-
-    @Test
-    void invalidateAllLoaded_whenNoLiveSwitchPoints_isNoOpBatch() {
+    void bulkWhenNoLiveSwitchPoints_isSafeNoOp() {
         // Detach every tracked type used by this suite so the bulk batch is empty.
         ClassInfo.getClassInfo(ClassA).detachLiveIndySwitchPoint()
         ClassInfo.getClassInfo(ClassB).detachLiveIndySwitchPoint()
-        IndyInvalidation.invalidateAllLoadedClassSwitchPoints() // empty-batch early return
-        // still callable and safe
-        IndyInvalidation.invalidateAllLoadedClassSwitchPoints()
+        IndyInvalidation.invalidateBulk()
+        IndyInvalidation.invalidateCategory()
+        IndyInvalidation.invalidateUnscoped()
     }
 
     @Test
@@ -551,13 +487,12 @@ final class IndyInvalidationTest {
 
     @Test
     void statsLogging_enabled_inChildProcess() {
-        // STATS_LOG is fixed at class init; cover the fine-log branches in a fresh JVM.
         def javaBin = System.getProperty('java.home') + '/bin/java'
         def cp = System.getProperty('java.class.path')
         def pb = new ProcessBuilder(
                 javaBin,
                 '-Dgroovy.indy.invalidation.stats=true',
-                '-Djava.util.logging.config.file=', // allow programmatic FINE below via default
+                '-Djava.util.logging.config.file=',
                 '-cp', cp,
                 'org.apache.groovy.runtime.indy.IndyInvalidationStatsProbe')
         pb.redirectErrorStream(true)
@@ -568,20 +503,6 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void invalidateClassHierarchy_skipsClearedClassInfoWeakRefs() {
-        // Force a ClassInfo whose weak Class ref is cleared so the scan hits loaded == null.
-        def info = ClassInfo.getClassInfo(ClearedRefHost)
-        info.indySwitchPoint // ensure live
-        def field = ClassInfo.getDeclaredField('classRef')
-        field.accessible = true
-        def wr = (WeakReference) field.get(info)
-        wr.clear()
-        assertEquals(null, info.theClass)
-        // Must not throw; other ClassInfos still scanned.
-        IndyInvalidation.invalidateClassHierarchy(Parent)
-    }
-
-    @Test
     void classInfoIncVersion_whenTheClassCleared_invalidatesLocally() {
         def info = ClassInfo.getClassInfo(ClearedIncVersionHost)
         SwitchPoint sp = info.indySwitchPoint
@@ -589,7 +510,7 @@ final class IndyInvalidationTest {
         field.accessible = true
         ((WeakReference) field.get(info)).clear()
         assertEquals(null, info.theClass)
-        info.incVersion() // else branch: invalidateIndySwitchPoint only
+        info.incVersion()
         assertTrue(sp.hasBeenInvalidated())
     }
 
@@ -597,7 +518,6 @@ final class IndyInvalidationTest {
     void setPerInstanceMetaClass_retiresClassSwitchPoint() {
         def type = Groovy12191PerInstHost
         def info = ClassInfo.getClassInfo(type)
-        // Construct before installing a custom class-level MetaClass.
         def instance = new Groovy12191PerInstHost()
         SwitchPoint sp = info.indySwitchPoint
         assertFalse(sp.hasBeenInvalidated())
@@ -608,7 +528,6 @@ final class IndyInvalidationTest {
         info.setPerInstanceMetaClass(instance, null)
     }
 
-
     @Test
     void hasClassLevelMetaClass_weakOnly_firstInstallDoesNotRetire() {
         def info = ClassInfo.getClassInfo(WeakOnlyHost)
@@ -617,7 +536,7 @@ final class IndyInvalidationTest {
         def mc = new groovy.lang.MetaClassImpl(WeakOnlyHost)
         mc.initialize()
         SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
-        info.setWeakMetaClass(mc) // first weak install
+        info.setWeakMetaClass(mc)
         assertFalse(sp.hasBeenInvalidated())
         assertSame(sp, info.indySwitchPoint)
         info.setWeakMetaClass(null)
@@ -642,7 +561,6 @@ final class IndyInvalidationTest {
         assertFalse(sp.hasBeenInvalidated())
         IndyInvalidation.invalidateMetaClass(mc)
         assertTrue(sp.hasBeenInvalidated())
-        // Fresh domain after retirement.
         assertFalse(IndyInvalidation.switchPointForMetaClass(mc).hasBeenInvalidated())
     }
 
@@ -656,7 +574,7 @@ final class IndyInvalidationTest {
         assertFalse(pending.hasBeenInvalidated())
         def mc = new groovy.lang.MetaClassImpl(type)
         mc.initialize()
-        info.strongMetaClass = mc // first install retires pending
+        info.strongMetaClass = mc
         assertTrue(pending.hasBeenInvalidated())
         SwitchPoint post = IndyInvalidation.classSwitchPointFor(type)
         assertSame(IndyInvalidation.switchPointForMetaClass(mc), post)
@@ -666,8 +584,6 @@ final class IndyInvalidationTest {
 
     @Test
     void classSwitchPointFor_doesNotForceMetaClassDuringLink() {
-        // Regression for script+closure defineClass order: classSwitchPointFor
-        // must not call getMetaClass() which loads nested classes early.
         def type = NoForceMcHost
         GroovySystem.metaClassRegistry.removeMetaClass(type)
         assertEquals(null, ClassInfo.getClassInfo(type).metaClassForClass)
@@ -682,23 +598,24 @@ final class IndyInvalidationTest {
         impl.initialize()
         def custom = new groovy.lang.DelegatingMetaClass(impl) {}
         SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(custom)
-        // Unwraps to adaptee MetaClassImpl — same domain key.
         assertSame(sp, IndyInvalidation.switchPointForMetaClass(impl))
         IndyInvalidation.invalidateMetaClass(impl)
         assertTrue(sp.hasBeenInvalidated())
+    }
+
+    @Test
+    void invalidateMetaClass_null_isNoOp() {
+        IndyInvalidation.invalidateMetaClass(null)
     }
 
     private static final class ClassA {}
     private static final class ClassB {}
     private static class Parent {}
     private static final class Child extends Parent {}
-    private static class ParentAlreadyDetached {}
-    private static final class ChildAlreadyDetached extends ParentAlreadyDetached {}
     private static final class LocalGen {}
     private static final class LocalGenReplace {}
     private static final class LocalGenWeak {}
     private static final class WeakOnlyHost {}
-    private static final class ClearedRefHost {}
     private static final class ClearedIncVersionHost {}
     private static interface Marker {}
     private static final class MarkerImpl implements Marker {}
@@ -715,10 +632,18 @@ final class IndyInvalidationTest {
 /** Top-level host for per-instance MetaClass SwitchPoint coverage. */
 class Groovy12191PerInstHost {}
 
-/** MetaClassImpl subclass that reports modified, forcing hierarchy fan-out. */
-class ModifiedCustomMetaClass extends groovy.lang.MetaClassImpl {
-    ModifiedCustomMetaClass(Class theClass) { super(theClass) }
-    @Override
-    boolean isModified() { true }
-}
+/**
+ * Pure custom MetaClass (not a {@code MetaClassImpl}) used to exercise bulk
+ * invalidation for non-stock kinds. {@code @Delegate} fills the MetaClass
+ * surface; {@link IndyInvalidation#isStockMetaClass} sees this type itself
+ * (not the adaptee), so it is classified as non-stock.
+ */
+class PureCustomMetaClass implements MetaClass {
+    @Delegate
+    final MetaClass delegate
 
+    PureCustomMetaClass(Class theClass) {
+        this.delegate = new groovy.lang.MetaClassImpl(theClass)
+        this.delegate.initialize()
+    }
+}

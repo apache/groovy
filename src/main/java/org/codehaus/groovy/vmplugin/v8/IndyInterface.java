@@ -221,17 +221,14 @@ public class IndyInterface {
     }
 
     static {
-        // MetaClass registry changes invalidate the affected class + subtypes (GROOVY-12191).
-        // Hierarchy fan-out is owned here (not duplicated in setStrongMetaClass beyond a
-        // local retire of the exact class for paths that never fire the registry).
+        // MetaClass registry changes invalidate the affected class domain (GROOVY-12191).
+        // Stock MetaClassImpl/EMC → exact class; custom MetaClass kinds → bulk.
         //
         // Pre-6.0 this listener rotated a process-wide SwitchPoint field on this class.
         // That field is removed (vmplugin is internal-by-intent): call sites now guard on
         // MetaClass-owned domains via applyMopSwitchPoints.
         GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> {
-            // MetaClass-aware fan-out: EMC / interface / array / global-EMC → hierarchy;
-            // pure MetaClassImpl class replace and per-instance MC → exact class only.
-            // See IndyInvalidation class javadoc for the decision matrix (GROOVY-12191).
+            // Exact-class (stock) vs process-wide bulk (custom / unscoped) — IndyInvalidation.
             IndyInvalidation.invalidateForMetaClassChange(cmcu);
             if (LOG_ENABLED) {
                 Class<?> type = cmcu.getClassToUpdate();
@@ -250,8 +247,8 @@ public class IndyInterface {
      * Bulk-invalidates every loaded class SwitchPoint so sites re-link under the
      * new category state. Per-class MetaClass changes use the MetaClass-aware
      * registry path ({@link IndyInvalidation#invalidateForMetaClassChange}) or
-     * {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()} (hierarchy
-     * fan-out for in-place EMC updates).
+     * {@link org.codehaus.groovy.reflection.ClassInfo#incVersion()} (exact-class
+     * for in-place EMC updates).
      * <p>
      * Pre-6.0 this method also rotated a process-wide {@code switchPoint} field.
      * That field is gone; bulk policy lives entirely in {@link IndyInvalidation}.

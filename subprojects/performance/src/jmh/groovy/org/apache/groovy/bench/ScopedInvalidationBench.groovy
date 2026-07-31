@@ -43,16 +43,16 @@ import java.util.concurrent.TimeUnit
  * per-class SwitchPoint domain. Baseline / cross-type / same-type rows
  * intentionally overlap that bench so ratios are available under the same
  * {@code .bench.} include pattern; unique coverage here is category enter/leave
- * (bulk class-domain invalidation), hierarchy fan-out, and setup-isolated
- * post-burst steady state:
+ * (bulk class-domain invalidation), parent-vs-child isolation (stock exact-class
+ * — no hierarchy fan-out), and setup-isolated post-burst steady state:
  * <ul>
  *   <li><b>Per-class</b> — MetaClass changes on an unrelated type must not
  *       deoptimize a hot monomorphic site;</li>
  *   <li><b>Same-type</b> — MetaClass changes on the hot type must re-link;</li>
  *   <li><b>Category</b> — {@code use(Category)} enter/leave bulk-invalidates
  *       class SwitchPoints so category methods become visible;</li>
- *   <li><b>Hierarchy fan-out</b> — parent MetaClass changes invalidate
- *       subclass-linked sites.</li>
+ *   <li><b>Parent churn</b> — parent MetaClass changes must <em>not</em>
+ *       deoptimize subclass-linked sites (stock exact-class policy).</li>
  * </ul>
  * Compare {@link #hotLoop_afterUnrelatedBurst} / {@link #hotLoop_unrelatedMetaClassChurn}
  * against {@link #hotLoop_baseline} (should stay close after scoping) and against
@@ -90,14 +90,15 @@ class ScopedInvalidationBench {
     }
 
     /**
-     * Parent of {@link HierChild} for hierarchy fan-out churn.
+     * Parent of {@link HierChild} for parent-vs-child isolation churn.
      */
     static class HierParent {
         int base() { 1 }
     }
 
     /**
-     * Subclass receiver whose SwitchPoint must clear when the parent MetaClass changes.
+     * Subclass receiver whose SwitchPoint must stay live when only the parent
+     * MetaClass changes (stock exact-class policy).
      */
     static class HierChild extends HierParent {
         int leaf() { 2 }
@@ -194,8 +195,8 @@ class ScopedInvalidationBench {
     }
 
     /**
-     * Category enter/leave interleaved with hot calls — exercises the
-     * process-wide category SwitchPoint domain (never fails over).
+     * Category enter/leave interleaved with hot calls — exercises
+     * {@code invalidateCategory()} bulk retirement of loaded class domains.
      * Uses a modest number of {@code use} blocks so category re-link cost
      * is visible without dominating wall-clock.
      * @param bh blackhole for the accumulated result
@@ -215,12 +216,13 @@ class ScopedInvalidationBench {
     }
 
     /**
-     * Subclass receiver calls with periodic parent MetaClass changes (hierarchy
-     * fan-out must invalidate the child SwitchPoint).
+     * Subclass receiver calls with periodic parent MetaClass changes. Under
+     * stock exact-class policy this should stay close to
+     * {@link #parentChild_baseline} (parent churn must not deopt the child).
      * @param bh blackhole for the accumulated result
      */
     @Benchmark
-    void hierarchy_parentMetaClassChurn(Blackhole bh) {
+    void parentChild_parentMetaClassChurn(Blackhole bh) {
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
             sum += child.leaf()
@@ -233,11 +235,11 @@ class ScopedInvalidationBench {
     }
 
     /**
-     * Subclass receiver calls with no MetaClass mutation (hierarchy baseline).
+     * Subclass receiver calls with no MetaClass mutation (parent/child baseline).
      * @param bh blackhole for the accumulated result
      */
     @Benchmark
-    void hierarchy_baseline(Blackhole bh) {
+    void parentChild_baseline(Blackhole bh) {
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
             sum += child.leaf()

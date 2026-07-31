@@ -20,14 +20,9 @@ package org.apache.groovy.runtime.indy;
 
 import groovy.lang.AdaptingMetaClass;
 import groovy.lang.DelegatingMetaClass;
-import groovy.lang.ExpandoMetaClass;
-import groovy.lang.ExpandoMetaClassCreationHandle;
-import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaClassRegistryChangeEvent;
-import groovy.lang.MutableMetaClass;
 import org.apache.groovy.util.SystemUtil;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.ClassInfo;
@@ -46,137 +41,33 @@ import java.util.logging.Logger;
  * Scoped invokedynamic {@link SwitchPoint} invalidation for the Groovy MOP
  * (GROOVY-12191).
  * <p>
- * <b>Model (single domain):</b> one SwitchPoint domain per
- * <em>{@link MetaClass} instance</em>, held in a weak identity map in this
- * class — not on {@link ClassInfo}, and not as fields on {@link MetaClassImpl}.
- * Every MetaClass kind (EMC, plain {@code MetaClassImpl}, custom) uses the same
- * mechanism. Monomorphic indy sites install the SwitchPoint of the class-level
- * MetaClass observed at link time — a single {@code guardWithTest} — while
- * avoiding process-wide deopt on unrelated MetaClass churn.
- * <p>
- * When no class-level MetaClass is installed yet (e.g. link during
- * {@code defineClass} before nested types exist), sites use a
- * <em>pending</em> SwitchPoint on {@link ClassInfo} (live domain, retired on
- * first MetaClass install). An already-invalid SwitchPoint cannot be used:
- * monomorphic caching would re-enter fallback forever. After a MetaClass
- * exists, only that instance’s domain is used — never both. Per-instance
- * MetaClass still forces uncacheable PIC entries ({@code canSetTarget=false}).
+ * <b>Domain:</b> one SwitchPoint per {@link MetaClass} instance (weak identity
+ * map here). When no class-level MetaClass is installed yet, sites use a
+ * ClassInfo <em>pending</em> domain (retired on first install). Monomorphic
+ * indy sites install a single {@code guardWithTest} on the class-level domain
+ * observed at link time.
  *
- * <h2>Why hierarchy fan-out still exists (and what it is not)</h2>
+ * <h2>Width policy (two axes only)</h2>
+ * <ul>
+ *   <li><b>Exact class</b> — {@link #invalidateClass(Class)}: stock
+ *       {@code MetaClassImpl} / EMC changes (including {@link ClassInfo#incVersion()},
+ *       registry replace, per-instance MetaClass).</li>
+ *   <li><b>All loaded</b> — process-wide retire used for category enter/leave
+ *       ({@link #invalidateCategory()}), unattributed registry events
+ *       ({@link #invalidateUnscoped()}), and non-stock custom MetaClass kinds
+ *       ({@link #invalidateBulk()}).</li>
+ * </ul>
+ * There is <em>no</em> parent→child SwitchPoint fan-out. Indy selection consults
+ * only the receiver’s own MetaClass tables; ancestor-dependent resolution on
+ * the missing-method / missing-property path re-enters
+ * {@code MetaClass.invokeMethod} / property miss and walks the hierarchy live
+ * from the registry each call. Construction-time snapshots of ancestor expando
+ * methods are pre-existing MOP behaviour and are not refreshed by SwitchPoint
+ * retirement. See also {@link MetaClassImpl#findMethodInClassHierarchy}.
  * <p>
- * Hierarchy fan-out is <em>not</em> “{@code MetaClassImpl} shares one method table
- * up the hierarchy”. Each class still has its own MetaClass domain. Fan-out
- * exists solely because <em>selection can observe ancestor MetaClass state</em>
- * without the receiver’s MetaClass changing:
- * <ol>
- *   <li><b>Missing-method path only (live) — the only case that requires
- *       parent→child SwitchPoint fan-out:</b>
- *       {@code MetaClassImpl.findMethodInClassHierarchy} returns immediately
- *       unless some strong MetaClass in the receiver hierarchy is a
- *       <em>modified</em> {@link MutableMetaClass} (EMC is the common case).
- *       When that gate opens, a previously linked miss on a subtype can become
- *       a hit (parent adds method), and a previously linked hierarchy hit can
- *       become a miss (parent EMC removed). Present methods on a child keep
- *       winning for applicable arguments after re-link (the walk does not
- *       rebuild MetaClass tables).</li>
- *   <li><b>Construction-time snapshot (MetaClassImpl init) — not fixed by SP:</b>
- *       when a {@code MetaClassImpl} is first built <em>after</em> an ancestor
- *       already carries expando methods, those methods can be copied into the
- *       child’s method index. A sibling whose MetaClass was built <em>before</em>
- *       the ancestor change keeps the older view. SwitchPoint retirement
- *       re-links against the <em>same</em> MetaClass instance and does not
- *       rebuild tables.</li>
- * </ol>
- * <p>
- * <b>6.0 decision on MetaClassImpl “hierarchy immunity”:</b>
- * {@code MetaClassImpl} <em>continues</em> to observe ancestor MetaClass state
- * on the missing-method path. Removing that walk would break well-used patterns
- * such as {@code Object.metaClass.foo = …} / parent EMC methods visible on
- * subclasses without giving every subtype its own EMC. Hierarchy SwitchPoint
- * fan-out is therefore retained, but only for the missing-method cases above —
- * pure unmodified {@code MetaClassImpl} ↔ {@code MetaClassImpl} (or null)
- * replace stays <b>exact-class</b>. Most “metaclass changed on the receiver”
- * cases are exact-class — the SwitchPoint retires because <em>that</em>
- * MetaClass changed, not because of hierarchy versioning.
- *
- * <h2>When do we invalidate, and how wide?</h2>
- *
- * <table border="1" summary="Invalidation policy">
- *   <tr><th>Event</th><th>Domain retired</th><th>Why</th></tr>
- *   <tr>
- *     <td>EMC method/property update ({@link ClassInfo#incVersion()})</td>
- *     <td>class + loaded subtypes / implementors / array lattice</td>
- *     <td>In-place EMC update can make a previously missing name resolvable on
- *         subtypes via the missing-method hierarchy walk (and can change
- *         already-linked miss targets). Present methods on the child keep
- *         winning after re-link.</td>
- *   </tr>
- *   <tr>
- *     <td>Registry replace where old or new MC is {@link ExpandoMetaClass}</td>
- *     <td>class + hierarchy</td>
- *     <td>Installing / removing EMC changes cross-class MOP visibility for
- *         already-linked subtype sites (miss path / EMC children).</td>
- *   </tr>
- *   <tr>
- *     <td>Registry replace while global EMC creation handle is active</td>
- *     <td>class + hierarchy</td>
- *     <td>Every class MetaClass is an EMC; inheritance refresh can republish
- *         super methods into subtypes.</td>
- *   </tr>
- *   <tr>
- *     <td>Registry replace of an interface or array type</td>
- *     <td>class + hierarchy (array lattice indexed)</td>
- *     <td>Interface / array MetaClasses participate in the same hierarchy walk
- *         (e.g. {@code Object[].metaClass.foo} is visible on {@code String[]}).</td>
- *   </tr>
- *   <tr>
- *     <td>Class replace where <em>both</em> old and new MetaClass are
- *         hierarchy-local (null, or unmodified {@code MetaClassImpl} /
- *         non-EMC subclass with {@code isModified()==false})</td>
- *     <td><b>exact class only</b></td>
- *     <td>Each class owns its own tables; parent replace does not open
- *         {@code findMethodInClassHierarchy}. Over-fan-out would re-link
- *         subtype sites without a MOP-visibility reason.</td>
- *   </tr>
- *   <tr>
- *     <td>Class replace involving unknown / custom MetaClass kinds</td>
- *     <td>class + hierarchy</td>
- *     <td>Correctness-first: custom MetaClasses may publish cross-class state;
- *         exact-only is an allow-list, not a deny-list of EMC alone.</td>
- *   </tr>
- *   <tr>
- *     <td>Per-instance MetaClass change</td>
- *     <td>exact class only</td>
- *     <td>Only that class's monomorphic sites must re-select; per-instance
- *         dispatch is already uncacheable in the PIC. Subtypes are unaffected.</td>
- *   </tr>
- *   <tr>
- *     <td>Category enter/leave, {@code invalidateCallSites()}, unscoped event</td>
- *     <td>all loaded class domains</td>
- *     <td>Category state is process-wide; no second hot-path guard.</td>
- *   </tr>
- * </table>
- *
- * <p>
- * <b>Over- vs under-invalidation:</b> exact-class is an <em>allow-list</em>
- * (hierarchy-local MetaClasses only). Ambiguous or custom MetaClass kinds fan
- * out. {@link #invalidateClass(Class)} / {@code incVersion} always fan out
- * (EMC in-place updates). Linked sites for a method that did not change may
- * still re-link when their receiver class domain is retired — that is the
- * monomorphic SwitchPoint trade-off (same as pre-6.0, but scoped). Hierarchy
- * fan-out deliberately over-invalidates subtype sites whose present methods
- * are unchanged, so that sites which previously linked a <em>miss</em> cannot
- * stay stale; the registry cannot cheaply know which names were linked.
- * <p>
- * <b>Scalability:</b> hierarchy fan-out is {@code O(|loaded subtypes of T|)}
- * via {@link ClassHierarchyIndex}. Category bulk remains a full ClassInfo walk
- * with cheap no-op detaches for domains that never allocated a SwitchPoint.
- * <p>
- * Install guards with
- * {@link #guardWithMopSwitchPoints(MethodHandle, MethodHandle, Object)}
- * (public / test entry). Production Selector wiring uses
- * {@code IndyInterface.applyMopSwitchPoints}.
- * Optional stats logging: {@code -Dgroovy.indy.invalidation.stats=true}.
+ * Optional stats: {@code -Dgroovy.indy.invalidation.stats=true}.
+ * Production guards: {@code IndyInterface.applyMopSwitchPoints}; tests may use
+ * {@link #guardWithMopSwitchPoints}.
  *
  * @since 6.0.0
  */
@@ -185,10 +76,15 @@ public final class IndyInvalidation {
     private static final Logger LOG = Logger.getLogger(IndyInvalidation.class.getName());
     private static final boolean STATS_LOG = SystemUtil.getBooleanSafe("groovy.indy.invalidation.stats");
 
+    /** Exact-class invalidation events ({@link #invalidateClass(Class)}). */
     private static final AtomicLong CLASS_INVALIDATIONS = new AtomicLong();
+    /** Category enter/leave bulk events ({@link #invalidateCategory()}). */
     private static final AtomicLong CATEGORY_INVALIDATIONS = new AtomicLong();
-    private static final AtomicLong EXACT_ONLY_INVALIDATIONS = new AtomicLong();
-    private static final AtomicLong HIERARCHY_INVALIDATIONS = new AtomicLong();
+    /**
+     * Non-category process-wide bulk events
+     * ({@link #invalidateBulk()} / {@link #invalidateUnscoped()}).
+     */
+    private static final AtomicLong BULK_INVALIDATIONS = new AtomicLong();
 
     private static final SwitchPoint[] EMPTY_SWITCH_POINTS = new SwitchPoint[0];
 
@@ -212,32 +108,18 @@ public final class IndyInvalidation {
         return new SwitchPointInvalidator();
     }
 
-    /**
-     * Invalidates SwitchPoints for category enter/leave and
-     * {@code VMPlugin.invalidateCallSites()}.
-     * <p>
-     * Implemented as a bulk class-domain invalidation so every linked site
-     * re-links under the new category state. There is no separate category
-     * SwitchPoint on the hot path.
-     */
-    public static void invalidateCategory() {
-        invalidateAllLoadedClassSwitchPoints();
-        CATEGORY_INVALIDATIONS.incrementAndGet();
-        if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
-            LOG.fine("category invalidation via bulk class SwitchPoints; total="
-                    + CATEGORY_INVALIDATIONS.get());
-        }
-    }
+    // -------------------------------------------------------------------------
+    // Width: exact class
+    // -------------------------------------------------------------------------
 
     /**
-     * Invalidates the per-class SwitchPoint for {@code type} and every loaded
-     * subtype/implementor (hierarchy fan-out). No-op when {@code type} is
-     * {@code null}. Does not bump {@link ClassInfo#getVersion()} on subtypes.
+     * Retires only {@code type}'s MetaClass SwitchPoint domain (exact class;
+     * no subtype fan-out). No-op when {@code type} is {@code null}. Does not
+     * bump {@link ClassInfo#getVersion()}.
      * <p>
-     * Used by {@link ClassInfo#incVersion()} (EMC method updates) and any
-     * caller that needs the conservative full-hierarchy policy. Registry
-     * listeners prefer {@link #invalidateForMetaClassChange(MetaClassRegistryChangeEvent)}
-     * so pure {@code MetaClassImpl} replacements stay exact-class.
+     * Used by {@link ClassInfo#incVersion()}, stock registry MetaClass changes,
+     * and per-instance MetaClass changes. Non-stock MetaClass kinds use
+     * {@link #invalidateBulk()} instead.
      *
      * @param type the class whose MetaClass changed
      */
@@ -245,40 +127,81 @@ public final class IndyInvalidation {
         if (type == null) {
             return;
         }
-        invalidateClassHierarchy(type);
-        CLASS_INVALIDATIONS.incrementAndGet();
-        HIERARCHY_INVALIDATIONS.incrementAndGet();
-        if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
-            LOG.fine("class SwitchPoint hierarchy invalidated for " + type.getName()
-                    + "; total=" + CLASS_INVALIDATIONS.get());
-        }
-    }
-
-    /**
-     * Retires only {@code type}'s MetaClass SwitchPoint domain (no subtype fan-out).
-     * Used when MetaClass change cannot affect cross-class MOP visibility
-     * (pure {@code MetaClassImpl} class replace, per-instance MetaClass).
-     *
-     * @param type the class whose domain is retired; no-op when {@code null}
-     */
-    public static void invalidateClassExact(final Class<?> type) {
-        if (type == null) {
-            return;
-        }
         List<SwitchPoint> batch = new ArrayList<>(1);
         collectLiveForClass(type, batch);
         invalidateBatch(batch);
         CLASS_INVALIDATIONS.incrementAndGet();
-        EXACT_ONLY_INVALIDATIONS.incrementAndGet();
         if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
             LOG.fine("exact-class SwitchPoint invalidated for " + type.getName()
-                    + "; totalExact=" + EXACT_ONLY_INVALIDATIONS.get());
+                    + "; totalClass=" + CLASS_INVALIDATIONS.get());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Width: all loaded (one primitive, reason-labelled public entries)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Category enter/leave and {@code VMPlugin.invalidateCallSites()}.
+     * Retires every loaded class-level domain so sites re-link under the new
+     * category state. No separate category SwitchPoint on the hot path.
+     */
+    public static void invalidateCategory() {
+        retireAllLoadedDomains();
+        CATEGORY_INVALIDATIONS.incrementAndGet();
+        if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
+            LOG.fine("category bulk invalidation; total=" + CATEGORY_INVALIDATIONS.get());
         }
     }
 
     /**
-     * Registry-driven invalidation with MetaClass-aware fan-out policy.
-     * See class javadoc table for the decision matrix.
+     * Process-wide bulk retirement for non-stock (custom) MetaClass registry
+     * events — correctness-first when selection may consult state outside the
+     * stock miss walk. Rare.
+     */
+    public static void invalidateBulk() {
+        retireAllLoadedDomains();
+        BULK_INVALIDATIONS.incrementAndGet();
+        if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
+            LOG.fine("custom-MetaClass bulk invalidation; totalBulk=" + BULK_INVALIDATIONS.get());
+        }
+    }
+
+    /**
+     * Process-wide bulk retirement when a MetaClass registry event carries no
+     * {@code Class} attribution.
+     */
+    public static void invalidateUnscoped() {
+        retireAllLoadedDomains();
+        BULK_INVALIDATIONS.incrementAndGet();
+        if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
+            LOG.fine("unscoped bulk invalidation; totalBulk=" + BULK_INVALIDATIONS.get());
+        }
+    }
+
+    /**
+     * Detaches and invalidates every live class-level MetaClass / pending domain
+     * for loaded types. Shared implementation for all process-wide entries.
+     */
+    private static void retireAllLoadedDomains() {
+        List<SwitchPoint> batch = new ArrayList<>();
+        try {
+            for (ClassInfo info : ClassInfo.getAllClassInfo()) {
+                info.collectLiveIndySwitchPoints(batch);
+            }
+        } finally {
+            invalidateBatch(batch);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Registry policy
+    // -------------------------------------------------------------------------
+
+    /**
+     * Registry-driven invalidation: exact class for stock MetaClass kinds and
+     * per-instance changes; process-wide bulk for custom MetaClass kinds or
+     * unattributed events. See class javadoc.
      *
      * @param event the registry change event (must not be {@code null})
      */
@@ -289,108 +212,43 @@ public final class IndyInvalidation {
             return;
         }
         if (event.isPerInstanceMetaClassChange()) {
-            // Per-instance MC: only this class's monomorphic sites re-select.
-            invalidateClassExact(type);
+            invalidateClass(type);
             return;
         }
-        if (needsHierarchyFanOut(type, event.getOldMetaClass(), event.getNewMetaClass())) {
-            invalidateClass(type);
+        if (needsBulkInvalidation(event.getOldMetaClass(), event.getNewMetaClass())) {
+            invalidateBulk();
         } else {
-            invalidateClassExact(type);
+            invalidateClass(type);
         }
     }
 
     /**
-     * Whether a class-level MetaClass change for {@code type} can affect
-     * already-linked sites on subtypes / array-covariance descendants.
+     * Whether a class-level MetaClass change involving {@code oldMc}/{@code newMc}
+     * requires process-wide bulk invalidation.
      * <p>
-     * Hierarchy fan-out is the default. Exact-class is an <em>allow-list</em>:
-     * both old and new MetaClass must be {@linkplain #isHierarchyLocalMetaClass
-     * hierarchy-local}, and {@code type} must not be an interface/array, and
-     * global EMC must be off. Unknown / custom MetaClass kinds therefore fan
-     * out (correctness-first).
-     * <p>
-     * Aligns with {@code MetaClassImpl.findMethodInClassHierarchy}: the live
-     * hierarchy walk opens only when a modified {@link MutableMetaClass} is
-     * present (EMC install/remove/update). Pure unmodified
-     * {@code MetaClassImpl} pairs never open that walk, so they stay
-     * exact-class. Fan-out is still required for the missing-method case even
-     * when a subtype already has <em>other</em> methods of the same name with
-     * different signatures — a previously unlinked {@code child.m2("")} has no
-     * site to invalidate, but a previously linked miss must re-select.
+     * Bulk is reserved for <em>non-stock</em> MetaClass kinds: not
+     * {@link MetaClassImpl} after adapter unwrap. Stock pairs stay exact-class.
      *
-     * @param type  the class being updated (not {@code null})
      * @param oldMc previous MetaClass (may be {@code null})
      * @param newMc new MetaClass (may be {@code null} on remove)
-     * @return {@code true} if subtype fan-out is required
+     * @return {@code true} if bulk invalidation is required
      */
-    public static boolean needsHierarchyFanOut(
-            final Class<?> type, final MetaClass oldMc, final MetaClass newMc) {
-        if (type.isInterface() || type.isArray()) {
-            return true;
-        }
-        if (isGlobalEmcEnabled()) {
-            return true;
-        }
-        // Exact-only only when BOTH sides are hierarchy-local.
-        return !isHierarchyLocalMetaClass(oldMc) || !isHierarchyLocalMetaClass(newMc);
+    public static boolean needsBulkInvalidation(final MetaClass oldMc, final MetaClass newMc) {
+        return !isStockMetaClass(oldMc) || !isStockMetaClass(newMc);
     }
 
     /**
-     * Whether {@code mc} cannot publish cross-class MOP state into subtype
-     * selection via the live missing-method hierarchy walk (or EMC inheritance).
-     * Hierarchy-local means:
-     * <ul>
-     *   <li>{@code null} (absent / removed), or</li>
-     *   <li>unwrapped {@code MetaClassImpl} that is not an
-     *       {@link ExpandoMetaClass} and reports {@code isModified()==false}.</li>
-     * </ul>
-     * EMC, modified mutable MetaClasses, and unknown MetaClass kinds return
-     * {@code false} so fan-out remains correctness-first.
-     * <p>
-     * Note: a hierarchy-local {@code MetaClassImpl} may still <em>contain</em>
-     * methods snapshotted from an ancestor at construction time; that snapshot
-     * is fixed for the MetaClass instance’s lifetime and is not refreshed by
-     * SwitchPoint retirement. See class javadoc.
+     * Whether {@code mc} is a stock MOP MetaClass for which exact-class
+     * invalidation is sufficient: {@code null}, or unwrapped
+     * {@link MetaClassImpl} (includes EMC and subclasses). Any other kind is
+     * non-stock and triggers bulk invalidation on registry replace.
      *
      * @param mc MetaClass to classify (may be {@code null})
-     * @return {@code true} if a replace involving only this kind needs no fan-out
+     * @return {@code true} if exact-class invalidation is sufficient
      */
-    public static boolean isHierarchyLocalMetaClass(final MetaClass mc) {
+    public static boolean isStockMetaClass(final MetaClass mc) {
         MetaClass current = unwrapMetaClass(mc);
-        if (current == null) {
-            return true;
-        }
-        // EMC always participates in cross-class visibility (even before the
-        // first method marks isModified), so it is never hierarchy-local.
-        if (current instanceof ExpandoMetaClass) {
-            return false;
-        }
-        if (current instanceof MutableMetaClass mutable && mutable.isModified()) {
-            return false;
-        }
-        // Unmodified MetaClassImpl (and non-EMC subclasses with isModified==false).
-        return current instanceof MetaClassImpl;
-    }
-
-    /**
-     * {@code true} when the registry creates {@link ExpandoMetaClass} instances
-     * by default ({@link ExpandoMetaClass#enableGlobally()}).
-     */
-    static boolean isGlobalEmcEnabled() {
-        MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
-        // Registry may be null while GroovySystem is still constructing it.
-        return registry != null
-                && registry.getMetaClassCreationHandler() instanceof ExpandoMetaClassCreationHandle;
-    }
-
-    /**
-     * Whether {@code mc} is (or wraps) an {@link ExpandoMetaClass}.
-     * Wrappers are unwrapped via {@link AdaptingMetaClass#getAdaptee()} or
-     * {@link DelegatingMetaClass#getAdaptee()} ({@code HandleMetaClass}).
-     */
-    static boolean isExpandoMetaClass(final MetaClass mc) {
-        return unwrapMetaClass(mc) instanceof ExpandoMetaClass;
+        return current == null || current instanceof MetaClassImpl;
     }
 
     /**
@@ -422,6 +280,10 @@ public final class IndyInvalidation {
         }
         return null;
     }
+
+    // -------------------------------------------------------------------------
+    // Domain map
+    // -------------------------------------------------------------------------
 
     /**
      * Domain key for a MetaClass (unwrapped adaptee when present).
@@ -467,62 +329,16 @@ public final class IndyInvalidation {
         ClassInfo.getClassInfo(type).collectLiveIndySwitchPoints(out);
     }
 
-    /**
-     * Invalidates SwitchPoints for {@code type} and all loaded classes assignable
-     * from {@code type}. Detach the root domain, then every descendant in
-     * {@link ClassHierarchyIndex}. Batched through
-     * {@link SwitchPoint#invalidateAll(SwitchPoint[])}.
-     *
-     * @param type the root of the invalidation fan-out
-     */
-    public static void invalidateClassHierarchy(final Class<?> type) {
-        List<SwitchPoint> batch = new ArrayList<>();
-        try {
-            collectLiveForClass(type, batch);
-            List<ClassInfo> descendants = new ArrayList<>();
-            ClassHierarchyIndex.collectDescendants(type, descendants);
-            for (ClassInfo info : descendants) {
-                info.collectLiveIndySwitchPoints(batch);
-            }
-        } finally {
-            invalidateBatch(batch);
-        }
-    }
-
-    /**
-     * Detaches and invalidates every live class-level MetaClass / pending domain
-     * for loaded types. Used for category enter/leave and unattributed MetaClass
-     * changes.
-     */
-    public static void invalidateAllLoadedClassSwitchPoints() {
-        List<SwitchPoint> batch = new ArrayList<>();
-        try {
-            for (ClassInfo info : ClassInfo.getAllClassInfo()) {
-                info.collectLiveIndySwitchPoints(batch);
-            }
-        } finally {
-            invalidateBatch(batch);
-        }
-    }
-
-    /**
-     * Invalidates every live class-level MetaClass SwitchPoint. Used when a
-     * MetaClass registry event carries no {@code Class} attribution.
-     */
-    public static void invalidateUnscoped() {
-        invalidateAllLoadedClassSwitchPoints();
-        CLASS_INVALIDATIONS.incrementAndGet();
-        if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
-            LOG.fine("unscoped SwitchPoint invalidation; total=" + CLASS_INVALIDATIONS.get());
-        }
-    }
-
     private static void invalidateBatch(final List<SwitchPoint> batch) {
         if (batch.isEmpty()) {
             return;
         }
         SwitchPoint.invalidateAll(batch.toArray(EMPTY_SWITCH_POINTS));
     }
+
+    // -------------------------------------------------------------------------
+    // Link-time domain resolution and guards
+    // -------------------------------------------------------------------------
 
     /**
      * Resolves the class used for the MetaClass SwitchPoint domain of a receiver.
@@ -543,7 +359,6 @@ public final class IndyInvalidation {
 
     /**
      * Returns the SwitchPoint domain for a MetaClass instance (unwraps adapters).
-     * All MetaClass kinds share the same weak identity map of domains.
      *
      * @param mc MetaClass (must not be {@code null})
      * @return the MetaClass-domain SwitchPoint
@@ -555,6 +370,7 @@ public final class IndyInvalidation {
 
     /**
      * Retires the SwitchPoint domain for {@code mc} (if one was allocated).
+     * Does not bump counters (local domain retire; width policy is separate).
      *
      * @param mc MetaClass (may be {@code null})
      */
@@ -580,8 +396,7 @@ public final class IndyInvalidation {
     /**
      * Returns the SwitchPoint for the given class at link time.
      * Prefers the installed class-level MetaClass domain; if none is installed
-     * yet, uses the ClassInfo pending domain (defineClass-safe — does not create
-     * a MetaClass). First MetaClass install retires the pending domain.
+     * yet, uses the ClassInfo pending domain (defineClass-safe).
      *
      * @param type the class (must not be {@code null})
      * @return the SwitchPoint for monomorphic MOP guards
@@ -597,12 +412,7 @@ public final class IndyInvalidation {
 
     /**
      * Installs a MetaClass SwitchPoint guard on {@code handle}.
-     * MetaClass or category changes that retire that domain cause the site to
-     * take {@code fallback}.
-     * <p>
-     * Public entry for tests and any code outside {@code vmplugin.v8}. Production
-     * call-site linking goes through {@code IndyInterface.applyMopSwitchPoints}
-     * (same {@code guardWithTest} after {@link #classSwitchPointFor(Object)}).
+     * Public entry for tests; production uses {@code IndyInterface.applyMopSwitchPoints}.
      *
      * @param handle   the fast-path handle
      * @param fallback the re-link / fallback handle
@@ -616,7 +426,6 @@ public final class IndyInvalidation {
 
     /**
      * Installs a MetaClass SwitchPoint guard on {@code handle}.
-     * See {@link #guardWithMopSwitchPoints(MethodHandle, MethodHandle, Object)}.
      *
      * @param handle        the fast-path handle
      * @param fallback      the re-link / fallback handle
@@ -628,10 +437,12 @@ public final class IndyInvalidation {
         return classSwitchPointFor(receiverClass).guardWithTest(handle, fallback);
     }
 
+    // -------------------------------------------------------------------------
+    // Stats (optional; tests)
+    // -------------------------------------------------------------------------
+
     /**
-     * Returns the total number of scoped class invalidations
-     * ({@link #invalidateClass(Class)} / {@link #invalidateClassExact(Class)} /
-     * {@link #invalidateForMetaClassChange} / {@link #invalidateUnscoped()} events).
+     * Exact-class invalidation event count ({@link #invalidateClass(Class)}).
      *
      * @return class invalidation count
      */
@@ -640,25 +451,17 @@ public final class IndyInvalidation {
     }
 
     /**
-     * Returns how many class invalidations used hierarchy fan-out.
+     * Non-category process-wide bulk event count
+     * ({@link #invalidateBulk()} / {@link #invalidateUnscoped()}).
      *
-     * @return hierarchy fan-out event count
+     * @return bulk invalidation count
      */
-    public static long hierarchyInvalidationCount() {
-        return HIERARCHY_INVALIDATIONS.get();
+    public static long bulkInvalidationCount() {
+        return BULK_INVALIDATIONS.get();
     }
 
     /**
-     * Returns how many class invalidations were exact-class only.
-     *
-     * @return exact-only event count
-     */
-    public static long exactOnlyInvalidationCount() {
-        return EXACT_ONLY_INVALIDATIONS.get();
-    }
-
-    /**
-     * Returns the total number of category-style bulk invalidations.
+     * Category-style bulk invalidation count ({@link #invalidateCategory()}).
      *
      * @return category invalidation count
      */
@@ -672,7 +475,6 @@ public final class IndyInvalidation {
     public static void resetCountersForTesting() {
         CLASS_INVALIDATIONS.set(0);
         CATEGORY_INVALIDATIONS.set(0);
-        EXACT_ONLY_INVALIDATIONS.set(0);
-        HIERARCHY_INVALIDATIONS.set(0);
+        BULK_INVALIDATIONS.set(0);
     }
 }
