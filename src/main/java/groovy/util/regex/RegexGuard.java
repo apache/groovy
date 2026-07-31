@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
  *
  * assert RegexGuard.matches(/gro+vy/, 'groovy', 200)
  * def m = RegexGuard.matcher(/(\d+)/, 'abc 123', Duration.ofMillis(200))
- * assert m.find() && m.group(1) == '123'
+ * assert m.find() &amp;&amp; m.group(1) == '123'
  *
  * try {
  *     RegexGuard.matches(/(.*,){16}X/, '1,' * 40, 200) // catastrophic backtracking
