@@ -26,7 +26,7 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation projects.groovyContracts
     testImplementation projects.groovySql // SqlInjectionCheckerTest compiles scripts against groovy.sql.Sql
-    testImplementation 'org.jspecify:jspecify:1.0.0'
+    testImplementation 'org.jspecify:jspecify:1.0.1'
 }
 
 groovyLibrary {
