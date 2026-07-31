@@ -1,0 +1,6 @@
+JQuery and JQuery UI Licenses (bundled by the JDK javadoc tool)
+
+The API documentation under html/api is produced by the JDK javadoc
+tool, which bundles its own copies of the JQuery and JQuery UI
+JavaScript libraries. Their MIT licenses are provided by the tool in
+the generated html/api/legal directory (jquery.md and jqueryUI.md).

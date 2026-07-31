@@ -216,6 +216,14 @@ ASM uses a 3-clause BSD license. For details, see licenses/asm-license.txt.
 
 ------------------------------------------------------------------------
 
+commonmark-java License (used by the optional groovy-markdown module
+and by the groovydoc component for markdown processing)
+
+This product bundles the commonmark jar, which is available under a
+"2-clause BSD" license.  For details, see licenses/commonmark-license.txt.
+
+------------------------------------------------------------------------
+
 Hamcrest License (needed when using optional JUnit dependency)
 
 This product bundles the Hamcrest jar, which is available under a
@@ -246,6 +254,22 @@ Details can be found in: licenses/jline3-license.txt
 
 This product bundles several JLine3 jars (optional dependency used with groovysh),
 which are available under a BSD License.  For details, see licenses/jline3-license.txt.
+
+------------------------------------------------------------------------
+
+JNA License (dependency used with groovysh)
+
+This product bundles the JNA jar, which is dual-licensed under the
+Apache License 2.0 and the LGPL v2.1.  It is distributed here under
+the Apache License 2.0, the text of which appears at the top of this file.
+
+------------------------------------------------------------------------
+
+JQuery License (dependency of the optional TestNG dependency, used
+for its report generation)
+
+This product bundles the jquery webjar, which is available under the
+MIT License.  For details, see licenses/jquery-js-license.txt.
 
 ------------------------------------------------------------------------
 
@@ -288,6 +312,15 @@ Eclipse Public License v2.0.  For details, see licenses/junit5-license.txt.
 
 ------------------------------------------------------------------------
 
+MXParser License (dependency of the optional XStream dependency
+used when serializing AST as XML)
+
+This product bundles the MXParser jar, which is available under the
+Indiana University Extreme! Lab Software License, Version 1.2.
+For details, see licenses/mxparser-license.txt.
+
+------------------------------------------------------------------------
+
 normalize.css License
 
 The stylesheet.css file (originally normalize.css) is referenced
@@ -305,6 +338,40 @@ component provide client-side syntax highlighting for code
 snippets in the generated documentation. They are made available
 under a MIT License:
 licenses/prism-license.txt
+
+------------------------------------------------------------------------
+
+Reactive Streams License (dependency of the optional RxJava and
+Project Reactor dependencies)
+
+This product bundles the reactive-streams jar, which is available under
+the MIT No Attribution (MIT-0) License.  For details, see
+licenses/reactive-streams-license.txt.
+
+------------------------------------------------------------------------
+
+SLF4J License (the slf4j-api and jcl-over-slf4j jars are dependencies
+of several optional modules including groovy-testng and Maven-based Grape)
+
+This product bundles the slf4j-api and jcl-over-slf4j jars, which are
+available under the MIT License.  For details, see licenses/slf4j-license.txt.
+
+------------------------------------------------------------------------
+
+Stax2 API License (dependency of the Woodstox library used by the
+optional Maven-based Grape support)
+
+This product bundles the stax2-api jar, which is available under a
+"2-clause BSD" license.  For details, see licenses/stax2-license.txt.
+
+------------------------------------------------------------------------
+
+TreeLayout License (used by groovyConsole for its AST browser
+tree layout)
+
+This product bundles the org.abego.treelayout.core jar, which is
+available under a "3-clause BSD" license.  For details, see
+licenses/treelayout-license.txt.
 
 ------------------------------------------------------------------------
 

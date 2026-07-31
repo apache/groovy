@@ -1,0 +1,6 @@
+MXParser License (dependency of the optional XStream dependency
+used when serializing AST as XML)
+
+This product bundles the MXParser jar, which is available under the
+Indiana University Extreme! Lab Software License, Version 1.2.
+For details, see licenses/mxparser-license.txt.

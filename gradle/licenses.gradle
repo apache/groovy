@@ -28,11 +28,12 @@ tasks.register('updateLicenses') {
     ext.licenseJLine3File = "${projectDir}/subprojects/groovy-groovysh/LICENSE"
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
+    ext.licenseDocsJarFile = "${licensesDir}/LICENSE-DOCSJAR"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
-    outputs.files(licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
-        licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
+    outputs.files(licenseBinZipFile, licenseDocFile, licenseDocsJarFile, licenseJarJarFile,
+        licenseSrcFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
@@ -42,13 +43,23 @@ tasks.register('updateLicenses') {
             include '*-JARJAR*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
-        def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
+        def groovydocFiles = fileTree(licensesDir) {
+            include 'normalize-stylesheet-groovy-groovydoc.txt'
+            include 'prism-groovy-groovydoc.txt'
+        }.sort { it.name }
+        // for the generated-documentation (groovydoc classifier) jars, which
+        // bundle the normalize-derived stylesheet and the prism assets
+        def docsJarFiles = fileTree(licensesDir) {
+            include 'normalize-stylesheet-BINZIP-DOC-SRC.txt'
+            include 'prism-BINZIP-DOC-SRC.txt'
+        }.sort { it.name }
         def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
         def jline3Files = fileTree(licensesDir).include('jline3-BINZIP-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
             (licenseBinZipFile)      : binzipFiles,
             (licenseDocFile)         : docFiles,
+            (licenseDocsJarFile)     : docsJarFiles,
             (licenseJarJarFile)      : jarjarFiles,
             (licenseSrcFile)         : srcFiles,
             (licenseGroovyDocFile)   : groovydocFiles,

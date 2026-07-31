@@ -280,6 +280,12 @@ sonarqube {
 }
 
 
+// The optional feature variants deliberately publish the raw (unshaded) jar
+// as their artifact. It is only reachable through Gradle module metadata by
+// consumers requiring the corresponding capability (e.g.
+// 'org.apache.groovy:groovy-grapes'); Maven consumers only ever see the
+// repackaged jar. The raw jar has been part of the published artifact surface
+// since Groovy 4, so removing it would break capability-based consumers.
 artifacts {
     grapesRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
     xstreamAstRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'

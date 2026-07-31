@@ -166,8 +166,8 @@ tasks.withType(Jar).configureEach { jar ->
         return
     }
     metaInf {
-        // root project provides its own JARJAR license/notice in its jar task
-        if (jar.name in ['jar', 'sourcesJar'] && project != rootProject) {
+        // the root project's main jar provides its own JARJAR license/notice in its jar task
+        if (jar.name in ['jar', 'sourcesJar'] && !(jar.name == 'jar' && project == rootProject)) {
             if (file("${projectDir}/LICENSE").exists()) {
                 from "${projectDir}/LICENSE"
             } else {
@@ -181,6 +181,27 @@ tasks.withType(Jar).configureEach { jar ->
                 from("${rootProject.projectDir}/notices/NOTICE-BASE") {
                     rename 'NOTICE-BASE', 'NOTICE'
                 }
+            }
+        } else if (jar.name == 'groovydocJar') {
+            // generated groovydoc bundles prism assets and a normalize-derived stylesheet
+            from("${rootProject.projectDir}/licenses/LICENSE-DOCSJAR") {
+                rename 'LICENSE-DOCSJAR', 'LICENSE'
+            }
+            from("${rootProject.projectDir}/notices/NOTICE-BASE") {
+                rename 'NOTICE-BASE', 'NOTICE'
+            }
+            into('licenses') {
+                from "${rootProject.projectDir}/licenses/normalize-stylesheet-license.txt"
+                from "${rootProject.projectDir}/licenses/prism-license.txt"
+            }
+        } else if (jar.name == 'javadocJar') {
+            // javadoc output bundles the JDK tool's own JS libraries (jquery etc.)
+            // whose licenses ship in the tool-generated legal/ directory
+            from("${rootProject.projectDir}/licenses/LICENSE-BASE") {
+                rename 'LICENSE-BASE', 'LICENSE'
+            }
+            from("${rootProject.projectDir}/notices/NOTICE-BASE") {
+                rename 'NOTICE-BASE', 'NOTICE'
             }
         }
         from generateReleaseInfo

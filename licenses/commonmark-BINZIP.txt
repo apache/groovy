@@ -1,0 +1,5 @@
+commonmark-java License (used by the optional groovy-markdown module
+and by the groovydoc component for markdown processing)
+
+This product bundles the commonmark jar, which is available under a
+"2-clause BSD" license.  For details, see licenses/commonmark-license.txt.

@@ -118,14 +118,25 @@ distribution {
         }
         into('licenses') {
             from rootProject.file('licenses')
+            // keep in sync with the licenses/*.txt files referenced from LICENSE-BINZIP
             include 'antlr4-license.txt'
             include 'asm-license.txt'
+            include 'commonmark-license.txt'
             include 'hamcrest-license.txt'
-            include 'jline2-license.txt'
+            include 'jline3-license.txt'
+            include 'jquery-js-license.txt'
             include 'jsr166y-license.txt'
             include 'jsr223-license.txt'
+            include 'jsvg-license.txt'
             include 'junit4-license.txt'
             include 'junit5-license.txt'
+            include 'mxparser-license.txt'
+            include 'normalize-stylesheet-license.txt'
+            include 'prism-license.txt'
+            include 'reactive-streams-license.txt'
+            include 'slf4j-license.txt'
+            include 'stax2-license.txt'
+            include 'treelayout-license.txt'
             include 'xstream-license.txt'
         }
     }
@@ -148,9 +159,11 @@ distribution {
         }
         into('licenses') {
             from rootProject.file('licenses')
+            // keep in sync with the licenses/*.txt files referenced from LICENSE-DOC
             include 'asciidoc-style-license.txt'
             include 'jquery-js-license.txt'
             include 'normalize-stylesheet-license.txt'
+            include 'prism-license.txt'
         }
         from rootProject.file("licenses/LICENSE-DOC")
         from rootProject.file("notices/NOTICE-BASE")
@@ -170,7 +183,9 @@ distribution {
                             '**/*.iws',        // used by Intellij IDEA
                             '.settings',       // used by Eclipse
                             '.classpath',      // used by Eclipse
-                            '.gradle'          // used by Gradle
+                            '.gradle',         // used by Gradle
+                            '**/*.class'       // a source release should never bundle bytecode
+                                               // even from stale output dirs in a dirty checkout
                     if (project.projectDir.name == 'performance') {
                         // The dashboard is only for the gh-pages published view
                         // (it bundles third-party JS); it plays no part in
@@ -210,7 +225,8 @@ distribution {
                             '.settings',      // used by Eclipse
                             '.classpath',     // used by Eclipse
                             '.gradle',        // used by Gradle
-                            '*.gpg'           // used by Gradle
+                            '*.gpg',          // used by Gradle
+                            '**/*.class'      // a source release should never bundle bytecode
                 }
             }
         }

@@ -1,0 +1,5 @@
+Stax2 API License (dependency of the Woodstox library used by the
+optional Maven-based Grape support)
+
+This product bundles the stax2-api jar, which is available under a
+"2-clause BSD" license.  For details, see licenses/stax2-license.txt.

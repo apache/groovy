@@ -1,0 +1,6 @@
+Reactive Streams License (dependency of the optional RxJava and
+Project Reactor dependencies)
+
+This product bundles the reactive-streams jar, which is available under
+the MIT No Attribution (MIT-0) License.  For details, see
+licenses/reactive-streams-license.txt.

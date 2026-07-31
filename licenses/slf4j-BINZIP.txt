@@ -1,0 +1,5 @@
+SLF4J License (the slf4j-api and jcl-over-slf4j jars are dependencies
+of several optional modules including groovy-testng and Maven-based Grape)
+
+This product bundles the slf4j-api and jcl-over-slf4j jars, which are
+available under the MIT License.  For details, see licenses/slf4j-license.txt.
