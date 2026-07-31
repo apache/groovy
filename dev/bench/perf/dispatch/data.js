@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785397938660,
+  "lastUpdate": 1785486992850,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -1336,6 +1336,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 875,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1496,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "b30bd9951c944e6caedf35408ab79c26ebfc238c",
+          "message": "minor refactor: slight additions to fat-free benchmark",
+          "timestamp": "2026-07-31T03:09:31Z",
+          "url": "https://github.com/apache/groovy/commit/b30bd9951c944e6caedf35408ab79c26ebfc238c"
+        },
+        "date": 1785486991919,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 3993,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 451,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 873,
             "unit": "classes"
           },
           {
