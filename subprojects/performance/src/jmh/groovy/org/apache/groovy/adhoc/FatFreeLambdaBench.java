@@ -58,6 +58,13 @@ import java.util.concurrent.TimeUnit;
  * and {@code count} (a reducer that builds no collection — its {@code Predicate}
  * / {@code BiPredicate}+param overloads landed in the GROOVY-12054 follow-up).
  * <p>
+ * Three further families give slight coverage to the fat-free twins added for
+ * non-predicate shapes and array receivers in the follow-up rollout, each with a
+ * compact {@code A/C/D/E} subset (the {@code rcurry} / {@code curryWith} variants
+ * are predicate-with-param specific and do not apply): {@code collect} (mapping,
+ * GROOVY-12215), {@code inject} (fold/reduce, GROOVY-12216), and
+ * {@code arrayCollect} (the array-receiver mapping twin, GROOVY-12218).
+ * <p>
  * All variants perform a full traversal (prefixes never match) and identical
  * per-element work; only the closure / lambda machinery differs.  Prefix
  * values rotate through a pre-built array so capture sites must keep
@@ -84,6 +91,7 @@ public class FatFreeLambdaBench {
     private int size;
 
     private List<String> data;
+    private String[] dataArray;
     private String[] prefixes;
     private int idx;
 
@@ -93,6 +101,8 @@ public class FatFreeLambdaBench {
         for (int i = 0; i < size; i++) {
             data.add("word_" + i);
         }
+        // Same elements as an Object[] receiver for the arrayCollect family.
+        dataArray = data.toArray(new String[0]);
         // Prefixes that never match any element — forces full traversal in every variant.
         // Eight values so the rotate index is a cheap mask-and-increment.
         prefixes = new String[]{"z_4", "z_70", "z_300", "z_99", "z_500", "z_7", "z_888", "z_1"};
@@ -134,4 +144,25 @@ public class FatFreeLambdaBench {
     @Benchmark public Number countF_sharedRcurry()      { return FatFreeLambda.countSharedRcurry(data, nextPrefix()); }
     @Benchmark public Number countG_lambdasCurryWith()  { return FatFreeLambda.countLambdasCurryWith(data, nextPrefix()); }
     @Benchmark public Number countH_closuresCurryWith() { return FatFreeLambda.countClosuresCurryWith(data, nextPrefix()); }
+
+    // ----- collect (mapping twin; GROOVY-12215) — element -> length -----------------
+
+    @Benchmark public List<Integer> collectA_captureClosure()   { return FatFreeLambda.collectCaptureClosure(data); }
+    @Benchmark public List<Integer> collectC_functionLambda()   { return FatFreeLambda.collectFunctionLambda(data); }
+    @Benchmark public List<Integer> collectD_functionMethodRef(){ return FatFreeLambda.collectFunctionMethodRef(data); }
+    @Benchmark public List<Integer> collectE_baseline()         { return FatFreeLambda.collectBaseline(data); }
+
+    // ----- inject (fold/reduce twin; GROOVY-12216) — sum of lengths -----------------
+
+    @Benchmark public Integer injectA_captureClosure()     { return FatFreeLambda.injectCaptureClosure(data); }
+    @Benchmark public Integer injectC_biFunctionLambda()   { return FatFreeLambda.injectBiFunctionLambda(data); }
+    @Benchmark public Integer injectD_biFunctionMethodRef(){ return FatFreeLambda.injectBiFunctionMethodRef(data); }
+    @Benchmark public Integer injectE_baseline()           { return FatFreeLambda.injectBaseline(data); }
+
+    // ----- arrayCollect (array-receiver mapping twin; GROOVY-12218) — element -> length ---
+
+    @Benchmark public List<Integer> arrayCollectA_captureClosure()    { return FatFreeLambda.arrayCollectCaptureClosure(dataArray); }
+    @Benchmark public List<Integer> arrayCollectC_functionLambda()    { return FatFreeLambda.arrayCollectFunctionLambda(dataArray); }
+    @Benchmark public List<Integer> arrayCollectD_functionMethodRef() { return FatFreeLambda.arrayCollectFunctionMethodRef(dataArray); }
+    @Benchmark public List<Integer> arrayCollectE_baseline()          { return FatFreeLambda.arrayCollectBaseline(dataArray); }
 }

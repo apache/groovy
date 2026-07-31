@@ -23,7 +23,9 @@ import groovy.transform.CompileStatic
 import org.apache.groovy.util.Closures
 import org.apache.groovy.util.Lambdas
 
+import java.util.function.BiFunction
 import java.util.function.BiPredicate
+import java.util.function.Function
 
 /**
  * Helper class for benchmarking the "fat-free lambda" idioms that landed in
@@ -56,6 +58,21 @@ import java.util.function.BiPredicate
  * references (C/D) are emitted as static methods and shared as singletons by
  * {@code LambdaMetafactory} (the GROOVY-11905 optimisation), giving zero
  * per-call lambda allocation.
+ * <p>
+ * Three further families give slight coverage to the fat-free twins added for
+ * non-predicate shapes and array receivers in the follow-up rollout. Each keeps
+ * a compact {@code A/C/D/E} variant set (capturing closure literal, singleton
+ * functional-interface lambda, singleton method reference, hand-written loop) —
+ * the {@code rcurry} / {@code curryWith} variants above are predicate-with-param
+ * specific and do not apply to these single-argument shapes:
+ * <ul>
+ *   <li><b>collect</b> — {@code collect(Iterable, Function)} mapping twin from
+ *       <b>GROOVY-12215</b> (maps each element to its length);</li>
+ *   <li><b>inject</b> — {@code inject(Iterable, init, BiFunction)} fold/reduce
+ *       twin from <b>GROOVY-12216</b> (folds the element lengths into a total);</li>
+ *   <li><b>arrayCollect</b> — the {@code collect(E[], Function)} array-receiver
+ *       twin from <b>GROOVY-12218</b> (same mapping over an {@code Object[]}).</li>
+ * </ul>
  */
 @CompileStatic
 class FatFreeLambda {
@@ -215,5 +232,97 @@ class FatFreeLambda {
     static Number countClosuresCurryWith(List<String> data, String prefix) {
         Closure<Boolean> c = Closures.curryWith(STARTS_WITH, prefix)
         data.count(c)
+    }
+
+    // ===== collect family (mapping — GROOVY-12215 collect(Iterable, Function) twin) =====
+    // Maps each element to its length; a single-argument shape, so only the core
+    // A/C/D/E contrast applies (no rcurry / curryWith param to carry).
+
+    /** A: capturing closure literal — the classic collect idiom. */
+    @CompileDynamic
+    static List<Integer> collectCaptureClosure(List<String> data) {
+        data.collect { it.length() }
+    }
+
+    /** C: real DGM collect(Function) + stateless Function lambda (singleton via indy). */
+    static List<Integer> collectFunctionLambda(List<String> data) {
+        Function<String, Integer> f = (String s) -> s.length()
+        data.collect(f)
+    }
+
+    /** D: real DGM collect(Function) + unbound method reference (singleton via indy). */
+    static List<Integer> collectFunctionMethodRef(List<String> data) {
+        Function<String, Integer> ref = String::length
+        data.collect(ref)
+    }
+
+    /** E: baseline plain for-loop — lower bound. */
+    static List<Integer> collectBaseline(List<String> data) {
+        List<Integer> out = new ArrayList<>(data.size())
+        for (String s : data) out.add(s.length())
+        return out
+    }
+
+    // ===== inject family (fold/reduce — GROOVY-12216 inject(Iterable, init, BiFunction) twin) =====
+    // Folds the element lengths into a running total starting at 0. The initial-value
+    // form takes a BiFunction (acc, element) -> acc; A uses the classic inject(init, Closure).
+
+    /** A: capturing closure literal — the classic inject idiom. */
+    @CompileDynamic
+    static Integer injectCaptureClosure(List<String> data) {
+        data.inject(0) { acc, s -> acc + s.length() }
+    }
+
+    /** C: real DGM inject(init, BiFunction) + stateless BiFunction lambda (singleton via indy). */
+    static Integer injectBiFunctionLambda(List<String> data) {
+        BiFunction<Integer, String, Integer> f = (Integer acc, String s) -> acc + s.length()
+        data.inject(0, f)
+    }
+
+    /** D: real DGM inject(init, BiFunction) + method reference to a static folder (singleton via indy). */
+    static Integer injectBiFunctionMethodRef(List<String> data) {
+        BiFunction<Integer, String, Integer> ref = FatFreeLambda::addLength
+        data.inject(0, ref)
+    }
+
+    /** Static folding step referenced by {@link #injectBiFunctionMethodRef}. */
+    static Integer addLength(Integer acc, String s) {
+        acc + s.length()
+    }
+
+    /** E: baseline plain for-loop — lower bound. */
+    static Integer injectBaseline(List<String> data) {
+        int acc = 0
+        for (String s : data) acc += s.length()
+        return acc
+    }
+
+    // ===== arrayCollect family (GROOVY-12218 collect(E[], Function) array-receiver twin) =====
+    // The same mapping as the collect family but on an Object[] receiver, exercising
+    // the ArrayGroovyMethods fat-free twin added for arrays.
+
+    /** A: capturing closure literal — the classic array collect idiom. */
+    @CompileDynamic
+    static List<Integer> arrayCollectCaptureClosure(String[] data) {
+        data.collect { it.length() }
+    }
+
+    /** C: real array-DGM collect(Function) + stateless Function lambda (singleton via indy). */
+    static List<Integer> arrayCollectFunctionLambda(String[] data) {
+        Function<String, Integer> f = (String s) -> s.length()
+        data.collect(f)
+    }
+
+    /** D: real array-DGM collect(Function) + unbound method reference (singleton via indy). */
+    static List<Integer> arrayCollectFunctionMethodRef(String[] data) {
+        Function<String, Integer> ref = String::length
+        data.collect(ref)
+    }
+
+    /** E: baseline plain for-loop — lower bound. */
+    static List<Integer> arrayCollectBaseline(String[] data) {
+        List<Integer> out = new ArrayList<>(data.length)
+        for (String s : data) out.add(s.length())
+        return out
     }
 }
