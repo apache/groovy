@@ -513,13 +513,36 @@ public class ClassInfo implements Finalizable {
         return null;
     }
 
+    /**
+     * Creates or returns the class-level MetaClass while holding {@link #lock}.
+     * Callers must already hold the lock ({@link #getMetaClass()}).
+     * <p>
+     * Mirrors {@link #getMetaClassForClass()} bootstrap safety: when
+     * {@link GroovySystem#getMetaClassRegistry()} is not yet published, a
+     * cached weak MetaClass is returned if present; otherwise creation is
+     * impossible and an {@link IllegalStateException} is thrown rather than
+     * an NPE on a null registry (Sonar javabugs:S2259 / PR #2736).
+     */
     private MetaClass getMetaClassUnderLock() {
         MetaClass answer = getStrongMetaClass();
-        if (answer!=null) return answer;
+        if (answer != null) {
+            return answer;
+        }
 
         answer = getWeakMetaClass();
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        MetaClassRegistry.MetaClassCreationHandle mccHandle = metaClassRegistry.getMetaClassCreationHandler();
+        // Same bootstrap window as getMetaClassForClass: registry may be null
+        // while GroovySystem is still initializing.
+        if (metaClassRegistry == null) {
+            if (answer != null) {
+                return answer;
+            }
+            throw new IllegalStateException(
+                    "MetaClassRegistry is not yet initialized; cannot create MetaClass for "
+                            + getTheClass());
+        }
+        MetaClassRegistry.MetaClassCreationHandle mccHandle =
+                metaClassRegistry.getMetaClassCreationHandler();
 
         if (isValidWeakMetaClass(answer, mccHandle)) {
             return answer;
@@ -536,16 +559,14 @@ public class ClassInfo implements Finalizable {
         return answer;
     }
 
-    private static boolean isValidWeakMetaClass(MetaClass metaClass) {
-        return isValidWeakMetaClass(metaClass, GroovySystem.getMetaClassRegistry().getMetaClassCreationHandler());
-    }
-
     /**
      * if EMC.enableGlobally() is OFF, return whatever the cached answer is.
      * but if EMC.enableGlobally() is ON and the cached answer is not an EMC, come up with a fresh answer
      */
     private static boolean isValidWeakMetaClass(MetaClass metaClass, MetaClassRegistry.MetaClassCreationHandle mccHandle) {
-        if(metaClass==null) return false;
+        if (metaClass == null) {
+            return false;
+        }
         boolean enableGloballyOn = (mccHandle instanceof ExpandoMetaClassCreationHandle);
         boolean cachedAnswerIsEMC = (metaClass instanceof ExpandoMetaClass);
         return (!enableGloballyOn || cachedAnswerIsEMC);
