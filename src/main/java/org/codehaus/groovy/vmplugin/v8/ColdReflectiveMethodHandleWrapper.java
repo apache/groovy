@@ -21,7 +21,9 @@ package org.codehaus.groovy.vmplugin.v8;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -48,10 +50,9 @@ import java.lang.reflect.Modifier;
  * hot path unchanged.
  * <p>
  * The plain-Java validity checks in {@link #isValidFor} mirror the guards the
- * full chain would install: switch-point freshness (which also covers
- * category enter/leave, as those invalidate the switch point), exact argument
- * classes (at least as strict as the chain's same-class guards), and
- * metaclass identity for {@code GroovyObject} receivers.
+ * full chain would install: per-class SwitchPoint freshness (GROOVY-12191;
+ * category enter/leave bulk-invalidates class SwitchPoints), exact argument
+ * classes, and metaclass identity for {@code GroovyObject} receivers.
  */
 class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
 
@@ -63,7 +64,7 @@ class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
     final Boolean thisCall;
     final Boolean spreadCall;
     private final MetaClass selectionMetaClass;
-    private final SwitchPoint validity;
+    private final SwitchPoint classValidity;
     private final Class<?>[] argClasses;
     private final MethodHandle reflectiveHandle;
     /**
@@ -76,7 +77,7 @@ class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
 
     private ColdReflectiveMethodHandleWrapper(MetaMethod method, CacheableCallSite callSite, Class<?> sender,
             String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall,
-            MetaClass selectionMetaClass, SwitchPoint validity, Class<?>[] argClasses) {
+            MetaClass selectionMetaClass, SwitchPoint classValidity, Class<?>[] argClasses) {
         super(null, null, method, true);
         this.callSite = callSite;
         this.sender = sender;
@@ -86,7 +87,7 @@ class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
         this.thisCall = thisCall;
         this.spreadCall = spreadCall;
         this.selectionMetaClass = selectionMetaClass;
-        this.validity = validity;
+        this.classValidity = classValidity;
         this.argClasses = argClasses;
         this.reflectiveHandle = IndyInterface.COLD_REFLECTIVE_INVOKER.bindTo(this);
     }
@@ -112,7 +113,9 @@ class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
      * @return {@code true} if the cached selection is still valid for them
      */
     boolean isValidFor(Object[] arguments) {
-        if (validity.hasBeenInvalidated()) return false;
+        if (classValidity != null && classValidity.hasBeenInvalidated()) {
+            return false;
+        }
         Class<?>[] classes = argClasses;
         if (arguments.length != classes.length) return false;
         for (int i = 0; i < classes.length; i++) {
@@ -152,8 +155,10 @@ class ColdReflectiveMethodHandleWrapper extends MethodHandleWrapper {
             if (a instanceof Wrapper) return null; // cast markers need the full coercion path
             argClasses[i] = (a == null) ? null : a.getClass();
         }
+        Object receiver = arguments[0];
+        SwitchPoint classSp = ClassInfo.getClassInfo(IndyInvalidation.switchPointClassFor(receiver)).getIndySwitchPoint();
         return new ColdReflectiveMethodHandleWrapper(cm, callSite, sender, methodName, callID,
-                safeNavigation, thisCall, spreadCall, mc, IndyInterface.switchPoint, argClasses);
+                safeNavigation, thisCall, spreadCall, mc, classSp, argClasses);
     }
 
     /**

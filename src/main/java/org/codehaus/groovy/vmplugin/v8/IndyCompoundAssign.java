@@ -146,8 +146,8 @@ public final class IndyCompoundAssign {
         Class<?> ac = (arg == null) ? null : arg.getClass();
         MethodHandle test = MethodHandles.insertArguments(GUARD, 0, rc, ac);
         MethodHandle guarded = MethodHandles.guardWithTest(test, invoke, elseTarget);
-        // a metaclass change invalidates the site, exactly as for a normal indy call.
-        guarded = IndyInterface.switchPoint.guardWithTest(guarded, elseTarget);
+        // Per-class SwitchPoint, same domain as a normal indy call (GROOVY-12191).
+        guarded = IndyInterface.applyMopSwitchPoints(guarded, elseTarget, receiver);
 
         // Per-instance metaclasses make a class-keyed cache unsound, so mark such
         // shapes uncacheable (the wrapper is still used for the current call) —

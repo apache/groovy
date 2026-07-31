@@ -100,7 +100,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.unw
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG_ENABLED;
-import static org.codehaus.groovy.vmplugin.v8.IndyInterface.switchPoint;
+import static org.codehaus.groovy.vmplugin.v8.IndyInterface.applyMopSwitchPoints;
 
 /**
  * Base state holder for invokedynamic method, property, constructor, and cast selection.
@@ -1283,9 +1283,11 @@ public abstract class Selector {
                 }
             }
 
-            // handle constant metaclass and category changes
-            handle = switchPoint.guardWithTest(handle, fallback);
-            if (LOG_ENABLED) LOG.info("added switch point guard");
+            // Per-class MetaClass SwitchPoint (GROOVY-12191). Category enter/leave
+            // bulk-invalidates class SwitchPoints so sites re-link without a second
+            // hot-path guard.
+            handle = applyMopSwitchPoints(handle, fallback, receiver);
+            if (LOG_ENABLED) LOG.info("added class switch point guard");
 
             java.util.function.Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
@@ -1444,7 +1446,8 @@ public abstract class Selector {
      * ({@code arguments[0]} is the receiver). The result has type
      * {@code callSite.type()}. Guard and switch-point wrapping are intentionally
      * omitted — the caller (compound-assignment) applies its own per-shape guard
-     * and shares the global MOP {@link IndyInterface#switchPoint}. The caller must
+     * and the scoped per-class MOP SwitchPoint (see
+     * {@link org.apache.groovy.runtime.indy.IndyInvalidation}). The caller must
      * have already established that {@code methodName} resolves for this receiver
      * (e.g. via {@code respondsTo}); this routes the actual invocation through the
      * same selection, coercion and wrapping path as a normal call.

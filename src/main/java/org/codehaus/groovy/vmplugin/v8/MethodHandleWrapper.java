@@ -112,21 +112,35 @@ class MethodHandleWrapper {
     }
 
     /**
-     * Returns the sentinel wrapper used when no cacheable handle is available.
+     * Returns the PIC sentinel used when a selection must not be stored under a
+     * receiver-class cache key ({@code canSetTarget == false}).
+     * <p>
+     * Renamed from the historical {@code getNullMethodHandleWrapper} name: the
+     * value is not “null work”, it is the deliberate “do not class-key-cache
+     * this shape” marker consumed by {@code fromCacheHandle} (GROOVY-12191).
      *
-     * @return the null sentinel wrapper
+     * @return the uncacheable PIC sentinel (identity-comparable singleton)
      */
-    public static MethodHandleWrapper getNullMethodHandleWrapper() {
-        return NullMethodHandleWrapper.INSTANCE;
+    public static MethodHandleWrapper getUncacheablePicSentinel() {
+        return UncacheablePicSentinel.INSTANCE;
     }
 
-    private static class NullMethodHandleWrapper extends MethodHandleWrapper {
-        /**
-         * Shared sentinel wrapper representing the absence of a reusable method handle.
-         */
-        public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper();
+    /**
+     * @deprecated use {@link #getUncacheablePicSentinel()}
+     */
+    @Deprecated
+    public static MethodHandleWrapper getNullMethodHandleWrapper() {
+        return getUncacheablePicSentinel();
+    }
 
-        private NullMethodHandleWrapper() {
+    /**
+     * Shared sentinel wrapper: not a real handle, only a PIC marker for
+     * uncacheable receiver shapes (per-instance MetaClass, spread-call, …).
+     */
+    private static final class UncacheablePicSentinel extends MethodHandleWrapper {
+        static final UncacheablePicSentinel INSTANCE = new UncacheablePicSentinel();
+
+        private UncacheablePicSentinel() {
             super(null, null, null, false);
         }
     }
