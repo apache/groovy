@@ -19,26 +19,12 @@
 package groovy.console.ui
 
 import junit.framework.TestCase
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-import static groovy.test.GroovyAssert.isAtLeastJdk
-import static org.junit.Assume.assumeTrue
-
 @RunWith(JUnit4)
 class HistoryRecordGetTextToRunTests extends TestCase {
-
-    @Before
-    void setUp() {
-        // javax.swing.JApplet was removed in JDK 26 (JEP 504); running scripts through
-        // Console introspection here pulls it in, so skip on JDK 26+. Console retains its
-        // deprecated run(JApplet) method for backwards compatibility; later Groovy versions
-        // remove it (GROOVY-11912) and re-enable these tests.
-        assumeTrue('javax.swing.JApplet was removed in JDK 26; Console cannot be introspected there', !isAtLeastJdk('26'))
-    }
-
     @Test
     void testImport() {
         assert java.text.SimpleDateFormat == runSelected('import java.text.SimpleDateFormat', 'return SimpleDateFormat')
