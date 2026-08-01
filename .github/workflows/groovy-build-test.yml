@@ -320,8 +320,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - jdk-url: "https://download.java.net/java/early_access/jdk27/27/GPL/openjdk-27-ea+27_linux-x64_bin.tar.gz"
-            jdk-version: "27.0.0-ea.27"
+          - jdk-url: "https://download.java.net/java/early_access/jdk27/27/GPL/openjdk-27-ea33_linux-x64_bin.tar.gz"
+            jdk-version: "27.0.0-ea.33"
     runs-on: ubuntu-latest
     steps:
       - name: "📥 Checkout repository"
