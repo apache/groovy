@@ -247,23 +247,31 @@ abstract class RepackageJarTask extends ShadowJar {
         // Fixed timestamp for reproducible builds (matches historical packaging).
         String tstamp = Date.parse('yyyy-MM-dd HH:mm', '1980-02-01 00:00').time.toString()
 
-        // Re-add untouched entries from the input jar without relocation.
-        if (untouchedFiles) {
-            ant.jar(destfile: out, index: false, modificationtime: tstamp, update: true) {
+        // Re-add untouched entries from the input jar without relocation and generate the
+        // Jar index (META-INF/INDEX.LIST). Both happen in a single update-in-place pass:
+        // each ant update renames the artefact aside and rewrites it, so a second pass is
+        // pure overhead — and on Windows another chance to trip over a stray file handle.
+        ant.jar(destfile: out, index: true, modificationtime: tstamp, update: true) {
+            if (untouchedFiles) {
                 zipfileset(src: inputJar.get().asFile, includes: untouchedFiles.join(','))
             }
         }
 
-        // Generate Jar index (META-INF/INDEX.LIST).
-        ant.jar(destfile: out, index: true, modificationtime: tstamp, update: true)
-
         if (generateOsgiManifest && osgiExtension != null) {
             File manifestFile = new File(temporaryDir, 'MANIFEST.MF')
+            // bnd (via the legacy osgi plugin) never closes its Analyzer, so it keeps an open
+            // handle on every jar it reads. On Windows that blocks the rename-to-temp which
+            // ant performs for update:true, so analyse a throwaway copy rather than the
+            // artefact we are about to update. The name must be unique per run: a fixed one
+            // would still be locked by the previous run's leak. See GROOVY-12199.
+            File analysisJar = new File(temporaryDir, "${out.name}.${Integer.toHexString(UUID.randomUUID().hashCode())}.tmp")
+            analysisJar.bytes = out.bytes
+            analysisJar.deleteOnExit()
             String bundleSymbolicName = projectName
             def mf = osgiExtension.osgiManifest {
                 symbolicName = bundleSymbolicName
                 instruction 'Import-Package', '*;resolution:=optional'
-                classesDir = out
+                classesDir = analysisJar
             }
             for (Action<? super Manifest> tweak : manifestTweaks) {
                 tweak.execute(mf)
