@@ -406,8 +406,8 @@ public class ProxyGenerator {
             this.methods = methods;
             this.emptyMethods = emptyMethods;
             this.useDelegate = useDelegate;
-            final int interfaceCount = interfaces.length;
             if (interfaces != null) {
+                final int interfaceCount = interfaces.length;
                 Class[] interfacesCopy = new Class[interfaceCount];
                 System.arraycopy(interfaces, 0, interfacesCopy, 0, interfaceCount);
                 Arrays.sort(interfacesCopy, INTERFACE_COMPARATOR);
