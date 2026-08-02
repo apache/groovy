@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785569855704,
+  "lastUpdate": 1785656409714,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -3998,6 +3998,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 461.6233333333333,
             "range": "±24.64",
+            "unit": "ms",
+            "extra": "5.0.7"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "id": "544c016eb215eae49075cc491a3397b1cea6dbef",
+          "message": "Avoid potential NPE",
+          "timestamp": "2026-08-02T06:28:03Z",
+          "url": "https://github.com/apache/groovy/commit/544c016eb215eae49075cc491a3397b1cea6dbef"
+        },
+        "date": 1785656407221,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 540.31,
+            "range": "±24.3",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 632.7433333333333,
+            "range": "±212.56",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 585.35,
+            "range": "±148.1",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 471.4866666666667,
+            "range": "±24.76",
             "unit": "ms",
             "extra": "5.0.7"
           }
