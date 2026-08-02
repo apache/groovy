@@ -7607,7 +7607,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through the Iterator transforming items using the supplied closure
+     * Lazily iterates through the Iterator transforming items using the supplied closure
      * and finding any non-null results.
      * <p>
      * Example:
@@ -7626,6 +7626,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         @DelegatesTo(genericTypeIndex = 0)
         @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> filteringTransform) {
         return new FindResultsIterator<>(self, filteringTransform);
+    }
+
+    /**
+     * Lazily iterates through the Iterator finding any non-null results.
+     * <p>
+     * Example:
+     * <pre class="language-groovy groovyTestCase">
+     * def items = [1, null, 'foo']
+     * assert items.iterator().findingResults().toList() == [1, 'foo']
+     * </pre>
+     *
+     * @param self               an Iterator
+     * @return an iterator for the non-null values
+     * @since 6.0.0
+     */
+    public static <T, U> Iterator<T> findingResults(Iterator<U> self) {
+        return findingResults(self, Closure.IDENTITY);
     }
 
     /**
