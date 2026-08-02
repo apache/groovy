@@ -18,10 +18,12 @@
  */
 package groovy.util
 
+import org.apache.groovy.util.HiddenClassDefiner
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static org.junit.jupiter.api.Assertions.*
 
 class ProxyGeneratorAdapterTest {
     @Test
@@ -35,7 +37,7 @@ class ProxyGeneratorAdapterTest {
 
     @Test
     void testShouldCreateProxyWithArrayDelegate() {
-        def adapter = new ProxyGeneratorAdapter([:], Map$Entry, [Map$Entry] as Class[], null, false, String[])
+        def adapter = new ProxyGeneratorAdapter([:], Map.Entry, [Map.Entry] as Class[], null, false, String[])
         assert adapter.proxyName() =~ /String_array\d+_groovyProxy/
     }
 
@@ -282,5 +284,136 @@ class ProxyGeneratorAdapterTest {
         proxy.run()
         proxy.run()
         assert calls == 2
+    }
+
+    // -------------------------------------------------------------------------
+    // Hidden-class-specific tests (since Groovy 6.0 / JEP 371)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Concrete abstract superclasses only reference types visible from the
+     * host loader, so the hidden nestmate path must succeed when enabled.
+     */
+    @Test
+    void testProxyIsDefinedAsHiddenClass() {
+        if (!HiddenClassDefiner.isEnabled()) return
+
+        def map = ['bar': { }]
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
+        assertTrue(adapter.isProxyHidden(),
+            'Concrete-super proxy must be a hidden class when hidden classes are enabled')
+        assert adapter.proxy(map) instanceof Bar
+    }
+
+    /**
+     * Interface aggregates (Object super + user interfaces, no typed delegate)
+     * must stay <em>visible</em>: MockFor/StubFor re-wrap them and need a
+     * nameable binary type for the {@code $delegate} field.
+     */
+    @Test
+    void testInterfaceAggregateIsNotHidden() {
+        if (!HiddenClassDefiner.isEnabled()) return
+
+        def map = [:]
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(
+                map, Object, [Iterator] as Class[], this.class.classLoader, false, null)
+        assertFalse(adapter.isProxyHidden(),
+            'Interface aggregates must remain nameable for MockFor re-wrapping')
+        def obj = adapter.proxy(map)
+        assert obj instanceof Iterator
+        assertFalse(obj.getClass().isHidden())
+    }
+
+    /**
+     * A proxy defined as a hidden class must report {@link Class#isHidden()} as
+     * {@code true} and must not be discoverable via {@code Class.forName()}.
+     */
+    @Test
+    void testHiddenProxyIsNotDiscoverableByName() {
+        if (!HiddenClassDefiner.isEnabled()) return
+
+        def map = ['bar': { }]
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
+        if (!adapter.isProxyHidden()) return
+
+        Class<?> proxyCls = adapter.proxy(map).getClass()
+        assertTrue(proxyCls.isHidden(), 'Proxy class must report isHidden() == true')
+        // Non-discoverability: the binary-name prefix (before '/') must not load
+        String binaryPrefix = proxyCls.name.substring(0, proxyCls.name.indexOf('/'))
+        assertThrows(ClassNotFoundException) {
+            Class.forName(binaryPrefix)
+        }
+        assertThrows(ClassNotFoundException) {
+            proxyCls.classLoader.loadClass(binaryPrefix)
+        }
+    }
+
+    /**
+     * MockFor-style re-wrap: interface aggregate (visible) then a delegating
+     * proxy whose {@code $delegate} field names that class. Must not throw
+     * during class definition (the original regression for hidden proxies).
+     */
+    @Test
+    void testDelegatingProxyOverInterfaceAggregate() {
+        def closures = [hasNext: { false }, next: { null }]
+        def aggregateAdapter = new ProxyGeneratorAdapter(
+                closures, Object, [Iterator] as Class[], this.class.classLoader, false, null)
+        def aggregate = aggregateAdapter.proxy(closures)
+        assert aggregate instanceof Iterator
+        assertFalse(aggregate.getClass().isHidden())
+
+        def wrapAdapter = new ProxyGeneratorAdapter(
+                closures, Object, [Iterator] as Class[],
+                aggregate.getClass().classLoader, false, aggregate.getClass())
+        def wrapped = wrapAdapter.delegatingProxy(aggregate, closures)
+        assert wrapped instanceof Iterator
+        assert !wrapped.hasNext()
+    }
+
+    /**
+     * A hidden proxy must implement the same interfaces and expose the same
+     * method behaviour as a visible (fallback) proxy.
+     */
+    @Test
+    void testHiddenProxyBehaviourIsIdenticalToVisibleProxy() {
+        def x = null
+        def map = ['bar': { x = 'HELLO_HIDDEN' }]
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
+        def obj = adapter.proxy(map)
+
+        assert obj instanceof GroovyObject
+        assert obj instanceof Bar
+        assert x == null
+        obj.bar()
+        assert x == 'HELLO_HIDDEN'
+        // Bar is loadable from this test's class loader → hidden path preferred
+        if (HiddenClassDefiner.isEnabled()) {
+            assertTrue(adapter.isProxyHidden())
+            assertTrue(obj.getClass().isHidden())
+        }
+    }
+
+    /**
+     * Proxies that extend a user type must still work: the nest host must be
+     * the user type (or another type sharing its ClassLoader), not a Groovy-core
+     * class whose loader cannot see the user type. Covered end-to-end by
+     * {@code testShouldNotThrowVerifyErrorBecauseOfStackSize} and
+     * {@code testTraitFromDifferentClassloader}; this focuses on a local type.
+     */
+    @Test
+    void testProxyOverUserSuperclassRemainsFunctional() {
+        def called = false
+        def map = ['bar': { called = true }]
+        ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
+        def obj = adapter.proxy(map)
+        assert obj instanceof Bar
+        obj.bar()
+        assert called
+        if (HiddenClassDefiner.isEnabled()) {
+            assertTrue(adapter.isProxyHidden())
+            assertTrue(obj.getClass().isHidden())
+            // Nest host is Bar (or its nest host), not a Groovy-core class alone
+            assertEquals(Bar.nestHost, obj.getClass().nestHost)
+        }
     }
 }
