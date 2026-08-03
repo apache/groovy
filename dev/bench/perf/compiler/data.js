@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785656409714,
+  "lastUpdate": 1785744999862,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -4048,6 +4048,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 471.4866666666667,
             "range": "±24.76",
+            "unit": "ms",
+            "extra": "5.0.7"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "7a34d4507db3a588e9ae413231f26ba4b564355a",
+          "message": "GROOVY-12225: STC: property access to a record component fails for precompiled records",
+          "timestamp": "2026-08-03T03:21:41Z",
+          "url": "https://github.com/apache/groovy/commit/7a34d4507db3a588e9ae413231f26ba4b564355a"
+        },
+        "date": 1785744960578,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 548.51,
+            "range": "±23.56",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 661.0266666666666,
+            "range": "±215.27",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 579.0833333333333,
+            "range": "±143.87",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 484.8666666666666,
+            "range": "±23.34",
             "unit": "ms",
             "extra": "5.0.7"
           }
