@@ -906,12 +906,14 @@ public class CharBuf extends Writer implements CharSequence {
                             break;
 
                         case 'u':
-                            if (index + 4 < to) {
-                                String hex = new String(chars, index + 1, 4);
-                                char unicode = (char) Integer.parseInt(hex, 16);
-                                buffer[location++] = unicode;
-                                index += 4;
+                            if (index + 4 >= to) {
+                                throw new JsonException("Unable to decode string");
                             }
+                            buffer[location++] = (char) (hexToNibble(chars[index + 1]) << 12
+                                    | hexToNibble(chars[index + 2]) << 8
+                                    | hexToNibble(chars[index + 3]) << 4
+                                    | hexToNibble(chars[index + 4]));
+                            index += 4;
                             break;
 
                         default:
@@ -929,5 +931,12 @@ public class CharBuf extends Writer implements CharSequence {
         this.location = location;
 
         return this;
+    }
+
+    private static int hexToNibble(final char c) {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        throw new JsonException("Unable to decode string");
     }
 }
