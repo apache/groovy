@@ -21,8 +21,10 @@ package org.codehaus.groovy.runtime;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+
 
 /**
  * A per-class table of compiler-generated dispatch targets, reached by a compact
@@ -115,7 +117,11 @@ public interface GeneratedDispatcher {
         final Arity1 arity1;
         final Arity2 arity2;
 
-        Bundle(final GeneratedDispatcher dispatcher, final Arity1 arity1, final Arity2 arity2) {
+        /**
+         * Public because the hosting class's compiler-emitted factory constructs it directly
+         * (see {@code ClosureWriter#writeDispatchersFactory}); not API for hand-written code.
+         */
+        public Bundle(final GeneratedDispatcher dispatcher, final Arity1 arity1, final Arity2 arity2) {
             this.dispatcher = dispatcher;
             this.arity1 = arity1;
             this.arity2 = arity2;
@@ -150,11 +156,12 @@ public interface GeneratedDispatcher {
     }
 
     /**
-     * Invokedynamic bootstrap for the hosting class's dispatcher accessor: adapts the class's
-     * three private static dispatch tables to their functional interfaces (one hidden class
-     * each, via {@code LambdaMetafactory} with the caller's full-privilege lookup) and returns
-     * them as one constant {@link Bundle}. Linked once per class, on first adapter creation.
-     * Emitted bytecode reaches this through
+     * Legacy invokedynamic bootstrap for the dispatcher accessor, kept for class files emitted
+     * by earlier 6.0 pre-releases: adapts the class's three private static dispatch tables to
+     * their functional interfaces (one hidden class each, via {@code LambdaMetafactory} with the
+     * caller's full-privilege lookup) and returns them as one constant {@link Bundle}. Current
+     * class files link through the one-{@code MethodHandle} overload instead. Emitted bytecode
+     * reaches this through
      * {@code org.codehaus.groovy.vmplugin.v8.IndyInterface#packedDispatchers} — the central
      * bytecode-facing bootstrap surface — which delegates here.
      *
@@ -181,5 +188,28 @@ public interface GeneratedDispatcher {
                 caller, "dispatch2", MethodType.methodType(Arity2.class),
                 twoType, caller.findStatic(host, TABLE2_METHOD, twoType), twoType).getTarget().invokeExact();
         return new ConstantCallSite(MethodHandles.constant(type.returnType(), new Bundle(dispatcher, arity1, arity2)));
+    }
+
+    /**
+     * Invokedynamic bootstrap for the dispatcher accessor: the hosting class supplies (as a
+     * constant bootstrap argument) a compiler-emitted factory that builds the bundle from its
+     * own <em>bytecode-level</em> {@code LambdaMetafactory} sites, so linking is one call and
+     * this method neither looks anything up nor defines any class — fit for any ahead-of-time
+     * runtime that restricts run-time reflection or class definition. Under GraalVM native
+     * image, the verified case, those sites are pre-processed at image build time and the
+     * factory's method references reach the class's own private tables without reflection
+     * metadata (GROOVY-12227). Emitted bytecode reaches this through
+     * {@code org.codehaus.groovy.vmplugin.v8.IndyInterface#packedDispatchers}.
+     *
+     * @param caller  the hosting class's lookup (supplied by the JVM, unused)
+     * @param name    the invoked name (unused)
+     * @param type    the accessor's type (see the three-argument overload)
+     * @param factory the hosting class's {@code $packedDispatchersFactory$}, {@code () -> Bundle}
+     * @return a constant call site producing the bundle
+     * @throws Throwable if the factory fails (a compiler bug)
+     */
+    static CallSite bootstrap(final MethodHandles.Lookup caller, final String name, final MethodType type,
+                              final MethodHandle factory) throws Throwable {
+        return new ConstantCallSite(MethodHandles.constant(type.returnType(), factory.invoke()));
     }
 }
