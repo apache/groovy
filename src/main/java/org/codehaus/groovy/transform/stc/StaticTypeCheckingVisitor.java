@@ -5925,7 +5925,9 @@ trying: for (ClassNode[] signature : signatures) {
                     PropertyNode property = findProperty(receiver, pname);
                     if (property != null && !property.isFinal()) {
                         ClassNode type = property.getOriginType();
-                        if (implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(args[0]), wrapTypeIfNecessary(type))) {
+                        // GROOVY-12229: the synthetic mutator accepts whatever the property
+                        // assignment form accepts, including implicit conversions like GString-String
+                        if (isAssignableTo(wrapTypeIfNecessary(args[0]), wrapTypeIfNecessary(type))) {
                             MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0),
                                     VOID_TYPE, new Parameter[]{new Parameter(type, name)}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                             node.setDeclaringClass(property.getDeclaringClass());
