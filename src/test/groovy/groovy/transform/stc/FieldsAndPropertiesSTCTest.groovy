@@ -2503,6 +2503,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12229
+    @Test
+    void testGeneratedSetterCallWithGString() {
+        assertScript '''
+            class C {
+                String p
+            }
+            def c = new C()
+            c.setP("v${1}")
+            assert c.p.class === String
+            assert c.p == 'v1'
+        '''
+    }
+
+    // GROOVY-12229
+    @Test
+    void testGeneratedSetterCallWithIncompatibleArgument() {
+        shouldFailWithMessages '''
+            class C {
+                String p
+            }
+            new C().setP(new Object())
+        ''',
+        'Cannot find matching method C#setP(java.lang.Object)'
+    }
+
     //--------------------------------------------------------------------------
 
     static interface InterfaceWithField {
