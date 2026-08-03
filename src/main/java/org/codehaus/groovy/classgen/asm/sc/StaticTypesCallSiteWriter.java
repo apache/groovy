@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -424,6 +425,17 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     ClassNode.EMPTY_ARRAY,
                     EmptyStatement.INSTANCE);
             getterNode.setDeclaringClass(receiverType);
+        }
+        // GROOVY-12225: a precompiled record's component accessor is named for the
+        // component (e.g. "x()"), so there is no get/is getter and no PropertyNode
+        if (getterNode == null && receiverType.isRecord()) {
+            for (RecordComponentNode rcn : receiverType.getRecordComponents()) {
+                if (rcn.getName().equals(propertyName)) {
+                    getterName = propertyName;
+                    getterNode = receiverType.getDeclaredMethod(propertyName, Parameter.EMPTY_ARRAY);
+                    break;
+                }
+            }
         }
         if (getterNode != null) {
             if (!getterNode.isStatic() && receiver instanceof ClassExpression && !isClassType(receiverType)) {
