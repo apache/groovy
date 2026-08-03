@@ -47,8 +47,10 @@ import static org.junit.Assume.assumeTrue
 final class RecordTest {
 
     private final GroovyShell shell
+    private final Class mode
 
     RecordTest(Class mode) {
+        this.mode = mode
         shell = GroovyShell.withConfig {
             ast(mode)
             imports {
@@ -232,6 +234,43 @@ final class RecordTest {
             checkNativeRecordClassNode(personDecompiledClassNode)
         } finally {
             sourceDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
+    // GROOVY-12225
+    @Test
+    void testPrecompiledRecordComponentPropertyAccess() {
+        assumeTrue(isAtLeastJdk('16.0'))
+
+        def parentDir = File.createTempDir()
+        def config = new CompilerConfiguration(targetDirectory: File.createTempDir())
+        try {
+            def a = new File(parentDir, 'Point.groovy')
+            a.write '''
+                package demo
+                record Point(int x, int y) { }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new CompilationUnit(config, null, loader)
+            cu.addSources(a)
+            cu.compile()
+
+            // Point is now resolved from its class file (no PropertyNodes present),
+            // so reading a component as a property must find the "x()" accessor and
+            // not fall back to the forbidden private backing field
+            def shell2 = GroovyShell.withConfig {
+                ast(mode)
+            }
+            shell2.classLoader.addClasspath(config.targetDirectory.absolutePath)
+            assertScript shell2, '''
+                import demo.Point
+                int readX(Point p) { p.x }
+                assert readX(new Point(3, 4)) == 3
+            '''
+        } finally {
+            parentDir.deleteDir()
             config.targetDirectory.deleteDir()
         }
     }
