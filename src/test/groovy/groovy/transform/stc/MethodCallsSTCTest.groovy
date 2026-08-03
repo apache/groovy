@@ -2229,6 +2229,33 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    // GROOVY-12230
+    @Test
+    void testStringOrGStringArgumentForStringParameter() {
+        assertScript '''
+            Class m(String s) { s.class }
+
+            boolean flag = true
+            assert m(flag ? "a${1}" : 'b') === String
+            assert m(flag ? 'b' : "a${1}") === String
+            assert m(flag ? "a${1}" : null) === String
+        '''
+    }
+
+    // GROOVY-12230
+    @Test
+    void testStringOrGStringArgumentForStringParameter2() {
+        assertScript '''
+            class StringHolder {
+                String p
+                StringHolder(String s) { p = s }
+            }
+
+            boolean flag = false
+            assert new StringHolder(flag ? "a${1}" : 'b').p.class === String
+        '''
+    }
+
     //--------------------------------------------------------------------------
 
     static class MyMethodCallTestClass {
