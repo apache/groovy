@@ -1467,6 +1467,46 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-12228
+    @Test
+    void testMultiAssignRetainsDeclaredType1() {
+        assertScript '''
+            def m() {
+                String a, b
+                (a, b) = ["x${1}", "y${2}"]
+                assert a instanceof String
+                assert a.class === String && b.class === String
+                assert a == 'x1' && b == 'y2'
+            }
+            m()
+        '''
+    }
+
+    // GROOVY-12228
+    @Test
+    void testMultiAssignRetainsDeclaredType2() {
+        assertScript '''
+            def m() {
+                def (String a, String b) = ["x${1}", "y${2}"]
+                assert a.class === String && b.class === String
+            }
+            m()
+        '''
+    }
+
+    // GROOVY-12228
+    @Test
+    void testMultiAssignRetainsDeclaredType3() {
+        assertScript '''
+            def m() {
+                Long a, b
+                (a, b) = [1, 2]
+                assert a.class === Long && b.class === Long
+            }
+            m()
+        '''
+    }
+
     // GROOVY-10943
     @Test
     void testMultiAssignUnderscorePlaceholder1() {
