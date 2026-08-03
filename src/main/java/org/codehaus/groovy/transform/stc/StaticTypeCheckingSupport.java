@@ -478,7 +478,9 @@ public abstract class StaticTypeCheckingSupport {
             return isPrimitiveType(targetComponent) ? sourceComponent.equals(targetComponent) // GROOVY-11053: strict
                 : !isPrimitiveType(sourceComponent) && isAssignableTo(sourceComponent, targetComponent); // GROOVY-10720
         }
-        if (type.isDerivedFrom(GSTRING_TYPE) && isStringType(toBeAssignedTo)) {
+        // GROOVY-12230: the String/GString LUB arises for conditionals like "flag ? gstring : string"
+        // and converts to String just as a GString does; see also #checkCompatibleAssignmentTypes
+        if ((type.isDerivedFrom(GSTRING_TYPE) || isGStringOrGStringStringLUB(type)) && isStringType(toBeAssignedTo)) {
             return true;
         }
         if (isStringType(type) && toBeAssignedTo.isDerivedFrom(GSTRING_TYPE)) {
