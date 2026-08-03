@@ -21,8 +21,12 @@ package org.codehaus.groovy.runtime;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+
+import org.apache.groovy.internal.util.UncheckedThrow;
+import org.apache.groovy.util.SystemUtil;
 
 /**
  * A per-class table of compiler-generated dispatch targets, reached by a compact
@@ -171,15 +175,116 @@ public interface GeneratedDispatcher {
         MethodType arrayType = MethodType.methodType(Object.class, int.class, Object[].class);
         MethodType oneType = MethodType.methodType(Object.class, int.class, Object.class, Object.class);
         MethodType twoType = MethodType.methodType(Object.class, int.class, Object.class, Object.class, Object.class);
+        return bootstrap(caller, name, type,
+                caller.findStatic(host, TABLE_METHOD, arrayType),
+                caller.findStatic(host, TABLE1_METHOD, oneType),
+                caller.findStatic(host, TABLE2_METHOD, twoType));
+    }
+
+    /**
+     * Preferred bootstrap overload: the three dispatch tables arrive as <em>constant bootstrap
+     * arguments</em> ({@code CONSTANT_MethodHandle} entries resolved by the VM's constant pool
+     * machinery), so linking needs no {@code Lookup.findStatic} — which, under GraalVM native
+     * image, would require per-class reflection metadata. Emitted bytecode reaches this through
+     * {@code org.codehaus.groovy.vmplugin.v8.IndyInterface#packedDispatchers}.
+     * <p>
+     * The bundle's dispatch shapes are adapted from the tables one of two ways. On a regular JVM,
+     * {@code LambdaMetafactory} spins one hidden class per shape, whose interface call inlines
+     * under the JIT (see the class javadoc for why that matters). Under a runtime that cannot
+     * define classes — a GraalVM native image, detected per call so a build-time-initialized
+     * class cannot bake in the wrong answer — the tables are wrapped in method-handle-invoking
+     * adapters instead: ahead-of-time-compiled lambdas of this class, so no class definition
+     * happens at run time. There is no JIT in such runtimes, so the inlining rationale for the
+     * hidden-class path does not apply. The wrapper path can be forced on a regular JVM with
+     * {@code -Dgroovy.packed.dispatch.handles=true} (a diagnostic knob, for testing parity).
+     *
+     * @param caller the hosting class's lookup (supplied by the JVM)
+     * @param name   the invoked name (unused)
+     * @param type   the accessor's type (see the three-argument overload)
+     * @param table  the array-shaped dispatch table, {@code (int, Object[]) -> Object}
+     * @param table1 the one-value table, {@code (int, Object, Object) -> Object}
+     * @param table2 the two-value table, {@code (int, Object, Object, Object) -> Object}
+     * @return a constant call site producing the bundle
+     * @throws Throwable if the tables cannot be linked (a compiler bug)
+     */
+    static CallSite bootstrap(final MethodHandles.Lookup caller, final String name, final MethodType type,
+                              final MethodHandle table, final MethodHandle table1, final MethodHandle table2) throws Throwable {
+        Bundle bundle;
+        if (handleBundlesRequested()) {
+            bundle = handleBundle(table, table1, table2);
+        } else {
+            try {
+                bundle = hiddenClassBundle(caller, table, table1, table2);
+            } catch (Throwable cannotDefineClasses) {
+                // belt and braces for AOT runtimes not caught by the property probe:
+                // hidden-class definition is the only fallible step past a valid compile
+                bundle = handleBundle(table, table1, table2);
+            }
+        }
+        return new ConstantCallSite(MethodHandles.constant(type.returnType(), bundle));
+    }
+
+    /**
+     * Whether to skip hidden-class adapters in favour of method-handle wrappers. Evaluated per
+     * link (not cached in a static): under native image this class may be initialized at build
+     * time, where {@code org.graalvm.nativeimage.imagecode} reports {@code buildtime} — caching
+     * would bake the wrong answer into the image heap.
+     */
+    private static boolean handleBundlesRequested() {
+        return "runtime".equals(System.getProperty("org.graalvm.nativeimage.imagecode"))
+                || SystemUtil.getBooleanSafe("groovy.packed.dispatch.handles");
+    }
+
+    /** The JIT-friendly path: one hidden class per dispatch shape, via {@code LambdaMetafactory}. */
+    private static Bundle hiddenClassBundle(final MethodHandles.Lookup caller,
+                                            final MethodHandle table, final MethodHandle table1, final MethodHandle table2) throws Throwable {
+        MethodType arrayType = MethodType.methodType(Object.class, int.class, Object[].class);
+        MethodType oneType = MethodType.methodType(Object.class, int.class, Object.class, Object.class);
+        MethodType twoType = MethodType.methodType(Object.class, int.class, Object.class, Object.class, Object.class);
         GeneratedDispatcher dispatcher = (GeneratedDispatcher) LambdaMetafactory.metafactory(
                 caller, "dispatch", MethodType.methodType(GeneratedDispatcher.class),
-                arrayType, caller.findStatic(host, TABLE_METHOD, arrayType), arrayType).getTarget().invokeExact();
+                arrayType, table, arrayType).getTarget().invokeExact();
         Arity1 arity1 = (Arity1) LambdaMetafactory.metafactory(
                 caller, "dispatch1", MethodType.methodType(Arity1.class),
-                oneType, caller.findStatic(host, TABLE1_METHOD, oneType), oneType).getTarget().invokeExact();
+                oneType, table1, oneType).getTarget().invokeExact();
         Arity2 arity2 = (Arity2) LambdaMetafactory.metafactory(
                 caller, "dispatch2", MethodType.methodType(Arity2.class),
-                twoType, caller.findStatic(host, TABLE2_METHOD, twoType), twoType).getTarget().invokeExact();
-        return new ConstantCallSite(MethodHandles.constant(type.returnType(), new Bundle(dispatcher, arity1, arity2)));
+                twoType, table2, twoType).getTarget().invokeExact();
+        return new Bundle(dispatcher, arity1, arity2);
+    }
+
+    /**
+     * The class-definition-free path: each dispatch shape invokes its table through the exact
+     * method handle. The lambdas below are ordinary bytecode of this class — under native image
+     * they are pre-processed at build time, so no class is defined at run time. Targets may
+     * throw checked exceptions the interfaces do not declare (the hidden-class path propagates
+     * them transparently), so parity requires the unchecked rethrow.
+     */
+    private static Bundle handleBundle(final MethodHandle table, final MethodHandle table1, final MethodHandle table2) {
+        return new Bundle(
+                (id, args) -> {
+                    try {
+                        return table.invokeExact(id, args);
+                    } catch (Throwable t) {
+                        UncheckedThrow.rethrow(t);
+                        throw new AssertionError("unreachable");
+                    }
+                },
+                (id, owner, a) -> {
+                    try {
+                        return table1.invokeExact(id, owner, a);
+                    } catch (Throwable t) {
+                        UncheckedThrow.rethrow(t);
+                        throw new AssertionError("unreachable");
+                    }
+                },
+                (id, owner, a, b) -> {
+                    try {
+                        return table2.invokeExact(id, owner, a, b);
+                    } catch (Throwable t) {
+                        UncheckedThrow.rethrow(t);
+                        throw new AssertionError("unreachable");
+                    }
+                });
     }
 }

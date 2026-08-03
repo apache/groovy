@@ -652,6 +652,20 @@ public class IndyInterface {
     }
 
     /**
+     * Preferred overload of {@link #packedDispatchers(MethodHandles.Lookup, String, MethodType)}:
+     * the dispatch tables arrive as constant bootstrap arguments, resolved by the VM's constant
+     * pool machinery rather than a runtime {@code Lookup.findStatic} — which lets the linkage
+     * work under GraalVM native image without per-class reflection metadata (GROOVY-12227).
+     * The three-argument form remains for class files emitted by earlier 6.0 snapshots.
+     *
+     * @since 6.0.0
+     */
+    public static CallSite packedDispatchers(MethodHandles.Lookup caller, String name, MethodType type,
+            MethodHandle table, MethodHandle table1, MethodHandle table2) throws Throwable {
+        return GeneratedDispatcher.bootstrap(caller, name, type, table, table1, table2);
+    }
+
+    /**
      * Constant-dynamic bootstrap for a packed closure literal's declared parameter types
      * (GROOVY-12151): decodes a method descriptor into a {@code Class[]} resolved once per
      * literal site. Delegates to {@link GeneratedDispatcher#paramTypes}; hosted here so

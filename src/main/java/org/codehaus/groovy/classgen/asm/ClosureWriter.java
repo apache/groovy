@@ -1087,11 +1087,18 @@ public class ClosureWriter {
         // and every later call returns the constant bundle, so the accessor is also the cache
         MethodVisitor mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCHERS_GETTER, DISPATCHERS_GETTER_DESC, null, null);
         mv.visitCode();
+        // The tables travel as constant bootstrap arguments (CONSTANT_MethodHandle), so the
+        // bootstrap needs no runtime Lookup.findStatic — which, under GraalVM native image,
+        // would demand per-class reflection metadata (GROOVY-12227).
         Handle bootstrap = new Handle(
                 H_INVOKESTATIC, INDY_INTERFACE_TYPE, "packedDispatchers",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/CallSite;",
                 false);
-        mv.visitInvokeDynamicInsn("packedDispatchers", DISPATCHERS_GETTER_DESC, bootstrap);
+        mv.visitInvokeDynamicInsn("packedDispatchers", DISPATCHERS_GETTER_DESC, bootstrap,
+                new Handle(H_INVOKESTATIC, internal, DISPATCH_METHOD, DISPATCH_DESC, false),
+                new Handle(H_INVOKESTATIC, internal, DISPATCH1_METHOD, DISPATCH1_DESC, false),
+                new Handle(H_INVOKESTATIC, internal, DISPATCH2_METHOD, DISPATCH2_DESC, false));
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
