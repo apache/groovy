@@ -181,6 +181,19 @@ public class ClosureWriter {
     // off the emitted-bytecode surface.
     private static final String DISPATCHERS_GETTER = "$getPackedDispatchers$";
     private static final String DISPATCHERS_GETTER_DESC = "()Ljava/lang/Object;";
+    // The factory emitted into the hosting class that adapts its three tables to their functional
+    // interfaces through bytecode-level LambdaMetafactory sites (see writeDispatchersFactory).
+    private static final String DISPATCHERS_FACTORY = "$packedDispatchersFactory$";
+    private static final String BUNDLE_TYPE = "org/codehaus/groovy/runtime/GeneratedDispatcher$Bundle";
+    private static final String DISPATCHER_TYPE = "org/codehaus/groovy/runtime/GeneratedDispatcher";
+    private static final String ARITY1_TYPE = "org/codehaus/groovy/runtime/GeneratedDispatcher$Arity1";
+    private static final String ARITY2_TYPE = "org/codehaus/groovy/runtime/GeneratedDispatcher$Arity2";
+    private static final Handle LMF_BOOTSTRAP = new Handle(
+            H_INVOKESTATIC, "java/lang/invoke/LambdaMetafactory", "metafactory",
+            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;"
+                    + "Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)"
+                    + "Ljava/lang/invoke/CallSite;",
+            false);
     // Max tableswitch cases per dispatch method (power of two: the two-level entry method selects a
     // chunk with a shift); sized so a full chunk stays well under the JIT's 325-byte inlining budget.
     private static final int DISPATCH_CHUNK = 8;
@@ -1082,19 +1095,28 @@ public class ClosureWriter {
         org.objectweb.asm.ClassVisitor cv = controller.getClassVisitor();
 
         // the accessor: return INDY packedDispatchers()Object — IndyInterface.packedDispatchers
-        // (delegating to GeneratedDispatcher.bootstrap) links the class's three dispatch tables
-        // (through LambdaMetafactory, with this class's lookup) once, on first adapter creation,
-        // and every later call returns the constant bundle, so the accessor is also the cache
+        // (delegating to GeneratedDispatcher.bootstrap) invokes this class's emitted factory
+        // once, on first adapter creation, and every later call returns the constant bundle,
+        // so the accessor is also the cache
         MethodVisitor mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCHERS_GETTER, DISPATCHERS_GETTER_DESC, null, null);
         mv.visitCode();
+        // The bundle is built by a factory emitted into this class (see writeDispatchersFactory)
+        // and reached as a constant bootstrap argument, so the bootstrap needs neither a runtime
+        // Lookup.findStatic nor a programmatic LambdaMetafactory call — an undeclared reflective
+        // lookup and a run-time class definition, the two operations ahead-of-time runtimes
+        // restrict; GraalVM native image is the verified case (GROOVY-12227).
         Handle bootstrap = new Handle(
                 H_INVOKESTATIC, INDY_INTERFACE_TYPE, "packedDispatchers",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;"
+                        + "Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/CallSite;",
                 false);
-        mv.visitInvokeDynamicInsn("packedDispatchers", DISPATCHERS_GETTER_DESC, bootstrap);
+        mv.visitInvokeDynamicInsn("packedDispatchers", DISPATCHERS_GETTER_DESC, bootstrap,
+                new Handle(H_INVOKESTATIC, internal, DISPATCHERS_FACTORY, DISPATCHERS_GETTER_DESC, false));
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
+
+        writeDispatchersFactory(cv, internal);
 
         // the array-free per-arity tables, over the targets whose captured-plus-argument count
         // matches (membership is sparse over the id space, so cases use lookupswitch); routing is
@@ -1199,6 +1221,48 @@ public class ClosureWriter {
      * switches over its id-range's members (at most {@code DISPATCH_CHUNK}, since a range spans
      * {@code DISPATCH_CHUNK} consecutive ids).
      */
+    /**
+     * Emits the hosting class's dispatcher factory: three <em>bytecode-level</em>
+     * {@code LambdaMetafactory} sites adapting its private static tables to their functional
+     * interfaces, wrapped in one {@code Bundle}.
+     * <p>
+     * Emitting the linkage here rather than calling {@code LambdaMetafactory} programmatically
+     * from the bootstrap matters twice over. The sites are ordinary {@code invokedynamic},
+     * visible in the class file, so an ahead-of-time compiler can pre-process them at build
+     * time (GraalVM native image, the verified case, does) — no class is defined at run time,
+     * and the JVM path is unchanged (the VM spins the same hidden class when it links the site).
+     * And because the factory lives in the hosting class, its method references reach that
+     * class's own private tables directly, so no {@code Lookup.findStatic} — and hence no
+     * per-class reflection metadata — is needed either (GROOVY-12227).
+     */
+    private static void writeDispatchersFactory(final org.objectweb.asm.ClassVisitor cv, final String internal) {
+        MethodVisitor mv = cv.visitMethod(ACC_PRIVATE | ACC_STATIC | ACC_SYNTHETIC, DISPATCHERS_FACTORY, DISPATCHERS_GETTER_DESC, null, null);
+        mv.visitCode();
+        mv.visitTypeInsn(NEW, BUNDLE_TYPE);
+        mv.visitInsn(DUP);
+        emitLambda(mv, internal, "dispatch", DISPATCHER_TYPE, DISPATCH_METHOD, DISPATCH_DESC);
+        emitLambda(mv, internal, "dispatch1", ARITY1_TYPE, DISPATCH1_METHOD, DISPATCH1_DESC);
+        emitLambda(mv, internal, "dispatch2", ARITY2_TYPE, DISPATCH2_METHOD, DISPATCH2_DESC);
+        mv.visitMethodInsn(INVOKESPECIAL, BUNDLE_TYPE, "<init>",
+                "(L" + DISPATCHER_TYPE + ";L" + ARITY1_TYPE + ";L" + ARITY2_TYPE + ";)V", false);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    /**
+     * Emits one {@code invokedynamic} adapting {@code tableMethod} to the single abstract method
+     * {@code samName} of {@code ifaceType}. The table's descriptor is both the erased and the
+     * instantiated signature, so the metafactory inserts no adaptation.
+     */
+    private static void emitLambda(final MethodVisitor mv, final String internal, final String samName,
+            final String ifaceType, final String tableMethod, final String tableDesc) {
+        mv.visitInvokeDynamicInsn(samName, "()L" + ifaceType + ";", LMF_BOOTSTRAP,
+                org.objectweb.asm.Type.getMethodType(tableDesc),
+                new Handle(H_INVOKESTATIC, internal, tableMethod, tableDesc, false),
+                org.objectweb.asm.Type.getMethodType(tableDesc));
+    }
+
     private static void writeArityTable(final org.objectweb.asm.ClassVisitor cv, final String internal,
             final ClassNode enclosing, final List<MethodNode> targets, final int paramCount,
             final String tableMethod, final String tableDesc) {
