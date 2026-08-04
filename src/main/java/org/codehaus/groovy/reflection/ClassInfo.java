@@ -239,7 +239,8 @@ public class ClassInfo implements Finalizable {
         List<SwitchPoint> batch = new ArrayList<>(2);
         collectLiveIndySwitchPoints(batch);
         if (!batch.isEmpty()) {
-            SwitchPoint.invalidateAll(batch.toArray(new SwitchPoint[0]));
+            // AOT-safe: stamp always advances; real invalidateAll only on a JVM
+            org.apache.groovy.runtime.indy.AotDispatch.invalidateAll(batch.toArray(new SwitchPoint[0]));
         }
     }
 

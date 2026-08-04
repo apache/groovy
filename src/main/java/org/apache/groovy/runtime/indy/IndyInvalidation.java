@@ -333,7 +333,8 @@ public final class IndyInvalidation {
         if (batch.isEmpty()) {
             return;
         }
-        SwitchPoint.invalidateAll(batch.toArray(EMPTY_SWITCH_POINTS));
+        // AOT-safe: advances the AotDispatch stamp; the real invalidateAll runs only on a JVM
+        AotDispatch.invalidateAll(batch.toArray(EMPTY_SWITCH_POINTS));
     }
 
     // -------------------------------------------------------------------------

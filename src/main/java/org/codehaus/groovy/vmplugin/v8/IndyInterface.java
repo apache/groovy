@@ -20,6 +20,7 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
+import org.apache.groovy.runtime.indy.AotDispatch;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -220,6 +221,37 @@ public class IndyInterface {
         }
     }
 
+    /**
+     * Guards against a GraalVM native-image gap: the runtime invokedynamic linkage invokes a
+     * bootstrap method without running its declaring class's {@code <clinit>} first (observed
+     * on GraalVM CE 25.2.4; on HotSpot the bootstrap's {@code DirectMethodHandle} carries a
+     * class-initialization barrier). Every BSM entry point calls this; on an initialized class
+     * it is a single null check.
+     */
+    private static void ensureInitialized() {
+        if (FROM_CACHE_HANDLE_METHOD == null) {
+            // an ordinary cross-class static read carries the initialization barrier the
+            // native-image BSM invocation path lacks; reading our own field would not
+            ClinitBarrier.trigger();
+            if (FROM_CACHE_HANDLE_METHOD == null) {
+                throw new GroovyBugError("IndyInterface linkage handles unavailable: <clinit> did not run");
+            }
+        }
+    }
+
+    /**
+     * A separate class whose read of {@link IndyInterface#LOOKUP} is an ordinary
+     * {@code getstatic} from foreign code — compiled with the standard ensure-initialized
+     * barrier that the native-image bootstrap-method invocation path is missing.
+     */
+    private static final class ClinitBarrier {
+        static void trigger() {
+            if (IndyInterface.LOOKUP == null) {
+                throw new GroovyBugError("unreachable: LOOKUP read before initialization");
+            }
+        }
+    }
+
     static {
         // MetaClass registry changes invalidate the affected class domain (GROOVY-12191).
         // Stock MetaClassImpl/EMC → exact class; custom MetaClass kinds → bulk.
@@ -294,6 +326,7 @@ public class IndyInterface {
      * @since 2.1.0
      */
     public static CallSite bootstrap(final MethodHandles.Lookup caller, final String callType, final MethodType type, final String name, final int flags) {
+        ensureInitialized();
         CallType ct = CallType.fromCallSiteName(callType);
         if (null == ct) throw new GroovyBugError("Unknown call type: " + callType);
 
@@ -314,9 +347,19 @@ public class IndyInterface {
         }
         // make an adapter for method selection, i.e. get cached method handle (fast path) or fall back
         MethodHandle mh = makeBootHandle(mc, sender, name, callID, type, safe, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
-        mc.setTarget(mh);
         mc.setDefaultTarget(mh);
         mc.setFallbackTarget(makeFallBack(mc, sender, name, callID, type, safe, thisCall, spreadCall));
+
+        if (mc.isAotLinked()) {
+            // AOT link mode (GROOVY-12227 spike): native image cannot retarget call sites
+            // (MethodHandleNatives.setCallSiteTargetNormal is unsupported), so the site links
+            // once, permanently, to the cache-consulting default path. The CacheableCallSite is
+            // never installed as the call site — it serves as the state carrier (PIC, fallback
+            // target) the bound handles consult. Retargeting only ever installs caches in this
+            // design, so semantics are unchanged; freshness moves to the AotDispatch stamp.
+            return new ConstantCallSite(mh);
+        }
+        mc.setTarget(mh);
 
         return mc;
     }
@@ -436,9 +479,15 @@ public class IndyInterface {
             // The PIC stores a sentinel to remember "do not relink this receiver shape";
             // execution still needs a real handle for the current invocation.
             mhw = fallbackSupplier.get();
+        } else if (callSite.isAotLinked() && mhw.getAotStamp() != AotDispatch.stamp()) {
+            // AOT freshness: the cached chain's SwitchPoint guards cannot fire under native
+            // image, so a stamp mismatch (any MOP invalidation since selection) is a miss —
+            // re-select and replace the PIC entry
+            mhw = fallbackSupplier.get();
+            callSite.put(receiverClassName, mhw.isCanSetTarget() ? mhw : UNCACHEABLE_PIC_SENTINEL);
         }
 
-        if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
+        if (!callSite.isAotLinked() && mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
             // GROOVY-11935: Set invokedynamic call site target immediately to enable earlier JIT inlining.
             if (callSite.type().parameterType(0) == Class.class) {
                 var method = mhw.getMethod();
@@ -497,8 +546,14 @@ public class IndyInterface {
      * reflective path on the same miss.
      */
     private static Object invokeColdReflective(ColdReflectiveMethodHandleWrapper cold, Object[] arguments) throws Throwable {
-        if (cold.isValidFor(arguments)) {
-            if (cold.incrementReflectiveHits() > INDY_OPTIMIZE_THRESHOLD) {
+        // AOT freshness: classValidity.hasBeenInvalidated() can never report true under native
+        // image, so the stamp carries staleness; a mismatch takes the re-selection path below
+        boolean aotStale = cold.callSite.isAotLinked() && cold.getAotStamp() != AotDispatch.stamp();
+        if (!aotStale && cold.isValidFor(arguments)) {
+            // In AOT mode the reflective tier IS the steady state: method-handle chains run in
+            // the native MH interpreter (microseconds/call, no JIT to fold them) while
+            // reflective dispatch uses AOT-compiled invocation stubs — so never promote.
+            if (!cold.callSite.isAotLinked() && cold.incrementReflectiveHits() > INDY_OPTIMIZE_THRESHOLD) {
                 // no longer cold: build the full guarded chain and replace the
                 // PIC entry, so even sites the consecutive-hit promotion never
                 // catches (e.g. polymorphic receivers) leave the reflective
@@ -564,13 +619,17 @@ public class IndyInterface {
 
         MethodHandle defaultTarget = callSite.getDefaultTarget();
         long fallbackCount = callSite.incrementFallbackCount();
-        if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (callSite.getTarget() != defaultTarget)) {
+        if (!callSite.isAotLinked()
+                && (fallbackCount > INDY_FALLBACK_THRESHOLD) && (callSite.getTarget() != defaultTarget)) {
             callSite.setTarget(defaultTarget);
             if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
             callSite.resetFallbackCount();
         }
 
-        if (callSite.getTarget() == defaultTarget) {
+        // in AOT mode the effective target is always the default path (the ConstantCallSite
+        // wraps it), so the PIC write-back below must run; getTarget() would report the
+        // never-installed placeholder
+        if (callSite.isAotLinked() || callSite.getTarget() == defaultTarget) {
             // correct the stale methodHandle in the inline cache of callsite
             // it is important but impacts the performance somehow when cache misses frequently
             Object receiver = arguments[0];

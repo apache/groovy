@@ -124,7 +124,8 @@ public final class SwitchPointInvalidator {
             synchronized (SINGLE_INVALIDATE_LOCK) {
                 SINGLE_INVALIDATE_BUF[0] = sp;
                 try {
-                    SwitchPoint.invalidateAll(SINGLE_INVALIDATE_BUF);
+                    // AOT-safe: stamp always advances; real invalidateAll only on a JVM
+                    AotDispatch.invalidateAll(SINGLE_INVALIDATE_BUF);
                 } finally {
                     SINGLE_INVALIDATE_BUF[0] = null;
                 }
