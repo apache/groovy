@@ -20,6 +20,7 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
+import org.apache.groovy.runtime.indy.AotDispatch;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
@@ -207,6 +208,12 @@ public class IndyInterface {
      */
     static final MethodHandle COLD_REFLECTIVE_INVOKER;
 
+    /**
+     * Handle for {@link #aotDispatch}: the single plain-Java entry an AOT-linked site's
+     * constant target binds to.
+     */
+    private static final MethodHandle AOT_DISPATCH_METHOD;
+
     static {
         try {
             MethodType mt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
@@ -215,8 +222,44 @@ public class IndyInterface {
             SELECT_METHOD_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethodHandle", mt);
             COLD_REFLECTIVE_INVOKER = LOOKUP.findStatic(IndyInterface.class, "invokeColdReflective",
                     MethodType.methodType(Object.class, ColdReflectiveMethodHandleWrapper.class, Object[].class));
+            AOT_DISPATCH_METHOD = LOOKUP.findStatic(IndyInterface.class, "aotDispatch",
+                    MethodType.methodType(Object.class, CacheableCallSite.class, Class.class, String.class, int.class,
+                            Boolean.class, Boolean.class, Boolean.class, Object[].class));
         } catch (Exception e) {
             throw new GroovyBugError(e);
+        }
+    }
+
+    /**
+     * Guards against a GraalVM native-image gap: the runtime invokedynamic linkage invokes a
+     * bootstrap method without running its declaring class's {@code <clinit>} first (observed
+     * on GraalVM CE 25.2.4; on HotSpot the bootstrap's {@code DirectMethodHandle} carries a
+     * class-initialization barrier). {@link #bootstrap} — the one BSM entry point that reads
+     * this class's linkage statics — calls this; on an initialized class it is a single null
+     * check. The other BSM entry points ({@code staticArrayAccess}, {@code packedDispatchers},
+     * {@code packedParamTypes}) read no such state and do not need it.
+     */
+    private static void ensureInitialized() {
+        if (FROM_CACHE_HANDLE_METHOD == null) {
+            // an ordinary cross-class static read carries the initialization barrier the
+            // native-image BSM invocation path lacks; reading our own field would not
+            ClinitBarrier.trigger();
+            if (FROM_CACHE_HANDLE_METHOD == null) {
+                throw new GroovyBugError("IndyInterface linkage handles unavailable: <clinit> did not run");
+            }
+        }
+    }
+
+    /**
+     * A separate class whose read of {@link IndyInterface#LOOKUP} is an ordinary
+     * {@code getstatic} from foreign code — compiled with the standard ensure-initialized
+     * barrier that the native-image bootstrap-method invocation path is missing.
+     */
+    private static final class ClinitBarrier {
+        static void trigger() {
+            if (IndyInterface.LOOKUP == null) {
+                throw new GroovyBugError("unreachable: LOOKUP read before initialization");
+            }
         }
     }
 
@@ -294,6 +337,7 @@ public class IndyInterface {
      * @since 2.1.0
      */
     public static CallSite bootstrap(final MethodHandles.Lookup caller, final String callType, final MethodType type, final String name, final int flags) {
+        ensureInitialized();
         CallType ct = CallType.fromCallSiteName(callType);
         if (null == ct) throw new GroovyBugError("Unknown call type: " + callType);
 
@@ -314,9 +358,32 @@ public class IndyInterface {
         }
         // make an adapter for method selection, i.e. get cached method handle (fast path) or fall back
         MethodHandle mh = makeBootHandle(mc, sender, name, callID, type, safe, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
-        mc.setTarget(mh);
         mc.setDefaultTarget(mh);
         mc.setFallbackTarget(makeFallBack(mc, sender, name, callID, type, safe, thisCall, spreadCall));
+
+        if (mc.isAotLinked()) {
+            // AOT link mode (GROOVY-12234): native image cannot retarget call sites
+            // (MethodHandleNatives.setCallSiteTargetNormal is unsupported), so the site links
+            // once, permanently, to a constant target. The CacheableCallSite is never installed
+            // as the call site — it serves as the state carrier (PIC, fallback target) the
+            // dispatcher consults. Retargeting only ever installs caches in this design, so
+            // semantics are unchanged; freshness moves to the AotDispatch stamp.
+            //
+            // The target is deliberately SHALLOW: one bound handle into aotDispatch, which does
+            // PIC lookup, freshness check, and invocation in ordinary compiled Java, and — for
+            // the dominant reflective tier — never re-enters the method-handle machinery.
+            // Measured caveat: entering ANY runtime-created method handle costs ~4.5us under
+            // native image (a per-entry interpreter cost, independent of chain depth or
+            // invokeExact), and the invokedynamic instruction's hop into this runtime-linked
+            // target pays it once per call regardless of the target's shape. The shallow form
+            // still wins on allocation (no per-call FallbackSupplier/provider lambdas) and
+            // keeps everything past the entry in compiled code.
+            MethodHandle aot = MethodHandles.insertArguments(AOT_DISPATCH_METHOD, 0,
+                    mc, sender, name, callID, safe, thisCall, spreadCall);
+            aot = aot.asCollector(Object[].class, type.parameterCount()).asType(type);
+            return new ConstantCallSite(aot);
+        }
+        mc.setTarget(mh);
 
         return mc;
     }
@@ -438,7 +505,7 @@ public class IndyInterface {
             mhw = fallbackSupplier.get();
         }
 
-        if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
+        if (!callSite.isAotLinked() && mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
             // GROOVY-11935: Set invokedynamic call site target immediately to enable earlier JIT inlining.
             if (callSite.type().parameterType(0) == Class.class) {
                 var method = mhw.getMethod();
@@ -479,6 +546,58 @@ public class IndyInterface {
     }
 
     /**
+     * Samples the invalidation stamp before a selection frame begins, for
+     * {@link #putSelected}; {@code 0} on a non-AOT site, where the stamp is never consulted.
+     */
+    static long preSelectionStamp(CacheableCallSite callSite) {
+        return callSite.isAotLinked() ? AotDispatch.stamp() : 0L;
+    }
+
+    /**
+     * Stores a freshly selected wrapper in the PIC — unless, on an AOT-linked site, the
+     * global invalidation stamp moved after {@code preSelectionStamp} was sampled (before
+     * the selection read any MOP state). The wrapper then reflects a MOP snapshot that may
+     * predate the change while its construction-time stamp postdates it, so caching it
+     * could dispatch stale until an unrelated future invalidation; the sentinel is stored
+     * instead, forcing re-selection on the next hit. (SwitchPoint guards are immune to
+     * this race because the token is acquired during selection and mutated by the
+     * invalidation itself; the stamp is compared against a sample, so the sample must be
+     * taken on the far side of the selection.) Uncacheable selections store the sentinel
+     * as always. On a non-AOT site this is exactly the historical put.
+     */
+    static void putSelected(CacheableCallSite callSite, String className, MethodHandleWrapper mhw, long preSelectionStamp) {
+        boolean selectionSpansInvalidation = callSite.isAotLinked() && AotDispatch.stamp() != preSelectionStamp;
+        callSite.put(className, !selectionSpansInvalidation && mhw.isCanSetTarget() ? mhw : UNCACHEABLE_PIC_SENTINEL);
+    }
+
+    /**
+     * The AOT-linked site's dispatch entry: PIC lookup, stamp-based freshness, and invocation,
+     * all in ordinary compiled Java (see the AOT branch of
+     * {@link #bootstrap(MethodHandles.Lookup, String, MethodType, String, int)}). The dominant
+     * tier — the reflective cold wrapper — is invoked directly, not through its bound method
+     * handle, so steady-state dispatch never enters the native method-handle interpreter.
+     * <p>
+     * PIC semantics mirror {@code fromCacheHandle}: uncacheable selections store the sentinel
+     * (forcing re-selection per call, since class-keyed reuse would be wrong for e.g.
+     * per-instance metaclasses), and a stamp mismatch — any MOP invalidation since the wrapper
+     * was selected — is a miss.
+     */
+    private static Object aotDispatch(CacheableCallSite callSite, Class<?> sender, String methodName, int callID,
+            Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) throws Throwable {
+        String receiverClassName = receiverCacheKey(arguments[0]);
+        MethodHandleWrapper mhw = callSite.getIfPresent(receiverClassName);
+        if (mhw == null || mhw == UNCACHEABLE_PIC_SENTINEL || mhw.getAotStamp() != AotDispatch.stamp()) {
+            long preSelectionStamp = preSelectionStamp(callSite);
+            mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, 1, arguments);
+            putSelected(callSite, receiverClassName, mhw, preSelectionStamp);
+        }
+        if (mhw instanceof ColdReflectiveMethodHandleWrapper) {
+            return invokeColdReflective((ColdReflectiveMethodHandleWrapper) mhw, arguments);
+        }
+        return mhw.getCachedMethodHandle().invokeExact(arguments);
+    }
+
+    /**
      * Cold-tier dispatch for the {@code groovy.indy.cold.reflection} spike.
      * Re-validates the cached selection with plain-Java checks and invokes the
      * meta method reflectively (classic call-site semantics: argument coercion
@@ -497,8 +616,14 @@ public class IndyInterface {
      * reflective path on the same miss.
      */
     private static Object invokeColdReflective(ColdReflectiveMethodHandleWrapper cold, Object[] arguments) throws Throwable {
-        if (cold.isValidFor(arguments)) {
-            if (cold.incrementReflectiveHits() > INDY_OPTIMIZE_THRESHOLD) {
+        // AOT freshness: classValidity.hasBeenInvalidated() can never report true under native
+        // image, so the stamp carries staleness; a mismatch takes the re-selection path below
+        boolean aotStale = cold.callSite.isAotLinked() && cold.getAotStamp() != AotDispatch.stamp();
+        if (!aotStale && cold.isValidFor(arguments)) {
+            // In AOT mode the reflective tier IS the steady state: method-handle chains run in
+            // the native MH interpreter (microseconds/call, no JIT to fold them) while
+            // reflective dispatch uses AOT-compiled invocation stubs — so never promote.
+            if (!cold.callSite.isAotLinked() && cold.incrementReflectiveHits() > INDY_OPTIMIZE_THRESHOLD) {
                 // no longer cold: build the full guarded chain and replace the
                 // PIC entry, so even sites the consecutive-hit promotion never
                 // catches (e.g. polymorphic receivers) leave the reflective
@@ -520,9 +645,27 @@ public class IndyInterface {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
         }
+        if (aotStale) {
+            // A stamp mismatch means the MOP changed, not that this selection shape is
+            // problematic, so re-select with the cold tier still allowed: the AOT steady
+            // state must remain the reflective wrapper (a full chain would run in the
+            // native method-handle interpreter until the next stamp bump). The fresh
+            // wrapper captures the current stamp, so this cannot recurse on the same
+            // cause; the GROOVY-12191 recursion below stems from validity failures,
+            // which under AOT never come from SwitchPoints.
+            long preSelectionStamp = preSelectionStamp(cold.callSite);
+            MethodHandleWrapper fresh = fallback(cold.callSite, cold.sender, cold.methodName, cold.callID,
+                    cold.safeNavigation, cold.thisCall, cold.spreadCall, 1, arguments);
+            putSelected(cold.callSite, receiverCacheKey(arguments[0]), fresh, preSelectionStamp);
+            if (fresh instanceof ColdReflectiveMethodHandleWrapper) {
+                return invokeColdReflective((ColdReflectiveMethodHandleWrapper) fresh, arguments);
+            }
+            return fresh.getCachedMethodHandle().invokeExact(arguments);
+        }
         // Re-select without the cold tier so an always-invalid SwitchPoint (or any
         // permanent cold miss after class-domain failover) cannot recurse through
         // tryBuild → invokeColdReflective (GROOVY-12191).
+        long preSelectionStamp = preSelectionStamp(cold.callSite);
         MethodHandleWrapper full = fallback(cold.callSite, cold.sender, cold.methodName, cold.callID,
                 cold.safeNavigation, cold.thisCall, cold.spreadCall, 1, arguments, false);
         // PIC write policy — same as fromCacheHandle / selectMethodHandle:
@@ -541,8 +684,7 @@ public class IndyInterface {
         //
         // UNCACHEABLE_PIC_SENTINEL is therefore the only safe PIC value when
         // the re-selected wrapper must not become a class-keyed cache entry.
-        cold.callSite.put(receiverCacheKey(arguments[0]),
-                full.isCanSetTarget() ? full : UNCACHEABLE_PIC_SENTINEL);
+        putSelected(cold.callSite, receiverCacheKey(arguments[0]), full, preSelectionStamp);
         return full.getCachedMethodHandle().invokeExact(arguments);
     }
 
@@ -560,23 +702,28 @@ public class IndyInterface {
      * Core method for indy method selection using runtime types.
      */
     private static MethodHandle selectMethodHandle(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+        long preSelectionStamp = preSelectionStamp(callSite);
         MethodHandleWrapper mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         MethodHandle defaultTarget = callSite.getDefaultTarget();
         long fallbackCount = callSite.incrementFallbackCount();
-        if ((fallbackCount > INDY_FALLBACK_THRESHOLD) && (callSite.getTarget() != defaultTarget)) {
+        if (!callSite.isAotLinked()
+                && (fallbackCount > INDY_FALLBACK_THRESHOLD) && (callSite.getTarget() != defaultTarget)) {
             callSite.setTarget(defaultTarget);
             if (LOG_ENABLED) LOG.info("call site target reset to default, preparing outside invocation");
             callSite.resetFallbackCount();
         }
 
-        if (callSite.getTarget() == defaultTarget) {
+        // in AOT mode the effective target is always the default path (the ConstantCallSite
+        // wraps it), so the PIC write-back below must run; getTarget() would report the
+        // never-installed placeholder
+        if (callSite.isAotLinked() || callSite.getTarget() == defaultTarget) {
             // correct the stale methodHandle in the inline cache of callsite
             // it is important but impacts the performance somehow when cache misses frequently
             Object receiver = arguments[0];
 
             // Avoid PIC pollution: don't write back uncached wrappers, e.g. for instance-level metaClass dispatches.
-            callSite.put(receiverCacheKey(receiver), mhw.isCanSetTarget() ? mhw : UNCACHEABLE_PIC_SENTINEL);
+            putSelected(callSite, receiverCacheKey(receiver), mhw, preSelectionStamp);
         }
 
         return mhw.getCachedMethodHandle();

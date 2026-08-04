@@ -26,6 +26,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import groovy.transform.Internal;
+import org.apache.groovy.runtime.indy.AotDispatch;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.runtime.indy.SwitchPointInvalidator;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
@@ -239,7 +240,8 @@ public class ClassInfo implements Finalizable {
         List<SwitchPoint> batch = new ArrayList<>(2);
         collectLiveIndySwitchPoints(batch);
         if (!batch.isEmpty()) {
-            SwitchPoint.invalidateAll(batch.toArray(new SwitchPoint[0]));
+            // AOT-safe: stamp always advances; real invalidateAll only on a JVM
+            AotDispatch.invalidateAll(batch.toArray(new SwitchPoint[0]));
         }
     }
 
