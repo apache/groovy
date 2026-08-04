@@ -1048,6 +1048,54 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-12226
+    @Test
+    void testStaticInnerClassInTrait2() {
+        assertScript shell, '''
+            trait T {
+                static class Outer {
+                    def outerMethod() { 'foo' }
+                    def outerProperty = 'bar'
+                    class Inner {
+                        def callOuter() { outerMethod() }
+                        def readOuter() { outerProperty }
+                    }
+                    def viaInner() {
+                        def inner = new Inner()
+                        inner.callOuter() + inner.readOuter()
+                    }
+                }
+            }
+            class Foo implements T {
+            }
+            assert new T.Outer().viaInner() == 'foobar'
+        '''
+    }
+
+    // GROOVY-12226: class name collides with the trait helper prefix
+    @Test
+    void testStaticInnerClassInTrait3() {
+        assertScript shell, '''
+            trait T {
+                static class Trait$Outer {
+                    def outerMethod() { 'foo' }
+                    def outerProperty = 'bar'
+                    class Inner {
+                        def callOuter() { outerMethod() }
+                        def readOuter() { outerProperty }
+                    }
+                    def viaInner() {
+                        def inner = new Inner()
+                        inner.callOuter() + inner.readOuter()
+                    }
+                }
+            }
+            class Foo implements T {
+            }
+            assert new T.Trait$Outer().viaInner() == 'foobar'
+        '''
+    }
+
     @Test
     void testNonStaticInnerClassInTrait() {
         shouldFail shell, '''
