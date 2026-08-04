@@ -271,6 +271,7 @@ public class StringEscapeUtils {
      * 
      * @param str  the <code>String</code> to unescape, may be null
      * @return a new unescaped <code>String</code>, <code>null</code> if null string input
+     * @throws JsonException if a <code>'\\u'</code> escape is not followed by four hexadecimal digits
      */
     public static String unescapeJava(String str) {
         if (str == null) {
@@ -300,6 +301,7 @@ public class StringEscapeUtils {
      * @param str  the <code>String</code> to unescape, may be null
      * @throws IllegalArgumentException if the Writer is <code>null</code>
      * @throws IOException if error occurs on underlying Writer
+     * @throws JsonException if a <code>'\\u'</code> escape is not followed by four hexadecimal digits
      */
     public static void unescapeJava(Writer out, String str) throws IOException {
         if (out == null) {
@@ -318,18 +320,18 @@ public class StringEscapeUtils {
                 // if in unicode, then we're reading unicode
                 // values in somehow
                 unicode.append(ch);
+                if (!isHexDigit(ch)) {
+                    // Integer.parseInt would accept a sign or a non-ASCII digit here, but an
+                    // escape carries exactly four hexadecimal digits and nothing else
+                    throw new JsonException("Unable to parse unicode value: \\u" + unicode);
+                }
                 if (unicode.length() == 4) {
                     // unicode now contains the four hex digits
                     // which represents our unicode character
-                    try {
-                        int value = Integer.parseInt(unicode.toString(), 16);
-                        out.write((char) value);
-                        unicode.setLength(0);
-                        inUnicode = false;
-                        hadSlash = false;
-                    } catch (NumberFormatException nfe) {
-                        throw new RuntimeException("Unable to parse unicode value: " + unicode, nfe);
-                    }
+                    out.write((char) Integer.parseInt(unicode.toString(), 16));
+                    unicode.setLength(0);
+                    inUnicode = false;
+                    hadSlash = false;
                 }
                 continue;
             }
@@ -378,11 +380,20 @@ public class StringEscapeUtils {
             }
             out.write(ch);
         }
+        if (inUnicode) {
+            // the string ended in the middle of an escape, so the digits read so far are not a
+            // value; dropping them silently would lose input the caller never asked us to discard
+            throw new JsonException("Unable to parse unicode value: \\u" + unicode);
+        }
         if (hadSlash) {
             // then we're in the weird case of a \ at the end of the
             // string, let's output it anyway.
             out.write('\\');
         }
+    }
+
+    private static boolean isHexDigit(char ch) {
+        return (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
     }
 
     /**

@@ -393,9 +393,54 @@ class StringEscapeUtilsTest {
 
     @Test
     void testUnescapeJavaInvalidUnicode() {
-        assertThrows(RuntimeException, { ->
+        assertThrows(JsonException, { ->
             StringEscapeUtils.unescapeJava("\\uZZZZ")
         })
+    }
+
+    // GROOVY-12233: A \u escape carries exactly four hexadecimal digits. Integer.parseInt(s, 16) is a looser
+    // grammar than that: it also accepts a leading sign and any Unicode digit, so escapes that no
+    // Java or JavaScript source could contain were unescaping to a real character.
+    @Test
+    void testUnescapeJavaRejectsSignedUnicode() {
+        // '+041' parses as 0x41, so this used to yield 'A'
+        assertThrows(JsonException, { ->
+            StringEscapeUtils.unescapeJava("\\u+041")
+        })
+        // '-001' parses as -1, so this used to yield the char 0xFFFF
+        assertThrows(JsonException, { ->
+            StringEscapeUtils.unescapeJava("\\u-001")
+        })
+    }
+
+    @Test
+    void testUnescapeJavaRejectsNonAsciiUnicodeDigits() {
+        // the Arabic-Indic digits for 1234, which used to yield the char 0x1234
+        assertThrows(JsonException, { ->
+            StringEscapeUtils.unescapeJava("\\u\u0661\u0662\u0663\u0664")
+        })
+    }
+
+    // A \u escape cut short by the end of the input used to leave the loop mid-escape, silently
+    // discarding both the escape and the digits already read, rather than reporting the input as
+    // malformed the way a trailing backslash does.
+    @Test
+    void testUnescapeJavaRejectsTruncatedUnicode() {
+        ["\\u", "\\u1", "\\u12", "\\u123", "x\\u12"].each { input ->
+            assertThrows(JsonException, { ->
+                StringEscapeUtils.unescapeJava(input)
+            }, "must reject '$input'")
+        }
+    }
+
+    @Test
+    void testUnescapeJavaValidUnicodeBoundaries() {
+        assertEquals("\u0000", StringEscapeUtils.unescapeJava("\\u0000"))
+        assertEquals("\uffff", StringEscapeUtils.unescapeJava("\\uffff"))
+        assertEquals("\u00e9", StringEscapeUtils.unescapeJava("\\u00e9"), "lower-case digits")
+        assertEquals("\u00e9", StringEscapeUtils.unescapeJava("\\u00E9"), "upper-case digits")
+        // a surrogate pair is two escapes, and ordinary text may follow the fourth digit
+        assertEquals("\ud83d\ude00ef", StringEscapeUtils.unescapeJava("\\ud83d\\ude00ef"))
     }
 
     @Test
