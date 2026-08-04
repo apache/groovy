@@ -108,7 +108,9 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         classNode = node;
         thisField = null;
 
-        if (node.isEnum() || node.isInterface() || isTrait(node.getOuterClass())) return;
+        // GROOVY-8587: trait helpers must not get the standard MOP methods, but
+        // GROOVY-12226: classes declared within a trait are ordinary inner classes
+        if (node.isEnum() || node.isInterface() || isTraitHelper(node)) return;
 
         // if the class has an inner class, add methods to support private member access
         if (node.getInnerClasses().hasNext()) {
@@ -147,6 +149,17 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 ((TupleExpression) superCtorCall.getArguments()).addExpression(castX(superClass, nullX()));
             }
         }
+    }
+
+    /**
+     * Tests for one of the classes generated for a trait, i.e. the helper, the
+     * field helper or the static field helper. Classes declared within a trait
+     * are not included.
+     */
+    private static boolean isTraitHelper(final ClassNode node) {
+        ClassNode outerClass = node.getOuterClass();
+        return isTrait(outerClass) && (node.getModifiers() & ACC_SYNTHETIC) != 0
+                && node.getName().startsWith(outerClass.getName() + "$Trait$");
     }
 
     private static void makeBridgeConstructor(final ClassNode c, final Parameter[] p) {
