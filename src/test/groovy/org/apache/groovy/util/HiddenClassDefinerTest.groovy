@@ -19,6 +19,8 @@
 package org.apache.groovy.util
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.parallel.ResourceLock
+import org.junit.jupiter.api.parallel.Resources
 import org.objectweb.asm.ClassWriter
 
 import java.lang.invoke.MethodHandles
@@ -75,13 +77,119 @@ class HiddenClassDefinerTest {
     }
 
     // -------------------------------------------------------------------------
-    // Status
+    // Status / enablement (runtime kill switch + native image)
     // -------------------------------------------------------------------------
 
     @Test
     void testHiddenClassesEnabledByDefault() {
+        // Assumes no kill-switch / native-image properties from the test runner.
         assertTrue(HiddenClassDefiner.isEnabled())
-        assertFalse(HiddenClassDefiner.HIDDEN_CLASSES_DISABLED)
+        assertFalse(HiddenClassDefiner.isNativeImageRuntime())
+    }
+
+    @Test
+    @ResourceLock(Resources.SYSTEM_PROPERTIES)
+    void testIsEnabledHonoursKillSwitchAtRuntime() {
+        String previous = System.getProperty(HiddenClassDefiner.PROPERTY_DISABLE)
+        try {
+            System.setProperty(HiddenClassDefiner.PROPERTY_DISABLE, 'true')
+            assertFalse(HiddenClassDefiner.isEnabled())
+            // Soft path must short-circuit without defining
+            assertNull(HiddenClassDefiner.tryDefineNestmate(
+                    LOOKUP, minimalClassBytes('org/apache/groovy/util/KillSwitch1'), true))
+        } finally {
+            if (previous == null) {
+                System.clearProperty(HiddenClassDefiner.PROPERTY_DISABLE)
+            } else {
+                System.setProperty(HiddenClassDefiner.PROPERTY_DISABLE, previous)
+            }
+        }
+        assertTrue(HiddenClassDefiner.isEnabled())
+    }
+
+    @Test
+    @ResourceLock(Resources.SYSTEM_PROPERTIES)
+    void testIsEnabledFalseUnderNativeImageRuntimeProperty() {
+        String previous = System.getProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE)
+        try {
+            System.setProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE,
+                    HiddenClassDefiner.NATIVE_IMAGE_CODE_RUNTIME)
+            assertTrue(HiddenClassDefiner.isNativeImageRuntime())
+            assertFalse(HiddenClassDefiner.isEnabled())
+            assertNull(HiddenClassDefiner.tryDefineNestmate(
+                    LOOKUP, minimalClassBytes('org/apache/groovy/util/NativeImg1'), true))
+        } finally {
+            if (previous == null) {
+                System.clearProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE)
+            } else {
+                System.setProperty(HiddenClassDefiner.PROPERTY_NATIVE_IMAGE_CODE, previous)
+            }
+        }
+        assertTrue(HiddenClassDefiner.isEnabled())
+    }
+
+    @Test
+    void testUnsupportedFeatureErrorIsSoftFailedByName() {
+        // Name-checked without a GraalVM dependency (see paulk-asert / native-image notes).
+        Error fake = new Error('synthetic') {
+            // subclass identity is wrong; match is by FQCN only
+        }
+        assertFalse(HiddenClassDefiner.isUnsupportedFeatureError(fake))
+        assertFalse(HiddenClassDefiner.isUnsupportedFeatureError(null))
+
+        // Load a synthetic Error subclass with the exact GraalVM FQCN
+        Class<? extends Error> synthetic = defineSyntheticUnsupportedFeatureError()
+        Error graalShaped = synthetic.getDeclaredConstructor(String).newInstance('no defineClass')
+        assertTrue(HiddenClassDefiner.isUnsupportedFeatureError(graalShaped))
+
+        // Same branch both tryDefineNestmate overloads use on Error
+        assertNull(HiddenClassDefiner.softFailOrRethrow(graalShaped))
+        Error other = new AssertionError('must rethrow')
+        assertThrows(AssertionError) {
+            HiddenClassDefiner.softFailOrRethrow(other)
+        }
+    }
+
+    /**
+     * Defines {@code com.oracle.svm.core.jdk.UnsupportedFeatureError} as a plain
+     * Error subclass in a throwaway loader so soft-fail matching can be unit-tested
+     * without GraalVM on the classpath.
+     */
+    private static Class<? extends Error> defineSyntheticUnsupportedFeatureError() {
+        String internal = 'com/oracle/svm/core/jdk/UnsupportedFeatureError'
+        def cw = new ClassWriter(0)
+        cw.visit(V17, ACC_PUBLIC, internal, null, 'java/lang/Error', null)
+        def mv = cw.visitMethod(ACC_PUBLIC, '<init>', '(Ljava/lang/String;)V', null, null)
+        mv.visitCode()
+        mv.visitVarInsn(ALOAD, 0)
+        mv.visitVarInsn(ALOAD, 1)
+        mv.visitMethodInsn(INVOKESPECIAL, 'java/lang/Error', '<init>', '(Ljava/lang/String;)V', false)
+        mv.visitInsn(RETURN)
+        mv.visitMaxs(2, 2)
+        mv.visitEnd()
+        cw.visitEnd()
+        byte[] bytes = cw.toByteArray()
+        ClassLoader loader = new ClassLoader(null) {
+            @Override
+            protected Class<?> findClass(String name) throws ClassNotFoundException {
+                if (name == 'com.oracle.svm.core.jdk.UnsupportedFeatureError') {
+                    return defineClass(name, bytes, 0, bytes.length)
+                }
+                throw new ClassNotFoundException(name)
+            }
+        }
+        (Class<? extends Error>) loader.loadClass('com.oracle.svm.core.jdk.UnsupportedFeatureError')
+    }
+
+    @Test
+    void testLookupClassDeterminesNestHostNotUtilityClass() {
+        // blackdrag: which class called MethodHandles.lookup() matters — the nest
+        // host is lookup.lookupClass(), not HiddenClassDefiner.
+        byte[] bytes = minimalClassBytes('org/apache/groovy/util/NestHostCheck')
+        Class<?> hidden = HiddenClassDefiner.tryDefineNestmate(LOOKUP, bytes, true)
+        assertNotNull(hidden)
+        assertEquals(LOOKUP.lookupClass().nestHost, hidden.nestHost)
+        assertFalse(hidden.nestHost == HiddenClassDefiner)
     }
 
     // -------------------------------------------------------------------------
