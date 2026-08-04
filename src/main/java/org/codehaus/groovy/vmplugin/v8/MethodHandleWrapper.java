@@ -34,6 +34,16 @@ class MethodHandleWrapper {
     private final MetaMethod method;
     private final boolean canSetTarget;
     private final AtomicLong latestHitCount = new AtomicLong(0);
+    /**
+     * The global {@code AotDispatch} invalidation stamp at creation. Read only for sites
+     * linked in AOT mode: a mismatch on a PIC hit means the MOP changed since this wrapper
+     * was selected and it must be treated as a miss (the AOT replacement for the SwitchPoint
+     * guards, which cannot fire under native image). Construction runs at the end of
+     * selection, so this stamp only covers invalidations arriving after caching; one landing
+     * while selection itself runs is caught at the PIC write instead
+     * (see {@code IndyInterface#putSelected}).
+     */
+    private final long aotStamp = org.apache.groovy.runtime.indy.AotDispatch.stamp();
 
     /**
      * Creates a wrapper for the cached and relink targets of a meta method.
@@ -75,6 +85,16 @@ class MethodHandleWrapper {
      */
     public MetaMethod getMethod() {
         return method;
+    }
+
+    /**
+     * Returns the global {@code AotDispatch} invalidation stamp captured at creation
+     * (see the {@code aotStamp} field for how AOT-linked sites use it).
+     *
+     * @return the creation-time stamp
+     */
+    long getAotStamp() {
+        return aotStamp;
     }
 
     /**

@@ -58,6 +58,7 @@ public class CacheableCallSite extends MutableCallSite {
     private volatile SoftReference<MethodHandleWrapper> latestHitMethodHandleWrapperSoftReference = null;
     private final AtomicLong fallbackCount = new AtomicLong();
     private final AtomicLong fallbackRound = new AtomicLong();
+    private final boolean aotLinked;
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
     private final Map<String, SoftReference<MethodHandleWrapper>> lruCache =
@@ -85,6 +86,50 @@ public class CacheableCallSite extends MutableCallSite {
     public CacheableCallSite(MethodType type, MethodHandles.Lookup lookup) {
         super(type);
         this.lookup = lookup;
+        // captured once, at link time (this constructor only runs while linking a site), so
+        // per-invocation code reads a plain field instead of probing system properties
+        this.aotLinked = org.apache.groovy.runtime.indy.AotDispatch.isAotLinkRequested();
+    }
+
+    /**
+     * Whether this site was linked in AOT mode (GraalVM native image, or the
+     * {@code groovy.indy.aot.link} diagnostic knob): the site is wrapped in a
+     * {@code ConstantCallSite} over the cache-consulting default path, is never retargeted,
+     * and cache freshness is carried by the {@code AotDispatch} stamp instead of SwitchPoints.
+     */
+    public boolean isAotLinked() {
+        return aotLinked;
+    }
+
+    /**
+     * Fails fast on any retarget attempt in AOT mode. Under a real native image
+     * {@code setTarget} throws {@code UnsupportedFeatureError} anyway — and worse, execution
+     * would continue with the stale target if that error were swallowed — so a missed gate is
+     * a bug on every platform; this surfaces it on the JVM, where tests run with the
+     * diagnostic knob.
+     */
+    @Override
+    public void setTarget(final MethodHandle newTarget) {
+        if (aotLinked) {
+            throw new IllegalStateException("call site retargeting is disabled in AOT link mode (GROOVY-12234)");
+        }
+        super.setTarget(newTarget);
+    }
+
+    /**
+     * Read-only PIC lookup: the cached wrapper for the receiver class, or {@code null} when
+     * absent or its soft reference has been cleared. Used by the AOT dispatch path, which
+     * resolves misses itself and must not pay for a value-provider allocation per call.
+     *
+     * @param className the receiver cache key
+     * @return the cached wrapper or {@code null}
+     */
+    public MethodHandleWrapper getIfPresent(String className) {
+        final SoftReference<MethodHandleWrapper> ref;
+        synchronized (lruCache) {
+            ref = lruCache.get(className);
+        }
+        return ref == null ? null : ref.get();
     }
 
     /**
