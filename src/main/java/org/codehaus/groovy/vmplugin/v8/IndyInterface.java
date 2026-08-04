@@ -208,6 +208,12 @@ public class IndyInterface {
      */
     static final MethodHandle COLD_REFLECTIVE_INVOKER;
 
+    /**
+     * Handle for {@link #aotDispatch}: the single plain-Java entry an AOT-linked site's
+     * constant target binds to.
+     */
+    private static final MethodHandle AOT_DISPATCH_METHOD;
+
     static {
         try {
             MethodType mt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
@@ -216,6 +222,9 @@ public class IndyInterface {
             SELECT_METHOD_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethodHandle", mt);
             COLD_REFLECTIVE_INVOKER = LOOKUP.findStatic(IndyInterface.class, "invokeColdReflective",
                     MethodType.methodType(Object.class, ColdReflectiveMethodHandleWrapper.class, Object[].class));
+            AOT_DISPATCH_METHOD = LOOKUP.findStatic(IndyInterface.class, "aotDispatch",
+                    MethodType.methodType(Object.class, CacheableCallSite.class, Class.class, String.class, int.class,
+                            Boolean.class, Boolean.class, Boolean.class, Object[].class));
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
@@ -353,11 +362,24 @@ public class IndyInterface {
         if (mc.isAotLinked()) {
             // AOT link mode (GROOVY-12227 spike): native image cannot retarget call sites
             // (MethodHandleNatives.setCallSiteTargetNormal is unsupported), so the site links
-            // once, permanently, to the cache-consulting default path. The CacheableCallSite is
-            // never installed as the call site — it serves as the state carrier (PIC, fallback
-            // target) the bound handles consult. Retargeting only ever installs caches in this
-            // design, so semantics are unchanged; freshness moves to the AotDispatch stamp.
-            return new ConstantCallSite(mh);
+            // once, permanently, to a constant target. The CacheableCallSite is never installed
+            // as the call site — it serves as the state carrier (PIC, fallback target) the
+            // dispatcher consults. Retargeting only ever installs caches in this design, so
+            // semantics are unchanged; freshness moves to the AotDispatch stamp.
+            //
+            // The target is deliberately SHALLOW: one bound handle into aotDispatch, which does
+            // PIC lookup, freshness check, and invocation in ordinary compiled Java, and — for
+            // the dominant reflective tier — never re-enters the method-handle machinery.
+            // Measured caveat: entering ANY runtime-created method handle costs ~4.5us under
+            // native image (a per-entry interpreter cost, independent of chain depth or
+            // invokeExact), and the invokedynamic instruction's hop into this runtime-linked
+            // target pays it once per call regardless of the target's shape. The shallow form
+            // still wins on allocation (no per-call FallbackSupplier/provider lambdas) and
+            // keeps everything past the entry in compiled code.
+            MethodHandle aot = MethodHandles.insertArguments(AOT_DISPATCH_METHOD, 0,
+                    mc, sender, name, callID, safe, thisCall, spreadCall);
+            aot = aot.asCollector(Object[].class, type.parameterCount()).asType(type);
+            return new ConstantCallSite(aot);
         }
         mc.setTarget(mh);
 
@@ -479,12 +501,6 @@ public class IndyInterface {
             // The PIC stores a sentinel to remember "do not relink this receiver shape";
             // execution still needs a real handle for the current invocation.
             mhw = fallbackSupplier.get();
-        } else if (callSite.isAotLinked() && mhw.getAotStamp() != AotDispatch.stamp()) {
-            // AOT freshness: the cached chain's SwitchPoint guards cannot fire under native
-            // image, so a stamp mismatch (any MOP invalidation since selection) is a miss —
-            // re-select and replace the PIC entry
-            mhw = fallbackSupplier.get();
-            callSite.put(receiverClassName, mhw.isCanSetTarget() ? mhw : UNCACHEABLE_PIC_SENTINEL);
         }
 
         if (!callSite.isAotLinked() && mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle())) {
@@ -525,6 +541,32 @@ public class IndyInterface {
         }
 
         return mhw.getCachedMethodHandle();
+    }
+
+    /**
+     * The AOT-linked site's dispatch entry: PIC lookup, stamp-based freshness, and invocation,
+     * all in ordinary compiled Java (see the AOT branch of
+     * {@link #bootstrap(MethodHandles.Lookup, String, MethodType, String, int)}). The dominant
+     * tier — the reflective cold wrapper — is invoked directly, not through its bound method
+     * handle, so steady-state dispatch never enters the native method-handle interpreter.
+     * <p>
+     * PIC semantics mirror {@code fromCacheHandle}: uncacheable selections store the sentinel
+     * (forcing re-selection per call, since class-keyed reuse would be wrong for e.g.
+     * per-instance metaclasses), and a stamp mismatch — any MOP invalidation since the wrapper
+     * was selected — is a miss.
+     */
+    private static Object aotDispatch(CacheableCallSite callSite, Class<?> sender, String methodName, int callID,
+            Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object[] arguments) throws Throwable {
+        String receiverClassName = receiverCacheKey(arguments[0]);
+        MethodHandleWrapper mhw = callSite.getIfPresent(receiverClassName);
+        if (mhw == null || mhw == UNCACHEABLE_PIC_SENTINEL || mhw.getAotStamp() != AotDispatch.stamp()) {
+            mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, 1, arguments);
+            callSite.put(receiverClassName, mhw.isCanSetTarget() ? mhw : UNCACHEABLE_PIC_SENTINEL);
+        }
+        if (mhw instanceof ColdReflectiveMethodHandleWrapper) {
+            return invokeColdReflective((ColdReflectiveMethodHandleWrapper) mhw, arguments);
+        }
+        return mhw.getCachedMethodHandle().invokeExact(arguments);
     }
 
     /**

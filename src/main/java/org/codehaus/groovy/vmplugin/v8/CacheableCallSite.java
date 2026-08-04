@@ -123,6 +123,22 @@ public class CacheableCallSite extends MutableCallSite {
      * @param valueProvider the provider used to compute a missing entry
      * @return the cached or newly created wrapper
      */
+    /**
+     * Read-only PIC lookup: the cached wrapper for the receiver class, or {@code null} when
+     * absent or its soft reference has been cleared. Used by the AOT dispatch path, which
+     * resolves misses itself and must not pay for a value-provider allocation per call.
+     *
+     * @param className the receiver cache key
+     * @return the cached wrapper or {@code null}
+     */
+    public MethodHandleWrapper getIfPresent(String className) {
+        final SoftReference<MethodHandleWrapper> ref;
+        synchronized (lruCache) {
+            ref = lruCache.get(className);
+        }
+        return ref == null ? null : ref.get();
+    }
+
     public MethodHandleWrapper getAndPut(String className, MemoizeCache.ValueProvider<? super String, ? extends MethodHandleWrapper> valueProvider) {
         MethodHandleWrapper result = null;
         SoftReference<MethodHandleWrapper> resultSoftReference;
