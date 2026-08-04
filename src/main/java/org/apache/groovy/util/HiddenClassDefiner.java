@@ -35,67 +35,87 @@ import java.util.Collections;
  * <h2>Lookup ownership (read this first)</h2>
  * <p>{@link MethodHandles#lookup()} is <em>caller-sensitive</em>: it returns a
  * full-privilege lookup only for the class that literally contains the call.
- * A lookup captured in this utility therefore only has full privilege for
- * {@code HiddenClassDefiner} itself — never for arbitrary foreign classes
- * (for example {@code java.lang.String} in {@code java.base}).
- *
- * <p>Consequently the <strong>preferred</strong> entry point is
- * {@link #tryDefineNestmate(Lookup, byte[], boolean)}, where the caller
- * supplies a {@link Lookup} obtained inside the intended nest-host class:
+ * Production call sites therefore capture a lookup on the intended nest host
+ * itself, for example:
  * <pre>{@code
- * // Inside the class that should host the hidden nestmate:
+ * // ReflectorLoader / ProxyGeneratorAdapter (or any nest host):
  * private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
  *
  * Class<?> hidden = HiddenClassDefiner.tryDefineNestmate(LOOKUP, bytecode, false);
- * if (hidden == null) {
- *     // fall back to ClassLoader.defineClass(...)
- * }
  * }</pre>
+ * The {@link Lookup#lookupClass() lookup class} determines the hidden class's
+ * defining loader, run-time package, protection domain, and nest host. A lookup
+ * from {@code ReflectorLoader} is therefore <em>not</em> interchangeable with
+ * one from {@code ProxyGeneratorAdapter} or from this utility: each hosts
+ * nestmates in a different package / loader / nest. What is shared is only the
+ * define policy (package alignment, {@code NESTMATE}+weak options, soft-fail).
+ *
+ * <p>A lookup captured inside {@code HiddenClassDefiner} only has full privilege
+ * for {@code HiddenClassDefiner} itself. It is used solely as the <em>caller</em>
+ * argument to {@link MethodHandles#privateLookupIn(Class, Lookup)} in the
+ * foreign-host overload — never as the nest host of production generators.
  *
  * <p>The overload {@link #tryDefineNestmate(Class, byte[], boolean)} is a
  * <em>best-effort</em> helper for foreign hosts (user classes Groovy does not
- * control). It uses {@link MethodHandles#privateLookupIn(Class, Lookup)} from
- * this class and therefore succeeds only when the host's package is accessible
- * to Groovy's module — typically true for unnamed-module application classes,
- * and typically false for sealed / unopened packages such as those in
- * {@code java.base}. Callers must always handle a {@code null} result.
+ * control). It succeeds only when the host's package is accessible to Groovy's
+ * module (typical for unnamed-module application classes; not for sealed /
+ * unopened packages such as those in {@code java.base}). Callers must always
+ * handle a {@code null} result and fall back to {@link ClassLoader#defineClass}.
  *
- * <h2>What this utility centralises</h2>
+ * <h2>Soft-fail contract</h2>
+ * <p>{@code try*} methods return {@code null} on expected failure modes so call
+ * sites can fall back with one null check:
  * <ul>
- *   <li>{@code NESTMATE} + weak-lifecycle policy for dynamic Groovy classes;</li>
- *   <li>rewriting {@code this_class} into the lookup class's package (required
- *       by {@link Lookup#defineHiddenClass});</li>
- *   <li>a soft API that returns {@code null} on the <em>expected</em> failure
- *       modes ({@link IllegalAccessException}, {@link IllegalArgumentException},
- *       {@link SecurityException}, {@link LinkageError}) so call sites fall back
- *       to {@link ClassLoader#defineClass} with one null check. Unexpected
- *       failures (e.g. programming errors in callers) are not swallowed as a
- *       blanket {@link RuntimeException}.</li>
+ *   <li>{@link IllegalAccessException}, {@link SecurityException}</li>
+ *   <li>{@link LinkageError}</li>
+ *   <li>{@link IllegalArgumentException}, {@link IndexOutOfBoundsException}
+ *       (invalid class-file bytes / ASM)</li>
+ *   <li>GraalVM native-image "feature unsupported" errors, detected by class
+ *       name ({@code com.oracle.svm.core.jdk.UnsupportedFeatureError}) without
+ *       a build dependency on GraalVM</li>
  * </ul>
+ * Other {@link Error}s and unexpected failures are rethrown.
  *
- * <h2>Kill switch</h2>
- * <p>{@code -Dgroovy.hidden.classes.disable=true} forces every {@code try*}
- * method to return {@code null}.
+ * <h2>Enablement (kill switch and native image)</h2>
+ * <p>{@link #isEnabled()} is evaluated on each call (class definition is not a
+ * hot path). That keeps {@code -Dgroovy.hidden.classes.disable=true} effective
+ * under GraalVM native image, where a {@code static final} snapshot taken at
+ * <em>build-time</em> class-init would freeze the wrong answer. When running
+ * inside a native image ({@code org.graalvm.nativeimage.imagecode=runtime}),
+ * enablement is {@code false}: runtime class definition is unsupported there,
+ * so the soft path never attempts it.
  *
  * @since 6.0.0
  * @see Lookup#defineHiddenClass(byte[], boolean, Lookup.ClassOption...)
  */
 public final class HiddenClassDefiner {
 
-    /** System property that disables hidden-class definitions. */
+    /** System property that disables hidden-class definitions at run time. */
     public static final String PROPERTY_DISABLE = "groovy.hidden.classes.disable";
 
     /**
-     * {@code true} when hidden-class definitions are globally disabled.
-     * Evaluated once at class-init so hot paths pay no property-lookup cost.
+     * GraalVM property set in native images. Value {@code "runtime"} means the
+     * current process is executing an already-built native image (as opposed to
+     * {@code "buildtime"} during image generation). Package-private: not a
+     * public configuration surface — use {@link #isEnabled()}.
      */
-    public static final boolean HIDDEN_CLASSES_DISABLED =
-            SystemUtil.getBooleanSafe(PROPERTY_DISABLE, false);
+    static final String PROPERTY_NATIVE_IMAGE_CODE = "org.graalvm.nativeimage.imagecode";
+
+    /** Value of {@link #PROPERTY_NATIVE_IMAGE_CODE} while executing a native image. */
+    static final String NATIVE_IMAGE_CODE_RUNTIME = "runtime";
+
+    /**
+     * Fully-qualified name of GraalVM's "feature not supported at runtime" error.
+     * Matched by name to avoid a compile-time dependency on {@code org.graalvm.*}.
+     */
+    static final String UNSUPPORTED_FEATURE_ERROR =
+            "com.oracle.svm.core.jdk.UnsupportedFeatureError";
 
     /**
      * Lookup for <em>this</em> class only — used exclusively as the caller
      * argument to {@link MethodHandles#privateLookupIn(Class, Lookup)} in the
-     * foreign-host overload. It is never used as a nest host for user code.
+     * foreign-host overload. It is never used as a nest host for production
+     * generators (those pass their own {@link MethodHandles#lookup()}).
      */
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
@@ -107,11 +127,24 @@ public final class HiddenClassDefiner {
     }
 
     /**
-     * @return {@code true} when hidden-class definition is enabled
-     *         (the default unless {@value #PROPERTY_DISABLE} is set)
+     * Whether hidden-class definition may be attempted in this process.
+     *
+     * <p>Returns {@code false} when:
+     * <ul>
+     *   <li>{@code -Dgroovy.hidden.classes.disable=true}, or</li>
+     *   <li>the process is a GraalVM native image at run time
+     *       ({@code org.graalvm.nativeimage.imagecode=runtime}).</li>
+     * </ul>
+     * Evaluated on each call so the kill switch remains effective when this
+     * class is initialized at native-image <em>build</em> time.
+     *
+     * @return {@code true} when a {@code tryDefineNestmate} attempt is allowed
      */
     public static boolean isEnabled() {
-        return !HIDDEN_CLASSES_DISABLED;
+        if (isNativeImageRuntime()) {
+            return false;
+        }
+        return !SystemUtil.getBooleanSafe(PROPERTY_DISABLE, false);
     }
 
     /**
@@ -119,9 +152,10 @@ public final class HiddenClassDefiner {
      * with a weak lifecycle.
      *
      * <p>The lookup must have been obtained via {@link MethodHandles#lookup()}
-     * inside the intended nest-host class (or otherwise carry full privilege
-     * for that class). The class-file package is rewritten to match the lookup
-     * class before definition.
+     * <em>inside</em> the intended nest-host class (or otherwise carry full
+     * privilege for that class). Which class called {@code lookup()} matters:
+     * it fixes the hidden class's loader, package, and nest. The class-file
+     * package is rewritten to match the lookup class before definition.
      *
      * @param lookup     full-privilege lookup for the nest host
      * @param bytes      class-file bytes
@@ -132,7 +166,7 @@ public final class HiddenClassDefiner {
             final Lookup lookup,
             final byte[] bytes,
             final boolean initialize) {
-        if (HIDDEN_CLASSES_DISABLED || lookup == null || bytes == null) {
+        if (!isEnabled() || lookup == null || bytes == null) {
             return null;
         }
         try {
@@ -140,12 +174,11 @@ public final class HiddenClassDefiner {
             return lookup.defineHiddenClass(aligned, initialize, NESTMATE_WEAK).lookupClass();
         } catch (IllegalAccessException | SecurityException | LinkageError e) {
             return null;
-        } catch (IllegalArgumentException e) {
-            // Invalid / unaligned class-file bytes (including ASM ClassReader).
+        } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
+            // Invalid class-file bytes (including ASM ClassReader).
             return null;
-        } catch (IndexOutOfBoundsException e) {
-            // Corrupt bytes can surface as bounds errors from ClassReader.
-            return null;
+        } catch (Error e) {
+            return softFailOrRethrow(e);
         }
     }
 
@@ -170,7 +203,7 @@ public final class HiddenClassDefiner {
             final Class<?> host,
             final byte[] bytes,
             final boolean initialize) {
-        if (HIDDEN_CLASSES_DISABLED || !isUsableHost(host) || bytes == null) {
+        if (!isEnabled() || !isUsableHost(host) || bytes == null) {
             return null;
         }
         try {
@@ -178,15 +211,49 @@ public final class HiddenClassDefiner {
             return tryDefineNestmate(hostLookup, bytes, initialize);
         } catch (IllegalAccessException | SecurityException e) {
             return null;
+        } catch (Error e) {
+            return softFailOrRethrow(e);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Internals (package-visible where tests need them)
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@code true} when executing inside a GraalVM native image (not during
+     * image build). Package-private for tests.
+     */
+    static boolean isNativeImageRuntime() {
+        return NATIVE_IMAGE_CODE_RUNTIME.equals(System.getProperty(PROPERTY_NATIVE_IMAGE_CODE));
+    }
+
+    /**
+     * {@code true} when {@code e} is GraalVM's unsupported-feature error.
+     * Package-private for tests.
+     */
+    static boolean isUnsupportedFeatureError(final Error e) {
+        return e != null && UNSUPPORTED_FEATURE_ERROR.equals(e.getClass().getName());
+    }
+
+    /**
+     * Soft-fails GraalVM unsupported-feature errors as {@code null}; rethrows
+     * every other {@link Error}. Package-private so unit tests cover the same
+     * branch used by both {@code tryDefineNestmate} overloads.
+     *
+     * @param e error caught around define / privateLookupIn
+     * @return {@code null} if soft-failed
+     */
+    static Class<?> softFailOrRethrow(final Error e) {
+        if (isUnsupportedFeatureError(e)) {
+            return null;
+        }
+        throw e;
     }
 
     /**
      * Rewrites {@code this_class} (and internal references to it) into
      * {@code host}'s run-time package. No-op when already aligned.
-     *
-     * <p>ASM may throw {@link IllegalArgumentException} for corrupt bytes; callers
-     * of {@link #tryDefineNestmate(Lookup, byte[], boolean)} treat that as soft-fail.
      */
     private static byte[] alignPackage(final byte[] bytes, final Class<?> host) {
         final String hostPkg = host.getPackageName();
@@ -202,7 +269,9 @@ public final class HiddenClassDefiner {
         }
         final ClassWriter writer = new ClassWriter(reader, 0);
         reader.accept(new ClassRemapper(writer,
-            new SimpleRemapper(CompilerConfiguration.ASM_API_VERSION, Collections.singletonMap(oldInternal, newInternal))), 0);
+                new SimpleRemapper(
+                        CompilerConfiguration.ASM_API_VERSION,
+                        Collections.singletonMap(oldInternal, newInternal))), 0);
         return writer.toByteArray();
     }
 
