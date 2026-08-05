@@ -640,15 +640,30 @@ public class IndyInterface {
     }
 
     /**
-     * Invokedynamic bootstrap for a class's packed-closure dispatcher accessor (GROOVY-12151):
-     * links the class's generated dispatch tables into one constant bundle, lazily on first
-     * adapter creation. Delegates to {@link GeneratedDispatcher#bootstrap}; hosted here so
-     * emitted bytecode references only this central bootstrap surface.
+     * Legacy invokedynamic bootstrap for a class's packed-closure dispatcher accessor
+     * (GROOVY-12151), kept for class files emitted by earlier 6.0 pre-releases: links the
+     * class's generated dispatch tables into one constant bundle, lazily on first adapter
+     * creation. Delegates to {@link GeneratedDispatcher#bootstrap}; hosted here so emitted
+     * bytecode references only this central bootstrap surface.
      *
      * @since 6.0.0
      */
     public static CallSite packedDispatchers(MethodHandles.Lookup caller, String name, MethodType type) throws Throwable {
         return GeneratedDispatcher.bootstrap(caller, name, type);
+    }
+
+    /**
+     * Invokedynamic bootstrap for a class's packed-closure dispatcher accessor (GROOVY-12151):
+     * the hosting class supplies a factory that builds the bundle from its own bytecode-level
+     * {@code LambdaMetafactory} sites. Nothing is looked up and no class is defined at link
+     * time, so this links unchanged under GraalVM native image (GROOVY-12227). The
+     * three-argument form remains for class files emitted by earlier 6.0 pre-releases.
+     *
+     * @since 6.0.0
+     */
+    public static CallSite packedDispatchers(MethodHandles.Lookup caller, String name, MethodType type,
+            MethodHandle factory) throws Throwable {
+        return GeneratedDispatcher.bootstrap(caller, name, type, factory);
     }
 
     /**
