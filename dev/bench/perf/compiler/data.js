@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785829604496,
+  "lastUpdate": 1785918595365,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -4148,6 +4148,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 366.25666666666666,
             "range": "±19.11",
+            "unit": "ms",
+            "extra": "5.0.7"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "2f85f423fe37747156874953ad368a30be9418df",
+          "message": "GROOVY-12233: StringEscapeUtils.unescapeJava mis-decodes and silently drops malformed \\u escapes",
+          "timestamp": "2026-08-04T03:49:52Z",
+          "url": "https://github.com/apache/groovy/commit/2f85f423fe37747156874953ad368a30be9418df"
+        },
+        "date": 1785918592804,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 557.23,
+            "range": "±23.98",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 643.59,
+            "range": "±210.75",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 572.7366666666667,
+            "range": "±145.01",
+            "unit": "ms",
+            "extra": "4.0.32"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 476.0866666666667,
+            "range": "±22.41",
             "unit": "ms",
             "extra": "5.0.7"
           }
