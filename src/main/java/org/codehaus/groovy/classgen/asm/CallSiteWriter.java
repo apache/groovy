@@ -113,6 +113,7 @@ public class CallSiteWriter {
     public static final String CONSTRUCTOR = "<$constructor$>";
     private final List<String> callSites = new ArrayList<String>(32);
     private int callSiteArrayVarIndex = -1;
+    private boolean prologueEmitted;
     private final WriterController controller;
 
     /**
@@ -141,7 +142,16 @@ public class CallSiteWriter {
             mv.visitMethodInsn(INVOKESTATIC, controller.getClassName(), GET_CALLSITE_METHOD, GET_CALLSITE_DESC, false);
             controller.getOperandStack().push(CALLSITE_ARRAY_TYPE);
             callSiteArrayVarIndex = controller.getCompileStack().defineTemporaryVariable("$local$callSiteArray", CALLSITE_ARRAY_TYPE, true);
+            prologueEmitted = true;
         }
+    }
+
+    /**
+     * Returns true if a call-site array loading prologue has been emitted for
+     * at least one method of the current class.
+     */
+    public boolean isPrologueEmitted() {
+        return prologueEmitted;
     }
 
     /**
