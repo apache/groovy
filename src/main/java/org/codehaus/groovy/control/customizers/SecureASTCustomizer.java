@@ -94,12 +94,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This customizer allows securing source code by controlling what code constructs are permitted.
- * This is typically done when using Groovy for its scripting or domain specific language (DSL) features.
+ * Restricts the grammar available to the source being compiled, so that a shell or domain specific
+ * language (DSL) offers only a chosen subset of the Groovy language.
  * For example, if you only want to allow arithmetic operations in a groovy shell,
  * you can configure this customizer to restrict package imports, method calls and so on.
  * <p>
- * Most of the security customization options found in this class work with either <i>allowed</i> or <i>disallowed</i> lists.
+ * <b>Despite its name, this customizer is not a sandbox and not a security boundary.</b>
+ * It is a best-effort grammar lockdown: it cannot constrain what otherwise-permitted code does at
+ * runtime, its coverage of the source is deliberately partial (see <i>Limitations</i> below), and an
+ * author of the source being compiled can work around it. Accordingly, the Apache Groovy
+ * <a href="https://github.com/apache/groovy/blob/master/THREAT_MODEL.md">threat model</a> treats it
+ * as a hardening aid rather than a security boundary (see its "security properties the project does
+ * NOT provide" section): a report that merely demonstrates a bypass is by design, not a
+ * vulnerability. If you must run partially-trusted scripts, layer real isolation <i>outside</i> the
+ * language, such as a separate process or JVM, an OS or container sandbox, least-privilege
+ * credentials and network egress controls, and treat this customizer as one layer within that,
+ * never the perimeter.
+ * <p>
+ * Most of the customization options found in this class work with either <i>allowed</i> or <i>disallowed</i> lists.
  * This means that, for a single option, you can set an allowed list OR a disallowed list, but not both.
  * You can mix allowed/disallowed strategies for different options.
  * For example, you can have an allowed import list and a disallowed tokens list.
@@ -180,17 +192,39 @@ import java.util.Map;
  * GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
  *  </pre>
  * <p>
- *  Note: {@code SecureASTCustomizer} allows you to lock down the grammar of scripts but by itself isn't intended
- *  to be the complete solution of all security issues when running scripts on the JVM. You might also want to
- *  consider setting the {@code groovy.grape.enable} System property to false, augmenting use of the customizer
- *  with additional techniques, and following standard security principles for JVM applications.
+ *  <b>Limitations.</b> Coverage is partial by design, so it is worth knowing where the checks do and
+ *  do not reach. This customizer visits the script statement block and method bodies. It does
+ *  <b>not</b> visit the following, so restrictions such as {@code disallowedReceivers}, the statement
+ *  and expression allowed/disallowed lists, and any registered {@link StatementChecker} or
+ *  {@link ExpressionChecker} do not apply to code appearing there:
+ *  <ul>
+ *  <li>annotation members, including closure arguments to annotations</li>
+ *  <li>constructor bodies; note also that a constructor is not a "method definition" as far as
+ *      {@link #setMethodDefinitionAllowed(boolean)} is concerned</li>
+ *  <li>static and instance initializer blocks</li>
+ *  <li>field initializer expressions</li>
+ *  </ul>
+ *  Import restrictions apply to actual {@code import} statements, so they have no effect on a
+ *  fully-qualified reference such as {@code new java.lang.ProcessBuilder(...)}. The
+ *  {@link #setIndirectImportCheckEnabled(boolean)} flag exists to catch some of those, but only
+ *  within the code this customizer visits.
+ *  <p>
+ *  More fundamentally, <i>compiling</i> Groovy source is itself code execution, whether or not you
+ *  subsequently run the result: global AST transforms found on the compile classpath,
+ *  {@code @groovy.transform.ASTTest}, {@code @Grab} dependency resolution and static initializers all
+ *  run during compilation, before and independently of any customizer you configure. Restricting the
+ *  grammar of source that you nevertheless compile does not change this. When compiling source you do
+ *  not fully trust, you should also set the {@code groovy.grape.enable} System property to false, keep
+ *  the compile classpath under your control, and apply the out-of-language isolation described above.
  *  <p>
  *  For more information, please read:
+ *  <ul>
  *  <li><a href="https://melix.github.io/blog/2015/03/sandboxing.html">Improved sandboxing of Groovy scripts</a></li>
  *  <li><a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">Oracle's Secure Coding Guidelines</a></li>
  *  <li><a href="https://snyk.io/blog/10-java-security-best-practices/">10 Java security best practices</a></li>
  *  <li><a href="https://www.infoworld.com/article/2076837/twelve-rules-for-developing-more-secure-java-code.html">Thirteen rules for developing secure Java applications</a></li>
  *  <li><a href="https://www.guardrails.io/blog/12-java-security-best-practices/">12 Java Security Best Practices</a></li>
+ *  </ul>
  *
  * @since 1.8.0
  */
@@ -243,34 +277,72 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     private List<String> allowedReceivers;
     private List<String> disallowedReceivers;
 
+    /**
+     * Creates a secure AST customizer that runs during canonicalization.
+     */
     public SecureASTCustomizer() {
         super(CompilePhase.CANONICALIZATION);
     }
 
+    /**
+     * Indicates whether explicit method definitions are allowed.
+     *
+     * @return {@code true} if method definitions are allowed
+     */
     public boolean isMethodDefinitionAllowed() {
         return isMethodDefinitionAllowed;
     }
 
+    /**
+     * Sets whether explicit method definitions are allowed.
+     *
+     * @param methodDefinitionAllowed {@code true} to allow method definitions
+     */
     public void setMethodDefinitionAllowed(final boolean methodDefinitionAllowed) {
         isMethodDefinitionAllowed = methodDefinitionAllowed;
     }
 
+    /**
+     * Indicates whether package declarations are allowed.
+     *
+     * @return {@code true} if package declarations are allowed
+     */
     public boolean isPackageAllowed() {
         return isPackageAllowed;
     }
 
+    /**
+     * Indicates whether closures are allowed.
+     *
+     * @return {@code true} if closures are allowed
+     */
     public boolean isClosuresAllowed() {
         return isClosuresAllowed;
     }
 
+    /**
+     * Sets whether closures are allowed.
+     *
+     * @param closuresAllowed {@code true} to allow closures
+     */
     public void setClosuresAllowed(final boolean closuresAllowed) {
         isClosuresAllowed = closuresAllowed;
     }
 
+    /**
+     * Sets whether package declarations are allowed.
+     *
+     * @param packageAllowed {@code true} to allow package declarations
+     */
     public void setPackageAllowed(final boolean packageAllowed) {
         isPackageAllowed = packageAllowed;
     }
 
+    /**
+     * Returns the list of explicitly disallowed imports.
+     *
+     * @return the disallowed imports, or {@code null}
+     */
     public List<String> getDisallowedImports() {
         return disallowedImports;
     }
@@ -283,6 +355,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getDisallowedImports();
     }
 
+    /**
+     * Sets the list of explicitly disallowed imports.
+     *
+     * @param disallowedImports the imports to reject
+     */
     public void setDisallowedImports(final List<String> disallowedImports) {
         if (allowedImports != null || allowedStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -298,6 +375,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedImports(disallowedImports);
     }
 
+    /**
+     * Returns the list of explicitly allowed imports.
+     *
+     * @return the allowed imports, or {@code null}
+     */
     public List<String> getAllowedImports() {
         return allowedImports;
     }
@@ -310,6 +392,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getAllowedImports();
     }
 
+    /**
+     * Sets the list of explicitly allowed imports.
+     *
+     * @param allowedImports the imports to allow
+     */
     public void setAllowedImports(final List<String> allowedImports) {
         if (disallowedImports != null || disallowedStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -325,6 +412,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setAllowedImports(allowedImports);
     }
 
+    /**
+     * Returns the list of disallowed star imports.
+     *
+     * @return the disallowed star imports, or {@code null}
+     */
     public List<String> getDisallowedStarImports() {
         return disallowedStarImports;
     }
@@ -337,6 +429,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getDisallowedStarImports();
     }
 
+    /**
+     * Sets the list of disallowed star imports.
+     *
+     * @param disallowedStarImports the star imports to reject
+     */
     public void setDisallowedStarImports(final List<String> disallowedStarImports) {
         if (allowedImports != null || allowedStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -353,6 +450,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedStarImports(disallowedStarImports);
     }
 
+    /**
+     * Returns the list of allowed star imports.
+     *
+     * @return the allowed star imports, or {@code null}
+     */
     public List<String> getAllowedStarImports() {
         return allowedStarImports;
     }
@@ -365,6 +467,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getAllowedStarImports();
     }
 
+    /**
+     * Sets the list of allowed star imports.
+     *
+     * @param allowedStarImports the star imports to allow
+     */
     public void setAllowedStarImports(final List<String> allowedStarImports) {
         if (disallowedImports != null || disallowedStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -397,6 +504,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return Collections.unmodifiableList(result);
     }
 
+    /**
+     * Returns the list of disallowed static imports.
+     *
+     * @return the disallowed static imports, or {@code null}
+     */
     public List<String> getDisallowedStaticImports() {
         return disallowedStaticImports;
     }
@@ -409,6 +521,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getDisallowedStaticImports();
     }
 
+    /**
+     * Sets the list of disallowed static imports.
+     *
+     * @param disallowedStaticImports the static imports to reject
+     */
     public void setDisallowedStaticImports(final List<String> disallowedStaticImports) {
         if (allowedStaticImports != null || allowedStaticStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -424,6 +541,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedStaticImports(disallowedStaticImports);
     }
 
+    /**
+     * Returns the list of allowed static imports.
+     *
+     * @return the allowed static imports, or {@code null}
+     */
     public List<String> getAllowedStaticImports() {
         return allowedStaticImports;
     }
@@ -436,6 +558,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getAllowedStaticImports();
     }
 
+    /**
+     * Sets the list of allowed static imports.
+     *
+     * @param allowedStaticImports the static imports to allow
+     */
     public void setAllowedStaticImports(final List<String> allowedStaticImports) {
         if (disallowedStaticImports != null || disallowedStaticStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -451,6 +578,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setAllowedStaticImports(allowedStaticImports);
     }
 
+    /**
+     * Returns the list of disallowed static star imports.
+     *
+     * @return the disallowed static star imports, or {@code null}
+     */
     public List<String> getDisallowedStaticStarImports() {
         return disallowedStaticStarImports;
     }
@@ -463,6 +595,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getDisallowedStaticStarImports();
     }
 
+    /**
+     * Sets the list of disallowed static star imports.
+     *
+     * @param disallowedStaticStarImports the static star imports to reject
+     */
     public void setDisallowedStaticStarImports(final List<String> disallowedStaticStarImports) {
         if (allowedStaticImports != null || allowedStaticStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -479,6 +616,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedStaticStarImports(disallowedStaticStarImports);
     }
 
+    /**
+     * Returns the list of allowed static star imports.
+     *
+     * @return the allowed static star imports, or {@code null}
+     */
     public List<String> getAllowedStaticStarImports() {
         return allowedStaticStarImports;
     }
@@ -491,6 +633,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getAllowedStaticStarImports();
     }
 
+    /**
+     * Sets the list of allowed static star imports.
+     *
+     * @param allowedStaticStarImports the static star imports to allow
+     */
     public void setAllowedStaticStarImports(final List<String> allowedStaticStarImports) {
         if (disallowedStaticImports != null || disallowedStaticStarImports != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -507,6 +654,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setAllowedStaticStarImports(allowedStaticStarImports);
     }
 
+    /**
+     * Returns the list of disallowed expression node types.
+     *
+     * @return the disallowed expression types, or {@code null}
+     */
     public List<Class<? extends Expression>> getDisallowedExpressions() {
         return disallowedExpressions;
     }
@@ -519,6 +671,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getDisallowedExpressions();
     }
 
+    /**
+     * Sets the list of disallowed expression node types.
+     *
+     * @param disallowedExpressions the expression types to reject
+     */
     public void setDisallowedExpressions(final List<Class<? extends Expression>> disallowedExpressions) {
         if (allowedExpressions != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -534,6 +691,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedExpressions(disallowedExpressions);
     }
 
+    /**
+     * Returns the list of allowed expression node types.
+     *
+     * @return the allowed expression types, or {@code null}
+     */
     public List<Class<? extends Expression>> getAllowedExpressions() {
         return allowedExpressions;
     }
@@ -546,6 +708,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getAllowedExpressions();
     }
 
+    /**
+     * Sets the list of allowed expression node types.
+     *
+     * @param allowedExpressions the expression types to allow
+     */
     public void setAllowedExpressions(final List<Class<? extends Expression>> allowedExpressions) {
         if (disallowedExpressions != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -561,6 +728,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setAllowedExpressions(allowedExpressions);
     }
 
+    /**
+     * Returns the list of disallowed statement node types.
+     *
+     * @return the disallowed statement types, or {@code null}
+     */
     public List<Class<? extends Statement>> getDisallowedStatements() {
         return disallowedStatements;
     }
@@ -573,6 +745,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getDisallowedStatements();
     }
 
+    /**
+     * Sets the list of disallowed statement node types.
+     *
+     * @param disallowedStatements the statement types to reject
+     */
     public void setDisallowedStatements(final List<Class<? extends Statement>> disallowedStatements) {
         if (allowedStatements != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -588,6 +765,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedStatements(disallowedStatements);
     }
 
+    /**
+     * Returns the list of allowed statement node types.
+     *
+     * @return the allowed statement types, or {@code null}
+     */
     public List<Class<? extends Statement>> getAllowedStatements() {
         return allowedStatements;
     }
@@ -600,6 +782,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getAllowedStatements();
     }
 
+    /**
+     * Sets the list of allowed statement node types.
+     *
+     * @param allowedStatements the statement types to allow
+     */
     public void setAllowedStatements(final List<Class<? extends Statement>> allowedStatements) {
         if (disallowedStatements != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -615,6 +802,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setAllowedStatements(allowedStatements);
     }
 
+    /**
+     * Indicates whether indirect import checks are enabled.
+     *
+     * @return {@code true} if indirect import checks are enabled
+     */
     public boolean isIndirectImportCheckEnabled() {
         return isIndirectImportCheckEnabled;
     }
@@ -630,6 +822,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         isIndirectImportCheckEnabled = indirectImportCheckEnabled;
     }
 
+    /**
+     * Returns the list of disallowed token types.
+     *
+     * @return the disallowed token types, or {@code null}
+     */
     public List<Integer> getDisallowedTokens() {
         return disallowedTokens;
     }
@@ -662,6 +859,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedTokens(disallowedTokens);
     }
 
+    /**
+     * Returns the list of allowed token types.
+     *
+     * @return the allowed token types, or {@code null}
+     */
     public List<Integer> getAllowedTokens() {
         return allowedTokens;
     }
@@ -694,14 +896,29 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setAllowedTokens(allowedTokens);
     }
 
+    /**
+     * Adds statement checkers consulted in addition to the allow/disallow lists.
+     *
+     * @param checkers the statement checkers to add
+     */
     public void addStatementCheckers(StatementChecker... checkers) {
         statementCheckers.addAll(Arrays.asList(checkers));
     }
 
+    /**
+     * Adds expression checkers consulted in addition to the allow/disallow lists.
+     *
+     * @param checkers the expression checkers to add
+     */
     public void addExpressionCheckers(ExpressionChecker... checkers) {
         expressionCheckers.addAll(Arrays.asList(checkers));
     }
 
+    /**
+     * Returns the list of disallowed constant or variable types.
+     *
+     * @return the disallowed constant types, or {@code null}
+     */
     public List<String> getDisallowedConstantTypes() {
         return disallowedConstantTypes;
     }
@@ -714,6 +931,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getDisallowedConstantTypes();
     }
 
+    /**
+     * Sets the list of disallowed constant or variable types.
+     *
+     * @param constantTypesBlackList the type names to reject
+     */
     public void setConstantTypesBlackList(final List<String> constantTypesBlackList) {
         if (allowedConstantTypes != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -721,6 +943,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         this.disallowedConstantTypes = constantTypesBlackList;
     }
 
+    /**
+     * Returns the list of allowed constant or variable types.
+     *
+     * @return the allowed constant types, or {@code null}
+     */
     public List<String> getAllowedConstantTypes() {
         return allowedConstantTypes;
     }
@@ -733,6 +960,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return getAllowedConstantTypes();
     }
 
+    /**
+     * Sets the list of allowed constant or variable types.
+     *
+     * @param allowedConstantTypes the type names to allow
+     */
     public void setAllowedConstantTypes(final List<String> allowedConstantTypes) {
         if (disallowedConstantTypes != null) {
             throw new IllegalArgumentException("You are not allowed to set both an allowed list and a disallowed list");
@@ -790,6 +1022,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedConstantTypesClasses(disallowedConstantTypes);
     }
 
+    /**
+     * Returns the list of receiver types on which calls are disallowed.
+     *
+     * @return the disallowed receiver types, or {@code null}
+     */
     public List<String> getDisallowedReceivers() {
         return disallowedReceivers;
     }
@@ -851,6 +1088,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setDisallowedReceiversClasses(disallowedReceivers);
     }
 
+    /**
+     * Returns the list of receiver types on which calls are allowed.
+     *
+     * @return the allowed receiver types, or {@code null}
+     */
     public List<String> getAllowedReceivers() {
         return allowedReceivers;
     }
@@ -907,6 +1149,14 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         setAllowedReceiversClasses(allowedReceivers);
     }
 
+    /**
+     * Verifies the configured security rules against the current source unit and class.
+     *
+     * @param source the source unit being customized
+     * @param context the current generator context
+     * @param classNode the class node being customized
+     * @throws CompilationFailedException if verification fails
+     */
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
         ModuleNode ast = source.getAST();
@@ -960,16 +1210,32 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
     }
 
+    /**
+     * Creates the visitor that enforces statement and expression restrictions.
+     *
+     * @return the security-checking visitor
+     */
     protected GroovyCodeVisitor createGroovyCodeVisitor() {
         return new SecuringCodeVisitor();
     }
 
+    /**
+     * Ensures the supplied class does not declare methods when such definitions are forbidden.
+     *
+     * @param owner the class to inspect
+     */
     protected void checkMethodDefinitionAllowed(ClassNode owner) {
         if (isMethodDefinitionAllowed) return;
         List<MethodNode> methods = filterMethods(owner);
         if (!methods.isEmpty()) throw new SecurityException("Method definitions are not allowed");
     }
 
+    /**
+     * Returns the non-synthetic methods declared directly by the supplied class.
+     *
+     * @param owner the class to inspect
+     * @return the directly declared, non-synthetic methods
+     */
     protected static List<MethodNode> filterMethods(ClassNode owner) {
         List<MethodNode> result = new LinkedList<>();
         List<MethodNode> methods = owner.getMethods();
@@ -982,6 +1248,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return result;
     }
 
+    /**
+     * Verifies that a star import is allowed by the current configuration.
+     *
+     * @param packageName the star import to check
+     */
     protected void assertStarImportIsAllowed(final String packageName) {
         if (allowedStarImports != null && !(allowedStarImports.contains(packageName)
                 || allowedStarImports.stream().filter(it -> it.endsWith(".")).anyMatch(packageName::startsWith))) {
@@ -993,6 +1264,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         }
     }
 
+    /**
+     * Verifies that a regular import is allowed by the current configuration.
+     *
+     * @param className the imported class name
+     */
     protected void assertImportIsAllowed(final String className) {
         if (allowedImports != null || allowedStarImports != null) {
             if (allowedImports != null && allowedImports.contains(className)) {
@@ -1024,6 +1300,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         return className.substring(0, className.lastIndexOf('.') + 1) + "*";
     }
 
+    /**
+     * Verifies that a static import is allowed by the current configuration.
+     *
+     * @param member the imported member name
+     * @param className the declaring class name
+     */
     protected void assertStaticImportIsAllowed(final String member, final String className) {
         final String fqn = className.equals(member) ? className : className + "." + member;
         if (allowedStaticImports != null && !allowedStaticImports.contains(fqn)) {
@@ -1100,19 +1382,16 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 try {
                     if (expression instanceof ConstructorCallExpression) {
                         assertImportIsAllowed(expression.getType().getName());
-                    } else if (expression instanceof MethodCallExpression) {
-                        MethodCallExpression expr = (MethodCallExpression) expression;
+                    } else if (expression instanceof MethodCallExpression expr) {
                         ClassNode objectExpressionType = expr.getObjectExpression().getType();
                         final String typename = getExpressionType(objectExpressionType).getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getMethodAsString(), typename);
-                    } else if (expression instanceof StaticMethodCallExpression) {
-                        StaticMethodCallExpression expr = (StaticMethodCallExpression) expression;
+                    } else if (expression instanceof StaticMethodCallExpression expr) {
                         final String typename = expr.getOwnerType().getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getMethod(), typename);
-                    } else if (expression instanceof MethodPointerExpression) {
-                        MethodPointerExpression expr = (MethodPointerExpression) expression;
+                    } else if (expression instanceof MethodPointerExpression expr) {
                         final String typename = expr.getType().getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getText(), typename);
@@ -1123,6 +1402,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        /**
+         * Returns the effective receiver type for nested array expressions.
+         *
+         * @param objectExpressionType the candidate receiver type
+         * @return the component type for arrays, otherwise the original type
+         */
         protected ClassNode getExpressionType(ClassNode objectExpressionType) {
             return objectExpressionType.isArray() ? getExpressionType(objectExpressionType.getComponentType()) : objectExpressionType;
         }
@@ -1142,6 +1427,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        /**
+         * Validates a block statement and then visits each nested statement.
+         *
+         * @param block the block statement to visit
+         */
         @Override
         public void visitBlockStatement(final BlockStatement block) {
             assertStatementAuthorized(block);
@@ -1150,6 +1440,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        /**
+         * Validates a {@code for} loop and then visits its collection and body.
+         *
+         * @param forLoop the loop to visit
+         */
         @Override
         public void visitForLoop(final ForStatement forLoop) {
             assertStatementAuthorized(forLoop);
@@ -1157,6 +1452,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             forLoop.getLoopBlock().visit(this);
         }
 
+        /**
+         * Validates a {@code while} loop and then visits its condition and body.
+         *
+         * @param loop the loop to visit
+         */
         @Override
         public void visitWhileLoop(final WhileStatement loop) {
             assertStatementAuthorized(loop);
@@ -1164,6 +1464,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             loop.getLoopBlock().visit(this);
         }
 
+        /**
+         * Validates a {@code do}/{@code while} loop and then visits its body and condition.
+         *
+         * @param loop the loop to visit
+         */
         @Override
         public void visitDoWhileLoop(final DoWhileStatement loop) {
             assertStatementAuthorized(loop);
@@ -1171,6 +1476,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             loop.getLoopBlock().visit(this);
         }
 
+        /**
+         * Validates an if-else statement and then visits its condition and branches.
+         *
+         * @param ifElse the conditional statement to visit
+         */
         @Override
         public void visitIfElse(final IfStatement ifElse) {
             assertStatementAuthorized(ifElse);
@@ -1179,18 +1489,33 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             ifElse.getElseBlock().visit(this);
         }
 
+        /**
+         * Validates an expression statement and then visits its expression.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitExpressionStatement(final ExpressionStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        /**
+         * Validates a return statement and then visits its return value.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitReturnStatement(final ReturnStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        /**
+         * Validates an assert statement and then visits its condition and message.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitAssertStatement(final AssertStatement statement) {
             assertStatementAuthorized(statement);
@@ -1198,6 +1523,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             statement.getMessageExpression().visit(this);
         }
 
+        /**
+         * Validates a try-catch-finally statement and then visits all nested blocks.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitTryCatchFinally(final TryCatchStatement statement) {
             assertStatementAuthorized(statement);
@@ -1208,11 +1538,21 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             statement.getFinallyStatement().visit(this);
         }
 
+        /**
+         * Ignores empty statements.
+         *
+         * @param statement the empty statement
+         */
         @Override
         public void visitEmptyStatement(EmptyStatement statement) {
             // noop
         }
 
+        /**
+         * Validates a switch statement and then visits its selector and branches.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitSwitch(final SwitchStatement statement) {
             assertStatementAuthorized(statement);
@@ -1223,6 +1563,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             statement.getDefaultStatement().visit(this);
         }
 
+        /**
+         * Validates a case statement and then visits its condition and body.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitCaseStatement(final CaseStatement statement) {
             assertStatementAuthorized(statement);
@@ -1230,22 +1575,42 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             statement.getCode().visit(this);
         }
 
+        /**
+         * Validates a break statement.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitBreakStatement(final BreakStatement statement) {
             assertStatementAuthorized(statement);
         }
 
+        /**
+         * Validates a continue statement.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitContinueStatement(final ContinueStatement statement) {
             assertStatementAuthorized(statement);
         }
 
+        /**
+         * Validates a throw statement and then visits the thrown expression.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitThrowStatement(final ThrowStatement statement) {
             assertStatementAuthorized(statement);
             statement.getExpression().visit(this);
         }
 
+        /**
+         * Validates a synchronized statement and then visits its expression and body.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitSynchronizedStatement(final SynchronizedStatement statement) {
             assertStatementAuthorized(statement);
@@ -1253,12 +1618,22 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             statement.getCode().visit(this);
         }
 
+        /**
+         * Validates a catch block and then visits its body.
+         *
+         * @param statement the statement to visit
+         */
         @Override
         public void visitCatchStatement(final CatchStatement statement) {
             assertStatementAuthorized(statement);
             statement.getCode().visit(this);
         }
 
+        /**
+         * Validates a method call and then visits its receiver, name, and arguments.
+         *
+         * @param call the method call expression to visit
+         */
         @Override
         public void visitMethodCallExpression(final MethodCallExpression call) {
             assertExpressionAuthorized(call);
@@ -1275,6 +1650,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             call.getArguments().visit(this);
         }
 
+        /**
+         * Validates a static method call and then visits its arguments.
+         *
+         * @param call the static method call to visit
+         */
         @Override
         public void visitStaticMethodCallExpression(final StaticMethodCallExpression call) {
             assertExpressionAuthorized(call);
@@ -1287,12 +1667,22 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             call.getArguments().visit(this);
         }
 
+        /**
+         * Validates a constructor call and then visits its arguments.
+         *
+         * @param call the constructor call to visit
+         */
         @Override
         public void visitConstructorCallExpression(final ConstructorCallExpression call) {
             assertExpressionAuthorized(call);
             call.getArguments().visit(this);
         }
 
+        /**
+         * Validates a ternary expression and then visits all branches.
+         *
+         * @param expression the ternary expression to visit
+         */
         @Override
         public void visitTernaryExpression(final TernaryExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1301,12 +1691,22 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getFalseExpression().visit(this);
         }
 
+        /**
+         * Validates an Elvis expression and then delegates to ternary-expression handling.
+         *
+         * @param expression the Elvis expression to visit
+         */
         @Override
         public void visitShortTernaryExpression(final ElvisOperatorExpression expression) {
             assertExpressionAuthorized(expression);
             visitTernaryExpression(expression);
         }
 
+        /**
+         * Validates a binary expression, its operator token, and both operands.
+         *
+         * @param expression the binary expression to visit
+         */
         @Override
         public void visitBinaryExpression(final BinaryExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1315,6 +1715,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getRightExpression().visit(this);
         }
 
+        /**
+         * Validates a prefix expression and then visits its operand.
+         *
+         * @param expression the prefix expression to visit
+         */
         @Override
         public void visitPrefixExpression(final PrefixExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1322,6 +1727,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a postfix expression and then visits its operand.
+         *
+         * @param expression the postfix expression to visit
+         */
         @Override
         public void visitPostfixExpression(final PostfixExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1329,12 +1739,22 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a boolean expression and then visits its wrapped expression.
+         *
+         * @param expression the boolean expression to visit
+         */
         @Override
         public void visitBooleanExpression(final BooleanExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a closure expression and then visits its body when closures are allowed.
+         *
+         * @param expression the closure expression to visit
+         */
         @Override
         public void visitClosureExpression(final ClosureExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1342,23 +1762,43 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getCode().visit(this);
         }
 
+        /**
+         * Delegates lambda-expression validation to closure-expression handling.
+         *
+         * @param expression the lambda expression to visit
+         */
         @Override
         public void visitLambdaExpression(LambdaExpression expression) {
             visitClosureExpression(expression);
         }
 
+        /**
+         * Validates a tuple expression and then visits its elements.
+         *
+         * @param expression the tuple expression to visit
+         */
         @Override
         public void visitTupleExpression(final TupleExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
         }
 
+        /**
+         * Validates a map expression and then visits its entries.
+         *
+         * @param expression the map expression to visit
+         */
         @Override
         public void visitMapExpression(final MapExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getMapEntryExpressions());
         }
 
+        /**
+         * Validates a map entry expression and then visits its key and value.
+         *
+         * @param expression the map entry expression to visit
+         */
         @Override
         public void visitMapEntryExpression(final MapEntryExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1366,12 +1806,22 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getValueExpression().visit(this);
         }
 
+        /**
+         * Validates a list expression and then visits its elements.
+         *
+         * @param expression the list expression to visit
+         */
         @Override
         public void visitListExpression(final ListExpression expression) {
             assertExpressionAuthorized(expression);
             visitListOfExpressions(expression.getExpressions());
         }
 
+        /**
+         * Validates a range expression and then visits both endpoints.
+         *
+         * @param expression the range expression to visit
+         */
         @Override
         public void visitRangeExpression(final RangeExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1379,6 +1829,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getTo().visit(this);
         }
 
+        /**
+         * Validates a property expression and then visits its receiver and property.
+         *
+         * @param expression the property expression to visit
+         */
         @Override
         public void visitPropertyExpression(final PropertyExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1404,6 +1859,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        /**
+         * Validates an attribute expression and then visits its receiver and attribute.
+         *
+         * @param expression the attribute expression to visit
+         */
         @Override
         public void visitAttributeExpression(final AttributeExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1419,11 +1879,21 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             checkConstantTypeIfNotMethodNameOrProperty(property);
         }
 
+        /**
+         * Validates a field expression.
+         *
+         * @param expression the field expression to visit
+         */
         @Override
         public void visitFieldExpression(final FieldExpression expression) {
             assertExpressionAuthorized(expression);
         }
 
+        /**
+         * Validates a method-pointer expression and then visits its target and method name.
+         *
+         * @param expression the method-pointer expression to visit
+         */
         @Override
         public void visitMethodPointerExpression(final MethodPointerExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1431,11 +1901,21 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             expression.getMethodName().visit(this);
         }
 
+        /**
+         * Delegates method-reference validation to method-pointer handling.
+         *
+         * @param expression the method-reference expression to visit
+         */
         @Override
         public void visitMethodReferenceExpression(final MethodReferenceExpression expression) {
             visitMethodPointerExpression(expression);
         }
 
+        /**
+         * Validates a constant expression and its constant type.
+         *
+         * @param expression the constant expression to visit
+         */
         @Override
         public void visitConstantExpression(final ConstantExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1448,11 +1928,21 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        /**
+         * Validates a class expression.
+         *
+         * @param expression the class expression to visit
+         */
         @Override
         public void visitClassExpression(final ClassExpression expression) {
             assertExpressionAuthorized(expression);
         }
 
+        /**
+         * Validates a variable expression and its inferred type.
+         *
+         * @param expression the variable expression to visit
+         */
         @Override
         public void visitVariableExpression(final VariableExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1465,12 +1955,22 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
 
+        /**
+         * Validates a declaration expression via binary-expression handling.
+         *
+         * @param expression the declaration expression to visit
+         */
         @Override
         public void visitDeclarationExpression(final DeclarationExpression expression) {
             assertExpressionAuthorized(expression);
             visitBinaryExpression(expression);
         }
 
+        /**
+         * Validates a GString expression and then visits its string and value parts.
+         *
+         * @param expression the GString expression to visit
+         */
         @Override
         public void visitGStringExpression(final GStringExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1478,6 +1978,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             visitListOfExpressions(expression.getValues());
         }
 
+        /**
+         * Validates an array expression and then visits its elements and size expressions.
+         *
+         * @param expression the array expression to visit
+         */
         @Override
         public void visitArrayExpression(final ArrayExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1485,54 +1990,99 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             visitListOfExpressions(expression.getSizeExpression());
         }
 
+        /**
+         * Validates a spread expression and then visits its nested expression.
+         *
+         * @param expression the spread expression to visit
+         */
         @Override
         public void visitSpreadExpression(final SpreadExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a spread-map expression and then visits its nested expression.
+         *
+         * @param expression the spread-map expression to visit
+         */
         @Override
         public void visitSpreadMapExpression(final SpreadMapExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a logical-not expression and then visits its operand.
+         *
+         * @param expression the not expression to visit
+         */
         @Override
         public void visitNotExpression(final NotExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a unary-minus expression and then visits its operand.
+         *
+         * @param expression the unary-minus expression to visit
+         */
         @Override
         public void visitUnaryMinusExpression(final UnaryMinusExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a unary-plus expression and then visits its operand.
+         *
+         * @param expression the unary-plus expression to visit
+         */
         @Override
         public void visitUnaryPlusExpression(final UnaryPlusExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a bitwise-negation expression and then visits its operand.
+         *
+         * @param expression the bitwise-negation expression to visit
+         */
         @Override
         public void visitBitwiseNegationExpression(final BitwiseNegationExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates a cast expression and then visits its operand.
+         *
+         * @param expression the cast expression to visit
+         */
         @Override
         public void visitCastExpression(final CastExpression expression) {
             assertExpressionAuthorized(expression);
             expression.getExpression().visit(this);
         }
 
+        /**
+         * Validates an argument-list expression and then visits its elements.
+         *
+         * @param expression the argument-list expression to visit
+         */
         @Override
         public void visitArgumentlistExpression(final ArgumentListExpression expression) {
             assertExpressionAuthorized(expression);
             visitTupleExpression(expression);
         }
 
+        /**
+         * Validates a closure-list expression and then visits its nested expressions.
+         *
+         * @param closureListExpression the closure-list expression to visit
+         */
         @Override
         public void visitClosureListExpression(final ClosureListExpression closureListExpression) {
             assertExpressionAuthorized(closureListExpression);
@@ -1540,6 +2090,11 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             visitListOfExpressions(closureListExpression.getExpressions());
         }
 
+        /**
+         * Validates a bytecode expression.
+         *
+         * @param expression the bytecode expression to visit
+         */
         @Override
         public void visitBytecodeExpression(final BytecodeExpression expression) {
             assertExpressionAuthorized(expression);
@@ -1552,6 +2107,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      */
     @FunctionalInterface
     public interface ExpressionChecker {
+        /**
+         * Determines whether the supplied expression is authorized.
+         *
+         * @param expression the expression to inspect
+         * @return {@code true} if the expression is allowed
+         */
         boolean isAuthorized(Expression expression);
     }
 
@@ -1561,6 +2122,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      */
     @FunctionalInterface
     public interface StatementChecker {
+        /**
+         * Determines whether the supplied statement is authorized.
+         *
+         * @param expression the statement to inspect
+         * @return {@code true} if the statement is allowed
+         */
         boolean isAuthorized(Statement expression);
     }
 }
