@@ -726,6 +726,18 @@ For a complete list of options, please refer to gapi:org.codehaus.groovy.control
 
 === Secure AST customizer
 
+CAUTION: Despite its name, this customizer is *not* a sandbox and *not* a security
+boundary. It secures the *grammar* not the *execution* - it is a best-effort restriction of the grammar available to a DSL, and nothing
+more. It cannot constrain what otherwise-permitted code does at runtime, its coverage of
+the source is deliberately partial (see <<secure-ast-limitations,Limitations>> below), and
+an author of the source being compiled can work around it. The Apache Groovy
+https://github.com/apache/groovy/blob/master/THREAT_MODEL.md[threat model] treats it as a
+hardening aid rather than a security boundary: a demonstrated bypass is expected
+behaviour, not a vulnerability. If you must run partially-trusted scripts, layer real
+isolation *outside* the language — a separate process or JVM, an OS or container sandbox,
+least-privilege credentials, and network egress controls — and treat this customizer as
+one layer within that, never the perimeter.
+
 This customizer will allow the developer of a DSL to restrict the
 *grammar* of the language, for example, to prevent users from using particular constructs.
 It is only ``secure'' in that one aspect, i.e. limiting the allowable constructs within a DSL.
@@ -800,6 +812,35 @@ include::../test/CustomizersTest.groovy[tags=secure_cz_custom_assert,indent=4]
 
 Statements can be checked using gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer.StatementChecker[]
 Expressions can be checked using gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer.ExpressionChecker[]
+
+[[secure-ast-limitations]]
+==== Limitations of the secure AST customizer
+
+Coverage is partial by design, so it is worth knowing where the checks do and do not
+reach. The customizer visits the script statement block and method bodies. It does *not*
+visit the following, so restrictions such as `disallowedReceivers`, the statement and
+expression allow/disallow lists, and your own custom checkers do not apply to code
+appearing there:
+
+* annotation members, including closure arguments to annotations
+* constructor bodies — note also that a constructor is not a ``method definition'' as far
+  as `methodDefinitionAllowed` is concerned
+* static and instance initializer blocks
+* field initializer expressions
+
+Import restrictions apply to actual `import` statements, so they have no effect on a
+fully-qualified reference such as `new java.lang.ProcessBuilder(...)`. The
+`indirectImportCheckEnabled` flag exists to catch some of those, but only within the code
+the customizer visits.
+
+More fundamentally, *compiling* Groovy source is itself code execution, whether or not you
+subsequently run the result: global AST transforms found on the compile classpath,
+`@groovy.transform.ASTTest`, `@Grab` dependency resolution and static initializers all run
+during compilation, before and independently of any customizer you configure. Restricting
+the grammar of source that you nevertheless compile does not change this. When compiling
+source you do not fully trust, you should also set the `groovy.grape.enable` system
+property to `false`, keep the compile classpath under your control, and apply the
+out-of-language isolation described above.
 
 === Source aware customizer
 

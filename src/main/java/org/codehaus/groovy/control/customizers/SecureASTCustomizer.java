@@ -94,12 +94,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This customizer allows securing source code by controlling what code constructs are permitted.
- * This is typically done when using Groovy for its scripting or domain specific language (DSL) features.
+ * Restricts the grammar available to the source being compiled, so that a shell or domain specific
+ * language (DSL) offers only a chosen subset of the Groovy language.
  * For example, if you only want to allow arithmetic operations in a groovy shell,
  * you can configure this customizer to restrict package imports, method calls and so on.
  * <p>
- * Most of the security customization options found in this class work with either <i>allowed</i> or <i>disallowed</i> lists.
+ * <b>Despite its name, this customizer is not a sandbox and not a security boundary.</b>
+ * It is a best-effort grammar lockdown: it cannot constrain what otherwise-permitted code does at
+ * runtime, its coverage of the source is deliberately partial (see <i>Limitations</i> below), and an
+ * author of the source being compiled can work around it. Accordingly, the Apache Groovy
+ * <a href="https://github.com/apache/groovy/blob/master/THREAT_MODEL.md">threat model</a> treats it
+ * as a hardening aid rather than a security boundary (see its "security properties the project does
+ * NOT provide" section): a report that merely demonstrates a bypass is by design, not a
+ * vulnerability. If you must run partially-trusted scripts, layer real isolation <i>outside</i> the
+ * language, such as a separate process or JVM, an OS or container sandbox, least-privilege
+ * credentials and network egress controls, and treat this customizer as one layer within that,
+ * never the perimeter.
+ * <p>
+ * Most of the customization options found in this class work with either <i>allowed</i> or <i>disallowed</i> lists.
  * This means that, for a single option, you can set an allowed list OR a disallowed list, but not both.
  * You can mix allowed/disallowed strategies for different options.
  * For example, you can have an allowed import list and a disallowed tokens list.
@@ -180,20 +192,39 @@ import java.util.Map;
  * GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
  *  </pre>
  * <p>
- *  Note: {@code SecureASTCustomizer} allows you to lock down the grammar of scripts but by itself isn't intended
- *  to be the complete solution of all security issues when running scripts on the JVM. You might also want to
- *  consider setting the {@code groovy.grape.enable} System property to false, augmenting use of the customizer
- *  with additional techniques, and following standard security principles for JVM applications.
- *  Accordingly, the Apache Groovy <a href="https://github.com/apache/groovy/blob/master/THREAT_MODEL.md">threat model</a>
- *  treats this customizer as a hardening aid rather than a security boundary (see its "security properties the
- *  project does NOT provide" section): a report that merely demonstrates a bypass is by design, not a vulnerability.
+ *  <b>Limitations.</b> Coverage is partial by design, so it is worth knowing where the checks do and
+ *  do not reach. This customizer visits the script statement block and method bodies. It does
+ *  <b>not</b> visit the following, so restrictions such as {@code disallowedReceivers}, the statement
+ *  and expression allowed/disallowed lists, and any registered {@link StatementChecker} or
+ *  {@link ExpressionChecker} do not apply to code appearing there:
+ *  <ul>
+ *  <li>annotation members, including closure arguments to annotations</li>
+ *  <li>constructor bodies; note also that a constructor is not a "method definition" as far as
+ *      {@link #setMethodDefinitionAllowed(boolean)} is concerned</li>
+ *  <li>static and instance initializer blocks</li>
+ *  <li>field initializer expressions</li>
+ *  </ul>
+ *  Import restrictions apply to actual {@code import} statements, so they have no effect on a
+ *  fully-qualified reference such as {@code new java.lang.ProcessBuilder(...)}. The
+ *  {@link #setIndirectImportCheckEnabled(boolean)} flag exists to catch some of those, but only
+ *  within the code this customizer visits.
+ *  <p>
+ *  More fundamentally, <i>compiling</i> Groovy source is itself code execution, whether or not you
+ *  subsequently run the result: global AST transforms found on the compile classpath,
+ *  {@code @groovy.transform.ASTTest}, {@code @Grab} dependency resolution and static initializers all
+ *  run during compilation, before and independently of any customizer you configure. Restricting the
+ *  grammar of source that you nevertheless compile does not change this. When compiling source you do
+ *  not fully trust, you should also set the {@code groovy.grape.enable} System property to false, keep
+ *  the compile classpath under your control, and apply the out-of-language isolation described above.
  *  <p>
  *  For more information, please read:
+ *  <ul>
  *  <li><a href="https://melix.github.io/blog/2015/03/sandboxing.html">Improved sandboxing of Groovy scripts</a></li>
  *  <li><a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">Oracle's Secure Coding Guidelines</a></li>
  *  <li><a href="https://snyk.io/blog/10-java-security-best-practices/">10 Java security best practices</a></li>
  *  <li><a href="https://www.infoworld.com/article/2076837/twelve-rules-for-developing-more-secure-java-code.html">Thirteen rules for developing secure Java applications</a></li>
  *  <li><a href="https://www.guardrails.io/blog/12-java-security-best-practices/">12 Java Security Best Practices</a></li>
+ *  </ul>
  *
  * @since 1.8.0
  */
