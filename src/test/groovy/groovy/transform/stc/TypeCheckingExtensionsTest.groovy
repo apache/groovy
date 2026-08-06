@@ -18,8 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.BytecodeProcessor
+import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
@@ -575,5 +581,42 @@ final class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             println 'Everything is ok'
         ''',
         'Error thrown from extension in onMethodSelection'
+    }
+
+    @Test
+    void testExtensionScriptInheritsConfigurationButNotCustomizers() {
+        Set<String> postprocessed = []
+        Set<String> customized = []
+
+        // not a customizer, so it reaches the extension script only if that script's
+        // compiler configuration was derived from the enclosing compilation's
+        config.bytecodePostprocessor = { String name, byte[] bytes ->
+            postprocessed << name
+            bytes
+        } as BytecodeProcessor
+
+        // a customizer, registered for the enclosing compilation: it must not reach
+        // the extension script, since customizers commonly assume the source units
+        // and class nodes of the compilation they were registered for
+        config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
+            @Override
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
+                customized << classNode.name
+            }
+        })
+
+        extension = 'groovy/transform/stc/SetupTestExtension.groovy'
+        assertScript '''
+            class A {}
+            new A()
+        '''
+
+        // the enclosing compilation is named TestScript<uuid>; the extension script is
+        // compiled separately by GroovyTypeCheckingExtensionSupport and named Script<n>
+        assert customized.contains('A'), 'customizer should see the enclosing compilation'
+        assert postprocessed.any { it.startsWith('Script') },
+            'extension script should inherit the enclosing compiler configuration'
+        assert !customized.any { it.startsWith('Script') },
+            'extension script should not inherit the enclosing compilation customizers'
     }
 }
