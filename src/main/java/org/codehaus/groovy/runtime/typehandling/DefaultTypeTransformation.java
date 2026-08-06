@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime.typehandling;
 import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
@@ -63,6 +64,7 @@ import java.util.stream.LongStream;
 
 /**
  * Class providing various type conversions, coercions and boxing/unboxing operations.
+ * @since Groovy 1.8.0
  */
 public class DefaultTypeTransformation {
 
@@ -95,6 +97,7 @@ public class DefaultTypeTransformation {
      * @return the byte value
      * @throws GroovyCastException if the object cannot be converted to a number
      */
+    @GroovyABI(since = "1.8.0")
     public static byte byteUnbox(final Object value) {
         if (value instanceof Byte b) {
             return b;
@@ -113,6 +116,7 @@ public class DefaultTypeTransformation {
      * @return the char value, or null character if value is null
      * @throws GroovyCastException if the object cannot be converted to char
      */
+    @GroovyABI(since = "1.8.0")
     public static char charUnbox(final Object value) {
         if (value instanceof Character c) {
             return c;
@@ -130,6 +134,7 @@ public class DefaultTypeTransformation {
      * @return the short value
      * @throws GroovyCastException if the object cannot be converted to a number
      */
+    @GroovyABI(since = "1.8.0")
     public static short shortUnbox(final Object value) {
         if (value instanceof Short s) {
             return s;
@@ -147,6 +152,7 @@ public class DefaultTypeTransformation {
      * @return the int value
      * @throws GroovyCastException if the object cannot be converted to a number
      */
+    @GroovyABI(since = "1.8.0")
     public static int intUnbox(final Object value) {
         if (value instanceof Integer i) {
             return i;
@@ -163,6 +169,7 @@ public class DefaultTypeTransformation {
      * @param value the object to unbox (may be null for false, Boolean, or any object with asBoolean())
      * @return the boolean value
      */
+    @GroovyABI(since = "1.8.0")
     public static boolean booleanUnbox(final Object value) {
         if (value instanceof Boolean b) {
             return b;
@@ -179,6 +186,7 @@ public class DefaultTypeTransformation {
      * @return the long value
      * @throws GroovyCastException if the object cannot be converted to a number
      */
+    @GroovyABI(since = "1.8.0")
     public static long longUnbox(final Object value) {
         if (value instanceof Long l) {
             return l;
@@ -197,6 +205,7 @@ public class DefaultTypeTransformation {
      * @return the float value, or NaN if value is null
      * @throws GroovyCastException if the object cannot be converted to a number
      */
+    @GroovyABI(since = "1.8.0")
     public static float floatUnbox(final Object value) {
         if (value instanceof Float f) {
             return f;
@@ -216,6 +225,7 @@ public class DefaultTypeTransformation {
      * @return the double value, or NaN if value is null
      * @throws GroovyCastException if the object cannot be converted to a number
      */
+    @GroovyABI(since = "1.8.0")
     public static double doubleUnbox(final Object value) {
         if (value instanceof Double d) {
             return d;
@@ -237,6 +247,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(boolean value) {
         return value ? Boolean.TRUE : Boolean.FALSE;
     }
@@ -249,6 +260,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(byte value) {
         return value;
     }
@@ -261,6 +273,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(char value) {
         return value;
     }
@@ -273,6 +286,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(short value) {
         return value;
     }
@@ -285,6 +299,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(int value) {
         return value;
     }
@@ -297,6 +312,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(long value) {
         return value;
     }
@@ -309,6 +325,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(float value) {
         return value;
     }
@@ -321,6 +338,7 @@ public class DefaultTypeTransformation {
      * @deprecated since 2.3.0 - Java's auto-boxing is sufficient for this operation
      */
     @Deprecated(since = "2.3.0")
+    @GroovyABI(since = "1.8.0")
     public static Object box(double value) {
         return value;
     }

@@ -57,6 +57,7 @@ import groovy.util.OrderBy;
 import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.util.ReversedList;
 import org.apache.groovy.util.SystemUtil;
@@ -1003,6 +1004,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.Map)
      * @since 1.0
      */
+    @GroovyABI(since="3.0.0")
     public static <K,V> Map<K,V> asImmutable(Map<K,V> self) {
         return asUnmodifiable(new LinkedHashMap<>(self));
     }
@@ -1016,6 +1018,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.SortedMap)
      * @since 1.0
      */
+    @GroovyABI(since="3.0.0")
     public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K,V> self) {
         return asUnmodifiable(new TreeMap<>(self));
     }
@@ -1041,6 +1044,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.List)
      * @since 1.0
      */
+    @GroovyABI(since="3.0.0")
     public static <T> List<T> asImmutable(List<T> self) {
         return asUnmodifiable(new ArrayList<>(self));
     }
@@ -1054,6 +1058,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.Set)
      * @since 1.0
      */
+    @GroovyABI(since="3.0.0")
     public static <T> Set<T> asImmutable(Set<T> self) {
         return asUnmodifiable(new LinkedHashSet<>(self));
     }
@@ -1067,6 +1072,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.SortedSet)
      * @since 1.0
      */
+    @GroovyABI(since="3.0.0")
     public static <T> SortedSet<T> asImmutable(SortedSet<T> self) {
         return asUnmodifiable(new TreeSet<>(self));
     }
@@ -1080,6 +1086,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asUnmodifiable(java.util.Collection)
      * @since 1.5.0
      */
+    @GroovyABI(since="3.0.0")
     public static <T> Collection<T> asImmutable(Collection<T> self) {
         return asUnmodifiable((Collection<T>) new ArrayList<>(self));
     }
@@ -11645,6 +11652,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
      * @since 1.0
      */
+    @GroovyABI(since="2.0.0")
     public static Iterator iterator(final Object self) {
         if (self instanceof Iterator) return (Iterator) self;
         return DefaultTypeTransformation.asCollection(self).iterator();
@@ -13818,6 +13826,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a Number to the power of a certain exponent
      * @since 1.0
      */
+    @GroovyABI(since="2.0.0")
     public static Number power(Number self, Number exponent) {
         double base, exp, answer;
         base = self.doubleValue();
@@ -13842,6 +13851,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param exponent an Integer exponent
      * @return a Number to the power of the exponent
      */
+    @GroovyABI(since="2.0.0")
     public static Number power(BigDecimal self, Integer exponent) {
         if (exponent >= 0) {
             return self.pow(exponent);
@@ -13859,6 +13869,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *  @param exponent an Integer exponent
      *  @return a Number to the power of the exponent
      */
+    @GroovyABI(since="2.0.0")
     public static Number power(BigInteger self, Integer exponent) {
         if (exponent >= 0) {
             return self.pow(exponent);
@@ -13877,6 +13888,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *  @param exponent an Integer exponent
      *  @return a Number to the power of the exponent
      */
+    @GroovyABI(since="2.0.0")
     public static Number power(Integer self, Integer exponent) {
         if (exponent >= 0) {
             BigInteger answer = BigInteger.valueOf(self).pow(exponent);
@@ -13900,6 +13912,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param exponent an Integer exponent
      * @return a Number to the power of the exponent
      */
+    @GroovyABI(since="2.0.0")
     public static Number power(Long self, Integer exponent) {
         if (exponent >= 0) {
             BigInteger answer = BigInteger.valueOf(self).pow(exponent);
@@ -13921,6 +13934,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a BigInteger to the power of the exponent
      * @since 2.3.8
      */
+    @GroovyABI(since="2.0.0")
     public static BigInteger power(BigInteger self, BigInteger exponent) {
         if ((exponent.signum() >= 0) && (exponent.compareTo(BI_INT_MAX) <= 0)) {
             return self.pow(exponent.intValue());

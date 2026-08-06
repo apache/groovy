@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.collection.runtime
 import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import groovy.transform.stc.POJO
+import org.apache.groovy.lang.annotation.GroovyABI
 
 /**
  * Represents named record, which is constructed by clauses excluding {@code from} and joins
@@ -99,6 +100,7 @@ class NamedRecord<E, T> extends NamedTuple<E> {
      * @param sr the source record
      * @return this record
      */
+    @GroovyABI(since="4.0.0")
     NamedRecord<E, T> sourceRecord(T sr) {
         sourceRecord = new SourceRecord<>(sr, getAliasList())
         return this

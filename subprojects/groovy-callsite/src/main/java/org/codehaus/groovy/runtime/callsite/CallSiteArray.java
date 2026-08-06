@@ -22,6 +22,7 @@ import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -39,6 +40,7 @@ public final class CallSiteArray {
     public final CallSite[] array;
     public final Class owner;
 
+    @GroovyABI(since = "1.6.0")
     public CallSiteArray(Class owner, final String[] names) {
         this.owner = owner;
         this.array = IntStream.range(0, names.length)

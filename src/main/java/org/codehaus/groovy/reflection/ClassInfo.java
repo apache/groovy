@@ -26,6 +26,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
 import groovy.transform.Internal;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.runtime.indy.SwitchPointInvalidator;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
@@ -346,6 +347,7 @@ public class ClassInfo implements Finalizable {
      * @param cls the class to get information for
      * @return the class information, or {@code null} if {@code cls} is {@code null}
      */
+    @GroovyABI(since = "1.6.0")
     public static ClassInfo getClassInfo (Class cls) {
         return globalClassValue.get(cls);
     }
@@ -583,6 +585,7 @@ public class ClassInfo implements Finalizable {
      *
      * @return a {@code MetaClass} instance
      */
+    @GroovyABI(since = "1.6.0")
     public final MetaClass getMetaClass() {
         MetaClass answer = getMetaClassForClass();
         if (answer != null) return answer;
