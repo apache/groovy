@@ -204,7 +204,12 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 "org.codehaus.groovy.ast.ClassHelper",
                 "org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport");
 
-        CompilerConfiguration config = new CompilerConfiguration().addCompilationCustomizers(ic);
+        // inherit the enclosing compilation's settings (bytecode target, preview features,
+        // optimization options, encoding, ...) but not its customizers: those are registered
+        // for the outer compilation and commonly assume its source units and class nodes
+        CompilerConfiguration config = new CompilerConfiguration(
+                typeCheckingVisitor.getSourceUnit().getConfiguration(), false)
+                .addCompilationCustomizers(ic);
         config.setScriptBaseClass("org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport$TypeCheckingDSL");
 
         final GroovyClassLoader transformLoader = compilationUnit!=null?compilationUnit.getTransformLoader():typeCheckingVisitor.getSourceUnit().getClassLoader();
