@@ -2390,8 +2390,10 @@ public abstract class StaticTypeCheckingSupport {
         ClassNode classNode = new ClassNode(className, Opcodes.ACC_PUBLIC, OBJECT_TYPE);
         addGeneratedMethod(classNode, "eval", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new ReturnStatement(expr));
 
-        // adjust configuration so class can be executed by this JVM
-        CompilerConfiguration cc = new CompilerConfiguration(config);
+        // adjust configuration so class can be executed by this JVM; the class node below is
+        // added without a source unit, so a customizer expecting one would fail, and customizers
+        // have no business running on an internal, throw-away expression holder in any case
+        CompilerConfiguration cc = new CompilerConfiguration(config, false);
         cc.setPreviewFeatures(false);
         cc.setScriptBaseClass(null);
         cc.setTargetBytecode(CompilerConfiguration.DEFAULT.getTargetBytecode());
