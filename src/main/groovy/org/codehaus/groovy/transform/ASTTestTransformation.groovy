@@ -52,18 +52,29 @@ import static org.codehaus.groovy.control.CompilePhase.fromPhaseNumber as toComp
 class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
 
     /**
+     * System property which, when set to {@code false}, makes {@link groovy.transform.ASTTest} a no-op.
+     * Compiling source containing the annotation then no longer evaluates its closure. Mirrors the
+     * {@code groovy.grape.enable} switch for {@code @Grab}.
+     */
+    public static final String ENABLE_PROPERTY = 'groovy.asttest.enable'
+
+    /**
      * Compilation unit that owns the current transformation.
      */
     CompilationUnit compilationUnit
 
     /**
      * Validates the annotation and schedules execution of its AST assertions.
+     * <p>
+     * Does nothing when {@value #ENABLE_PROPERTY} is set to {@code false}.
      *
      * @param nodes the annotation node and annotated AST node
      * @param source the source unit containing the annotation
      */
     @Override
     void visit(final ASTNode[] nodes, final SourceUnit source) {
+        if (!Boolean.parseBoolean(System.getProperty(ENABLE_PROPERTY, 'true'))) return
+
         AnnotationNode annotationNode = nodes[0]
 
         def member = annotationNode.getMember('phase')

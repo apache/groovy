@@ -53,6 +53,14 @@ import java.lang.annotation.Target;
  * <p>
  * The <code>node</code> variable refers to the AST node where the AST test annotation is put. In the previous example,
  * it means that <i>node</i> refers to the declaration "int x".
+ * <p>
+ * Because the closure is evaluated during compilation, merely <em>compiling</em> source which carries this
+ * annotation executes that code, whether or not the compiled result is subsequently run. Setting the
+ * {@code groovy.asttest.enable} system property to {@code false} makes the annotation a no-op, in the same
+ * way that {@code groovy.grape.enable} turns off {@code @Grab} dependency resolution. Consider doing so when
+ * compiling source you do not control; see the Apache Groovy
+ * <a href="https://github.com/apache/groovy/blob/master/THREAT_MODEL.md">threat model</a> for what compiling
+ * such source does and does not imply.
  *
  * @since 2.0.0
  */
