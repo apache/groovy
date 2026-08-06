@@ -206,6 +206,48 @@ planned for deprecation/removal in a future Groovy version. Formal
 `@Deprecated` may be restored before 6 GA once beta feedback confirms
 indy remains acceptable for those use cases.
 
+### Groovy 6 — `CompilerConfiguration` copy constructor copies customizers (GROOVY-9585)
+
+`CompilerConfiguration(CompilerConfiguration)` now copies the source
+configuration's compilation customizers along with every other setting.
+Before Groovy 6 it copied everything *except* customizers.
+
+**Who is affected.** Code that derives a configuration from an existing
+one and then registers its own customizers:
+
+```java
+CompilerConfiguration child = new CompilerConfiguration(parent);
+child.addCompilationCustomizers(mine);   // now: parent's customizers *and* mine
+```
+
+The change is silent — no exception, just customizers running that
+previously did not. An `ImportCustomizer` adds its imports twice; an
+`ASTTransformationCustomizer`, which carries mutable `applied` state, is
+invoked for a second compilation.
+
+**To restore the old behaviour**, use the two-argument copy constructor added in
+6.0.0:
+
+```java
+CompilerConfiguration child = new CompilerConfiguration(parent, false);
+```
+
+**Nested compilation.** A copied customizer is invoked for every primary
+class node of the child compilation, including nodes added via
+`CompilationUnit.addClassNode`, which have no `SourceUnit` — as that
+method's javadoc warns. A customizer that dereferences the `SourceUnit`
+it is handed will therefore throw `NullPointerException`; Gradle's
+incremental-compilation customizer is one such, and Groovy's own
+`SourceAwareCustomizer` is another. A customizer may equally assume the
+class nodes it sees belong to the compilation it was registered for.
+Groovy's own nested compilations —
+`StaticTypeCheckingSupport.evaluateExpression`, which compiles a
+synthetic expression holder, and `GroovyTypeCheckingExtensionSupport`,
+which compiles a type checking DSL script — therefore pass `false`.
+**Prefer `new CompilerConfiguration(parent, false)` whenever you derive a
+configuration for a nested compilation**, and null-check the `SourceUnit`
+in any customizer that might be applied to one.
+
 ## The binary-compatibility check
 
 The [`subprojects/binary-compatibility/`](subprojects/binary-compatibility)

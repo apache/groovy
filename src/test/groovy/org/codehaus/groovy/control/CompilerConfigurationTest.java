@@ -181,8 +181,31 @@ public final class CompilerConfigurationTest {
         assertEquals(pluginFactory, config.getPluginFactory());
         assertTrue(config.isLogClassgen());
         assertEquals(100, config.getLogClassgenStackTraceMaxDepth());
-        // TODO GROOVY-9585: re-enable below assertion once prod code is fixed
-//        assertEquals(1, config.getCompilationCustomizers().size());
+        assertEquals(1, config.getCompilationCustomizers().size());
+    }
+
+    @Test
+    public void testCopyConstructorWithoutCustomizers() {
+        CompilerConfiguration init = new CompilerConfiguration();
+        init.setScriptBaseClass("blarg.foo.WhatSit");
+        init.setSourceEncoding("LEAD-123");
+        init.setTargetBytecode(CompilerConfiguration.JDK17);
+        init.addCompilationCustomizers(new ImportCustomizer().addStarImports("groovy.transform"));
+        assertEquals(1, init.getCompilationCustomizers().size());
+
+        CompilerConfiguration withCustomizers = new CompilerConfiguration(init, true);
+        assertEquals(1, withCustomizers.getCompilationCustomizers().size());
+
+        CompilerConfiguration withoutCustomizers = new CompilerConfiguration(init, false);
+        assertTrue(withoutCustomizers.getCompilationCustomizers().isEmpty());
+
+        // everything other than the customizers is copied either way
+        assertEquals("blarg.foo.WhatSit", withoutCustomizers.getScriptBaseClass());
+        assertEquals("LEAD-123", withoutCustomizers.getSourceEncoding());
+        assertEquals(CompilerConfiguration.JDK17, withoutCustomizers.getTargetBytecode());
+
+        // the source configuration is left alone
+        assertEquals(1, init.getCompilationCustomizers().size());
     }
 
     @Test

@@ -605,10 +605,33 @@ public class CompilerConfiguration {
      * CompilerConfiguration myConfiguration = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
      * myConfiguration.setDebug(true);
      * </pre></blockquote>
+     * <p>
+     * The supplied configuration's {@link #getCompilationCustomizers() compilation customizers}
+     * are copied along with everything else. Prior to Groovy 6, they were not; code which copies a
+     * configuration and then adds its own customizers will now see the copied ones as well as its
+     * own. Use {@link #CompilerConfiguration(CompilerConfiguration, boolean)} with {@code false} if
+     * you want only your own.
      *
      * @param configuration The configuration to copy.
      */
     public CompilerConfiguration(final CompilerConfiguration configuration) {
+        this(configuration, true);
+    }
+
+    /**
+     * Copy constructor which optionally omits the supplied configuration's
+     * {@link #getCompilationCustomizers() compilation customizers}.
+     * <p>
+     * Pass {@code false} when deriving a configuration for a <em>nested</em> compilation, such as
+     * compiling a synthetic class node or a DSL script encountered while compiling something else.
+     * A customizer is registered for a particular compilation and commonly assumes its source units
+     * and class nodes, so applying one to a nested compilation may misbehave or fail outright.
+     *
+     * @param configuration The configuration to copy.
+     * @param copyCustomizers whether to also copy the compilation customizers
+     * @since 6.0.0
+     */
+    public CompilerConfiguration(final CompilerConfiguration configuration, final boolean copyCustomizers) {
         setWarningLevel(configuration.getWarningLevel());
         setTargetDirectory(configuration.getTargetDirectory());
         setClasspathList(configuration.getClasspath());
@@ -637,8 +660,9 @@ public class CompilerConfiguration {
         Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
         setJointCompilationOptions(null != jointCompilationOptions ? new HashMap<>(jointCompilationOptions) : jointCompilationOptions);
 
-        // TODO GROOVY-9585: add line below once gradle build issues fixed
-//        compilationCustomizers.addAll(configuration.getCompilationCustomizers());
+        if (copyCustomizers) {
+            compilationCustomizers.addAll(configuration.getCompilationCustomizers());
+        }
     }
 
     /**
