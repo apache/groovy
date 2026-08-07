@@ -41,6 +41,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 import java.io.Serial;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -125,6 +127,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     private static final String DELEGATE_OBJECT_FIELD = "$delegate";
     private static final AtomicLong PROXY_COUNTER = new AtomicLong();
 
+    /**
+     * Full-privilege lookup for this class — last-resort nest host when no
+     * foreign host is suitable. See {@link org.apache.groovy.util.HiddenClassDefiner}.
+     */
+    private static final Lookup LOOKUP = MethodHandles.lookup();
+
     private static final List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<>());
     private static final List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<>());
     private static final Set<String> GROOVYOBJECT_METHOD_NAMES;
@@ -139,7 +147,18 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     private final String proxyName;
     private final Class superClass;
     private final Class delegateClass;
+    /**
+     * Class loader used for intermediate Groovy compilation (e.g. trait adapter
+     * classes in {@link #adjustSuperClass}) and as a fallback when hidden-class
+     * definition is not possible.
+     */
     private final InnerLoader innerLoader;
+    /**
+     * Whether the final proxy class was defined as a hidden class.
+     * {@code true} means {@link #cachedClass} is a hidden nestmate;
+     * {@code false} means it was defined via the classic {@link ClassLoader} path.
+     */
+    private final boolean proxyIsHidden;
     private final Set<Class > implClasses;
     private final Set<Object> visitedMethods;
     private final Set<String> objectDelegateMethods;
@@ -167,13 +186,15 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
      */
     public ProxyGeneratorAdapter(
             final Map<Object, Object> closureMap,
-            final Class superClass,
+            final Class requestedSuperClass,
             final Class[] interfaces,
             final ClassLoader proxyLoader,
             final boolean emptyBody,
             final Class delegateClass) {
         super(ASM_API_VERSION, new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES));
-        this.innerLoader = proxyLoader != null ? createInnerLoader(proxyLoader, interfaces) : findClassLoader(superClass, interfaces);
+        this.innerLoader = proxyLoader != null
+                ? createInnerLoader(proxyLoader, interfaces)
+                : findClassLoader(requestedSuperClass, interfaces);
         this.visitedMethods = new LinkedHashSet<>();
         this.delegatedClosures = closureMap.isEmpty() ? EMPTY_DELEGATECLOSURE_MAP : new HashMap<>();
         boolean wildcard = false;
@@ -187,11 +208,15 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         this.hasWildcard = wildcard;
 
         this.delegateClass = delegateClass;
-        Class<?> fixedSuperClass = adjustSuperClass(superClass, interfaces);
+        // Normalise interface supers to a concrete class (Object or trait adapter).
+        // Parameter is named requestedSuperClass so it cannot shadow this.superClass.
+        Class<?> fixedSuperClass = adjustSuperClass(requestedSuperClass, interfaces);
         // if we have to delegate to another object, generate the appropriate delegate field
         // and collect the name of the methods for which delegation is active
         this.generateDelegateField = delegateClass != null;
-        this.objectDelegateMethods = generateDelegateField ? createDelegateMethodList(fixedSuperClass, delegateClass, interfaces) : Collections.emptySet();
+        this.objectDelegateMethods = generateDelegateField
+                ? createDelegateMethodList(fixedSuperClass, delegateClass, interfaces)
+                : Collections.emptySet();
 
         // a proxy is supposed to be a concrete class, so it cannot extend an interface.
         // If the provided superclass is an interface, then we replace the superclass with Object
@@ -200,7 +225,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
 
         // collect classes which have possible methods to be overloaded
         this.implClasses = new LinkedHashSet<>();
-        this.implClasses.add(superClass);
+        this.implClasses.add(requestedSuperClass);
         if (generateDelegateField) {
             implClasses.add(delegateClass);
             Collections.addAll(this.implClasses, Arrays.stream(delegateClass.getInterfaces()).filter(c -> !c.isSealed()).toArray(Class[]::new));
@@ -208,23 +233,43 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         if (interfaces != null) {
             Collections.addAll(this.implClasses, interfaces);
         }
-        this.proxyName = proxyName();
+        this.proxyName = computeProxyName();
         this.emptyBody = emptyBody;
 
         // generate bytecode
         ClassWriter writer = (ClassWriter) cv;
         this.visit(CompilerConfiguration.DEFAULT.getBytecodeVersion(), ACC_PUBLIC, proxyName, null, null, null);
-        byte[] b = writer.toByteArray();
-        cachedClass = innerLoader.defineClass(proxyName.replace('/', '.'), b);
-        // cache no-arg constructor
-        Class<?>[] args = generateDelegateField ? new Class[]{Map.class, delegateClass} : new Class[]{Map.class};
-        Constructor<?> constructor;
-        try {
-            constructor = cachedClass.getConstructor(args);
-        } catch (NoSuchMethodException e) {
-            constructor = null;
-        }
-        cachedNoArgConstructor = constructor;
+        final byte[] b = writer.toByteArray();
+
+        final Class<?>[] ctorArgs = generateDelegateField
+                ? new Class<?>[]{Map.class, delegateClass}
+                : new Class<?>[]{Map.class};
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        final Collection<? extends Class<?>> namedTypes = (Collection) implClasses;
+        // Use this.superClass (normalised concrete super), not the constructor
+        // parameter which still holds the pre-adjustSuperClass value (often an interface).
+        final ProxyClassDefiner.Result defined = ProxyClassDefiner.define(
+                b,
+                proxyName.replace('/', '.'),
+                this.superClass,
+                this.delegateClass,
+                namedTypes,
+                LOOKUP,
+                innerLoader::defineClass,
+                ctorArgs);
+        this.proxyIsHidden = defined.hidden;
+        this.cachedClass = defined.type;
+        this.cachedNoArgConstructor = defined.constructor;
+    }
+
+    /**
+     * Diagnostic: {@code true} if this adapter's proxy was defined as a hidden
+     * nestmate (JEP 371). Not part of the stable user-facing proxy contract.
+     *
+     * @return {@code true} when the proxy class is hidden
+     */
+    public boolean isProxyHidden() {
+        return proxyIsHidden;
     }
 
     private Class<?> adjustSuperClass(final Class<?> superClass, Class<?>[] interfaces) {
@@ -486,14 +531,29 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         }
     }
 
-    private String proxyName() {
+    private String computeProxyName() {
         String name = delegateClass != null ? delegateClass.getName() : superClass.getName();
         if (name.startsWith("[") && name.endsWith(";")) {
             name = name.substring(1, name.length() - 1) + "_array";
         }
         int index = name.lastIndexOf('.');
+        // The proxy name is used as the internal class name in the generated
+        // bytecode.  When the proxy ends up defined as a hidden class the JVM
+        // appends its own synthetic suffix, so the logical name below is only
+        // used for the visible-class (InnerLoader) fallback path and for
+        // diagnostics (e.g. stack traces via Class.getName()).
         if (index == -1) return name + PROXY_COUNTER.incrementAndGet() + "_groovyProxy";
         return name.substring(index + 1) + PROXY_COUNTER.incrementAndGet() + "_groovyProxy";
+    }
+
+    /**
+     * Returns the proxy name used in the generated bytecode (internal form).
+     * This is also the name visible in stack traces for visible-class proxies.
+     *
+     * @return the proxy name
+     */
+    public String proxyName() {
+        return proxyName;
     }
 
     private static boolean isImplemented(final Class<?> clazz, final String name, final String desc) {
