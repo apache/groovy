@@ -754,4 +754,109 @@ final class SecureASTCustomizerTest {
             '''
         }
     }
+
+    //--------------------------------------------------------------------------
+    // code outside method bodies: constructors and initializers
+
+    private void disallowSystemReceiver() {
+        customizer.disallowedReceivers = ['java.lang.System']
+    }
+
+    @Test
+    void testDisallowedReceiverInScriptBody() {
+        disallowSystemReceiver()
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate "System.getProperty('java.version')"
+        }
+    }
+
+    @Test
+    void testDisallowedReceiverInConstructor() {
+        disallowSystemReceiver()
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate '''
+                class A { A() { System.getProperty('java.version') } }
+                new A()
+            '''
+        }
+    }
+
+    @Test
+    void testDisallowedReceiverInStaticInitializer() {
+        disallowSystemReceiver()
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate '''
+                class A { static { System.getProperty('java.version') } }
+                new A()
+            '''
+        }
+    }
+
+    @Test
+    void testDisallowedReceiverInObjectInitializer() {
+        disallowSystemReceiver()
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate '''
+                class A { { System.getProperty('java.version') } }
+                new A()
+            '''
+        }
+    }
+
+    @Test
+    void testDisallowedReceiverInFieldInitializer() {
+        disallowSystemReceiver()
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate '''
+                class A { def f = System.getProperty('java.version') }
+                new A()
+            '''
+        }
+    }
+
+    @Test
+    void testDisallowedReceiverInStaticFieldInitializer() {
+        disallowSystemReceiver()
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate '''
+                class A { static def f = System.getProperty('java.version') }
+                new A()
+            '''
+        }
+    }
+
+    @Test
+    void testGeneratedScriptConstructorsAreNotChecked() {
+        // every script class has generated constructors which call super(Binding); they are not
+        // written by the author of the script, so they must not be subject to the restrictions
+        customizer.with {
+            disallowedReceivers = ['java.lang.System']
+            allowedExpressions = [BinaryExpression, ConstantExpression]
+        }
+        def shell = new GroovyShell(configuration)
+        shell.evaluate '1 + 1'
+        // no error means success
+    }
+
+    @Test
+    void testTransformGeneratedConstructorIsNotChecked() {
+        // @TupleConstructor generates a constructor, which likewise is not authored source
+        customizer.with {
+            disallowedReceivers = ['java.lang.System']
+            indirectImportCheckEnabled = true
+        }
+        def shell = new GroovyShell(configuration)
+        shell.evaluate '''
+            @groovy.transform.TupleConstructor
+            class A { String a }
+            new A('x')
+        '''
+        // no error means success
+    }
 }
