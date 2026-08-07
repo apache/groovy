@@ -18,11 +18,13 @@
  */
 package groovy.transform
 
-import groovy.junit6.plugin.ForkedJvm
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
+import static org.codehaus.groovy.transform.ASTTestTransformation.ENABLE_PROPERTY
 
 /**
  * Tests the {@code groovy.asttest.enable} switch for the {@link ASTTest} AST transform.
@@ -38,26 +40,42 @@ final class ASTTestEnableTest {
         new C()
     '''
 
+    private String originalValue
+
+    @BeforeEach
+    void setUp() {
+        originalValue = System.getProperty(ENABLE_PROPERTY)
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (originalValue == null) {
+            System.clearProperty(ENABLE_PROPERTY)
+        } else {
+            System.setProperty(ENABLE_PROPERTY, originalValue)
+        }
+    }
+
     @Test
     void testEnabledByDefault() {
-        assert System.getProperty('groovy.asttest.enable') == null
+        System.clearProperty(ENABLE_PROPERTY)
 
         def error = shouldFail(SCRIPT_WITH_FAILING_AST_TEST)
         assert error.message.contains('test closure was evaluated')
     }
 
     @Test
-    @ForkedJvm(systemProperties = ['groovy.asttest.enable=false'])
     void testDisabledBySystemProperty() {
-        assert System.getProperty('groovy.asttest.enable') == 'false'
+        System.setProperty(ENABLE_PROPERTY, 'false')
 
         // the annotation is a no-op, so the failing closure never runs
         assertScript SCRIPT_WITH_FAILING_AST_TEST
     }
 
     @Test
-    @ForkedJvm(systemProperties = ['groovy.asttest.enable=true'])
     void testExplicitlyEnabledBySystemProperty() {
+        System.setProperty(ENABLE_PROPERTY, 'true')
+
         def error = shouldFail(SCRIPT_WITH_FAILING_AST_TEST)
         assert error.message.contains('test closure was evaluated')
     }
