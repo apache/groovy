@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786003376786,
+  "lastUpdate": 1786086774887,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -1700,6 +1700,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 873,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1500,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "7567bf552a6653a71cb21fa5518cb937b45a458c",
+          "message": "minor refactor: I think these were erased accidentally during javadoc generation - adding a note to make it clearer we can remove in Groovy 7",
+          "timestamp": "2026-08-07T07:00:52Z",
+          "url": "https://github.com/apache/groovy/commit/7567bf552a6653a71cb21fa5518cb937b45a458c"
+        },
+        "date": 1786086773882,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4003,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 449,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 872,
             "unit": "classes"
           },
           {
