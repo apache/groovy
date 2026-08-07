@@ -18,6 +18,7 @@
  */
 package groovy.concurrent;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
@@ -416,6 +417,7 @@ public interface Awaitable<T> {
      * @param sources the awaitables, futures, or adapted objects to wait for
      * @return an awaitable that resolves to a list of results
      */
+    @GroovyABI(since="6.0.0")
     static Awaitable<List<Object>> all(Object... sources) {
         return AsyncSupport.allAsync(sources);
     }

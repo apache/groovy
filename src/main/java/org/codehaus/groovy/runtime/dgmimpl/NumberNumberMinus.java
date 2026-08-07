@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 public final class NumberNumberMinus extends NumberNumberMetaMethod {
@@ -38,6 +39,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
      * @param right another Number to subtract to the first one
      * @return the subtraction
      */
+    @GroovyABI(since="2.0")
     public static Number minus(Number left, Number right) {
         return NumberMath.subtract(left, right);
     }

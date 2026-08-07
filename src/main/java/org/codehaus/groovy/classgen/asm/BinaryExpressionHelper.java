@@ -583,7 +583,6 @@ public class BinaryExpressionHelper {
             VariableExpression var = (VariableExpression) leftExpression;
             if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
                 // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
-                rhsType = ClassHelper.getWrapper(rhsType);
                 operandStack.box();
             }
 

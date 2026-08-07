@@ -29,6 +29,7 @@ import groovy.transform.stc.PickFirstResolver;
 import groovy.util.regex.BalancedGroup;
 import groovy.util.regex.RegexGuard;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.util.CharSequenceReader;
@@ -2448,6 +2449,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @since 1.8.2
      */
+    @GroovyABI(since="3.0.0")
     public static String plus(final CharSequence left, final Object right) {
         return left + DefaultGroovyMethods.toString(right);
     }

@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -39,6 +41,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of() {
         return new WindowDefinitionImpl<>();
     }
@@ -52,6 +55,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy) {
         return new WindowDefinitionImpl<>(partitionBy);
     }
@@ -65,6 +69,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Queryable.Order<? super T, ? extends U> orderBy) {
         return new WindowDefinitionImpl<T, U>(Collections.singletonList(orderBy));
     }
@@ -78,6 +83,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(List<Queryable.Order<? super T, ? extends U>> orderBy) {
         return new WindowDefinitionImpl<>(orderBy);
     }
@@ -92,6 +98,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy);
     }
@@ -107,6 +114,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy, RowBound rows) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy, rows);
     }
@@ -121,6 +129,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(List<Queryable.Order<? super T, ? extends U>> orderBy, RowBound rows) {
         return new WindowDefinitionImpl<>(orderBy, rows);
     }
@@ -136,6 +145,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(Function<? super T, ?> partitionBy, List<Queryable.Order<? super T, ? extends U>> orderBy, ValueBound<? extends U> range) {
         return new WindowDefinitionImpl<>(partitionBy, orderBy, range);
     }
@@ -150,6 +160,7 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return the {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T, U extends Comparable<? super U>> WindowDefinition<T, U> of(List<Queryable.Order<? super T, ? extends U>> orderBy, ValueBound<? extends U> range) {
         return new WindowDefinitionImpl<>(orderBy, range);
     }
@@ -208,5 +219,6 @@ public interface WindowDefinition<T, U extends Comparable<? super U>> {
      * @return self, i.e. current {@link WindowDefinition} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     WindowDefinition<T, U> setId(Object id);
 }
