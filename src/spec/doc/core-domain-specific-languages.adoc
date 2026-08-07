@@ -817,16 +817,20 @@ Expressions can be checked using gapi:org.codehaus.groovy.control.customizers.Se
 ==== Limitations of the secure AST customizer
 
 Coverage is partial by design, so it is worth knowing where the checks do and do not
-reach. The customizer visits the script statement block and method bodies. It does *not*
+reach. The customizer visits the script statement block, method and constructor bodies,
+static and instance initializer blocks, and field initializer expressions. It does *not*
 visit the following, so restrictions such as `disallowedReceivers`, the statement and
 expression allow/disallow lists, and your own custom checkers do not apply to code
 appearing there:
 
 * annotation members, including closure arguments to annotations
-* constructor bodies — note also that a constructor is not a ``method definition'' as far
-  as `methodDefinitionAllowed` is concerned
-* static and instance initializer blocks
-* field initializer expressions
+* code carrying no source position, which is how constructors, initializers and fields
+  added by the compiler or by an AST transformation are told apart from those written by
+  the author of the source being secured — a script class always has generated
+  constructors, for example, and checking those would reject valid programs
+
+Note that a constructor is not a ``method definition'' as far as `methodDefinitionAllowed`
+is concerned: its body is checked, but declaring one remains permitted.
 
 Import restrictions apply to actual `import` statements, so they have no effect on a
 fully-qualified reference such as `new java.lang.ProcessBuilder(...)`. The

@@ -18,8 +18,11 @@
  */
 package org.codehaus.groovy.control.customizers;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -193,17 +196,20 @@ import java.util.Map;
  *  </pre>
  * <p>
  *  <b>Limitations.</b> Coverage is partial by design, so it is worth knowing where the checks do and
- *  do not reach. This customizer visits the script statement block and method bodies. It does
+ *  do not reach. This customizer visits the script statement block, method and constructor bodies,
+ *  static and instance initializer blocks, and field initializer expressions. It does
  *  <b>not</b> visit the following, so restrictions such as {@code disallowedReceivers}, the statement
  *  and expression allowed/disallowed lists, and any registered {@link StatementChecker} or
  *  {@link ExpressionChecker} do not apply to code appearing there:
  *  <ul>
  *  <li>annotation members, including closure arguments to annotations</li>
- *  <li>constructor bodies; note also that a constructor is not a "method definition" as far as
- *      {@link #setMethodDefinitionAllowed(boolean)} is concerned</li>
- *  <li>static and instance initializer blocks</li>
- *  <li>field initializer expressions</li>
+ *  <li>code carrying no source position, which is how constructors, initializers and fields added by
+ *      the compiler or by an AST transformation are told apart from those written by the author of
+ *      the source being secured</li>
  *  </ul>
+ *  Note that a constructor is not a "method definition" as far as
+ *  {@link #setMethodDefinitionAllowed(boolean)} is concerned: its body is checked, but declaring one
+ *  remains permitted.
  *  Import restrictions apply to actual {@code import} statements, so they have no effect on a
  *  fully-qualified reference such as {@code new java.lang.ProcessBuilder(...)}. The
  *  {@link #setIndirectImportCheckEnabled(boolean)} flag exists to catch some of those, but only
@@ -1197,6 +1203,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                         methodNode.getCode().visit(visitor);
                     }
                 }
+                visitConstructorsAndInitializers(clNode, visitor);
             }
         }
 
@@ -1208,6 +1215,56 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 }
             }
         }
+        visitConstructorsAndInitializers(classNode, visitor);
+    }
+
+    /**
+     * Applies the security checks to code which lives outside method bodies: constructors, instance
+     * and static initializer blocks, and field initializer expressions. These are not reachable from
+     * {@link ModuleNode#getStatementBlock()} or {@link ClassNode#getMethods()}, so without this they
+     * would escape the configured restrictions entirely.
+     * <p>
+     * Only nodes carrying a source position are visited. The compiler and AST transformations add
+     * constructors, initializers and fields of their own — a script class always has generated
+     * constructors, for example — and those are not written by the author of the source being
+     * secured, so checking them would reject valid programs rather than restrict the author.
+     * Generated nodes normally carry no source position, which is what distinguishes them here.
+     *
+     * @param clNode the class to inspect
+     * @param visitor the security-checking visitor to apply
+     */
+    protected void visitConstructorsAndInitializers(final ClassNode clNode, final GroovyCodeVisitor visitor) {
+        for (ConstructorNode constructor : clNode.getDeclaredConstructors()) {
+            if (!constructor.isSynthetic() && constructor.getCode() != null && isFromSource(constructor)) {
+                constructor.getCode().visit(visitor);
+            }
+        }
+        for (Statement statement : clNode.getObjectInitializerStatements()) {
+            if (isFromSource(statement)) statement.visit(visitor);
+        }
+        for (MethodNode staticInitializer : clNode.getMethods("<clinit>")) {
+            // the <clinit> method is always synthetic, but the statements within it need not be
+            if (staticInitializer.getCode() instanceof BlockStatement block) {
+                for (Statement statement : block.getStatements()) {
+                    if (isFromSource(statement)) statement.visit(visitor);
+                }
+            }
+        }
+        for (FieldNode field : clNode.getFields()) {
+            Expression initialValue = field.getInitialExpression();
+            if (initialValue != null && isFromSource(initialValue)) initialValue.visit(visitor);
+        }
+    }
+
+    /**
+     * Indicates whether a node originates from the source being compiled rather than from the
+     * compiler or an AST transformation.
+     *
+     * @param node the node to test
+     * @return {@code true} if the node carries a source position
+     */
+    private static boolean isFromSource(final ASTNode node) {
+        return node.getLineNumber() > 0;
     }
 
     /**
