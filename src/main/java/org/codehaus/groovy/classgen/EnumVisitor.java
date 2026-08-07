@@ -264,6 +264,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
         // static init
         List<FieldNode> fields = enumClass.getFields();
+        boolean directInit = canInitDirectly(enumClass, fields);
         List<Expression> arrayInit = new ArrayList<>();
         List<Statement> block = new ArrayList<>();
         int index = -1;
@@ -320,7 +321,9 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 }
             }
             arrayInit.add(fieldX(field));
-            block.add(assignS(fieldX(field), callX(enumType, "$INIT", args)));
+            Expression init = callX(enumType, "$INIT", args);
+            if (directInit) init = new EnumConstantInit(enumClass, field.getName(), index, init);
+            block.add(assignS(fieldX(field), init));
         }
 
         if (!isAIC) {
@@ -336,6 +339,31 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         }
 
         enumClass.addStaticInitializerStatements(block, true);
+    }
+
+    /**
+     * Determines whether the constants of the given enum can be initialized with a direct
+     * constructor call rather than with a call to the synthetic {@code $INIT} helper.
+     * <p>
+     * This is only the case when every constant is a plain identifier and so supplies no
+     * arguments of its own; the constructor arguments are then known to be exactly the
+     * compiler-supplied name and ordinal.  Constants declared with arguments, with named
+     * arguments or with a class body keep the {@code $INIT} path, as do enums whose own
+     * constructor cannot accept just the name and the ordinal.
+     *
+     * @param enumClass the enum being completed
+     * @param fields    the fields of {@code enumClass}, before any initial value is cleared
+     * @return {@code true} if a direct constructor call may be attempted
+     */
+    private static boolean canInitDirectly(final ClassNode enumClass, final List<FieldNode> fields) {
+        // an abstract enum or one that is extended has constants with a body, i.e. subclasses
+        if (isAnonymousInnerClass(enumClass) || enumClass.isAbstract() || !isNotExtended(enumClass)) return false;
+        // GROOVY-10811: a declared constructor must be callable with no user-supplied argument
+        if (!enumClass.getDeclaredConstructors().isEmpty() && !hasNoArgConstructor(enumClass)) return false;
+        for (FieldNode field : fields) {
+            if (field.isEnum() && field.getInitialExpression() != null) return false;
+        }
+        return true;
     }
 
     private void addError(final AnnotatedNode an, final String msg) {

@@ -959,6 +959,58 @@ final class EnumTest extends CompilableTestSupport {
             }
         '''
     }
+
+    // constants that supply no arguments of their own are created with a direct
+    // constructor call instead of through the synthetic $INIT helper
+    @Test
+    void testConstantsWithoutArguments() {
+        assert Weekday.values()*.name() == ['MON', 'TUE', 'WED']
+        assert Weekday.values()*.ordinal() == [0, 1, 2]
+        assert Weekday.valueOf('TUE') == Weekday.TUE
+        assert Weekday.TUE.declaringClass == Weekday
+        assert Weekday.MIN_VALUE == Weekday.MON
+        assert Weekday.MAX_VALUE == Weekday.WED
+        assert Weekday.MON.next() == Weekday.TUE
+        assert Weekday.MON.previous() == Weekday.WED
+        assert Weekday.TUE in (Weekday.MON..Weekday.WED)
+        assert EnumSet.allOf(Weekday).size() == 3
+        assert Weekday.MON.compareTo(Weekday.WED) < 0
+    }
+
+    @Test
+    void testConstantsWithoutArgumentsAreSerializable() {
+        def buffer = new ByteArrayOutputStream()
+        new ObjectOutputStream(buffer).writeObject(Weekday.TUE)
+        def restored = new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray())).readObject()
+        assert restored.is(Weekday.TUE)
+    }
+
+    @Test
+    void testConstantsWithoutArgumentsRunTheDeclaredConstructor() {
+        assert Tagged.values()*.tag == ['tagged', 'tagged']
+    }
+
+    @Test
+    void testConstantsWithoutArgumentsWhenConstructorHasDefaults() {
+        assert Defaulted.values()*.label == ['none', 'none']
+    }
+}
+
+enum Weekday {
+    MON, TUE, WED
+}
+
+enum Tagged {
+    ALPHA, BETA
+    private final String tag
+    Tagged() { tag = 'tagged' }
+    String getTag() { tag }
+}
+
+enum Defaulted {
+    ONE, TWO
+    final String label
+    Defaulted(String label = 'none') { this.label = label }
 }
 
 enum UsCoin {
