@@ -38,6 +38,11 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junit6}"
 }
 
+groovyLibrary {
+    // New module in Groovy 6; no earlier baseline to compare against.
+    withoutBinaryCompatibilityChecks()
+}
+
 tasks.named('test') {
     useJUnitPlatform {
         // Fixture classes for negative-path tests are tagged 'manual' and

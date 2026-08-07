@@ -54,7 +54,7 @@ rootProject.allprojects {
                 onlyModified = true
                 failOnModification = false
                 ignoreMissingClasses = true
-                classExcludes = ["**_closure**", "org.codehaus.groovy.runtime.dgm\$**"]
+                classExcludes = ["**_closure**", "**_lambda**", "org.codehaus.groovy.runtime.dgm\$**"]
                 packageExcludes = ["**internal**", "groovyjarjar**"]
 //                TODO consider using rich report but we need to add a custom rule first
 //                richReport {

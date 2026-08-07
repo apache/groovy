@@ -32,6 +32,11 @@ dependencies {
     testImplementation projects.groovyTest
 }
 
+groovyLibrary {
+    // New module in Groovy 6; no earlier baseline to compare against.
+    withoutBinaryCompatibilityChecks()
+}
+
 tasks.withType(Javadoc).configureEach {
     exclude '**/package-info.java'
 }

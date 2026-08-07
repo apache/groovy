@@ -31,7 +31,6 @@ dependencies {
 groovyLibrary {
     optionalModule()
 
-    withoutBinaryCompatibilityChecks()
     moduleDescriptor {
         extensionClasses = 'org.apache.groovy.ginq.GinqGroovyMethods'
     }

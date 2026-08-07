@@ -29,6 +29,11 @@ dependencies {
     testImplementation projects.groovyTestJunit6
 }
 
+groovyLibrary {
+    // New module in Groovy 6; no earlier baseline to compare against.
+    withoutBinaryCompatibilityChecks()
+}
+
 // The only Java source is a package-private implementation class;
 // exclude it from javadoc to avoid "no public classes found" error.
 tasks.withType(Javadoc).configureEach {

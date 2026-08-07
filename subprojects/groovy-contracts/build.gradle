@@ -38,5 +38,4 @@ tasks.named('test') {
 
 groovyLibrary {
     optionalModule()
-    withoutBinaryCompatibilityChecks()
 }
