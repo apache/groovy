@@ -180,6 +180,14 @@ public class TryCatchStatement extends Statement {
     //
 
     /**
+     * @deprecated since 5.0.0, use {@link #addCatch(CatchStatement)}; planned for removal in Groovy 7
+     */
+    @Deprecated(since = "5.0.0", forRemoval = true)
+    public void addCatch$$bridge(CatchStatement catchStatement) {
+        addCatch(catchStatement);
+    }
+
+    /**
      * Adds a {@link CatchStatement}} to this try-catch block and returns this for method chaining.
      *
      * @param catchStatement
@@ -189,6 +197,14 @@ public class TryCatchStatement extends Statement {
     public TryCatchStatement addCatch(CatchStatement catchStatement) {
         catchStatements.add(catchStatement);
         return this;
+    }
+
+    /**
+     * @deprecated since 5.0.0, use {@link #addResource(ExpressionStatement)}; planned for removal in Groovy 7
+     */
+    @Deprecated(since = "5.0.0", forRemoval = true)
+    public void addResource$$bridge(ExpressionStatement resourceStatement) {
+        addResource(resourceStatement);
     }
 
     /**
