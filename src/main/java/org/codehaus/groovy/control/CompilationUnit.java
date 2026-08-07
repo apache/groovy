@@ -1013,7 +1013,12 @@ public class CompilationUnit extends ProcessingUnit {
         /**
          * Performs the operation for one primary class node.
          *
-         * @param source the source unit owning the class
+         * @param source the source unit owning the class, or {@code null} when the class node was
+         *        supplied directly via {@link CompilationUnit#addClassNode(ClassNode)} and so has no
+         *        originating source. Implementations must tolerate {@code null} here: an unguarded
+         *        dereference is reported as a {@link org.codehaus.groovy.GroovyBugError} wrapping the
+         *        {@code NullPointerException}, which reads as a compiler bug rather than as a fault
+         *        in the implementation.
          * @param context the current generator context
          * @param classNode the class node to process
          * @throws CompilationFailedException if processing fails

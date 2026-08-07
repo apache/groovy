@@ -57,14 +57,22 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
 
     /**
      * Invokes the delegate only when the source and class validators accept the current input.
+     * <p>
+     * A {@code null} source unit selects nothing: this customizer exists to match against source
+     * units, so a class node which has none (see
+     * {@link org.codehaus.groovy.control.CompilationUnit.IPrimaryClassNodeOperation#call(SourceUnit,
+     * GeneratorContext, ClassNode) call}) cannot satisfy any source-based criterion, and the
+     * delegate is not invoked.
      *
-     * @param source the source unit being customized
+     * @param source the source unit being customized, possibly {@code null}
      * @param context the current generator context
      * @param classNode the class node being customized
      * @throws CompilationFailedException if the delegate fails
      */
     @Override
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
+        if (source == null) return;
+
         String fileName = source.getName();
         ReaderSource reader = source.getSource();
         if (reader instanceof FileReaderSource file) {
