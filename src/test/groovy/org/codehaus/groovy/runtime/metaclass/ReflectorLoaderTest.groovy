@@ -18,13 +18,14 @@
  */
 package org.codehaus.groovy.runtime.metaclass
 
-import org.apache.groovy.util.HiddenClassDefiner
 import org.codehaus.groovy.runtime.Reflector
 import org.junit.jupiter.api.Test
 import org.objectweb.asm.ClassWriter
 
 import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
 import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertNull
 import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import static org.objectweb.asm.Opcodes.ALOAD
@@ -33,8 +34,10 @@ import static org.objectweb.asm.Opcodes.RETURN
 import static org.objectweb.asm.Opcodes.V17
 
 /**
- * Covers the hidden-class path in {@link ReflectorLoader}.
+ * Minimal smoke coverage for deprecated {@link ReflectorLoader} binary-compat
+ * surface — not a place to grow policy tests.
  */
+@SuppressWarnings('deprecation')
 class ReflectorLoaderTest {
 
     private static byte[] reflectorSubclassBytes(String internalName) {
@@ -54,7 +57,7 @@ class ReflectorLoaderTest {
     }
 
     @Test
-    void testDefineClassPrefersHiddenNestmateOfReflectorLoader() {
+    void testDefineClassIsVisibleAndCached() {
         def loader = new ReflectorLoader(this.class.classLoader)
         String name = ReflectorLoader.getReflectorName(StringBuilder)
         Class<?> cls = loader.defineClass(
@@ -63,20 +66,24 @@ class ReflectorLoaderTest {
                 this.class.protectionDomain)
         assertNotNull(cls)
         assertTrue(Reflector.isAssignableFrom(cls))
-        if (HiddenClassDefiner.isEnabled()) {
-            assertTrue(cls.isHidden())
-            // Nest host is ReflectorLoader (caller-owned LOOKUP), not Reflector
-            assertEquals(ReflectorLoader.nestHost, cls.nestHost)
-        }
+        assertFalse(cls.isHidden(), 'deprecated loader defines visible classes only')
+        assertEquals(name, cls.name)
         assertNotNull(cls.getDeclaredConstructor().newInstance())
-        // Cache key is the logical name, not the hidden runtime name
         assertEquals(cls, loader.getLoadedClass(name))
+        assertNull(loader.getLoadedClass('no.such.Reflector'))
     }
 
     @Test
     void testGetReflectorNameForJavaAndUserTypes() {
-        assertTrue(ReflectorLoader.getReflectorName(String).startsWith('gjdk.'))
-        assertTrue(ReflectorLoader.getReflectorName(String[]).contains('Array'))
+        // Non-array java.* types get the gjdk. prefix (restricted package).
+        assertEquals('gjdk.java.lang.String_GroovyReflector',
+                ReflectorLoader.getReflectorName(String))
+        // Arrays use getName() form "[L…;" which does not start with "java.", so
+        // the historical path has no gjdk. prefix — preserve that contract.
+        assertEquals('java.lang.String_GroovyReflectorArray',
+                ReflectorLoader.getReflectorName(String[]))
+        assertEquals('java.lang.String_GroovyReflectorArray2',
+                ReflectorLoader.getReflectorName(String[][]))
         assertTrue(ReflectorLoader.getReflectorName(ReflectorLoaderTest).endsWith('_GroovyReflector'))
     }
 }

@@ -128,9 +128,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
     private static final AtomicLong PROXY_COUNTER = new AtomicLong();
 
     /**
-     * Full-privilege lookup for this class (caller-sensitive, captured here).
-     * Used as the last-resort nest host when no foreign host is suitable —
-     * never replaced by {@code privateLookupIn} on a utility class.
+     * Full-privilege lookup for this class — last-resort nest host when no
+     * foreign host is suitable. See {@link org.apache.groovy.util.HiddenClassDefiner}.
      */
     private static final Lookup LOOKUP = MethodHandles.lookup();
 

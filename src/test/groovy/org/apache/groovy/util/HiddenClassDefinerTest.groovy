@@ -44,7 +44,8 @@ import static org.objectweb.asm.Opcodes.V17
  *
  * <p>The preferred production path is {@code tryDefineNestmate(Lookup, ...)}
  * with a lookup captured in this test class itself (caller-sensitive). The
- * foreign-host overload is covered separately as a best-effort path.
+ * foreign-host overload and its internal {@code canAttemptPrivateLookup}
+ * pre-filter are covered as best-effort policy.
  *
  * @since 6.0.0
  */
@@ -56,8 +57,7 @@ class HiddenClassDefinerTest {
      * {@code $$InjectedInvoker} hidden class on some JDKs; pin to this class
      * with {@code privateLookupIn} so nest-host assertions are stable.
      * Production Java call sites capture {@code MethodHandles.lookup()} in a
-     * {@code static final} field of the nest-host class itself (see
-     * {@code ReflectorLoader}, {@code ProxyGeneratorAdapter}).
+     * {@code static final} field of the nest-host class itself.
      */
     private static final Lookup LOOKUP = MethodHandles.privateLookupIn(
             HiddenClassDefinerTest, MethodHandles.lookup())
@@ -183,8 +183,9 @@ class HiddenClassDefinerTest {
 
     @Test
     void testLookupClassDeterminesNestHostNotUtilityClass() {
-        // blackdrag: which class called MethodHandles.lookup() matters — the nest
-        // host is lookup.lookupClass(), not HiddenClassDefiner.
+        // Which class called MethodHandles.lookup() matters — the nest host is
+        // lookup.lookupClass(), not HiddenClassDefiner (even though module rights
+        // are the same for every runtime-captured lookup).
         byte[] bytes = minimalClassBytes('org/apache/groovy/util/NestHostCheck')
         Class<?> hidden = HiddenClassDefiner.tryDefineNestmate(LOOKUP, bytes, true)
         assertNotNull(hidden)
@@ -254,8 +255,33 @@ class HiddenClassDefinerTest {
     }
 
     // -------------------------------------------------------------------------
-    // Best-effort API: foreign host
+    // Module-open pre-filter + best-effort foreign host
     // -------------------------------------------------------------------------
+
+    @Test
+    void testCanAttemptPrivateLookupPrefilter() {
+        // Usable same-module / unnamed application host
+        assertTrue(HiddenClassDefiner.canAttemptPrivateLookup(HiddenClassDefinerTest))
+
+        // Unusable shapes
+        assertFalse(HiddenClassDefiner.canAttemptPrivateLookup(null))
+        assertFalse(HiddenClassDefiner.canAttemptPrivateLookup(Integer.TYPE))
+        assertFalse(HiddenClassDefiner.canAttemptPrivateLookup(String[].class))
+
+        // Nestmate of String needs private privileges into java.base.
+        // On a stock modular JDK java.lang is not open to the runtime → false.
+        // Environments that pass --add-opens may report true; either is valid,
+        // but the pre-filter must match what privateLookupIn would allow.
+        boolean stringOpen = String.module.isOpen('java.lang', HiddenClassDefiner.module)
+        assertEquals(stringOpen, HiddenClassDefiner.canAttemptPrivateLookup(String),
+                'pre-filter must mirror Module.isOpen for java.lang')
+
+        // Hidden class cannot host further nestmates
+        Class<?> hidden = HiddenClassDefiner.tryDefineNestmate(
+                LOOKUP, minimalClassBytes('org/apache/groovy/util/PrefilterHidden'), true)
+        assertNotNull(hidden)
+        assertFalse(HiddenClassDefiner.canAttemptPrivateLookup(hidden))
+    }
 
     @Test
     void testTryDefineNestmateWithForeignHost() {
@@ -281,15 +307,21 @@ class HiddenClassDefinerTest {
     }
 
     @Test
-    void testForeignHostIntoJavaBaseTypicallyFails() {
-        // java.lang is not open to unnamed modules → privateLookupIn fails → null
-        // (unless the JVM was launched with --add-opens). Soft API must not throw.
+    void testForeignHostIntoJavaBaseDoesNotThrow() {
+        // Try to create a nestmate for String — privateLookupIn into java.lang
+        // fails on a stock modular JDK. Soft API must return null, never throw.
         byte[] bytes = minimalClassBytes('java/lang/ShouldNotAppear')
         Class<?> result = HiddenClassDefiner.tryDefineNestmate(String, bytes, true)
-        // On a stock JDK this is null; if the environment opens java.lang, a
-        // hidden class is still a valid outcome. Never throw.
-        if (result != null) {
+        if (!HiddenClassDefiner.canAttemptPrivateLookup(String)) {
+            assertNull(result, 'unopened java.lang must soft-fail to null')
+        } else if (result != null) {
+            // Only when the JVM was launched with --add-opens java.base/java.lang=...
             assertTrue(result.isHidden())
         }
+    }
+
+    @Test
+    void testForeignHostNullBytesRejected() {
+        assertNull(HiddenClassDefiner.tryDefineNestmate(HiddenClassDefinerTest, null, true))
     }
 }

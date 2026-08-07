@@ -31,30 +31,31 @@ import java.util.function.BiFunction;
  * hidden nestmate when safe and falling back to a visible {@link ClassLoader}
  * definition otherwise.
  *
- * <p>Extracted from {@link ProxyGeneratorAdapter} so that class keeps focused on
- * bytecode generation while nest-host policy and define/fallback live here.
+ * <p>Extracted so {@link ProxyGeneratorAdapter} stays focused on bytecode
+ * generation. Nest-host and module policy live in
+ * {@link HiddenClassDefiner}; this class only applies proxy-specific rules.
  *
  * <h2>When a proxy stays visible</h2>
  * <ul>
  *   <li>hidden classes are disabled;</li>
- *   <li>any named dependency (super / delegate / implemented type) is itself
- *       hidden — hidden types cannot appear as nominal field/super types;</li>
+ *   <li>any named dependency is itself hidden;</li>
  *   <li>interface-style aggregates ({@code Object} super, no typed delegate,
- *       at least one user interface) — these are routinely re-wrapped (e.g. by
- *       MockFor) and must remain loadable by binary name.</li>
+ *       at least one user interface) — must stay nameable for MockFor re-wrap.</li>
  * </ul>
  *
- * <h2>Nest host selection (at most one foreign try, then own Lookup)</h2>
+ * <h2>Nest host selection</h2>
  * <ol>
- *   <li>{@code delegateClass} if usable and its loader can see every dependency;</li>
+ *   <li>{@code delegateClass} if a usable foreign host (open package + loader
+ *       can see every dependency);</li>
  *   <li>else concrete {@code superClass} (not {@code Object}) under the same rule;</li>
- *   <li>else the caller-owned {@link Lookup} from {@link ProxyGeneratorAdapter}
+ *   <li>else caller-owned {@link Lookup} from {@link ProxyGeneratorAdapter}
  *       when that loader can see every dependency.</li>
  * </ol>
- * Interfaces are not used as nest hosts: they add trials without helping the
- * common cases and complicate class-loader reasoning.
+ * Interfaces are not used as nest hosts. Module A/B/C coverage is documented on
+ * {@link HiddenClassDefiner}.
  *
  * @since 6.0.0
+ * @see HiddenClassDefiner
  */
 final class ProxyClassDefiner {
 
@@ -115,7 +116,6 @@ final class ProxyClassDefiner {
             }
         }
 
-        // Visible fallback — never mark as hidden.
         type = visibleDefine.apply(binaryName, bytecode);
         return new Result(type, false, resolvePublicConstructor(type, ctorArgs));
     }
@@ -144,12 +144,13 @@ final class ProxyClassDefiner {
                 }
             }
         }
-        // Interface aggregates must stay nameable for re-wrapping (MockFor, etc.).
         return delegateClass != null || superClass != Object.class || !hasUserInterface(implClasses);
     }
 
     /**
      * Single preferred foreign nest host, or {@code null} to skip to own Lookup.
+     * Unopened platform packages are rejected via
+     * {@link HiddenClassDefiner#canAttemptPrivateLookup(Class)}.
      */
     static Class<?> preferredForeignHost(
             final Class<?> superClass,
@@ -217,7 +218,6 @@ final class ProxyClassDefiner {
         if (candidate == null) {
             return null;
         }
-        // Ensure deferred linkage succeeds before we commit to the hidden path.
         if (resolvePublicConstructor(candidate, ctorArgs) == null) {
             return null;
         }
@@ -236,12 +236,17 @@ final class ProxyClassDefiner {
         }
     }
 
+    /**
+     * Proxy-specific exclusions plus {@link HiddenClassDefiner#canAttemptPrivateLookup}
+     * (shape + module-open). {@code Object} / this adapter / sealed types are
+     * never foreign hosts.
+     */
     private static boolean isCandidateHost(final Class<?> type) {
         return type != null
                 && type != Object.class
                 && type != ProxyGeneratorAdapter.class
-                && !isUnusableNamedType(type)
-                && !type.isSealed();
+                && !type.isSealed()
+                && HiddenClassDefiner.canAttemptPrivateLookup(type);
     }
 
     private static boolean isUnusableNamedType(final Class<?> type) {
