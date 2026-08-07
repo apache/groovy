@@ -31,20 +31,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * classes such as generated meta-method dispatchers.
  *
  * <p>Since Groovy 6.0 this loader first attempts to define each artifact as a
- * <em>hidden nestmate</em> of the target class via
- * {@link HiddenClassDefiner#tryDefineNestmate(Class, byte[], boolean)} (best-effort
- * {@code privateLookupIn} into the target). Benefits when that succeeds:
- * <ul>
- *   <li>non-discoverable by name;</li>
- *   <li>same defining loader / package / protection domain as the target;</li>
- *   <li>nestmate of the target;</li>
- *   <li>weak lifecycle — eligible for eager unloading once the {@link Class}
- *       object is unreachable.</li>
- * </ul>
+ * hidden nestmate of the target via
+ * {@link HiddenClassDefiner#tryDefineNestmate(Class, byte[], boolean)}. When
+ * that soft-fails (unopened package, unsuitable host, …) it falls back to
+ * {@link ClassLoader#defineClass} with the protection domain captured at
+ * construction. Module / nest-host policy is documented on
+ * {@link HiddenClassDefiner}.
  *
- * <p>If hidden-class definition is refused (module not open, target unsuitable,
- * …) the loader falls back to {@link ClassLoader#defineClass} with the
- * protection domain captured at construction time.
+ * @see HiddenClassDefiner
  */
 public class ClassLoaderForClassArtifacts extends ClassLoader {
 

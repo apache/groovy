@@ -58,6 +58,20 @@ class ProxyClassDefinerTest {
         cw.toByteArray()
     }
 
+    private static byte[] classWithMapCtor(String internalName) {
+        def cw = new ClassWriter(0)
+        cw.visit(V17, ACC_PUBLIC, internalName, null, 'java/lang/Object', null)
+        def mv = cw.visitMethod(ACC_PUBLIC, '<init>', '(Ljava/util/Map;)V', null, null)
+        mv.visitCode()
+        mv.visitVarInsn(ALOAD, 0)
+        mv.visitMethodInsn(INVOKESPECIAL, 'java/lang/Object', '<init>', '()V', false)
+        mv.visitInsn(RETURN)
+        mv.visitMaxs(1, 2)
+        mv.visitEnd()
+        cw.visitEnd()
+        cw.toByteArray()
+    }
+
     @Test
     void testMayDefineHiddenRejectsInterfaceAggregates() {
         // Object super + user interface + no delegate → must stay nameable
@@ -80,13 +94,36 @@ class ProxyClassDefinerTest {
     }
 
     @Test
-    void testPreferredForeignHostPrefersDelegateThenSuper() {
-        assertEquals(ArrayList, ProxyClassDefiner.preferredForeignHost(
-                Object, ArrayList, [Object, ArrayList] as Set))
+    void testMayDefineHiddenWithoutUserInterfaces() {
+        // null / only Object / GroovyObject → no user interface → may be hidden
+        if (!HiddenClassDefiner.isEnabled()) return
+        assertTrue(ProxyClassDefiner.mayDefineHidden(Object, null, null))
+        assertTrue(ProxyClassDefiner.mayDefineHidden(Object, null, [Object] as Set))
+        assertTrue(ProxyClassDefiner.mayDefineHidden(Object, null, [Object, GroovyObject] as Set))
+    }
+
+    @Test
+    void testPreferredForeignHostPrefersOpenHostsAndSkipsPlatform() {
+        // Application host in an open / unnamed package is preferred
         assertEquals(ConcreteHost, ProxyClassDefiner.preferredForeignHost(
                 ConcreteHost, null, [ConcreteHost] as Set))
+
+        // Delegate preferred over super when both are candidates
+        assertEquals(ConcreteHost, ProxyClassDefiner.preferredForeignHost(
+                Object, ConcreteHost, [Object, ConcreteHost] as Set))
+
+        // No usable foreign host for pure interface aggregate shape
         assertNull(ProxyClassDefiner.preferredForeignHost(
                 Object, null, [Object, Iterator] as Set))
+
+        // ArrayList lives in java.base and is not open to the runtime on a stock
+        // JDK → must not be selected as foreign host (avoids a doomed
+        // privateLookupIn). Own Lookup / visible fallback handle it.
+        if (!HiddenClassDefiner.canAttemptPrivateLookup(ArrayList)) {
+            assertNull(ProxyClassDefiner.preferredForeignHost(
+                    Object, ArrayList, [Object, ArrayList] as Set),
+                    'unopened java.util.ArrayList must not be a foreign host')
+        }
     }
 
     @Test
@@ -99,6 +136,23 @@ class ProxyClassDefinerTest {
         assertTrue(ProxyClassDefiner.loaderCanResolve(childType, childType))
         // Bootstrap types always visible
         assertTrue(ProxyClassDefiner.loaderCanResolve(childType, String))
+        // null / primitive types are always "resolvable"
+        assertTrue(ProxyClassDefiner.loaderCanResolve(String, null))
+        assertTrue(ProxyClassDefiner.loaderCanResolve(String, Integer.TYPE))
+    }
+
+    @Test
+    void testCanResolveAllRequiresEveryDependency() {
+        assertTrue(ProxyClassDefiner.canResolveAll(
+                ConcreteHost, ConcreteHost, null, [ConcreteHost] as Set))
+        assertTrue(ProxyClassDefiner.canResolveAll(
+                ConcreteHost, ConcreteHost, null, null))
+
+        def childLoader = new GroovyClassLoader(this.class.classLoader)
+        Class<?> childType = childLoader.parseClass('class Unseen {}')
+        // Host in parent loader cannot see a child-defined type
+        assertFalse(ProxyClassDefiner.canResolveAll(
+                String, Object, null, [childType] as Set))
     }
 
     @Test
@@ -140,12 +194,93 @@ class ProxyClassDefinerTest {
                 fallback,
                 new Class<?>[0])
         assertNotNull(result.type)
-        // Own LOOKUP (this test class) may not host ConcreteHost package;
-        // foreign host ConcreteHost should succeed when privateLookupIn works.
+        // Foreign host ConcreteHost should succeed when privateLookupIn works.
         if (result.hidden) {
             assertTrue(result.type.isHidden())
             assertEquals(ConcreteHost.nestHost, result.type.nestHost)
         }
         assertNotNull(result.constructor)
+    }
+
+    @Test
+    void testDefineUsesOwnLookupWhenForeignHostUnopened() {
+        if (!HiddenClassDefiner.isEnabled()) return
+        // Typed delegate is ArrayList (java.base). Foreign try is skipped when
+        // the package is not open; own Lookup from this test class may still
+        // host the nestmate if every dependency is resolvable.
+        def bytes = publicNoArgClass('org/codehaus/groovy/runtime/OwnLookupHost')
+        def fallback = { String name, byte[] b ->
+            new GroovyClassLoader(this.class.classLoader).defineClass(name, b)
+        }
+        def ownLookup = MethodHandles.privateLookupIn(
+                ProxyClassDefinerTest, MethodHandles.lookup())
+        def result = ProxyClassDefiner.define(
+                bytes,
+                'org.codehaus.groovy.runtime.OwnLookupHost',
+                Object,
+                ArrayList,
+                [Object, ArrayList] as Set,
+                ownLookup,
+                fallback,
+                new Class<?>[0])
+        assertNotNull(result.type)
+        assertNotNull(result.constructor)
+        if (result.hidden && !HiddenClassDefiner.canAttemptPrivateLookup(ArrayList)) {
+            // Nest host is the own-lookup class, not ArrayList
+            assertEquals(ProxyClassDefinerTest.nestHost, result.type.nestHost)
+        }
+    }
+
+    @Test
+    void testAcceptRejectsMissingPublicConstructor() {
+        if (!HiddenClassDefiner.isEnabled()) return
+        // Class with only no-arg ctor, but we ask for Map ctor → accept() nulls out
+        // and define falls back to visible (which also won't have Map ctor unless we define it).
+        def bytes = publicNoArgClass('org/codehaus/groovy/runtime/NoMapCtor')
+        def fallback = { String name, byte[] b ->
+            new GroovyClassLoader(this.class.classLoader).defineClass(name, b)
+        }
+        def result = ProxyClassDefiner.define(
+                bytes,
+                'org.codehaus.groovy.runtime.NoMapCtor',
+                ConcreteHost,
+                null,
+                [ConcreteHost] as Set,
+                MethodHandles.lookup(),
+                fallback,
+                new Class<?>[]{Map})
+        // Visible fallback also has no Map ctor → constructor is null
+        assertNotNull(result.type)
+        assertNull(result.constructor)
+        assertFalse(result.hidden)
+    }
+
+    @Test
+    void testResolvePublicConstructor() {
+        assertNotNull(ProxyClassDefiner.resolvePublicConstructor(String, new Class<?>[]{String}))
+        assertNull(ProxyClassDefiner.resolvePublicConstructor(String, new Class<?>[]{Object}))
+    }
+
+    @Test
+    void testDefineHiddenWithMatchingCtorArgs() {
+        if (!HiddenClassDefiner.isEnabled()) return
+        def bytes = classWithMapCtor('org/codehaus/groovy/runtime/MapCtorHidden')
+        def fallback = { String name, byte[] b ->
+            new GroovyClassLoader(this.class.classLoader).defineClass(name, b)
+        }
+        def result = ProxyClassDefiner.define(
+                bytes,
+                'org.codehaus.groovy.runtime.MapCtorHidden',
+                ConcreteHost,
+                null,
+                [ConcreteHost] as Set,
+                MethodHandles.lookup(),
+                fallback,
+                new Class<?>[]{Map})
+        assertNotNull(result.type)
+        assertNotNull(result.constructor)
+        if (result.hidden) {
+            assertTrue(result.type.isHidden())
+        }
     }
 }

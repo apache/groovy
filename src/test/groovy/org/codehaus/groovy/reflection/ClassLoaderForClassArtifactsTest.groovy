@@ -71,6 +71,21 @@ class ClassLoaderForClassArtifactsTest {
     }
 
     @Test
+    void testDefineFallsBackForUnopenedPlatformHost() {
+        // Nestmate of String fails without --add-opens. Visible defineClass
+        // fallback must still produce a usable class.
+        def loader = new ClassLoaderForClassArtifacts(String)
+        String name = loader.createClassName('platformFallback')
+        Class<?> cls = loader.define(name, minimalBytes(name.replace('.', '/')))
+        assertNotNull(cls)
+        assertNotNull(cls.getDeclaredConstructor().newInstance())
+        if (!HiddenClassDefiner.canAttemptPrivateLookup(String)) {
+            assertFalse(cls.isHidden(),
+                    'unopened java.lang.String host must fall back to a visible class')
+        }
+    }
+
+    @Test
     void testDefineClassAndGetConstructor() {
         def loader = new ClassLoaderForClassArtifacts(Host)
         String name = loader.createClassName('withCtor')
@@ -99,5 +114,25 @@ class ClassLoaderForClassArtifactsTest {
         assertFalse(javaName.startsWith('java.'),
             'java.* artifacts must be renamed out of the restricted package')
         assertTrue(javaName.startsWith('java_lang_String'))
+    }
+
+    @Test
+    void testCreateClassNameFromMethod() {
+        def loader = new ClassLoaderForClassArtifacts(Host)
+        def method = Object.getDeclaredMethod('toString')
+        String name = loader.createClassName(method)
+        assertTrue(name.contains('toString'))
+    }
+
+    @Test
+    void testLoadClassFindsPreviouslyDefinedVisibleClass() {
+        // When hidden path is used the binary name is not loadable; force a
+        // platform host so fallback defines a visible class under `name`.
+        def loader = new ClassLoaderForClassArtifacts(String)
+        String name = loader.createClassName('loadable')
+        Class<?> defined = loader.define(name, minimalBytes(name.replace('.', '/')))
+        if (!defined.isHidden()) {
+            assertEquals(defined, loader.loadClass(name))
+        }
     }
 }
