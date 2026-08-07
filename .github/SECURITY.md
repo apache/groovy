@@ -20,7 +20,7 @@ limitations under the License.
 
 The latest released version in the Groovy 5.0.x stream of releases
 is the currently recommended version of Groovy and requires JDK11 as a minimum.
-Users still working on JDK should use the latest 4.0.x version.
+Users still working on JDK 8 should use the latest 4.0.x version.
 
 The latest released version in the Groovy 3.0.x stream of releases
 is the currently recommended version of Groovy if you require access
