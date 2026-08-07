@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786003361379,
+  "lastUpdate": 1786086755271,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -4248,6 +4248,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 471.9866666666667,
             "range": "±23.15",
+            "unit": "ms",
+            "extra": "5.0.8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "7567bf552a6653a71cb21fa5518cb937b45a458c",
+          "message": "minor refactor: I think these were erased accidentally during javadoc generation - adding a note to make it clearer we can remove in Groovy 7",
+          "timestamp": "2026-08-07T07:00:52Z",
+          "url": "https://github.com/apache/groovy/commit/7567bf552a6653a71cb21fa5518cb937b45a458c"
+        },
+        "date": 1786086752169,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 571.12,
+            "range": "±24.04",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 671.73,
+            "range": "±217.05",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 588.48,
+            "range": "±145.13",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 495.56333333333333,
+            "range": "±23.43",
             "unit": "ms",
             "extra": "5.0.8"
           }
