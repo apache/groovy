@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -50,16 +51,25 @@ import java.util.Set;
  * {@code &&} (union of true bindings), {@code ||} (union of false bindings).
  * Other shapes contribute nothing (conservative).
  * <p>
- * Consumers:
- * <ul>
- *   <li>{@link VariableScopeVisitor} — declare names on the live path</li>
- *   <li>{@link org.codehaus.groovy.classgen.asm.InstanceofFlowSlotPublisher} —
- *       publish/hide CompileStack slots from these bindings</li>
- * </ul>
+ * <b>Design note — dual use across compiler phases.</b><br>
+ * This class is consumed by two separate compiler phases:
+ * <ol>
+ *   <li>{@link VariableScopeVisitor} (semantic analysis) — uses the binding
+ *       sets to declare pattern-variable names only on the live path, so that
+ *       subsequent name resolution sees the correct scope.</li>
+ *   <li>{@link org.codehaus.groovy.classgen.asm.InstanceofFlowSlotPublisher}
+ *       (code generation) — uses the same binding sets to publish/hide bytecode
+ *       locals on the matching control-flow arm, keeping CompileStack slot
+ *       visibility consistent with the resolved scopes.</li>
+ * </ol>
+ * Both phases need to ask the same question ("which names are live on which
+ * path?"), so sharing this analysis type avoids two independent implementations
+ * that could diverge.
  *
  * @see org.codehaus.groovy.classgen.asm.InstanceofFlowSlotPublisher
  * @since 6.0.0
  */
+@Internal
 public final class InstanceofFlowBindings {
 
     private static final InstanceofFlowBindings EMPTY =
@@ -111,6 +121,11 @@ public final class InstanceofFlowBindings {
 
     /**
      * All pattern-variable names appearing in either path (stable encounter order).
+     * <p>
+     * Implemented by iterating both lists directly rather than composing
+     * {@link #whenTrueNames()} and {@link #whenFalseNames()}: that would
+     * allocate two intermediate {@link Set} objects only to merge them into a
+     * third, whereas the direct loop allocates only the result set.
      */
     public Set<String> allNames() {
         if (isEmpty()) return Collections.emptySet();
@@ -145,8 +160,17 @@ public final class InstanceofFlowBindings {
     /**
      * Returns {@code true} if {@code expression} contains any JEP&nbsp;394 type
      * pattern ({@code e instanceof T t} or {@code e !instanceof T t}), including
-     * nested subexpressions. Used to decide whether expression-statement
-     * CompileStack isolation is required.
+     * <em>arbitrarily nested</em> subexpressions (e.g. a pattern buried inside a
+     * method-call argument or a ternary).
+     * <p>
+     * <strong>Why a full subtree walk?</strong> This method is used for
+     * expression-statement isolation: before discarding an expression-statement's
+     * value, the code generator needs to know whether <em>any</em> descendant
+     * node may have allocated a CompileStack slot for a pattern variable, even
+     * if {@link #of} does not model that node (e.g. a pattern inside a method
+     * argument). The conservative "does any descendant match?" question requires
+     * visiting the whole tree. Short-circuiting ({@code found[0]} check) stops
+     * the walk as soon as the first match is detected.
      *
      * @param expression any expression; {@code null} yields {@code false}
      */
@@ -175,6 +199,20 @@ public final class InstanceofFlowBindings {
                 && decl.getVariableExpression() != null;
     }
 
+    /**
+     * Core recursive descent that computes binding sets.
+     * <p>
+     * <strong>Why not a full subtree walk?</strong> Unlike {@link #containsPattern},
+     * this method only needs to understand the <em>boolean algebra</em> of the
+     * condition (which variables are <em>definitely</em> bound on each path),
+     * not to locate patterns anywhere in an arbitrary expression tree. The
+     * recursive descent follows exactly the operators that can propagate
+     * definite-assignment ({@code instanceof}, {@code !instanceof}, {@code &&},
+     * {@code ||}, {@code !}) and returns {@link #EMPTY} conservatively for any
+     * other expression shape. This keeps the traversal shallow and
+     * proportional to the boolean structure of the condition, not to the total
+     * AST size.
+     */
     private static InstanceofFlowBindings analyse(final Expression expression) {
         Expression expr = expression;
 
@@ -200,7 +238,9 @@ public final class InstanceofFlowBindings {
             if (op == Types.LOGICAL_AND) {
                 InstanceofFlowBindings left = analyse(binary.getLeftExpression());
                 InstanceofFlowBindings right = analyse(binary.getRightExpression());
-                // True path evaluates both; false path is not definite for either side alone.
+                // True path: the condition succeeds only if both sides are true, so
+                // both sides' true-bindings are definitely assigned. The false path is
+                // not definite: either side alone may have caused failure.
                 return new InstanceofFlowBindings(
                         union(left.whenTrue, right.whenTrue),
                         List.of());
@@ -208,7 +248,9 @@ public final class InstanceofFlowBindings {
             if (op == Types.LOGICAL_OR) {
                 InstanceofFlowBindings left = analyse(binary.getLeftExpression());
                 InstanceofFlowBindings right = analyse(binary.getRightExpression());
-                // False path evaluates both; true path is not definite for either side alone.
+                // False path: the condition fails only if both sides are false, so
+                // both sides' false-bindings are definitely assigned. The true path
+                // is not definite: only the left side may have been evaluated.
                 return new InstanceofFlowBindings(
                         List.of(),
                         union(left.whenFalse, right.whenFalse));
