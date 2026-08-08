@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCall;
@@ -45,6 +46,7 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.classgen.InstanceofFlowBindings;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -470,6 +472,11 @@ public class StatementWriter {
 
     /**
      * Generates bytecode for an if/else statement.
+     * <p>
+     * GROOVY-12242 / JEP 394: after the condition runs, pattern locals are hidden
+     * then re-published only on the live path (then / else / after abrupt
+     * completion) via {@link InstanceofFlowSlotPublisher}, matching
+     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor}.
      *
      * @param statement the if statement to compile
      */
@@ -477,22 +484,38 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitIfElse");
         writeStatementLabel(statement);
 
-        Label exitPath = controller.getCompileStack().pushBreakable(statement.getStatementLabels()); // GROOVY-7463
+        CompileStack compileStack = controller.getCompileStack();
+        InstanceofFlowBindings bindings = InstanceofFlowBindings.of(statement.getBooleanExpression());
+
+        Label exitPath = compileStack.pushBreakable(statement.getStatementLabels()); // GROOVY-7463
         statement.getBooleanExpression().visit(controller.getAcg());
+        // Hide every pattern slot; publish only path-live bindings below.
+        InstanceofFlowSlotPublisher slotPublisher = InstanceofFlowSlotPublisher.captureAndHide(compileStack, bindings);
+
         Label elsePath = controller.getOperandStack().jump(IFEQ);
+        slotPublisher.publishTrue(compileStack);
         statement.getIfBlock().visit(controller.getAcg());
-        controller.getCompileStack().pop();
+        slotPublisher.hideTrue(compileStack);
+        compileStack.pop(); // ends breakable
+
+        boolean ifFallsThrough = maybeFallsThrough(statement.getIfBlock());
+        boolean elseEmpty = statement.getElseBlock().isEmpty();
+        boolean elseFallsThrough = elseEmpty || maybeFallsThrough(statement.getElseBlock());
 
         MethodVisitor mv = controller.getMethodVisitor();
-        if (statement.getElseBlock().isEmpty()) {
+        if (elseEmpty) {
             mv.visitLabel(elsePath);
         } else {
-            if (maybeFallsThrough(statement.getIfBlock())) {
+            if (ifFallsThrough) {
                 mv.visitJumpInsn(GOTO, exitPath);
             }
             mv.visitLabel(elsePath);
+            slotPublisher.publishFalse(compileStack);
             statement.getElseBlock().visit(controller.getAcg());
+            slotPublisher.hideFalse(compileStack);
         }
+
+        slotPublisher.publishAfterIf(compileStack, ifFallsThrough, elseEmpty, elseFallsThrough);
         mv.visitLabel(exitPath);
     }
 
@@ -883,6 +906,10 @@ public class StatementWriter {
      * Evaluates the expression and discards any value left on the operand stack.
      * Marks method-call and binary expressions so that unused return values
      * are elided rather than boxed.
+     * <p>
+     * GROOVY-12242: non-declaration statements that contain an {@code instanceof}
+     * type pattern run in a nested CompileStack state so pattern locals cannot
+     * leak. Detection uses {@link InstanceofFlowBindings#containsPattern}.
      *
      * @param statement the expression statement to compile
      */
@@ -895,9 +922,22 @@ public class StatementWriter {
         if (expression instanceof MethodCall || expression instanceof BinaryExpression)
             expression.putNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE, Boolean.TRUE);
 
-        var operandStack = controller.getOperandStack();
-        int mark = operandStack.getStackLength();
-        expression.visit(controller.getAcg());
-        operandStack.popDownTo(mark);
+        CompileStack compileStack = controller.getCompileStack();
+        // Declaration LHS isolation is in evaluateEqual; multi-assign must not be wrapped.
+        boolean isolatesPatternVars = !(expression instanceof DeclarationExpression)
+                && InstanceofFlowBindings.containsPattern(expression);
+        if (isolatesPatternVars) {
+            compileStack.pushState();
+        }
+        try {
+            var operandStack = controller.getOperandStack();
+            int mark = operandStack.getStackLength();
+            expression.visit(controller.getAcg());
+            operandStack.popDownTo(mark);
+        } finally {
+            if (isolatesPatternVars) {
+                compileStack.pop();
+            }
+        }
     }
 }

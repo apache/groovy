@@ -909,6 +909,31 @@ public class CompileStack {
     }
 
     /**
+     * Re-publishes a previously defined local into the current state.
+     * Used by {@link InstanceofFlowSlotPublisher} for path-scoped pattern variables
+     * (GROOVY-12242 / JEP 394).
+     *
+     * @param variable the bytecode variable to make visible again
+     */
+    public void putVariable(final BytecodeVariable variable) {
+        if (variable != null) {
+            stackVariables.put(variable.getName(), variable);
+        }
+    }
+
+    /**
+     * Removes a named local from the current state without affecting temporary
+     * variables or the free-register cursor. Used by {@link InstanceofFlowSlotPublisher}
+     * to hide pattern slots that are not live on the current control-flow path.
+     *
+     * @param name the variable name to remove
+     * @return the removed variable, or {@code null} if it was not present
+     */
+    public BytecodeVariable removeVariable(final String name) {
+        return stackVariables.remove(name);
+    }
+
+    /**
      * Calculates the index of the next free register stores it
      * and sets the current variable index to the old value
      */

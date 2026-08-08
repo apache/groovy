@@ -45,6 +45,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -66,6 +67,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -76,10 +78,17 @@ import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 
 /**
  * Initializes the variable scopes for an AST.
+ * <p>
+ * For JEP&nbsp;394 {@code instanceof} pattern variables (GROOVY-12242), name
+ * resolution follows {@link InstanceofFlowBindings} (flow analysis): a pattern
+ * variable is only declared where the pattern has definitely matched. Bytecode
+ * slot visibility applies the same analysis via
+ * {@link org.codehaus.groovy.classgen.asm.InstanceofFlowSlotPublisher}.
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
@@ -623,20 +632,45 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * {@inheritDoc}
+     * Visits an {@code if}/{@code else} with Java-aligned flow scoping for
+     * {@code instanceof} pattern variables (GROOVY-12242 / JEP 394).
+     * <p>
+     * Pattern variables that bind when the condition is {@code true} are in
+     * scope in the then-block; those that bind when it is {@code false} are in
+     * scope in the else-block. When a branch cannot complete normally, bindings
+     * from the opposite path remain in scope for subsequent statements (e.g.
+     * {@code if (!(o instanceof String s)) return; s.length()}).
      */
     @Override
     public void visitIfElse(final IfStatement statement) {
+        InstanceofFlowBindings bindings = InstanceofFlowBindings.of(statement.getBooleanExpression());
+
+        // Condition: pattern vars are available for short-circuit RHS (e.g. &&).
         pushState();
         visitStatement(statement);
         statement.getBooleanExpression().visit(this);
+        popState();
+
+        // Then-block: only true-path bindings.
         pushState();
+        declarePatternVariables(bindings.whenTrue());
         statement.getIfBlock().visit(this);
         popState();
-        popState();
+
+        // Else-block: only false-path bindings.
         pushState();
+        declarePatternVariables(bindings.whenFalse());
         statement.getElseBlock().visit(this);
         popState();
+
+        // After the if: Java keeps the opposite path's bindings when a branch
+        // cannot complete normally (early return / throw).
+        if (!maybeFallsThrough(statement.getIfBlock())) {
+            declarePatternVariables(bindings.whenFalse());
+        }
+        if (!statement.getElseBlock().isEmpty() && !maybeFallsThrough(statement.getElseBlock())) {
+            declarePatternVariables(bindings.whenTrue());
+        }
     }
 
     /**
@@ -660,13 +694,29 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * {@inheritDoc}
+     * Visits a {@code while} loop. Pattern variables introduced by the condition
+     * are in scope for the condition's short-circuit RHS and for the loop body
+     * (GROOVY-12242). They do not leak past the loop.
      */
     @Override
     public void visitWhileLoop(final WhileStatement statement) {
         pushState();
         super.visitWhileLoop(statement);
         popState();
+    }
+
+    /**
+     * Declares {@code instanceof} pattern variables into the current scope so
+     * that subsequent visits resolve them as locals. Skips names already present
+     * in this scope (re-declaring the same pattern variable object after a
+     * condition visit is a no-op).
+     */
+    private void declarePatternVariables(final List<VariableExpression> patternVariables) {
+        for (VariableExpression variable : patternVariables) {
+            if (currentScope.getDeclaredVariable(variable.getName()) == null) {
+                declare(variable);
+            }
+        }
     }
 
     // expressions:
@@ -681,15 +731,64 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * {@inheritDoc}
+     * Visits binary expressions with flow-aware scoping for {@code &&} / {@code ||}
+     * so pattern variables follow Java short-circuit rules (GROOVY-12242 / JEP 394):
+     * <ul>
+     *   <li>{@code a && b} — true-path bindings of {@code a} are in scope in {@code b}</li>
+     *   <li>{@code a || b} — true-path bindings of {@code a} are <em>not</em> in scope in {@code b};
+     *       false-path bindings of {@code a} are</li>
+     * </ul>
      */
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
-        super.visitBinaryExpression(expression);
+        int op = expression.getOperation().getType();
+        if (op == Types.LOGICAL_AND) {
+            // Left first; its true-path pattern vars stay in the current scope for the right.
+            expression.getLeftExpression().visit(this);
+            expression.getRightExpression().visit(this);
+        } else if (op == Types.LOGICAL_OR) {
+            // Left's true-path bindings must not leak into the right (Java rejects
+            // `o instanceof String s || s.isEmpty()`). False-path bindings of the
+            // left are in scope on the right (`!(o instanceof String s) || s.isEmpty()`).
+            InstanceofFlowBindings leftBindings = InstanceofFlowBindings.of(expression.getLeftExpression());
+            pushState();
+            expression.getLeftExpression().visit(this);
+            popState();
+            pushState();
+            declarePatternVariables(leftBindings.whenFalse());
+            expression.getRightExpression().visit(this);
+            popState();
+        } else {
+            super.visitBinaryExpression(expression);
+        }
 
-        if (Types.isAssignment(expression.getOperation().getType())) {
+        if (Types.isAssignment(op)) {
             checkFinalFieldAccess(expression.getLeftExpression());
         }
+    }
+
+    /**
+     * Visits a ternary / Elvis expression with flow scoping for pattern variables:
+     * true-path bindings are in scope in the then-branch; false-path bindings in
+     * the else-branch (GROOVY-12242 / JEP 394).
+     */
+    @Override
+    public void visitTernaryExpression(final TernaryExpression expression) {
+        InstanceofFlowBindings bindings = InstanceofFlowBindings.of(expression.getBooleanExpression());
+
+        pushState();
+        expression.getBooleanExpression().visit(this);
+        popState();
+
+        pushState();
+        declarePatternVariables(bindings.whenTrue());
+        expression.getTrueExpression().visit(this);
+        popState();
+
+        pushState();
+        declarePatternVariables(bindings.whenFalse());
+        expression.getFalseExpression().visit(this);
+        popState();
     }
 
     /**
