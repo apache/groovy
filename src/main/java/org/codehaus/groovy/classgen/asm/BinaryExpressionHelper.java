@@ -47,6 +47,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
+import org.codehaus.groovy.classgen.InstanceofFlowBindings;
 import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
@@ -565,53 +566,53 @@ public class BinaryExpressionHelper {
         }
 
         // evaluate RHS and store its value
-        if (lhsType.isArray() && rightExpression instanceof ListExpression) { // array = [ ... ]
-            Expression array = new ArrayExpression(lhsType.getComponentType(), ((ListExpression) rightExpression).getExpressions());
-            array.setSourcePosition(rightExpression);
-            array.setType(lhsType);
-            array.visit(acg);
-        } else if (rightExpression instanceof EmptyExpression) { // define field
-            CompileStack.pushInitValue(lhsType, mv);
-            operandStack.push(lhsType);
-        } else {
-            rightExpression.visit(acg);
-        }
-
-        ClassNode rhsType = operandStack.getTopOperand();
-
+        // GROOVY-12242: for a single-variable declaration, evaluate the RHS in a nested
+        // CompileStack state so instanceof pattern variables do not leak past the
+        // declaration while the LHS local is defined in the outer state.
         if (directAssignment) {
-            VariableExpression var = (VariableExpression) leftExpression;
-            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
-                // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
-                rhsType = ClassHelper.getWrapper(rhsType);
-                operandStack.box();
-            }
+            compileStack.pushState();
+            try {
+                evaluateRightHandSide(lhsType, rightExpression, acg, mv, operandStack);
+                ClassNode rhsType = operandStack.getTopOperand();
+                VariableExpression var = (VariableExpression) leftExpression;
+                if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
+                    // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
+                    rhsType = ClassHelper.getWrapper(rhsType);
+                    operandStack.box();
+                }
 
-            // ensure we try to unbox null to cause a runtime NPE in case we assign
-            // null to a primitive typed variable, even if it is used only in boxed
-            // form as it is closure shared
-            if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(var.getOriginType()) && isNullConstant(rightExpression)) {
-                operandStack.doGroovyCast(var.getOriginType());
-                // these two are never reached in bytecode and only there
-                // to avoid verify errors and compiler infrastructure hazzle
-                operandStack.box();
-                operandStack.doGroovyCast(lhsType);
-            }
-            // normal type transformation
-            if (!ClassHelper.isPrimitiveType(lhsType) && isNullConstant(rightExpression)) {
-                operandStack.replace(lhsType);
-            } else {
-                operandStack.doGroovyCast(lhsType);
+                // ensure we try to unbox null to cause a runtime NPE in case we assign
+                // null to a primitive typed variable, even if it is used only in boxed
+                // form as it is closure shared
+                if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(var.getOriginType()) && isNullConstant(rightExpression)) {
+                    operandStack.doGroovyCast(var.getOriginType());
+                    // these two are never reached in bytecode and only there
+                    // to avoid verify errors and compiler infrastructure hazzle
+                    operandStack.box();
+                    operandStack.doGroovyCast(lhsType);
+                }
+                // normal type transformation
+                if (!ClassHelper.isPrimitiveType(lhsType) && isNullConstant(rightExpression)) {
+                    operandStack.replace(lhsType);
+                } else {
+                    operandStack.doGroovyCast(lhsType);
+                }
+            } finally {
+                // Drop RHS pattern locals before defining the LHS in the outer state
+                compileStack.pop();
             }
 
             // store value
-            BytecodeVariable v = compileStack.defineVariable(var, lhsType, true);
+            BytecodeVariable v = compileStack.defineVariable((Variable) leftExpression, lhsType, true);
             operandStack.remove(1);
             if (returnRightValue) {
                 new VariableSlotLoader(lhsType, v.getIndex(), operandStack).visit(acg);
             }
             return;
         }
+
+        evaluateRightHandSide(lhsType, rightExpression, acg, mv, operandStack);
+        ClassNode rhsType = operandStack.getTopOperand();
 
         // GROOVY-10918: direct store to local variable or parameter (no temp)
         if (!defineVariable && leftExpression instanceof VariableExpression) {
@@ -1110,6 +1111,37 @@ public class BinaryExpressionHelper {
         controller.getCompileStack().popLHS();
     }
 
+    /**
+     * Evaluates the right-hand side of an assignment onto the operand stack.
+     */
+    private void evaluateRightHandSide(final ClassNode lhsType, final Expression rightExpression,
+                                       final AsmClassGenerator acg, final MethodVisitor mv,
+                                       final OperandStack operandStack) {
+        if (lhsType.isArray() && rightExpression instanceof ListExpression) { // array = [ ... ]
+            Expression array = new ArrayExpression(lhsType.getComponentType(), ((ListExpression) rightExpression).getExpressions());
+            array.setSourcePosition(rightExpression);
+            array.setType(lhsType);
+            array.visit(acg);
+        } else if (rightExpression instanceof EmptyExpression) { // define field
+            CompileStack.pushInitValue(lhsType, mv);
+            operandStack.push(lhsType);
+        } else {
+            rightExpression.visit(acg);
+        }
+    }
+
+    /**
+     * Emits bytecode for {@code e instanceof T} and, when the right-hand side is
+     * a JEP&nbsp;394 type pattern ({@code e instanceof T t}), conditionally stores
+     * the checked value into the pattern variable {@code t}.
+     * <p>
+     * The pattern variable's visibility is governed by flow scoping in
+     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor} and
+     * {@link StatementWriter#writeIfElse}; this method only performs the store.
+     *
+     * @param expression an {@code instanceof} binary expression
+     * @see org.codehaus.groovy.classgen.InstanceofFlowBindings
+     */
     private void evaluateInstanceof(final BinaryExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
@@ -1117,25 +1149,24 @@ public class BinaryExpressionHelper {
         expression.getLeftExpression().visit(controller.getAcg());
         operandStack.box(); // TODO: support instanceof primitives
 
-      //ClassNode sourceType = operandStack.getTopOperand();
         ClassNode targetType = expression.getRightExpression().getType();
-
-        var jep394 = !(expression.getRightExpression() instanceof ClassExpression);
-        if (jep394) {
-            operandStack.dup(); // stash value for use by JEP 394 pattern variable
+        // JEP 394: RHS is DeclarationExpression (Type name) rather than ClassExpression
+        boolean patternMatch = !(expression.getRightExpression() instanceof ClassExpression);
+        if (patternMatch) {
+            operandStack.dup(); // stash value for the pattern variable store
         }
 
         String typeName = BytecodeHelper.getClassInternalName(targetType);
         controller.getMethodVisitor().visitTypeInsn(INSTANCEOF, typeName);
         operandStack.replace(ClassHelper.boolean_TYPE);
 
-        if (jep394) {
+        if (patternMatch) {
             var variable = (Variable) ((BinaryExpression) expression.getRightExpression()).getLeftExpression();
             BytecodeVariable v = compileStack.defineVariable(variable, targetType, false);
             MethodVisitor mv = controller.getMethodVisitor();
 
             mv.visitInsn(DUP_X1); // stack: ..., check, value, check
-            Label l0 = operandStack.jump(IFEQ); // skip store if not instanceof
+            Label notInstance = operandStack.jump(IFEQ); // skip store if not instanceof
 
             mv.visitTypeInsn(CHECKCAST, typeName);
             if (!v.isHolder()) {
@@ -1146,12 +1177,12 @@ public class BinaryExpressionHelper {
                 mv.visitInsn(SWAP);
                 mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
             }
-            Label l1 = operandStack.jump(GOTO);
+            Label done = operandStack.jump(GOTO);
 
-            mv.visitLabel(l0); // stack: ..., check, value
+            mv.visitLabel(notInstance); // stack: ..., check, value
             mv.visitInsn(POP);
 
-            mv.visitLabel(l1); // stack: ..., check
+            mv.visitLabel(done); // stack: ..., check
             operandStack.push(ClassHelper.boolean_TYPE);
         }
     }
@@ -1441,23 +1472,30 @@ public class BinaryExpressionHelper {
         ClassNode commonType = WideningCategories.lowestUpperBound(truePartType, falsePartType);
 
         // write "x?y:z" as "x?T(y):T(z)" where T is common type of y and z
+        CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        // load x
+        // load x; hide pattern locals then publish only on the live arm (GROOVY-12242)
         boolPart.visit(controller.getAcg());
+        InstanceofFlowSlotPublisher slotPublisher = InstanceofFlowSlotPublisher.captureAndHide(
+                compileStack, InstanceofFlowBindings.of(expression.getBooleanExpression()));
         Label l0 = operandStack.jump(IFEQ);
 
         // true path: load y and cast to T
+        slotPublisher.publishTrue(compileStack);
         truePart.visit(controller.getAcg());
         operandStack.doGroovyCast(commonType);
+        slotPublisher.hideTrue(compileStack);
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
 
         // false path: load z and cast to T
         mv.visitLabel(l0);
+        slotPublisher.publishFalse(compileStack);
         falsePart.visit(controller.getAcg());
         operandStack.doGroovyCast(commonType);
+        slotPublisher.hideFalse(compileStack);
 
         // finish up
         mv.visitLabel(l1);
