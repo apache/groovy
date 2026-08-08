@@ -498,4 +498,289 @@ final class InstanceofTest {
             true
         ''')
     }
+
+    // -------------------------------------------------------------------------
+    // GROOVY-12242: systematic visibility matrix
+    //
+    // For each condition shape the test verifies:
+    //   - if-block visibility
+    //   - else-block visibility
+    //   - after-if-else visibility (with and without abrupt completion)
+    // -------------------------------------------------------------------------
+
+    // --- (1) simple: o instanceof String s ---
+
+    // pattern var in if-block (already covered by testVariable above);
+    // here we also test: NOT in else-block, NOT after if-else (no abrupt branch)
+    @Test
+    void testSimpleInstanceof_notInElse_notAfterIf() {
+        def err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (o instanceof String s) { /* ok */ }
+                    else { return s }
+                }
+            }
+            new C().m(1)
+        '''
+        assert err.message =~ /No such property: s/
+
+        err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (o instanceof String s) { /* ok */ }
+                    return s
+                }
+            }
+            new C().m('x')
+        '''
+        assert err.message =~ /No such property: s/
+    }
+
+    // pattern var IS visible after if when else cannot complete normally
+    @Test
+    void testSimpleInstanceof_visibleAfterIf_whenElseAbrupt() {
+        // else throws → s is visible after
+        def f = { Object o ->
+            if (o instanceof String s) {
+                // matched
+            } else {
+                throw new IllegalArgumentException('not a string')
+            }
+            s.toUpperCase()
+        }
+        assert f('hello') == 'HELLO'
+        try { f(1); assert false } catch (IllegalArgumentException ignored) {}
+    }
+
+    // --- (2) simple: !(o instanceof String s) ---
+
+    // true-branch (the !instanceof branch) must NOT see s;
+    // false-branch (else) MUST see s
+    @Test
+    void testNegatedInstanceof_truePathHides_falsePathBinds() {
+        // else sees s (already covered by testVariableScopeNegatedElse)
+        // here: if-branch does NOT see s
+        def err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (!(o instanceof String s)) {
+                        return s
+                    }
+                    return 'ok'
+                }
+            }
+            new C().m(1)
+        '''
+        assert err.message =~ /No such property: s/
+    }
+
+    // --- (3) !instanceof s, plus return in else block (→ s after if) ---
+    // (already covered by testVariableScopeEarlyReturn / testVariableScopeNegatedElse;
+    //  repeat here as an explicit cell in the matrix)
+    @Test
+    void testNegatedInstanceof_earlyReturnInTrue_visibleAfter() {
+        def f = { Object o ->
+            if (!(o instanceof String s)) return 'nope'
+            s.toUpperCase()
+        }
+        assert f('hi') == 'HI'
+        assert f(42) == 'nope'
+    }
+
+    // --- (4) o instanceof String s && cond ---
+
+    // if-block: s visible; else-block: s NOT visible; after: NOT visible
+    @Test
+    void testAndChain_ifBlockVisible_elseNotVisible_afterNotVisible() {
+        // if-block is visible (tested by testVariableAndChain and testVariableScope)
+        // else-block: NOT visible
+        def err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (o instanceof String s && s.length() > 0) {
+                        /* ok */
+                    } else {
+                        return s
+                    }
+                }
+            }
+            new C().m(1)
+        '''
+        assert err.message =~ /No such property: s/
+
+        // after if: NOT visible (even if both branches complete normally)
+        err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (o instanceof String s && s.length() > 0) { /* ok */ }
+                    return s
+                }
+            }
+            new C().m('x')
+        '''
+        assert err.message =~ /No such property: s/
+    }
+
+    // --- (5) o instanceof String s || cond ---
+
+    // In dynamic Groovy the evaluateInstanceof always allocates the slot, so s can be
+    // accessed in the if-block at runtime (even though flow scoping says it's not
+    // guaranteed). TypeChecked enforces the stricter Java rule: true-path binding of
+    // left of || is NOT in scope on the right (Java rule) and NOT in the if-block.
+    @Test
+    void testOrChain_noVisibilityAnywhere() {
+        def shell = GroovyShell.withConfig {
+            ast groovy.transform.TypeChecked
+        }
+        // s must not be visible in the if-block when condition is instanceof s || ...
+        def err = shouldFail shell, '''
+            @groovy.transform.TypeChecked
+            class C {
+                static Object m(Object o) {
+                    if (o instanceof String s || true) {
+                        return s
+                    }
+                    return 'ok'
+                }
+            }
+        '''
+        assert err.message =~ /The variable .s. is undeclared|Apparent variable .s./
+    }
+
+    // --- (6) !(o instanceof String s) && cond ---
+    // De Morgan: ≡ (!instanceof s) && cond
+    // In dynamic mode, evaluateInstanceof defines the slot during condition evaluation,
+    // so s resolves dynamically even in the if-body. TypeChecked enforces the strict rule:
+    // && propagates no false-bindings, so if-block (true path) does NOT see s.
+    @Test
+    void testNegatedAndCond_noVisibility() {
+        def shell = GroovyShell.withConfig {
+            ast groovy.transform.TypeChecked
+        }
+        def err = shouldFail shell, '''
+            @groovy.transform.TypeChecked
+            class C {
+                static Object m(Object o) {
+                    if (!(o instanceof String s) && true) {
+                        return s
+                    }
+                    return 'out'
+                }
+            }
+        '''
+        assert err.message =~ /The variable .s. is undeclared|Apparent variable .s./
+    }
+
+    // --- (7) !(o instanceof String s) && cond, plus return in else block ---
+    // After the if: the if-block's true-path has !(s bound) && cond, no s guarantee.
+    // TypeChecked enforces that s is NOT visible after the if statement.
+    @Test
+    void testNegatedAndCond_withElseReturn_noVisibilityAfter() {
+        def shell = GroovyShell.withConfig {
+            ast groovy.transform.TypeChecked
+        }
+        def err = shouldFail shell, '''
+            @groovy.transform.TypeChecked
+            class C {
+                static Object m(Object o) {
+                    if (!(o instanceof String s) && true) {
+                        // true path: s not definitely bound
+                    } else {
+                        return 'out'
+                    }
+                    return s
+                }
+            }
+        '''
+        assert err.message =~ /The variable .s. is undeclared|Apparent variable .s./
+    }
+
+    // --- (8) !(o instanceof String s) || cond ---
+    // Equivalent to !s || cond. False path of || = both sides false → s is bound when
+    // left is false (i.e. o instanceof String s) AND right is false.
+    // So else-block sees s; after-if with abrupt if-block sees s.
+    @Test
+    void testNegatedOr_elseBlockSees_afterAbruptIfBlockSees() {
+        // else-block: !(!(s)) || cond is false → !(o instanceof s) is false → s bound
+        def f = { Object o ->
+            if (!(o instanceof String s) || s.isEmpty()) {
+                return 'branch-true'
+            } else {
+                // here s is definitely bound (the !instanceof was false, so instanceof matched)
+                return 'has-s:' + s
+            }
+        }
+        assert f('hello') == 'has-s:hello'   // !instanceof false, so else
+        assert f('') == 'branch-true'         // !instanceof false but s.isEmpty true → if
+        assert f(42) == 'branch-true'         // !instanceof true → if
+
+        // after if with abrupt else (throw): s visible after
+        def g = { Object o ->
+            if (!(o instanceof String s) || s.isEmpty()) {
+                /* fell through */
+            } else {
+                throw new IllegalStateException('non-empty string')
+            }
+            // s NOT visible here (if-block can complete normally without binding s)
+        }
+        g('') // no exception
+        g(42) // no exception
+    }
+
+    // --- (9) !(o instanceof String s) || cond, plus return in else block ---
+    // true-path completes normally → s NOT visible after if-else when else abruptly returns
+    // (because the if-path does not guarantee s is bound)
+    @Test
+    void testNegatedOr_elseReturn_noVisibilityAfter() {
+        def err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (!(o instanceof String s) || s.isEmpty()) {
+                        /* true branch: no guarantee s is bound */
+                    } else {
+                        return 'else'
+                    }
+                    return s
+                }
+            }
+            new C().m('')
+        '''
+        assert err.message =~ /No such property: s/
+    }
+
+    // -------------------------------------------------------------------------
+    // Additional De Morgan / compound cases
+    // -------------------------------------------------------------------------
+
+    // De Morgan: !(a && b) ≡ !a || !b
+    // !(o instanceof String s && cond) — no binding anywhere (conservative)
+    @Test
+    void testDeMorgan_notAndNegation_noBinding() {
+        def err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (!(o instanceof String s && s.length() > 0)) {
+                        return s
+                    }
+                    return 'ok'
+                }
+            }
+            new C().m(1)
+        '''
+        assert err.message =~ /No such property: s/
+    }
+
+    // Double negation: !!(o instanceof String s) ≡ o instanceof String s
+    @Test
+    void testDoubleNegation_positiveBinding() {
+        def f = { Object o ->
+            if (!!(o instanceof String s)) {
+                return s.toUpperCase()
+            }
+            return 'no'
+        }
+        assert f('ab') == 'AB'
+        assert f(1)   == 'no'
+    }
 }
