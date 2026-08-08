@@ -43,6 +43,12 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
  * you can use the method "<code>TupleExpression getTupleExpression()</code>" method.
  * Calling either of these expression getters when the "isMultipleAssignment" condition
  * is not appropriate is unsafe and will result in a <code>ClassCastException</code>.
+ * <p>
+ * JEP&nbsp;394 type patterns reuse this node as the right-hand side of
+ * {@code instanceof}: {@code e instanceof String s} is modelled as an
+ * {@code instanceof} {@link BinaryExpression} whose RHS is a
+ * {@code DeclarationExpression} with an {@link EmptyExpression} initializer.
+ * The pattern variable's scope is flow-sensitive (see GROOVY-12242).
  */
 public class DeclarationExpression extends BinaryExpression {
 
@@ -130,6 +136,11 @@ public class DeclarationExpression extends BinaryExpression {
                     : null;
     }
 
+    /**
+     * Returns the type of the declared variable (or of the tuple for a multiple
+     * assignment). For a JEP&nbsp;394 pattern used as the RHS of {@code instanceof},
+     * this is the pattern type {@code T} in {@code e instanceof T t}.
+     */
     @Override
     public ClassNode getType() {
         return (isMultipleAssignmentDeclaration() ? getTupleExpression() : getVariableExpression()).getType();
