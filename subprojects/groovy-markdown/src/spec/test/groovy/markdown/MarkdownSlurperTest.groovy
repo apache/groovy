@@ -184,11 +184,15 @@ class MarkdownSlurperTest {
 
     @Test
     void testDeeplyNestedInlineEmphasisRejected() {
-        // second DoS vector: deeply nested inline emphasis overflows *inside* CommonMark's own
-        // inline processing, before the block-nesting pre-check can run. It must still surface as
-        // a MarkdownRuntimeException, not a raw StackOverflowError.
+        // second DoS vector: deeply nested inline emphasis. CommonMark 0.30+ caps this via
+        // maxInlineNesting (wired to maxNestingDepth); the resulting tree still exceeds the
+        // limit after Document/Paragraph wrapping and is rejected by checkNestingDepth — never
+        // as a raw StackOverflowError.
+        def slurper = new MarkdownSlurper()
+        slurper.maxNestingDepth = 1000 // explicit, so the ambient property cannot affect the result
         def md = ('*' * 50000) + 'a' + ('*' * 50000)
-        assertThrows(MarkdownRuntimeException) { new MarkdownSlurper().parseText(md) }
+        def ex = assertThrows(MarkdownRuntimeException) { slurper.parseText(md) }
+        assert ex.message.contains('nesting depth')
     }
 
     @Test

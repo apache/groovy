@@ -87,9 +87,11 @@ import java.util.Map;
  *       bounds this at parse time (via CommonMark's {@code maxOpenBlockParsers}) and rejects
  *       any document nested deeper than the limit.</li>
  *   <li><b>Inline emphasis nesting</b> (e.g. {@code ('*' * 50000) + 'a' + ('*' * 50000)}).
- *       This overflows inside CommonMark's own inline processing, before control returns
- *       here; CommonMark 0.29.0 has no inline-nesting cap, so it is caught and reported
- *       as a {@link MarkdownRuntimeException}.</li>
+ *       Bounded at parse time via CommonMark's {@code maxInlineNesting} (aligned with
+ *       {@link #setMaxNestingDepth(int) maxNestingDepth}); over-limit nesting is degraded to
+ *       plain text and the resulting tree is then rejected by the same depth check used for
+ *       blocks. A {@link StackOverflowError} catch remains as a last-resort backstop if the
+ *       limit is disabled.</li>
  * </ul>
  * This nesting cap is a robustness backstop, not a licence to treat the parser as hardened.
  *
@@ -117,7 +119,7 @@ public class MarkdownSlurper {
     private int maxNestingDepth = Integer.getInteger("groovy.markdown.maxNestingDepth", DEFAULT_MAX_NESTING_DEPTH);
 
     /**
-     * Returns the maximum block/container nesting depth the parser will accept.
+     * Returns the maximum block/container and inline nesting depth the parser will accept.
      *
      * @return the maximum nesting depth, or a value {@code <= 0} when the limit is disabled
      */
@@ -126,12 +128,14 @@ public class MarkdownSlurper {
     }
 
     /**
-     * Sets the maximum block/container nesting depth. Over-limit nesting is bounded at parse time
-     * (via CommonMark's {@code maxOpenBlockParsers}) and rejected with a {@link MarkdownRuntimeException}.
-     * A value of {@code 0} or less disables the limit; deeply nested inline emphasis is still caught
-     * and reported regardless.
+     * Sets the maximum block/container and inline nesting depth. Over-limit nesting is bounded at
+     * parse time (via CommonMark's {@code maxOpenBlockParsers} and {@code maxInlineNesting}) and
+     * rejected with a {@link MarkdownRuntimeException}. A value of {@code 0} or less disables the
+     * limit (CommonMark's caps are raised to {@link Integer#MAX_VALUE}); a
+     * {@link StackOverflowError} from pathological input is still reported as a
+     * {@link MarkdownRuntimeException}.
      *
-     * @param maxNestingDepth maximum number of nested block elements to allow
+     * @param maxNestingDepth maximum number of nested elements to allow
      */
     public void setMaxNestingDepth(int maxNestingDepth) {
         this.maxNestingDepth = maxNestingDepth;
@@ -183,13 +187,12 @@ public class MarkdownSlurper {
             checkNestingDepth(doc);
             return new MarkdownDocument(blocksToList(doc));
         } catch (StackOverflowError e) {
-            // Inline-emphasis vector: input such as ('*' * N) + 'a' + ('*' * N) overflows inside
-            // CommonMark's own recursive inline processing before control returns here, so the
-            // block-nesting cap above cannot see it (CommonMark 0.29.0 has no inline-nesting cap,
-            // and maxOpenBlockParsers does not apply to inline elements). This also backstops any
-            // block recursion that slips past checkNestingDepth. Catching the Error is safe: parse()
-            // builds a fresh parser and tree per call, so a half-unwound stack leaves no shared state
-            // to corrupt.
+            // Last-resort backstop when the nesting limit is disabled (maxNestingDepth <= 0) or
+            // some other recursive path still overflows. CommonMark 0.30+ caps inline nesting via
+            // maxInlineNesting (wired in buildParser), so the historical ('*' * N) + 'a' + ('*' * N)
+            // vector no longer reaches here under the default limit. Catching the Error is safe:
+            // parse() builds a fresh parser and tree per call, so a half-unwound stack leaves no
+            // shared state to corrupt.
             //
             // The catch body must do near-zero work: the stack is still near-exhausted here, so
             // constructing the exception inline (its stack-trace capture needs headroom) overflows
@@ -239,13 +242,22 @@ public class MarkdownSlurper {
     private Parser buildParser() {
         Parser.Builder b = Parser.builder();
         if (maxNestingDepth > 0) {
-            // Bound block/container nesting at parse time so CommonMark returns a shallow tree
-            // (excess nesting degrades to text) regardless of input depth. This keeps parse-time
-            // memory/CPU bounded and the subsequent recursive walk safe. The cap is expressed in
-            // open-block-parser units, ~2 shallower than the resulting AST depth (Document wrapping),
-            // so an over-limit document still parses deeper than maxNestingDepth and is then rejected
-            // by checkNestingDepth rather than being silently truncated.
+            // Bound block/container and inline nesting at parse time so CommonMark returns a
+            // shallow tree (excess nesting degrades to text) regardless of input depth. This keeps
+            // parse-time memory/CPU bounded and the subsequent recursive walk safe. The caps are
+            // expressed in open-block-parser / inline-nesting units, ~2 shallower than the resulting
+            // AST depth (Document / Paragraph wrapping), so an over-limit document still parses
+            // deeper than maxNestingDepth and is then rejected by checkNestingDepth rather than
+            // being silently truncated. CommonMark 0.30+ defaults both to 100; we raise them to
+            // maxNestingDepth so the slurper's single limit controls both vectors.
             b.maxOpenBlockParsers(maxNestingDepth);
+            b.maxInlineNesting(maxNestingDepth);
+        } else {
+            // Limit disabled: remove CommonMark's built-in defaults (100 as of 0.30) so that
+            // maxNestingDepth <= 0 is a true "no cap". Pathological input may then StackOverflow;
+            // parse() converts that to MarkdownRuntimeException.
+            b.maxOpenBlockParsers(Integer.MAX_VALUE);
+            b.maxInlineNesting(Integer.MAX_VALUE);
         }
         if (tablesEnabled) {
             b.extensions(TableSupport.extensions());
@@ -259,9 +271,9 @@ public class MarkdownSlurper {
      * ({@link #blocksToList}/{@link #nodeToMap}, and the text extraction in {@link #appendText})
      * recurses once per nesting level, so a deeply nested document would overflow the stack; this
      * iterative pre-check fails fast instead, mirroring the nesting-depth cap of the sibling
-     * {@code JsonSlurper}. {@code buildParser()} already caps block nesting at parse time, so an
-     * over-limit document arrives here bounded to {@code maxNestingDepth}-ish blocks — still deeper
-     * than the limit (by the Document wrapping), so it is rejected here.
+     * {@code JsonSlurper}. {@code buildParser()} already caps block and inline nesting at parse
+     * time, so an over-limit document arrives here bounded to {@code maxNestingDepth}-ish nodes —
+     * still deeper than the limit (by Document / Paragraph wrapping), so it is rejected here.
      *
      * @param root the root node of the parsed document
      */

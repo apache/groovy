@@ -116,13 +116,13 @@ boundary, so the safest choice is not to hand it attacker-controlled input. If
 you must, bound the input by size yourself before parsing and treat the parsed
 result defensively.
 
-As a backstop, `MarkdownSlurper` caps how deeply a document may nest, so that a
-small but pathologically nested input -- thousands of nested block quotes, or a
-long run of emphasis markers -- is reported as a `MarkdownRuntimeException`
-rather than being allowed to exhaust the stack with a `StackOverflowError`. The
-limit defaults to `1000` and can be set per instance or globally via the
-`groovy.markdown.maxNestingDepth` system property; a value of `0` or less
-disables the check.
+As a backstop, `MarkdownSlurper` caps how deeply a document may nest (both block
+containers and inline emphasis), so that a small but pathologically nested input
+-- thousands of nested block quotes, or a long run of emphasis markers -- is
+reported as a `MarkdownRuntimeException` rather than being allowed to exhaust
+the stack with a `StackOverflowError`. The limit defaults to `1000` and can be
+set per instance or globally via the `groovy.markdown.maxNestingDepth` system
+property; a value of `0` or less disables the check.
 
 [source,groovy]
 ----
