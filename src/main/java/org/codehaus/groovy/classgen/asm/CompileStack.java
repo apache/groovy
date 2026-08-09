@@ -36,9 +36,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ASTORE;
@@ -101,6 +103,14 @@ public class CompileStack {
     private final Deque<BytecodeVariable> temporaryVariables = new LinkedList<>();
     /** overall used variables for a method/constructor */
     private final Deque<BytecodeVariable> usedVariables = new LinkedList<>();
+    /**
+     * Pattern variables defined by {@code instanceof} type patterns in this method.
+     * Keys are names; values are the slots allocated by {@code evaluateInstanceof}.
+     * The name→slot mapping in {@link #stackVariables} may be hidden/restored via
+     * {@link #hideVariable(String)} and {@link #pushState()}/{@link #pop()}, but
+     * the slot indices recorded here remain valid for the whole method.
+     */
+    private final Map<String, BytecodeVariable> patternVariables = new HashMap<>();
     /** map containing named labels of parenting blocks */
     private Map<String, Label> superBlockNamedLabels = new HashMap<>();
     /** map containing named labels of current block */
@@ -476,6 +486,7 @@ public class CompileStack {
         untypedExceptions.clear();
         stackVariables.clear();
         usedVariables.clear();
+        patternVariables.clear();
         finallyBlocks.clear();
         resetVariableIndex(false);
         superBlockNamedLabels.clear();
@@ -909,28 +920,105 @@ public class CompileStack {
     }
 
     /**
-     * Re-publishes a previously defined local into the current state.
-     * Used by {@link InstanceofFlowSlotPublisher} for path-scoped pattern variables
-     * (GROOVY-12242 / JEP 394).
+     * Records that {@code variable} was allocated as an {@code instanceof} pattern
+     * binding. The slot is already present in {@link #stackVariables}; this registry
+     * lets later control-flow boundaries hide names while keeping the slot indices.
+     * <p>
+     * GROOVY-12242 / JEP 394: pattern slots are defined during condition evaluation
+     * (needed for short-circuit {@code &&} RHS). After the condition, names that are
+     * not live on a path must be hidden so (1) a same-named local can be declared
+     * on that path and (2) name lookup does not load a slot that scoping forbids.
+     * <p>
+     * Re-recording the same name replaces the previous registry entry (a later
+     * condition may re-bind the name to a new slot).
      *
-     * @param variable the bytecode variable to make visible again
+     * @param variable the pattern local just defined; ignored if {@code null}
+     * @see #hideVariable(String)
+     * @see #hidePatternVariablesExcept(Collection, Collection)
      */
-    public void putVariable(final BytecodeVariable variable) {
+    public void recordPatternVariable(final BytecodeVariable variable) {
         if (variable != null) {
-            stackVariables.put(variable.getName(), variable);
+            patternVariables.put(variable.getName(), variable);
         }
     }
 
     /**
-     * Removes a named local from the current state without affecting temporary
-     * variables or the free-register cursor. Used by {@link InstanceofFlowSlotPublisher}
-     * to hide pattern slots that are not live on the current control-flow path.
+     * Hides a named variable from name resolution while leaving its slot index
+     * allocated. The name becomes free in the <em>current</em> state frame only.
+     * <p>
+     * Call this inside a {@link #pushState()}/{@link #pop()} region so that
+     * {@code pop} restores the previous name map (and thus re-exposes the variable
+     * if it was visible in the outer frame). Using hide without a matching push
+     * permanently removes the name from the current frame — the intended form for
+     * “after this construct the name is no longer in scope”.
+     * <p>
+     * This is the CompileStack-native mechanism for flow-scoped pattern variables
+     * (GROOVY-12242). It deliberately does not free the register: the value may
+     * still be needed on another path that re-exposes the same slot via pop or a
+     * later path that still lists the name as live.
      *
-     * @param name the variable name to remove
-     * @return the removed variable, or {@code null} if it was not present
+     * @param name the variable name to hide; no-op if absent
      */
-    public BytecodeVariable removeVariable(final String name) {
-        return stackVariables.remove(name);
+    public void hideVariable(final String name) {
+        stackVariables.remove(name);
+    }
+
+    /**
+     * Snapshot of the pattern-variable registry (name → slot). Used to compute
+     * which names a condition evaluation <em>introduced or re-bound</em> by
+     * comparing {@link BytecodeVariable} identity before and after the visit.
+     * A name-only set is insufficient when a later condition reuses a pattern name.
+     *
+     * @return an immutable copy of the registry; empty if none recorded
+     */
+    public Map<String, BytecodeVariable> snapshotPatternVariables() {
+        if (patternVariables.isEmpty()) return Collections.emptyMap();
+        return Map.copyOf(patternVariables);
+    }
+
+    /**
+     * Names whose registry entry is new or whose {@link BytecodeVariable} identity
+     * differs from {@code before} (re-bind of the same name).
+     *
+     * @param before snapshot from {@link #snapshotPatternVariables()} taken before
+     *               evaluating the condition; may be empty
+     * @return names introduced or re-bound by the condition that just ran
+     */
+    public Set<String> patternVariablesIntroducedSince(final Map<String, BytecodeVariable> before) {
+        if (patternVariables.isEmpty()) return Collections.emptySet();
+        if (before == null || before.isEmpty()) {
+            return Set.copyOf(patternVariables.keySet());
+        }
+        Set<String> introduced = new HashSet<>();
+        for (Map.Entry<String, BytecodeVariable> e : patternVariables.entrySet()) {
+            if (before.get(e.getKey()) != e.getValue()) {
+                introduced.add(e.getKey());
+            }
+        }
+        return introduced;
+    }
+
+    /**
+     * Among {@code candidates}, hides every name that is not in {@code liveNames}.
+     * Only names that are both candidates and recorded pattern variables are affected;
+     * outer pattern variables not listed in {@code candidates} stay untouched.
+     * <p>
+     * Must be used with {@link #pushState()}/{@link #pop()} (or as a permanent hide
+     * on the current frame) as described by {@link #hideVariable(String)}.
+     *
+     * @param candidates names introduced by the current condition; may be empty
+     * @param liveNames  names that must remain visible; may be empty or {@code null}
+     *                   (both mean hide every candidate)
+     */
+    public void hidePatternVariablesExcept(final Collection<String> candidates,
+                                           final Collection<String> liveNames) {
+        if (candidates == null || candidates.isEmpty()) return;
+        for (String name : candidates) {
+            if (!patternVariables.containsKey(name)) continue;
+            if (liveNames == null || !liveNames.contains(name)) {
+                hideVariable(name);
+            }
+        }
     }
 
     /**
