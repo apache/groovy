@@ -172,4 +172,21 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         '''
         assertInitHelperCall(code)
     }
+
+    // the $INIT call that is emitted instead of the direct call must be the one the static
+    // compilation transformer produced, not the untransformed call it was given
+    @Test
+    void testMissingNameAndOrdinalConstructorKeepsStaticInitHelperCall() {
+        def code = staticInitializerOf '''
+            @groovy.transform.CompileStatic
+            @groovy.transform.TupleConstructor(defaults = false)
+            enum E {
+                ONE
+                String[] value
+            }
+        '''
+        assertInitHelperCall(code)
+        assert code.any { it.contains('INVOKESTATIC E.$INIT ([Ljava/lang/Object;)LE;') }
+        assert !code.any { it.contains('ScriptBytecodeAdapter') }
+    }
 }
