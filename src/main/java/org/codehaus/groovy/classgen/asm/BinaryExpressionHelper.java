@@ -47,12 +47,16 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
-import org.codehaus.groovy.classgen.InstanceofFlowBindings;
+import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofPathLiveNames;
 import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -1135,12 +1139,12 @@ public class BinaryExpressionHelper {
      * a JEP&nbsp;394 type pattern ({@code e instanceof T t}), conditionally stores
      * the checked value into the pattern variable {@code t}.
      * <p>
-     * The pattern variable's visibility is governed by flow scoping in
-     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor} and
-     * {@link StatementWriter#writeIfElse}; this method only performs the store.
+     * The slot is allocated and {@linkplain CompileStack#recordPatternVariable
+     * recorded} immediately so a short-circuit {@code &&} RHS can reference
+     * {@code t}. Path-level name visibility after the condition is administered
+     * by CompileStack hide/push/pop (see {@link StatementWriter#writeIfElse}).
      *
      * @param expression an {@code instanceof} binary expression
-     * @see org.codehaus.groovy.classgen.InstanceofFlowBindings
      */
     private void evaluateInstanceof(final BinaryExpression expression) {
         CompileStack compileStack = controller.getCompileStack();
@@ -1163,6 +1167,7 @@ public class BinaryExpressionHelper {
         if (patternMatch) {
             var variable = (Variable) ((BinaryExpression) expression.getRightExpression()).getLeftExpression();
             BytecodeVariable v = compileStack.defineVariable(variable, targetType, false);
+            compileStack.recordPatternVariable(v);
             MethodVisitor mv = controller.getMethodVisitor();
 
             mv.visitInsn(DUP_X1); // stack: ..., check, value, check
@@ -1476,26 +1481,32 @@ public class BinaryExpressionHelper {
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        // load x; hide pattern locals then publish only on the live arm (GROOVY-12242)
+        // load x; path-hide pattern locals via CompileStack push/hide/pop (GROOVY-12242)
+        InstanceofPathLiveNames pathNames = InstanceofPathLiveNames.get(expression);
+        Map<String, BytecodeVariable> beforePatterns = compileStack.snapshotPatternVariables();
         boolPart.visit(controller.getAcg());
-        InstanceofFlowSlotPublisher slotPublisher = InstanceofFlowSlotPublisher.captureAndHide(
-                compileStack, InstanceofFlowBindings.of(expression.getBooleanExpression()));
+        Set<String> introduced = compileStack.patternVariablesIntroducedSince(beforePatterns);
         Label l0 = operandStack.jump(IFEQ);
 
-        // true path: load y and cast to T
-        slotPublisher.publishTrue(compileStack);
+        // true path: only whenTrue names visible among those this condition introduced
+        compileStack.pushState();
+        compileStack.hidePatternVariablesExcept(introduced, pathNames.whenTrue());
         truePart.visit(controller.getAcg());
         operandStack.doGroovyCast(commonType);
-        slotPublisher.hideTrue(compileStack);
+        compileStack.pop();
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
 
-        // false path: load z and cast to T
+        // false path: only whenFalse names visible
         mv.visitLabel(l0);
-        slotPublisher.publishFalse(compileStack);
+        compileStack.pushState();
+        compileStack.hidePatternVariablesExcept(introduced, pathNames.whenFalse());
         falsePart.visit(controller.getAcg());
         operandStack.doGroovyCast(commonType);
-        slotPublisher.hideFalse(compileStack);
+        compileStack.pop();
+
+        // After ternary, names introduced by this condition leave scope.
+        compileStack.hidePatternVariablesExcept(introduced, Collections.emptySet());
 
         // finish up
         mv.visitLabel(l1);

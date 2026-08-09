@@ -45,15 +45,20 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.InstanceofFlowBindings;
+import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofPathLiveNames;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
+import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
@@ -473,10 +478,14 @@ public class StatementWriter {
     /**
      * Generates bytecode for an if/else statement.
      * <p>
-     * GROOVY-12242 / JEP 394: after the condition runs, pattern locals are hidden
-     * then re-published only on the live path (then / else / after abrupt
-     * completion) via {@link InstanceofFlowSlotPublisher}, matching
-     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor}.
+     * GROOVY-12242 / JEP 394: {@code evaluateInstanceof} allocates pattern slots
+     * during the condition (needed for short-circuit {@code &&} RHS). After the
+     * condition, CompileStack hides names that are not live on the current path
+     * using {@link CompileStack#hidePatternVariablesExcept} inside
+     * {@link CompileStack#pushState}/{@link CompileStack#pop} frames. Path-live
+     * name sets come from {@link InstanceofPathLiveNames} metadata written by
+     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor} — classgen does
+     * not re-run the flow analysis.
      *
      * @param statement the if statement to compile
      */
@@ -485,22 +494,27 @@ public class StatementWriter {
         writeStatementLabel(statement);
 
         CompileStack compileStack = controller.getCompileStack();
-        InstanceofFlowBindings bindings = InstanceofFlowBindings.of(statement.getBooleanExpression());
+        InstanceofPathLiveNames pathNames = InstanceofPathLiveNames.get(statement);
 
-        Label exitPath = compileStack.pushBreakable(statement.getStatementLabels()); // GROOVY-7463
+        // Define pattern slots on the *outer* frame so that after the breakable
+        // push/pop the survivors remain ordinary stackVariables entries (no
+        // put-back / show API). GROOVY-7463 breakable still wraps the arms only.
+        Map<String, BytecodeVariable> beforePatterns = compileStack.snapshotPatternVariables();
         statement.getBooleanExpression().visit(controller.getAcg());
-        // Hide every pattern slot; publish only path-live bindings below.
-        InstanceofFlowSlotPublisher slotPublisher = InstanceofFlowSlotPublisher.captureAndHide(compileStack, bindings);
+        Set<String> introduced = compileStack.patternVariablesIntroducedSince(beforePatterns);
 
-        Label elsePath = controller.getOperandStack().jump(IFEQ);
-        slotPublisher.publishTrue(compileStack);
-        statement.getIfBlock().visit(controller.getAcg());
-        slotPublisher.hideTrue(compileStack);
-        compileStack.pop(); // ends breakable
+        Label exitPath = compileStack.pushBreakable(statement.getStatementLabels());
 
         boolean ifFallsThrough = maybeFallsThrough(statement.getIfBlock());
         boolean elseEmpty = statement.getElseBlock().isEmpty();
         boolean elseFallsThrough = elseEmpty || maybeFallsThrough(statement.getElseBlock());
+
+        // Then path: only whenTrue names among those this condition introduced.
+        Label elsePath = controller.getOperandStack().jump(IFEQ);
+        compileStack.pushState();
+        compileStack.hidePatternVariablesExcept(introduced, pathNames.whenTrue());
+        statement.getIfBlock().visit(controller.getAcg());
+        compileStack.pop();
 
         MethodVisitor mv = controller.getMethodVisitor();
         if (elseEmpty) {
@@ -510,12 +524,28 @@ public class StatementWriter {
                 mv.visitJumpInsn(GOTO, exitPath);
             }
             mv.visitLabel(elsePath);
-            slotPublisher.publishFalse(compileStack);
+            // Else path: only whenFalse names among those this condition introduced.
+            compileStack.pushState();
+            compileStack.hidePatternVariablesExcept(introduced, pathNames.whenFalse());
             statement.getElseBlock().visit(controller.getAcg());
-            slotPublisher.hideFalse(compileStack);
+            compileStack.pop();
         }
 
-        slotPublisher.publishAfterIf(compileStack, ifFallsThrough, elseEmpty, elseFallsThrough);
+        // Survivors per JLS §6.3.2.2-200-C (abrupt-completion rule).
+        Set<String> survivors = new HashSet<>();
+        if (!ifFallsThrough) {
+            survivors.addAll(pathNames.whenFalse());
+        }
+        if (!elseEmpty && !elseFallsThrough) {
+            survivors.addAll(pathNames.whenTrue());
+        }
+        survivors.retainAll(introduced);
+
+        // Leave the breakable frame: outer map still holds all pattern slots from
+        // the condition (they were defined before pushBreakable). Permanently hide
+        // non-survivors on the outer frame.
+        compileStack.pop(); // ends breakable
+        compileStack.hidePatternVariablesExcept(introduced, survivors);
         mv.visitLabel(exitPath);
     }
 
@@ -908,8 +938,8 @@ public class StatementWriter {
      * are elided rather than boxed.
      * <p>
      * GROOVY-12242: non-declaration statements that contain an {@code instanceof}
-     * type pattern run in a nested CompileStack state so pattern locals cannot
-     * leak. Detection uses {@link InstanceofFlowBindings#containsPattern}.
+     * type pattern run in a nested CompileStack state ({@code pushState}/{@code pop})
+     * so pattern locals defined during evaluation cannot leak past the statement.
      *
      * @param statement the expression statement to compile
      */
@@ -925,7 +955,7 @@ public class StatementWriter {
         CompileStack compileStack = controller.getCompileStack();
         // Declaration LHS isolation is in evaluateEqual; multi-assign must not be wrapped.
         boolean isolatesPatternVars = !(expression instanceof DeclarationExpression)
-                && InstanceofFlowBindings.containsPattern(expression);
+                && containsTypePattern(expression);
         if (isolatesPatternVars) {
             compileStack.pushState();
         }
@@ -939,5 +969,31 @@ public class StatementWriter {
                 compileStack.pop();
             }
         }
+    }
+
+    /**
+     * Structural check: does {@code expression} contain any JEP&nbsp;394 type
+     * pattern ({@code e instanceof T t})? Not a flow analysis — used only to
+     * decide whether an expression statement needs CompileStack isolation.
+     */
+    private static boolean containsTypePattern(final Expression expression) {
+        if (expression == null) return false;
+        boolean[] found = {false};
+        expression.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitBinaryExpression(final BinaryExpression be) {
+                if (found[0]) return;
+                int op = be.getOperation().getType();
+                if ((op == Types.KEYWORD_INSTANCEOF || op == Types.COMPARE_NOT_INSTANCEOF)
+                        && be.getRightExpression() instanceof DeclarationExpression decl
+                        && !decl.isMultipleAssignmentDeclaration()
+                        && decl.getVariableExpression() != null) {
+                    found[0] = true;
+                    return;
+                }
+                super.visitBinaryExpression(be);
+            }
+        });
+        return found[0];
     }
 }

@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.DynamicVariable
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.IfStatement
-import org.codehaus.groovy.classgen.InstanceofFlowBindings
+import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.ast.CodeVisitorSupport
@@ -95,6 +95,54 @@ final class InstanceofFlowBindingsTest {
         assert InstanceofFlowBindings.containsPattern(expr)
     }
 
+    // allPatternNames() returns ALL pattern variable names in the expression tree,
+    // regardless of which flow path (whenTrue / whenFalse) they appear on.
+    // This differs from allNames() which only covers names in the binding sets.
+    @Test
+    void testAllPatternNames_positiveInstanceof() {
+        // simple instanceof: appears in both allNames() and allPatternNames()
+        def b = InstanceofFlowBindings.of(parseCondition('o instanceof String s'))
+        def expr = parseCondition('o instanceof String s')
+        assert InstanceofFlowBindings.allPatternNames(expr) == ['s'] as Set
+    }
+
+    @Test
+    void testAllPatternNames_orCondition_returnsNameEvenWhenBindingsEmpty() {
+        // o instanceof String s || true: bindings EMPTY (no whenTrue, no whenFalse),
+        // so allNames() returns {}. But allPatternNames() still returns {s} because
+        // evaluateInstanceof allocates the slot regardless.
+        def expr = parseCondition('o instanceof String s || true')
+        def b = InstanceofFlowBindings.of(expr)
+        assert b.isEmpty()                                          : 'bindings are empty for || shape'
+        assert b.allNames().isEmpty()                               : 'allNames() returns {} for || shape'
+        assert InstanceofFlowBindings.allPatternNames(expr) == ['s'] as Set  : 'allPatternNames() returns {s}'
+    }
+
+    @Test
+    void testAllPatternNames_andCondition_sameAsAllNames() {
+        // o instanceof String s && cond: whenTrue={s}, allNames()={s}, allPatternNames()={s}
+        def expr = parseCondition('o instanceof String s && s.length() > 0')
+        def b = InstanceofFlowBindings.of(expr)
+        assert InstanceofFlowBindings.allPatternNames(expr) == b.allNames()
+    }
+
+    @Test
+    void testAllPatternNames_nullReturnsEmpty() {
+        assert InstanceofFlowBindings.allPatternNames(null).isEmpty()
+    }
+
+    @Test
+    void testAllPatternNames_noPattern_returnsEmpty() {
+        def expr = parseCondition('o instanceof String')  // no pattern variable
+        assert InstanceofFlowBindings.allPatternNames(expr).isEmpty()
+    }
+
+    @Test
+    void testAllPatternNames_twoPatternsTwoNames() {
+        def expr = parseCondition2('o instanceof String s && p instanceof Integer i')
+        assert InstanceofFlowBindings.allPatternNames(expr) == ['s', 'i'] as Set
+    }
+
     @Test
     void testRightOfOrIsDynamicVariable() {
         def src = '''
@@ -154,21 +202,22 @@ final class InstanceofFlowBindingsTest {
     }
 
     // -------------------------------------------------------------------------
-    // GROOVY-12242: systematic binding-analysis unit tests
+    // GROOVY-12242: systematic binding-analysis unit tests aligned with JLS §6.3.1
     //
-    // Covers every condition shape in the visibility matrix:
-    //   (1) instanceof s
-    //   (2) !instanceof s
-    //   (3) !instanceof s (negated via BooleanExpression)
-    //   (4) instanceof s && cond
-    //   (5) instanceof s || cond
-    //   (6) !instanceof s && cond
-    //   (7) !instanceof s || cond
-    //   (8) !(instanceof s && cond)
-    //   (9) double negation !!(instanceof s)
+    // JLS §6.3.1 defines flow scoping for pattern variables in expressions.
+    // The following tests map directly to each sub-section:
+    //
+    //  §6.3.1.5 (instanceof): e instanceof T t  → whenTrue: {t}, whenFalse: {} (no rule)
+    //  §6.3.1.3 (!):          !a                → whenTrue = a.whenFalse, whenFalse = a.whenTrue
+    //  §6.3.1.1 (&&):         a && b            → whenTrue = a.whenTrue ∪ b.whenTrue, whenFalse = {} (no rule)
+    //  §6.3.1.2 (||):         a || b            → whenFalse = a.whenFalse ∪ b.whenFalse, whenTrue = {} (no rule)
+    //  §6.3.1.7 (parens):     (a)               → same as a (transparent)
+    //  §6.3.1.4 (?:):         a ? b : c         → no whenTrue / whenFalse bindings (conservative)
+    //  §6.3.1.1-200-A error:  same name in a.whenTrue and b.whenTrue of && → compile-time error
     // -------------------------------------------------------------------------
 
-    // (4) o instanceof String s && cond — true: {s}, false: {}
+    // JLS §6.3.1.1 Rule B: a&&b when-true = a.whenTrue ∪ b.whenTrue = {s} ∪ {} = {s}
+    // JLS §6.3.1.1 (note): no rule for when-false of &&.
     @Test
     void testAndWithPattern_trueBinds_falseEmpty() {
         def b = InstanceofFlowBindings.of(parseCondition('o instanceof String s && true'))
@@ -176,28 +225,28 @@ final class InstanceofFlowBindingsTest {
         assert b.whenFalse().isEmpty()
     }
 
-    // (5) o instanceof String s || cond — both paths empty (can't guarantee s on true path,
-    //     and cond alone doesn't bind s on the false path)
+    // JLS §6.3.1.2 (note): no rule for when-true of ||.
+    // JLS §6.3.1.2 Rule B: a||b when-false = a.whenFalse ∪ b.whenFalse.
+    // For (o instanceof String s): whenFalse = {} (§6.3.1.5: no when-false for instanceof).
+    // For true: whenFalse = {}. So a||b when-false = {} ∪ {} = {}. Both paths empty.
     @Test
     void testOrWithPattern_bothEmpty() {
         def b = InstanceofFlowBindings.of(parseCondition('o instanceof String s || true'))
         assert b.isEmpty()
     }
 
-    // (6) !(o instanceof String s) && cond
-    //     Left's false path binds s, but && propagates no false-bindings.
-    //     Left's true path is empty. Right contributes nothing.
-    //     → true: {}, false: {}
+    // JLS §6.3.1.3: !(o instanceof String s) when-true = a.whenFalse = {} (§6.3.1.5 no when-false)
+    // JLS §6.3.1.1 Rule B: (left.whenTrue={}) && (right.whenTrue={}) → whenTrue = {}
+    // JLS §6.3.1.1 (note): no rule for when-false of &&. → whenFalse = {}
     @Test
     void testNegatedAndCond_bothEmpty() {
         def b = InstanceofFlowBindings.of(parseCondition('!(o instanceof String s) && true'))
         assert b.isEmpty()
     }
 
-    // (7) !(o instanceof String s) || cond
-    //     Left false-path binds s (since !(s) is false → s matched).
-    //     Right's false path is empty. || false-path = union of false-paths = {s}.
-    //     → true: {}, false: {s}
+    // JLS §6.3.1.3: !(o instanceof String s) when-false = a.whenTrue = {s}
+    // JLS §6.3.1.2 Rule B: a||b when-false = a.whenFalse ∪ b.whenFalse = {s} ∪ {} = {s}
+    // JLS §6.3.1.2 (note): no rule for when-true of ||. → whenTrue = {}
     @Test
     void testNegatedOrCond_falseBinds() {
         def b = InstanceofFlowBindings.of(parseCondition('!(o instanceof String s) || true'))
@@ -205,9 +254,8 @@ final class InstanceofFlowBindingsTest {
         assert b.whenTrue().isEmpty()
     }
 
-    // (8) !(o instanceof String s && s.length() > 0)
-    //     Inner: true:{s}, false:{}. Negated: true:{}, false:{s}.
-    //     → true: {}, false: {s}
+    // JLS §6.3.1.1 Rule B: (a&&b) when-true = {s}; negated → when-false = {s}, when-true = {}
+    // (§6.3.1.3: !expr when-true = expr.whenFalse; !expr when-false = expr.whenTrue)
     @Test
     void testNegatedAndPattern_falseBindsAfterNegation() {
         def b = InstanceofFlowBindings.of(parseCondition('!(o instanceof String s && s.length() > 0)'))
@@ -215,14 +263,54 @@ final class InstanceofFlowBindingsTest {
         assert b.whenTrue().isEmpty()
     }
 
-    // (9) double negation !!(o instanceof String s) ≡ o instanceof String s
-    //     Inner: true:{s}, false:{}. Negated once: true:{}, false:{s}.
-    //     Negated twice: true:{s}, false:{}.
+    // JLS §6.3.1.3 applied twice (double negation identity):
+    //   o instanceof String s: whenTrue={s}, whenFalse={}
+    //   !(…): whenTrue={}, whenFalse={s}
+    //   !!(…): whenTrue={s}, whenFalse={}  — same as the original (§6.3.1.3 is its own inverse)
     @Test
     void testDoubleNegation_sameAsPositive() {
         def b = InstanceofFlowBindings.of(parseCondition('!!(o instanceof String s)'))
         assert b.whenTrue()*.name == ['s']
         assert b.whenFalse().isEmpty()
+    }
+
+    // JLS §6.3.1.5: a instanceof T t introduces t when true; NO binding when false.
+    // This is the base axiom — everything else is derived from it.
+    @Test
+    void testJLS_6_3_1_5_noWhenFalseForInstanceof() {
+        // Positive instanceof: whenTrue binds, whenFalse is explicitly empty
+        def pos = InstanceofFlowBindings.of(parseCondition('o instanceof String s'))
+        assert pos.whenTrue()*.name == ['s'] : 'JLS §6.3.1.5-100-A: s introduced when true'
+        assert pos.whenFalse().isEmpty()     : 'JLS §6.3.1.5 (note): no rule for when false'
+
+        // Plain instanceof without pattern variable: contributes nothing
+        def plain = InstanceofFlowBindings.of(parseCondition('o instanceof String'))
+        assert plain.isEmpty() : 'no type pattern means no binding'
+    }
+
+    // JLS §6.3.1.7: parenthesized expressions are transparent.
+    // (a instanceof T t) has exactly the same bindings as a instanceof T t.
+    @Test
+    void testJLS_6_3_1_7_parenthesizedExpression_transparent() {
+        // The Groovy AST wraps the condition in a BooleanExpression; unwrapping happens in analyse().
+        // A user-written (o instanceof String s) adds no additional wrapper beyond what the
+        // if-condition already imposes, so the result must equal the unwrapped case.
+        def wrapped = InstanceofFlowBindings.of(parseCondition('(o instanceof String s)'))
+        assert wrapped.whenTrue()*.name == ['s'] : 'JLS §6.3.1.7-100-A: parens transparent for whenTrue'
+        assert wrapped.whenFalse().isEmpty()     : 'JLS §6.3.1.7-100-B: parens transparent for whenFalse'
+    }
+
+    // JLS §6.3.1.4: conditional operator a ? b : c — no whenTrue/whenFalse bindings.
+    // "It cannot be determined at compile time whether a will evaluate to true."
+    // InstanceofFlowBindings.analyse() returns EMPTY conservatively for this shape
+    // (it is not a boolean-algebra operator that propagates definite-assignment).
+    @Test
+    void testJLS_6_3_1_4_ternaryConditional_noBindings() {
+        // The condition `o instanceof String s ? true : false` cannot propagate
+        // the binding of s beyond the ternary — no scope rule exists for ?:
+        // (§6.3.1.4 note).  analyse() sees a non-recognised expression shape → EMPTY.
+        def b = InstanceofFlowBindings.of(parseCondition('o instanceof String s ? true : false'))
+        assert b.isEmpty() : 'JLS §6.3.1.4 (note): no whenTrue/false rule for ?:'
     }
 
     // (4) o instanceof String s && p instanceof Integer i  (JLS §6.3.1.1)

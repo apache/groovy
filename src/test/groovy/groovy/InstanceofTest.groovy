@@ -20,6 +20,8 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
 import static groovy.test.GroovyAssert.shouldFail
 
 final class InstanceofTest {
@@ -624,66 +626,57 @@ final class InstanceofTest {
 
     // --- (5) o instanceof String s || cond ---
 
-    // In dynamic Groovy the evaluateInstanceof always allocates the slot, so s can be
-    // accessed in the if-block at runtime (even though flow scoping says it's not
-    // guaranteed). TypeChecked enforces the stricter Java rule: true-path binding of
-    // left of || is NOT in scope on the right (Java rule) and NOT in the if-block.
+    // JLS §6.3.1.2 (note): no rule for when-true of || — so VariableScopeVisitor does
+    // NOT declare s in the if-block scope. Dynamic Groovy resolves the undeclared s as a
+    // DynamicVariable, which yields MissingPropertyException at runtime (same as TypeChecked).
+    // There is no need to use @TypeChecked here — the scope decision is made entirely by
+    // VariableScopeVisitor (JLS §6.3.2.2-200-A: e.whenTrue is {} for this shape).
     @Test
-    void testOrChain_noVisibilityAnywhere() {
-        def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
-        }
+    void testOrChain_noVisibilityInIfBlock() {
         // s must not be visible in the if-block when condition is instanceof s || ...
-        def err = shouldFail shell, '''
-            @groovy.transform.TypeChecked
+        def err = shouldFail MissingPropertyException, '''
             class C {
-                static Object m(Object o) {
+                def m(Object o) {
                     if (o instanceof String s || true) {
                         return s
                     }
                     return 'ok'
                 }
             }
+            new C().m('hello')
         '''
-        assert err.message =~ /The variable .s. is undeclared|Apparent variable .s./
+        assert err.message =~ /No such property: s/
     }
 
     // --- (6) !(o instanceof String s) && cond ---
     // De Morgan: ≡ (!instanceof s) && cond
-    // In dynamic mode, evaluateInstanceof defines the slot during condition evaluation,
-    // so s resolves dynamically even in the if-body. TypeChecked enforces the strict rule:
-    // && propagates no false-bindings, so if-block (true path) does NOT see s.
+    // JLS §6.3.1.3 + §6.3.1.1: !(o instanceof String s).whenTrue = {} (no when-false for instanceof),
+    // && propagates no false-bindings, so the if-block (true path) does NOT see s.
+    // VariableScopeVisitor declares nothing in the if-block → DynamicVariable → MissingPropertyException.
     @Test
-    void testNegatedAndCond_noVisibility() {
-        def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
-        }
-        def err = shouldFail shell, '''
-            @groovy.transform.TypeChecked
+    void testNegatedAndCond_noVisibilityInIfBlock() {
+        def err = shouldFail MissingPropertyException, '''
             class C {
-                static Object m(Object o) {
+                def m(Object o) {
                     if (!(o instanceof String s) && true) {
                         return s
                     }
                     return 'out'
                 }
             }
+            new C().m(1)
         '''
-        assert err.message =~ /The variable .s. is undeclared|Apparent variable .s./
+        assert err.message =~ /No such property: s/
     }
 
-    // --- (7) !(o instanceof String s) && cond, plus return in else block ---
-    // After the if: the if-block's true-path has !(s bound) && cond, no s guarantee.
-    // TypeChecked enforces that s is NOT visible after the if statement.
+    // --- (7) !(o instanceof String s) && cond, plus abrupt else-block ---
+    // After the if: JLS §6.3.2.2-200-C-B: var introduced when true=?, S cannot complete normally, T can.
+    // Here if-block true-path has no s binding (whenTrue={}), so even with abrupt else, s is NOT after.
     @Test
     void testNegatedAndCond_withElseReturn_noVisibilityAfter() {
-        def shell = GroovyShell.withConfig {
-            ast groovy.transform.TypeChecked
-        }
-        def err = shouldFail shell, '''
-            @groovy.transform.TypeChecked
+        def err = shouldFail MissingPropertyException, '''
             class C {
-                static Object m(Object o) {
+                def m(Object o) {
                     if (!(o instanceof String s) && true) {
                         // true path: s not definitely bound
                     } else {
@@ -692,8 +685,40 @@ final class InstanceofTest {
                     return s
                 }
             }
+            new C().m(1)
         '''
-        assert err.message =~ /The variable .s. is undeclared|Apparent variable .s./
+        assert err.message =~ /No such property: s/
+    }
+
+    // --- (NEW) !(o instanceof String s) with abrupt else-block only ---
+    // missing case:
+    //   if (!(o instanceof String s)) { println "not String" } else { println "String"; return }
+    //   println s  // <-- must be INVALID
+    //
+    // JLS §6.3.2.2-200-C analysis:
+    //   e = !(o instanceof String s): whenTrue={}, whenFalse={s}
+    //   S = if-block (println "not String"): can complete normally
+    //   T = else-block (println "String"; return): cannot complete normally
+    //   C-A: e.whenTrue={} -> nothing even if T abrupt
+    //   C-B: e.whenFalse={s}, S cannot complete normally? NO (S falls through) -> C-B does NOT apply
+    //   -> s is NOT introduced after the if-else statement
+    @Test
+    void testNegatedInstanceof_abruptElseOnly_noVisibilityAfter() {
+        def err = shouldFail MissingPropertyException, '''
+            class C {
+                def m(Object o) {
+                    if (!(o instanceof String s)) {
+                        println "not String"
+                    } else {
+                        println "String"
+                        return s
+                    }
+                    return s  // s NOT in scope: if-block falls through, C-B does not apply
+                }
+            }
+            new C().m(1)
+        '''
+        assert err.message =~ /No such property: s/
     }
 
     // --- (8) !(o instanceof String s) || cond ---
@@ -782,5 +807,188 @@ final class InstanceofTest {
         }
         assert f('ab') == 'AB'
         assert f(1)   == 'no'
+    }
+
+    // -------------------------------------------------------------------------
+    // GROOVY-12242: redeclaration where pattern variable is / is not visible
+    // -------------------------------------------------------------------------
+
+    /**
+     * Else-block of positive instanceof: s not in scope → fresh local is allowed
+     * and correctly used at runtime (class generation must free the name).
+     */
+    @Test
+    void testRedeclareInElse_wherePatternNotVisible_runtime() {
+        def f = { Object o ->
+            if (o instanceof String s) {
+                return 'pat:' + s
+            } else {
+                def s = 'local'
+                return s
+            }
+        }
+        assert f('hi') == 'pat:hi'
+        assert f(1) == 'local'
+    }
+
+    /**
+     * After if with both branches falling through: s not in scope → fresh local OK.
+     */
+    @Test
+    void testRedeclareAfterIf_wherePatternNotVisible_runtime() {
+        def f = { Object o ->
+            if (o instanceof String s) {
+                // matched; s does not escape
+            }
+            def s = 99
+            return s
+        }
+        assert f('x') == 99
+        assert f(1) == 99
+    }
+
+    /**
+     * True-branch of negated instanceof: s not in scope → fresh local OK.
+     */
+    @Test
+    void testRedeclareInNegatedIf_wherePatternNotVisible_runtime() {
+        def f = { Object o ->
+            if (!(o instanceof String s)) {
+                def s = 'shadow'
+                return s
+            } else {
+                return 'pat:' + s
+            }
+        }
+        assert f(1) == 'shadow'
+        assert f('hi') == 'pat:hi'
+    }
+
+    /**
+     * Nested: outer pattern s remains usable after an inner if that introduces i.
+     */
+    @Test
+    void testNestedInstanceof_outerPatternStillVisible() {
+        def f = { Object o, Object p ->
+            if (o instanceof String s) {
+                if (p instanceof Integer i) {
+                    return s + ':' + i
+                }
+                return s + ':no-i'
+            }
+            return 'no-s'
+        }
+        assert f('ab', 3) == 'ab:3'
+        assert f('ab', 'x') == 'ab:no-i'
+        assert f(1, 3) == 'no-s'
+    }
+
+    // --- shouldNotCompile: cannot redeclare where pattern s is visible ---
+
+    @Test
+    void testShouldNotCompile_redeclareInIfBlock_wherePatternVisible() {
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            def m(Object o) {
+                if (o instanceof String s) {
+                    def s = 'nope'
+                }
+            }
+        '''
+        assert err.message =~ /already contains a variable of the name s/
+    }
+
+    @Test
+    void testShouldNotCompile_redeclareAfterEarlyReturn_wherePatternVisible() {
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            def m(Object o) {
+                if (!(o instanceof String s)) return
+                def s = 'nope'
+            }
+        '''
+        assert err.message =~ /already contains a variable of the name s/
+    }
+
+    @Test
+    void testShouldNotCompile_redeclareAfterAbruptElse_wherePatternVisible() {
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            def m(Object o) {
+                if (o instanceof String s) {
+                } else {
+                    return
+                }
+                def s = 'nope'
+            }
+        '''
+        assert err.message =~ /already contains a variable of the name s/
+    }
+
+    @Test
+    void testShouldNotCompile_redeclareInElseOfNegated_wherePatternVisible() {
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            def m(Object o) {
+                if (!(o instanceof String s)) {
+                } else {
+                    def s = 'nope'
+                }
+            }
+        '''
+        assert err.message =~ /already contains a variable of the name s/
+    }
+
+    /**
+     * Successive ifs reusing pattern name {@code s}: second condition must
+     * re-bind the slot so else-path hide still frees the name for redeclaration.
+     */
+    @Test
+    void testSuccessiveIfs_reusePatternName_redeclareInSecondElse() {
+        def f = { Object a, Object b ->
+            if (a instanceof String s) {
+                // first binding
+            }
+            if (b instanceof Integer s) {
+                return 'int:' + s
+            } else {
+                def s = 'local'
+                return s
+            }
+        }
+        assert f('x', 7) == 'int:7'
+        assert f('x', 'y') == 'local'
+        assert f(1, 7) == 'int:7'
+        assert f(1, 'y') == 'local'
+    }
+
+    /**
+     * Expression-statement pattern then a later if reusing the name — hide must
+     * still apply (identity-based "introduced", not name-set diff).
+     */
+    @Test
+    void testIsolatedPatternExpr_thenIfReuseName_redeclareInElse() {
+        def f = { Object o ->
+            (o instanceof String s) // isolated; must not leak
+            if (o instanceof Integer s) {
+                return 'int:' + s
+            } else {
+                def s = 'ok'
+                return s
+            }
+        }
+        assert f(5) == 'int:5'
+        assert f('hi') == 'ok'
+    }
+
+    /**
+     * After an early-return negated instanceof, survivor {@code s} remains usable
+     * even when a prior isolated pattern used the same name.
+     */
+    @Test
+    void testNameReuse_thenSurvivorAfterEarlyReturn() {
+        def f = { Object o ->
+            (o instanceof Number n) // different name; isolation
+            if (!(o instanceof String s)) return 'early'
+            return s.toUpperCase()
+        }
+        assert f('ab') == 'AB'
+        assert f(1) == 'early'
     }
 }
