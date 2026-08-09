@@ -47,7 +47,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofPathLiveNames;
+import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
 import org.codehaus.groovy.syntax.Types;
 import org.objectweb.asm.Label;
@@ -483,9 +483,9 @@ public class StatementWriter {
      * condition, CompileStack hides names that are not live on the current path
      * using {@link CompileStack#hidePatternVariablesExcept} inside
      * {@link CompileStack#pushState}/{@link CompileStack#pop} frames. Path-live
-     * name sets come from {@link InstanceofPathLiveNames} metadata written by
-     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor} — classgen does
-     * not re-run the flow analysis.
+     * names come from {@link InstanceofFlowBindings} metadata attached by
+     * {@link org.codehaus.groovy.classgen.VariableScopeVisitor} — classgen
+     * reads names only and does not re-run the flow analysis.
      *
      * @param statement the if statement to compile
      */
@@ -494,7 +494,8 @@ public class StatementWriter {
         writeStatementLabel(statement);
 
         CompileStack compileStack = controller.getCompileStack();
-        InstanceofPathLiveNames pathNames = InstanceofPathLiveNames.get(statement);
+        // Name view of the visitor's analysis; never re-analyse the condition.
+        InstanceofFlowBindings bindings = InstanceofFlowBindings.get(statement);
 
         // Define pattern slots on the *outer* frame so that after the breakable
         // push/pop the survivors remain ordinary stackVariables entries (no
@@ -512,7 +513,7 @@ public class StatementWriter {
         // Then path: only whenTrue names among those this condition introduced.
         Label elsePath = controller.getOperandStack().jump(IFEQ);
         compileStack.pushState();
-        compileStack.hidePatternVariablesExcept(introduced, pathNames.whenTrue());
+        compileStack.hidePatternVariablesExcept(introduced, bindings.whenTrueNames());
         statement.getIfBlock().visit(controller.getAcg());
         compileStack.pop();
 
@@ -526,7 +527,7 @@ public class StatementWriter {
             mv.visitLabel(elsePath);
             // Else path: only whenFalse names among those this condition introduced.
             compileStack.pushState();
-            compileStack.hidePatternVariablesExcept(introduced, pathNames.whenFalse());
+            compileStack.hidePatternVariablesExcept(introduced, bindings.whenFalseNames());
             statement.getElseBlock().visit(controller.getAcg());
             compileStack.pop();
         }
@@ -534,10 +535,10 @@ public class StatementWriter {
         // Survivors per JLS §6.3.2.2-200-C (abrupt-completion rule).
         Set<String> survivors = new HashSet<>();
         if (!ifFallsThrough) {
-            survivors.addAll(pathNames.whenFalse());
+            survivors.addAll(bindings.whenFalseNames());
         }
         if (!elseEmpty && !elseFallsThrough) {
-            survivors.addAll(pathNames.whenTrue());
+            survivors.addAll(bindings.whenTrueNames());
         }
         survivors.retainAll(introduced);
 

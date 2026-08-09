@@ -47,7 +47,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeExpression;
-import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofPathLiveNames;
+import org.codehaus.groovy.classgen.VariableScopeVisitor.InstanceofFlowBindings;
 import org.codehaus.groovy.runtime.MultipleAssignmentSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
@@ -1482,7 +1482,7 @@ public class BinaryExpressionHelper {
         MethodVisitor mv = controller.getMethodVisitor();
 
         // load x; path-hide pattern locals via CompileStack push/hide/pop (GROOVY-12242)
-        InstanceofPathLiveNames pathNames = InstanceofPathLiveNames.get(expression);
+        InstanceofFlowBindings bindings = InstanceofFlowBindings.get(expression);
         Map<String, BytecodeVariable> beforePatterns = compileStack.snapshotPatternVariables();
         boolPart.visit(controller.getAcg());
         Set<String> introduced = compileStack.patternVariablesIntroducedSince(beforePatterns);
@@ -1490,7 +1490,7 @@ public class BinaryExpressionHelper {
 
         // true path: only whenTrue names visible among those this condition introduced
         compileStack.pushState();
-        compileStack.hidePatternVariablesExcept(introduced, pathNames.whenTrue());
+        compileStack.hidePatternVariablesExcept(introduced, bindings.whenTrueNames());
         truePart.visit(controller.getAcg());
         operandStack.doGroovyCast(commonType);
         compileStack.pop();
@@ -1500,7 +1500,7 @@ public class BinaryExpressionHelper {
         // false path: only whenFalse names visible
         mv.visitLabel(l0);
         compileStack.pushState();
-        compileStack.hidePatternVariablesExcept(introduced, pathNames.whenFalse());
+        compileStack.hidePatternVariablesExcept(introduced, bindings.whenFalseNames());
         falsePart.visit(controller.getAcg());
         operandStack.doGroovyCast(commonType);
         compileStack.pop();

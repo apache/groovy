@@ -93,21 +93,20 @@ import static org.codehaus.groovy.transform.trait.Traits.isTrait;
  * <p>
  * For JEP&nbsp;394 {@code instanceof} pattern variables (GROOVY-12242), this
  * class is the <strong>single authoritative source</strong> of scope decisions.
- * The nested {@link InstanceofFlowBindings} analysis determines which pattern
- * variables are definitely bound on each path; this visitor:
+ * {@link InstanceofFlowBindings} answers which pattern variables are definitely
+ * bound on each control-flow path; this visitor:
  * <ul>
- *   <li>declares each pattern variable only in the lexical scopes where it is
- *       live, so name resolution outside those scopes yields a
- *       {@link org.codehaus.groovy.ast.DynamicVariable} (runtime
- *       {@link groovy.lang.MissingPropertyException} in dynamic Groovy — the
- *       same rule {@code @TypeChecked} enforces at compile time); and</li>
- *   <li>attaches {@link InstanceofPathLiveNames} metadata to {@code if}/ternary
- *       nodes so later phases can consume the path-live name sets without
- *       re-running the flow analysis.</li>
+ *   <li>declares each pattern variable only where it is live, so out-of-scope
+ *       references become {@link org.codehaus.groovy.ast.DynamicVariable}
+ *       (runtime {@link groovy.lang.MissingPropertyException} in dynamic
+ *       Groovy — the same rule {@code @TypeChecked} enforces at compile
+ *       time); and</li>
+ *   <li>attaches the same {@link InstanceofFlowBindings} instance as AST
+ *       metadata so later phases (classgen) can read path-live <em>names</em>
+ *       without re-running the analysis.</li>
  * </ul>
  *
  * @see InstanceofFlowBindings
- * @see InstanceofPathLiveNames
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
@@ -653,8 +652,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     /**
      * Visits an {@code if}/{@code else} statement, establishing correct
      * lexical scopes for JEP&nbsp;394 {@code instanceof} pattern variables
-     * (GROOVY-12242) and recording {@link InstanceofPathLiveNames} on the
-     * statement so later phases need not re-derive the flow analysis.
+     * (GROOVY-12242) and attaching {@link InstanceofFlowBindings} metadata so
+     * later phases need not re-derive the flow analysis.
      * <p>
      * Rules applied (JLS §6.3.2.2 / JEP 394):
      * <ul>
@@ -674,8 +673,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitIfElse(final IfStatement statement) {
         InstanceofFlowBindings bindings = InstanceofFlowBindings.of(statement.getBooleanExpression());
-        // Enrich the AST so classgen can adjust CompileStack without re-analysis.
-        statement.putNodeMetaData(InstanceofPathLiveNames.KEY, InstanceofPathLiveNames.of(bindings));
+        // Same analysis result: declare into scopes + enrich AST for classgen.
+        InstanceofFlowBindings.put(statement, bindings);
 
         // Condition: pattern vars are available for short-circuit RHS (e.g. &&).
         pushState();
@@ -803,13 +802,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     /**
      * Visits a ternary / Elvis expression with flow scoping for pattern variables:
      * true-path bindings are in scope in the then-branch; false-path bindings in
-     * the else-branch (GROOVY-12242 / JEP 394). Also records
-     * {@link InstanceofPathLiveNames} on the expression for later phases.
+     * the else-branch (GROOVY-12242 / JEP 394). Also attaches
+     * {@link InstanceofFlowBindings} metadata for later phases.
      */
     @Override
     public void visitTernaryExpression(final TernaryExpression expression) {
         InstanceofFlowBindings bindings = InstanceofFlowBindings.of(expression.getBooleanExpression());
-        expression.putNodeMetaData(InstanceofPathLiveNames.KEY, InstanceofPathLiveNames.of(bindings));
+        InstanceofFlowBindings.put(expression, bindings);
 
         pushState();
         expression.getBooleanExpression().visit(this);
@@ -1015,157 +1014,132 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     // =========================================================================
-    // Nested class: InstanceofPathLiveNames
-    // =========================================================================
-
-    /**
-     * Path-live pattern-variable <em>names</em> for an {@code if}/ternary
-     * condition (GROOVY-12242 / JEP 394).
-     * <p>
-     * Produced once by {@link VariableScopeVisitor} and attached as node
-     * metadata under {@link #KEY}. Downstream code generation reads these
-     * sets to decide which CompileStack names to hide on each path; it must
-     * not re-run the flow analysis.
-     *
-     * @since 6.0.0
-     */
-    @Internal
-    public static final class InstanceofPathLiveNames {
-
-        /** Metadata key used with {@link ASTNode#putNodeMetaData}/{@code getNodeMetaData}. */
-        public static final Object KEY = InstanceofPathLiveNames.class;
-
-        private static final InstanceofPathLiveNames EMPTY =
-                new InstanceofPathLiveNames(Collections.emptySet(), Collections.emptySet());
-
-        private final Set<String> whenTrue;
-        private final Set<String> whenFalse;
-
-        private InstanceofPathLiveNames(final Set<String> whenTrue, final Set<String> whenFalse) {
-            this.whenTrue = whenTrue;
-            this.whenFalse = whenFalse;
-        }
-
-        /** Names definitely bound when the condition is {@code true}. */
-        public Set<String> whenTrue() { return whenTrue; }
-
-        /** Names definitely bound when the condition is {@code false}. */
-        public Set<String> whenFalse() { return whenFalse; }
-
-        /** Whether both path sets are empty. */
-        public boolean isEmpty() {
-            return whenTrue.isEmpty() && whenFalse.isEmpty();
-        }
-
-        /**
-         * Builds an immutable name-set pair from a flow-analysis result.
-         */
-        static InstanceofPathLiveNames of(final InstanceofFlowBindings bindings) {
-            if (bindings == null || bindings.isEmpty()) return EMPTY;
-            return new InstanceofPathLiveNames(
-                    Set.copyOf(bindings.whenTrueNames()),
-                    Set.copyOf(bindings.whenFalseNames()));
-        }
-
-        /**
-         * Returns the metadata attached to {@code node}, or an empty instance
-         * if none is present (no pattern variables on either path).
-         */
-        public static InstanceofPathLiveNames get(final ASTNode node) {
-            if (node == null) return EMPTY;
-            InstanceofPathLiveNames names = node.getNodeMetaData(KEY);
-            return names != null ? names : EMPTY;
-        }
-    }
-
-    // =========================================================================
     // Nested class: InstanceofFlowBindings
     // =========================================================================
 
     /**
-     * Flow-sensitive analysis of JEP&nbsp;394 {@code instanceof} pattern
-     * bindings (GROOVY-12242).
-     * <p>
-     * Given a boolean condition, this type answers: which pattern variables are
-     * <em>definitely bound</em> when the condition is {@code true} vs
-     * {@code false}?  It is the Groovy equivalent of the JLS §6.3.1
+     * Flow-sensitive result for JEP&nbsp;394 {@code instanceof} pattern
+     * bindings (GROOVY-12242) — the Groovy equivalent of the JLS §6.3.1
      * &ldquo;introduced by&rdquo; sets.
      * <p>
-     * Pure semantic analysis — no bytecode knowledge. Consumed only by
-     * {@link VariableScopeVisitor}, which declares names into scopes and
-     * publishes {@link InstanceofPathLiveNames} metadata for later phases.
-     * Code generation must not call {@link #of(Expression)} itself.
+     * One type, two views of the same analysis:
+     * <ul>
+     *   <li>{@link #whenTrue()}/{@link #whenFalse()} — pattern
+     *       {@link VariableExpression}s for {@link VariableScopeVisitor} to
+     *       declare into lexical scopes;</li>
+     *   <li>{@link #whenTrueNames()}/{@link #whenFalseNames()} — the same
+     *       sets as names for classgen to path-hide CompileStack slots.</li>
+     * </ul>
+     * {@link VariableScopeVisitor} runs the analysis once via {@link #of},
+     * declares from the variable lists, and attaches this instance as AST
+     * metadata ({@link #put}/{@link #get}). Later phases must use
+     * {@link #get} only — never re-call {@link #of} on the condition.
      * <p>
-     * Covered condition shapes:
-     * {@code e instanceof T t}, {@code e !instanceof T t}, {@code !expr},
-     * {@code a && b}, {@code a || b}. All other shapes return
-     * {@link #EMPTY} (conservative: no bindings on either path).
+     * Covered shapes: {@code e instanceof T t}, {@code e !instanceof T t},
+     * {@code !expr}, {@code a && b}, {@code a || b}. All other shapes yield
+     * {@link #EMPTY} (conservative: no definite bindings).
      *
      * @see VariableScopeVisitor
-     * @see InstanceofPathLiveNames
      * @since 6.0.0
      */
     @Internal
     public static final class InstanceofFlowBindings {
 
+        /** Metadata key for {@link ASTNode#putNodeMetaData}/{@code getNodeMetaData}. */
+        public static final Object KEY = InstanceofFlowBindings.class;
+
         /** Singleton for "no pattern variables on either path". */
-        public static final InstanceofFlowBindings EMPTY = new InstanceofFlowBindings(List.of(), List.of());
+        public static final InstanceofFlowBindings EMPTY =
+                new InstanceofFlowBindings(List.of(), List.of());
 
         private final List<VariableExpression> whenTrue;
         private final List<VariableExpression> whenFalse;
+        /** Cached name view of {@link #whenTrue}; never reallocated. */
+        private final Set<String> whenTrueNames;
+        /** Cached name view of {@link #whenFalse}; never reallocated. */
+        private final Set<String> whenFalseNames;
 
         private InstanceofFlowBindings(final List<VariableExpression> whenTrue,
-                             final List<VariableExpression> whenFalse) {
+                                       final List<VariableExpression> whenFalse) {
             this.whenTrue = whenTrue;
             this.whenFalse = whenFalse;
+            this.whenTrueNames = namesOf(whenTrue);
+            this.whenFalseNames = namesOf(whenFalse);
         }
 
         /**
          * Pattern variables definitely assigned when the condition is {@code true}.
+         * Used by {@link VariableScopeVisitor} to declare into scopes.
          */
         public List<VariableExpression> whenTrue() { return whenTrue; }
 
         /**
          * Pattern variables definitely assigned when the condition is {@code false}.
+         * Used by {@link VariableScopeVisitor} to declare into scopes.
          */
         public List<VariableExpression> whenFalse() { return whenFalse; }
+
+        /**
+         * Names of pattern variables bound when the condition is {@code true}.
+         * Used by classgen for CompileStack path-hide; same set as {@link #whenTrue()}.
+         */
+        public Set<String> whenTrueNames() { return whenTrueNames; }
+
+        /**
+         * Names of pattern variables bound when the condition is {@code false}.
+         * Used by classgen for CompileStack path-hide; same set as {@link #whenFalse()}.
+         */
+        public Set<String> whenFalseNames() { return whenFalseNames; }
 
         /** Whether any pattern variable is bound on either path. */
         public boolean isEmpty() {
             return whenTrue.isEmpty() && whenFalse.isEmpty();
         }
 
-        /** Names of pattern variables bound when the condition is {@code true}. */
-        public Set<String> whenTrueNames()  { return names(whenTrue);  }
-
-        /** Names of pattern variables bound when the condition is {@code false}. */
-        public Set<String> whenFalseNames() { return names(whenFalse); }
-
         /**
          * All pattern-variable names in either path (stable encounter order).
          */
         public Set<String> allNames() {
             if (isEmpty()) return Collections.emptySet();
-            Set<String> names = new LinkedHashSet<>(whenTrue.size() + whenFalse.size());
-            for (VariableExpression ve : whenTrue)  names.add(ve.getName());
-            for (VariableExpression ve : whenFalse) names.add(ve.getName());
-            return names;
-        }
-
-        private static Set<String> names(final List<VariableExpression> vars) {
-            if (vars.isEmpty()) return Collections.emptySet();
-            Set<String> result = new LinkedHashSet<>(vars.size());
-            for (VariableExpression ve : vars) result.add(ve.getName());
-            return result;
+            if (whenFalseNames.isEmpty()) return whenTrueNames;
+            if (whenTrueNames.isEmpty()) return whenFalseNames;
+            Set<String> names = new LinkedHashSet<>(whenTrueNames.size() + whenFalseNames.size());
+            names.addAll(whenTrueNames);
+            names.addAll(whenFalseNames);
+            return Collections.unmodifiableSet(names);
         }
 
         // -----------------------------------------------------------------
-        // Factory methods
+        // AST metadata (enrichment for later phases)
+        // -----------------------------------------------------------------
+
+        /**
+         * Attaches this analysis result to {@code node} for later phases.
+         * No-op when {@code bindings} is null or {@link #EMPTY}.
+         */
+        public static void put(final ASTNode node, final InstanceofFlowBindings bindings) {
+            if (node == null || bindings == null || bindings.isEmpty()) return;
+            node.putNodeMetaData(KEY, bindings);
+        }
+
+        /**
+         * Returns the analysis result previously attached to {@code node}, or
+         * {@link #EMPTY} if none (no path-live pattern variables).
+         */
+        public static InstanceofFlowBindings get(final ASTNode node) {
+            if (node == null) return EMPTY;
+            InstanceofFlowBindings bindings = node.getNodeMetaData(KEY);
+            return bindings != null ? bindings : EMPTY;
+        }
+
+        // -----------------------------------------------------------------
+        // Analysis entry points
         // -----------------------------------------------------------------
 
         /**
          * Analyses {@code expression} for definite {@code instanceof} pattern
-         * bindings.
+         * bindings. Call only from {@link VariableScopeVisitor} (or tests);
+         * classgen must use {@link #get(ASTNode)}.
          *
          * @param expression a boolean condition (may be a
          *                   {@link BooleanExpression} wrapper); {@code null}
@@ -1178,14 +1152,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         /**
          * Returns {@code true} if {@code expression} contains any JEP&nbsp;394
-         * type-pattern node ({@code e instanceof T t} or
-         * {@code e !instanceof T t}), at any depth in the expression tree.
-         * <p>
-         * Unlike {@link #of}, which only follows boolean-algebra operators, this
-         * performs a full subtree walk. Used by tests and diagnostics; classgen
-         * has its own structural check for expression-statement isolation.
-         *
-         * @param expression any expression; {@code null} yields {@code false}
+         * type-pattern node at any depth. Full subtree walk (unlike {@link #of}).
+         * Used by tests and diagnostics; classgen has its own structural check
+         * for expression-statement isolation.
          */
         public static boolean containsPattern(final Expression expression) {
             if (expression == null) return false;
@@ -1207,18 +1176,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
 
         /**
-         * Returns the names of <em>all</em> pattern variables that appear
-         * anywhere in {@code expression}, regardless of which flow path they
-         * are definitely assigned on.
-         * <p>
-         * Unlike {@link #allNames()} (which covers only names in the
-         * {@code whenTrue}/{@code whenFalse} sets), this method walks the
-         * entire expression tree. Useful in tests and diagnostics; code
-         * generation tracks allocated pattern slots via CompileStack instead.
-         *
-         * @param expression the expression to walk; {@code null} yields an
-         *                   empty set
-         * @return an unmodifiable set of all pattern variable names
+         * Names of <em>all</em> pattern variables in {@code expression}, regardless
+         * of definite-assignment path. Full tree walk; for tests/diagnostics.
+         * Classgen tracks allocated slots via CompileStack instead.
          */
         public static Set<String> allPatternNames(final Expression expression) {
             if (expression == null) return Collections.emptySet();
@@ -1245,17 +1205,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         /**
          * Recursive descent over the boolean algebra of the condition.
-         * <p>
-         * Only the operators that can propagate definite-assignment are
-         * followed ({@code instanceof}, {@code !instanceof}, {@code !},
-         * {@code &&}, {@code ||}).  All other shapes return {@link #EMPTY}
-         * conservatively.  This keeps the traversal proportional to the
-         * boolean structure, not to the total AST size.
+         * Only operators that propagate definite-assignment are followed
+         * ({@code instanceof}, {@code !instanceof}, {@code !}, {@code &&},
+         * {@code ||}). Other shapes return {@link #EMPTY} conservatively.
          */
         private static InstanceofFlowBindings analyse(final Expression expression) {
             Expression expr = expression;
-            // Unwrap BooleanExpression wrappers; handle NotExpression explicitly
-            // so nested negations compose correctly.
             while (expr instanceof BooleanExpression && !(expr instanceof NotExpression)) {
                 expr = ((BooleanExpression) expr).getExpression();
             }
@@ -1309,6 +1264,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             for (VariableExpression ve : a) if (seen.add(ve.getName())) result.add(ve);
             for (VariableExpression ve : b) if (seen.add(ve.getName())) result.add(ve);
             return List.copyOf(result);
+        }
+
+        private static Set<String> namesOf(final List<VariableExpression> vars) {
+            if (vars.isEmpty()) return Collections.emptySet();
+            if (vars.size() == 1) return Set.of(vars.get(0).getName());
+            Set<String> result = new LinkedHashSet<>(vars.size());
+            for (VariableExpression ve : vars) result.add(ve.getName());
+            return Collections.unmodifiableSet(result);
         }
 
         private static boolean isTypePattern(final Expression right) {
