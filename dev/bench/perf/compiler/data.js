@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786172702504,
+  "lastUpdate": 1786258892497,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -4348,6 +4348,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 475.41999999999996,
             "range": "±24.63",
+            "unit": "ms",
+            "extra": "5.0.8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]",
+            "email": "49699333+dependabot[bot]@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "a251ce910600c85af0e64e444ee996492929a65a",
+          "message": "Bump gradle/actions/wrapper-validation from 6.2.0 to 6.3.0\n\nBumps [gradle/actions/wrapper-validation](https://github.com/gradle/actions) from 6.2.0 to 6.3.0.\n- [Release notes](https://github.com/gradle/actions/releases)\n- [Commits](https://github.com/gradle/actions/compare/3f131e8634966bd73d06cc69884922b02e6faf92...9c971963bec38e04b3d30dcc455b5382be2fdbfb)\n\n---\nupdated-dependencies:\n- dependency-name: gradle/actions/wrapper-validation\n  dependency-version: 6.3.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>",
+          "timestamp": "2026-08-09T01:24:41Z",
+          "url": "https://github.com/apache/groovy/commit/a251ce910600c85af0e64e444ee996492929a65a"
+        },
+        "date": 1786258888645,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 410.1766666666666,
+            "range": "±20.48",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 489.31666666666666,
+            "range": "±171.41",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 438.53,
+            "range": "±111.77",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 367.39333333333326,
+            "range": "±18.64",
             "unit": "ms",
             "extra": "5.0.8"
           }
