@@ -227,6 +227,28 @@ above. Each bites contributors quickly if missed:
   transforms that need resolved types belong in
   `INSTRUCTION_SELECTION` or later. See the
   [Compilation pipeline](#compilation-pipeline) phase table.
+- **When a transform relocates authored code, leave it in the
+  AST.** A closure supplied as an annotation member is code the
+  user wrote. Transforms routinely move it elsewhere —
+  `@TupleConstructor(pre=...)` inlines it into the constructor it
+  generates, `@ConditionalInterrupt` copies it into a synthetic
+  method — and several then blank the annotation member so the
+  type checker does not try to check it. That is fine, provided
+  the code lands somewhere in the AST with its source position
+  intact. Compile-time consumers — IDE tooling, static analysis,
+  other transforms, compilation customizers — tell authored code
+  from generated code by source position, since generated nodes
+  carry none. Don't park it somewhere only your own transform can
+  reach, such as node metadata.
+- **Give a transform an off-switch when it can't.** A transform
+  which executes user code during compilation, or takes it out of
+  the AST entirely, should offer a documented system property to
+  turn it off, so a build compiling source it does not control can
+  decline the behaviour. `@Grab` has `groovy.grape.enable` and
+  `@ASTTest` has `groovy.asttest.enable`; both default to `true`.
+  `@ASTTest` is the one first-party transform needing this: it
+  rebuilds its closure from the raw source text and compiles it in
+  a separate shell, so that code never appears in the AST at all.
 
 ## Operator families
 
