@@ -75,8 +75,11 @@ attacker-supplied Groovy for analysis, linting, or type-checking — but
 deliberately never runs the output — is therefore **not** a safety
 boundary; it has already granted code execution. Treat "compile-only"
 as equivalent to "run": keep `@Grab` off for such input
-(`-Dgroovy.grape.enable=false`), and note that `SecureASTCustomizer` is
-a best-effort grammar filter, not a sandbox, so it does not change this.
+(`-Dgroovy.grape.enable=false`) and, from Groovy 5.1.0 and 6.0.0,
+`@ASTTest` too (`-Dgroovy.asttest.enable=false`), which makes that
+annotation a no-op instead of evaluating its closure. Note that
+`SecureASTCustomizer` is a best-effort grammar filter, not a sandbox,
+so it does not change any of this.
 See [`THREAT_MODEL.md`](../THREAT_MODEL.md) §3.
 
 ## Reporting a Vulnerability
