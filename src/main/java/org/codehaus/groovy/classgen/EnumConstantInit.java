@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.objectweb.asm.MethodVisitor;
 
@@ -45,8 +46,9 @@ import static org.objectweb.asm.Opcodes.NEW;
  * to be exactly the name and the ordinal, the constructor can be selected there instead.
  * <p>
  * Only the bytecode generator sees the direct call: every other visitor is given the
- * {@code $INIT} call, which is also emitted if the expected constructor turns out not to
- * be present once all transforms have run.
+ * {@code $INIT} call and every {@link ExpressionTransformer} rewrites it in place, so the
+ * call that is emitted if the expected constructor turns out not to be present once all
+ * transforms have run is the one that would have been emitted without this expression.
  */
 final class EnumConstantInit extends BytecodeExpression {
 
@@ -77,6 +79,14 @@ final class EnumConstantInit extends BytecodeExpression {
         } else {
             initCall.visit(visitor);
         }
+    }
+
+    @Override
+    public Expression transformExpression(final ExpressionTransformer transformer) {
+        Expression result = new EnumConstantInit(enumClass, name, ordinal, transformer.transform(initCall));
+        result.setSourcePosition(this);
+        result.copyNodeMetaData(this);
+        return result;
     }
 
     @Override
