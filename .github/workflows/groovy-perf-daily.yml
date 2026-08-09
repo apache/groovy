@@ -50,7 +50,7 @@ jobs:
           key: gradle-deps-${{ runner.os }}-perf-${{ github.base_ref || github.ref_name }}-${{ hashFiles('versions.properties', 'gradle/wrapper/gradle-wrapper.properties', 'settings.gradle', 'build-logic/build.gradle') }}
           restore-keys: |
             gradle-deps-${{ runner.os }}-perf-${{ github.base_ref || github.ref_name }}-
-      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         # The action's own caching is disabled: dependency jars and wrapper
         # dists are cached by the explicit branch-keyed step above instead.
         with:
