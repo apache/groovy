@@ -206,6 +206,34 @@ planned for deprecation/removal in a future Groovy version. Formal
 `@Deprecated` may be restored before 6 GA once beta feedback confirms
 indy remains acceptable for those use cases.
 
+### Groovy 6 — `instanceof` pattern variable flow scoping (GROOVY-12242)
+
+Groovy 6 aligns JEP 394 / JLS §6.3-style *pattern variable* scoping for
+`e instanceof T t` (and `!instanceof`) with Java for the common shapes:
+`if`/`else` (including abrupt-completion survivors), short-circuit
+`&&` / `||`, ternary/Elvis arms, and true-path bindings in `while` bodies.
+
+**Who is affected (silent behaviour change in dynamic Groovy).** Code that
+previously treated a pattern variable as a local outside its JLS live range
+— for example in an `else` branch of `if (o instanceof String s)`, after a
+fall-through `if`, or on the RHS of `o instanceof String s || s.isEmpty()` —
+now resolves that name as a dynamic property. At runtime that yields
+`MissingPropertyException` (or a type-checker error under `@TypeChecked` /
+`@CompileStatic`), with **no** additional compile-time warning in dynamic
+mode. That is the intended Java-aligned semantics; Groovy 6 is the major
+version for the change.
+
+**What is *not* claimed.** `while` / `do`-`while` deliberately get only
+*partial* flow scoping: true-path bindings are available in a `while` body
+and short-circuit rules apply in conditions, but Groovy does **not**
+introduce false-path bindings after a loop when the body cannot complete
+normally (JLS §6.3.2.3). Pattern names never leak past the loop. Full
+after-loop introduction is a possible future enhancement, not a 6.0 gap to
+back-port silently.
+
+Release notes for the 6.0 beta line should call this out (JIRA
+`breaking` label on GROOVY-12242).
+
 ### Groovy 6 — `CompilerConfiguration` copy constructor copies customizers (GROOVY-9585)
 
 `CompilerConfiguration(CompilerConfiguration)` now copies the source

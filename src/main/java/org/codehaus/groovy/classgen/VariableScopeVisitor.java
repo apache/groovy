@@ -608,7 +608,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * {@inheritDoc}
+     * Visits a {@code do}/{@code while} loop (GROOVY-12242).
+     * <p>
+     * The body runs before the condition, so pattern variables from the
+     * condition are <em>not</em> in scope in the body (same as Java). The
+     * condition is visited in a nested scope so short-circuit RHS works and
+     * pattern names do not leak after the loop. Like {@link #visitWhileLoop},
+     * there is no after-loop introduction of {@code whenFalse} bindings.
      */
     @Override
     public void visitDoWhileLoop(final DoWhileStatement statement) {
@@ -726,14 +732,37 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Visits a {@code while} loop. Pattern variables introduced by the condition
-     * are in scope for the condition's short-circuit RHS and for the loop body
-     * (GROOVY-12242). They do not leak past the loop.
+     * Visits a {@code while} loop with <em>partial</em> JEP&nbsp;394 flow scoping
+     * for {@code instanceof} pattern variables (GROOVY-12242).
+     * <p>
+     * <strong>What is supported (aligned with the if-then rule for the body):</strong>
+     * <ul>
+     *   <li>Short-circuit visibility inside the condition ({@code &&} / {@code ||}).</li>
+     *   <li>{@code e.whenTrue()} pattern variables are in scope in the loop body.</li>
+     * </ul>
+     * <p>
+     * <strong>Intentional divergence from JLS §6.3.2.3 (while):</strong>
+     * Groovy does <em>not</em> introduce {@code e.whenFalse()} after the loop when
+     * the body cannot complete normally. Full after-loop introduction would need
+     * definite abrupt-completion analysis of every exit path (including
+     * {@code break}/{@code continue} of nested loops) and is left out for 6.0 —
+     * pattern variables never leak past the loop. Documented as a deliberate
+     * partial implementation, not an oversight.
      */
     @Override
     public void visitWhileLoop(final WhileStatement statement) {
+        InstanceofFlowBindings bindings = InstanceofFlowBindings.of(statement.getBooleanExpression());
+
+        // Condition: short-circuit RHS only; discard pattern decls after the visit.
         pushState();
-        super.visitWhileLoop(statement);
+        visitStatement(statement);
+        statement.getBooleanExpression().visit(this);
+        popState();
+
+        // Body: § if-then analogue — only e.whenTrue() (no after-loop whenFalse).
+        pushState();
+        declarePatternVariables(bindings.whenTrue());
+        statement.getLoopBlock().visit(this);
         popState();
     }
 
