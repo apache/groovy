@@ -115,6 +115,14 @@ final class IntersectionCastParserTest {
         assertTrue(!ast.context.errorCollector.hasErrors())
     }
 
+    @Test
+    void 'type pattern accepted for !instanceof'() {
+        ModuleNode ast = buildAST('def b = x !instanceof String s')
+        assertNotNull(ast)
+        assertTrue(!ast.context.errorCollector.hasErrors(),
+                "Parse should accept !instanceof type pattern; got: ${ast.context.errorCollector.errors}")
+    }
+
     //--------------------------------------------------------------------------
 
     private static ClassNode singleCastTargetType(String src) {

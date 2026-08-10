@@ -798,25 +798,42 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
      *   <li>{@code a && b} — true-path bindings of {@code a} are in scope in {@code b}</li>
      *   <li>{@code a || b} — true-path bindings of {@code a} are <em>not</em> in scope in {@code b};
      *       false-path bindings of {@code a} are</li>
+     *   <li>{@code e !instanceof T t} / {@code !(e instanceof T t)} — pattern declare is
+     *       isolated on the left of short-circuit ops; only flow-live sets are re-introduced</li>
      * </ul>
      */
     @Override
     public void visitBinaryExpression(final BinaryExpression expression) {
         int op = expression.getOperation().getType();
         if (op == Types.LOGICAL_AND) {
-            // Left first; its true-path pattern vars stay in the current scope for the right.
+            // Symmetric to ||: isolate left's declares, then expose only whenTrue on the right.
+            // Fixes `e !instanceof T t && t.m()` and `!(e instanceof T t) && t.m()` (whenTrue={}).
+            InstanceofFlowBindings leftBindings = InstanceofFlowBindings.of(expression.getLeftExpression());
+            pushState();
             expression.getLeftExpression().visit(this);
+            popState();
+            pushState();
+            declarePatternVariables(leftBindings.whenTrue());
             expression.getRightExpression().visit(this);
+            popState();
         } else if (op == Types.LOGICAL_OR) {
             // Left's true-path bindings must not leak into the right (Java rejects
             // `o instanceof String s || s.isEmpty()`). False-path bindings of the
-            // left are in scope on the right (`!(o instanceof String s) || s.isEmpty()`).
+            // left are in scope on the right (`o !instanceof String s || s.isEmpty()`).
             InstanceofFlowBindings leftBindings = InstanceofFlowBindings.of(expression.getLeftExpression());
             pushState();
             expression.getLeftExpression().visit(this);
             popState();
             pushState();
             declarePatternVariables(leftBindings.whenFalse());
+            expression.getRightExpression().visit(this);
+            popState();
+        } else if (op == Types.COMPARE_NOT_INSTANCEOF) {
+            // Defence in depth: pattern declare on the RHS must not stick to the
+            // enclosing scope (whenTrue of !instanceof is empty). Live paths
+            // re-introduce via declarePatternVariables / short-circuit handlers.
+            expression.getLeftExpression().visit(this);
+            pushState();
             expression.getRightExpression().visit(this);
             popState();
         } else {
@@ -1064,9 +1081,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
      * metadata ({@link #put}/{@link #get}). Later phases must use
      * {@link #get} only — never re-call {@link #of} on the condition.
      * <p>
-     * Covered shapes: {@code e instanceof T t}, {@code e !instanceof T t},
-     * {@code !expr}, {@code a && b}, {@code a || b}. All other shapes yield
-     * {@link #EMPTY} (conservative: no definite bindings).
+     * Covered shapes: {@code e instanceof T t}, {@code e !instanceof T t}
+     * (native form and {@code !(e instanceof T t)}), {@code !expr},
+     * {@code a && b}, {@code a || b}. All other shapes yield {@link #EMPTY}
+     * (conservative: no definite bindings).
      *
      * @see VariableScopeVisitor
      * @since 6.0.0

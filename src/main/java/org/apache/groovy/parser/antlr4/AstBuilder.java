@@ -3232,22 +3232,30 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     ctx);
 
           case NOT_INSTANCEOF: {
-            CoercionTypeContext coercionCtx = ctx.coercionType();
-            if (coercionCtx.castParExpression() != null
-                    && coercionCtx.castParExpression().intersectionType().type().size() > 1) {
+            // GROOVY-12242: !instanceof Type name (JEP 394 pattern) via matchingType;
+            // parenthesised (T) / rejected intersection (A & B) via castParExpression.
+            NotInstanceofTypeContext nit = ctx.notInstanceofType();
+            if (nit.matchingType() != null) {
+                nit.matchingType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+                return configureAST(
+                        new BinaryExpression(
+                                (Expression) this.visit(ctx.left),
+                                this.createGroovyToken(ctx.op),
+                                this.visitMatchingType(nit.matchingType())),
+                        ctx);
+            }
+            CastParExpressionContext castCtx = nit.castParExpression();
+            if (castCtx.intersectionType().type().size() > 1) {
                 throw this.createParsingFailedException("Intersection types are not supported as the right-hand side of !instanceof", ctx);
             }
-            ClassNode notInstType = this.visitCoercionType(coercionCtx);
-            // GROOVY-11998: keep IS_INSIDE_INSTANCEOF_EXPR on the parser context for the resolver
-            (coercionCtx.type() != null
-                    ? coercionCtx.type()
-                    : coercionCtx.castParExpression().intersectionType().type(0)
-            ).putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            // GROOVY-11998: mark the type context for the resolver (parameterized RHS)
+            castCtx.intersectionType().type(0).putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            ClassNode notInstType = this.visitCastParExpression(castCtx);
             return configureAST(
                     new BinaryExpression(
                             (Expression) this.visit(ctx.left),
                             this.createGroovyToken(ctx.op),
-                            configureAST(new ClassExpression(notInstType), coercionCtx)),
+                            configureAST(new ClassExpression(notInstType), castCtx)),
                     ctx);
           }
 

@@ -209,9 +209,10 @@ indy remains acceptable for those use cases.
 ### Groovy 6 — `instanceof` pattern variable flow scoping (GROOVY-12242)
 
 Groovy 6 aligns JEP 394 / JLS §6.3-style *pattern variable* scoping for
-`e instanceof T t` (and `!instanceof`) with Java for the common shapes:
-`if`/`else` (including abrupt-completion survivors), short-circuit
-`&&` / `||`, ternary/Elvis arms, and true-path bindings in `while` bodies.
+`e instanceof T t` and `e !instanceof T t` (equivalent to
+`!(e instanceof T t)`) with Java for the common shapes: `if`/`else`
+(including abrupt-completion survivors), short-circuit `&&` / `||`,
+ternary/Elvis arms, and true-path bindings in `while` bodies.
 
 **Who is affected (silent behaviour change in dynamic Groovy).** Code that
 previously treated a pattern variable as a local outside its JLS live range

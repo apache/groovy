@@ -352,8 +352,14 @@ referenceType
     :   qualifiedClassName typeArguments?
     ;
 
-matchingType // see: instanceof
+matchingType // see: instanceof / !instanceof type patterns (JEP 394)
     :   standardType identifier?
+    ;
+
+// RHS of !instanceof: Type / Type name (pattern), or parenthesised (T) / rejected (A & B)
+notInstanceofType
+    :   matchingType
+    |   castParExpression
     ;
 
 standardType // see: returnType
@@ -846,7 +852,8 @@ expression
 
     // boolean relational expressions (level 7)
     |   left=expression nls op=INSTANCEOF nls matchingType                                  #relationalExprAlt
-    |   left=expression nls op=(AS | NOT_INSTANCEOF) nls coercionType                       #relationalExprAlt
+    |   left=expression nls op=NOT_INSTANCEOF nls notInstanceofType                         #relationalExprAlt
+    |   left=expression nls op=AS nls coercionType                                          #relationalExprAlt
     |   left=expression nls op=(LE | GE | GT | LT | IN | NOT_IN) nls right=expression       #relationalExprAlt
 
     // equality/inequality (==/!=) (level 8)

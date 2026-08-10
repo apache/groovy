@@ -47,6 +47,30 @@ final class InstanceofFlowBindingsTest {
     }
 
     @Test
+    void testBindingsOfNativeNotInstanceofPattern() {
+        def b = InstanceofFlowBindings.of(parseCondition('o !instanceof String s'))
+        assert b.whenTrue().isEmpty()
+        assert b.whenFalse()*.name == ['s']
+        assert b.allNames() as List == ['s']
+        // equivalent to !(o instanceof String s)
+        def negated = InstanceofFlowBindings.of(parseCondition('!(o instanceof String s)'))
+        assert b.whenTrue()*.name == negated.whenTrue()*.name
+        assert b.whenFalse()*.name == negated.whenFalse()*.name
+    }
+
+    @Test
+    void testContainsPatternNativeNotInstanceof() {
+        assert InstanceofFlowBindings.containsPattern(parseCondition('o !instanceof String s'))
+        assert !InstanceofFlowBindings.containsPattern(parseCondition('o !instanceof String'))
+    }
+
+    @Test
+    void testAllPatternNamesNativeNotInstanceof() {
+        def expr = parseCondition('o !instanceof String s')
+        assert InstanceofFlowBindings.allPatternNames(expr) == ['s'] as Set
+    }
+
+    @Test
     void testBindingsOfAnd() {
         def b = InstanceofFlowBindings.of(parseCondition('o instanceof String s && s.length() > 0'))
         assert b.whenTrue()*.name == ['s']
