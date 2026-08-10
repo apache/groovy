@@ -96,6 +96,95 @@ final class InstanceofTest {
         assert (n instanceof Integer i && i.intValue() == 12345)
     }
 
+    // GROOVY-12242: native !instanceof type pattern (JEP 394)
+    @Test
+    void testNotInstanceofPatternVariable() {
+        def n = (Number) 12345
+        if (n !instanceof String s) {
+            assert n.intValue() == 12345
+        } else {
+            assert false : 'expected non-String'
+        }
+        if (n !instanceof Integer i) {
+            assert false : 'expected Integer (condition false)'
+        } else {
+            assert i.intValue() == 12345
+        }
+    }
+
+    // GROOVY-12242: !instanceof pattern + short-circuit / early return survivors
+    @Test
+    void testNotInstanceofPatternScope() {
+        def f = { Object o ->
+            if (o !instanceof String s) {
+                return 'not-string'
+            } else {
+                return s.toUpperCase()
+            }
+        }
+        assert f('hi') == 'HI'
+        assert f(1) == 'not-string'
+
+        def g = { Object o ->
+            if (o !instanceof String s) return 'early'
+            return s.toUpperCase()
+        }
+        assert g('ab') == 'AB'
+        assert g(9) == 'early'
+    }
+
+    // GROOVY-12242: !instanceof pattern must not leak into then-block
+    @Test
+    void testNotInstanceofPatternThenBlockDynamic() {
+        def err = shouldFail MissingPropertyException, '''
+            def m(Object o) {
+                if (o !instanceof String s) {
+                    return s
+                }
+                return 'ok'
+            }
+            m(1)
+        '''
+        assert err.message =~ /No such property: s/
+    }
+
+    // GROOVY-12242: ternary with !instanceof pattern
+    @Test
+    void testNotInstanceofPatternTernary() {
+        def f = { Object o ->
+            (o !instanceof String s) ? 'not' : s.toUpperCase()
+        }
+        assert f(1) == 'not'
+        assert f('xy') == 'XY'
+    }
+
+    // GROOVY-12242: && / || with !instanceof pattern
+    @Test
+    void testNotInstanceofPatternBooleanOps() {
+        // true path of !instanceof is empty — RHS of && must not see s as bound from left
+        def err = shouldFail MissingPropertyException, '''
+            def m(Object o) {
+                return (o !instanceof String s && s.isEmpty())
+            }
+            m(1)
+        '''
+        assert err.message =~ /No such property: s/
+
+        // Same for parenthesised negation form (&& isolation is flow-based)
+        err = shouldFail MissingPropertyException, '''
+            def m(Object o) {
+                return (!(o instanceof String s) && s.isEmpty())
+            }
+            m(1)
+        '''
+        assert err.message =~ /No such property: s/
+
+        // false path of !instanceof binds s — RHS of || can use s when left is false
+        assert (({ Object o -> (o !instanceof String s || s.isEmpty()) }('')) == true)
+        assert (({ Object o -> (o !instanceof String s || s.length() > 0) }('ab')) == true)
+        assert (({ Object o -> (o !instanceof String s || s.isEmpty()) }(1)) == true)
+    }
+
     // GROOVY-11229
     @Test
     void testVariable2() {

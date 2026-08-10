@@ -485,9 +485,9 @@ It is possible to use labels in the `break` instruction as a target for jump, as
 include::../test/semantics/LabelsTest.groovy[tags=break_label,indent=0]
 ----
 
-=== `instanceof` pattern variables (JEP 394)
+=== `instanceof` / `!instanceof` pattern variables (JEP 394)
 
-Since Groovy 6, a type pattern on `instanceof` / `!instanceof` introduces a
+Since Groovy 6, a type pattern on `instanceof` or `!instanceof` introduces a
 *pattern variable* whose scope follows Java's flow rules (JLS §6.3 / JEP 394)
 for the common shapes used in application code:
 
@@ -500,13 +500,20 @@ if (o instanceof String s) {
     // s is *not* in scope here (dynamic: MissingPropertyException; static: error)
 }
 // s is not in scope after a fall-through if either
+
+if (o !instanceof Integer i) {
+    // i is *not* in scope here (condition true means o is not an Integer)
+} else {
+    assert i instanceof Integer      // i is bound when !instanceof is false
+}
 ----
 
-Short-circuit boolean operators and ternary arms respect the same “definitely
-bound on this path” rules (`&&` exposes true-path bindings on the right-hand
-side; `||` does not). Under `@TypeChecked` / `@CompileStatic` the type checker
-rejects out-of-scope uses at compile time; in dynamic Groovy the same uses
-become dynamic property lookups and typically throw
+The form `e !instanceof T t` is equivalent to `!(e instanceof T t)` for both
+binding and scoping. Short-circuit boolean operators and ternary arms respect
+the same “definitely bound on this path” rules (`&&` exposes true-path bindings
+on the right-hand side; `||` does not). Under `@TypeChecked` / `@CompileStatic`
+the type checker rejects out-of-scope uses at compile time; in dynamic Groovy
+the same uses become dynamic property lookups and typically throw
 `groovy.lang.MissingPropertyException` at runtime.
 
 [NOTE]

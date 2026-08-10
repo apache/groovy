@@ -1192,6 +1192,19 @@ public class BinaryExpressionHelper {
         }
     }
 
+    /**
+     * Emits bytecode for {@code e !instanceof T} and for the JEP&nbsp;394
+     * type pattern form {@code e !instanceof T t}.
+     * <p>
+     * Implemented as {@code !(e instanceof T [t])} so pattern store logic in
+     * {@link #evaluateInstanceof} is shared: the pattern local is assigned when
+     * the value <em>is</em> an instance of {@code T} (i.e. when the overall
+     * {@code !instanceof} result is false). Path visibility follows
+     * {@code InstanceofFlowBindings} for {@code COMPARE_NOT_INSTANCEOF}
+     * (whenTrue/whenFalse swapped relative to plain {@code instanceof}).
+     *
+     * @param expression a {@code !instanceof} binary expression
+     */
     private void evaluateNotInstanceof(final BinaryExpression expression) {
         unaryExpressionHelper.writeNotExpression(
                 notX(

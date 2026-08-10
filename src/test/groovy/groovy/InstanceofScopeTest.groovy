@@ -52,6 +52,7 @@ import org.junit.jupiter.api.Test
  *  1  | o instanceof String s                 | local    | dynamic    | dynamic (*)
  *  1b | o instanceof String s, else abrupt    | local    | (abrupt)   | local
  *  2  | !(o instanceof String s)              | dynamic  | local      | —
+ *  2n | o !instanceof String s  (native)      | dynamic  | local      | dynamic  (≡ 2)
  *  3  | !(o instanceof String s), if abrupt   | (abrupt) | local      | local
  *  4  | o instanceof String s &amp;&amp; cond         | local    | dynamic    | dynamic
  *  5  | o instanceof String s || cond         | dynamic  | dynamic    | dynamic
@@ -63,6 +64,7 @@ import org.junit.jupiter.api.Test
  * (*) s NOT visible after when both branches fall through.
  * (**) missing case: abrupt else alone is not enough; if-block must
  * also be abrupt for §6.3.2.2-200-C-B to apply.
+ * (2n) native {@code !instanceof} is equivalent to {@code !(instanceof)}.
  */
 final class InstanceofScopeTest {
 
@@ -100,6 +102,101 @@ final class InstanceofScopeTest {
     /** True if the accessed variable is a local (not a DynamicVariable). */
     private static boolean isLocal(Variable v) {
         !(v instanceof DynamicVariable)
+    }
+
+    // -------------------------------------------------------------------------
+    // Native !instanceof Type name (equivalent to !(instanceof), JEP 394)
+    // -------------------------------------------------------------------------
+
+    /**
+     * {@code o !instanceof String s} ≡ {@code !(o instanceof String s)}:
+     * whenTrue={}, whenFalse={s} → then dynamic, else local, after dynamic.
+     */
+    @Test
+    void testNativeNotInstanceof_ifBlockDynamic_elseLocal_afterDynamic() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    if (o !instanceof String s) {
+                        s                 // then → dynamic
+                    } else {
+                        s.length()        // else → local
+                    }
+                    s                     // after → dynamic
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        assert accesses.size() == 3
+        assert !isLocal(accesses[0]) : "then of !instanceof: s must be dynamic"
+        assert isLocal(accesses[1])  : "else of !instanceof: s must be local"
+        assert !isLocal(accesses[2]) : "after !instanceof if: s must be dynamic"
+    }
+
+    /**
+     * Early return in then of {@code !instanceof}: whenFalse={s} survives after
+     * (same as {@code !(instanceof)} with abrupt then).
+     */
+    @Test
+    void testNativeNotInstanceof_abruptThen_afterLocal() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    if (o !instanceof String s) return
+                    s.length()            // after → local (survivor)
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        assert accesses.size() == 1
+        assert isLocal(accesses[0]) : "after abrupt then of !instanceof: s must be local"
+    }
+
+    /**
+     * {@code &&} RHS of native {@code !instanceof} and of {@code !(instanceof)}
+     * must both be dynamic (whenTrue empty) — short-circuit isolation is symmetric.
+     */
+    @Test
+    void testNotInstanceof_andRhsDynamic_nativeAndNegatedForms() {
+        for (String cond : [
+                'o !instanceof String s && s.isEmpty()',
+                '!(o instanceof String s) && s.isEmpty()',
+        ]) {
+            def src = """
+                class C {
+                    def m(Object o) {
+                        ${cond}
+                    }
+                }
+            """
+            def accesses = collectAccesses(src)
+            assert accesses.size() == 1 : "expected one use of s in: $cond"
+            assert !isLocal(accesses[0]) : "&& RHS must be dynamic for: $cond"
+        }
+    }
+
+    /**
+     * Redeclare in then of {@code !instanceof} is allowed (whenTrue empty).
+     */
+    @Test
+    void testNativeNotInstanceof_redeclareInThen_isLocal() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    if (o !instanceof String s) {
+                        def s = 'x'
+                        s
+                    } else {
+                        s.length()
+                    }
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        assert accesses.size() == 2
+        assert isLocal(accesses[0]) : "then redeclare: local"
+        assert isLocal(accesses[1]) : "else pattern: local"
+        assert !accesses[0].is(accesses[1])
     }
 
     // -------------------------------------------------------------------------
