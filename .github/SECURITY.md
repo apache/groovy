@@ -69,15 +69,20 @@ enter the private reporting flow below.
 **Compiling untrusted Groovy is already code execution — not only
 running it.** Groovy runs code *during* compilation: global AST
 transforms on the compile classpath, static initializers, `@Grab`
-dependency resolution, and the `@ASTTest` annotation (whose closure is
-evaluated at compile time in a fresh shell). A pipeline that *compiles*
+dependency resolution, the `@ASTTest` annotation (whose closure is
+evaluated at compile time in a fresh shell), and the evaluation of some
+annotation members, among other mechanisms. A pipeline that *compiles*
 attacker-supplied Groovy for analysis, linting, or type-checking — but
 deliberately never runs the output — is therefore **not** a safety
 boundary; it has already granted code execution. Treat "compile-only"
 as equivalent to "run": keep `@Grab` off for such input
 (`-Dgroovy.grape.enable=false`) and, from Groovy 5.1.0 and 6.0.0,
 `@ASTTest` too (`-Dgroovy.asttest.enable=false`), which makes that
-annotation a no-op instead of evaluating its closure. Note that
+annotation a no-op instead of evaluating its closure.
+
+Those two switches turn off the two mechanisms which have one; they do
+not make compilation safe, and the list above is illustrative rather
+than a set of doors that can all be closed. Note also that
 `SecureASTCustomizer` is a best-effort grammar filter, not a sandbox,
 so it does not change any of this.
 See [`THREAT_MODEL.md`](../THREAT_MODEL.md) §3.

@@ -128,9 +128,13 @@ obligation*, not the act of looking — so when in doubt, still report it.
   construction. This covers *compiling, parsing, or statically analyzing*
   such text, not only running it: Groovy executes compile-time
   metaprogramming — global AST transforms on the compile classpath,
-  `@ASTTest`, and static initializers — during `groovyc`, JSR-223
-  compilation, and even IDE indexing, so merely compiling attacker-
-  controlled Groovy is code execution, exactly as evaluating it is.
+  `@ASTTest`, static initializers, and the evaluation of some annotation
+  members, among others — during `groovyc`, JSR-223 compilation, and even
+  IDE indexing, so merely compiling attacker-controlled Groovy is code
+  execution, exactly as evaluating it is. That list is illustrative, not
+  exhaustive: compile-time execution is a property of the language, so
+  new mechanisms appear as the compiler and its transforms evolve, and
+  enumerating them is not something this model attempts.
   *(documented)*
 - **Groovlets and template servlets** (`groovy-servlet`: `GroovyServlet`,
   `TemplateServlet`). These run `.groovy` scripts / templates that the
@@ -178,7 +182,15 @@ obligation*, not the act of looking — so when in doubt, still report it.
 - **Trusted-input surfaces.** The classpath, global AST transforms,
   extension modules, `CompilerConfiguration`, system properties
   (`groovy.*`), and `~/.groovy` are developer/operator-controlled. An
-  attacker who can alter them already has code execution.
+  attacker who can alter them already has code execution. This includes
+  AST transformations supplied by third-party libraries, local ones
+  reached through an annotation as well as global ones: such a transform
+  may evaluate an annotation member during compilation, or relocate
+  authored code somewhere no compile-time inspection can reach. The
+  conventions for transform authors in [`ARCHITECTURE.md`](ARCHITECTURE.md)
+  are guidance, not something the compiler enforces, so a script which
+  merely *uses* a third-party annotation is outside what
+  `SecureASTCustomizer` can restrict.
 - **Vulnerabilities in dependencies or the JDK** (JAXP providers, JDBC
   drivers, Ivy/Maven resolvers, logging backends). Report those upstream;
   Groovy tracks and bumps where it can. Note that a CVE in a dependency
