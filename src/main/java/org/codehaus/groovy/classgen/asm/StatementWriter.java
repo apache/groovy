@@ -478,14 +478,20 @@ public class StatementWriter {
     /**
      * Generates bytecode for an if/else statement.
      * <p>
-     * GROOVY-12242 / JEP 394: {@code evaluateInstanceof} allocates pattern slots
-     * during the condition (needed for short-circuit {@code &&} RHS). After the
-     * condition, CompileStack hides names that are not live on the current path
-     * using {@link CompileStack#hidePatternVariablesExcept} inside
-     * {@link CompileStack#pushState}/{@link CompileStack#pop} frames. Path-live
+     * GROOVY-7463: a labeled {@code if} registers a breakable frame around the
+     * <em>then</em> arm only (same region as before GROOVY-12242). The else arm
+     * runs after that frame is popped so labeled-break scoping for the then
+     * arm is unchanged. Named break labels remain registered for the method
+     * (CompileStack does not un-register them on pop).
+     * <p>
+     * GROOVY-12242 / JEP 394: pattern slots are allocated on the outer frame
+     * during the condition (needed for short-circuit {@code &&} RHS). Each arm
+     * then uses {@link CompileStack#pushState}/{@link CompileStack#hidePatternVariablesExcept}/
+     * {@link CompileStack#pop} so only path-live names are visible. Path-live
      * names come from {@link InstanceofFlowBindings} metadata attached by
      * {@link org.codehaus.groovy.classgen.VariableScopeVisitor} — classgen
-     * reads names only and does not re-run the flow analysis.
+     * does not re-run the flow analysis. After both arms, non-survivors are
+     * permanently hidden on the outer frame (JLS §6.3.2.2-200-C).
      *
      * @param statement the if statement to compile
      */
@@ -497,13 +503,12 @@ public class StatementWriter {
         // Name view of the visitor's analysis; never re-analyse the condition.
         InstanceofFlowBindings bindings = InstanceofFlowBindings.get(statement);
 
-        // Define pattern slots on the *outer* frame so that after the breakable
-        // push/pop the survivors remain ordinary stackVariables entries (no
-        // put-back / show API). GROOVY-7463 breakable still wraps the arms only.
+        // Pattern slots on the outer frame so survivors need no put-back after pop.
         Map<String, BytecodeVariable> beforePatterns = compileStack.snapshotPatternVariables();
         statement.getBooleanExpression().visit(controller.getAcg());
         Set<String> introduced = compileStack.patternVariablesIntroducedSince(beforePatterns);
 
+        // GROOVY-7463: breakable wraps then only (historical region).
         Label exitPath = compileStack.pushBreakable(statement.getStatementLabels());
 
         boolean ifFallsThrough = maybeFallsThrough(statement.getIfBlock());
@@ -516,6 +521,7 @@ public class StatementWriter {
         compileStack.hidePatternVariablesExcept(introduced, bindings.whenTrueNames());
         statement.getIfBlock().visit(controller.getAcg());
         compileStack.pop();
+        compileStack.pop(); // ends breakable (before else — same as pre-GROOVY-12242)
 
         MethodVisitor mv = controller.getMethodVisitor();
         if (elseEmpty) {
@@ -525,14 +531,14 @@ public class StatementWriter {
                 mv.visitJumpInsn(GOTO, exitPath);
             }
             mv.visitLabel(elsePath);
-            // Else path: only whenFalse names among those this condition introduced.
+            // Else path (outside breakable): only whenFalse names.
             compileStack.pushState();
             compileStack.hidePatternVariablesExcept(introduced, bindings.whenFalseNames());
             statement.getElseBlock().visit(controller.getAcg());
             compileStack.pop();
         }
 
-        // Survivors per JLS §6.3.2.2-200-C (abrupt-completion rule).
+        // Survivors per JLS §6.3.2.2-200-C on the outer frame.
         Set<String> survivors = new HashSet<>();
         if (!ifFallsThrough) {
             survivors.addAll(bindings.whenFalseNames());
@@ -541,11 +547,6 @@ public class StatementWriter {
             survivors.addAll(bindings.whenTrueNames());
         }
         survivors.retainAll(introduced);
-
-        // Leave the breakable frame: outer map still holds all pattern slots from
-        // the condition (they were defined before pushBreakable). Permanently hide
-        // non-survivors on the outer frame.
-        compileStack.pop(); // ends breakable
         compileStack.hidePatternVariablesExcept(introduced, survivors);
         mv.visitLabel(exitPath);
     }

@@ -80,6 +80,50 @@ final class BreakContinueLabelTest {
         '''
     }
 
+    /**
+     * GROOVY-7463 + GROOVY-12242: breakable frame for a labeled {@code if}
+     * still ends before the else arm (historical region). A break from the
+     * then-arm of a nested labeled if remains supported; a break from the
+     * else-arm to the outer if's label is still resolved via the method-level
+     * named-break map (CompileStack does not un-register names on pop).
+     */
+    @Test
+    void testBreakLabelFromElseOfLabeledIf() {
+        assertScript '''
+            def log = []
+            label:
+            if (false) {
+                log << 'then'
+                assert false
+            } else {
+                log << 'else'
+                break label
+                log << 'after-break'
+            }
+            log << 'after-if'
+            assert log == ['else', 'after-if']
+        '''
+    }
+
+    // GROOVY-12242: labeled if + instanceof pattern in then still breaks correctly
+    @Test
+    void testBreakLabelInIfWithInstanceofPattern() {
+        assertScript '''
+            def log = []
+            Object o = 'x'
+            label:
+            if (o instanceof String s) {
+                log << s
+                break label
+                log << 'dead'
+            } else {
+                log << 'else'
+            }
+            log << 'done'
+            assert log == ['x', 'done']
+        '''
+    }
+
     @Test
     void testBreakLabelInSimpleForLoop() {
         assertScript '''

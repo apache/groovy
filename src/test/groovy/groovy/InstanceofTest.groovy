@@ -432,6 +432,32 @@ final class InstanceofTest {
         assert o == ''
     }
 
+    // GROOVY-12242: negated while condition — s not in body; not after (partial JLS)
+    @Test
+    void testWhileNegated_bodyAndAfterNotVisible() {
+        def err = shouldFail MissingPropertyException, '''
+            def m(Object o) {
+                while (!(o instanceof String s)) {
+                    return s
+                }
+                return 'out'
+            }
+            m(1)
+        '''
+        assert err.message =~ /No such property: s/
+
+        err = shouldFail MissingPropertyException, '''
+            def m(Object o) {
+                while (!(o instanceof String s)) {
+                    return 'in'
+                }
+                return s
+            }
+            m('hi')
+        '''
+        assert err.message =~ /No such property: s/
+    }
+
     // GROOVY-12242: reuse the same pattern variable name in successive statements
     @Test
     void testVariableNameReuse() {

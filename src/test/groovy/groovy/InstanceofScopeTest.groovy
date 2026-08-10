@@ -533,6 +533,121 @@ final class InstanceofScopeTest {
     }
 
     // -------------------------------------------------------------------------
+    // while / do-while (intentional partial flow scoping)
+    // -------------------------------------------------------------------------
+
+    /**
+     * while body sees e.whenTrue only. Positive instanceof → s local in body.
+     */
+    @Test
+    void testWhile_positiveInstanceof_bodyLocal_afterDynamic() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    while (o instanceof String s) {
+                        s.length()        // body → local
+                        break
+                    }
+                    s                     // after → dynamic (no after-loop introduction)
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        assert accesses.size() == 2
+        assert isLocal(accesses[0])  : "while body: s must be local (whenTrue)"
+        assert !isLocal(accesses[1]) : "after while: s must be dynamic (no JLS after-loop intro)"
+    }
+
+    /**
+     * while (!(o instanceof String s)): whenTrue={}, so body must *not* see s
+     * as a local. After the loop still dynamic (partial support).
+     */
+    @Test
+    void testWhile_negatedInstanceof_bodyDynamic_afterDynamic() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    while (!(o instanceof String s)) {
+                        s                 // body → dynamic (whenTrue={})
+                        break
+                    }
+                    s                     // after → dynamic
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        assert accesses.size() == 2
+        assert !isLocal(accesses[0]) : "while body of negated: s must be dynamic"
+        assert !isLocal(accesses[1]) : "after while: s must be dynamic"
+    }
+
+    /**
+     * Even when the while body cannot complete normally, Groovy does not
+     * introduce whenFalse after the loop (documented divergence from JLS).
+     */
+    @Test
+    void testWhile_abruptBody_stillNoAfterLoopIntroduction() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    while (!(o instanceof String s)) {
+                        return 'in'
+                    }
+                    s                     // still dynamic — no after-loop whenFalse
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        assert accesses.size() == 1
+        assert !isLocal(accesses[0]) : "after while with abrupt body: no whenFalse introduction"
+    }
+
+    /**
+     * {@code while (o instanceof String s || cond)}: whenTrue is empty, so the
+     * body must not see s as a local (|| has no whenTrue rule).
+     */
+    @Test
+    void testWhile_orCondition_bodyDynamic() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    while (o instanceof String s || false) {
+                        s                 // body → dynamic
+                        break
+                    }
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        assert accesses.size() == 1
+        assert !isLocal(accesses[0]) : "while body of || condition: s must be dynamic"
+    }
+
+    /**
+     * do-while: body runs before condition — s not in body; condition RHS of &&
+     * may be local. After loop still dynamic.
+     */
+    @Test
+    void testDoWhile_bodyDynamic_conditionRhsLocal_afterDynamic() {
+        def src = '''
+            class C {
+                def m(Object o) {
+                    do {
+                        s                 // body → dynamic
+                    } while (o instanceof String s && s.length() > 0)
+                    s                     // after → dynamic
+                }
+            }
+        '''
+        def accesses = collectAccesses(src)
+        // body s, condition s.length(), after s
+        assert accesses.size() == 3
+        assert !isLocal(accesses[0]) : "do-while body: s must be dynamic"
+        assert isLocal(accesses[1])  : "do-while condition && RHS: s must be local"
+        assert !isLocal(accesses[2]) : "after do-while: s must be dynamic"
+    }
+
+    // -------------------------------------------------------------------------
     // Redeclaration where pattern variable is NOT visible → new local is OK
     // -------------------------------------------------------------------------
 

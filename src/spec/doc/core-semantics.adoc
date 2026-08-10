@@ -485,6 +485,45 @@ It is possible to use labels in the `break` instruction as a target for jump, as
 include::../test/semantics/LabelsTest.groovy[tags=break_label,indent=0]
 ----
 
+=== `instanceof` pattern variables (JEP 394)
+
+Since Groovy 6, a type pattern on `instanceof` / `!instanceof` introduces a
+*pattern variable* whose scope follows Java's flow rules (JLS §6.3 / JEP 394)
+for the common shapes used in application code:
+
+[source,groovy]
+----
+Object o = 'hi'
+if (o instanceof String s) {
+    assert s.toUpperCase() == 'HI'   // s is a local in the then-block
+} else {
+    // s is *not* in scope here (dynamic: MissingPropertyException; static: error)
+}
+// s is not in scope after a fall-through if either
+----
+
+Short-circuit boolean operators and ternary arms respect the same “definitely
+bound on this path” rules (`&&` exposes true-path bindings on the right-hand
+side; `||` does not). Under `@TypeChecked` / `@CompileStatic` the type checker
+rejects out-of-scope uses at compile time; in dynamic Groovy the same uses
+become dynamic property lookups and typically throw
+`groovy.lang.MissingPropertyException` at runtime.
+
+[NOTE]
+====
+*While loops (intentional partial support).* A `while` condition's true-path
+pattern variables are in scope in the loop body, and short-circuit rules apply
+inside the condition. Groovy does *not* introduce false-path bindings *after*
+the loop when the body cannot complete normally (unlike the full JLS while
+rule). Pattern names never leak past the loop. Full after-loop introduction may
+be considered later; it is not part of the 6.0 contract.
+====
+
+This is a **breaking change** from earlier Groovy releases that left pattern
+locals visible more widely in dynamic mode. See
+link:https://issues.apache.org/jira/browse/GROOVY-12242[GROOVY-12242] and
+`COMPATIBILITY.md`.
+
 == Expressions
 
 Expressions are the building blocks of Groovy programs that are used to reference
