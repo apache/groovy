@@ -209,7 +209,8 @@ import java.util.Map;
  *  </ul>
  *  A generated member may still <em>contain</em> authored code, since a transformation can move it
  *  there — {@code @TupleConstructor(pre=...)} relocates the supplied closure body into the generated
- *  constructor — and such code keeps its source position, so it is checked.
+ *  constructor, and {@code @ConditionalInterrupt} relocates its condition into a synthetic method —
+ *  and such code keeps its source position, so it is checked wherever it was moved to.
  *  <p>
  *  Note that a constructor is not a "method definition" as far as
  *  {@link #setMethodDefinitionAllowed(boolean)} is concerned: its body is checked, but declaring one
@@ -239,6 +240,8 @@ import java.util.Map;
  * @since 1.8.0
  */
 public class SecureASTCustomizer extends CompilationCustomizer {
+
+    private static final String STATIC_INITIALIZER = "<clinit>";
 
     private boolean isPackageAllowed = true;
     private boolean isClosuresAllowed = true;
@@ -1208,6 +1211,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                     }
                 }
                 visitConstructorsAndInitializers(clNode, visitor);
+                visitSyntheticMethods(clNode, visitor);
             }
         }
 
@@ -1220,6 +1224,34 @@ public class SecureASTCustomizer extends CompilationCustomizer {
             }
         }
         visitConstructorsAndInitializers(classNode, visitor);
+        visitSyntheticMethods(classNode, visitor);
+    }
+
+    /**
+     * Applies the security checks to code the author wrote which a transformation has relocated into
+     * a synthetic method. Synthetic methods are otherwise skipped, since the compiler generates a
+     * great many of them and their contents are not the author's code.
+     * <p>
+     * A transformation may nonetheless move authored code there:
+     * {@code ConditionalInterruptibleASTTransformation} lifts the closure supplied to
+     * {@code @ConditionalInterrupt} into a synthetic method and calls it at every method start and
+     * every loop. Without this, the restrictions would apply to that closure everywhere except when
+     * written as an annotation member, which is not a distinction the author of the secured source
+     * could predict.
+     * <p>
+     * As elsewhere, only statements carrying a source position are visited, so the generated
+     * contents of a synthetic method are left alone. {@code <clinit>} is handled by
+     * {@link #visitConstructorsAndInitializers(ClassNode, GroovyCodeVisitor)} instead.
+     *
+     * @param clNode the class to inspect
+     * @param visitor the security-checking visitor to apply
+     */
+    protected void visitSyntheticMethods(final ClassNode clNode, final GroovyCodeVisitor visitor) {
+        for (MethodNode method : clNode.getMethods()) {
+            if (method.isSynthetic() && !STATIC_INITIALIZER.equals(method.getName())) {
+                visitAuthoredStatementsOf(method.getCode(), visitor);
+            }
+        }
     }
 
     /**
@@ -1256,7 +1288,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         for (Statement statement : clNode.getObjectInitializerStatements()) {
             if (isFromSource(statement)) statement.visit(visitor);
         }
-        for (MethodNode staticInitializer : clNode.getMethods("<clinit>")) {
+        for (MethodNode staticInitializer : clNode.getMethods(STATIC_INITIALIZER)) {
             // the <clinit> method is always generated, but the statements within it need not be
             visitAuthoredStatementsOf(staticInitializer.getCode(), visitor);
         }

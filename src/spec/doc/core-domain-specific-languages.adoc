@@ -831,8 +831,9 @@ appearing there:
 
 A generated member may still *contain* code you wrote, because a transformation can move it
 there: `@TupleConstructor(pre=...)` and `@MapConstructor(pre=...)` relocate the supplied
-closure body into the constructor they generate. Such code keeps its original source
-position and is checked.
+closure body into the constructor they generate, and `@ConditionalInterrupt` relocates its
+condition into a synthetic method. Such code keeps its original source position and is
+checked wherever it was moved to.
 
 Note that a constructor is not a ``method definition'' as far as `methodDefinitionAllowed`
 is concerned: its body is checked, but declaring one remains permitted.

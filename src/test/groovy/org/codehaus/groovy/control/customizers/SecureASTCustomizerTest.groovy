@@ -873,6 +873,38 @@ final class SecureASTCustomizerTest {
     }
 
     @Test
+    void testDisallowedReceiverMovedIntoSyntheticMethod() {
+        // @ConditionalInterrupt lifts its closure into a synthetic method and calls it at every
+        // method start and every loop; the closure is still code the script author wrote
+        disallowSystemReceiver()
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate '''
+                import groovy.transform.ConditionalInterrupt
+                @ConditionalInterrupt({ System.getProperty('java.version') != null })
+                class A { def m() { 1 } }
+                null
+            '''
+        }
+    }
+
+    @Test
+    void testGeneratedSyntheticMethodsAreNotChecked() {
+        // an enum gets synthetic values(), valueOf(), next(), previous() and $INIT methods whose
+        // bodies call java.lang.Enum. None of that is written by the script author, and none of it
+        // carries a source position, so the restrictions must not reach it. Without the filter in
+        // visitSyntheticMethods this script is rejected with
+        // "Method calls not allowed on [java.lang.Enum]".
+        customizer.disallowedReceivers = ['java.lang.Enum']
+        def shell = new GroovyShell(configuration)
+        shell.evaluate '''
+            enum E { X, Y }
+            null
+        '''
+        // no error means success
+    }
+
+    @Test
     void testTransformGeneratedConstructorIsNotChecked() {
         // @TupleConstructor generates a constructor, which likewise is not authored source
         customizer.with {
