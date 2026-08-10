@@ -994,6 +994,36 @@ final class EnumTest extends CompilableTestSupport {
     void testConstantsWithoutArgumentsWhenConstructorHasDefaults() {
         assert Defaulted.values()*.label == ['none', 'none']
     }
+
+    // the reason the direct constructor call has an opt-out: a meta class registered
+    // before an enum initializes sees its constants being created only on the $INIT
+    // path, so an explicit empty argument list, e.g. ONE(), keeps that path open to
+    // interception while a plain constant list is created beyond the reach of the
+    // meta class
+    @Test
+    void testEmptyArgumentListKeepsConstantCreationOpenToMetaClassInterception() {
+        def interceptedInits = { Class enumClass ->
+            def seen = []
+            def mc = new DelegatingMetaClass(enumClass) {
+                Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+                    if (methodName == '$INIT') seen << arguments.toList()
+                    super.invokeStaticMethod(object, methodName, arguments)
+                }
+            }
+            mc.initialize()
+            GroovySystem.metaClassRegistry.setMetaClass(enumClass, mc)
+            try {
+                // first active use: <clinit> runs now, after the meta class is in place
+                assert enumClass.getMethod('values').invoke(null)*.name() == ['ONE', 'TWO']
+            } finally {
+                GroovySystem.metaClassRegistry.removeMetaClass(enumClass)
+            }
+            seen
+        }
+        def loader = new GroovyClassLoader(getClass().classLoader)
+        assert interceptedInits(loader.parseClass('enum OptedOut { ONE(), TWO }')) == [['ONE', 0], ['TWO', 1]]
+        assert interceptedInits(loader.parseClass('enum Direct { ONE, TWO }')).isEmpty()
+    }
 }
 
 enum Weekday {

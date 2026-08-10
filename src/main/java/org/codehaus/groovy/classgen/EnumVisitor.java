@@ -349,7 +349,11 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
      * arguments of its own; the constructor arguments are then known to be exactly the
      * compiler-supplied name and ordinal.  Constants declared with arguments, with named
      * arguments or with a class body keep the {@code $INIT} path, as do enums whose own
-     * constructor cannot accept just the name and the ordinal.
+     * constructor cannot accept just the name and the ordinal.  An explicit empty
+     * argument list, e.g. {@code ONE()}, also keeps the {@code $INIT} path without
+     * otherwise changing the meaning of the enum, which serves as the opt-out for the
+     * rare code that intercepts constant creation through a meta class registered
+     * before the enum initializes (see {@link EnumConstantInit}).
      *
      * @param enumClass the enum being completed
      * @param fields    the fields of {@code enumClass}, before any initial value is cleared

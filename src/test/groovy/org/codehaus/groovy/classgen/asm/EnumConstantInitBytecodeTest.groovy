@@ -43,15 +43,22 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
         all[(start + 1)..<end]
     }
 
+    private static void assertContiguous(final List<String> code, final List<String> pattern) {
+        def body = new InstructionSequence(instructions: code.findAll {
+            !(it ==~ /L\d+/ || it.startsWith('LINENUMBER') || it.startsWith('FRAME'))
+        })
+        assert body.hasStrictSequence(pattern)
+    }
+
     private static void assertDirectConstructorCall(final List<String> code) {
-        assert code.join('\n').contains([
+        assertContiguous(code, [
             'NEW E',
             'DUP',
             'LDC "ONE"',
             'ICONST_0',
             'INVOKESPECIAL E.<init> (Ljava/lang/String;I)V',
             'PUTSTATIC E.ONE : LE;'
-        ].join('\n'))
+        ])
         assert !code.any { it.contains('$INIT') }
         assert !code.any { it.contains('selectConstructorAndTransformArguments') }
     }
@@ -113,6 +120,29 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
     }
 
     @Test
+    void testTraitImplementingEnumCallsConstructorDirectly() {
+        def code = staticInitializerOf '''
+            trait Named {
+                String describe() { "constant $name" }
+            }
+            enum E implements Named { ONE, TWO }
+        '''
+        assertDirectConstructorCall(code)
+    }
+
+    @Test
+    void testLargeOrdinalsSelectCorrectPushInstruction() {
+        def code = staticInitializerOf """
+            enum E { ${(0..129).collect { 'C' + it }.join(', ')} }
+        """
+        assertContiguous(code, ['LDC "C5"', 'ICONST_5'])
+        assertContiguous(code, ['LDC "C6"', 'BIPUSH 6'])
+        assertContiguous(code, ['LDC "C127"', 'BIPUSH 127'])
+        assertContiguous(code, ['LDC "C128"', 'SIPUSH 128'])
+        assert !code.any { it.contains('$INIT') }
+    }
+
+    @Test
     void testConstantsWithArgumentsUseInitHelper() {
         def code = staticInitializerOf '''
             enum E {
@@ -120,6 +150,17 @@ final class EnumConstantInitBytecodeTest extends AbstractBytecodeTestCase {
                 final int value
                 E(int value) { this.value = value }
             }
+        '''
+        assertInitHelperCall(code)
+    }
+
+    // an explicit empty argument list means the same [name, ordinal] arguments but keeps
+    // the meta-class-mediated $INIT path: the per-enum opt-out from the direct call for
+    // anyone intercepting constant creation through a meta class registered before init
+    @Test
+    void testConstantsWithEmptyArgumentListUseInitHelper() {
+        def code = staticInitializerOf '''
+            enum E { ONE(), TWO }
         '''
         assertInitHelperCall(code)
     }
