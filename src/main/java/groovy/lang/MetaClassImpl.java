@@ -1508,7 +1508,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         Class<?>[] types = MetaClassHelper.convertToTypeArray(arguments);
         MetaMethod method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, types);
-        cacheEntry = e.cachedMethodForSuper = new MetaMethodIndex.CacheEntry(types, method.isAbstract() ? null : method);
+        cacheEntry = e.cachedMethodForSuper = new MetaMethodIndex.CacheEntry(types, method == null || method.isAbstract() ? null : method);
 
         return cacheEntry.method;
     }
