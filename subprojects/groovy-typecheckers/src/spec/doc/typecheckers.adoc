@@ -721,6 +721,20 @@ patterns also combines with the early-exit form, e.g.
 include::../test/NullCheckerTest.groovy[tags=broader_guards,indent=0]
 ----
 
+*Validator and assertion methods* which guarantee an argument is non-null when
+they complete normally also narrow that argument: `Objects.requireNonNull(x)`
+and Guava-style `checkNotNull(x)` throw for a null argument, `assertNotNull(x)`
+(JUnit 4/5, TestNG, or similar — message parameters are recognized in any
+position) fails for one, and a fluent `assertThat(x).isNotNull()` chain
+(AssertJ, Truth, or similar) fails when `x` is null. Like annotations, these
+methods are matched by simple name, so any library following the common naming
+conventions is recognized:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=validator_narrowing,indent=0]
+----
+
 *Ternary and elvis expressions*: the checker examines the branches of ternary
 (`condition ? a : b`) and elvis (`x ?: fallback`) expressions. A ternary is treated as
 nullable if either branch can be null, judging each branch under the condition's own

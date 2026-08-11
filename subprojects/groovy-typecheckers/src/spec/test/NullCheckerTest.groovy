@@ -180,6 +180,27 @@ class NullCheckerTest {
     }
 
     @Test
+    void testValidatorNarrowing() {
+        assertScript('''
+        import groovy.transform.TypeChecked
+        import java.lang.annotation.*
+
+        @Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+        @Retention(RetentionPolicy.RUNTIME)
+        @interface Nullable {}
+
+        // tag::validator_narrowing[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        int labelWidth(@Nullable String label) {
+            Objects.requireNonNull(label, 'label must be supplied')
+            label.length()                             // ok: requireNonNull throws on null
+        }
+        // end::validator_narrowing[]
+        assert labelWidth('price') == 5
+        ''')
+    }
+
+    @Test
     void testNullPassedToNonNull() {
         def err = shouldFail('''
         import groovy.transform.TypeChecked

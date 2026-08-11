@@ -675,6 +675,188 @@ final class NullCheckerTest {
         assert err.message.contains("Potential null dereference: 's' is @Nullable")
     }
 
+    // === Validator and assertion narrowing (requireNonNull, assertNotNull, assertThat) ===
+
+    @Test
+    void testRequireNonNullNarrowsNullableParameter() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    Objects.requireNonNull(s)
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testRequireNonNullWithMessageNarrows() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    Objects.requireNonNull(s, 's must not be null')
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testStaticallyImportedRequireNonNullNarrows() {
+        assertScript shell, 'import static java.util.Objects.requireNonNull\n' + ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    requireNonNull(s)
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testRequireNonNullResultDereference() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    Objects.requireNonNull(s).length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testRequireNonNullNarrowsFlowNullable() {
+        assertScript strictShell, '''
+            class Foo {
+                static int bar(boolean b) {
+                    def s = b ? 'x' : null
+                    Objects.requireNonNull(s)
+                    s.length()
+                }
+            }
+            assert Foo.bar(true) == 1
+        '''
+    }
+
+    @Test
+    void testCheckNotNullNarrows() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static <T> T checkNotNull(T ref) {
+                    if (ref == null) throw new NullPointerException()
+                    ref
+                }
+                static int bar(@Nullable String s) {
+                    checkNotNull(s)
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testUnrecognizedValidatorDoesNotNarrow() {
+        def err = shouldFail shell, ANNOS + '''
+            class Foo {
+                static void verifyNotNull(Object o) { }
+                static int bar(@Nullable String s) {
+                    verifyNotNull(s)
+                    s.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
+    @Test
+    void testAssertNotNullNarrowsActualNotMessage() {
+        // JUnit 4 parameter order: (message, actual)
+        assertScript shell, ANNOS + '''
+            class Foo {
+                static void assertNotNull(String message, Object actual) {
+                    assert actual != null : message
+                }
+                static int bar(@Nullable String s) {
+                    assertNotNull('s must be set', s)
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testJUnit5AssertNotNullNarrows() {
+        assertScript shell, 'import static org.junit.jupiter.api.Assertions.assertNotNull\n' + ANNOS + '''
+            class Foo {
+                static int bar(@Nullable String s) {
+                    assertNotNull(s)
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testAssertThatIsNotNullNarrows() {
+        assertScript shell, ANNOS + '''
+            class Check {
+                Check isNotNull() { this }
+                Check describedAs(String description) { this }
+            }
+            class Foo {
+                static Check assertThat(Object actual) { new Check() }
+                static int bar(@Nullable String s) {
+                    assertThat(s).isNotNull()
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testAssertThatChainedIsNotNullNarrows() {
+        assertScript shell, ANNOS + '''
+            class Check {
+                Check isNotNull() { this }
+                Check describedAs(String description) { this }
+            }
+            class Foo {
+                static Check assertThat(Object actual) { new Check() }
+                static int bar(@Nullable String s) {
+                    assertThat(s).describedAs('the name').isNotNull()
+                    s.length()
+                }
+            }
+            assert Foo.bar('hi') == 2
+        '''
+    }
+
+    @Test
+    void testAssertThatWithoutIsNotNullDoesNotNarrow() {
+        def err = shouldFail shell, ANNOS + '''
+            class Check {
+                Check isNotNull() { this }
+                Check describedAs(String description) { this }
+            }
+            class Foo {
+                static Check assertThat(Object actual) { new Check() }
+                static int bar(@Nullable String s) {
+                    assertThat(s).describedAs('the name')
+                    s.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' is @Nullable")
+    }
+
     // === Nullable expression results (GROOVY-12209) ===
 
     @Test

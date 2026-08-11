@@ -102,7 +102,14 @@ import static org.codehaus.groovy.syntax.Types.isAssignment
  *     <li>Utility methods: {@code Objects.nonNull(x)}, {@code Objects.isNull(x)}</li>
  *     <li>Assert statements: {@code assert x}, {@code assert x != null}</li>
  *     <li>Guard conditions of while loops and ternary expressions</li>
+ *     <li>Validator methods which throw on null, so their argument is non-null
+ *         afterwards: {@code Objects.requireNonNull(x)} and Guava-style {@code checkNotNull(x)}</li>
+ *     <li>Test assertions: {@code assertNotNull(x)} (JUnit 4/5, TestNG, or similar —
+ *         message parameters are recognized in any position) and fluent
+ *         {@code assertThat(x).isNotNull()} chains (AssertJ, Truth, or similar)</li>
  * </ul>
+ * Like annotations, validator and assertion methods are matched by simple name,
+ * so any library following the common naming conventions is recognized.
  *
  * <pre>
  * {@code @TypeChecked(extensions = 'groovy.typecheckers.NullChecker')}
@@ -129,6 +136,8 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     private static final Set<String> NULLCHECK_ANNOS = Set.of('NullCheck', 'ParametersAreNonnullByDefault', 'ParametersAreNonNullByDefault')
     private static final Set<String> NONNULL_BY_DEFAULT_ANNOS = Set.of('NonNullByDefault', 'NonnullByDefault', 'NullMarked')
     private static final Set<String> NULL_UNMARKED_ANNOS = Set.of('NullUnmarked')
+    private static final Set<String> NONNULL_VALIDATOR_METHODS = Set.of('requireNonNull', 'checkNotNull')
+    private static final Set<String> ASSERTION_MESSAGE_TYPES = Set.of('java.lang.String', 'java.util.function.Supplier')
 
     /**
      * Registers null-safety checks for each visited method body.
@@ -222,12 +231,14 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     checkDereference(call.objectExpression, call)
                 }
                 checkMethodArguments(call)
+                applyCallNarrowing(call)
             }
 
             @Override
             void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
                 super.visitStaticMethodCallExpression(call)
                 checkMethodArguments(call)
+                applyCallNarrowing(call)
             }
 
             @Override
@@ -408,6 +419,65 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     guardedVars.add(var)
                 }
             }
+
+            /**
+             * Applies narrowing for calls that guarantee an argument is non-null when
+             * they complete normally: {@code Objects.requireNonNull} and Guava-style
+             * {@code checkNotNull} throw for a null argument, {@code assertNotNull}
+             * fails for one, and a fluent {@code assertThat(x).isNotNull()} chain
+             * fails when {@code x} is null. Like annotations, the methods are matched
+             * by simple name, so any library following the conventions is recognized.
+             */
+            private void applyCallNarrowing(call) {
+                if (call instanceof MethodCallExpression && call.methodAsString == 'isNotNull') {
+                    applyFluentNarrowing(call)
+                    return
+                }
+                def target = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
+                def args = call.arguments
+                if (!(target instanceof MethodNode) || !(args instanceof TupleExpression) || !args.expressions) {
+                    return
+                }
+                if (target.name in NONNULL_VALIDATOR_METHODS) {
+                    narrowToNonNull(args.getExpression(0))
+                } else if (target.name == 'assertNotNull') {
+                    // JUnit 4 takes (message, actual) while JUnit 5 and TestNG take (actual, message),
+                    // so narrow the arguments matching non-message parameters rather than assuming a position
+                    def params = target.parameters
+                    int limit = Math.min(args.expressions.size(), params.length)
+                    for (int i = 0; i < limit; i++) {
+                        if (!(params[i].type.name in ASSERTION_MESSAGE_TYPES)) {
+                            narrowToNonNull(args.getExpression(i))
+                        }
+                    }
+                }
+            }
+
+            /**
+             * Narrows the value asserted by a fluent {@code assertThat(x)...isNotNull()}
+             * chain, looking through any intermediate calls ({@code describedAs}, etc.).
+             */
+            private void applyFluentNarrowing(MethodCallExpression call) {
+                def receiver = call.objectExpression
+                while (receiver instanceof MethodCallExpression && receiver.methodAsString != 'assertThat') {
+                    receiver = receiver.objectExpression
+                }
+                boolean assertThat = (receiver instanceof MethodCallExpression && receiver.methodAsString == 'assertThat')
+                    || (receiver instanceof StaticMethodCallExpression && receiver.method == 'assertThat')
+                if (!assertThat) return
+                def args = receiver.arguments
+                if (args instanceof TupleExpression && args.expressions.size() == 1) {
+                    narrowToNonNull(args.getExpression(0))
+                }
+            }
+
+            private void narrowToNonNull(Expression expr) {
+                def var = guardableVariable(expr)
+                if (var != null) {
+                    applyFacts(Set.of(var))
+                }
+            }
+
 
             private void checkDereference(Expression receiver, Expression context) {
                 if (isNullExpr(receiver)) {
