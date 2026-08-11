@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786346016331,
+  "lastUpdate": 1786431696328,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -4448,6 +4448,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 467.12000000000006,
             "range": "±22.11",
+            "unit": "ms",
+            "extra": "5.0.8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "3d96c3956240f776b03a8c2fb9db6b7efebb0acb",
+          "message": "GROOVY-12234: Indy: AOT link mode so dynamic Groovy dispatch works in\nGraalVM native images\n\nGraalVM native image supports every java.lang.invoke building block\nGroovy's indy runtime composes except retargeting an existing call\nsite: MutableCallSite.setTarget and SwitchPoint.invalidateAll fail with\nUnsupportedFeatureError, and execution would continue on the stale\ntarget if the error were swallowed. In Groovy's indy design those two\nprimitives only ever install or invalidate caches — dispatch semantics\nlive entirely in method selection — so under AOT (detected per link via\nGraalVM's image-code property, or forced on a JVM with\n-Dgroovy.indy.aot.link=true) every site links once, permanently:\n\n* The site becomes a ConstantCallSite bound to aotDispatch: PIC lookup\n  (new allocation-free CacheableCallSite.getIfPresent), stamp freshness\n  check, and invocation in ordinary compiled Java. The CacheableCallSite\n  is never installed as the call site — it carries the state — and its\n  setTarget fails fast in AOT mode so a missed gate surfaces under the\n  knob on a JVM.\n* Cache freshness moves from SwitchPoint guards (which cannot fire\n  natively) to a global stamp: all three SwitchPoint.invalidateAll call\n  sites funnel through AotDispatch.invalidateAll, each cached wrapper\n  captures the stamp at selection, and a mismatch on a PIC hit re-selects.\n  A pre-selection sample guards the PIC write itself: a selection that\n  raced an invalidation caches the sentinel, not the wrapper, closing\n  the window where a construction-time stamp would postdate a change\n  the selection missed. Coarser than GROOVY-12191's scoped invalidation\n  but never stale.\n* The reflective cold tier (GROOVY-12137) is the AOT steady state:\n  promotion to full method-handle chains is gated off, including on\n  stamp-mismatch re-selection, since runtime-created handles run in the\n  native MH interpreter (~4.5us per entry) while reflective dispatch\n  uses AOT-compiled stubs (~10ns).\n\nThe JVM path is unchanged: the mode is decided per link and never\ncached in statics (image build-time class init would bake the wrong\nanswer); per-invocation code reads a site-local flag; the stamp is\nadvanced but never consulted outside AOT mode. ensureInitialized()\nguards a GraalVM gap where the runtime indy linkage invokes a bootstrap\nmethod without running its declaring class's <clinit> (observed on\nGraalVM CE 25.2.4); only the dynamic-dispatch bootstrap needs it. The\nretargeting restriction is particular to GraalVM native image; the mode\nrelies on nothing GraalVM-specific and the knob is the opt-in for any\nruntime sharing the restriction.\n\nEvery already-published indy-compiled jar becomes native-capable\nwithout recompilation, since the BSM in existing class files is\nIndyInterface.bootstrap. Verified: a 20-scenario dynamic gauntlet on\nJVM normal, JVM AOT-knob, and a native image built from stock-indy\nclass files with only agent-recorded metadata; the fully dynamic\nGroovyPolicyMCP server builds and serves natively including HTTPS\nthrough dynamically-compiled groovy-http-builder. AotLinkModeTest\ncovers the mode in-tree on a JVM: a dispatch gauntlet hot past both\npromotion thresholds with the fail-fast armed, polymorphic PIC churn on\none constant site, stamp-carried meta class invalidation,\nper-instance-metaclass sentinel re-selection, setTarget fail-fast, and\nstamp monotonicity.",
+          "timestamp": "2026-08-04T06:00:28Z",
+          "url": "https://github.com/apache/groovy/commit/3d96c3956240f776b03a8c2fb9db6b7efebb0acb"
+        },
+        "date": 1786431693205,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 363.15999999999997,
+            "range": "±22.57",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 450.14666666666665,
+            "range": "±154.18",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 400.20666666666665,
+            "range": "±104.49",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 329.2733333333333,
+            "range": "±17.04",
             "unit": "ms",
             "extra": "5.0.8"
           }
