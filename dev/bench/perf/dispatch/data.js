@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786346031044,
+  "lastUpdate": 1786431708912,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -1913,6 +1913,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1501,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "3d96c3956240f776b03a8c2fb9db6b7efebb0acb",
+          "message": "GROOVY-12234: Indy: AOT link mode so dynamic Groovy dispatch works in\nGraalVM native images\n\nGraalVM native image supports every java.lang.invoke building block\nGroovy's indy runtime composes except retargeting an existing call\nsite: MutableCallSite.setTarget and SwitchPoint.invalidateAll fail with\nUnsupportedFeatureError, and execution would continue on the stale\ntarget if the error were swallowed. In Groovy's indy design those two\nprimitives only ever install or invalidate caches — dispatch semantics\nlive entirely in method selection — so under AOT (detected per link via\nGraalVM's image-code property, or forced on a JVM with\n-Dgroovy.indy.aot.link=true) every site links once, permanently:\n\n* The site becomes a ConstantCallSite bound to aotDispatch: PIC lookup\n  (new allocation-free CacheableCallSite.getIfPresent), stamp freshness\n  check, and invocation in ordinary compiled Java. The CacheableCallSite\n  is never installed as the call site — it carries the state — and its\n  setTarget fails fast in AOT mode so a missed gate surfaces under the\n  knob on a JVM.\n* Cache freshness moves from SwitchPoint guards (which cannot fire\n  natively) to a global stamp: all three SwitchPoint.invalidateAll call\n  sites funnel through AotDispatch.invalidateAll, each cached wrapper\n  captures the stamp at selection, and a mismatch on a PIC hit re-selects.\n  A pre-selection sample guards the PIC write itself: a selection that\n  raced an invalidation caches the sentinel, not the wrapper, closing\n  the window where a construction-time stamp would postdate a change\n  the selection missed. Coarser than GROOVY-12191's scoped invalidation\n  but never stale.\n* The reflective cold tier (GROOVY-12137) is the AOT steady state:\n  promotion to full method-handle chains is gated off, including on\n  stamp-mismatch re-selection, since runtime-created handles run in the\n  native MH interpreter (~4.5us per entry) while reflective dispatch\n  uses AOT-compiled stubs (~10ns).\n\nThe JVM path is unchanged: the mode is decided per link and never\ncached in statics (image build-time class init would bake the wrong\nanswer); per-invocation code reads a site-local flag; the stamp is\nadvanced but never consulted outside AOT mode. ensureInitialized()\nguards a GraalVM gap where the runtime indy linkage invokes a bootstrap\nmethod without running its declaring class's <clinit> (observed on\nGraalVM CE 25.2.4); only the dynamic-dispatch bootstrap needs it. The\nretargeting restriction is particular to GraalVM native image; the mode\nrelies on nothing GraalVM-specific and the knob is the opt-in for any\nruntime sharing the restriction.\n\nEvery already-published indy-compiled jar becomes native-capable\nwithout recompilation, since the BSM in existing class files is\nIndyInterface.bootstrap. Verified: a 20-scenario dynamic gauntlet on\nJVM normal, JVM AOT-knob, and a native image built from stock-indy\nclass files with only agent-recorded metadata; the fully dynamic\nGroovyPolicyMCP server builds and serves natively including HTTPS\nthrough dynamically-compiled groovy-http-builder. AotLinkModeTest\ncovers the mode in-tree on a JVM: a dispatch gauntlet hot past both\npromotion thresholds with the fail-fast armed, polymorphic PIC churn on\none constant site, stamp-carried meta class invalidation,\nper-instance-metaclass sentinel re-selection, setTarget fail-fast, and\nstamp monotonicity.",
+          "timestamp": "2026-08-04T06:00:28Z",
+          "url": "https://github.com/apache/groovy/commit/3d96c3956240f776b03a8c2fb9db6b7efebb0acb"
+        },
+        "date": 1786431708231,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4008,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 453,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 876,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1502,
             "unit": "classes"
           },
           {
