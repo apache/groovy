@@ -602,11 +602,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 // GROOVY-4922: Due to a numbering scheme change, find the super$number$methodName with
                 // the highest value. If we don't, no method may be found, leading to a stack overflow!
                 int distance = ReflectionCache.getCachedClass(c).getSuperClassDistance() - 1;
-                if (isBridge(method)) // GROOVY-6663
-                    return mopArrayIndex(method, "super$" + distance + "$" + method.getName());
+                // GROOVY-6663: a bridge method is only fit for super usage via a MOP method of
+                // class c; one declared by a super class would skip a level of the hierarchy.
+                // GROOVY-12247: the overridden method may be declared more than one level up,
+                // so keep searching the distances instead of checking the closest one only.
+                boolean bridge = isBridge(method);
                 while (distance > 0) {
                     int index = mopArrayIndex(method, "super$" + distance + "$" + method.getName());
-                    if (index >= 0) return index;
+                    if (index >= 0 && (!bridge || mopMethods[index].getDeclaringClass().getTheClass() == c)) return index;
                     distance -= 1;
                 }
                 return -1;
@@ -1598,7 +1601,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         Class<?>[] types = MetaClassHelper.convertToTypeArray(arguments);
         MetaMethod method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, types);
-        cacheEntry = e.cachedMethodForSuper = new MetaMethodIndex.MetaMethodCache(types, method.isAbstract() ? null : method);
+        cacheEntry = e.cachedMethodForSuper = new MetaMethodIndex.MetaMethodCache(types, method == null || method.isAbstract() ? null : method);
 
         return cacheEntry.method;
     }
