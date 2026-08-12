@@ -255,6 +255,69 @@ class MemoizedASTTransformationTest {
             assert Outer.Inner.calc(3, 4) + Outer.Inner.calc(3, 4) + Outer.count == 15
         '''
     }
+
+    // @Memoized on a record method stores its cache in an extra instance
+    // field — a class shape javac cannot declare but the JVM accepts. Record
+    // serialization writes components only and rebuilds instances through the
+    // canonical constructor, so the cache field is never written and is
+    // freshly initialized on read. This test pins both properties: if a
+    // future JDK starts enforcing field/component correspondence, or record
+    // deserialization stops reinitializing the field, it fails.
+    @Test
+    void testMemoizedRecordSerializationRoundTrip() {
+        assertScript '''
+            import groovy.transform.Memoized
+
+            record Book(String title) implements Serializable {
+                static int calls = 0
+                @Memoized
+                String shout() { calls++; title.toUpperCase() }
+            }
+
+            def book = new Book('groovy')
+            assert book.shout() == 'GROOVY'
+            assert book.shout() == 'GROOVY'
+            assert Book.calls == 1
+
+            assert Book.recordComponents*.name == ['title']
+            assert Book.declaredFields.any { it.name.startsWith('memoizedMethodClosure') && !java.lang.reflect.Modifier.isStatic(it.modifiers) }
+
+            def bytes = new ByteArrayOutputStream()
+            new ObjectOutputStream(bytes).withCloseable { it.writeObject(book) }
+            def copy = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray())).withCloseable { it.readObject() }
+            assert copy == book
+
+            assert copy.shout() == 'GROOVY'
+            assert Book.calls == 2 // recomputed once with a fresh cache
+            assert copy.shout() == 'GROOVY'
+            assert Book.calls == 2 // then memoized again
+        '''
+    }
+
+    // Ordinary classes serialize the generated memoize closure field itself,
+    // so @Memoized composes with Serializable only while the whole memoize
+    // chain remains Serializable. Nothing else guards that property.
+    @Test
+    void testMemoizedSerializableClassRoundTrip() {
+        assertScript '''
+            import groovy.transform.Memoized
+
+            class Greeter implements Serializable {
+                private static final long serialVersionUID = 1L
+                String name
+                @Memoized
+                String shout() { name.toUpperCase() }
+            }
+
+            def greeter = new Greeter(name: 'groovy')
+            assert greeter.shout() == 'GROOVY'
+
+            def bytes = new ByteArrayOutputStream()
+            new ObjectOutputStream(bytes).withCloseable { it.writeObject(greeter) }
+            def copy = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray())).withCloseable { it.readObject() }
+            assert copy.shout() == 'GROOVY'
+        '''
+    }
 }
 
 class MemoizedTestClass2 {
