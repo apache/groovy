@@ -994,6 +994,25 @@ Reassigning a non-null value clears the nullable state:
 include::../test/NullCheckerTest.groovy[tags=flow_reassign,indent=0]
 ----
 
+Strict mode also verifies that each explicitly-annotated `@NonNull` instance field
+is definitely initialized: at its declaration, in an instance initializer block, or
+by every declared constructor (a constructor delegating via `this(...)` relies on
+its delegate). Fields that are merely non-null by default (e.g. under `@NullMarked`
+without an explicit annotation) are not checked, so idiomatic Groovy property
+classes constructed via named arguments stay noise-free:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=field_initialization,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=field_initialization_message,indent=0]
+----
+
 The complete list of errors detected include:
 
 * assigning `null` to a `@NonNull` field or variable (including implicit `@NonNull` from `@NonNullByDefault`)
@@ -1003,6 +1022,8 @@ The complete list of errors detected include:
 * dereferencing the return value of a `@Nullable` method without a null check
 * re-assigning `null` to a `@MonotonicNonNull` or `@Lazy` field after initialization
 * dereferencing a variable known to be null through flow analysis (`strict` mode only)
+* an explicitly-annotated `@NonNull` instance field not definitely initialized at its
+  declaration, in an instance initializer block, or by every constructor (`strict` mode only)
 
 NOTE: For complementary null-related checks such as detecting broken null-check logic,
 unnecessary null guards before `instanceof`, or `Boolean` methods returning `null`,

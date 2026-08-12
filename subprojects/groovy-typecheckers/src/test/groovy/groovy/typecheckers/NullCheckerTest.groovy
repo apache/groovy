@@ -1955,6 +1955,126 @@ final class NullCheckerTest {
         assert err.message.contains("Potential null dereference: 's' is @Nullable")
     }
 
+    // === NullChecker(strict: true): @NonNull field initialization ===
+
+    @Test
+    void testStrictNonNullFieldNotInitialized() {
+        def err = shouldFail strictShell, ANNOS + '''
+            class Foo {
+                @NonNull String name
+            }
+        '''
+        assert err.message.contains("@NonNull field 'name' is not initialized")
+    }
+
+    @Test
+    void testStrictNonNullFieldWithInitializer() {
+        assertScript strictShell, ANNOS + '''
+            class Foo {
+                @NonNull String name = 'unknown'
+            }
+            assert new Foo().name == 'unknown'
+        '''
+    }
+
+    @Test
+    void testStrictNonNullFieldAssignedInConstructor() {
+        assertScript strictShell, ANNOS + '''
+            class Foo {
+                @NonNull String name
+                Foo(String n) { name = n }
+            }
+            assert new Foo('groovy').name == 'groovy'
+        '''
+    }
+
+    @Test
+    void testStrictNonNullFieldAssignedViaThisInConstructor() {
+        assertScript strictShell, ANNOS + '''
+            class Foo {
+                @NonNull String name
+                Foo(String name) { this.name = name }
+            }
+            assert new Foo('groovy').name == 'groovy'
+        '''
+    }
+
+    @Test
+    void testStrictNonNullFieldMissedByOneConstructor() {
+        def err = shouldFail strictShell, ANNOS + '''
+            class Foo {
+                @NonNull String name
+                Foo(String n) { name = n }
+                Foo() { }
+            }
+        '''
+        assert err.message.contains("@NonNull field 'name' is not initialized by all constructors")
+    }
+
+    @Test
+    void testStrictDelegatingConstructorReliesOnDelegate() {
+        assertScript strictShell, ANNOS + '''
+            class Foo {
+                @NonNull String name
+                Foo(String n) { name = n }
+                Foo() { this('unknown') }
+            }
+            assert new Foo().name == 'unknown'
+        '''
+    }
+
+    @Test
+    void testStrictInitializerBlockInitializes() {
+        assertScript strictShell, ANNOS + '''
+            class Foo {
+                @NonNull String name
+                {
+                    name = 'unknown'
+                }
+                Foo() { }
+            }
+            assert new Foo().name == 'unknown'
+        '''
+    }
+
+    @Test
+    void testLenientModeDoesNotCheckFieldInitialization() {
+        assertScript shell, ANNOS + '''
+            class Foo {
+                @NonNull String name
+            }
+            new Foo()
+        '''
+    }
+
+    @Test
+    void testStrictMonotonicFieldNotChecked() {
+        assertScript strictShell, ANNOS + '''
+            class Foo {
+                @MonotonicNonNull String cached
+            }
+            new Foo()
+        '''
+    }
+
+    @Test
+    void testStrictDefaultNonNullFieldsNotChecked() {
+        // only explicitly-annotated @NonNull fields are checked, so idiomatic Groovy
+        // property classes constructed via named arguments stay noise-free
+        assertScript strictShell, '''
+            import java.lang.annotation.*
+            @Target([ElementType.TYPE])
+            @Retention(RetentionPolicy.RUNTIME)
+            @interface NonNullByDefault {}
+
+            @NonNullByDefault
+            class Book {
+                String title
+            }
+            assert new Book(title: 'Groovy in Action').title
+        '''
+    }
+
     // === Chained method call dereference ===
 
     @Test

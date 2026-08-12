@@ -525,6 +525,32 @@ class NullCheckerTest {
     }
 
     @Test
+    void testFieldInitialization() {
+        def err = shouldFail('''
+        import groovy.transform.TypeChecked
+        import java.lang.annotation.*
+
+        @Target([ElementType.FIELD])
+        @Retention(RetentionPolicy.RUNTIME)
+        @interface NonNull {}
+
+        // tag::field_initialization[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker(strict: true)')
+        class Library {
+            @NonNull String catalog                  // never assigned
+            Library(String catalog) { }
+        }
+        // end::field_initialization[]
+        ''')
+        def expectedError = '''\
+        # tag::field_initialization_message[]
+        [Static type checking] - @NonNull field 'catalog' is not initialized by all constructors
+        # end::field_initialization_message[]
+        '''
+        assert err.message.contains(expectedError.readLines()[1].trim())
+    }
+
+    @Test
     void testRequiresIntegration() {
         def err = shouldFail('''
         import groovy.transform.TypeChecked
