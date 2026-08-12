@@ -1506,6 +1506,216 @@ final class NullCheckerTest {
         '''
     }
 
+    // === Nullable type arguments (generics) ===
+
+    @Test
+    void testNullableTypeArgumentReturnDereference() {
+        def err = shouldFail shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(List<@Nullable String> xs) {
+                    xs.get(0).length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'get()' may return null")
+    }
+
+    @Test
+    void testNullableTypeArgumentSafeNavigation() {
+        assertScript shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static Integer bar(List<@Nullable String> xs) {
+                    xs.get(0)?.length()
+                }
+            }
+            assert Foo.bar([null]) == null
+            assert Foo.bar(['hi']) == 2
+        '''
+    }
+
+    @Test
+    void testUnannotatedTypeArgumentNotFlagged() {
+        assertScript shell, '''
+            class Foo {
+                static int bar(List<String> xs) {
+                    xs.get(0).length() + xs[0].length() + xs.head().length()
+                }
+            }
+            assert Foo.bar(['hi']) == 6
+        '''
+    }
+
+    @Test
+    void testNullableTypeArgumentSubscript() {
+        def err = shouldFail shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(List<@Nullable String> xs) {
+                    xs[0].length()
+                }
+            }
+        '''
+        assert err.message.contains('may be null')
+        assert err.message.contains('xs[0]')
+    }
+
+    @Test
+    void testNullableTypeArgumentSubscriptSafeNavigation() {
+        assertScript shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static Integer bar(List<@Nullable String> xs) {
+                    xs[0]?.length()
+                }
+            }
+            assert Foo.bar([null]) == null
+            assert Foo.bar(['hi']) == 2
+        '''
+    }
+
+    @Test
+    void testNullableTypeArgumentDgmCalls() {
+        def err = shouldFail shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(List<@Nullable String> xs) {
+                    xs.head().length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'head()' may return null")
+    }
+
+    @Test
+    void testNullableTypeArgumentMapSubscript() {
+        def err = shouldFail shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(Map<String, @Nullable Integer> m) {
+                    m['k'].intValue()
+                }
+            }
+        '''
+        assert err.message.contains('may be null')
+    }
+
+    @Test
+    void testNullableTypeArgumentSubscriptFlowTracked() {
+        def err = shouldFail strictShell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(List<@Nullable String> xs) {
+                    def s = xs[0]
+                    s.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' may be null")
+    }
+
+    @Test
+    void testNullableTypeArgumentSubscriptGuarded() {
+        assertScript strictShell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(List<@Nullable String> xs) {
+                    def s = xs[0]
+                    s != null ? s.length() : -1
+                }
+            }
+            assert Foo.bar(['hi']) == 2
+            assert Foo.bar([null]) == -1
+        '''
+    }
+
+    @Test
+    void testNullableTypeArgumentMapValue() {
+        def err = shouldFail shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(Map<String, @Nullable Integer> m) {
+                    m.get('k').intValue()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'get()' may return null")
+    }
+
+    @Test
+    void testNullableTypeArgumentSubtypeReceiver() {
+        def err = shouldFail shell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(ArrayList<@Nullable String> xs) {
+                    xs.get(0).length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 'get()' may return null")
+    }
+
+    @Test
+    void testNullableTypeArgumentPassedToNonNullParameter() {
+        def err = shouldFail shell, '''
+            import org.jspecify.annotations.NonNull
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int len(@NonNull String s) { s.length() }
+                static int bar(List<@Nullable String> xs) {
+                    len(xs.get(0))
+                }
+            }
+        '''
+        assert err.message.contains("Cannot pass @Nullable value to @NonNull parameter 's' of 'len'")
+    }
+
+    @Test
+    void testNullableTypeArgumentGuarded() {
+        assertScript strictShell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(List<@Nullable String> xs) {
+                    def s = xs.get(0)
+                    if (s != null) {
+                        return s.length()
+                    }
+                    return -1
+                }
+            }
+            assert Foo.bar(['hi']) == 2
+            assert Foo.bar([null]) == -1
+        '''
+    }
+
+    @Test
+    void testNullableTypeArgumentFlowTracked() {
+        def err = shouldFail strictShell, '''
+            import org.jspecify.annotations.Nullable
+
+            class Foo {
+                static int bar(List<@Nullable String> xs) {
+                    def s = xs.get(0)
+                    s.length()
+                }
+            }
+        '''
+        assert err.message.contains("Potential null dereference: 's' may be null")
+    }
+
     // === JSpecify annotations from precompiled Java (GROOVY-12206) ===
 
     @Test

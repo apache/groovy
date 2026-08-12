@@ -85,6 +85,11 @@ import static org.codehaus.groovy.syntax.Types.isAssignment
  *     <li>Dereferencing a {@code @Nullable} variable without a null check or safe navigation ({@code ?.})</li>
  *     <li>Dereferencing the result of a {@code @Nullable}-returning method without a null check,
  *         whether called explicitly ({@code x.getA().b}) or via property syntax ({@code x.a.b})</li>
+ *     <li>Dereferencing a result whose inferred type carries a {@code @Nullable} type
+ *         argument reaching it through a class or method level type variable, e.g.
+ *         {@code get(0)}, the idiomatic {@code xs[0]} subscript, or {@code head()} on a
+ *         {@code List<@Nullable String>}, and {@code get(key)} or {@code m[key]} on a
+ *         {@code Map<String, @Nullable Integer>}</li>
  *     <li>Dereferencing a safe-navigation result without a further guard ({@code a?.b.c};
  *         use {@code a?.b?.c} instead)</li>
  *     <li>Passing other nullable expressions (safe-navigation results, {@code @Nullable}-returning
@@ -510,9 +515,11 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                     addStaticTypeError("Potential null dereference: '${receiver.text}' may be null", context)
                 } else if (receiver instanceof MethodCallExpression || receiver instanceof StaticMethodCallExpression) {
                     def targetMethod = receiver.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
-                    if (targetMethod instanceof MethodNode && hasNullableAnno(targetMethod)) {
+                    if (targetMethod instanceof MethodNode && (hasNullableAnno(targetMethod) || inferredNullableTypeUse(receiver))) {
                         addStaticTypeError("Potential null dereference: '${targetMethod.name}()' may return null", context)
                     }
+                } else if (isSubscript(receiver) && inferredNullableTypeUse(receiver)) {
+                    addStaticTypeError("Potential null dereference: '${receiver.text}' may be null", context)
                 } else if (receiver instanceof PropertyExpression) {
                     if (nullableProperty(receiver)) {
                         addStaticTypeError("Potential null dereference: '${receiver.propertyAsString}' may be null", context)
@@ -566,7 +573,11 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 if (isSafeNavResult(expr)) return true
                 if (expr instanceof MethodCallExpression || expr instanceof StaticMethodCallExpression) {
                     def target = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
-                    return target instanceof MethodNode && hasNullableAnno(target)
+                    if (!(target instanceof MethodNode)) return false
+                    return hasNullableAnno(target) || inferredNullableTypeUse(expr)
+                }
+                if (isSubscript(expr)) {
+                    return inferredNullableTypeUse(expr)
                 }
                 if (expr instanceof PropertyExpression) {
                     return nullableProperty(expr)
@@ -736,6 +747,25 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
      */
     private static boolean isSafeNavResult(Expression expr) {
         (expr instanceof PropertyExpression && expr.safe) || (expr instanceof MethodCallExpression && expr.safe)
+    }
+
+    private static boolean isSubscript(Expression expr) {
+        expr instanceof BinaryExpression && expr.operation.type == Types.LEFT_SQUARE_BRACKET
+    }
+
+    /**
+     * Determines whether an expression's inferred type carries a {@code @Nullable}
+     * type-use annotation. The static type checker's generics inference preserves type
+     * annotations when instantiating class and method level type variables, so this
+     * recognizes a {@code @Nullable} type argument reaching a result: {@code get(0)},
+     * the idiomatic {@code xs[0]} subscript, or DGM calls like {@code head()} on a
+     * {@code List<@Nullable String>}, whether the annotated type appears in source or
+     * comes from a compiled dependency (GROOVY-12206).
+     */
+    private static boolean inferredNullableTypeUse(Expression expr) {
+        def inferred = expr.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE)
+        inferred instanceof ClassNode &&
+            inferred.typeAnnotations?.any { it.classNode?.nameWithoutPackage in NULLABLE_ANNOS }
     }
 
     /**
