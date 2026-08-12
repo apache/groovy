@@ -22,6 +22,8 @@ import org.apache.groovy.lang.annotation.Incubating
 import org.apache.groovy.typecheckers.CheckingVisitor
 import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.CodeVisitorSupport
+import org.codehaus.groovy.ast.ConstructorNode
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
@@ -30,6 +32,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.expr.CastExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression
 import org.codehaus.groovy.ast.expr.EmptyExpression
@@ -43,6 +46,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.BlockStatement
+import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
@@ -88,6 +92,9 @@ import static org.codehaus.groovy.syntax.Types.isAssignment
  *         them from {@code @NonNull} methods</li>
  *     <li>Re-assigning {@code null} to a {@code @MonotonicNonNull} field after initialization</li>
  *     <li>Dereferencing a variable known to be null through flow analysis ({@code strict} mode only)</li>
+ *     <li>An explicitly-annotated {@code @NonNull} instance field that is not definitely
+ *         initialized — at its declaration, in an instance initializer block, or by every
+ *         declared constructor ({@code strict} mode only)</li>
  * </ul>
  * <p>
  * The checker recognizes a range of null-guard patterns:
@@ -140,13 +147,19 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     private static final Set<String> ASSERTION_MESSAGE_TYPES = Set.of('java.lang.String', 'java.util.function.Supplier')
 
     /**
-     * Registers null-safety checks for each visited method body.
+     * Registers null-safety checks for each visited method body and, in strict mode,
+     * definite-initialization checks for {@code @NonNull} fields of each visited class.
      */
     @Override
     Object run() {
         boolean strict = options?.strict ?: false
         afterVisitMethod { MethodNode method ->
             method.code?.visit(makeVisitor(strict, method))
+        }
+        if (strict) {
+            afterVisitClass { ClassNode cn ->
+                checkNonNullFieldInitialization(cn)
+            }
         }
     }
 
@@ -576,6 +589,69 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     }
 
     //--------------------------------------------------------------------------
+
+    /**
+     * Checks that each explicitly-annotated {@code @NonNull} instance field is definitely
+     * initialized: at its declaration, in an instance initializer block, or by every
+     * declared constructor (a constructor delegating via {@code this(...)} relies on its
+     * delegate). Only performed in {@code strict} mode. Fields that are merely non-null
+     * by default (e.g. under {@code @NullMarked} without an explicit annotation) are not
+     * checked, so idiomatic Groovy property classes constructed via named arguments stay
+     * noise-free. Assignment detection is not path-sensitive: an assignment anywhere in
+     * a constructor counts.
+     */
+    private void checkNonNullFieldInitialization(ClassNode cn) {
+        if (cn.interface) return
+        List<FieldNode> candidates = cn.fields.findAll { field ->
+            !field.static && !isPrimitiveType(field.type) && field.initialValueExpression == null &&
+                hasAnno(field, NONNULL_ANNOS) && !hasNullableAnno(field) && !hasMonotonicAnno(field)
+        }
+        if (!candidates) return
+        Set<String> initBlockAssigned = assignedFieldNames(cn.objectInitializerStatements)
+        List<ConstructorNode> ctors = cn.declaredConstructors
+        List<Set<String>> ctorAssigned = ctors.findAll { !delegatesToThis(it) }
+                                              .collect { assignedFieldNames([it.code]) }
+        for (field in candidates) {
+            if (field.name in initBlockAssigned) continue
+            if (!ctors) {
+                addStaticTypeError("@NonNull field '${field.name}' is not initialized", field)
+            } else if (ctorAssigned.any { !(field.name in it) }) {
+                addStaticTypeError("@NonNull field '${field.name}' is not initialized by all constructors", field)
+            }
+        }
+    }
+
+    private static boolean delegatesToThis(ConstructorNode ctor) {
+        def first = ctor.firstStatement
+        first instanceof ExpressionStatement && first.expression instanceof ConstructorCallExpression &&
+            ((ConstructorCallExpression) first.expression).thisCall
+    }
+
+    /**
+     * Collects the names of fields assigned (by simple name or via {@code this.name})
+     * anywhere within the given statements.
+     */
+    private static Set<String> assignedFieldNames(List<Statement> statements) {
+        Set<String> names = []
+        def collector = new CodeVisitorSupport() {
+            @Override
+            void visitBinaryExpression(BinaryExpression expression) {
+                if (isAssignment(expression.operation.type)) {
+                    def left = expression.leftExpression
+                    if (left instanceof VariableExpression) {
+                        names.add(left.name)
+                    } else if (left instanceof PropertyExpression && left.objectExpression instanceof VariableExpression
+                            && ((VariableExpression) left.objectExpression).thisExpression) {
+                        def name = left.propertyAsString
+                        if (name != null) names.add(name)
+                    }
+                }
+                super.visitBinaryExpression(expression)
+            }
+        }
+        statements.each { it?.visit(collector) }
+        names
+    }
 
     private static boolean hasNullableAnno(AnnotatedNode node) {
         hasAnno(node, NULLABLE_ANNOS)
