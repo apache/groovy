@@ -177,7 +177,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
      * interface given a map of closures.
      *
      * @param closureMap    the delegates implementations
-     * @param superClass    corresponding to the superclass class visitor
      * @param interfaces    extra interfaces the proxy should implement
      * @param proxyLoader   the class loader which should be used to load the generated proxy
      * @param delegateClass if not null, generate a delegate field with the corresponding class
