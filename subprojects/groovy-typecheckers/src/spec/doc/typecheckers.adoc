@@ -682,6 +682,31 @@ The following class-level annotations are also recognized:
   parameters are treated as effectively `@NonNull` (unless explicitly annotated `@Nullable`).
   This provides compile-time null checking complementing the runtime checks that `@NullCheck` generates.
 
+*Nullable type arguments* are also honoured wherever the static type checker's
+inference carries them through a class or method level type variable: calling
+`get(0)`, the idiomatic subscript `xs[0]`, or GDK methods like `head()` on a
+`List<@Nullable String>`, and `get(key)` or `m[key]` on a
+`Map<String, @Nullable Integer>`, all yield a nullable result which must be
+guarded or safely dereferenced. This works whether the annotated type appears
+in source or is read from a compiled dependency:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_type_argument,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_type_argument_message,indent=0]
+----
+
+Wider generics support — nullable type parameters and bounds
+(`<T extends @Nullable Object>`), wildcards at use sites, `@Nullable` checking of
+arguments against instantiated parameter types (e.g. `add(null)` on a
+`List<@NonNull String>`), and array component positions — is not yet covered.
+
 === Null-safe access patterns
 
 The checker recognizes several patterns for safely working with nullable values.
@@ -1020,6 +1045,9 @@ The complete list of errors detected include:
 * returning `null` or a `@Nullable` value from a `@NonNull` method (including implicit `@NonNull` from `@NonNullByDefault`)
 * dereferencing a `@Nullable` variable without a null check or safe navigation
 * dereferencing the return value of a `@Nullable` method without a null check
+* dereferencing a result whose inferred type carries a `@Nullable` type argument
+  reaching it through a class or method level type variable (e.g. `get(0)`, `xs[0]`,
+  or `head()` on a `List<@Nullable String>`)
 * re-assigning `null` to a `@MonotonicNonNull` or `@Lazy` field after initialization
 * dereferencing a variable known to be null through flow analysis (`strict` mode only)
 * an explicitly-annotated `@NonNull` instance field not definitely initialized at its

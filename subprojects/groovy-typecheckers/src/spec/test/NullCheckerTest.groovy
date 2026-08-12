@@ -525,6 +525,29 @@ class NullCheckerTest {
     }
 
     @Test
+    void testNullableTypeArgument() {
+        def err = shouldFail('''
+        import groovy.transform.TypeChecked
+        import org.jspecify.annotations.Nullable
+
+        // tag::nullable_type_argument[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        class Catalog {
+            static int firstTitleLength(List<@Nullable String> titles) {
+                titles.get(0).length()               // get(0) may return null
+            }
+        }
+        // end::nullable_type_argument[]
+        ''')
+        def expectedError = '''\
+        # tag::nullable_type_argument_message[]
+        [Static type checking] - Potential null dereference: 'get()' may return null
+        # end::nullable_type_argument_message[]
+        '''
+        assert err.message.contains(expectedError.readLines()[1].trim())
+    }
+
+    @Test
     void testFieldInitialization() {
         def err = shouldFail('''
         import groovy.transform.TypeChecked
