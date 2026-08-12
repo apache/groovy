@@ -32,6 +32,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.TypePath;
 import org.objectweb.asm.TypeReference;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -296,6 +297,26 @@ public class CompileStack {
         stackVariables = element.stackVariables;
         finallyBlocks = element.finallyBlocks;
         inSpecialConstructorCall = element.inSpecialConstructorCall;
+        if (!clear) reopenHiddenVariableRanges();
+    }
+
+    /**
+     * Opens a new LocalVariableTable range for any variable in the restored
+     * frame whose range was closed by {@link #hideVariable} in the frame just
+     * popped — the pop makes the name visible again, so debug info must resume
+     * here. Skipped during {@link #clear} (code emission is already complete).
+     */
+    private void reopenHiddenVariableRanges() {
+        Label here = null;
+        for (BytecodeVariable variable : stackVariables.values()) {
+            if (variable.isRangeClosed()) {
+                if (here == null) {
+                    here = new Label();
+                    controller.getMethodVisitor().visitLabel(here);
+                }
+                variable.reopenRange(here);
+            }
+        }
     }
 
     /**
@@ -451,9 +472,19 @@ public class CompileStack {
             }
             for (BytecodeVariable v : usedVariables) {
                 String type = BytecodeHelper.getTypeDescription(v.isHolder() ? ClassHelper.REFERENCE_TYPE : v.getType());
-                Label startLabel = v.getStartLabel(), endLabel = v.getEndLabel();
-                if (endLabel == null) endLabel = startLabel; // only occurs for '_' placeholder
-                mv.visitLocalVariable(v.getName(), type, null, startLabel, endLabel, v.getIndex());
+                // GROOVY-12242: one table entry per visibility range (several for
+                // flow-scoped pattern variables; exactly one for ordinary locals)
+                List<Label[]> ranges = localVariableRanges(v);
+                if (ranges.isEmpty()) continue;
+                int n = ranges.size();
+                Label[] startLabels = new Label[n], endLabels = new Label[n];
+                int[] indices = new int[n];
+                for (int i = 0; i < n; i += 1) {
+                    startLabels[i] = ranges.get(i)[0];
+                    endLabels[i] = ranges.get(i)[1];
+                    indices[i] = v.getIndex();
+                    mv.visitLocalVariable(v.getName(), type, null, startLabels[i], endLabels[i], v.getIndex());
+                }
                 // JSR 308: local variable type annotations
                 ClassNode t = v.getType();
                 String typePath = ""; // ?
@@ -461,7 +492,7 @@ public class CompileStack {
                     for (AnnotationNode a : t.getTypeAnnotations()) {
                         type = BytecodeHelper.getTypeDescription(a.getClassNode());
                         var av = mv.visitLocalVariableAnnotation(TypeReference.LOCAL_VARIABLE << 24, TypePath.fromString(typePath),
-                            new Label[]{startLabel}, new Label[]{endLabel}, new int[]{v.getIndex()}, type, a.hasRuntimeRetention());
+                            startLabels, endLabels, indices, type, a.hasRuntimeRetention());
                         if (av != null) {
                             controller.getAcg().visitAnnotationAttributes(a, av);
                             av.visitEnd();
@@ -499,6 +530,38 @@ public class CompileStack {
         thisEndLabel = null;
         className = null;
         scope = null;
+    }
+
+    /**
+     * The LocalVariableTable ranges to emit for a variable: each closed range
+     * (GROOVY-12242 flow-scoped hides) plus the still-open range, zero-width
+     * ranges omitted. A variable that was never hidden keeps today's single
+     * entry, including the zero-width form used for the {@code '_'} placeholder.
+     */
+    private static List<Label[]> localVariableRanges(final BytecodeVariable v) {
+        List<Label[]> closed = v.getClosedRanges();
+        if (closed.isEmpty()) {
+            Label startLabel = v.getStartLabel(), endLabel = v.getEndLabel();
+            if (endLabel == null) endLabel = startLabel; // only occurs for '_' placeholder
+            return Collections.singletonList(new Label[]{startLabel, endLabel});
+        }
+        List<Label[]> ranges = new ArrayList<>(closed.size() + 1);
+        for (Label[] range : closed) {
+            if (hasWidth(range[0], range[1])) ranges.add(range);
+        }
+        if (!v.isRangeClosed() && hasWidth(v.getStartLabel(), v.getEndLabel())) {
+            ranges.add(new Label[]{v.getStartLabel(), v.getEndLabel()});
+        }
+        return ranges;
+    }
+
+    private static boolean hasWidth(final Label start, final Label end) {
+        if (start == null || end == null) return false;
+        try {
+            return start.getOffset() != end.getOffset();
+        } catch (IllegalStateException e) {
+            return true; // offsets not resolved (non-writer visitor); keep the range
+        }
     }
 
     /**
@@ -957,10 +1020,21 @@ public class CompileStack {
      * still be needed on another path that re-exposes the same slot via pop or a
      * later path that still lists the name as live.
      *
+     * <p>
+     * The variable's LocalVariableTable range is closed at the hide point so
+     * debug info never claims visibility over a region where flow scoping has
+     * removed the name; if a later {@link #pop} re-exposes the variable, a new
+     * range is opened (emitted as an additional table entry by {@link #clear}).
+     *
      * @param name the variable name to hide; no-op if absent
      */
     public void hideVariable(final String name) {
-        stackVariables.remove(name);
+        BytecodeVariable variable = stackVariables.remove(name);
+        if (variable != null && !variable.isRangeClosed()) {
+            Label here = new Label();
+            controller.getMethodVisitor().visitLabel(here);
+            variable.closeRange(here);
+        }
     }
 
     /**

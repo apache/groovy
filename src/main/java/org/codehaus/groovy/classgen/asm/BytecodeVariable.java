@@ -22,6 +22,10 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.objectweb.asm.Label;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Represents compile time variable metadata while compiling a method.
  */
@@ -47,6 +51,15 @@ public class BytecodeVariable {
     // these fields should probably go to jvm Operand class
     private Label startLabel;
     private Label endLabel;
+
+    // GROOVY-12242: flow-scoped pattern variables are visible over several
+    // disjoint bytecode regions (e.g. condition + then-arm, then again after
+    // the if). Each completed region is kept here and emitted as its own
+    // LocalVariableTable entry; startLabel/endLabel describe the currently
+    // open region only. Ordinary locals never close a range, so this stays
+    // null for them and emission is unchanged.
+    private List<Label[]> closedRanges;
+    private boolean rangeClosed;
 
     private BytecodeVariable() {
         index = 0;
@@ -170,6 +183,56 @@ public class BytecodeVariable {
      */
     public void setEndLabel(final Label endLabel) {
         this.endLabel = endLabel;
+    }
+
+    /**
+     * Ends the currently open local-variable-table range at the given label,
+     * recording it for later emission. Used when flow scoping hides this
+     * variable (GROOVY-12242); a later {@link #reopenRange} starts a new range
+     * if the variable becomes visible again.
+     *
+     * @param end the label at which visibility ends; ignored if {@code null}
+     *            or if no range is open
+     */
+    public void closeRange(final Label end) {
+        if (!rangeClosed && startLabel != null && end != null) {
+            if (closedRanges == null) closedRanges = new ArrayList<>(2);
+            closedRanges.add(new Label[]{startLabel, end});
+            rangeClosed = true;
+        }
+    }
+
+    /**
+     * Starts a new local-variable-table range at the given label after a
+     * {@link #closeRange}. The end label is reset to the start and extended
+     * by subsequent scope pops; a range that is never extended has zero
+     * width and is not emitted.
+     *
+     * @param start the label at which visibility resumes; ignored if
+     *              {@code null} or if no range was closed
+     */
+    public void reopenRange(final Label start) {
+        if (rangeClosed && start != null) {
+            startLabel = start;
+            endLabel = start;
+            rangeClosed = false;
+        }
+    }
+
+    /**
+     * @return whether the current local-variable-table range has been closed
+     *         without being reopened (the variable is hidden by flow scoping)
+     */
+    public boolean isRangeClosed() {
+        return rangeClosed;
+    }
+
+    /**
+     * @return the completed local-variable-table ranges as {start, end} label
+     *         pairs, oldest first; empty for variables never hidden
+     */
+    public List<Label[]> getClosedRanges() {
+        return closedRanges == null ? Collections.emptyList() : closedRanges;
     }
 
     /**
