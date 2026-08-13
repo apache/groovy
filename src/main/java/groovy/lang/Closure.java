@@ -20,7 +20,6 @@ package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
 import org.apache.groovy.io.StringBuilderWriter;
-import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
@@ -353,7 +352,6 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *
      * @return the lexical {@code this} object
      */
-    @GroovyABI(since = "1.0.0")
     public Object getThisObject() {
         return thisObject;
     }
