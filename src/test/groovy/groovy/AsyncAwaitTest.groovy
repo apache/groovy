@@ -642,6 +642,87 @@ final class AsyncAwaitTest {
         '''
     }
 
+    @Test
+    void testDeferInAsyncLambda() {
+        assertScript '''
+            def log = []
+            def task = async () -> {
+                defer { log << 'cleanup' }
+                log << 'work'
+                42
+            }
+            assert await(task) == 42
+            assert log == ['work', 'cleanup']
+        '''
+    }
+
+    @Test
+    void testDeferOutsideAsyncIsPlainMethodCall() {
+        // outside an async closure, `defer` stays an ordinary identifier,
+        // so with no defer method in scope this fails at runtime, not compile time
+        def err = shouldFail(MissingMethodException, '''
+            defer { println 'cleanup' }
+        ''')
+        assert err.message.contains('defer')
+    }
+
+    @Test
+    void testDeferAsDslMethodOutsideAsync() {
+        assertScript '''
+            log = []
+            def defer(c) { log << (c instanceof Closure ? c() : c) }
+            defer { 'dsl closure' }
+            defer 'dsl command'
+            assert log == ['dsl closure', 'dsl command']
+        '''
+    }
+
+    @Test
+    void testDeferAsMethodInClassOutsideAsync() {
+        assertScript '''
+            class Registry {
+                def actions = []
+                def defer(action) {
+                    actions << action
+                }
+                def register() {
+                    defer 'cleanup'
+                }
+            }
+            def r = new Registry()
+            r.register()
+            assert r.actions == ['cleanup']
+        '''
+    }
+
+    @Test
+    void testDeferInNestedClosureInsideAsyncFails() {
+        def err = shouldFail '''
+            def task = async {
+                [1, 2, 3].each {
+                    defer { println 'cleanup' }
+                }
+            }
+        '''
+        assert err.message.contains('defer must be used directly in the body of an async closure')
+    }
+
+    @Test
+    void testDeferInNestedAsyncClosure() {
+        assertScript '''
+            def log = []
+            def outer = async {
+                def inner = async {
+                    defer { log << 'inner cleanup' }
+                    'inner'
+                }
+                await inner
+            }
+            assert await(outer) == 'inner'
+            assert log == ['inner cleanup']
+        '''
+    }
+
     // === executor configuration ===
 
     @Test

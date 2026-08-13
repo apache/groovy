@@ -981,6 +981,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ExpressionStatement visitDeferStmtAlt(final DeferStmtAltContext ctx) {
+        if (!Boolean.TRUE.equals(asyncClosureStack.peek())) {
+            throw createParsingFailedException(
+                    asyncClosureStack.contains(Boolean.TRUE)
+                            ? "defer must be used directly in the body of an async closure, not in a nested closure"
+                            : "defer must be used inside an async closure",
+                    ctx);
+        }
         Expression action;
         ExpressionStatement stmtExprStmt = (ExpressionStatement) this.visit(ctx.statementExpression());
         Expression expr = stmtExprStmt.getExpression();
@@ -3108,6 +3115,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Expression visitAsyncClosureExprAlt(final AsyncClosureExprAltContext ctx) {
+        nextClosureIsAsync = true;
         ClosureExpression closure = this.visitClosureOrLambdaExpression(ctx.closureOrLambdaExpression());
         return configureAST(AsyncTransformHelper.transformAsyncClosure(closure), ctx);
     }
@@ -3938,10 +3946,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public LambdaExpression visitStandardLambdaExpression(final StandardLambdaExpressionContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
+        asyncClosureStack.push(nextClosureIsAsync);
+        nextClosureIsAsync = false;
         try {
             return configureAST(this.createLambda(ctx.standardLambdaParameters(), ctx.lambdaBody()), ctx);
         } finally {
             switchExpressionRuleContextStack.pop();
+            asyncClosureStack.pop();
         }
     }
 
@@ -3975,6 +3986,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public ClosureExpression visitClosure(final ClosureContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
+        asyncClosureStack.push(nextClosureIsAsync);
+        nextClosureIsAsync = false;
         visitingClosureCount += 1;
         try {
             Parameter[] parameters = asBoolean(ctx.formalParameterList())
@@ -3993,6 +4006,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(new ClosureExpression(parameters, code), ctx);
         } finally {
             switchExpressionRuleContextStack.pop();
+            asyncClosureStack.pop();
             visitingClosureCount -= 1;
         }
     }
@@ -4976,6 +4990,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
     private final Deque<List<InnerClassNode>> anonymousInnerClassesDefinedInMethodStack = new ArrayDeque<>();
     private final Deque<GroovyParserRuleContext> switchExpressionRuleContextStack = new ArrayDeque<>();
+    /** one entry per enclosing closure/lambda: TRUE if it is the closure of an {@code async} expression */
+    private final Deque<Boolean> asyncClosureStack = new ArrayDeque<>();
+    /** set just before visiting the closure/lambda of an {@code async} expression; consumed by the closure/lambda visit */
+    private boolean nextClosureIsAsync;
 
     private Tuple2<GroovyParserRuleContext, Exception> numberFormatError;
 
