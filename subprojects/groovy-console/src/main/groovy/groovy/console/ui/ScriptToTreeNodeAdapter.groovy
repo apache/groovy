@@ -70,6 +70,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression
 import org.codehaus.groovy.ast.expr.SpreadExpression
 import org.codehaus.groovy.ast.expr.SpreadMapExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.SwitchExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
@@ -93,6 +94,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement
 import org.codehaus.groovy.ast.stmt.ThrowStatement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
+import org.codehaus.groovy.ast.stmt.YieldStatement
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.classgen.asm.BytecodeHelper
@@ -635,6 +637,18 @@ class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     @Override
     void visitSwitch(SwitchStatement node) {
         addNode(node, SwitchStatement, { super.visitSwitch(it) })
+    }
+
+    /** Adds a first-class switch expression node to the tree (GROOVY-12255). */
+    @Override
+    void visitSwitchExpression(SwitchExpression node) {
+        addNode(node, SwitchExpression, { super.visitSwitchExpression(it) })
+    }
+
+    /** Adds a yield statement node to the tree (GROOVY-12255). */
+    @Override
+    void visitYieldStatement(YieldStatement node) {
+        addNode(node, YieldStatement, { super.visitYieldStatement(it) })
     }
 
     /** Adds a case statement node to the tree. */

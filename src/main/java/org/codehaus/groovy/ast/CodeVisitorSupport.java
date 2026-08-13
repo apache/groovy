@@ -49,6 +49,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -72,6 +73,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 
 /**
@@ -314,6 +316,18 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     /**
+     * Visits a {@link YieldStatement}, traversing the yielded expression
+     * (GROOVY-12255).
+     *
+     * @param statement the yield statement
+     * @since 6.0.0
+     */
+    @Override
+    public void visitYieldStatement(final YieldStatement statement) {
+        statement.getExpression().visit(this);
+    }
+
+    /**
      * Visits a {@link org.codehaus.groovy.ast.expr.MethodCallExpression}, traversing the object expression,
      * method expression, and argument list.
      *
@@ -367,6 +381,44 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         expression.getBooleanExpression().visit(this);
         expression.getTrueExpression().visit(this);
         expression.getFalseExpression().visit(this);
+    }
+
+    /**
+     * Visits a {@link SwitchExpression}, traversing the selector, case arms, and
+     * default arm (GROOVY-12255).
+     *
+     * @param expression the switch expression
+     * @since 6.0.0
+     */
+    @Override
+    public void visitSwitchExpression(final SwitchExpression expression) {
+        expression.getExpression().visit(this);
+        afterSwitchConditionExpressionVisited(expression);
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            caseStatement.visit(this);
+        }
+        afterSwitchCaseStatementsVisited(expression);
+        expression.getDefaultStatement().visit(this);
+    }
+
+    /**
+     * Hook method called after the switch-expression selector is visited, but
+     * before case arms (GROOVY-12255).
+     *
+     * @param expression the switch expression being visited
+     * @since 6.0.0
+     */
+    protected void afterSwitchConditionExpressionVisited(final SwitchExpression expression) {
+    }
+
+    /**
+     * Hook method called after all case arms are visited, but before the default
+     * arm (GROOVY-12255).
+     *
+     * @param expression the switch expression being visited
+     * @since 6.0.0
+     */
+    protected void afterSwitchCaseStatementsVisited(final SwitchExpression expression) {
     }
 
     /**

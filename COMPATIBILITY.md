@@ -260,6 +260,29 @@ back-port silently.
 Release notes for the 6.0 beta line should call this out (JIRA
 `breaking` label on GROOVY-12242).
 
+### Groovy 6 — first-class switch expressions (GROOVY-12255)
+
+Groovy 6 compiles switch expressions (JEP 361) as first-class AST
+(`SwitchExpression` / `YieldStatement`) instead of desugaring them to an
+immediately-called closure around a switch statement (the GROOVY-9272
+implementation shipped in 4.x / 5.x).
+
+**Who is affected (runtime behaviour).** A dynamic switch expression whose
+selector matches no arm now throws `IllegalStateException`. Previously the
+desugared closure completed without a `return` and the expression evaluated
+to `null`. Under `@TypeChecked` / `@CompileStatic`, a non-exhaustive switch
+expression (no `default`, and not a complete enum) is a compile-time error.
+
+**Who is affected (AST tools).** Visitors, macros, and AST transforms that
+assumed a switch expression was a `MethodCallExpression` wrapping a
+`SwitchStatement` need to handle `SwitchExpression` and `YieldStatement`.
+`GroovyCodeVisitor` supplies default methods so existing visitors keep
+compiling.
+
+**What is *not* claimed.** Matching still uses Groovy `isCase` (Class, regex,
+Collection, Closure). `tableswitch` / `lookupswitch` are emitted only when
+the selector and labels are constants of a type `javac` would switch on.
+
 ### Groovy 6 — `CompilerConfiguration` copy constructor copies customizers (GROOVY-9585)
 
 `CompilerConfiguration(CompilerConfiguration)` now copies the source

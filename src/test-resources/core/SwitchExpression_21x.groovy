@@ -33,6 +33,7 @@ def meth() {
             yield 'hi'
         }
         case 2 -> 'Hello'
+        default -> 'hi'
     }
     r + ', Daniel'
 }

@@ -184,9 +184,26 @@ final class SemanticsTest {
             case 'Adam'   -> 'Eve'
             case 'Antony' -> 'Cleopatra'
             case 'Bonnie' -> 'Clyde'
+            default       -> 'Unknown'
         }
         // end::switch_expression[]
         assert partner == 'Juliet'
+    }
+
+    @Test
+    void testSwitchExpressionYieldBlock() {
+        // tag::switch_expression_yield[]
+        int n = 2
+        int value = switch (n) {
+            case 1 -> 10
+            case 2 -> {
+                int doubled = n * 10
+                yield doubled
+            }
+            default -> throw new IllegalArgumentException(String.valueOf(n))
+        }
+        // end::switch_expression_yield[]
+        assert value == 20
     }
 
     @Test

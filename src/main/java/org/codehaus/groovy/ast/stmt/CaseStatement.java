@@ -35,6 +35,7 @@ public class CaseStatement extends Statement {
 
     private Statement code;
     private Expression expression;
+    private boolean arrow;
 
     /**
      * Constructs a case statement with the given expression pattern and code block.
@@ -83,6 +84,29 @@ public class CaseStatement extends Statement {
         expression=e;
     }
 
+    /**
+     * Indicates whether this case uses an arrow label ({@code case L ->}) rather
+     * than a colon label ({@code case L:}). Arrow labels do not fall through
+     * (GROOVY-12255 / JEP 361).
+     *
+     * @return {@code true} if this case was written with {@code ->}
+     * @since 6.0.0
+     */
+    public boolean isArrow() {
+        return arrow;
+    }
+
+    /**
+     * Marks this case as an arrow label ({@code case L ->}) or a colon label
+     * (GROOVY-12255).
+     *
+     * @param arrow {@code true} if this case was written with {@code ->}
+     * @since 6.0.0
+     */
+    public void setArrow(final boolean arrow) {
+        this.arrow = arrow;
+    }
+
     @Override
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCaseStatement(this);
@@ -90,6 +114,6 @@ public class CaseStatement extends Statement {
 
     @Override
     public String toString() {
-        return super.toString() + "[expression: " + expression + "; code: " + code + "]";
+        return super.toString() + "[expression: " + expression + "; code: " + code + "; arrow: " + arrow + "]";
     }
 }

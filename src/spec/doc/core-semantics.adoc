@@ -205,12 +205,37 @@ Switch supports the following kinds of comparisons:
 
 NOTE: When using a closure case value, the default `it` parameter is actually the switch value (in our example, variable `x`).
 
-Groovy also supports switch expressions as shown in the following example:
+Groovy also supports switch expressions as specified by
+https://openjdk.org/jeps/361[JEP 361: Switch Expressions]
+(link:https://issues.apache.org/jira/browse/GROOVY-12255[GROOVY-12255]).
+A switch expression produces a value. Arms may use arrow labels
+(`case L ->`), which do not fall through, or traditional colon labels
+(`case L:`) with an explicit `yield`. A switch expression must complete by
+yielding a value or by throwing; unlike a switch statement, an unmatched
+selector throws `IllegalStateException`. Under `@TypeChecked` /
+`@CompileStatic` a non-exhaustive switch expression (no `default`, and not a
+complete enum) is a compile-time error. From Groovy 6 the compiler keeps the
+expression as first-class AST (`SwitchExpression` / `YieldStatement`) rather
+than rewriting it to a closure around a switch statement.
 
 [source,groovy]
 ----
 include::../test/SemanticsTest.groovy[tags=switch_expression,indent=0]
 ----
+
+Arrow arms that need more than one statement use a block and `yield`:
+
+[source,groovy]
+----
+include::../test/SemanticsTest.groovy[tags=switch_expression_yield,indent=0]
+----
+
+Multiple constants may share an arm, and Groovy's usual `isCase` matching
+(Class, regex, Collection, Closure) is available in both the statement and
+the expression forms. Under static compilation, when every case label is an
+`int`, `String` or enum constant, the compiler emits `tableswitch` /
+`lookupswitch` bytecode in the same style as `javac`
+(link:https://issues.apache.org/jira/browse/GROOVY-12255[GROOVY-12255]).
 
 ==== Looping structures
 ===== Classic for loop
@@ -556,6 +581,7 @@ Groovy supports many of the same kinds of expressions as Java, including:
 ----
 assert 'bar' == switch('foo') {
   case 'foo' -> 'bar'
+  default    -> 'other'
 }
 ----
 | switch expressions

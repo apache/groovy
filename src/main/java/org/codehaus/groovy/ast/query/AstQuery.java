@@ -469,6 +469,8 @@ public final class AstQuery<T extends ASTNode> {
         @Override public void visitSynchronizedStatement(org.codehaus.groovy.ast.stmt.SynchronizedStatement s) { enter(s, () -> super.visitSynchronizedStatement(s)); }
         @Override public void visitCatchStatement(org.codehaus.groovy.ast.stmt.CatchStatement s) { enter(s, () -> super.visitCatchStatement(s)); }
         @Override public void visitEmptyStatement(org.codehaus.groovy.ast.stmt.EmptyStatement s) { enter(s, () -> super.visitEmptyStatement(s)); }
+        @Override public void visitYieldStatement(org.codehaus.groovy.ast.stmt.YieldStatement s) { enter(s, () -> super.visitYieldStatement(s)); }
+        @Override public void visitSwitchExpression(org.codehaus.groovy.ast.expr.SwitchExpression e) { enter(e, () -> super.visitSwitchExpression(e)); }
 
         // ---- expressions (sinks only; wrappers funnel into these) ----
 

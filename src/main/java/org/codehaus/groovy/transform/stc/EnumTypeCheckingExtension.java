@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform.stc;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE;
@@ -41,13 +42,14 @@ public class EnumTypeCheckingExtension extends TypeCheckingExtension {
     }
 
     /**
-     * Resolves enum constants referenced inside switch case labels.
+     * Resolves enum constants referenced inside switch case labels, including
+     * first-class switch expressions (GROOVY-12255).
      */
     @Override
     public boolean handleUnresolvedVariableExpression(final VariableExpression vexp) {
-        var switchStatement = this.typeCheckingVisitor.typeCheckingContext.getEnclosingSwitchStatement();
-        if (switchStatement != null) {
-            ClassNode type = switchStatement.getExpression().getNodeMetaData(StaticTypesMarker.TYPE);
+        Expression selector = selectorOfEnclosingSwitch();
+        if (selector != null) {
+            ClassNode type = selector.getNodeMetaData(StaticTypesMarker.TYPE);
             if (type != null && type.isEnum()) {
                 FieldNode fieldNode = type.redirect().getField(vexp.getName());
                 if (fieldNode != null && fieldNode.isEnum()) {
@@ -57,5 +59,9 @@ public class EnumTypeCheckingExtension extends TypeCheckingExtension {
             }
         }
         return false;
+    }
+
+    private Expression selectorOfEnclosingSwitch() {
+        return typeCheckingVisitor.typeCheckingContext.getEnclosingSwitchSelector();
     }
 }

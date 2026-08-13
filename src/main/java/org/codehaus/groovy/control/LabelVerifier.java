@@ -37,7 +37,13 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.LambdaExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +56,8 @@ import java.util.Set;
 public class LabelVerifier extends PrePostStatementVisitor {
 
     boolean inIf, inLoop, inSwitch;
+    private int closureDepth;
+    private final Deque<Integer> switchExpressionClosureDepths = new ArrayDeque<>();
     private final SourceUnit source;
     private Set<String> availableLabels;
     private Map<String, Statement> undefinedLabels;
@@ -210,6 +218,57 @@ public class LabelVerifier extends PrePostStatementVisitor {
         switchStatement.getDefaultStatement().visit(this);
         inSwitch = oldInSwitch;
         postVisitStatement(switchStatement);
+    }
+
+    /**
+     * Verifies labels and {@code yield} inside a switch expression
+     * (GROOVY-12255).
+     *
+     * @param expression the switch expression to inspect
+     * @since 6.0.0
+     */
+    @Override
+    public void visitSwitchExpression(final SwitchExpression expression) {
+        expression.getExpression().visit(this);
+        switchExpressionClosureDepths.push(closureDepth);
+        try {
+            expression.getCaseStatements().forEach(this::visit);
+            expression.getDefaultStatement().visit(this);
+        } finally {
+            switchExpressionClosureDepths.pop();
+        }
+    }
+
+    /**
+     * Verifies that a {@code yield} statement targets the innermost switch
+     * expression and does not cross a closure or lambda that was entered
+     * <em>after</em> that switch (GROOVY-12255 / JEP 361). A switch expression
+     * that itself lives inside a closure (for example a GINQ query) is allowed.
+     *
+     * @param statement the yield statement to inspect
+     * @since 6.0.0
+     */
+    @Override
+    public void visitYieldStatement(final YieldStatement statement) {
+        visitStatement(statement);
+        if (switchExpressionClosureDepths.isEmpty()) {
+            addError("the yield statement is only allowed inside a switch expression", statement);
+        } else if (closureDepth > switchExpressionClosureDepths.peek()) {
+            addError("yield cannot jump through a closure or lambda", statement);
+        }
+        super.visitYieldStatement(statement);
+    }
+
+    @Override
+    public void visitClosureExpression(final ClosureExpression expression) {
+        closureDepth += 1;
+        super.visitClosureExpression(expression);
+        closureDepth -= 1;
+    }
+
+    @Override
+    public void visitLambdaExpression(final LambdaExpression expression) {
+        visitClosureExpression(expression);
     }
 
     /**

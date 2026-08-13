@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -361,6 +362,65 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
      * {@inheritDoc}
      */
     @Override
+    public void visitSwitchExpression(final org.codehaus.groovy.ast.expr.SwitchExpression expression) {
+        expression.getExpression().visit(this);
+        List<Statement> branches = new ArrayList<>(expression.getCaseStatements());
+        if (!(expression.getDefaultStatement() instanceof EmptyStatement)) {
+            branches.add(expression.getDefaultStatement());
+        }
+        List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
+
+        int lastIndex = branches.size() - 1;
+        for (int i = 0; i <= lastIndex; i++) {
+            pushState();
+            boolean done = false;
+            boolean leavesExpression = false;
+            for (int j = i; !done; j++) {
+                Statement branch = branches.get(j);
+                Statement block = branch;
+                if (branch instanceof CaseStatement caseS) {
+                    block = caseS.getCode();
+                    caseS.getExpression().visit(this);
+                }
+                block.visit(this);
+                done = j == lastIndex || !fallsThrough(block);
+                if (done) {
+                    // GROOVY-12255: yield completes the expression normally;
+                    // only throw/return fail to reach the code after it
+                    leavesExpression = completesWithoutReachingAfterExpression(block);
+                }
+            }
+            if (!leavesExpression) {
+                afterStates.add(getState());
+            }
+            popState();
+        }
+        if (afterStates.isEmpty()) {
+            return;
+        }
+
+        Map<Variable, VariableState> beforeState = getState();
+        Set<Variable> allVars = new HashSet<>(beforeState.keySet());
+        for (Map<Variable, VariableState> map : afterStates) {
+            allVars.addAll(map.keySet());
+        }
+        for (Variable var : allVars) {
+            VariableState beforeValue = beforeState.get(var);
+            if (beforeValue != null) {
+                final VariableState merged = afterStates.get(0).get(var);
+                if (merged != null) {
+                    if (afterStates.stream().allMatch(state -> merged.equals(state.get(var)))) {
+                        beforeState.put(var, merged);
+                    } else {
+                        VariableState different = beforeValue == VariableState.is_uninitialized ? VariableState.is_ambiguous : VariableState.is_var;
+                        beforeState.put(var, different);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public void visitSwitch(SwitchStatement switchS) {
         visitStatement(switchS);
         switchS.getExpression().visit(this);
@@ -490,10 +550,29 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     /**
+     * True when every path through {@code block} leaves the enclosing method
+     * (return) or throws, so assignments in that arm do not reach the code
+     * after a switch expression (GROOVY-12255). {@link YieldStatement}
+     * completes the expression normally and therefore does reach that code.
+     */
+    private boolean completesWithoutReachingAfterExpression(final Statement block) {
+        if (block instanceof ReturnStatement || block instanceof ThrowStatement) {
+            return true;
+        }
+        if (block instanceof YieldStatement) {
+            return false;
+        }
+        if (block instanceof BlockStatement bs && !bs.getStatements().isEmpty()) {
+            return completesWithoutReachingAfterExpression(DefaultGroovyMethods.last(bs.getStatements()));
+        }
+        return false;
+    }
+
+    /**
      * @return true if the block's last statement is a return or throw
      */
     private boolean returningBlock(Statement block) {
-        if (block instanceof ReturnStatement || block instanceof  ThrowStatement) {
+        if (block instanceof ReturnStatement || block instanceof ThrowStatement || block instanceof YieldStatement) {
             return true;
         }
         if (!(block instanceof BlockStatement bs)) {
@@ -503,7 +582,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             return false;
         }
         Statement last = DefaultGroovyMethods.last(bs.getStatements());
-        if (last instanceof ReturnStatement || last instanceof ThrowStatement) {
+        if (last instanceof ReturnStatement || last instanceof ThrowStatement || last instanceof YieldStatement) {
             return true;
         }
         return false;
@@ -524,7 +603,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             return true;
         }
         Statement last = DefaultGroovyMethods.last(block.getStatements());
-        boolean completesAbruptly = last instanceof ReturnStatement || last instanceof BreakStatement || last instanceof ThrowStatement || last instanceof ContinueStatement;
+        boolean completesAbruptly = last instanceof ReturnStatement || last instanceof BreakStatement || last instanceof ThrowStatement || last instanceof ContinueStatement || last instanceof YieldStatement;
         return !completesAbruptly;
     }
 

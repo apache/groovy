@@ -72,6 +72,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -94,6 +95,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CallSiteWriter;
@@ -978,6 +980,23 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(expression, "visitTernaryExpression");
         controller.getBinaryExpressionHelper().evaluateTernary(expression);
         doPostVisit(expression); // GROOVY-7473
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void visitSwitchExpression(final SwitchExpression expression) {
+        controller.getSwitchExpressionWriter().writeSwitchExpression(expression);
+        doPostVisit(expression);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void visitYieldStatement(final YieldStatement statement) {
+        controller.getSwitchExpressionWriter().writeYield(statement);
     }
 
     /**

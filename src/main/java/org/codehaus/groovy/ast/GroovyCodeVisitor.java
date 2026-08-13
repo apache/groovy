@@ -51,6 +51,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -74,6 +75,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 
 import java.util.List;
@@ -212,6 +214,19 @@ public interface GroovyCodeVisitor {
      * @param statement the {@link EmptyStatement} to process
      */
     default void visitEmptyStatement(EmptyStatement statement) {
+    }
+
+    /**
+     * Visits a {@code yield} statement that produces the value of an enclosing
+     * {@link SwitchExpression} (GROOVY-12255). The default implementation
+     * visits the yielded expression so existing visitors keep traversing
+     * without a source change.
+     *
+     * @param statement the {@link YieldStatement} to process
+     * @since 6.0.0
+     */
+    default void visitYieldStatement(YieldStatement statement) {
+        visit(statement.getExpression());
     }
 
     /**
@@ -494,6 +509,22 @@ public interface GroovyCodeVisitor {
      * @param expression the {@link EmptyExpression} to process
      */
     default void visitEmptyExpression(EmptyExpression expression) {
+    }
+
+    /**
+     * Visits a first-class switch expression (GROOVY-12255 / JEP 361). The
+     * default implementation visits the selector, each case, and the default
+     * arm so existing visitors keep traversing without a source change.
+     *
+     * @param expression the {@link SwitchExpression} to process
+     * @since 6.0.0
+     */
+    default void visitSwitchExpression(SwitchExpression expression) {
+        visit(expression.getExpression());
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            caseStatement.visit(this);
+        }
+        visit(expression.getDefaultStatement());
     }
 
     /**
