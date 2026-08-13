@@ -21,6 +21,7 @@ package org.apache.groovy.runtime.async;
 import groovy.concurrent.AwaitResult;
 import groovy.concurrent.Awaitable;
 import groovy.concurrent.AwaitableAdapterRegistry;
+import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
@@ -121,6 +122,7 @@ public class AsyncSupport {
      * Blocks the calling thread until the computation completes.
      * The original exception is rethrown transparently.
      */
+    @GroovyABI(since="6.0.0")
     public static <T> T await(Awaitable<T> awaitable) {
         try {
             return awaitable.get();
@@ -132,6 +134,7 @@ public class AsyncSupport {
     }
 
     /** Awaits a {@link CompletableFuture} using non-interruptible {@code join()}. */
+    @GroovyABI(since="6.0.0")
     public static <T> T await(CompletableFuture<T> future) {
         try {
             return future.join();
@@ -143,11 +146,13 @@ public class AsyncSupport {
     }
 
     /** Awaits a {@link CompletionStage} by converting to CompletableFuture. */
+    @GroovyABI(since="6.0.0")
     public static <T> T await(CompletionStage<T> stage) {
         return await(stage.toCompletableFuture());
     }
 
     /** Awaits a {@link Future}. Delegates to the CF overload if applicable. */
+    @GroovyABI(since="6.0.0")
     public static <T> T await(Future<T> future) {
         if (future instanceof CompletableFuture<T> cf) {
             return await(cf);
@@ -172,6 +177,7 @@ public class AsyncSupport {
      * {@code CompletionStage}, and {@code Future} when a value implements more
      * than one of them (e.g. {@link CompletableFuture}).
      */
+    @GroovyABI(since="6.0.0")
     @SuppressWarnings("unchecked")
     public static <T> T await(Object source) {
         if (source == null) return null;
@@ -203,6 +209,7 @@ public class AsyncSupport {
     /**
      * Executes the given supplier asynchronously using the default executor.
      */
+    @GroovyABI(since="6.0.0")
     public static <T> Awaitable<T> async(Supplier<T> supplier) {
         return executeAsync(supplier, AsyncExecutors.getExecutor());
     }
@@ -222,6 +229,7 @@ public class AsyncSupport {
      * Called by compiler-generated code at the start of closures
      * containing {@code defer} statements.
      */
+    @GroovyABI(since="6.0.0")
     public static Deque<Callable<?>> createDeferScope() {
         return new ArrayDeque<>();
     }
@@ -230,6 +238,7 @@ public class AsyncSupport {
      * Registers a deferred action in the given scope. Actions execute in LIFO
      * order when {@link #executeDeferScope} is called (in the finally block).
      */
+    @GroovyABI(since="6.0.0")
     public static void defer(Deque<Callable<?>> scope,
                              Callable<?> action) {
         if (scope == null) {
@@ -288,6 +297,7 @@ public class AsyncSupport {
      * @param bridge the GeneratorBridge instance (injected as synthetic parameter)
      * @param value  the value to yield
      */
+    @GroovyABI(since="6.0.0")
     public static void yieldReturn(Object bridge, Object value) {
         if (!(bridge instanceof GeneratorBridge<?>)) {
             throw new IllegalStateException("yield return can only be used inside an async generator");
@@ -308,6 +318,7 @@ public class AsyncSupport {
      * @param <T>  the element type
      * @return an Iterable that yields values from the generator
      */
+    @GroovyABI(since="6.0.0")
     public static <T> Iterable<T> asyncGenerator(Consumer<Object> body) {
         Objects.requireNonNull(body, "body must not be null");
         GeneratorBridge<T> bridge = new GeneratorBridge<>();
@@ -336,6 +347,7 @@ public class AsyncSupport {
      * @param <T>    the element type
      * @return an iterable
      */
+    @GroovyABI(since="6.0.0")
     @SuppressWarnings("unchecked")
     public static <T> Iterable<T> toIterable(Object source) {
         if (source == null) return Collections.emptyList();
@@ -355,6 +367,7 @@ public class AsyncSupport {
      * cannot mask the original loop error; prefer robust {@code close()}
      * implementations.
      */
+    @GroovyABI(since="6.0.0")
     public static void closeIterable(Object source) {
         if (source instanceof Closeable c) {
             try {

@@ -27,6 +27,7 @@ import groovy.lang.Writable;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -45,6 +46,7 @@ import static java.util.Arrays.stream;
 
 /**
  * Formatting methods
+ * @since Groovy 4.0.0
  */
 public class FormatHelper {
 
@@ -96,6 +98,7 @@ public class FormatHelper {
      * @param arguments the object to convert to a string
      * @return a string representation
      */
+    @GroovyABI(since="5.0.0")
     public static String toString(Object arguments) {
         return format(arguments, false, -1, false);
     }

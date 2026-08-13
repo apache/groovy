@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.IntRange;
+import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -80,6 +81,7 @@ public final class MultipleAssignmentSupport {
      * @param fromIndex the declarator position of the rest binding
      * @param seq       the iterator that has already yielded the preceding fixed-slot values
      */
+    @GroovyABI(since="6.0.0")
     public static Object tailRest(final Object rhs, final int fromIndex, final Iterator<?> seq) {
         if (rhs instanceof List) {
             if (fromIndex >= ((List<?>) rhs).size()) return createSimilarList((List<?>) rhs, 0);
@@ -144,6 +146,7 @@ public final class MultipleAssignmentSupport {
      * @param fromIndex positive index where the slice begins
      * @param toIndex   negative index where the slice ends (inclusive)
      */
+    @GroovyABI(since="6.0.0")
     public static Object nonTailRestSlice(final Object rhs, final int fromIndex, final int toIndex) {
         int size = -1;
         if (rhs instanceof List) size = ((List<?>) rhs).size();

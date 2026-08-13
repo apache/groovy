@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.collection.runtime
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.Internal
+import org.apache.groovy.lang.annotation.GroovyABI
 import org.apache.groovy.util.SystemUtil
 
 import java.util.concurrent.Callable
@@ -54,6 +55,7 @@ class QueryableHelper {
      * @return the result {@link Queryable} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T> Queryable<SourceRecord<T>> navigate(Queryable<? extends T> queryable, List<String> aliasList) {
         List<SourceRecord<T>> sourceRecordList =
                 queryable.stream()
@@ -71,6 +73,7 @@ class QueryableHelper {
      * @throws TooManyValuesException if the {@link Queryable} instance contains more than one value
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T> T singleValue(final Queryable<? extends T> queryable) {
         List<? extends T> list = queryable.toList()
         int size = list.size()
@@ -91,6 +94,7 @@ class QueryableHelper {
      * @param supplier the supplier to execute
      * @return the asynchronous result
      */
+    @GroovyABI(since="4.0.0")
     static <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
         return CompletableFuture.supplyAsync(supplier, ThreadPoolHolder.THREAD_POOL)
     }
@@ -112,6 +116,7 @@ class QueryableHelper {
      * @param callable the task to submit
      * @return the submitted task
      */
+    @GroovyABI(since="4.0.0")
     static <T> ForkJoinTask<T> submit(Callable<T> callable) {
         return ThreadPoolHolder.FORKJOIN_POOL.submit(callable)
     }
@@ -131,6 +136,7 @@ class QueryableHelper {
      * @param name the variable name
      * @param value the variable value
      */
+    @GroovyABI(since="4.0.0")
     static <T> void setVar(String name, T value) {
         VAR_HOLDER.get().put(name, value)
     }
@@ -141,6 +147,7 @@ class QueryableHelper {
      * @param name the variable name
      * @return the stored value
      */
+    @GroovyABI(since="4.0.0")
     static <T> T getVar(String name) {
         (T) VAR_HOLDER.get().get(name)
     }
@@ -151,6 +158,7 @@ class QueryableHelper {
      * @param name the variable name
      * @return the removed value
      */
+    @GroovyABI(since="4.0.0")
     static <T> T removeVar(String name) {
         (T) VAR_HOLDER.get().remove(name)
     }

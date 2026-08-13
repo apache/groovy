@@ -20,6 +20,7 @@ package org.apache.groovy.transform.copywith;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -52,6 +53,7 @@ public final class NestedCopyWithSupport {
      * (nested-aware) {@code copyWith(Map)}. The block is thus pure sugar over
      * the map form, inheriting its closed-type-domain and identity guarantees.
      */
+    @GroovyABI(since="6.0.0")
     public static Object applyBlock(final Object self, final Closure<?> block) {
         Map<Object, Object> sink = new LinkedHashMap<>();
         Closure<?> c = (Closure<?>) block.clone();
@@ -63,6 +65,7 @@ public final class NestedCopyWithSupport {
     }
 
     @SuppressWarnings("unchecked")
+    @GroovyABI(since="6.0.0")
     public static Map<Object, Object> flatten(final Object self, final Map<Object, Object> raw) {
         if (raw == null) return new LinkedHashMap<>();
         Map<Object, Object> flat = new LinkedHashMap<>();

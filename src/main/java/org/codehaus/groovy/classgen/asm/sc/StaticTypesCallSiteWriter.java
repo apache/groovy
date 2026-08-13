@@ -578,9 +578,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 writePowerCall(receiver, argument, rType, aType);
                 return;
               case "and":
-              case  "or":
+              case "or":
               case "xor":
-              case "implies":
               case "remainder":
               case "leftShift":
               case "rightShift":
