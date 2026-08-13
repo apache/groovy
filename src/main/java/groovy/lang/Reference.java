@@ -18,7 +18,6 @@
  */
 package groovy.lang;
 
-import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.Serial;
@@ -97,7 +96,6 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
      *
      * @return the referenced value
      */
-    @GroovyABI(since = "1.0.0")
     public T get() {
         return value;
     }
@@ -107,7 +105,6 @@ public class Reference<T> extends GroovyObjectSupport implements Serializable {
      *
      * @param value the new value
      */
-    @GroovyABI(since = "1.0.0")
     public void set(T value) {
         this.value = value;
     }
