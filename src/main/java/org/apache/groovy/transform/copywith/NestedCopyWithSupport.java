@@ -41,6 +41,7 @@ import java.util.Map;
  * @since 6.0.0
  */
 @Incubating
+@GroovyABI(since="6.0.0")
 public final class NestedCopyWithSupport {
 
     private NestedCopyWithSupport() {
@@ -53,7 +54,6 @@ public final class NestedCopyWithSupport {
      * (nested-aware) {@code copyWith(Map)}. The block is thus pure sugar over
      * the map form, inheriting its closed-type-domain and identity guarantees.
      */
-    @GroovyABI(since="6.0.0")
     public static Object applyBlock(final Object self, final Closure<?> block) {
         Map<Object, Object> sink = new LinkedHashMap<>();
         Closure<?> c = (Closure<?>) block.clone();
@@ -65,7 +65,6 @@ public final class NestedCopyWithSupport {
     }
 
     @SuppressWarnings("unchecked")
-    @GroovyABI(since="6.0.0")
     public static Map<Object, Object> flatten(final Object self, final Map<Object, Object> raw) {
         if (raw == null) return new LinkedHashMap<>();
         Map<Object, Object> flat = new LinkedHashMap<>();
