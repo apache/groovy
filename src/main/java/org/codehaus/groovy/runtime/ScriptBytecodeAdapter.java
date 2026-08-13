@@ -749,7 +749,7 @@ public class ScriptBytecodeAdapter {
         return (T) n;
     }
 
-    @GroovyABI(since = "1.0")
+    @GroovyABI(since = "1.0.0")
     public static MetaClass initMetaClass(final Object object) {
         return InvokerHelper.getMetaClass(object.getClass());
     }
