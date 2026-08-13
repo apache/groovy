@@ -46,6 +46,7 @@ options {
 
 @members {
     private int inSwitchExpressionLevel = 0;
+    private int inAsyncClosureLevel = 0;
 
     public static class GroovyParserRuleContext extends ParserRuleContext implements NodeMetaDataHandler {
         private Map metaDataMap = null;
@@ -662,7 +663,8 @@ statement
     |   { inSwitchExpressionLevel > 0 }?
         yieldStatement                                                                                      #yieldStmtAlt
     |   YIELD RETURN nls expression                                                                         #yieldReturnStmtAlt
-    |   DEFER nls statementExpression                                                                       #deferStmtAlt
+    |   { inAsyncClosureLevel > 0 }?
+        DEFER nls statementExpression                                                                       #deferStmtAlt
     |   identifier COLON nls statement                                                                      #labeledStmtAlt
     |   assertStatement                                                                                     #assertStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
@@ -809,7 +811,7 @@ expression
     :   castParExpression castOperandExpression                                             #castExprAlt
 
     // async closure/lambda must come before postfixExpression to resolve ambiguity with method call, e.g. async { ... }
-    |   ASYNC nls closureOrLambdaExpression                                                 #asyncClosureExprAlt
+    |   ASYNC nls { inAsyncClosureLevel++; } closureOrLambdaExpression { inAsyncClosureLevel--; }   #asyncClosureExprAlt
 
     // await expression: single-arg or multi-arg (parenthesized or unparenthesized)
     |   AWAIT nls ( LPAREN expression (COMMA nls expression)* RPAREN
