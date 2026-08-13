@@ -581,8 +581,9 @@ public class BinaryExpressionHelper {
                 VariableExpression var = (VariableExpression) leftExpression;
                 if (var.isClosureSharedVariable() && ClassHelper.isPrimitiveType(rhsType)) {
                     // GROOVY-5570: if a closure shared variable is a primitive type, it must be boxed
+                    rhsType = ClassHelper.getWrapper(rhsType);
                     operandStack.box();
-            }
+                }
 
                 // ensure we try to unbox null to cause a runtime NPE in case we assign
                 // null to a primitive typed variable, even if it is used only in boxed
