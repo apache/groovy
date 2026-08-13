@@ -27,6 +27,7 @@ import groovy.transform.options.PropertyHandler;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.CopyWithUtils;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -325,8 +326,10 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
     }
 
     /**
-     * This method exists to be binary compatible with 1.7 - 1.8.6 compiled code.
+     * This method exists to be binary compatible with 1.7 - 1.8.6 compiled code and is since 2.5.0 used
+     * by code produced by ImmutablePropertyHandler
      */
+    @GroovyABI(since="1.7.0")
     public static Object checkImmutable(final String className, final String fieldName, final Object field) {
         if (field == null || field instanceof Enum || ImmutablePropertyUtils.isBuiltinImmutable(field.getClass().getName())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection<?>) field);

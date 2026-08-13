@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.util;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
+
 import java.util.Arrays;
 
 /**
@@ -34,6 +36,7 @@ public class HashCodeHelper {
      *
      * @return the starting hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int initHash() {
         return SEED;
     }
@@ -45,6 +48,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, boolean var) {
         return shift(current) + (var ? 79 : 97);
     }
@@ -56,6 +60,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, char var) {
         return shift(current) + (int) var;
     }
@@ -67,6 +72,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, Character var) {
         return updateHash(current, var == null ? 0 : var.charValue());
     }
@@ -78,6 +84,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, int var) {
         return shift(current) + var;
     }
@@ -89,6 +96,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, Integer var) {
         return updateHash(current, var == null ? 0 : var);
     }
@@ -100,6 +108,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, long var) {
         return shift(current) + (int) (var ^ (var >>> 32));
     }
@@ -111,6 +120,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, Long var) {
         return updateHash(current, var == null ? 0L : var);
     }
@@ -122,6 +132,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, float var) {
         return updateHash(current, Float.floatToIntBits(var));
     }
@@ -133,6 +144,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, Float var) {
         return updateHash(current, var == null ? 0f : var);
     }
@@ -144,6 +156,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, double var) {
         return updateHash(current, Double.doubleToLongBits(var));
     }
@@ -155,6 +168,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, Double var) {
         return updateHash(current, var == null ? 0d : var);
     }
@@ -166,6 +180,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, Object var) {
         if (var == null) return updateHash(current, 0);
         if (var.getClass().isArray())
@@ -180,6 +195,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, boolean[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
@@ -192,6 +208,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, char[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
@@ -204,6 +221,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, byte[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
@@ -216,6 +234,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, short[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
@@ -228,6 +247,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, int[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
@@ -240,6 +260,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, long[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
@@ -252,6 +273,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, float[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
@@ -264,6 +286,7 @@ public class HashCodeHelper {
      * @param var the value to mix in
      * @return the updated hash value
      */
+    @GroovyABI(since="1.6.0")
     public static int updateHash(int current, double[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);

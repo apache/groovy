@@ -20,6 +20,7 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.runtime.indy.AotDispatch;
 import org.apache.groovy.runtime.indy.IndyInvalidation;
 import org.apache.groovy.util.SystemUtil;
@@ -336,6 +337,7 @@ public class IndyInterface {
      *                   </ul>
      * @since 2.1.0
      */
+    @GroovyABI(since="2.1.0")
     public static CallSite bootstrap(final MethodHandles.Lookup caller, final String callType, final MethodType type, final String name, final int flags) {
         ensureInitialized();
         CallType ct = CallType.fromCallSiteName(callType);
@@ -778,6 +780,7 @@ public class IndyInterface {
     /**
      * @since 2.5.0
      */
+    @GroovyABI(since="2.5.0")
     public static CallSite staticArrayAccess(MethodHandles.Lookup lookup, String name, MethodType type) {
         if (type.parameterCount() == 2) {
             return new ConstantCallSite(IndyArrayAccess.arrayGet(type));
@@ -795,6 +798,7 @@ public class IndyInterface {
      *
      * @since 6.0.0
      */
+    @GroovyABI(since="6.0.0")
     public static CallSite packedDispatchers(MethodHandles.Lookup caller, String name, MethodType type) throws Throwable {
         return GeneratedDispatcher.bootstrap(caller, name, type);
     }
@@ -822,6 +826,7 @@ public class IndyInterface {
      *
      * @since 6.0.0
      */
+    @GroovyABI(since="6.0.0")
     public static Class<?>[] packedParamTypes(MethodHandles.Lookup caller, String name, Class<?> type, String descriptor) {
         return GeneratedDispatcher.paramTypes(caller, name, type, descriptor);
     }
