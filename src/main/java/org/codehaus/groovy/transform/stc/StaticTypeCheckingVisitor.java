@@ -86,6 +86,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -105,6 +106,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.ast.tools.WideningCategories;
@@ -4878,6 +4880,125 @@ trying: for (ClassNode[] signature : signatures) {
         }
     }
 
+    /**
+     * Type-checks a switch expression: visits the selector and each arm, unifies
+     * the yielded types (JEP 361 poly expression), and reports a non-exhaustive
+     * switch when the selector type is statically known (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    @Override
+    public void visitSwitchExpression(final SwitchExpression expression) {
+        typeCheckingContext.pushEnclosingSwitchExpression(expression);
+        try {
+            Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+            try {
+                super.visitSwitchExpression(expression);
+            } finally {
+                popAssignmentTracking(oldTracker);
+            }
+
+            List<ClassNode> yieldTypes = typeCheckingContext.getEnclosingSwitchExpressionYieldTypes();
+            ClassNode resultType;
+            if (yieldTypes.isEmpty()) {
+                resultType = OBJECT_TYPE;
+            } else {
+                resultType = yieldTypes.get(0);
+                for (int i = 1; i < yieldTypes.size(); i += 1) {
+                    resultType = lowestUpperBound(resultType, yieldTypes.get(i));
+                }
+                resultType = wrapTypeIfNecessary(checkForTargetType(expression, resultType));
+            }
+            storeType(expression, resultType);
+            expression.setType(resultType);
+
+            checkSwitchExpressionExhaustiveness(expression);
+        } finally {
+            typeCheckingContext.popTemporaryTypeInfo();
+            typeCheckingContext.popEnclosingSwitchExpression();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void afterSwitchConditionExpressionVisited(final SwitchExpression expression) {
+        typeCheckingContext.pushTemporaryTypeInfo();
+        Expression conditionExpression = expression.getExpression();
+        conditionExpression.putNodeMetaData(TYPE, getType(conditionExpression));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void afterSwitchCaseStatementsVisited(final SwitchExpression expression) {
+        if (!expression.getDefaultStatement().isEmpty()) {
+            Expression selectable = expression.getExpression();
+            optInstanceOfTypeInfo(selectable, selectable.getNodeMetaData(TYPE));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void visitYieldStatement(final YieldStatement statement) {
+        super.visitYieldStatement(statement);
+        if (typeCheckingContext.getEnclosingSwitchExpression() != null) {
+            typeCheckingContext.getEnclosingSwitchExpressionYieldTypes().add(getType(statement.getExpression()));
+        }
+    }
+
+    private Expression selectableOfEnclosingSwitch() {
+        return typeCheckingContext.getEnclosingSwitchSelector();
+    }
+
+    private void checkSwitchExpressionExhaustiveness(final SwitchExpression expression) {
+        if (expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty()) {
+            return;
+        }
+        Expression selector = expression.getExpression();
+        ClassNode selectorType = getType(selector);
+        if (selectorType != null && selectorType.isEnum() && coversAllEnumConstants(expression, selectorType)) {
+            return;
+        }
+        addError("the switch expression does not cover all possible input values", expression);
+    }
+
+    private boolean coversAllEnumConstants(final SwitchExpression expression, final ClassNode enumType) {
+        Set<String> remaining = new LinkedHashSet<>();
+        for (FieldNode field : enumType.redirect().getFields()) {
+            if (field.isEnum()) {
+                remaining.add(field.getName());
+            }
+        }
+        if (remaining.isEmpty() && enumType.isResolved()) {
+            Object[] constants = enumType.getTypeClass().getEnumConstants();
+            if (constants != null) {
+                for (Object constant : constants) {
+                    remaining.add(((Enum<?>) constant).name());
+                }
+            }
+        }
+        if (remaining.isEmpty()) {
+            return false;
+        }
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            Expression caseExpr = caseStatement.getExpression();
+            if (caseExpr instanceof VariableExpression variable) {
+                remaining.remove(variable.getName());
+            } else if (caseExpr instanceof PropertyExpression property
+                    && property.getObjectExpression() instanceof ClassExpression owner
+                    && owner.getType().equals(enumType)
+                    && property.getProperty() instanceof ConstantExpression name) {
+                remaining.remove(name.getText());
+            }
+        }
+        return remaining.isEmpty();
+    }
+
     /** {@inheritDoc} */
     @Override
     protected void afterSwitchConditionExpressionVisited(final SwitchStatement statement) {
@@ -4899,7 +5020,11 @@ trying: for (ClassNode[] signature : signatures) {
     /** {@inheritDoc} */
     @Override
     public void visitCaseStatement(final CaseStatement statement) {
-        Expression selectable = typeCheckingContext.getEnclosingSwitchStatement().getExpression();
+        Expression selectable = selectableOfEnclosingSwitch();
+        if (selectable == null) {
+            super.visitCaseStatement(statement);
+            return;
+        }
         Expression expression = statement.getExpression();
         if (expression instanceof ClassExpression) { // GROOVY-8411: refine the switch type
             if (!optInstanceOfTypeInfo(selectable, expression.getType())) {

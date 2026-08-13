@@ -17,25 +17,12 @@
  *  under the License.
  */
 
-import groovy.transform.CompileStatic
-
-@CompileStatic
-String same(String s) { s }
-
-@CompileStatic
-def meth() {
-    def a = 1
-    def r = switch (a) {
-        case 1 -> {
-            if (true) {
-                yield same('a')
-            } else {
-                yield same('b')
-            }
+def a = 1
+def r = switch (a) {
+    case 1 -> {
+        if (true) {
+            println 'no yield'
         }
-        default -> same('z')
     }
-    r + 'z'
+    default -> 0
 }
-
-assert 'az' == meth()

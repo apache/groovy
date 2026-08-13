@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
@@ -35,6 +36,7 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 
 import java.util.Map;
 
@@ -177,6 +179,20 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     @Override
     public void visitThrowStatement(final ThrowStatement stmt) {
         stmt.setExpression(transform(stmt.getExpression()));
+    }
+
+    @Override
+    public void visitYieldStatement(final YieldStatement stmt) {
+        stmt.setExpression(transform(stmt.getExpression()));
+    }
+
+    @Override
+    public void visitSwitchExpression(final SwitchExpression expression) {
+        expression.setExpression(transform(expression.getExpression()));
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            caseStatement.visit(this);
+        }
+        expression.getDefaultStatement().visit(this);
     }
 
     @Override

@@ -99,6 +99,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -122,6 +123,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -171,6 +173,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.yieldS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.classgen.asm.util.TypeUtil.isPrimitiveType;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
@@ -922,7 +925,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ReturnStatement visitReturnStmtAlt(final ReturnStmtAltContext ctx) {
-        if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
+        if (isInsideSwitchExpression()) {
             throw createParsingFailedException("switch expression does not support `return`", ctx);
         }
 
@@ -962,10 +965,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public ReturnStatement visitYieldStatement(final YieldStatementContext ctx) {
-        ReturnStatement returnStatement = (ReturnStatement) returnS((Expression) this.visit(ctx.expression()));
-        returnStatement.putNodeMetaData(IS_YIELD_STATEMENT, Boolean.TRUE);
-        return configureAST(returnStatement, ctx);
+    public YieldStatement visitYieldStatement(final YieldStatementContext ctx) {
+        return configureAST(yieldS((Expression) this.visit(ctx.expression())), ctx);
     }
 
     @Override
@@ -975,7 +976,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public ReturnStatement visitYieldStmtAlt(final YieldStmtAltContext ctx) {
+    public YieldStatement visitYieldStmtAlt(final YieldStmtAltContext ctx) {
         return configureAST(this.visitYieldStatement(ctx.yieldStatement()), ctx);
     }
 
@@ -1020,27 +1021,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * <pre>
-     * switch(x) {
-     *   case 0, 1 -> 'a'
-     *   case 2    -> 'b'
-     *   default   -> 'z'
-     * }
-     * </pre>
-     * will be transformed to:
-     * <pre>
-     * { ->
-     *     switch(x) {
-     *       case 0:
-     *       case 1:  return 'a'
-     *       case 2:  return 'b'
-     *       default: return 'z'
-     *     }
-     * }.call()
-     * </pre>
+     * Builds a first-class {@link SwitchExpression} (GROOVY-12255 / JEP 361).
+     * Arrow arms that are a single expression become {@link YieldStatement}s;
+     * colon arms use explicit {@code yield}. The expression is compiled inline
+     * — it is not rewritten to a closure wrapping a {@link SwitchStatement}.
      */
     @Override
-    public MethodCallExpression visitSwitchExpression(final SwitchExpressionContext ctx) {
+    public SwitchExpression visitSwitchExpression(final SwitchExpressionContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
         try {
             validateSwitchExpressionLabels(ctx);
@@ -1074,18 +1061,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 }
             }
 
-            Statement statement = configureAST(
-                    new SwitchStatement(
+            return configureAST(
+                    new SwitchExpression(
                             this.visitExpressionInPar(ctx.expressionInPar()),
                             caseStatements,
                             defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
                     ),
                     ctx);
-            statement = createBlockStatement(List.of(statement));
-
-            MethodCallExpression immediateExecution = callX(closureX(null, statement), CALL_STR);
-            immediateExecution.setImplicitThis(false);
-            return immediateExecution;
         } finally {
             switchExpressionRuleContextStack.pop();
         }
@@ -1131,25 +1113,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         boolean[] hasThrowHolder = new boolean[1];
                         codeBlock.visit(new CodeVisitorSupport() {
                             @Override
-                            public void visitReturnStatement(ReturnStatement statement) {
-                                if (isTrue(statement, IS_YIELD_STATEMENT)) {
-                                    hasYieldHolder[0] = true;
-                                    return;
-                                }
-
-                                super.visitReturnStatement(statement);
+                            public void visitYieldStatement(final YieldStatement statement) {
+                                hasYieldHolder[0] = true;
                             }
 
                             @Override
                             public void visitThrowStatement(ThrowStatement statement) {
                                 hasThrowHolder[0] = true;
                             }
+
+                            @Override
+                            public void visitClosureExpression(final ClosureExpression expression) {
+                                // yield inside a nested closure does not complete this arm
+                            }
                         });
 
                         if (hasYieldHolder[0] || hasThrowHolder[0]) {
                             hasResultStmtHolder[0] = true;
                         }
-
                     }
 
                     Statement exprOrBlockStatement = statements.get(0);
@@ -1160,26 +1141,34 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         }
                     }
 
-                    if (!(exprOrBlockStatement instanceof ReturnStatement || exprOrBlockStatement instanceof ThrowStatement)) {
+                    if (!(exprOrBlockStatement instanceof YieldStatement || exprOrBlockStatement instanceof ThrowStatement)) {
                         if (isArrow) {
-                            MethodCallExpression callClosure = callX(
-                                    configureAST(
-                                            closureX(null, exprOrBlockStatement),
-                                            exprOrBlockStatement
-                                    ), CALL_STR);
-                            callClosure.setImplicitThis(false);
-                            Expression resultExpr = exprOrBlockStatement instanceof ExpressionStatement
-                                    ? ((ExpressionStatement) exprOrBlockStatement).getExpression()
-                                    : callClosure;
-
-                            codeBlock = configureAST(
-                                    createBlockStatement(configureAST(
-                                            returnS(resultExpr),
-                                            exprOrBlockStatement
-                                    )),
-                                    exprOrBlockStatement
-                            );
+                            if (exprOrBlockStatement instanceof ExpressionStatement expressionStatement) {
+                                codeBlock = configureAST(
+                                        createBlockStatement(configureAST(
+                                                yieldS(expressionStatement.getExpression()),
+                                                exprOrBlockStatement
+                                        )),
+                                        exprOrBlockStatement
+                                );
+                            } else if (!containsYieldOrThrow(exprOrBlockStatement)) {
+                                throw createParsingFailedException("`yield` or `throw` is expected", exprOrBlockStatement);
+                            } else {
+                                codeBlock = configureAST(
+                                        createBlockStatement(exprOrBlockStatement),
+                                        exprOrBlockStatement
+                                );
+                            }
                         }
+                    } else if (exprOrBlockStatement instanceof YieldStatement || exprOrBlockStatement instanceof ThrowStatement) {
+                        codeBlock = configureAST(
+                                createBlockStatement(exprOrBlockStatement),
+                                exprOrBlockStatement
+                        );
+                    }
+
+                    if (isArrow && org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough(codeBlock)) {
+                        throw createParsingFailedException("`yield` or `throw` is expected", exprOrBlockStatement);
                     }
 
                     switch (tuple.getV1().getType()) {
@@ -1189,16 +1178,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                             }
                             for (int i = 0, n = tuple.getV2().size(); i < n; i += 1) {
                                 Expression expr = tuple.getV2().get(i);
-                                statementList.add(
-                                        configureAST(
-                                                new CaseStatement(
-                                                        expr,
-
-                                                        // check whether processing the last label. if yes, block statement should be attached.
-                                                        (isLast && i == n - 1) ? codeBlock
-                                                                : EmptyStatement.INSTANCE
-                                                ),
-                                                firstLabelHolder.get(0)));
+                                CaseStatement caseStatement = new CaseStatement(
+                                        expr,
+                                        (isLast && i == n - 1) ? codeBlock : EmptyStatement.INSTANCE
+                                );
+                                caseStatement.setArrow(isArrow);
+                                statementList.add(configureAST(caseStatement, firstLabelHolder.get(0)));
                             }
                             break;
                         case DEFAULT:
@@ -1211,6 +1196,44 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 });
 
         return tuple(result, isArrowHolder[0], hasResultStmtHolder[0]);
+    }
+
+    /**
+     * True when a switch-expression frame is more recent than any closure or
+     * lambda frame. {@code return} in that region would leave the enclosing
+     * method rather than complete the expression (JEP 361).
+     */
+    private boolean isInsideSwitchExpression() {
+        for (var ctx : switchExpressionRuleContextStack) {
+            if (ctx instanceof SwitchExpressionContext) {
+                return true;
+            }
+            if (ctx instanceof ClosureContext || ctx instanceof StandardLambdaExpressionContext) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsYieldOrThrow(final Statement statement) {
+        boolean[] found = new boolean[1];
+        statement.visit(new CodeVisitorSupport() {
+            @Override
+            public void visitYieldStatement(final YieldStatement yieldStatement) {
+                found[0] = true;
+            }
+
+            @Override
+            public void visitThrowStatement(final ThrowStatement throwStatement) {
+                found[0] = true;
+            }
+
+            @Override
+            public void visitClosureExpression(final ClosureExpression expression) {
+                // do not look inside nested closures / lambdas
+            }
+        });
+        return found[0];
     }
 
     private void validateSwitchExpressionLabels(SwitchExpressionContext ctx) {
@@ -5056,7 +5079,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String INTEGER_LITERAL_TEXT = "_INTEGER_LITERAL_TEXT";
     private static final String FLOATING_POINT_LITERAL_TEXT = "_FLOATING_POINT_LITERAL_TEXT";
     private static final String ENCLOSING_INSTANCE_EXPRESSION = "_ENCLOSING_INSTANCE_EXPRESSION";
-    private static final String IS_YIELD_STATEMENT = "_IS_YIELD_STATEMENT";
     private static final String PARAMETER_MODIFIER_MANAGER = "_PARAMETER_MODIFIER_MANAGER";
     private static final String PARAMETER_CONTEXT = "_PARAMETER_CONTEXT";
     private static final String IS_RECORD_GENERATED = "_IS_RECORD_GENERATED";

@@ -732,6 +732,16 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void visitSwitchExpression(final org.codehaus.groovy.ast.expr.SwitchExpression expression) {
+        pushState();
+        super.visitSwitchExpression(expression);
+        popState();
+    }
+
+    /**
      * Visits a {@code while} loop with <em>partial</em> JEP&nbsp;394 flow scoping
      * for {@code instanceof} pattern variables (GROOVY-12242).
      * <p>

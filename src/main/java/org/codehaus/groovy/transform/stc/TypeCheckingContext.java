@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -229,6 +230,17 @@ public class TypeCheckingContext {
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<>();
     /** Stack of enclosing switch statements. */
     protected final LinkedList<SwitchStatement> switchStatements = new LinkedList<>();
+    /** Stack of enclosing switch expressions (GROOVY-12255). */
+    protected final LinkedList<SwitchExpression> switchExpressions = new LinkedList<>();
+    /** Yield types collected for the current switch expression (parallel to {@link #switchExpressions}). */
+    protected final LinkedList<List<ClassNode>> switchExpressionYieldTypes = new LinkedList<>();
+    /**
+     * Innermost-first stack of switch selectors (statement or expression).
+     * Case-label typing must use this rather than preferring statements over
+     * expressions, or a nested switch expression would see the outer selector
+     * (GROOVY-12255).
+     */
+    protected final LinkedList<Expression> switchSelectors = new LinkedList<>();
     /** Stack of enclosing closures. */
     protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<>();
     // stores the current binary expression. This is used when assignments are made with a null object, for type inference
@@ -410,12 +422,14 @@ public class TypeCheckingContext {
      */
     public void pushEnclosingSwitchStatement(final SwitchStatement switchStatement) {
         switchStatements.addFirst(switchStatement);
+        switchSelectors.addFirst(switchStatement.getExpression());
     }
 
     /**
      * Pops a switch statement from the enclosing switch statements stack.
      */
     public SwitchStatement popEnclosingSwitchStatement() {
+        switchSelectors.removeFirst();
         return switchStatements.removeFirst();
     }
 
@@ -434,6 +448,62 @@ public class TypeCheckingContext {
      */
     public List<SwitchStatement> getEnclosingSwitchStatements() {
         return Collections.unmodifiableList(switchStatements);
+    }
+
+    /**
+     * Pushes a switch expression onto the enclosing-expression stack
+     * (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public void pushEnclosingSwitchExpression(final SwitchExpression switchExpression) {
+        switchExpressions.addFirst(switchExpression);
+        switchExpressionYieldTypes.addFirst(new LinkedList<>());
+        switchSelectors.addFirst(switchExpression.getExpression());
+    }
+
+    /**
+     * Pops the current switch expression (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public SwitchExpression popEnclosingSwitchExpression() {
+        switchSelectors.removeFirst();
+        switchExpressionYieldTypes.removeFirst();
+        return switchExpressions.removeFirst();
+    }
+
+    /**
+     * Returns the switch expression on top of the stack, or {@code null}
+     * (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public SwitchExpression getEnclosingSwitchExpression() {
+        if (switchExpressions.isEmpty()) return null;
+        return switchExpressions.getFirst();
+    }
+
+    /**
+     * Returns the list collecting yield types for the current switch expression
+     * (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public List<ClassNode> getEnclosingSwitchExpressionYieldTypes() {
+        if (switchExpressionYieldTypes.isEmpty()) return List.of();
+        return switchExpressionYieldTypes.getFirst();
+    }
+
+    /**
+     * Selector of the innermost enclosing switch statement or expression
+     * (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public Expression getEnclosingSwitchSelector() {
+        if (switchSelectors.isEmpty()) return null;
+        return switchSelectors.getFirst();
     }
 
     /**

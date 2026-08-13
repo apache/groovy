@@ -22,6 +22,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Variable;
@@ -116,6 +117,12 @@ public class CompileStack {
     private Map<String, Label> superBlockNamedLabels = new HashMap<>();
     /** map containing named labels of current block */
     private Map<String, Label> currentBlockNamedLabels = new HashMap<>();
+    /**
+     * Nested switch-expression join points (GROOVY-12255). {@code yield} jumps
+     * to the innermost {@link SwitchExpressionContext#endLabel} after applying
+     * intervening finally blocks.
+     */
+    private final Deque<SwitchExpressionContext> switchExpressions = new LinkedList<>();
     /**
      * list containing finally blocks
      * <p>
@@ -687,6 +694,72 @@ public class CompileStack {
         breakLabel = new Label();
         registerNamedLabels(labelNames, breakLabel, null);
         return breakLabel;
+    }
+
+    /**
+     * Pushes a switch-expression context so that {@code yield} can jump to the
+     * expression's join point (GROOVY-12255). The join label is installed as
+     * this frame's {@code breakLabel} (same as {@link #pushSwitch()}) so
+     * {@link #applyFinallyBlocks} only inlines recorders pushed after this
+     * call. A second {@link #pushState()} then snapshots that label; without
+     * it, a {@code try}/{@code synchronized} wrapping the whole expression
+     * would be treated as intervening.
+     *
+     * @param resultType the unified result type left on the operand stack at the join point
+     * @return the end label of the switch expression
+     * @since 6.0.0
+     */
+    public Label pushSwitchExpression(final ClassNode resultType) {
+        pushState();
+        Label endLabel = new Label();
+        breakLabel = endLabel;
+        pushState();
+        switchExpressions.push(new SwitchExpressionContext(endLabel, resultType));
+        return endLabel;
+    }
+
+    /**
+     * Returns the innermost switch-expression context, or {@code null} if the
+     * current method is not compiling a {@link SwitchExpression}
+     * (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public SwitchExpressionContext getSwitchExpressionContext() {
+        return switchExpressions.peek();
+    }
+
+    /**
+     * Pops the innermost switch-expression context and restores the previous
+     * compile-stack state (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public void popSwitchExpression() {
+        if (switchExpressions.isEmpty()) {
+            throw new GroovyBugError("Tried to pop a switch expression without a matching push.");
+        }
+        switchExpressions.pop();
+        pop();
+        pop();
+    }
+
+    /**
+     * Join-point information for a switch expression being compiled
+     * (GROOVY-12255).
+     *
+     * @since 6.0.0
+     */
+    public static final class SwitchExpressionContext {
+        /** Label at which every completing arm joins, with the result on the stack. */
+        public final Label endLabel;
+        /** Type of the value left on the operand stack at {@link #endLabel}. */
+        public final ClassNode resultType;
+
+        SwitchExpressionContext(final Label endLabel, final ClassNode resultType) {
+            this.endLabel = endLabel;
+            this.resultType = resultType;
+        }
     }
 
     /**

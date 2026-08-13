@@ -68,6 +68,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression
 import org.codehaus.groovy.ast.expr.SpreadExpression
 import org.codehaus.groovy.ast.expr.SpreadMapExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.SwitchExpression
 import org.codehaus.groovy.ast.expr.TernaryExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression
@@ -91,6 +92,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement
 import org.codehaus.groovy.ast.stmt.ThrowStatement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
+import org.codehaus.groovy.ast.stmt.YieldStatement
 import org.codehaus.groovy.classgen.BytecodeExpression
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.classgen.Verifier
@@ -589,6 +591,32 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
         printLineBreak()
         print 'return '
         statement.getExpression().visit(this)
+        printLineBreak()
+    }
+
+    @Override
+    void visitSwitchExpression(SwitchExpression expression) {
+        print 'switch ('
+        expression?.expression?.visit this
+        print ') {'
+        printLineBreak()
+        indented {
+            expression?.caseStatements?.each {
+                visitCaseStatement it
+            }
+            if (expression?.defaultStatement !instanceof EmptyStatement) {
+                print 'default -> '
+                printLineBreak()
+                expression?.defaultStatement?.visit this
+            }
+        }
+        print '}'
+    }
+
+    @Override
+    void visitYieldStatement(YieldStatement statement) {
+        print 'yield '
+        statement?.expression?.visit this
         printLineBreak()
     }
 

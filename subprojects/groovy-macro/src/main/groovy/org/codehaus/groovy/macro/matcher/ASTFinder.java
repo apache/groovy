@@ -252,6 +252,20 @@ class ASTFinder extends ContextualClassCodeVisitor {
         tryFind(SwitchStatement.class, statement);
     }
 
+    /** Visits a first-class switch expression and records it when it matches the pattern (GROOVY-12255). */
+    @Override
+    public void visitSwitchExpression(final org.codehaus.groovy.ast.expr.SwitchExpression expression) {
+        super.visitSwitchExpression(expression);
+        tryFind(org.codehaus.groovy.ast.expr.SwitchExpression.class, expression);
+    }
+
+    /** Visits a yield statement and records it when it matches the pattern (GROOVY-12255). */
+    @Override
+    public void visitYieldStatement(final org.codehaus.groovy.ast.stmt.YieldStatement statement) {
+        super.visitYieldStatement(statement);
+        tryFind(org.codehaus.groovy.ast.stmt.YieldStatement.class, statement);
+    }
+
     /** Visits a synchronized statement and records it when it matches the pattern. */
     @Override
     public void visitSynchronizedStatement(final SynchronizedStatement statement) {

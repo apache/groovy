@@ -100,7 +100,10 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
 
             @Override
             public Expression transform(final Expression expression) {
-                if (expression instanceof ClosureExpression) { // switch expressions are desugared to closures
+                if (expression instanceof org.codehaus.groovy.ast.expr.SwitchExpression) {
+                    return expression.transformExpression(this);
+                }
+                if (expression instanceof ClosureExpression) {
                     expression.visit(this);
                     return expression;
                 }

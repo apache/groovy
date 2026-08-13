@@ -201,6 +201,14 @@ public class DelegatingController extends WriterController {
      * {@inheritDoc}
      */
     @Override
+    public SwitchExpressionWriter getSwitchExpressionWriter() {
+        return delegationController.getSwitchExpressionWriter();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public CompileStack getCompileStack() {
         return delegationController.getCompileStack();
     }

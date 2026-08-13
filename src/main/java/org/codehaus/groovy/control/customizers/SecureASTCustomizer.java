@@ -59,6 +59,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -82,6 +83,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -1677,6 +1679,35 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 caseStatement.visit(this);
             }
             statement.getDefaultStatement().visit(this);
+        }
+
+        /**
+         * Validates a switch expression and then visits its selector and arms
+         * (GROOVY-12255).
+         *
+         * @param expression the switch expression to visit
+         * @since 6.0.0
+         */
+        @Override
+        public void visitSwitchExpression(final SwitchExpression expression) {
+            assertExpressionAuthorized(expression);
+            expression.getExpression().visit(this);
+            for (CaseStatement caseStatement : expression.getCaseStatements()) {
+                caseStatement.visit(this);
+            }
+            expression.getDefaultStatement().visit(this);
+        }
+
+        /**
+         * Validates a yield statement and then visits its operand (GROOVY-12255).
+         *
+         * @param statement the yield statement to visit
+         * @since 6.0.0
+         */
+        @Override
+        public void visitYieldStatement(final YieldStatement statement) {
+            assertStatementAuthorized(statement);
+            statement.getExpression().visit(this);
         }
 
         /**

@@ -606,6 +606,22 @@ public abstract class ContextualClassCodeVisitor extends ClassCodeVisitorSupport
         popContext();
     }
 
+    /** Visits a first-class switch expression while tracking traversal context (GROOVY-12255). */
+    @Override
+    public void visitSwitchExpression(final org.codehaus.groovy.ast.expr.SwitchExpression expression) {
+        pushContext(expression);
+        super.visitSwitchExpression(expression);
+        popContext();
+    }
+
+    /** Visits a yield statement while tracking traversal context (GROOVY-12255). */
+    @Override
+    public void visitYieldStatement(final org.codehaus.groovy.ast.stmt.YieldStatement statement) {
+        pushContext(statement);
+        super.visitYieldStatement(statement);
+        popContext();
+    }
+
     /** Visits a synchronized statement while tracking traversal context. */
     @Override
     public void visitSynchronizedStatement(final SynchronizedStatement statement) {

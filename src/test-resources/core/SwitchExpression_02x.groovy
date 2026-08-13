@@ -24,7 +24,11 @@ def result = switch(a) {
 assert 'a' == result
 
 a = 9
-result = switch(a) {
-    case 6 -> 'a'
+try {
+    result = switch(a) {
+        case 6 -> 'a'
+    }
+    assert false: 'expected IllegalStateException for non-exhaustive switch expression'
+} catch (IllegalStateException e) {
+    assert e.message.contains('does not cover')
 }
-assert null == result
