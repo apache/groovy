@@ -353,7 +353,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      *
      * @return the lexical {@code this} object
      */
-    @GroovyABI(since = "1.0")
+    @GroovyABI(since = "1.0.0")
     public Object getThisObject() {
         return thisObject;
     }

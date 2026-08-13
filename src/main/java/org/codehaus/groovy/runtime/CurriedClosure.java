@@ -104,7 +104,7 @@ public final class CurriedClosure<V> extends Closure<V> {
         }
     }
 
-    @GroovyABI(since = "1.0")
+    @GroovyABI(since = "1.0.0")
     public CurriedClosure(final Closure<V> uncurriedClosure, final Object... arguments) {
         this(0, uncurriedClosure, arguments);
     }

@@ -178,7 +178,7 @@ public abstract class NumberMath {
      * @param right the divisor
      * @return the modulo result
      */
-    @GroovyABI(since = "2.0")
+    @GroovyABI(since = "2.0.0")
     public static Number mod(Number left, Number right) {
         return getMath(left, right).modImpl(left, right);
     }
