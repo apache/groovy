@@ -20,6 +20,7 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 
 import groovy.lang.Tuple2;
 import groovy.transform.Internal;
+import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -72,6 +73,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T> Queryable<T> from(Iterable<T> iterable) {
         return new QueryableCollection<>(iterable);
     }
@@ -84,6 +86,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T> Queryable<T> from(T[] array) {
         return new QueryableCollection<>(Arrays.asList(array));
     }
@@ -96,6 +99,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T> Queryable<T> from(Stream<T> sourceStream) {
         return new QueryableCollection<>(sourceStream);
     }
@@ -108,6 +112,7 @@ public interface Queryable<T> {
      * @return the {@link Queryable} instance
      * @since 4.0.0
      */
+    @GroovyABI(since="4.0.0")
     static <T> Queryable<T> from(Queryable<T> queryable) {
         return queryable;
     }

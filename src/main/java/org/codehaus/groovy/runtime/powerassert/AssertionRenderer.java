@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.FormatHelper;
 
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public final class AssertionRenderer {
         return new AssertionRenderer(text, recorder).render();
     }
 
+    @GroovyABI(since="1.7.0")
     private String render() {
         renderText();
         sortValues();

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.macro.runtime;
 
 import groovy.lang.Closure;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
@@ -55,6 +56,7 @@ public enum MacroBuilder {
      * @param <T> the expected result type
      * @return the built macro value
      */
+    @GroovyABI(since="2.5.0")
     public <T> T macro(String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(false, source, context, resultClass);
     }
@@ -69,6 +71,7 @@ public enum MacroBuilder {
      * @param <T> the expected result type
      * @return the built macro value
      */
+    @GroovyABI(since="2.5.0")
     public <T> T macro(boolean asIs, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(null, asIs, source, context, resultClass);
     }
@@ -83,6 +86,7 @@ public enum MacroBuilder {
      * @param <T> the expected result type
      * @return the built macro value
      */
+    @GroovyABI(since="2.5.0")
     public <T> T macro(CompilePhase compilePhase, String source, final List<Closure<Expression>> context, Class<T> resultClass) {
         return macro(compilePhase, false, source, context, resultClass);
     }

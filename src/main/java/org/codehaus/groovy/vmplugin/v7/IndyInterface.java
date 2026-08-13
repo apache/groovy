@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.vmplugin.v7;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.vmplugin.v8.CacheableCallSite;
 
 import java.lang.invoke.CallSite;
@@ -126,6 +127,7 @@ public class IndyInterface {
      * @return the produced CallSite
      * @since 2.1.0
      */
+    @GroovyABI(since="2.1.0")
     public static CallSite bootstrap(Lookup caller, String callType, MethodType type, String name, int flags) {
         return org.codehaus.groovy.vmplugin.v8.IndyInterface.bootstrap(caller, callType, type, name, flags);
     }
