@@ -60,7 +60,7 @@ public class GStringImpl extends GString {
      * @param values  the value parts
      * @param strings the string parts
      */
-    @GroovyABI(since = "1.0")
+    @GroovyABI(since = "1.0.0")
     public GStringImpl(Object[] values, String[] strings) {
         this(values, strings, checkValuesStringConstant(values), null, false);
     }
