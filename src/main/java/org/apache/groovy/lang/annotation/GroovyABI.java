@@ -26,7 +26,7 @@ import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Marks a program element as part of Groovy's binary ABI.
@@ -45,17 +45,29 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * used exclusively by bytecode generated at runtime by the current Groovy
  * version should not be annotated.
  * <p>
- * Notes:
- * <li>groovy.*: These classes are not annotated, as they are part of public API
- * <li>runtime packages: These classes are normally internal and subject
- * to removal or change. These classes must use this annotation if any of their methods
- * is referenced by the compiler.
- * <li>AST helper classes not in runtime: Some AST transforms leverage helper classes, that
- * are not in a runtime package. These classes must be annotated.
+ * Prefer annotating the type when every reachable member shares the same
+ * {@link #since()} value; annotate members individually only when their
+ * {@code since} differs or only part of the type is part of the ABI.
+ *
+ * <p>{@code since} records the first Groovy release in which the element
+ * became part of the binary ABI. It is mandatory and must use the full
+ * three-part version form, e.g. {@code "1.0.0"}.
+ *
+ * <p><b>Retention.</b> This marker has {@link java.lang.annotation.RetentionPolicy#CLASS}
+ * retention: it survives into published class files so the build's binary
+ * compatibility tooling can rely on it.
+ *
+ * <p>Notes:
+ * <li>groovy.*: These classes are part of the public API and are therefore not annotated.
+ * <li>runtime packages: These classes are normally internal and subject to
+ * removal or change. If any of their methods is referenced by the compiler,
+ * it must be annotated so the reference becomes visible.
+ * <li>AST helper classes not in runtime: Some AST transforms leverage helper
+ * classes that are not in a runtime package. These classes must be annotated.
  */
 @Documented
 @Target({TYPE, METHOD, CONSTRUCTOR, FIELD})
-@Retention(SOURCE)
+@Retention(CLASS)
 public @interface GroovyABI {
-    String since() default "";
+    String since();
 }
