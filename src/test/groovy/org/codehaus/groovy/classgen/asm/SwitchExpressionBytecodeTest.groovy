@@ -74,6 +74,23 @@ final class SwitchExpressionBytecodeTest extends AbstractBytecodeTestCase {
     }
 
     @Test
+    void staticSparseIntSwitchUsesLookupSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                switch (n) {
+                    case 1       -> 10
+                    case 100     -> 20
+                    case 1000000 -> 30
+                    default      -> 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['LOOKUPSWITCH'])
+        assert !bytecode.toString().contains('isCase')
+    }
+
+    @Test
     void staticEnumSwitchDispatchesByNameNotOrdinal() {
         // constant names are stable across separate recompilation of the enum;
         // ordinals are not, and dispatching on them silently retargets arms
@@ -91,6 +108,24 @@ final class SwitchExpressionBytecodeTest extends AbstractBytecodeTestCase {
         ''')
         assert bytecode.hasSequence(['INVOKEVIRTUAL java/lang/Enum.name'])
         assert !bytecode.toString().contains('Enum.ordinal')
+        assert !bytecode.toString().contains('isCase')
+    }
+
+    @Test
+    void staticEnumSwitchWithUnqualifiedNamesUsesNameDispatch() {
+        def bytecode = compile(method: 'm', '''\
+            import java.time.Month
+
+            @groovy.transform.CompileStatic
+            String m(Month month) {
+                switch (month) {
+                    case JANUARY -> 'jan'
+                    case JUNE -> 'jun'
+                    default -> 'other'
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['INVOKEVIRTUAL java/lang/Enum.name'])
         assert !bytecode.toString().contains('isCase')
     }
 

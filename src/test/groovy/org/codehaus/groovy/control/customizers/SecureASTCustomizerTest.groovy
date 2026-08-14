@@ -148,6 +148,39 @@ final class SecureASTCustomizerTest {
         }
     }
 
+    @Test // GROOVY-12255
+    void testDisallowedSwitchExpression() {
+        String script = '''
+            def r = switch (2) {
+                case 1 -> 'a'
+                case 2 -> { yield 'b' }
+                default -> 'z'
+            }
+            assert r == 'b'
+        '''
+        def shell = new GroovyShell(configuration)
+        shell.evaluate(script) // authorized: selector, arms and yields are all visited
+        customizer.disallowedExpressions = [org.codehaus.groovy.ast.expr.SwitchExpression]
+        assert hasSecurityException {
+            shell.evaluate(script)
+        }
+    }
+
+    @Test // GROOVY-12255
+    void testDisallowedYieldStatement() {
+        customizer.disallowedStatements = [org.codehaus.groovy.ast.stmt.YieldStatement]
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('1+1')
+        assert hasSecurityException {
+            shell.evaluate('''
+                def r = switch (1) {
+                    case 1 -> { yield 'a' }
+                    default -> 'z'
+                }
+            ''')
+        }
+    }
+
     @Test
     void testAllowedTokens() {
         customizer.allowedTokens = [Types.PLUS, Types.MINUS]

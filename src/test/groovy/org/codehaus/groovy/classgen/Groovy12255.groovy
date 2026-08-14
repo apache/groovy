@@ -18,6 +18,12 @@
  */
 package org.codehaus.groovy.classgen
 
+import org.codehaus.groovy.ast.expr.Expression
+import org.codehaus.groovy.ast.expr.ExpressionTransformer
+import org.codehaus.groovy.ast.expr.SwitchExpression
+import org.codehaus.groovy.ast.stmt.CaseStatement
+import org.codehaus.groovy.ast.stmt.YieldStatement
+import org.codehaus.groovy.ast.tools.GeneralUtils
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -522,6 +528,117 @@ final class Groovy12255 {
             }
             assert r == 3
         '''
+    }
+
+    @Test
+    void compileStaticEnumSwitchWithUnqualifiedConstantNames() {
+        assertScript '''
+            import java.time.Month
+
+            @groovy.transform.CompileStatic
+            String m(Month month) {
+                switch (month) {
+                    case JANUARY -> 'jan'
+                    case JUNE -> 'jun'
+                    default -> 'other'
+                }
+            }
+            assert m(Month.JANUARY) == 'jan'
+            assert m(Month.JUNE) == 'jun'
+            assert m(Month.MARCH) == 'other'
+        '''
+    }
+
+    @Test
+    void compileStaticEnumSwitchLocalVariableShadowingConstantName() {
+        assertScript '''
+            import java.time.Month
+
+            @groovy.transform.CompileStatic
+            String m(Month month, Month JANUARY) {
+                switch (month) {
+                    case JANUARY -> 'matched local'
+                    default -> 'other'
+                }
+            }
+            assert m(Month.JUNE, Month.JUNE) == 'matched local'
+            assert m(Month.JANUARY, Month.JUNE) == 'other'
+        '''
+    }
+
+    @Test
+    void compileStaticStringSwitchWithHashCollision() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(String s) {
+                switch (s) {
+                    case 'Aa' -> 'first'   // 'Aa' and 'BB' share a hashCode,
+                    case 'BB' -> 'second'  // exercising the equals chain
+                    default   -> 'none'
+                }
+            }
+            assert m('Aa') == 'first'
+            assert m('BB') == 'second'
+            assert m('Cc') == 'none'
+        '''
+    }
+
+    @Test
+    void compileStaticSparseIntKeysStillDispatch() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                switch (n) {
+                    case 1       -> 10
+                    case 100     -> 20
+                    case 1000000 -> 30
+                    default      -> 0
+                }
+            }
+            assert m(1) == 10
+            assert m(100) == 20
+            assert m(1000000) == 30
+            assert m(7) == 0
+        '''
+    }
+
+    @Test
+    void compileStaticNonConstantLabelFallsBackToIsCase() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(int n) {
+                switch (n) {
+                    case 1        -> 'one'
+                    case 300..400 -> 'range'
+                    default       -> 'other'
+                }
+            }
+            assert m(1) == 'one'
+            assert m(350) == 'range'
+            assert m(7) == 'other'
+        '''
+    }
+
+    @Test
+    void switchExpressionNodeApi() {
+        def se = GeneralUtils.switchX(GeneralUtils.constX(1),
+                [new CaseStatement(GeneralUtils.constX(1), GeneralUtils.stmt(GeneralUtils.constX('a')))],
+                GeneralUtils.stmt(GeneralUtils.constX('z')))
+        se.addCase(new CaseStatement(GeneralUtils.constX(2), GeneralUtils.yieldS(GeneralUtils.constX('b'))))
+        assert se.text.startsWith('switch (')
+        assert se.toString().contains('cases')
+        se.expression = GeneralUtils.constX(3)
+        assert se.expression.text == '3'
+        se.defaultStatement = GeneralUtils.yieldS(GeneralUtils.constX('y'))
+        assert se.defaultStatement instanceof YieldStatement
+        assert se.defaultStatement.text == "yield y"
+        def copy = se.transformExpression(new ExpressionTransformer() {
+            @Override
+            Expression transform(Expression expression) { expression }
+        })
+        assert copy instanceof SwitchExpression
+        assert copy.caseStatements.size() == 2
+        assert copy.caseStatements[1].arrow == se.caseStatements[1].arrow
     }
 
     @Test
