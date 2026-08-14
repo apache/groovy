@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.classgen
 
+import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ExpressionTransformer
 import org.codehaus.groovy.ast.expr.SwitchExpression
+import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.CaseStatement
 import org.codehaus.groovy.ast.stmt.YieldStatement
 import org.codehaus.groovy.ast.tools.GeneralUtils
@@ -512,6 +514,45 @@ final class Groovy12255 {
     }
 
     @Test
+    void compileStaticForLoopInArmWithImplicitThis() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                int n
+                int run() {
+                    switch (1) {
+                        case 1 -> {
+                            for (int i = 0; i < 3; i++) {
+                                bump()
+                            }
+                            yield n
+                        }
+                        default -> 0
+                    }
+                }
+                void bump() { n += 1 }
+            }
+            assert new C().run() == 3
+        '''
+    }
+
+    @Test
+    void labeledBreakSkippingYieldInLastArmIsError() {
+        def err = shouldFail('''
+            def cond = true
+            def r = switch (1) {
+                case 1 -> {
+                    label:
+                    if (cond) break label
+                    yield 1
+                }
+                default -> 0
+            }
+        ''')
+        assert err.message.contains('does not support `break`') || err.message.contains('yield')
+    }
+
+    @Test
     void labeledBreakToArmLocalLoopIsAllowed() {
         assertScript '''
             def r = switch (1) {
@@ -653,6 +694,247 @@ final class Groovy12255 {
             }
         ''')
         assert err.message.contains('yield cannot jump through a closure or lambda')
+    }
+
+    @Test
+    void asyncYieldReturnInsideNestedClosureIsAllowed() {
+        assertScript '''
+            def r = switch (1) {
+                case 1 -> {
+                    def items = async {
+                        yield return 7
+                    }
+                    yield items.collect().first()
+                }
+                default -> 0
+            }
+            assert r == 7
+        '''
+    }
+
+    @Test
+    void switchStatementInsideSwitchExpressionCanYield() {
+        assertScript '''
+            def r = switch (1) {
+                case 1 -> {
+                    switch (2) {
+                        case 2:
+                            yield 42
+                        default:
+                            yield 0
+                    }
+                }
+                default -> -1
+            }
+            assert r == 42
+        '''
+    }
+
+    @Test
+    void colonArmIfFallsThroughToCompletingDefault() {
+        assertScript '''
+            def cond = false
+            def r = switch ('a') {
+                case 'a':
+                    if (cond) yield 1
+                default:
+                    yield 0
+            }
+            assert r == 0
+        '''
+    }
+
+    @Test
+    void lastColonArmIfWithoutElseIsError() {
+        def err = shouldFail('''
+            def r = switch (1) {
+                case 1:
+                    if (true) yield 1
+            }
+        ''')
+        assert err.message.contains('yield') || err.message.contains('throw')
+    }
+
+    @Test
+    void compileStaticYieldInsideTryFinallyIntSwitch() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                def log = []
+                int r = switch (n) {
+                    case 1 -> {
+                        try {
+                            yield 10
+                        } finally {
+                            log << 'fin'
+                        }
+                    }
+                    default -> 0
+                }
+                assert log == ['fin']
+                return r
+            }
+            assert m(1) == 10
+        '''
+    }
+
+    @Test
+    void compileStaticYieldInsideTryFinallyStringSwitch() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(String s) {
+                def log = []
+                String r = switch (s) {
+                    case 'Foo' -> {
+                        try {
+                            yield 'a'
+                        } finally {
+                            log << 'fin'
+                        }
+                    }
+                    default -> 'z'
+                }
+                assert log == ['fin']
+                return r
+            }
+            assert m('Foo') == 'a'
+        '''
+    }
+
+    @Test
+    void compileStaticYieldInsideTryFinallyEnumSwitch() {
+        assertScript '''
+            import java.time.DayOfWeek
+
+            @groovy.transform.CompileStatic
+            String m(DayOfWeek d) {
+                def log = []
+                String r = switch (d) {
+                    case DayOfWeek.MONDAY -> {
+                        try {
+                            yield 'mon'
+                        } finally {
+                            log << 'fin'
+                        }
+                    }
+                    default -> 'other'
+                }
+                assert log == ['fin']
+                return r
+            }
+            assert m(DayOfWeek.MONDAY) == 'mon'
+        '''
+    }
+
+    @Test
+    void compileStaticSwitchExpressionInFieldInitializer() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                final String s = switch (1) {
+                    case 1 -> 'a'
+                    default -> 'b'
+                }
+            }
+            assert new C().s == 'a'
+        '''
+    }
+
+    @Test
+    void compileStaticSwitchExpressionInConstructor() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                final String s
+                C() {
+                    s = switch (1) {
+                        case 1 -> 'ok'
+                        default -> 'no'
+                    }
+                }
+            }
+            assert new C().s == 'ok'
+        '''
+    }
+
+    @Test
+    void compileStaticCharAndByteSelectorsUseIntSwitch() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int fromChar(char c) {
+                switch (c) {
+                    case (char) 'A' -> 1
+                    case (char) 'B' -> 2
+                    default -> 0
+                }
+            }
+            @groovy.transform.CompileStatic
+            int fromByte(byte b) {
+                switch (b) {
+                    case (byte) 1 -> 10
+                    case (byte) 2 -> 20
+                    default -> 0
+                }
+            }
+            assert fromChar((char) 'B') == 2
+            assert fromByte((byte) 1) == 10
+        '''
+    }
+
+    @Test
+    void compileStaticSwitchExpressionInStaticInitializer() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                static final String S
+                static {
+                    S = switch (1) {
+                        case 1 -> 's'
+                        default -> 'x'
+                    }
+                }
+            }
+            assert C.S == 's'
+        '''
+    }
+
+    @Test
+    void transformExpressionCopiesArmsAndDoesNotMutateOriginal() {
+        def original = GeneralUtils.switchX(
+                GeneralUtils.constX(1),
+                [new CaseStatement(
+                        GeneralUtils.constX(1),
+                        GeneralUtils.block(
+                                GeneralUtils.ifS(
+                                        GeneralUtils.boolX(GeneralUtils.constX(true)),
+                                        GeneralUtils.yieldS(GeneralUtils.constX('a'))),
+                                new AssertStatement(
+                                        GeneralUtils.boolX(GeneralUtils.constX(true)),
+                                        GeneralUtils.constX('a'))))],
+                GeneralUtils.yieldS(GeneralUtils.constX('z')))
+        original.caseStatements[0].arrow = true
+
+        def transformed = original.transformExpression(new ExpressionTransformer() {
+            @Override
+            Expression transform(Expression expression) {
+                if (expression instanceof ConstantExpression && expression.value == 'a') {
+                    return GeneralUtils.constX('A')
+                }
+                return expression.transformExpression(this)
+            }
+        })
+
+        assert transformed instanceof SwitchExpression
+        assert transformed.is(original) == false
+        def originalYield = original.caseStatements[0].code.statements[0].ifBlock.expression
+        assert originalYield.text == 'a'
+        def copiedYield = transformed.caseStatements[0].code.statements[0].ifBlock.expression
+        assert copiedYield.text == 'A'
+        assert transformed.caseStatements[0].arrow
+        assert original.caseStatements[0].code.statements[1].messageExpression.text == 'a'
+        assert transformed.caseStatements[0].code.statements[1].messageExpression.text == 'A'
+        assert transformed.defaultStatement instanceof YieldStatement
+        assert transformed.defaultStatement.expression.text == 'z'
     }
 
     @Test

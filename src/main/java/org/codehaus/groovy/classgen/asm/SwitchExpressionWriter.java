@@ -60,10 +60,9 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.NEW;
 
 /**
- * Emits JVM bytecode for a {@link SwitchExpression} (GROOVY-12255). Completing
- * arms leave the result on the operand stack and jump to a shared join point —
- * the same shape javac uses for JEP 361 switch expressions. There is no
- * closure wrapper and no extra method.
+ * Emits JVM bytecode for a {@link SwitchExpression}. Completing arms leave the
+ * result on the operand stack and jump to a shared join point — the same shape
+ * javac uses for JEP 361 switch expressions.
  * <p>
  * When the selector type and case labels permit it, the writer emits
  * {@code tableswitch} / {@code lookupswitch} (with the Java 7 two-switch form

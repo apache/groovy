@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -362,7 +363,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
      * {@inheritDoc}
      */
     @Override
-    public void visitSwitchExpression(final org.codehaus.groovy.ast.expr.SwitchExpression expression) {
+    public void visitSwitchExpression(final SwitchExpression expression) {
         expression.getExpression().visit(this);
         List<Statement> branches = new ArrayList<>(expression.getCaseStatements());
         if (!(expression.getDefaultStatement() instanceof EmptyStatement)) {

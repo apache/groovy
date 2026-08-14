@@ -184,7 +184,6 @@ final class SemanticsTest {
             case 'Adam'   -> 'Eve'
             case 'Antony' -> 'Cleopatra'
             case 'Bonnie' -> 'Clyde'
-            default       -> 'Unknown'
         }
         // end::switch_expression[]
         assert partner == 'Juliet'

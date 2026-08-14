@@ -54,6 +54,7 @@ import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -76,6 +77,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.YieldStatement;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -254,16 +256,16 @@ class ASTFinder extends ContextualClassCodeVisitor {
 
     /** Visits a first-class switch expression and records it when it matches the pattern (GROOVY-12255). */
     @Override
-    public void visitSwitchExpression(final org.codehaus.groovy.ast.expr.SwitchExpression expression) {
+    public void visitSwitchExpression(final SwitchExpression expression) {
         super.visitSwitchExpression(expression);
-        tryFind(org.codehaus.groovy.ast.expr.SwitchExpression.class, expression);
+        tryFind(SwitchExpression.class, expression);
     }
 
     /** Visits a yield statement and records it when it matches the pattern (GROOVY-12255). */
     @Override
-    public void visitYieldStatement(final org.codehaus.groovy.ast.stmt.YieldStatement statement) {
+    public void visitYieldStatement(final YieldStatement statement) {
         super.visitYieldStatement(statement);
-        tryFind(org.codehaus.groovy.ast.stmt.YieldStatement.class, statement);
+        tryFind(YieldStatement.class, statement);
     }
 
     /** Visits a synchronized statement and records it when it matches the pattern. */

@@ -171,6 +171,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mayCompleteNormally;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.yieldS;
@@ -1021,10 +1022,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     /**
-     * Builds a first-class {@link SwitchExpression} (GROOVY-12255 / JEP 361).
+     * Builds a {@link SwitchExpression} as specified by JEP 361.
      * Arrow arms that are a single expression become {@link YieldStatement}s;
-     * colon arms use explicit {@code yield}. The expression is compiled inline
-     * — it is not rewritten to a closure wrapping a {@link SwitchStatement}.
+     * colon arms use explicit {@code yield}.
      */
     @Override
     public SwitchExpression visitSwitchExpression(final SwitchExpressionContext ctx) {
@@ -1036,9 +1036,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (statementsAndArrowAndYieldOrThrow.isEmpty()) {
                 throw createParsingFailedException("`case` or `default` branches are expected", ctx.LBRACE());
             } else {
-                var tuple = last(statementsAndArrowAndYieldOrThrow);
-                if (!tuple.getV2() && !tuple.getV3()) { // if no arrow, yield or throw is required
-                    throw createParsingFailedException("`yield` or `throw` is expected", tuple.getV1().get(0));
+                // Last group must complete: every path yields or throws (JEP 361).
+                // Intermediate colon groups may still fall through.
+                var lastGroup = last(statementsAndArrowAndYieldOrThrow);
+                List<Statement> lastStmts = lastGroup.getV1();
+                Statement lastArm = lastStmts.get(lastStmts.size() - 1);
+                Statement lastCode = lastArm instanceof CaseStatement cs ? cs.getCode() : lastArm;
+                if (mayCompleteNormally(lastCode)) {
+                    throw createParsingFailedException("`yield` or `throw` is expected", lastArm);
                 }
             }
 
@@ -1167,7 +1172,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         );
                     }
 
-                    if (isArrow && org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough(codeBlock)) {
+                    if (isArrow && mayCompleteNormally(codeBlock)) {
                         throw createParsingFailedException("`yield` or `throw` is expected", exprOrBlockStatement);
                     }
 

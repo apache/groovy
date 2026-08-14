@@ -2117,6 +2117,18 @@ public class GeneralUtils {
         return sb.toString();
     }
     /**
+     * True when some path through {@code statement} can complete normally,
+     * including a labeled {@code break} that skips a later abrupt statement.
+     * Prefer this over {@link #maybeFallsThrough(Statement)} when rejecting
+     * incomplete switch-expression arms.
+     */
+    @Internal
+    public static boolean mayCompleteNormally(final Statement statement) {
+        if (statement == null || statement.isEmpty()) return true;
+        return analyzeStatementFlow(statement).mayContinue;
+    }
+
+    /**
      * Determines whether execution may continue past the supplied statement.
      *
      * @param statement the statement to analyze

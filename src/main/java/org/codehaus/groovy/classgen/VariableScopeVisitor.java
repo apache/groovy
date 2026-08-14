@@ -49,6 +49,7 @@ import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -735,7 +736,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
      * {@inheritDoc}
      */
     @Override
-    public void visitSwitchExpression(final org.codehaus.groovy.ast.expr.SwitchExpression expression) {
+    public void visitSwitchExpression(final SwitchExpression expression) {
         pushState();
         super.visitSwitchExpression(expression);
         popState();
