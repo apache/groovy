@@ -633,6 +633,7 @@ final class SyntaxErrorTest {
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_11x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_12x.groovy')
         TestUtils.doRunAndShouldFail('fail/SwitchExpression_13x.groovy')
+        TestUtils.doRunAndShouldFail('fail/SwitchExpression_14x.groovy')
     }
 
     @Test

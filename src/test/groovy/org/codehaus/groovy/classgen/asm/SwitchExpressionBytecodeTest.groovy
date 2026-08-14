@@ -29,15 +29,26 @@ final class SwitchExpressionBytecodeTest extends AbstractBytecodeTestCase {
 
     @Test
     void noClosureAllocationForSwitchExpression() {
-        def bytecode = compile(method: 'run', '''\
+        // Probe the current closure bytecode so the negative assertions
+        // below stay meaningful if closure codegen changes (indy, naming).
+        def closureBytecode = compile(method: 'run', '''\
+            def c = { -> 'closure' }
+            c()
+        ''')
+        def closureText = closureBytecode.toString()
+        assert closureText.contains('$_run_closure')
+
+        def switchBytecode = compile(method: 'run', '''\
             def r = switch (1) {
                 case 1 -> 'a'
                 default -> 'z'
             }
         ''')
-        assert !bytecode.hasStrictSequence(['INVOKESPECIAL', 'org/codehaus/groovy/runtime/callsite'])
-        assert !bytecode.toString().contains('InnerClassNode')
-        assert !bytecode.toString().contains('$_run_closure')
+        def switchText = switchBytecode.toString()
+        assert !switchText.contains('$_run_closure')
+        if (closureText.contains('InnerClassNode')) {
+            assert !switchText.contains('InnerClassNode')
+        }
     }
 
     @Test

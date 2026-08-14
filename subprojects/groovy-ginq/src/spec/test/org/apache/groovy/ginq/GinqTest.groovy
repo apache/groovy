@@ -6919,6 +6919,21 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - switch - yield block"() {
+        assertGinqScript '''
+            assert ['odd', 'even', 'odd'] == GQ {
+                from n in [1, 2, 3]
+                select switch (n) {
+                    case 1, 3 -> {
+                        yield 'odd'
+                    }
+                    default -> 'even'
+                }
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinqMethod - GQ - 0"() {
         assertScript '''
 // tag::ginq_method_01[]
