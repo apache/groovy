@@ -54,6 +54,25 @@ final class AstNodeToScriptAdapterTest {
         assert result =~ /public java.lang.Object run\(\) \{\s*true\s*\}/
     }
 
+    @Test // GROOVY-12255
+    void testSwitchExpressionAndYield() {
+        String script = '''
+            def r = switch (2) {
+                case 1 -> 'a'
+                case 2 -> { yield 'b' }
+                default -> 'z'
+            }
+        '''
+        String result = compileToScript(script, CompilePhase.CONVERSION)
+
+        assert result.contains('switch (2)')
+        assert result.contains('case 1:')
+        assert result.contains("yield 'a'")
+        assert result.contains("yield 'b'")
+        assert result.contains('default ->')
+        assert result.contains("yield 'z'")
+    }
+
     @Test
     void testStringEscaping() {
         String script = ''' if (_out.toString().endsWith('\\n\\n')) { }  '''
