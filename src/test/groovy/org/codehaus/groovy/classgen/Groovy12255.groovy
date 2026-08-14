@@ -406,6 +406,125 @@ final class Groovy12255 {
     }
 
     @Test
+    void compileStaticNullStringSelectorUsesDefault() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(String s) {
+                switch (s) {
+                    case 'Foo' -> 'a'
+                    case 'Bar' -> 'b'
+                    default    -> 'dflt'
+                }
+            }
+            assert m('Foo') == 'a'
+            assert m(null) == 'dflt'
+        '''
+    }
+
+    @Test
+    void compileStaticNullEnumSelectorUsesDefault() {
+        assertScript '''
+            import java.time.DayOfWeek
+
+            @groovy.transform.CompileStatic
+            String m(DayOfWeek d) {
+                switch (d) {
+                    case DayOfWeek.MONDAY -> 'mon'
+                    default -> 'dflt'
+                }
+            }
+            assert m(DayOfWeek.MONDAY) == 'mon'
+            assert m(null) == 'dflt'
+        '''
+    }
+
+    @Test
+    void compileStaticNullSelectorOnExhaustiveEnumThrows() {
+        def err = shouldFail(IllegalStateException, '''
+            enum Flag { ON, OFF }
+
+            @groovy.transform.CompileStatic
+            String m(Flag f) {
+                switch (f) {
+                    case Flag.ON  -> 'on'
+                    case Flag.OFF -> 'off'
+                }
+            }
+            m(null)
+        ''')
+        assert err.message.contains('does not cover')
+    }
+
+    @Test
+    void compileStaticNullIntegerSelectorUsesDefault() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(Integer n) {
+                switch (n) {
+                    case 1 -> 'one'
+                    case 2 -> 'two'
+                    default -> 'dflt'
+                }
+            }
+            assert m(1) == 'one'
+            assert m(null) == 'dflt'
+        '''
+    }
+
+    @Test
+    void labeledBreakOutOfSwitchExpressionIsError() {
+        def err = shouldFail('''
+            outer:
+            while (true) {
+                def r = switch (1) {
+                    case 1 -> {
+                        for (;;) { break outer }
+                        yield -1
+                    }
+                    default -> 0
+                }
+            }
+        ''')
+        assert err.message.contains("cannot break to label 'outer'")
+    }
+
+    @Test
+    void labeledContinueOutOfSwitchExpressionIsError() {
+        def err = shouldFail('''
+            outer:
+            while (true) {
+                def r = switch (1) {
+                    case 1 -> {
+                        for (;;) { continue outer }
+                        yield -1
+                    }
+                    default -> 0
+                }
+            }
+        ''')
+        assert err.message.contains("cannot continue to label 'outer'")
+    }
+
+    @Test
+    void labeledBreakToArmLocalLoopIsAllowed() {
+        assertScript '''
+            def r = switch (1) {
+                case 1 -> {
+                    int n = 0
+                    inner:
+                    for (;;) {
+                        n += 1
+                        if (n > 2) break inner
+                    }
+                    yield n
+                }
+                default -> 0
+            }
+            assert r == 3
+        '''
+    }
+
+    @Test
     void yieldThroughNestedClosureIsError() {
         def err = shouldFail('''
             def r = switch (1) {

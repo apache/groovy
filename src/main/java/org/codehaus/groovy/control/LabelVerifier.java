@@ -222,7 +222,10 @@ public class LabelVerifier extends PrePostStatementVisitor {
 
     /**
      * Verifies labels and {@code yield} inside a switch expression
-     * (GROOVY-12255).
+     * (GROOVY-12255). Per JEP 361, {@code break} and {@code continue} cannot
+     * transfer control out of a switch expression, so the enclosing loop,
+     * switch, and label context does not flow into the arms; loops and labels
+     * declared inside an arm remain valid targets.
      *
      * @param expression the switch expression to inspect
      * @since 6.0.0
@@ -230,12 +233,22 @@ public class LabelVerifier extends PrePostStatementVisitor {
     @Override
     public void visitSwitchExpression(final SwitchExpression expression) {
         expression.getExpression().visit(this);
+        boolean oldInIf = inIf, oldInLoop = inLoop, oldInSwitch = inSwitch;
+        Set<String> oldAvailableLabels = availableLabels;
+        inIf = false;
+        inLoop = false;
+        inSwitch = false;
+        availableLabels = new HashSet<>();
         switchExpressionClosureDepths.push(closureDepth);
         try {
             expression.getCaseStatements().forEach(this::visit);
             expression.getDefaultStatement().visit(this);
         } finally {
             switchExpressionClosureDepths.pop();
+            inIf = oldInIf;
+            inLoop = oldInLoop;
+            inSwitch = oldInSwitch;
+            availableLabels = oldAvailableLabels;
         }
     }
 
