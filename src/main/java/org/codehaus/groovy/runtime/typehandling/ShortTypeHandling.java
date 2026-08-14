@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.typehandling;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import groovy.lang.GString;
 
 import java.util.Arrays;
@@ -43,6 +44,7 @@ public class ShortTypeHandling {
      * @return the Class object, or null if input is null
      * @throws GroovyCastException if the object is not a Class or valid class name
      */
+    @GroovyABI(since="2.3.0")
     public static Class castToClass(Object object) {
         if (object==null) return null;
         if (object instanceof Class) return (Class) object;
@@ -63,6 +65,7 @@ public class ShortTypeHandling {
      * @param object any object (may be null)
      * @return string representation, or null if input is null
      */
+    @GroovyABI(since="2.3.0")
     public static String castToString(Object object) {
         if (object==null) return null;
         if (object.getClass().isArray()) {
@@ -93,6 +96,7 @@ public class ShortTypeHandling {
      * @return the Enum value, or null if input is null
      * @throws GroovyCastException if the object cannot be converted to the enum type
      */
+    @GroovyABI(since="2.3.0")
     public static Enum castToEnum(Object object, Class<? extends Enum> type) {
         if (object==null) return null;
         if (type.isInstance(object)) return (Enum) object;

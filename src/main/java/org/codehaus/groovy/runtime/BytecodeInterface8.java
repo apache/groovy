@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
 
 /**
@@ -25,6 +26,7 @@ import org.codehaus.groovy.runtime.metaclass.DefaultMetaClassInfo;
  */
 public class BytecodeInterface8 {
 
+    @GroovyABI(since="1.8.0")
     public static boolean disabledStandardMetaClass() {
         return DefaultMetaClassInfo.disabledStandardMetaClass();
     }
@@ -34,6 +36,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if integer has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigInt() {
        return DefaultMetaClassInfo.isOrigInt();
     }
@@ -48,6 +51,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from int[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static int intArrayGet(int[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -56,6 +60,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into int[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void intArraySet(int[] a, int i, int v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -66,6 +71,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if byte has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigB() {
        return DefaultMetaClassInfo.isOrigByte();
     }
@@ -80,6 +86,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from byte[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static byte bArrayGet(byte[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -88,6 +95,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into byte[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void bArraySet(byte[] a, int i, byte v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -98,6 +106,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if short has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigS() {
        return DefaultMetaClassInfo.isOrigShort();
     }
@@ -112,6 +121,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from short[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static short sArrayGet(short[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -120,6 +130,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into short[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void sArraySet(short[] a, int i, short v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -130,6 +141,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if char has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigC() {
        return DefaultMetaClassInfo.isOrigChar();
     }
@@ -144,6 +156,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from char[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static char cArrayGet(char[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -152,6 +165,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into char[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void cArraySet(char[] a, int i, char v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -162,6 +176,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if long has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigL() {
        return DefaultMetaClassInfo.isOrigLong();
     }
@@ -176,6 +191,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from long[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static long lArrayGet(long[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -184,6 +200,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into long[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void lArraySet(long[] a, int i, long v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -194,6 +211,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if boolean has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigZ() {
        return DefaultMetaClassInfo.isOrigBool();
     }
@@ -208,6 +226,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from boolean[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static boolean zArrayGet(boolean[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -216,6 +235,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into boolean[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void zArraySet(boolean[] a, int i, boolean v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -226,6 +246,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if float has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigF() {
        return DefaultMetaClassInfo.isOrigFloat();
     }
@@ -240,6 +261,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from float[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static float fArrayGet(float[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -248,6 +270,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into float[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void fArraySet(float[] a, int i, float v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -258,6 +281,7 @@ public class BytecodeInterface8 {
     /**
      * @return true if double has its default MetaClass
      */
+    @GroovyABI(since="1.8.0")
     public static boolean isOrigD() {
        return DefaultMetaClassInfo.isOrigDouble();
     }
@@ -272,6 +296,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from double[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static double dArrayGet(double[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -280,6 +305,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into double[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void dArraySet(double[] a, int i, double v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
@@ -290,6 +316,7 @@ public class BytecodeInterface8 {
     /**
      * Gets value from Object[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static Object objectArrayGet(Object[] a, int i) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         return a[i];
@@ -298,6 +325,7 @@ public class BytecodeInterface8 {
     /**
      * Sets value into Object[] using normalized index.
      */
+    @GroovyABI(since="1.8.0")
     public static void objectArraySet(Object[] a, int i, Object v) {
         if (i < 0) i = DefaultGroovyMethodsSupport.normaliseIndex(i, a.length);
         a[i] = v;
