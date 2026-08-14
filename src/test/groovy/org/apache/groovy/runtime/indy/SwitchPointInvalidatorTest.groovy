@@ -185,6 +185,19 @@ final class SwitchPointInvalidatorTest {
     }
 
     @Test
+    void anySwitchPointAllocated_setByAllocation_andMonotonic() {
+        // The flag is process-global and monotonic, and this shared test JVM has
+        // long since allocated SwitchPoints; only the true-and-stays-true side is
+        // assertable here. The false side (bulk retirement skipped in a process
+        // that never links an indy MOP guard) is covered by classic-mode runs.
+        def inv = new SwitchPointInvalidator()
+        inv.switchPoint
+        assertTrue(SwitchPointInvalidator.isAnySwitchPointAllocated())
+        inv.invalidate()
+        assertTrue(SwitchPointInvalidator.isAnySwitchPointAllocated(), 'flag never resets')
+    }
+
+    @Test
     void concurrentGet_retryOnCasLoss() {
         // Hammer getSwitchPoint from many threads so some lose the CAS and retry.
         def inv = new SwitchPointInvalidator()

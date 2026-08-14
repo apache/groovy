@@ -182,8 +182,18 @@ public final class IndyInvalidation {
     /**
      * Detaches and invalidates every live class-level MetaClass / pending domain
      * for loaded types. Shared implementation for all process-wide entries.
+     * <p>
+     * Skipped entirely when no SwitchPoint has ever been allocated in this
+     * process, e.g. classic-only bytecode never installs indy MOP guards
+     * (GROOVY-12258): the flag
+     * is set before any SwitchPoint is published, so a {@code false} read
+     * proves the walk over {@link ClassInfo#getAllClassInfo()} — O(loaded
+     * classes), twice per category {@code use} block — would collect nothing.
      */
     private static void retireAllLoadedDomains() {
+        if (!SwitchPointInvalidator.isAnySwitchPointAllocated()) {
+            return;
+        }
         List<SwitchPoint> batch = new ArrayList<>();
         try {
             for (ClassInfo info : ClassInfo.getAllClassInfo()) {

@@ -50,6 +50,16 @@ public final class SwitchPointInvalidator {
     private static final Object SINGLE_INVALIDATE_LOCK = new Object();
     private static final SwitchPoint[] SINGLE_INVALIDATE_BUF = new SwitchPoint[1];
 
+    /**
+     * Whether any invalidator in this process has ever allocated a live
+     * SwitchPoint. Monotonic: set before a new SwitchPoint is published (so a
+     * {@code false} read proves no SwitchPoint is installed in any guard) and
+     * never cleared. Lets process-wide bulk retirement become a no-op in
+     * processes that never link an indy MOP guard, e.g. classic-only bytecode
+     * (GROOVY-12258).
+     */
+    private static volatile boolean anySwitchPointAllocated;
+
     /** {@code null} means no live switch point (lazy allocation on next get). */
     private final AtomicReference<SwitchPoint> current = new AtomicReference<>();
     private final AtomicInteger retirementCount = new AtomicInteger();
@@ -75,6 +85,9 @@ public final class SwitchPointInvalidator {
                 return sp;
             }
             SwitchPoint created = new SwitchPoint();
+            // Flag before publish: a bulk path reading false is then guaranteed
+            // no SwitchPoint was visible to any guard, so skipping is safe.
+            anySwitchPointAllocated = true;
             if (current.compareAndSet(null, created)) {
                 return created;
             }
@@ -112,6 +125,18 @@ public final class SwitchPointInvalidator {
      */
     public int getRetirementCount() {
         return retirementCount.get();
+    }
+
+    /**
+     * Whether any invalidator has ever allocated a live SwitchPoint in this
+     * process. Monotonic (never resets to {@code false}). A {@code false}
+     * return guarantees no guard chain anywhere holds a SwitchPoint, so
+     * process-wide bulk retirement may be skipped.
+     *
+     * @return {@code true} once the first SwitchPoint has been allocated
+     */
+    public static boolean isAnySwitchPointAllocated() {
+        return anySwitchPointAllocated;
     }
 
     /**
