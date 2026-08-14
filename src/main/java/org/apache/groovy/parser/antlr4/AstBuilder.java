@@ -19,7 +19,6 @@
 package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple2;
-import groovy.lang.Tuple3;
 import groovy.transform.CompileStatic;
 import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
@@ -1031,38 +1030,37 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         switchExpressionRuleContextStack.push(ctx);
         try {
             validateSwitchExpressionLabels(ctx);
-            List<Tuple3<List<Statement>, Boolean, Boolean>> statementsAndArrowAndYieldOrThrow =
-                    ctx.switchBlockStatementExpressionGroup().stream().map(this::visitSwitchBlockStatementExpressionGroup).toList();
-            if (statementsAndArrowAndYieldOrThrow.isEmpty()) {
+            List<Statement> statementList = ctx.switchBlockStatementExpressionGroup().stream()
+                    .map(this::visitSwitchBlockStatementExpressionGroup)
+                    .reduce(new LinkedList<>(), (r, e) -> {
+                        r.addAll(e);
+                        return r;
+                    });
+            if (statementList.isEmpty()) {
                 throw createParsingFailedException("`case` or `default` branches are expected", ctx.LBRACE());
-            } else {
-                // Last group must complete: every path yields or throws (JEP 361).
-                // Intermediate colon groups may still fall through.
-                var lastGroup = last(statementsAndArrowAndYieldOrThrow);
-                List<Statement> lastStmts = lastGroup.getV1();
-                Statement lastArm = lastStmts.get(lastStmts.size() - 1);
-                Statement lastCode = lastArm instanceof CaseStatement cs ? cs.getCode() : lastArm;
-                if (mayCompleteNormally(lastCode)) {
-                    throw createParsingFailedException("`yield` or `throw` is expected", lastArm);
-                }
+            }
+
+            // Last group must complete: every path yields or throws (JEP 361).
+            // Intermediate colon groups may still fall through.
+            Statement lastArm = last(statementList);
+            Statement lastCode = lastArm instanceof CaseStatement cs ? cs.getCode() : lastArm;
+            if (mayCompleteNormally(lastCode)) {
+                throw createParsingFailedException("`yield` or `throw` is expected", lastArm);
             }
 
             List<CaseStatement> caseStatements = new ArrayList<>();
             Statement defaultStatement = null;
-
-            for (var tuple : statementsAndArrowAndYieldOrThrow) {
-                for (Statement s : tuple.getV1()) {
-                    if (s instanceof CaseStatement c) {
-                        if (defaultStatement != null) {
-                            throw createParsingFailedException("default case should appear last", defaultStatement);
-                        }
-                        caseStatements.add(c);
-                    } else if (isTrue(s, IS_SWITCH_DEFAULT)) {
-                        if (defaultStatement != null) {
-                            throw createParsingFailedException("switch expression should have only one default case", s);
-                        }
-                        defaultStatement = s;
+            for (Statement statement : statementList) {
+                if (statement instanceof CaseStatement caseStatement) {
+                    if (defaultStatement != null) {
+                        throw createParsingFailedException("default case should appear last", defaultStatement);
                     }
+                    caseStatements.add(caseStatement);
+                } else if (isTrue(statement, IS_SWITCH_DEFAULT)) {
+                    if (defaultStatement != null) {
+                        throw createParsingFailedException("switch expression should have only one default case", statement);
+                    }
+                    defaultStatement = statement;
                 }
             }
 
@@ -1070,8 +1068,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     new SwitchExpression(
                             this.visitExpressionInPar(ctx.expressionInPar()),
                             caseStatements,
-                            defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
-                    ),
+                            defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE),
                     ctx);
         } finally {
             switchExpressionRuleContextStack.pop();
@@ -1079,128 +1076,86 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public Tuple3<List<Statement>, Boolean, Boolean> visitSwitchBlockStatementExpressionGroup(SwitchBlockStatementExpressionGroupContext ctx) {
-        int labelCnt = ctx.switchExpressionLabel().size();
-        List<Token> firstLabelHolder = new ArrayList<>(1);
-        final int[] arrowCntHolder = new int[1];
+    public List<Statement> visitSwitchBlockStatementExpressionGroup(final SwitchBlockStatementExpressionGroupContext ctx) {
+        List<SwitchExpressionLabel> labels = ctx.switchExpressionLabel().stream()
+                .map(this::switchExpressionLabel)
+                .toList();
+        if (labels.isEmpty()) {
+            throw createParsingFailedException("`case` or `default` branches are expected", ctx);
+        }
 
-        boolean[] isArrowHolder = new boolean[1];
-        boolean[] hasResultStmtHolder = new boolean[1];
-        List<Statement> result = (List<Statement>) ctx.switchExpressionLabel().stream()
-                .map(e -> (Object) this.visitSwitchExpressionLabel(e))
-                .reduce(new ArrayList<Statement>(4), (r, e) -> {
-                    List<Statement> statementList = (List<Statement>) r;
-                    Tuple3<Token, List<Expression>, Integer> tuple = (Tuple3<Token, List<Expression>, Integer>) e;
+        if (labels.stream().anyMatch(SwitchExpressionLabel::isArrow) && labels.size() > 1) {
+            throw createParsingFailedException("`case ... ->` does not support falling through cases", labels.get(0).keyword());
+        }
 
-                    boolean isArrow = ARROW == tuple.getV3();
-                    isArrowHolder[0] = isArrow;
-                    if (isArrow) {
-                        if (++arrowCntHolder[0] > 1 && !firstLabelHolder.isEmpty()) {
-                            throw createParsingFailedException("`case ... ->` does not support falling through cases", firstLabelHolder.get(0));
-                        }
-                    }
+        BlockStatement arm = this.switchExpressionArm(ctx, labels.get(0).isArrow());
+        Token firstKeyword = labels.get(0).keyword();
+        SwitchExpressionLabel lastLabel = last(labels);
 
-                    boolean isLast = labelCnt - 1 == statementList.size();
+        return labels.stream().collect(
+                ArrayList::new,
+                (cases, label) -> this.addSwitchExpressionCases(cases, label, arm, firstKeyword, label == lastLabel),
+                ArrayList::addAll);
+    }
 
-                    BlockStatement codeBlock = this.visitBlockStatements(ctx.blockStatements());
-                    List<Statement> statements = codeBlock.getStatements();
-                    int statementsCnt = statements.size();
-                    if (0 == statementsCnt) {
-                        throw createParsingFailedException("`yield` is expected", ctx.blockStatements());
-                    }
+    private BlockStatement switchExpressionArm(final SwitchBlockStatementExpressionGroupContext ctx, final boolean arrow) {
+        BlockStatement block = this.visitBlockStatements(ctx.blockStatements());
+        List<Statement> statements = block.getStatements();
+        if (statements.isEmpty()) {
+            throw createParsingFailedException("`yield` is expected", ctx.blockStatements());
+        }
+        if (!arrow) {
+            return block;
+        }
+        if (statements.size() > 1) {
+            throw createParsingFailedException("Expect only 1 statement, but " + statements.size() + " statements found", ctx.blockStatements());
+        }
 
-                    if (isArrow && statementsCnt > 1) {
-                        throw createParsingFailedException("Expect only 1 statement, but " + statementsCnt + " statements found", ctx.blockStatements());
-                    }
+        Statement body = unwrapSingletonBlock(statements.get(0));
+        if (body instanceof YieldStatement || body instanceof ThrowStatement) {
+            return configureAST(createBlockStatement(body), body);
+        }
+        if (body instanceof ExpressionStatement expressionStatement) {
+            return configureAST(
+                    createBlockStatement(configureAST(yieldS(expressionStatement.getExpression()), body)),
+                    body);
+        }
+        if (mayCompleteNormally(body)) {
+            throw createParsingFailedException("`yield` or `throw` is expected", body);
+        }
+        return configureAST(createBlockStatement(body), body);
+    }
 
-                    if (!isArrow) {
-                        boolean[] hasYieldHolder = new boolean[1];
-                        boolean[] hasThrowHolder = new boolean[1];
-                        codeBlock.visit(new CodeVisitorSupport() {
-                            @Override
-                            public void visitYieldStatement(final YieldStatement statement) {
-                                hasYieldHolder[0] = true;
-                            }
+    private void addSwitchExpressionCases(
+            final List<Statement> cases,
+            final SwitchExpressionLabel label,
+            final BlockStatement arm,
+            final Token firstKeyword,
+            final boolean lastLabel) {
+        switch (label.keyword().getType()) {
+            case CASE -> {
+                List<Expression> values = label.values();
+                for (int i = 0, n = values.size(); i < n; i++) {
+                    CaseStatement caseStatement = new CaseStatement(
+                            values.get(i),
+                            lastLabel && i == n - 1 ? arm : EmptyStatement.INSTANCE);
+                    caseStatement.setArrow(label.isArrow());
+                    cases.add(configureAST(caseStatement, firstKeyword));
+                }
+            }
+            case DEFAULT -> {
+                arm.putNodeMetaData(IS_SWITCH_DEFAULT, Boolean.TRUE);
+                cases.add(arm);
+            }
+            default -> throw createParsingFailedException("Unsupported switch label: " + label.keyword().getText(), label.keyword());
+        }
+    }
 
-                            @Override
-                            public void visitThrowStatement(ThrowStatement statement) {
-                                hasThrowHolder[0] = true;
-                            }
-
-                            @Override
-                            public void visitClosureExpression(final ClosureExpression expression) {
-                                // yield inside a nested closure does not complete this arm
-                            }
-                        });
-
-                        if (hasYieldHolder[0] || hasThrowHolder[0]) {
-                            hasResultStmtHolder[0] = true;
-                        }
-                    }
-
-                    Statement exprOrBlockStatement = statements.get(0);
-                    if (exprOrBlockStatement instanceof BlockStatement blockStatement) {
-                        List<Statement> branchStatementList = blockStatement.getStatements();
-                        if (1 == branchStatementList.size()) {
-                            exprOrBlockStatement = branchStatementList.get(0);
-                        }
-                    }
-
-                    if (!(exprOrBlockStatement instanceof YieldStatement || exprOrBlockStatement instanceof ThrowStatement)) {
-                        if (isArrow) {
-                            if (exprOrBlockStatement instanceof ExpressionStatement expressionStatement) {
-                                codeBlock = configureAST(
-                                        createBlockStatement(configureAST(
-                                                yieldS(expressionStatement.getExpression()),
-                                                exprOrBlockStatement
-                                        )),
-                                        exprOrBlockStatement
-                                );
-                            } else if (!containsYieldOrThrow(exprOrBlockStatement)) {
-                                throw createParsingFailedException("`yield` or `throw` is expected", exprOrBlockStatement);
-                            } else {
-                                codeBlock = configureAST(
-                                        createBlockStatement(exprOrBlockStatement),
-                                        exprOrBlockStatement
-                                );
-                            }
-                        }
-                    } else if (exprOrBlockStatement instanceof YieldStatement || exprOrBlockStatement instanceof ThrowStatement) {
-                        codeBlock = configureAST(
-                                createBlockStatement(exprOrBlockStatement),
-                                exprOrBlockStatement
-                        );
-                    }
-
-                    if (isArrow && mayCompleteNormally(codeBlock)) {
-                        throw createParsingFailedException("`yield` or `throw` is expected", exprOrBlockStatement);
-                    }
-
-                    switch (tuple.getV1().getType()) {
-                        case CASE:
-                            if (!asBoolean(statementList)) {
-                                firstLabelHolder.add(tuple.getV1());
-                            }
-                            for (int i = 0, n = tuple.getV2().size(); i < n; i += 1) {
-                                Expression expr = tuple.getV2().get(i);
-                                CaseStatement caseStatement = new CaseStatement(
-                                        expr,
-                                        (isLast && i == n - 1) ? codeBlock : EmptyStatement.INSTANCE
-                                );
-                                caseStatement.setArrow(isArrow);
-                                statementList.add(configureAST(caseStatement, firstLabelHolder.get(0)));
-                            }
-                            break;
-                        case DEFAULT:
-                            codeBlock.putNodeMetaData(IS_SWITCH_DEFAULT, Boolean.TRUE);
-                            statementList.add(codeBlock);
-                            break;
-                    }
-
-                    return statementList;
-                });
-
-        return tuple(result, isArrowHolder[0], hasResultStmtHolder[0]);
+    private static Statement unwrapSingletonBlock(final Statement statement) {
+        if (statement instanceof BlockStatement block && block.getStatements().size() == 1) {
+            return block.getStatements().get(0);
+        }
+        return statement;
     }
 
     /**
@@ -1220,27 +1175,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         return false;
     }
 
-    private static boolean containsYieldOrThrow(final Statement statement) {
-        boolean[] found = new boolean[1];
-        statement.visit(new CodeVisitorSupport() {
-            @Override
-            public void visitYieldStatement(final YieldStatement yieldStatement) {
-                found[0] = true;
-            }
-
-            @Override
-            public void visitThrowStatement(final ThrowStatement throwStatement) {
-                found[0] = true;
-            }
-
-            @Override
-            public void visitClosureExpression(final ClosureExpression expression) {
-                // do not look inside nested closures / lambdas
-            }
-        });
-        return found[0];
-    }
-
     private void validateSwitchExpressionLabels(SwitchExpressionContext ctx) {
         Map<String, List<SwitchExpressionLabelContext>> acMap =
                 ctx.switchBlockStatementExpressionGroup().stream()
@@ -1253,14 +1187,17 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public Tuple3<Token, List<Expression>, Integer> visitSwitchExpressionLabel(SwitchExpressionLabelContext ctx) {
-        final Integer acType = ctx.ac.getType();
-        if (asBoolean(ctx.CASE())) {
-            return tuple(ctx.CASE().getSymbol(), this.visitExpressionList(ctx.expressionList()), acType);
-        } else if (asBoolean(ctx.DEFAULT())) {
-            return tuple(ctx.DEFAULT().getSymbol(), Collections.singletonList(EmptyExpression.INSTANCE), acType);
-        }
+    public Object visitSwitchExpressionLabel(final SwitchExpressionLabelContext ctx) {
+        return this.switchExpressionLabel(ctx);
+    }
 
+    private SwitchExpressionLabel switchExpressionLabel(final SwitchExpressionLabelContext ctx) {
+        if (asBoolean(ctx.CASE())) {
+            return new SwitchExpressionLabel(ctx.CASE().getSymbol(), this.visitExpressionList(ctx.expressionList()), ctx.ac.getType());
+        }
+        if (asBoolean(ctx.DEFAULT())) {
+            return new SwitchExpressionLabel(ctx.DEFAULT().getSymbol(), Collections.singletonList(EmptyExpression.INSTANCE), ctx.ac.getType());
+        }
         throw createParsingFailedException("Unsupported switch expression label: " + ctx.getText(), ctx);
     }
 
@@ -4965,6 +4902,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     //--------------------------------------------------------------------------
+
+    private record SwitchExpressionLabel(Token keyword, List<Expression> values, int separator) {
+        private boolean isArrow() {
+            return ARROW == separator;
+        }
+    }
 
     private static class DeclarationListStatement extends Statement {
 
