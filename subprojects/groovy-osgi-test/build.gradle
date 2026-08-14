@@ -26,7 +26,7 @@ plugins {
 
 dependencies {
     testImplementation 'org.apache.felix:org.apache.felix.framework:7.0.5'
-    testImplementation "org.junit.jupiter:junit-jupiter:${versions.junit5}"
+    testImplementation "org.junit.jupiter:junit-jupiter:${rootProject.versions.junit5}"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

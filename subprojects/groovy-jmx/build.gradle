@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject // JmxBuilder extends FactoryBuilderSupport...
+    api project(':') // JmxBuilder extends FactoryBuilderSupport...
     testImplementation projects.groovyTest
     testImplementation projects.groovyTestJunit6
     testRuntimeOnly(project(':')) {

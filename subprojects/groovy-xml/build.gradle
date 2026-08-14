@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject // MarkupBuilder extends BuilderSupport...
+    api project(':') // MarkupBuilder extends BuilderSupport...
 
     testImplementation projects.groovyTest
     testImplementation "xmlunit:xmlunit:${versions.xmlunit}"

@@ -27,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    implementation rootProject
+    implementation project(':')
     implementation projects.groovyConsole
     implementation projects.groovyTemplates
     implementation projects.groovyXml

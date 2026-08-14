@@ -24,7 +24,7 @@ plugins {
 }
 
 dependencies {
-    testImplementation rootProject
+    testImplementation project(':')
     testImplementation projects.groovyTest
     testImplementation projects.groovyTestJunit6
     testRuntimeOnly projects.groovyGrapeIvy

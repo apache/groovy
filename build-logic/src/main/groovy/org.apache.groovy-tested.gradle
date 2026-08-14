@@ -98,12 +98,12 @@ tasks.withType(Test).configureEach {
     }
     // Forward any groovy.grape.* property set on the Gradle command line (-P or -D)
     // to the test JVM. Lets users override Grape behaviour — debug flags, future
-    // settings — without adding one-off plumbing per flag. Project properties (-P)
+    // settings — without adding one-off plumbing per flag. Gradle properties (-P)
     // win over system properties (-D) when both are set, matching Gradle convention.
     def grapeProps = new LinkedHashMap<String, String>()
-    project.properties.each { k, v ->
-        if (k.toString().startsWith('groovy.grape.') && v != null) {
-            grapeProps[k.toString()] = v.toString()
+    providers.gradlePropertiesPrefixedBy('groovy.grape.').get().each { k, v ->
+        if (v != null) {
+            grapeProps[k] = v.toString()
         }
     }
     System.properties.each { k, v ->
@@ -232,19 +232,35 @@ tasks.withType(Test).configureEach {
         }
     }
 
-    afterSuite { desc, result ->
-        if (!desc.parent) {
-            aggregator.get().recordSuite(result.successfulTestCount, result.failedTestCount, result.skippedTestCount)
-            if (result.resultType == TestResult.ResultType.SUCCESS) {
-                def green = '\u001B[32m'
-                def yellow = '\u001B[33m'
-                def reset = '\u001B[0m'
-                logger.lifecycle "${desc.name}: ${green}${result.successfulTestCount} passed${reset}, " +
-                    "${yellow}${result.skippedTestCount} skipped${reset} " +
-                    "(${result.testCount} tests)"
+    // addTestListener replaces the afterSuite(Closure) overload removed in Gradle 10;
+    // locals are captured because the anonymous class cannot see the task delegate
+    def taskLogger = logger
+    def suiteAggregator = aggregator
+    addTestListener(new TestListener() {
+        @Override
+        void beforeSuite(TestDescriptor suite) { }
+
+        @Override
+        void afterSuite(TestDescriptor desc, TestResult result) {
+            if (!desc.parent) {
+                suiteAggregator.get().recordSuite(result.successfulTestCount, result.failedTestCount, result.skippedTestCount)
+                if (result.resultType == TestResult.ResultType.SUCCESS) {
+                    def green = '\u001B[32m'
+                    def yellow = '\u001B[33m'
+                    def reset = '\u001B[0m'
+                    taskLogger.lifecycle "${desc.name}: ${green}${result.successfulTestCount} passed${reset}, " +
+                        "${yellow}${result.skippedTestCount} skipped${reset} " +
+                        "(${result.testCount} tests)"
+                }
             }
         }
-    }
+
+        @Override
+        void beforeTest(TestDescriptor testDescriptor) { }
+
+        @Override
+        void afterTest(TestDescriptor testDescriptor, TestResult result) { }
+    })
 }
 
 tasks.withType(GroovyCompile).configureEach {

@@ -28,7 +28,7 @@ dependencies {
         transitive = false
     }
 
-    api rootProject  // ServletBinding extends Binding...
+    api project(':')  // ServletBinding extends Binding...
     implementation projects.groovyXml // needed for MarkupBuilder
     implementation projects.groovyTemplates // needed by TemplateServlet
 

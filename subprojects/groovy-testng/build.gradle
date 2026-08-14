@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject // TestNgRunner implements GroovyRunner...
+    api project(':') // TestNgRunner implements GroovyRunner...
     runtimeOnly('org.testng:testng:7.12.0') {
         exclude(group: 'com.google.inject', module: 'guice')
         exclude(group: 'com.google.code.findbugs', module: 'jsr305')

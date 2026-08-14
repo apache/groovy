@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject // JsonBuilder extends GroovyObjectSupport...
+    api project(':') // JsonBuilder extends GroovyObjectSupport...
 
     testImplementation projects.groovyTest
     testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm

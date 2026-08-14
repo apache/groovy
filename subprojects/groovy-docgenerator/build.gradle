@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    implementation rootProject
+    implementation project(':')
     implementation projects.groovyTemplates
     implementation projects.groovyGroovydoc
     implementation "com.github.javaparser:javaparser-core:${versions.javaParser}"

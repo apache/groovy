@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject
+    api project(':')
     implementation("org.apache.ivy:ivy:${versions.ivy}") {
         transitive = false
     }

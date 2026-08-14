@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    implementation rootProject
+    implementation project(':')
     implementation projects.groovyMacro
     testImplementation projects.groovyTest
     testImplementation projects.groovyTypecheckers // MonadicChecker @CompileStatic tests

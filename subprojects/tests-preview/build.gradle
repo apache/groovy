@@ -23,7 +23,7 @@ plugins {
 }
 
 dependencies {
-    implementation rootProject
+    implementation project(':')
     testImplementation projects.groovyTest
 }
 

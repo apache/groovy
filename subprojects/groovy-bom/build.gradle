@@ -20,15 +20,17 @@ plugins {
     id 'org.apache.groovy-platform'
 }
 
+def bomDependencyFactory = project.dependencyFactory
+
 dependencies {
     constraints {
         rootProject.allprojects { p ->
             p.pluginManager.withPlugin('org.apache.groovy-base') {
                 // add a dependency on all components of Groovy
-                api(p)
+                api(bomDependencyFactory.createProjectDependency(p.path))
                 // and each component references back the BOM
                 p.dependencies {
-                    api(platform(project((":groovy-bom"))))
+                    api(platform(project(":groovy-bom")))
                 }
             }
         }

@@ -36,6 +36,11 @@ plugins {
 if (project == rootProject) {
     def sharedConfiguration = project.extensions.create('sharedConfiguration', SharedConfiguration, project.objects, rootProject.layout, project.providers, rootProject.layout.buildDirectory.get().asFile, rootProject.logger, gradle.startParameter)
     project.extensions.create('versions', Versions, sharedConfiguration, project.providers, project.layout)
+} else {
+    // declare the root's shared extensions locally so references resolve without
+    // the implicit parent-project property lookup removed in Gradle 10
+    project.extensions.add(SharedConfiguration, 'sharedConfiguration', rootProject.extensions.getByType(SharedConfiguration))
+    project.extensions.add(Versions, 'versions', rootProject.extensions.getByType(Versions))
 }
 
 group = 'org.apache.groovy'

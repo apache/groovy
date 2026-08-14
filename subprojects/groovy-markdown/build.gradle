@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject
+    api project(':')
     implementation "org.commonmark:commonmark:${versions.commonmark}"
     compileOnly "org.commonmark:commonmark-ext-gfm-tables:${versions.commonmark}"
     testImplementation projects.groovyTest

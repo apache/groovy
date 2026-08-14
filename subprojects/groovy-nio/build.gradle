@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject // NioExtensions uses Closure
+    api project(':') // NioExtensions uses Closure
 
     testImplementation projects.groovyTest
     testImplementation("org.spockframework:spock-core:${versions.spock}") {

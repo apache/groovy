@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject
+    api project(':')
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-csv:${versions.jackson}"
     implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${versions.jackson}"

@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject // Template uses Writable...
+    api project(':') // Template uses Writable...
     implementation projects.groovyXml
     testImplementation projects.groovyTest
     testImplementation projects.groovyTestJunit6

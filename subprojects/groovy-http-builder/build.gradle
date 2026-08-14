@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject
+    api project(':')
     implementation projects.groovyJson
     implementation projects.groovyXml
     testRuntimeOnly "org.jsoup:jsoup:1.23.1"

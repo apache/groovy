@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject  // DateUtilExtensions has methods with Closure params...
+    api project(':')  // DateUtilExtensions has methods with Closure params...
     testImplementation projects.groovyTest
 }
 

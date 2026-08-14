@@ -81,11 +81,13 @@ configurations {
     }
 }
 
+def baseProjectPaths = rootProject.allprojects.findAll {
+    it.pluginManager.hasPlugin('org.apache.groovy-base')
+}*.path
+
 dependencies {
-    rootProject.allprojects {
-        if (pluginManager.hasPlugin('org.apache.groovy-base')) {
-            baseProjects(it)
-        }
+    baseProjectPaths.each {
+        baseProjects(project(it))
     }
     // also include optional features from main module
     distributions(project(":")) {
@@ -250,6 +252,8 @@ def sdkElements = configurations.create("sdkElements") {
     }
 }
 
-signing {
+// the signing extension lives on the root project; configure it explicitly
+// rather than via the implicit parent-project method lookup removed in Gradle 10
+rootProject.signing {
     sign sdkElements
 }

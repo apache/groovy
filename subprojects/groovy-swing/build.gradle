@@ -24,7 +24,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject  // SwingBuilder extends FactoryBuilderSupport...
+    api project(':')  // SwingBuilder extends FactoryBuilderSupport...
     testImplementation projects.groovyTest
     testImplementation testFixtures(project(':'))
     testFixturesImplementation projects.groovyTest

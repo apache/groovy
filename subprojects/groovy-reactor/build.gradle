@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject
+    api project(':')
     implementation "io.projectreactor:reactor-core:${versions.reactor}"
     testImplementation projects.groovyTest
 }

@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject // AstBuilderTransformation publicly references numerous core classes
+    api project(':') // AstBuilderTransformation publicly references numerous core classes
     testImplementation projects.groovyTest
 }
 

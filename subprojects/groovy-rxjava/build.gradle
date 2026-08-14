@@ -21,7 +21,7 @@ plugins {
 }
 
 dependencies {
-    api rootProject
+    api project(':')
     implementation "io.reactivex.rxjava3:rxjava:${versions.rxjava3}"
     testImplementation projects.groovyTest
 }

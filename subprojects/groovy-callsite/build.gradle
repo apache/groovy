@@ -22,7 +22,7 @@ plugins {
 
 dependencies {
     // Classic call-site caching runtime; depends on core, never the reverse.
-    api rootProject
+    api project(':')
     testImplementation projects.groovyTest
 }
 
