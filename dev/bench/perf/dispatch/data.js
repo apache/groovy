@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786691921372,
+  "lastUpdate": 1786777470548,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2106,6 +2106,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.loaded.total",
             "value": 4011,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 453,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 876,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "35b9e21adc7e72584b6f9dc7c561061134efdd9a",
+          "message": "Build: Make JMH regression alerts direction-aware; retire github-action-benchmark compare on PRs\n\nThe action hardcodes JMH as smaller-is-better, so throughput (ops/time)\nbenchmarks alerted on speedups and never on slowdowns, and it compared\nagainst the single previous data point on noisy shared runners.\n\nPer-benchmark alerts now live in the jmh-summary.py PR comment instead:\ndirection comes from each benchmark's scoreUnit, ratios are measured\nagainst the trailing 90-day baseline, and runner-speed skew is divided\nout via the existing ruler calibration. Benchmarks >= 1.5x slower are\nlisted explicitly; otherwise a quiet all-clear line is shown.\n\nThe daily/adhoc workflows still use github-action-benchmark to publish\ngh-pages data, so dashboards and graphs are unchanged.",
+          "timestamp": "2026-08-15T01:51:40Z",
+          "url": "https://github.com/apache/groovy/commit/35b9e21adc7e72584b6f9dc7c561061134efdd9a"
+        },
+        "date": 1786777469940,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4009,
             "unit": "classes"
           },
           {
