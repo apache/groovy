@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786691904504,
+  "lastUpdate": 1786777457836,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Compiler Performance": [
@@ -4648,6 +4648,56 @@ window.BENCHMARK_DATA = {
             "name": "compile@groovy-5",
             "value": 479.40666666666664,
             "range": "±24.2",
+            "unit": "ms",
+            "extra": "5.0.8"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "realbluesun@hotmail.com"
+          },
+          "id": "35b9e21adc7e72584b6f9dc7c561061134efdd9a",
+          "message": "Build: Make JMH regression alerts direction-aware; retire github-action-benchmark compare on PRs\n\nThe action hardcodes JMH as smaller-is-better, so throughput (ops/time)\nbenchmarks alerted on speedups and never on slowdowns, and it compared\nagainst the single previous data point on noisy shared runners.\n\nPer-benchmark alerts now live in the jmh-summary.py PR comment instead:\ndirection comes from each benchmark's scoreUnit, ratios are measured\nagainst the trailing 90-day baseline, and runner-speed skew is divided\nout via the existing ruler calibration. Benchmarks >= 1.5x slower are\nlisted explicitly; otherwise a quiet all-clear line is shown.\n\nThe daily/adhoc workflows still use github-action-benchmark to publish\ngh-pages data, so dashboards and graphs are unchanged.",
+          "timestamp": "2026-08-15T01:51:40Z",
+          "url": "https://github.com/apache/groovy/commit/35b9e21adc7e72584b6f9dc7c561061134efdd9a"
+        },
+        "date": 1786777455512,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "compile@current",
+            "value": 570.5666666666667,
+            "range": "±19.75",
+            "unit": "ms",
+            "extra": "current"
+          },
+          {
+            "name": "compile@groovy-3",
+            "value": 670.95,
+            "range": "±220.25",
+            "unit": "ms",
+            "extra": "3.0.25"
+          },
+          {
+            "name": "compile@groovy-4",
+            "value": 584.1933333333333,
+            "range": "±144.58",
+            "unit": "ms",
+            "extra": "4.0.33"
+          },
+          {
+            "name": "compile@groovy-5",
+            "value": 493.96,
+            "range": "±24.65",
             "unit": "ms",
             "extra": "5.0.8"
           }
