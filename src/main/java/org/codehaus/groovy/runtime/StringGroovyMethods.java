@@ -52,6 +52,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -2734,7 +2735,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.regex.Matcher#quoteReplacement(String)
      */
     public static String replaceAll(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        final CharSequence cs = RegexGuard.prepare(self);
+        final CharSequence cs = Objects.requireNonNull(RegexGuard.prepare(self), "self");
         final Matcher matcher = pattern.matcher(cs);
         if (matcher.find()) {
             final StringBuilder sb = new StringBuilder(cs.length() + 16);
@@ -2833,7 +2834,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static String replaceFirst(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"List<String>","String[]"}) final Closure closure) {
-        final CharSequence cs = RegexGuard.prepare(self);
+        final CharSequence cs = Objects.requireNonNull(RegexGuard.prepare(self), "self");
         final Matcher matcher = pattern.matcher(cs);
         if (matcher.find()) {
             final StringBuilder sb = new StringBuilder(cs.length() + 16);

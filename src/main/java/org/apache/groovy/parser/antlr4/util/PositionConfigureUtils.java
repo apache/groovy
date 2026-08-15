@@ -53,12 +53,12 @@ public class PositionConfigureUtils {
 
     public static Tuple2<Integer, Integer> endPosition(Token token) {
         String stopText = token.getText();
-        int stopTextLength = 0;
-        int newLineCnt = 0;
-        if (null != stopText) {
-            stopTextLength = stopText.length();
-            newLineCnt = (int) StringUtils.countChar(stopText, '\n');
+        // ANTLR EOF / unset tokens often have null text; treat as zero-width
+        if (stopText == null) {
+            return tuple(token.getLine(), token.getCharPositionInLine() + 1);
         }
+        int stopTextLength = stopText.length();
+        int newLineCnt = (int) StringUtils.countChar(stopText, '\n');
 
         if (0 == newLineCnt) {
             // column numbers are code-point based (the lexer reads a CodePointCharStream), so
@@ -82,7 +82,8 @@ public class PositionConfigureUtils {
         astNode.setLastLineNumber(token.getLine());
         // measure the token text in code points to keep lastColumnNumber code-point based (GROOVY-12085)
         String text = token.getText();
-        astNode.setLastColumnNumber(token.getCharPositionInLine() + 1 + text.codePointCount(0, text.length()));
+        int extra = text == null ? 0 : text.codePointCount(0, text.length());
+        astNode.setLastColumnNumber(token.getCharPositionInLine() + 1 + extra);
 
         return astNode;
     }
