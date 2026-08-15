@@ -62,7 +62,8 @@ public class IndyGuardsFiltersAndSignatures {
      * Shared guards, filters, constructors, and invokers used when assembling indy call paths.
      */
     protected static final MethodHandle
-            SAME_CLASS, SAME_CLASSES, SAME_MC, IS_NULL, NON_NULL,
+            SAME_CLASS, SAME_CLASSES, SAME_CLASSES_2, SAME_CLASSES_3, SAME_CLASSES_4,
+            SAME_MC, IS_NULL, NON_NULL,
             UNWRAP_METHOD, UNWRAP_EXCEPTION,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
             GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY, GROOVY_OBJECT_SET_PROPERTY, META_METHOD_INVOKER,
@@ -82,6 +83,9 @@ public class IndyGuardsFiltersAndSignatures {
         try {
             SAME_CLASS                           = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
             SAME_CLASSES                         = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class[].class, Object[].class));
+            SAME_CLASSES_2                       = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class.class, Class.class, Object.class, Object.class));
+            SAME_CLASSES_3                       = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class.class, Class.class, Class.class, Object.class, Object.class, Object.class));
+            SAME_CLASSES_4                       = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class.class, Class.class, Class.class, Class.class, Object.class, Object.class, Object.class, Object.class));
             SAME_MC                              = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
             IS_NULL                              = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
             NON_NULL                             = LOOKUP.findStatic (Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class));
@@ -238,5 +242,32 @@ public class IndyGuardsFiltersAndSignatures {
                 return false;
         }
         return true;
+    }
+
+    /**
+     * Two-argument same-class guard used by hot indy sites so
+     * {@code asCollector(Object[].class, n)} does not allocate an {@code Object[]}
+     * on every invocation. {@code Selector} binds the expected classes with a
+     * single {@link MethodHandles#insertArguments} call.
+     */
+    public static boolean sameClasses(Class<?> c0, Class<?> c1, Object o0, Object o1) {
+        return o0 != null && o1 != null && o0.getClass() == c0 && o1.getClass() == c1;
+    }
+
+    /**
+     * Three-argument same-class guard; see {@link #sameClasses(Class, Class, Object, Object)}.
+     */
+    public static boolean sameClasses(Class<?> c0, Class<?> c1, Class<?> c2, Object o0, Object o1, Object o2) {
+        return o0 != null && o1 != null && o2 != null
+                && o0.getClass() == c0 && o1.getClass() == c1 && o2.getClass() == c2;
+    }
+
+    /**
+     * Four-argument same-class guard; see {@link #sameClasses(Class, Class, Object, Object)}.
+     */
+    public static boolean sameClasses(Class<?> c0, Class<?> c1, Class<?> c2, Class<?> c3,
+                                      Object o0, Object o1, Object o2, Object o3) {
+        return o0 != null && o1 != null && o2 != null && o3 != null
+                && o0.getClass() == c0 && o1.getClass() == c1 && o2.getClass() == c2 && o3.getClass() == c3;
     }
 }

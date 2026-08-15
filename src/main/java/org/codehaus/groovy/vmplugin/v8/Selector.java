@@ -22,29 +22,17 @@ import groovy.lang.Closure;
 import groovy.lang.ExpandoMetaClass;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
-import groovy.lang.MetaBeanProperty;
-import groovy.lang.MetaProperty;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
+import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaMethod;
+import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
 import groovy.transform.Internal;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -67,6 +55,20 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.ARRAYLIST_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.BEAN_CONSTRUCTOR_PROPERTY_SETTER;
@@ -91,6 +93,9 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NON
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NULL_REF;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASS;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES_2;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES_3;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASSES_4;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_MC;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAM_CONVERSION;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SET_PROPERTY;
@@ -1289,7 +1294,7 @@ public abstract class Selector {
             handle = applyMopSwitchPoints(handle, fallback, receiver);
             if (LOG_ENABLED) LOG.info("added class switch point guard");
 
-            java.util.function.Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
+            Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
                     || TypeHelper.getUnboxedType(t).isPrimitive(); // GROOVY-11782
             };
@@ -1314,11 +1319,11 @@ public abstract class Selector {
                     handle = MethodHandles.guardWithTest(test, handle, fallback);
                 }
             } else if (Arrays.stream(pt).anyMatch(nonFinalOrNullUnsafe)) {
-                MethodHandle test = SAME_CLASSES
-                        .bindTo(Arrays.stream(args).map(Object::getClass).toArray(Class[]::new))
-                        .asCollector(Object[].class, pt.length)
-                        .asType(MethodType.methodType(boolean.class, pt));
-                handle = MethodHandles.guardWithTest(test, handle, fallback);
+                // Arity 0 never reaches here: anyMatch on an empty pt is false,
+                // and a receiver is always present. No same-class combinator is
+                // installed for a parameterless handle.
+                handle = MethodHandles.guardWithTest(
+                        Selector.sameClassesGuard(args, handle.type()), handle, fallback);
                 if (LOG_ENABLED) LOG.info("added same-class argument check");
             } else if (safeNavigationOrig) { // GROOVY-11126
                 MethodHandle test = NON_NULL.asType(MethodType.methodType(boolean.class, pt[0]));
@@ -1532,5 +1537,47 @@ public abstract class Selector {
             sender = sender.getEnclosingClass();
         }
         return sender;
+    }
+
+    /**
+     * Specialised same-class guards for arities 1–4, stored at {@code [n - 1]}.
+     */
+    private static final MethodHandle[] SAME_CLASS_GUARDS = {
+            SAME_CLASS,
+            SAME_CLASSES_2,
+            SAME_CLASSES_3,
+            SAME_CLASSES_4
+    };
+
+    /**
+     * Builds a same-class guard that avoids {@code asCollector(Object[].class, n)}
+     * for the common 1–4 argument shapes (receiver plus 0–3 parameters).
+     * Expected classes are bound with a single {@link MethodHandles#insertArguments}
+     * (one adapter, not a chain of {@code bindTo}). The produced handle has type
+     * {@code callType.changeReturnType(boolean.class)} and returns {@code false}
+     * if any argument is {@code null} or has a different runtime class.
+     * <p>
+     * Arity 0 is not specialised; the caller does not install a guard in that
+     * case. If this helper is invoked with no parameters it falls through to
+     * the collector of an empty array, which returns {@code true}.
+     *
+     * @param args     non-null arguments captured at link time; length matches {@code callType}
+     * @param callType the invocation handle type whose parameters the guard must accept
+     */
+    static MethodHandle sameClassesGuard(final Object[] args, final MethodType callType) {
+        int n = callType.parameterCount();
+        MethodType booleanType = callType.changeReturnType(boolean.class);
+        if (n >= 1 && n <= SAME_CLASS_GUARDS.length) {
+            Object[] classes = new Object[n];
+            for (int i = 0; i < n; i++) {
+                classes[i] = args[i].getClass();
+            }
+            return MethodHandles.insertArguments(SAME_CLASS_GUARDS[n - 1], 0, classes).asType(booleanType);
+        }
+        Class<?>[] classes = new Class<?>[n];
+        for (int i = 0; i < n; i++) {
+            classes[i] = args[i].getClass();
+        }
+        return SAME_CLASSES.bindTo(classes).asCollector(Object[].class, n).asType(booleanType);
     }
 }

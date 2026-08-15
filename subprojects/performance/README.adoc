@@ -148,6 +148,27 @@ exact-class policy — no hierarchy fan-out). Steady-state monomorphic sites
 carry a single SwitchPoint guard. Complements the Grails-oriented
 `CallSiteInvalidationBench` under `org.apache.groovy.perf.grails`.
 
+== Same-class guards (GROOVY-12284)
+
+`SameClassesGuardBench` measures the invokedynamic same-class guard that
+linked monomorphic sites install when every argument is non-null.
+Arities 1–4 (receiver plus 0–3 parameters) are specialised on HEAD;
+arity 5 keeps `asCollector(Object[].class, n)` and is the negative
+control. `@CompileStatic` rows (`cs_arity2`, `cs_arity5`) emit
+`invokevirtual` and must stay at parity. Each benchmark method is a
+single call so `-PjmhProfilers=gc` reports bytes per invocation.
+
+`SameClassesGuardMhBench` reconstructs the collector vs specialised
+MethodHandle combinators and invokes them with `invokeExact`, isolating
+the adapter from MOP selection. Specialised handles are bound with a
+single `insertArguments` (the production shape). Compiles on any tree
+that has the public overloads; `@Setup` fails on a pre-GROOVY-12284
+runtime. Run with:
+
+    ./gradlew :perf:jmh -PbenchInclude=SameClassesGuardBench
+    ./gradlew :perf:jmh -PbenchInclude=SameClassesGuardMhBench
+    ./gradlew :perf:jmh -PbenchInclude=SameClassesGuardBench -PjmhProfilers=gc
+
 == Dashboard pages
 
 The `dashboard/` directory is the source of truth for the hand-crafted pages
