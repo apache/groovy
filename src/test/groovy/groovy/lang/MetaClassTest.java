@@ -41,6 +41,8 @@ final class MetaClassTest {
         assertNotNull(metaClass, "got metaclass");
 
         metaClass.invokeMethod(this, "doSomething", new Object[0]);
+        // null argument array is treated as "no arguments" (MOP contract)
+        metaClass.invokeMethod(this, "doSomething", (Object[]) null);
     }
 
     @Test

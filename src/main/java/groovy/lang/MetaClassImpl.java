@@ -1189,7 +1189,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        final Object[] arguments = Optional.ofNullable(originalArguments).orElse(EMPTY_ARGUMENTS);
+        final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
 
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
