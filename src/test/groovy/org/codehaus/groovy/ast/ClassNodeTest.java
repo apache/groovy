@@ -117,6 +117,38 @@ public final class ClassNodeTest {
         assertEquals(arrayNode.getComponentType().toString(), plainNode.getComponentType().toString());
     }
 
+
+    @Test
+    public void testEqualsAndHashCodeUseNameWithoutGetText() {
+        ClassNode a = new ClassNode("com.example.Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        ClassNode b = new ClassNode("com.example.Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        ClassNode c = new ClassNode("com.example.Bar", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        ClassNode redirected = ClassHelper.makeWithoutCaching("com.example.Foo");
+        redirected.setRedirect(a);
+
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(a, redirected);
+        assertEquals(a.hashCode(), redirected.hashCode());
+        assertTrue(!a.equals(c));
+
+        ClassNode stringArrayViaName = ClassHelper.makeWithoutCaching("java.lang.String").makeArray();
+        ClassNode stringArrayViaClass = ClassHelper.make(String[].class);
+        assertEquals(stringArrayViaName, stringArrayViaClass);
+    }
+
+    @Test
+    public void testIntersectionTypesWithDifferentComponentsAreNotEqual() {
+        ClassNode runnableAndSerializable = new IntersectionTypeClassNode(new ClassNode[]{
+                ClassHelper.make(Runnable.class), ClassHelper.make(java.io.Serializable.class)
+        });
+        ClassNode closeableAndFlushable = new IntersectionTypeClassNode(new ClassNode[]{
+                ClassHelper.make(java.io.Closeable.class), ClassHelper.make(java.io.Flushable.class)
+        });
+        assertTrue(!runnableAndSerializable.equals(closeableAndFlushable));
+        assertTrue(runnableAndSerializable.hashCode() != closeableAndFlushable.hashCode());
+    }
+
     @Test
     public void testTypeAnnotations() {
         var annotation = new AnnotationNode(ClassHelper.make(Deprecated.class));

@@ -1319,6 +1319,9 @@ public class ClassNode extends AnnotatedNode {
      * @return true if this node is derived from the given ClassNode
      */
     public boolean isDerivedFrom(ClassNode type) {
+        if (type == this) {
+            return true;
+        }
         if (ClassHelper.isPrimitiveVoid(this)) {
             return ClassHelper.isPrimitiveVoid(type);
         }
