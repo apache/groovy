@@ -40,7 +40,7 @@ def cappedTracks = [
     [group: 'org.junit.platform', name: 'junit-platform-launcher', current: versions.junit5Platform, maxPrefix: '1.'],
     [group: 'org.codehaus.groovy', name: 'groovy',                 current: versions.latest3,        maxPrefix: '3.0.'],
     [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest4,        maxPrefix: '4.0.'],
-    [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest5,        maxPrefix: '5.0.'],
+    [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest5,        maxPrefix: '5.'],
 ]
 def capByCoord = cappedTracks.collectEntries { [("${it.group}:${it.name}".toString()): it.maxPrefix] }
 
