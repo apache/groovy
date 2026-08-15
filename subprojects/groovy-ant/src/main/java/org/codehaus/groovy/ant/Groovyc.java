@@ -1336,20 +1336,7 @@ public class Groovyc extends MatchingTask {
         // 32767 is the command line length limit on Windows
         if (fork && (count > 32767)) {
             try {
-                // Restrict permissions so the arg-file in the public temp dir is
-                // not world-readable/writable (java:S5443 / CWE-377). Prefer
-                // atomic owner-only perms at creation time on POSIX filesystems.
-                // FQCN: org.apache.tools.ant.types.Path is already imported as Path.
-                java.nio.file.Path tempPath;
-                try {
-                    tempPath = Files.createTempFile("groovyc-files-", ".txt",
-                            PosixFilePermissions.asFileAttribute(
-                                    PosixFilePermissions.fromString("rw-------")));
-                } catch (UnsupportedOperationException e) {
-                    // non-POSIX filesystems (e.g. Windows)
-                    tempPath = Files.createTempFile("groovyc-files-", ".txt");
-                }
-                File tempFile = tempPath.toFile();
+                File tempFile = createOwnerOnlyTempFile(argFileDirectory(), "groovyc-files-", ".txt");
                 temporaryFiles.add(tempFile);
                 PrintWriter pw = printWriter(tempFile);
                 for (File srcFile : compileList) {
@@ -1365,6 +1352,43 @@ public class Groovyc extends MatchingTask {
                 commandLineList.add(srcFile.getPath());
             }
         }
+    }
+
+    /**
+     * Parent directory for the forked-mode {@code @} argument file: {@code destDir}
+     * when set, otherwise the Ant project basedir.
+     */
+    private java.nio.file.Path argFileDirectory() {
+        if (destDir != null) {
+            return destDir.toPath();
+        }
+        return getProject().getBaseDir().toPath();
+    }
+
+    /**
+     * Creates a uniquely named file under {@code directory} with owner-only
+     * access. POSIX permissions are applied atomically at creation time;
+     * other filesystems get a best-effort restriction afterwards.
+     */
+    private static File createOwnerOnlyTempFile(java.nio.file.Path directory, String prefix, String suffix) throws IOException {
+        java.nio.file.Path tempPath;
+        try {
+            tempPath = Files.createTempFile(directory, prefix, suffix,
+                    PosixFilePermissions.asFileAttribute(
+                            PosixFilePermissions.fromString("rw-------")));
+        } catch (UnsupportedOperationException e) {
+            tempPath = Files.createTempFile(directory, prefix, suffix);
+            restrictToOwner(tempPath.toFile());
+        }
+        return tempPath.toFile();
+    }
+
+    private static void restrictToOwner(File file) {
+        file.setReadable(false, false);
+        file.setWritable(false, false);
+        file.setExecutable(false, false);
+        file.setReadable(true, true);
+        file.setWritable(true, true);
     }
 
     @SuppressFBWarnings(value = "DM_DEFAULT_ENCODING", justification = "This is only used to store filenames when exceeding a particular length limit when in fork mode")
