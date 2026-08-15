@@ -41,6 +41,9 @@ import java.io.InvalidObjectException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.io.Writer;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -543,13 +546,13 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             CallOverride override = CALL_OVERRIDES.get(myClass);
             // call selects a doCall: the cache is keyed on the subclass's doCall declarations,
             // arity-indexed (GROOVY-12165) so the shapes the GDK drives hard (Map#each,
-            // eachWithIndex, inject) dispatch directly. An argument that is already an instance
-            // of each declared parameter type dispatches directly; anything that needs Groovy
-            // coercion (GString -> String, number conversions, null) falls through to the
-            // metaclass below, which coerces exactly as before (GROOVY-12164). A subclass with
-            // no doCall keeps the GROOVY-11911 call()/call(Object) compatibility carve-out,
-            // whose targets alone need the re-entry latch (a custom call override may delegate
-            // back to call(...), which must not re-dispatch to the same target).
+            // eachWithIndex, inject) dispatch directly via a cached MethodHandle. An argument
+            // that is already an instance of each declared parameter type dispatches directly;
+            // anything that needs Groovy coercion (GString -> String, number conversions, null)
+            // falls through to the metaclass below, which coerces exactly as before (GROOVY-12164).
+            // A subclass with no doCall keeps the GROOVY-11911 call()/call(Object) compatibility
+            // carve-out, whose targets alone need the re-entry latch (a custom call override may
+            // delegate back to call(...), which must not re-dispatch to the same target).
             Method target = null;
             int arity = arguments.length;
             if (arity < CallOverride.ARITY_LIMIT) {
@@ -559,25 +562,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                 }
             }
             if (target != null) {
+                MethodHandle handle = override.handles[arity];
                 if (!override.callForm[arity]) {
                     // a doCall body: re-entry is ordinary recursion, no latch required
-                    try {
-                        return (V) target.invoke(this, arguments);
-                    } catch (InvocationTargetException ite) {
-                        UncheckedThrow.rethrow(ite.getCause());
-                        return null; // unreachable statement
-                    } catch (IllegalAccessException iae) {
-                        throw new GroovyRuntimeException(iae);
-                    }
+                    return invokeCached(handle, target, this, arguments);
                 } else if (!IN_CALL_FALLBACK.get()) {
                     IN_CALL_FALLBACK.set(Boolean.TRUE);
                     try {
-                        return (V) target.invoke(this, arguments);
-                    } catch (InvocationTargetException ite) {
-                        UncheckedThrow.rethrow(ite.getCause());
-                        return null; // unreachable statement
-                    } catch (IllegalAccessException iae) {
-                        throw new GroovyRuntimeException(iae);
+                        return invokeCached(handle, target, this, arguments);
                     } finally {
                         IN_CALL_FALLBACK.set(Boolean.FALSE);
                     }
@@ -591,6 +583,59 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             return null; // unreachable statement
         } catch (Exception e) {
             return (V) throwRuntimeException(e);
+        }
+    }
+
+    /**
+     * Invokes a cached {@code doCall}/{@code call} target. Prefers the adapted
+     * {@link MethodHandle} so {@code Method.invoke} is not on the GDK
+     * {@code each}/{@code collect} hot path. Exceptions thrown by the body —
+     * including a body that itself throws {@link InvocationTargetException} or
+     * {@link IllegalAccessException} — are rethrown as-is on the handle path;
+     * the {@link Method#invoke} fallback unwraps only the wrapper
+     * {@link InvocationTargetException} that reflection introduces.
+     */
+    @SuppressWarnings("unchecked")
+    private static <V> V invokeCached(final MethodHandle handle, final Method target, final Closure<?> self, final Object[] arguments) {
+        if (handle != null) {
+            try {
+                return (V) invokeHandle(handle, self, arguments);
+            } catch (Throwable t) {
+                UncheckedThrow.rethrow(t);
+                return null;
+            }
+        }
+        try {
+            return (V) target.invoke(self, arguments);
+        } catch (InvocationTargetException ite) {
+            UncheckedThrow.rethrow(ite.getCause());
+            return null; // unreachable statement
+        } catch (IllegalAccessException iae) {
+            throw new GroovyRuntimeException(iae);
+        }
+    }
+
+    /**
+     * {@code invokeExact} against a handle adapted to
+     * {@link MethodType#genericMethodType(int) genericMethodType(arity+1)}
+     * (fixed-arity {@code Object} receiver and arguments, {@code Object} return).
+     * Cases {@code 0..ARITY_LIMIT-1} match that type exactly; the spreader
+     * is the type-correct fallback if the limit grows without a matching case.
+     */
+    private static Object invokeHandle(final MethodHandle handle, final Closure<?> self, final Object[] arguments) throws Throwable {
+        switch (arguments.length) {
+            case 0:
+                return handle.invokeExact((Object) self);
+            case 1:
+                return handle.invokeExact((Object) self, arguments[0]);
+            case 2:
+                return handle.invokeExact((Object) self, arguments[0], arguments[1]);
+            case 3:
+                return handle.invokeExact((Object) self, arguments[0], arguments[1], arguments[2]);
+            case 4:
+                return handle.invokeExact((Object) self, arguments[0], arguments[1], arguments[2], arguments[3]);
+            default:
+                return handle.asSpreader(Object[].class, arguments.length).invokeExact((Object) self, arguments);
         }
     }
 
@@ -1434,13 +1479,16 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * NOTE: this reflective cache is a bridge, not a destination. For compiler-generated closure
+     * NOTE: this cache is a bridge, not a destination. For compiler-generated closure
      * classes the long-term plan (GEP-27) is for the compiler to emit a {@code call(Object...)}
      * override that arity-dispatches directly to the right {@code doCall} — plain virtual
-     * dispatch, no reflection, module-system-clean — at which point this cache serves only
-     * legacy jars and hand-written subclasses. Extend it with that destination in mind.
+     * dispatch, no {@code MethodHandle} adaptation, module-system-clean — at which point this
+     * cache serves only legacy jars and hand-written subclasses. Until then cached targets
+     * are invoked via {@code MethodHandle} ({@code Method.invoke} only when the target cannot
+     * be adapted). Extend it with that destination in mind.
      */
     private static final class CallOverride {
+        private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
         /**
          * Cached arities: {@code 0..ARITY_LIMIT-1}. Sized to cover every callback shape the GDK
          * drives (iteration and inject/withIndex variants peak at three parameters, plus slack).
@@ -1449,7 +1497,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         /**
          * Marker instance indicating that no dispatch targets exist.
          */
-        static final CallOverride NONE = new CallOverride(new Method[ARITY_LIMIT], new Class[ARITY_LIMIT][], new boolean[ARITY_LIMIT]);
+        static final CallOverride NONE = new CallOverride(new Method[ARITY_LIMIT], new Class[ARITY_LIMIT][], new boolean[ARITY_LIMIT], new MethodHandle[ARITY_LIMIT]);
         /**
          * Cached {@code doCall} targets indexed by parameter count, or null where absent,
          * ambiguous, or inaccessible — {@code call} selects a {@code doCall}, so the cache is
@@ -1476,11 +1524,20 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
          * dispatched body keep their own fast path).
          */
         final boolean[] callForm;
+        /**
+         * {@link MethodHandles#unreflect(Method)} of {@link #byArity}, adapted to
+         * {@link MethodType#genericMethodType(int) genericMethodType(arity+1)}
+         * for {@code invokeExact}, or null when the method cannot be adapted.
+         * The call path prefers the handle so {@code Method.invoke} is not on
+         * the GDK {@code each}/{@code collect} hot path.
+         */
+        final MethodHandle[] handles;
 
-        private CallOverride(Method[] byArity, Class<?>[][] guards, boolean[] callForm) {
+        private CallOverride(Method[] byArity, Class<?>[][] guards, boolean[] callForm, MethodHandle[] handles) {
             this.byArity = byArity;
             this.guards = guards;
             this.callForm = callForm;
+            this.handles = handles;
         }
 
         static boolean guardsPass(Class<?>[] guards, Object[] args) {
@@ -1593,7 +1650,26 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                 }
                 any = true;
             }
-            return any ? new CallOverride(byArity, guards, callForm) : NONE;
+            if (!any) {
+                return NONE;
+            }
+            MethodHandle[] handles = new MethodHandle[ARITY_LIMIT];
+            for (int arity = 0; arity < ARITY_LIMIT; arity += 1) {
+                if (byArity[arity] != null) {
+                    handles[arity] = unreflect(byArity[arity]);
+                }
+            }
+            return new CallOverride(byArity, guards, callForm, handles);
+        }
+
+        private static MethodHandle unreflect(final Method method) {
+            try {
+                return LOOKUP.unreflect(method)
+                        .asType(MethodType.genericMethodType(method.getParameterCount() + 1));
+            } catch (Exception ignored) {
+                // inaccessible or not adaptable: call() falls back to Method.invoke
+                return null;
+            }
         }
 
         private static Method findOverride(Class<?> type, Class<?>... params) {
