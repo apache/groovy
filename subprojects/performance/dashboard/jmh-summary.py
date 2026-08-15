@@ -21,6 +21,12 @@
 # normalisation as subprojects/performance/dashboard/jmh-summary.html so the numbers
 # are directly comparable with the daily dashboard.
 #
+# The summary also flags individual benchmarks that are >= ALERT_THRESHOLD slower
+# than their 90-day baseline. This replaces github-action-benchmark's alert comment,
+# which hardcodes JMH as smaller-is-better and so misreads throughput (ops/time)
+# benchmarks: speedups triggered alerts and slowdowns never did. Here direction
+# comes from each benchmark's scoreUnit, and calibration removes hardware skew.
+#
 # Runner calibration: the historical baseline was produced on different (shared)
 # runner hardware, which is the dominant noise source in these comparisons. Pure-Java
 # "ruler" benchmarks (the *Calibration* benches, plus the pre-existing `_java`
@@ -48,6 +54,10 @@ WINDOW_MS = 90 * DAY_MS
 CALIBRATION_TOLERANCE = 1.15
 # a calibration factor needs at least this many ruler measurements to be trusted
 MIN_RULERS = 3
+# a benchmark this much slower than its 90-day baseline is flagged in the comment
+ALERT_THRESHOLD = 1.5
+# alerts listed individually before collapsing the rest into a count
+MAX_ALERTS = 15
 
 # (group label, CI-split parts whose data.js makes up that group)
 GROUPS = [
@@ -167,11 +177,13 @@ def part_ratios(current, means):
 
 
 def compute_group_scores(results_by_part, mode, now_ms):
-    """Returns (rows, calibrations):
+    """Returns (rows, calibrations, alerts):
     rows          - (label, raw_geomean, calibrated_geomean, n) per group
     calibrations  - (part, factor_or_None, ruler_count) per part that had results
+    alerts        - (name, slowdown_factor, was_calibrated) per non-ruler benchmark
+                    at least ALERT_THRESHOLD slower than its 90-day baseline
     """
-    rows, calibrations = [], []
+    rows, calibrations, alerts = [], [], []
     for label, parts in GROUPS:
         raw, calibrated = [], []
         for part in parts:
@@ -190,11 +202,21 @@ def compute_group_scores(results_by_part, mode, now_ms):
             raw += [r for name, r in ratios if not is_calibration(name)]
             if calib:
                 calibrated += [r / calib for name, r in ratios if not is_ruler(name)]
+            # Ratios from normalize() are direction-consistent (higher = faster
+            # regardless of ops/ms vs ms/op), so one threshold works for all
+            # benchmarks. Rulers measure the runner, not Groovy, and are never
+            # flagged; hardware skew is divided out where calibration exists.
+            for name, r in ratios:
+                if is_ruler(name):
+                    continue
+                effective = r / calib if calib else r
+                if effective < 1 / ALERT_THRESHOLD:
+                    alerts.append((name, 1 / effective, calib is not None))
         rows.append((label, geomean(raw), geomean(calibrated), len(raw)))
-    return rows, calibrations
+    return rows, calibrations, alerts
 
 
-def render_markdown(rows, calibrations, mode, commit_sha, marker):
+def render_markdown(rows, calibrations, alerts, mode, commit_sha, marker):
     short = (commit_sha or '')[:7] or 'unknown'
     lines = [
         f'### JMH summary — {mode} (commit `{short}`)',
@@ -216,6 +238,21 @@ def render_markdown(rows, calibrations, mode, commit_sha, marker):
             any_data = True
             cal = f'{calibrated:.3f} ×' if calibrated is not None else '—'
             lines.append(f'| {label} | {raw:.3f} × | {cal} | {n} |')
+
+    if alerts:
+        plural = 's' if len(alerts) != 1 else ''
+        lines += [
+            '',
+            f'> ⚠️ **{len(alerts)} benchmark{plural} at least {ALERT_THRESHOLD}× slower '
+            'than the 90-day baseline:**',
+        ]
+        for name, slowdown, was_calibrated in sorted(alerts, key=lambda a: -a[1])[:MAX_ALERTS]:
+            basis = 'calibrated' if was_calibrated else 'raw — no calibration data'
+            lines.append(f'> - `{name}` — {slowdown:.2f}× slower ({basis})')
+        if len(alerts) > MAX_ALERTS:
+            lines.append(f'> - …and {len(alerts) - MAX_ALERTS} more')
+    elif any_data:
+        lines += ['', f'No benchmark is ≥{ALERT_THRESHOLD}× slower than its 90-day baseline.']
 
     with_calib = [(part, factor, count) for part, factor, count in calibrations if factor is not None]
     off_parts = [part for part, factor, _ in with_calib
@@ -296,9 +333,9 @@ def main():
         print(f'No results-*.json found under {args.results_dir}', file=sys.stderr)
         return 1
 
-    rows, calibrations = compute_group_scores(results_by_part, args.mode, int(time.time() * 1000))
+    rows, calibrations, alerts = compute_group_scores(results_by_part, args.mode, int(time.time() * 1000))
     marker = f'<!-- jmh-summary:{args.mode} -->'
-    body, any_data = render_markdown(rows, calibrations, args.mode, args.commit, marker)
+    body, any_data = render_markdown(rows, calibrations, alerts, args.mode, args.commit, marker)
     print(body)
 
     pr = (args.pr_number or '').strip()
