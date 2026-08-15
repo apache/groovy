@@ -62,6 +62,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -905,36 +906,85 @@ public class CompilationUnit extends ProcessingUnit {
      * @return the class visitor used to emit bytecode
      */
     protected ClassVisitor createClassVisitor() {
-        return new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES) {
-            private ClassNode getClassNode(String name) {
-                // try classes under compilation
-                CompileUnit cu = getAST();
-                ClassNode cn = cu.getClass(name);
-                if (cn != null) return cn;
+        return new CachingClassWriter();
+    }
+
+    /**
+     * Per-class {@link ClassWriter} that memoizes {@link #getCommonSuperClass}.
+     * {@code COMPUTE_FRAMES} repeats the same internal-name pairs at merge points;
+     * the writer (and its maps) live for one generated class and are then discarded.
+     */
+    private final class CachingClassWriter extends ClassWriter {
+        private final Map<String, ClassNode> classNodeByInternalName = new HashMap<>(8);
+        private final Map<String, Map<String, String>> commonSuperByPair = new HashMap<>(8);
+
+        private CachingClassWriter() {
+            super(COMPUTE_MAXS | COMPUTE_FRAMES);
+        }
+
+        @Override
+        protected String getCommonSuperClass(final String type1, final String type2) {
+            Map<String, String> bySecond = commonSuperByPair.get(type1);
+            if (bySecond != null) {
+                String cached = bySecond.get(type2);
+                if (cached != null) {
+                    return cached;
+                }
+            }
+            ClassNode class1 = getClassNode(type1);
+            ClassNode class2 = getClassNode(type2);
+            if (class1 == null || class2 == null) {
+                throw new GroovyBugError("Unable to determine common super class of " + type1 + " and " + type2);
+            }
+            ClassNode commonNode = getCommonSuperClassNode(class1, class2);
+            String common;
+            if (commonNode == class1) {
+                common = type1;
+            } else if (commonNode == class2) {
+                common = type2;
+            } else if (ClassHelper.isObjectType(commonNode)) {
+                common = "java/lang/Object";
+            } else {
+                common = commonNode.getName().replace('.', '/');
+            }
+            commonSuperByPair.computeIfAbsent(type1, k -> new HashMap<>(4)).put(type2, common);
+            commonSuperByPair.computeIfAbsent(type2, k -> new HashMap<>(4)).put(type1, common);
+            return common;
+        }
+
+        private ClassNode getClassNode(final String internalName) {
+            ClassNode cached = classNodeByInternalName.get(internalName);
+            if (cached != null) {
+                return cached;
+            }
+            String name = internalName.replace('/', '.');
+            // try classes under compilation
+            CompileUnit cu = getAST();
+            ClassNode cn = cu.getClass(name);
+            if (cn == null) {
                 // try inner classes
                 cn = cu.getGeneratedInnerClass(name);
-                if (cn != null) return cn;
+            }
+            if (cn == null) {
                 ClassNodeResolver.LookupResult lookupResult = getClassNodeResolver().resolveName(name, CompilationUnit.this);
-                return lookupResult == null ? null : lookupResult.getClassNode();
+                cn = lookupResult == null ? null : lookupResult.getClassNode();
             }
-            private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
-                // adapted from ClassWriter code
-                if (c.isDerivedFrom(d)) return d;
-                if (d.isDerivedFrom(c)) return c;
-                if (c.isInterface() || d.isInterface()) return ClassHelper.OBJECT_TYPE;
-                do {
-                    c = c.getSuperClass();
-                } while (c != null && !d.isDerivedFrom(c));
-                if (c == null) return ClassHelper.OBJECT_TYPE;
-                return c;
+            if (cn != null) {
+                classNodeByInternalName.put(internalName, cn);
             }
-            @Override
-            protected String getCommonSuperClass(String arg1, String arg2) {
-                ClassNode a = getClassNode(arg1.replace('/', '.'));
-                ClassNode b = getClassNode(arg2.replace('/', '.'));
-                return getCommonSuperClassNode(a,b).getName().replace('.','/');
-            }
-        };
+            return cn;
+        }
+
+        private ClassNode getCommonSuperClassNode(ClassNode c, ClassNode d) {
+            // adapted from ClassWriter code
+            if (c.isDerivedFrom(d)) return d;
+            if (d.isDerivedFrom(c)) return c;
+            if (c.isInterface() || d.isInterface()) return ClassHelper.OBJECT_TYPE;
+            do {
+                c = c.getSuperClass();
+            } while (c != null && !d.isDerivedFrom(c));
+            return c == null ? ClassHelper.OBJECT_TYPE : c;
+        }
     }
 
     //---------------------------------------------------------------------------
