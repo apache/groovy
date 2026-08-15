@@ -206,6 +206,31 @@ planned for deprecation/removal in a future Groovy version. Formal
 `@Deprecated` may be restored before 6 GA once beta feedback confirms
 indy remains acceptable for those use cases.
 
+### Groovy 5/6 — `ObjectUtil` restored for Groovy 4 compiled `@Immutable` classes (GROOVY-12257)
+
+The `@Immutable` transform in Groovy 4.0.5 through 4.0.x emitted
+references to `org.apache.groovy.runtime.ObjectUtil.cloneObject` into
+generated constructors and getters for defensive copies of array,
+`Cloneable`, and collection properties (GROOVY-10747). The class was
+removed in 5.0.0-alpha-1 together with the `$getLookup` machinery it
+relied on (GROOVY-10931), so those pre-compiled classes failed on
+Groovy 5+ with `NoClassDefFoundError` — only at first execution of a
+clone path, which for collection properties depends on the runtime
+value being `Cloneable`, making the failure intermittent and easy to
+miss in testing.
+
+`ObjectUtil` is restored (5.1.1, 6.0.0) as a deprecated
+binary-compatibility facade with the original semantics: arrays clone
+via the unchanged `ArrayUtil` fast paths, other `Cloneable`s through
+their public `clone()` via the MOP, and a non-public `clone()` still
+surfaces `NoSuchMethodException` exactly as before. Classes compiled
+by ≤ 4.0.4 (which used `ReflectionMethodInvoker`, still present) and
+by 5+ (whose transforms emit `invokedynamic` or `InvokerHelper` clone
+calls) never reference the class. It exists only as a link target for
+Groovy 4 bytecode and is not intended for direct use. This lets
+"legacy" Grails plugins compiled with Groovy 4 still work with later
+Grails versions using more recent Groovy versions.
+
 ### Groovy 6 — `instanceof` pattern variable flow scoping (GROOVY-12242)
 
 Groovy 6 aligns JEP 394 / JLS §6.3-style *pattern variable* scoping for
