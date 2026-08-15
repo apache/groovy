@@ -26,7 +26,7 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation projects.groovyTestJunit6 // for groovy.junit6.plugin.ForkedJvm
     testImplementation projects.groovyDateutil
-    testImplementation('net.javacrumbs.json-unit:json-unit:6.0.1') {
+    testImplementation('net.javacrumbs.json-unit:json-unit:6.2.0') {
         // hamcrest-core 3.0 is an empty deprecation stub; exclude it to avoid pinning a
         // verification checksum for it. JUnit already supplies hamcrest-core and the tests
         // here only use JsonAssert.assertJsonEquals (no hamcrest matchers).
