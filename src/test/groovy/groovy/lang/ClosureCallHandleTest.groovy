@@ -18,6 +18,7 @@
  */
 package groovy.lang
 
+import org.codehaus.groovy.runtime.InvokerInvocationException
 import org.junit.jupiter.api.Test
 
 import java.lang.invoke.MethodHandle
@@ -52,9 +53,11 @@ final class ClosureCallHandleTest {
         def c = new Closure(this) {
             def doCall(String s) { s.toUpperCase() }
         }
-        assert c.call('ab') == 'AB'
+        // Java/GDK entry: Groovy c.call(...) is indy and binds to doCall, skipping guards
+        assert javaVarargsCall(c, 'ab') == 'AB'
         // GROOVY-12164: GString is not a String, so the MH/guard path must not fire
-        assert c.call("${'ab'}") == 'AB'
+        assert javaVarargsCall(c, "${'ab'}") == 'AB'
+        assert handleFor(c, 1) != null
     }
 
     @Test
@@ -137,7 +140,7 @@ final class ClosureCallHandleTest {
     @Test
     void 'arity at the cache limit is not cached'() {
         def five = { a, b, c, d, e -> a + b + c + d + e }
-        assert five.call(1, 2, 3, 4, 5) == 15
+        assert javaVarargsCall(five, 1, 2, 3, 4, 5) == 15
         assert cachedTarget(five, 5) == null
         assert handleFor(five, 5) == null
     }
@@ -148,14 +151,16 @@ final class ClosureCallHandleTest {
         def empty = new Closure(this) {
             void doCall() { side << 1 }
         }
-        assert empty.call() == null
+        assert javaVarargsCall(empty) == null
         assert side == [1]
+        assert handleFor(empty, 0) != null
 
         def boxed = new Closure(this) {
             int doCall(int x) { x + 1 }
         }
-        assert boxed.call(41) == 42
+        assert javaVarargsCall(boxed, 41) == 42
         assert [1, 2].collect(boxed) == [2, 3]
+        assert handleFor(boxed, 1) != null
     }
 
     @Test
@@ -191,8 +196,37 @@ final class ClosureCallHandleTest {
     @Test
     void 'curried and method-pointer closures stay on the metaclass path'() {
         def add = { a, b -> a + b }
-        assert add.curry(10).call(2) == 12
-        assert 'abc'.&substring.call(1) == 'bc'
+        def curried = add.curry(10)
+        assert javaVarargsCall(curried, 2) == 12
+        assert javaVarargsCall('abc'.&substring, 1) == 'bc'
+        assert handleFor(curried, 1) == null
+        assert handleFor('abc'.&substring, 1) == null
+    }
+
+    @Test
+    void 'invokeCached catch propagates throwers built as MethodHandles'() {
+        def c = { 1 }
+        Method method = findDoCall(c.getClass(), 0)
+        method.accessible = true
+        MethodHandle throwing = MethodHandles.dropArguments(
+                MethodHandles.throwException(Object, IllegalStateException)
+                        .bindTo(new IllegalStateException('mh-throw')),
+                0, Object)
+        def e = shouldFail(IllegalStateException) {
+            invokeCachedDirect(throwing, method, c, new Object[0])
+        }
+        assert e.message == 'mh-throw'
+    }
+
+    @Test
+    void 'invokeCached catch propagates NullPointerException from invokeHandle'() {
+        def c = { 1 }
+        Method method = findDoCall(c.getClass(), 0)
+        method.accessible = true
+        MethodHandle handle = handleFor(c, 0)
+        shouldFail(NullPointerException) {
+            invokeCachedDirect(handle, method, c, null)
+        }
     }
 
     @Test
@@ -246,6 +280,203 @@ final class ClosureCallHandleTest {
     }
 
     @Test
+    void 'java varargs call hits invokeHandle for arities zero through four'() {
+        // Groovy c.call(a,b,...) is indy and binds to doCall; the MH switch is on
+        // Closure.call(Object...), which Java/GDK uses.
+        def zero = { 42 }
+        assert javaVarargsCall(zero) == 42
+        def one = { x -> x }
+        assert javaVarargsCall(one, 'x') == 'x'
+        def two = { a, b -> a + b }
+        assert javaVarargsCall(two, 1, 2) == 3
+        def three = { a, b, c -> a + b + c }
+        assert javaVarargsCall(three, 1, 2, 3) == 6
+        def four = { a, b, c, d -> a + b + c + d }
+        assert javaVarargsCall(four, 1, 2, 3, 4) == 10
+    }
+
+    @Test
+    void 'java varargs call rethrows body throwables from the handle'() {
+        def boom = { throw new IllegalStateException('via-java-call') }
+        def e = shouldFail(IllegalStateException) {
+            javaVarargsCall(boom)
+        }
+        assert e.message == 'via-java-call'
+
+        def inner = new RuntimeException('inner')
+        def iteBody = { throw new InvocationTargetException(inner) }
+        def ite = shouldFail(InvocationTargetException) {
+            javaVarargsCall(iteBody)
+        }
+        assert ite.cause.is(inner)
+
+        def io = { throw new IOException('via-java-call-io') }
+        def ioe = shouldFail(IOException) {
+            javaVarargsCall(io)
+        }
+        assert ioe.message == 'via-java-call-io'
+
+        def err = { throw new Error('via-java-call-err') }
+        def error = shouldFail(Error) {
+            javaVarargsCall(err)
+        }
+        assert error.message == 'via-java-call-err'
+    }
+
+    @Test
+    void 'public call uses Method invoke when the cached handle is cleared'() {
+        def c = { x -> "r:$x" }
+        assert javaVarargsCall(c, 'a') == 'r:a'
+        assert handleFor(c, 1) != null
+        clearHandle(c, 1)
+        assert handleFor(c, 1) == null
+        assert javaVarargsCall(c, 'b') == 'r:b'
+    }
+
+    @Test
+    void 'public call unwraps InvocationTargetException when the handle is cleared'() {
+        def c = { throw new IllegalStateException('cleared-handle') }
+        try {
+            javaVarargsCall(c)
+        } catch (IllegalStateException ignored) {
+            // warms CallOverride so byArity[0] is populated
+        }
+        clearHandle(c, 0)
+        def e = shouldFail(IllegalStateException) {
+            javaVarargsCall(c)
+        }
+        assert e.message == 'cleared-handle'
+    }
+
+    @Test
+    void 'subclass with no doCall or call override resolves to CallOverride NONE'() {
+        def c = new Closure(this) {}
+        assert callOverrideOf(c).is(callOverrideNone())
+        shouldFail(MissingMethodException) {
+            javaVarargsCall(c)
+        }
+        Method lookup = Class.forName('groovy.lang.Closure$CallOverride')
+                .getDeclaredMethod('lookup', Class)
+        lookup.accessible = true
+        assert lookup.invoke(null, Closure).is(callOverrideNone())
+    }
+
+    @Test
+    void 'null arguments array skips the cached handle and uses the metaclass'() {
+        def c = { 7 }
+        assert javaVarargsCall(c) == 7
+        Method call = Closure.getMethod('call', Object[].class)
+        assert call.invoke(c, new Object[]{null}) == 7
+    }
+
+    @Test
+    void 'lookup skips static array and ambiguous doCall shapes'() {
+        def skipped = new Closure(this) {
+            static Object doCall(String ignored) { 'static' }
+            static Object call(Object ignored) { 'static-call' }
+            Object extra() { 'not-doCall' }
+            def doCall(Object[] args) { args }
+            def doCall() { 1 }
+        }
+        assert javaVarargsCall(skipped) == 1
+        assert handleFor(skipped, 0) != null
+        assert cachedTarget(skipped, 1) == null
+
+        def mixed = new Closure(this) {
+            def doCall(Object a, String b) { "$a:$b" }
+        }
+        assert javaVarargsCall(mixed, 1, 'x') == '1:x'
+        assert javaVarargsCall(mixed, 1, "${'x'}") == '1:x'
+        assert handleFor(mixed, 2) != null
+
+        def ambiguous = new Closure(this) {
+            def doCall(String s) { "s:$s" }
+            def doCall(Integer i) { "i:$i" }
+        }
+        assert javaVarargsCall(ambiguous, 'a') == 's:a'
+        assert javaVarargsCall(ambiguous, 2) == 'i:2'
+        assert cachedTarget(ambiguous, 1) == null
+        assert handleFor(ambiguous, 1) == null
+    }
+
+    @Test
+    void 'lookup keeps the most-derived doCall and boxes every primitive guard'() {
+        def child = new ChildDoCall()
+        assert javaVarargsCall(child, 'z') == 'child:z'
+        assert handleFor(child, 1) != null
+
+        def covariant = new StringDoCallClosure()
+        assert StringDoCallClosure.declaredMethods.any { it.name == 'doCall' && it.bridge }
+        assert javaVarargsCall(covariant, 7) == '7'
+        assert handleFor(covariant, 1) != null
+        assert !cachedTarget(covariant, 1).bridge
+
+        def primitives = new PrimitiveDoCalls()
+        assert javaVarargsCall(primitives, 1) == 2
+        assert javaVarargsCall(primitives, 1L, 2L) == 3L
+        assert javaVarargsCall(primitives, true, false, true) == true
+        assert javaVarargsCall(primitives, 1.0d, 2.0d, 3.0d, 4.0d) == 10.0d
+        assert handleFor(primitives, 1) != null
+        assert handleFor(primitives, 2) != null
+        assert handleFor(primitives, 3) != null
+        assert handleFor(primitives, 4) != null
+
+        def more = new MorePrimitiveDoCalls()
+        assert javaVarargsCall(more, (char) 'A') == (char) 'A'
+        assert javaVarargsCall(more, (byte) 1, (byte) 2) == (byte) 3
+        assert javaVarargsCall(more, (short) 1, (short) 2, (short) 3) == (short) 6
+        assert javaVarargsCall(more, 1.0f, 2.0f, 3.0f, 4.0f) == 10.0f
+        assert handleFor(more, 1) != null
+        assert handleFor(more, 2) != null
+        assert handleFor(more, 3) != null
+        assert handleFor(more, 4) != null
+    }
+
+    @Test
+    void 'InvokerInvocationException from the metaclass is unwrapped'() {
+        def c = { 1 }
+        c.metaClass = new DelegatingMetaClass(c.metaClass) {
+            @Override
+            Object invokeMethod(Object object, String methodName, Object[] arguments) {
+                throw new InvokerInvocationException(new IllegalStateException('via-mop'))
+            }
+        }
+        def e = shouldFail(IllegalStateException) {
+            javaVarargsCall(c)
+        }
+        assert e.message == 'via-mop'
+    }
+
+    @Test
+    void 'an active category or replaced metaclass skips the cached handle'() {
+        def c = { x -> "v:$x" }
+        assert javaVarargsCall(c, 'a') == 'v:a'
+        use(HandleTestCategory) {
+            assert javaVarargsCall(c, 'b') == 'v:b'
+        }
+        c.metaClass = c.metaClass
+        assert javaVarargsCall(c, 'c') == 'v:c'
+    }
+
+    @Test
+    void 'lookup helpers handle non-closure types and unboxable leftovers'() {
+        Class<?> callOverride = Class.forName('groovy.lang.Closure$CallOverride')
+        Method lookup = callOverride.getDeclaredMethod('lookup', Class)
+        lookup.accessible = true
+        assert lookup.invoke(null, String).is(callOverrideNone())
+
+        Method findOverride = callOverride.getDeclaredMethod('findOverride', Class, Class[])
+        findOverride.accessible = true
+        assert findOverride.invoke(null, Closure, [String] as Class[]) == null
+
+        Method wrapperOf = callOverride.getDeclaredMethod('wrapperOf', Class)
+        wrapperOf.accessible = true
+        assert wrapperOf.invoke(null, void) == void
+        assert wrapperOf.invoke(null, String) == String
+        assert wrapperOf.invoke(null, float) == Float
+    }
+
+    @Test
     void 'unreflect returns null when the method cannot be adapted'() {
         def hidden = new Object() {
             private void secret() {}
@@ -255,6 +486,42 @@ final class ClosureCallHandleTest {
         Method unreflect = callOverride.getDeclaredMethod('unreflect', Method)
         unreflect.accessible = true
         assert unreflect.invoke(null, method) == null
+    }
+
+    private static Object javaVarargsCall(Closure c, Object... args) {
+        Method m = Closure.getMethod('call', Object[].class)
+        try {
+            return m.invoke(c, new Object[]{args})
+        } catch (InvocationTargetException ite) {
+            throw ite.cause
+        }
+    }
+
+    private static Object callOverrideNone() {
+        def none = Class.forName('groovy.lang.Closure$CallOverride').getDeclaredField('NONE')
+        none.accessible = true
+        return none.get(null)
+    }
+
+    private static Object callOverrideOf(Closure closure) {
+        def table = Closure.getDeclaredField('CALL_OVERRIDES')
+        table.accessible = true
+        return table.get(null).get(closure.getClass())
+    }
+
+    private static void clearHandle(Closure closure, int arity) {
+        Object[] slots = handleSlots(closure)
+        slots[arity] = null
+    }
+
+    private static Object[] handleSlots(Closure closure) {
+        Class<?> callOverride = Class.forName('groovy.lang.Closure$CallOverride')
+        def table = Closure.getDeclaredField('CALL_OVERRIDES')
+        table.accessible = true
+        def override = table.get(null).get(closure.getClass())
+        def f = callOverride.getDeclaredField('handles')
+        f.accessible = true
+        return (Object[]) f.get(override)
     }
 
     private static Object callOverrideField(Closure closure, String field, int arity) {
@@ -303,4 +570,42 @@ final class ClosureCallHandleTest {
             throw ite.cause
         }
     }
+}
+
+class HandleTestCategory {
+    static Object identity(Object self) { self }
+}
+
+class ParentDoCall extends Closure {
+    ParentDoCall() { super(null) }
+
+    def doCall(Object o) { "parent:$o" }
+}
+
+class ChildDoCall extends ParentDoCall {
+    def doCall(Object o) { "child:$o" }
+}
+
+class PrimitiveDoCalls extends Closure {
+    PrimitiveDoCalls() { super(null) }
+
+    int doCall(int x) { x + 1 }
+
+    long doCall(long a, long b) { a + b }
+
+    boolean doCall(boolean a, boolean b, boolean c) { a || b || c }
+
+    double doCall(double a, double b, double c, double d) { a + b + c + d }
+}
+
+class MorePrimitiveDoCalls extends Closure {
+    MorePrimitiveDoCalls() { super(null) }
+
+    char doCall(char x) { x }
+
+    byte doCall(byte a, byte b) { (byte) (a + b) }
+
+    short doCall(short a, short b, short c) { (short) (a + b + c) }
+
+    float doCall(float a, float b, float c, float d) { a + b + c + d }
 }
