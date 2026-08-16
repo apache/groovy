@@ -48,10 +48,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -560,6 +563,13 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                 if (m != null && CallOverride.guardsPass(override.guards[arity], arguments)) {
                     target = m;
                 }
+            } else {
+                // High-arity doCall: cached asSpreader of type (Object, Object[])Object.
+                // The 0..ARITY_LIMIT-1 invokeExact switch is unchanged.
+                CallOverride.SpreadSlot slot = override.spreadFor(arity);
+                if (slot != null && CallOverride.guardsPass(slot.guards, arguments)) {
+                    return invokeCached(slot.handle, slot.method, this, arguments);
+                }
             }
             if (target != null) {
                 MethodHandle handle = override.handles[arity];
@@ -616,11 +626,12 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     /**
-     * {@code invokeExact} against a handle adapted to
-     * {@link MethodType#genericMethodType(int) genericMethodType(arity+1)}
-     * (fixed-arity {@code Object} receiver and arguments, {@code Object} return).
-     * Cases {@code 0..ARITY_LIMIT-1} match that type exactly; the spreader
-     * is the type-correct fallback if the limit grows without a matching case.
+     * {@code invokeExact} against a cached handle. Cases {@code 0..ARITY_LIMIT-1}
+     * match {@link MethodType#genericMethodType(int) genericMethodType(arity+1)}.
+     * The default is a handle already adapted to
+     * {@link MethodType#genericMethodType(int, boolean) genericMethodType(1, true)}
+     * ({@code (Object, Object[])Object}) at lookup — {@code asSpreader} is not
+     * applied per call.
      */
     private static Object invokeHandle(final MethodHandle handle, final Closure<?> self, final Object[] arguments) throws Throwable {
         switch (arguments.length) {
@@ -635,7 +646,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             case 4:
                 return handle.invokeExact((Object) self, arguments[0], arguments[1], arguments[2], arguments[3]);
             default:
-                return handle.asSpreader(Object[].class, arguments.length).invokeExact((Object) self, arguments);
+                return handle.invokeExact((Object) self, arguments);
         }
     }
 
@@ -1490,14 +1501,22 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private static final class CallOverride {
         private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
         /**
-         * Cached arities: {@code 0..ARITY_LIMIT-1}. Sized to cover every callback shape the GDK
-         * drives (iteration and inject/withIndex variants peak at three parameters, plus slack).
+         * Specialised {@code invokeExact} cutoff: cases {@code 0..ARITY_LIMIT-1} use a
+         * fixed-arity handle. Sized to cover every callback shape the GDK drives
+         * (iteration and inject/withIndex variants peak at three parameters, plus slack).
+         * Higher arities are cached separately as {@link #SPREADER_TYPE} handles.
          */
         static final int ARITY_LIMIT = 5;
         /**
+         * Cached high-arity shape: {@code (Object, Object[])Object}. Built once at
+         * lookup with {@code asSpreader}; {@code invokeHandle} then {@code invokeExact}s it.
+         */
+        static final MethodType SPREADER_TYPE = MethodType.genericMethodType(1, true);
+        static final SpreadSlot[] NO_SPREAD = new SpreadSlot[0];
+        /**
          * Marker instance indicating that no dispatch targets exist.
          */
-        static final CallOverride NONE = new CallOverride(new Method[ARITY_LIMIT], new Class[ARITY_LIMIT][], new boolean[ARITY_LIMIT], new MethodHandle[ARITY_LIMIT]);
+        static final CallOverride NONE = new CallOverride(new Method[ARITY_LIMIT], new Class[ARITY_LIMIT][], new boolean[ARITY_LIMIT], new MethodHandle[ARITY_LIMIT], NO_SPREAD);
         /**
          * Cached {@code doCall} targets indexed by parameter count, or null where absent,
          * ambiguous, or inaccessible — {@code call} selects a {@code doCall}, so the cache is
@@ -1530,14 +1549,49 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
          * for {@code invokeExact}, or null when the method cannot be adapted.
          * The call path prefers the handle so {@code Method.invoke} is not on
          * the GDK {@code each}/{@code collect} hot path.
+         * Slots {@code 0..ARITY_LIMIT-1} are {@code genericMethodType(arity+1)};
+         * higher arities live in {@link #spread}.
          */
         final MethodHandle[] handles;
+        /**
+         * Exact-arity {@code doCall} targets with {@code arity >= ARITY_LIMIT},
+         * each adapted to {@link #SPREADER_TYPE}. Empty when the class has none.
+         */
+        final SpreadSlot[] spread;
 
-        private CallOverride(Method[] byArity, Class<?>[][] guards, boolean[] callForm, MethodHandle[] handles) {
+        private CallOverride(Method[] byArity, Class<?>[][] guards, boolean[] callForm, MethodHandle[] handles, SpreadSlot[] spread) {
             this.byArity = byArity;
             this.guards = guards;
             this.callForm = callForm;
             this.handles = handles;
+            this.spread = spread;
+        }
+
+        /**
+         * One high-arity {@code doCall}: exact parameter count, optional 12164
+         * guards, and a lookup-time spreader handle.
+         */
+        static final class SpreadSlot {
+            final int arity;
+            final Method method;
+            final Class<?>[] guards;
+            final MethodHandle handle;
+
+            SpreadSlot(final int arity, final Method method, final Class<?>[] guards, final MethodHandle handle) {
+                this.arity = arity;
+                this.method = method;
+                this.guards = guards;
+                this.handle = handle;
+            }
+        }
+
+        SpreadSlot spreadFor(final int arity) {
+            for (SpreadSlot slot : spread) {
+                if (slot.arity == arity) {
+                    return slot;
+                }
+            }
+            return null;
         }
 
         static boolean guardsPass(Class<?>[] guards, Object[] args) {
@@ -1551,8 +1605,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
 
         /**
          * Finds the subclass's {@code doCall} declarations, one target per arity — {@code call}
-         * selects a {@code doCall}, so the cache is keyed on the doCall declarations themselves
-         * and any visibility the MOP would dispatch is accepted (the hierarchy is walked with
+         * selects a {@code doCall}, so the cache is keyed on the doCall declarations themselves.
+         * Arities {@code 0..ARITY_LIMIT-1} use specialised {@code invokeExact}; higher arities
+         * are stored as {@link #SPREADER_TYPE} handles. Any visibility the MOP would dispatch
+         * is accepted (the hierarchy is walked with
          * {@code getDeclaredMethods}; an overridden signature keeps its most-derived form).
          * Bridge methods are skipped (their erased twin is the real declaration), as are static
          * declarations and methods with array-typed parameters (that shape belongs to vararg
@@ -1583,6 +1639,9 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             Method[] exact = new Method[ARITY_LIMIT];
             Method[] typed = new Method[ARITY_LIMIT];
             boolean[] typedAmbiguous = new boolean[ARITY_LIMIT];
+            Map<Integer, Method> highExact = null;
+            Map<Integer, Method> highTyped = null;
+            Set<Integer> highAmbiguous = null;
             Set<String> seen = new HashSet<>();
             for (Class<?> c = type; c != null && c != Closure.class; c = c.getSuperclass()) {
                 for (Method m : c.getDeclaredMethods()) {
@@ -1592,13 +1651,29 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                     Class<?>[] params = m.getParameterTypes();
                     if (!seen.add(java.util.Arrays.toString(params))) continue; // overridden below: most-derived wins
                     int arity = m.getParameterCount();
-                    if (arity >= ARITY_LIMIT) continue;
                     boolean allObject = true, hasArray = false;
                     for (Class<?> p : params) {
                         if (p != Object.class) allObject = false;
                         if (p.isArray()) hasArray = true;
                     }
                     if (hasArray) continue;
+                    if (arity >= ARITY_LIMIT) {
+                        if (highExact == null) {
+                            highExact = new HashMap<>();
+                            highTyped = new HashMap<>();
+                            highAmbiguous = new HashSet<>();
+                        }
+                        if (allObject) {
+                            highExact.putIfAbsent(arity, m);
+                        } else if (highExact.containsKey(arity)) {
+                            // all-Object at this arity already won, as for 0..ARITY_LIMIT-1
+                        } else if (highTyped.containsKey(arity)) {
+                            highAmbiguous.add(arity);
+                        } else {
+                            highTyped.put(arity, m);
+                        }
+                        continue;
+                    }
                     if (allObject) {
                         if (exact[arity] == null) exact[arity] = m;
                     } else if (typed[arity] != null) {
@@ -1650,22 +1725,66 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                 }
                 any = true;
             }
-            if (!any) {
-                return NONE;
-            }
             MethodHandle[] handles = new MethodHandle[ARITY_LIMIT];
             for (int arity = 0; arity < ARITY_LIMIT; arity += 1) {
                 if (byArity[arity] != null) {
                     handles[arity] = unreflect(byArity[arity]);
                 }
             }
-            return new CallOverride(byArity, guards, callForm, handles);
+            SpreadSlot[] spread = buildSpread(highExact, highTyped, highAmbiguous);
+            if (spread.length > 0) {
+                any = true;
+            }
+            if (!any) {
+                return NONE;
+            }
+            return new CallOverride(byArity, guards, callForm, handles, spread);
+        }
+
+        private static SpreadSlot[] buildSpread(final Map<Integer, Method> highExact, final Map<Integer, Method> highTyped, final Set<Integer> highAmbiguous) {
+            if (highExact == null) {
+                return NO_SPREAD;
+            }
+            Set<Integer> arities = new HashSet<>(highExact.keySet());
+            arities.addAll(highTyped.keySet());
+            List<SpreadSlot> built = new ArrayList<>(arities.size());
+            for (Integer boxed : arities) {
+                int arity = boxed;
+                Method exact = highExact.get(boxed);
+                Method m = (exact != null) ? exact
+                        : (highAmbiguous.contains(boxed) ? null : highTyped.get(boxed));
+                if (m == null) {
+                    continue;
+                }
+                try {
+                    m.setAccessible(true);
+                } catch (RuntimeException ignored) {
+                    continue;
+                }
+                Class<?>[] g = null;
+                if (m != exact) {
+                    Class<?>[] params = m.getParameterTypes();
+                    g = new Class[arity];
+                    for (int i = 0; i < arity; i += 1) {
+                        g[i] = (params[i] == Object.class) ? null : wrapperOf(params[i]);
+                    }
+                }
+                built.add(new SpreadSlot(arity, m, g, unreflect(m)));
+            }
+            return built.isEmpty() ? NO_SPREAD : built.toArray(NO_SPREAD);
         }
 
         private static MethodHandle unreflect(final Method method) {
             try {
-                return LOOKUP.unreflect(method)
-                        .asType(MethodType.genericMethodType(method.getParameterCount() + 1));
+                int arity = method.getParameterCount();
+                MethodHandle handle = LOOKUP.unreflect(method)
+                        .asType(MethodType.genericMethodType(arity + 1));
+                if (arity >= ARITY_LIMIT) {
+                    // box first, then spread: asSpreader on a still-primitive handle
+                    // would demand a primitive array
+                    handle = handle.asSpreader(Object[].class, arity).asType(SPREADER_TYPE);
+                }
+                return handle;
             } catch (Exception ignored) {
                 // inaccessible or not adaptable: call() falls back to Method.invoke
                 return null;

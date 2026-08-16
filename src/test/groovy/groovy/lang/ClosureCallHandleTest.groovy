@@ -138,11 +138,59 @@ final class ClosureCallHandleTest {
     }
 
     @Test
-    void 'arity at the cache limit is not cached'() {
+    void 'arity at the specialised limit is cached as a spreader'() {
         def five = { a, b, c, d, e -> a + b + c + d + e }
         assert javaVarargsCall(five, 1, 2, 3, 4, 5) == 15
-        assert cachedTarget(five, 5) == null
-        assert handleFor(five, 5) == null
+        assert cachedTarget(five, 5) != null
+        MethodHandle handle = handleFor(five, 5)
+        assert handle != null
+        assert handle.type() == MethodType.genericMethodType(1, true)
+        shouldFail(MissingMethodException) {
+            javaVarargsCall(five, 1, 2, 3, 4)
+        }
+        shouldFail(MissingMethodException) {
+            javaVarargsCall(five, 1, 2, 3, 4, 5, 6)
+        }
+
+        def six = { a, b, c, d, e, f -> a + b + c + d + e + f }
+        assert javaVarargsCall(six, 1, 2, 3, 4, 5, 6) == 21
+        assert handleFor(six, 6).type() == MethodType.genericMethodType(1, true)
+        assert handleFor(six, 5) == null
+
+        def fiveInts = new Closure(this) {
+            int doCall(int a, int b, int c, int d, int e) { a + b + c + d + e }
+        }
+        assert javaVarargsCall(fiveInts, 1, 2, 3, 4, 5) == 15
+        assert handleFor(fiveInts, 5) != null
+
+        def boom = { a, b, c, d, e -> throw new IllegalStateException('five') }
+        def e = shouldFail(IllegalStateException) {
+            javaVarargsCall(boom, 1, 2, 3, 4, 5)
+        }
+        assert e.message == 'five'
+    }
+
+    @Test
+    void 'typed high-arity doCall still falls through when a guard fails'() {
+        def c = new Closure(this) {
+            def doCall(String a, String b, String c, String d, String e) {
+                a + b + c + d + e
+            }
+        }
+        assert javaVarargsCall(c, 'a', 'b', 'c', 'd', 'e') == 'abcde'
+        assert handleFor(c, 5) != null
+        assert javaVarargsCall(c, 'a', 'b', 'c', 'd', "${'e'}") == 'abcde'
+    }
+
+    @Test
+    void 'high-arity call override without doCall is not cached'() {
+        def c = new Closure(this) {
+            Object call(a, b, c, d, e) { 'wrapped' }
+        }
+        shouldFail(MissingMethodException) {
+            javaVarargsCall(c, 1, 2, 3, 4, 5)
+        }
+        assert handleFor(c, 5) == null
     }
 
     @Test
@@ -272,11 +320,11 @@ final class ClosureCallHandleTest {
         def c = new Closure(this) {
             def doCall(a, b, d, e, f) { [a, b, d, e, f] }
         }
-        Method method = findDoCall(c.getClass(), 5)
-        method.accessible = true
-        MethodHandle handle = MethodHandles.lookup().unreflect(method)
-                .asType(MethodType.genericMethodType(6))
+        MethodHandle handle = handleFor(c, 5)
+        assert handle != null
+        assert handle.type() == MethodType.genericMethodType(1, true)
         assert invokeHandleDirect(handle, c, [1, 2, 3, 4, 5] as Object[]) == [1, 2, 3, 4, 5]
+        assert javaVarargsCall(c, 1, 2, 3, 4, 5) == [1, 2, 3, 4, 5]
     }
 
     @Test
@@ -535,12 +583,43 @@ final class ClosureCallHandleTest {
         return (arity < slots.length) ? slots[arity] : null
     }
 
+    private static int arityLimit() {
+        def f = Class.forName('groovy.lang.Closure$CallOverride').getDeclaredField('ARITY_LIMIT')
+        f.accessible = true
+        return f.getInt(null)
+    }
+
     private static MethodHandle handleFor(Closure closure, int arity) {
-        return (MethodHandle) callOverrideField(closure, 'handles', arity)
+        if (arity < arityLimit()) {
+            return (MethodHandle) callOverrideField(closure, 'handles', arity)
+        }
+        return (MethodHandle) spreadSlotField(closure, arity, 'handle')
     }
 
     private static Method cachedTarget(Closure closure, int arity) {
-        return (Method) callOverrideField(closure, 'byArity', arity)
+        if (arity < arityLimit()) {
+            return (Method) callOverrideField(closure, 'byArity', arity)
+        }
+        return (Method) spreadSlotField(closure, arity, 'method')
+    }
+
+    private static Object spreadSlotField(Closure closure, int arity, String field) {
+        Class<?> callOverride = Class.forName('groovy.lang.Closure$CallOverride')
+        Object override = callOverrideOf(closure)
+        def spread = callOverride.getDeclaredField('spread')
+        spread.accessible = true
+        Object[] slots = (Object[]) spread.get(override)
+        Class<?> slotType = Class.forName('groovy.lang.Closure$CallOverride$SpreadSlot')
+        def arityField = slotType.getDeclaredField('arity')
+        arityField.accessible = true
+        def valueField = slotType.getDeclaredField(field)
+        valueField.accessible = true
+        for (Object slot : slots) {
+            if (arityField.getInt(slot) == arity) {
+                return valueField.get(slot)
+            }
+        }
+        return null
     }
 
     private static Method findDoCall(Class<?> type, int arity) {
