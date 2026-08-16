@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.Optional;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptor;
@@ -284,8 +283,8 @@ public class MethodNode extends AnnotatedNode {
      * @return true if this method is a default interface method
      */
     public boolean isDefault() {
-        return (modifiers & (ACC_ABSTRACT | ACC_PUBLIC | ACC_STATIC)) == ACC_PUBLIC &&
-            Optional.ofNullable(getDeclaringClass()).filter(ClassNode::isInterface).isPresent();
+        return (modifiers & (ACC_ABSTRACT | ACC_PUBLIC | ACC_STATIC)) == ACC_PUBLIC
+            && getDeclaringClass() != null && getDeclaringClass().isInterface();
     }
 
     /**
