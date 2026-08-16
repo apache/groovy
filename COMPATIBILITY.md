@@ -253,12 +253,11 @@ assumed a switch expression was a `MethodCallExpression` wrapping a
 `SwitchStatement` need to handle `SwitchExpression` and `YieldStatement`.
 `GroovyCodeVisitor` supplies default methods so existing visitors keep
 compiling. `SwitchExpression.transformExpression` rewrites the selector and
-case-label expressions only and does not copy arm statements. When the
-transformer is also a `GroovyCodeVisitor` (the usual
-`ClassCodeExpressionTransformer` / `ResolveVisitor` case), the shared arms
-are then visited so nested expressions still run through resolve and
-rewrite. A plain `ExpressionTransformer` that is not a visitor leaves arm
-bodies untouched.
+case-label expressions only and does not copy arm statements. A
+`ClassCodeExpressionTransformer` (including `ResolveVisitor`) walks the
+node in place via `visitSwitchExpression`, so nested arm expressions still
+run through resolve and rewrite. A plain `ExpressionTransformer` leaves
+arm bodies untouched.
 
 **What is *not* claimed.** Matching still uses Groovy `isCase` (Class, regex,
 Collection, Closure). `tableswitch` / `lookupswitch` are emitted only when

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -38,8 +39,10 @@ import java.util.List;
  * <p>
  * Arms stay as {@link CaseStatement}s, the same way a
  * {@link ClosureExpression} holds a statement body: the case label is an
- * expression, the arm is a statement. {@link #transformExpression} therefore
- * rewrites only the selector and case labels.
+ * expression, the arm is a statement. A plain {@link ExpressionTransformer}
+ * rewrites only the selector and case labels. A
+ * {@link ClassCodeExpressionTransformer} walks the tree in place via
+ * {@link ClassCodeExpressionTransformer#visitSwitchExpression}.
  *
  * @see SwitchStatement
  * @see YieldStatement
@@ -150,13 +153,18 @@ public class SwitchExpression extends Expression {
     }
 
     /**
-     * Transforms the selector and each case-label expression. Arm bodies are
-     * statements and are shared, not copied. If {@code transformer} is also a
-     * {@link GroovyCodeVisitor}, those shared arms are then visited so nested
-     * expressions still run through resolve and rewrite.
+     * A {@link ClassCodeExpressionTransformer} walks this node in place through
+     * {@link ClassCodeExpressionTransformer#visitSwitchExpression}, the same
+     * pattern {@link ClosureExpression} uses so resolve, static-import and
+     * similar rewrites still see nested arm expressions. Any other transformer
+     * gets a copy of the selector and case labels; arm statements are shared.
      */
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
+        if (transformer instanceof ClassCodeExpressionTransformer visitor) {
+            visitor.visitSwitchExpression(this);
+            return this;
+        }
         List<CaseStatement> transformedCases = new ArrayList<>(caseStatements.size());
         for (CaseStatement caseStatement : caseStatements) {
             CaseStatement copy = new CaseStatement(
@@ -175,16 +183,6 @@ public class SwitchExpression extends Expression {
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         ret.setType(getType());
-        // ExpressionTransformer does not walk statements. When the transformer
-        // is also a visitor (ResolveVisitor, ClassCodeExpressionTransformer,
-        // …) walk the shared arms so nested expressions still get rewritten.
-        // Arms are not copied.
-        if (transformer instanceof GroovyCodeVisitor visitor) {
-            for (CaseStatement caseStatement : ret.getCaseStatements()) {
-                caseStatement.getCode().visit(visitor);
-            }
-            ret.getDefaultStatement().visit(visitor);
-        }
         return ret;
     }
 

@@ -50,7 +50,7 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
     }
 
     @Test
-    void staticStringSwitchUsesLookupSwitchThenTableSwitch() {
+    void staticStringSwitchUsesLookupSwitch() {
         def bytecode = compile(method: 'm', '''\
             @groovy.transform.CompileStatic
             String m(String s) {
@@ -62,7 +62,7 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
             }
         ''')
         assert bytecode.hasSequence(['LOOKUPSWITCH'])
-        assert bytecode.hasSequence(['TABLESWITCH'])
+        assert !bytecode.hasSequence(['TABLESWITCH'])
         assert bytecode.hasSequence(['INVOKEVIRTUAL java/lang/String.equals'])
     }
 
@@ -189,6 +189,23 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
     }
 
     @Test
+    void staticCommaArrowLabelsShareOneArm() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                switch (n) {
+                    case 6, 8, 10 -> 3
+                    default -> 0
+                }
+            }
+            assert m(6) == 3
+            assert m(8) == 3
+            assert m(10) == 3
+            assert m(7) == 0
+        '''
+    }
+
+    @Test
     void staticColonFallThroughSharesFollowingArm() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -207,6 +224,37 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
             assert m(2) == 12
             assert m(3) == 3
             assert m(4) == 0
+        '''
+    }
+
+    @Test
+    void staticNullCaseLabelUsesRuntimeIsCase() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(Object o) {
+                switch (o) {
+                    case null -> 'n'
+                    default -> 'd'
+                }
+            }
+            assert m(null) == 'n'
+            assert m(1) == 'd'
+        '''
+    }
+
+    @Test
+    void staticObjectTypedClassLabelUsesRuntimeIsCase() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(Object o) {
+                Object label = String
+                switch (o) {
+                    case label -> 's'
+                    default -> 'd'
+                }
+            }
+            assert m('x') == 's'
+            assert m(1) == 'd'
         '''
     }
 

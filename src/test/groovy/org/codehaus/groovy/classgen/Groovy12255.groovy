@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen
 
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ExpressionTransformer
@@ -26,6 +27,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.CaseStatement
 import org.codehaus.groovy.ast.stmt.YieldStatement
 import org.codehaus.groovy.ast.tools.GeneralUtils
+import org.codehaus.groovy.control.SourceUnit
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -965,6 +967,32 @@ final class Groovy12255 {
         }.visitSwitchExpression(original)
 
         assert original.caseStatements[0].code.statements[0].ifBlock.expression.text == 'A'
+    }
+
+    @Test
+    void classCodeExpressionTransformerTransformWalksArmsInPlace() {
+        def original = GeneralUtils.switchX(
+                GeneralUtils.constX(1),
+                [new CaseStatement(
+                        GeneralUtils.constX(1),
+                        GeneralUtils.yieldS(GeneralUtils.constX('a')))],
+                GeneralUtils.yieldS(GeneralUtils.constX('z')))
+
+        def transformer = new ClassCodeExpressionTransformer() {
+            @Override
+            protected SourceUnit getSourceUnit() { null }
+
+            @Override
+            Expression transform(Expression expression) {
+                if (expression instanceof ConstantExpression && expression.value == 'a') {
+                    return GeneralUtils.constX('A')
+                }
+                return super.transform(expression)
+            }
+        }
+        def transformed = transformer.transform(original)
+        assert transformed.is(original)
+        assert original.caseStatements[0].code.expression.text == 'A'
     }
 
     @Test
