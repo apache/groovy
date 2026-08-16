@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: the last colon arm can complete without `yield`/`throw` (`if` has no `else`)
 def cond = false
 def r = switch ('a') {
     case 'a':

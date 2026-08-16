@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: `continue` cannot jump out of a switch expression
 def a = 7
 while (a-- > 0) {
     def r = switch(a) {

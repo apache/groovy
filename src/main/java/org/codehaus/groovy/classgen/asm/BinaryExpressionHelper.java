@@ -191,6 +191,26 @@ public class BinaryExpressionHelper {
     }
 
     /**
+     * Loads the stored switch selector, evaluates {@code caseValue}, and invokes
+     * {@link org.codehaus.groovy.runtime.ScriptBytecodeAdapter#isCase(Object, Object)}.
+     * Shared by switch statements and switch expressions so both keep the
+     * operand stack consistent.
+     *
+     * @param selectorIndex local slot holding the selector
+     * @param selectorType  type stored in that slot
+     * @param caseValue     the case label expression
+     */
+    public void writeIsCase(final int selectorIndex, final ClassNode selectorType, final Expression caseValue) {
+        OperandStack operandStack = controller.getOperandStack();
+        operandStack.load(selectorType, selectorIndex);
+        operandStack.box();
+        caseValue.visit(controller.getAcg());
+        operandStack.box();
+        isCaseMethod.call(controller.getMethodVisitor());
+        operandStack.replace(ClassHelper.boolean_TYPE, 2);
+    }
+
+    /**
      * Evaluates the supplied binary expression.
      *
      * @param expression the expression to compile

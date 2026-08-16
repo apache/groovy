@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: `if` without `else` can complete normally, so the arrow block does not always yield
 def a = 1
 def r = switch (a) {
     case 1 -> {

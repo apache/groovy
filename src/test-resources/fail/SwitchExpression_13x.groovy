@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: `return` inside a loop still leaves the switch expression
 def a = 1
 def r = switch (a) {
     case 1 -> {

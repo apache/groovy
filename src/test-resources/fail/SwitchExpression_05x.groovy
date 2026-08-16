@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: a colon arm must `yield` or `throw`; a lone expression statement is not a result
 def a = 6
 def r = switch(a) {
     case 6 : 'a'

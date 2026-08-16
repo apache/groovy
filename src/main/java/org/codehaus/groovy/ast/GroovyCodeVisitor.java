@@ -218,7 +218,7 @@ public interface GroovyCodeVisitor {
 
     /**
      * Visits a {@code yield} statement that produces the value of an enclosing
-     * {@link SwitchExpression} (GROOVY-12255). The default implementation
+     * {@link SwitchExpression}. The default implementation
      * visits the yielded expression so existing visitors keep traversing
      * without a source change.
      *
@@ -512,7 +512,7 @@ public interface GroovyCodeVisitor {
     }
 
     /**
-     * Visits a first-class switch expression (GROOVY-12255 / JEP 361). The
+     * Visits a first-class switch expression (JEP 361). The
      * default implementation visits the selector, each case, and the default
      * arm so existing visitors keep traversing without a source change.
      *

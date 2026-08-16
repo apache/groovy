@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: consecutive empty arrow labels; each `->` needs its own body
 def a = 6
 switch(a) {
     case 6 ->

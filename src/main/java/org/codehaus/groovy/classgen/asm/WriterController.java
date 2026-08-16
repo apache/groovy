@@ -420,7 +420,7 @@ public class WriterController {
 
     /**
      * Returns the SwitchExpressionWriter for compiling first-class switch
-     * expressions (GROOVY-12255 / JEP 361).
+     * expressions (JEP 361).
      *
      * @since 6.0.0
      */

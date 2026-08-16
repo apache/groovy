@@ -680,6 +680,8 @@ final class Groovy12255 {
         assert copy instanceof SwitchExpression
         assert copy.caseStatements.size() == 2
         assert copy.caseStatements[1].arrow == se.caseStatements[1].arrow
+        assert copy.caseStatements[0].code.is(se.caseStatements[0].code)
+        assert copy.defaultStatement.is(se.defaultStatement)
     }
 
     @Test
@@ -899,7 +901,7 @@ final class Groovy12255 {
     }
 
     @Test
-    void transformExpressionCopiesArmsAndDoesNotMutateOriginal() {
+    void transformExpressionRewritesSelectorAndCaseLabelsOnly() {
         def original = GeneralUtils.switchX(
                 GeneralUtils.constX(1),
                 [new CaseStatement(
@@ -917,24 +919,115 @@ final class Groovy12255 {
         def transformed = original.transformExpression(new ExpressionTransformer() {
             @Override
             Expression transform(Expression expression) {
-                if (expression instanceof ConstantExpression && expression.value == 'a') {
-                    return GeneralUtils.constX('A')
+                if (expression instanceof ConstantExpression && expression.value == 1) {
+                    return GeneralUtils.constX(2)
                 }
                 return expression.transformExpression(this)
             }
         })
 
         assert transformed instanceof SwitchExpression
-        assert transformed.is(original) == false
+        assert !transformed.is(original)
+        assert transformed.expression.text == '2'
+        assert original.expression.text == '1'
+        assert transformed.caseStatements[0].expression.text == '2'
+        assert original.caseStatements[0].expression.text == '1'
+        assert transformed.caseStatements[0].code.is(original.caseStatements[0].code)
+        assert transformed.defaultStatement.is(original.defaultStatement)
+        assert transformed.caseStatements[0].arrow
         def originalYield = original.caseStatements[0].code.statements[0].ifBlock.expression
         assert originalYield.text == 'a'
-        def copiedYield = transformed.caseStatements[0].code.statements[0].ifBlock.expression
-        assert copiedYield.text == 'A'
-        assert transformed.caseStatements[0].arrow
-        assert original.caseStatements[0].code.statements[1].messageExpression.text == 'a'
-        assert transformed.caseStatements[0].code.statements[1].messageExpression.text == 'A'
-        assert transformed.defaultStatement instanceof YieldStatement
-        assert transformed.defaultStatement.expression.text == 'z'
+    }
+
+    @Test
+    void classCodeExpressionTransformerRewritesNestedArmExpressionsInPlace() {
+        def original = GeneralUtils.switchX(
+                GeneralUtils.constX(1),
+                [new CaseStatement(
+                        GeneralUtils.constX(1),
+                        GeneralUtils.block(
+                                GeneralUtils.ifS(
+                                        GeneralUtils.boolX(GeneralUtils.constX(true)),
+                                        GeneralUtils.yieldS(GeneralUtils.constX('a')))))],
+                GeneralUtils.yieldS(GeneralUtils.constX('z')))
+
+        new org.codehaus.groovy.ast.ClassCodeExpressionTransformer() {
+            @Override
+            protected org.codehaus.groovy.control.SourceUnit getSourceUnit() { null }
+
+            @Override
+            Expression transform(Expression expression) {
+                if (expression instanceof ConstantExpression && expression.value == 'a') {
+                    return GeneralUtils.constX('A')
+                }
+                return super.transform(expression)
+            }
+        }.visitSwitchExpression(original)
+
+        assert original.caseStatements[0].code.statements[0].ifBlock.expression.text == 'A'
+    }
+
+    @Test
+    void referenceSelectorInSwitchStatement() {
+        assertScript '''
+            def x = 1
+            def cl = { x = 2 }
+            cl()
+            def r = 'no'
+            switch (x) {
+                case 2: r = 'ok'; break
+                default: r = 'no'
+            }
+            assert r == 'ok'
+        '''
+    }
+
+    @Test
+    void referenceSelectorWrittenByClosure() {
+        assertScript '''
+            def x = 1
+            def cl = { x = 2 }
+            cl()
+            def y = switch (x) {
+                case 2 -> 'ok'
+                default -> 'no'
+            }
+            assert y == 'ok'
+        '''
+    }
+
+    @Test
+    void referenceSelectorWrittenByClosureUnderCompileStatic() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m() {
+                int x = 1
+                def cl = { x = 2 }
+                cl()
+                switch (x) {
+                    case 2 -> 'ok'
+                    default -> 'no'
+                }
+            }
+            assert m() == 'ok'
+        '''
+    }
+
+    @Test
+    void referenceWrapperSelectorWrittenByClosureUnderCompileStatic() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m() {
+                Integer x = 1
+                def cl = { x = 2 }
+                cl()
+                switch (x) {
+                    case 2 -> 'ok'
+                    default -> 'no'
+                }
+            }
+            assert m() == 'ok'
+        '''
     }
 
     @Test

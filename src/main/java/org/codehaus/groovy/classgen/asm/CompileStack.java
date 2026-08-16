@@ -720,13 +720,26 @@ public class CompileStack {
 
     /**
      * Returns the innermost switch-expression context, or {@code null} if the
-     * current method is not compiling a {@link SwitchExpression}
-     * (GROOVY-12255).
+     * current method is not compiling a {@link SwitchExpression}.
      *
      * @since 6.0.0
      */
     public SwitchExpressionContext getSwitchExpressionContext() {
         return switchExpressions.peek();
+    }
+
+    /**
+     * Returns the innermost switch-expression context, or throws if {@code yield}
+     * is being compiled outside any switch expression.
+     *
+     * @since 6.0.0
+     */
+    public SwitchExpressionContext requireSwitchExpressionContext() {
+        SwitchExpressionContext context = getSwitchExpressionContext();
+        if (context == null) {
+            throw new GroovyBugError("yield outside of a switch expression");
+        }
+        return context;
     }
 
     /**

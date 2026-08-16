@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: an arrow block must complete with `yield` or `throw` on every path
 def a = 1
 def r = switch (a) {
     case 1 -> {
