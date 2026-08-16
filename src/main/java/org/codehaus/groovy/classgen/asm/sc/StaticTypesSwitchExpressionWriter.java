@@ -51,7 +51,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDG
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNULL;
-import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 /**
@@ -174,14 +173,14 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         boolean primitive = isIntegralType(selectorType);
         if (!primitive && !isIntegralWrapper(selectorType)) return false;
 
+        Label defaultTarget = new Label();
         ArmGroup<Integer> group = groupArms(expression.getCaseStatements(),
-                cs -> intConstant(cs.getExpression()));
+                cs -> intConstant(cs.getExpression()), defaultTarget);
         if (group.error) return true;
         if (group.keys == null) return false;
 
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
-        Label defaultTarget = new Label();
 
         int intSelector = selectorIndex;
         if (!primitive) {
@@ -206,21 +205,33 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         for (int i = 0; i < keys.size(); i += 1) {
             sorted.put(keys.get(i), targets.get(i));
         }
-        int[] keyArray = sorted.keySet().stream().mapToInt(Integer::intValue).toArray();
-        Label[] targetArray = sorted.values().toArray(Label[]::new);
-        MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitVarInsn(ILOAD, intSelector);
+        int n = sorted.size();
+        int[] keyArray = new int[n];
+        Label[] targetArray = new Label[n];
+        int i = 0;
+        for (var entry : sorted.entrySet()) {
+            keyArray[i] = entry.getKey();
+            targetArray[i] = entry.getValue();
+            i += 1;
+        }
+
+        OperandStack operandStack = controller.getOperandStack();
+        operandStack.load(ClassHelper.int_TYPE, intSelector);
+        operandStack.remove(1);
+
         int min = keyArray[0];
-        int max = keyArray[keyArray.length - 1];
+        int max = keyArray[n - 1];
         long span = (long) max - (long) min + 1L;
-        // same size heuristic javac uses: tableswitch if it is no larger than lookupswitch
+        // classfile payload, padding omitted (JVMS §6.5): tableswitch ≈ 12+4*span,
+        // lookupswitch ≈ 8+8*n. Prefer tableswitch when it is no larger.
         long tableSize = 12L + 4L * span;
-        long lookupSize = 8L + 8L * keyArray.length;
-        if (tableSize <= lookupSize) {
+        long lookupSize = 8L + 8L * n;
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (span > 0 && span <= Integer.MAX_VALUE && tableSize <= lookupSize) {
             Label[] table = new Label[(int) span];
             Arrays.fill(table, defaultTarget);
-            for (int i = 0; i < keyArray.length; i += 1) {
-                table[keyArray[i] - min] = targetArray[i];
+            for (int k = 0; k < n; k += 1) {
+                table[(int) ((long) keyArray[k] - min)] = targetArray[k];
             }
             mv.visitTableSwitchInsn(min, max, defaultTarget, table);
         } else {
@@ -234,14 +245,14 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
             return false;
         }
 
+        Label defaultTarget = new Label();
         ArmGroup<String> group = groupArms(expression.getCaseStatements(),
-                cs -> stringConstant(cs.getExpression()));
+                cs -> stringConstant(cs.getExpression()), defaultTarget);
         if (group.error) return true;
         if (group.keys == null) return false;
 
-        Label defaultTarget = new Label();
         jumpIfNull(selectorIndex, selectorType, defaultTarget);
-        emitStringIndexDispatch(selectorIndex, group.keys, group.targets, defaultTarget);
+        emitStringHashDispatch(selectorIndex, group.keys, group.targets, defaultTarget);
         finishArms(expression, group.targets, defaultTarget, selectorIndex, selectorType, false);
         return true;
     }
@@ -256,8 +267,9 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         ClassNode enumType = unwrapEnumType(selectorType);
         if (enumType == null || !enumType.isEnum()) return false;
 
+        Label defaultTarget = new Label();
         ArmGroup<String> group = groupArms(expression.getCaseStatements(),
-                cs -> enumConstantName(cs.getExpression(), enumType));
+                cs -> enumConstantName(cs.getExpression(), enumType), defaultTarget);
         if (group.error) return true;
         if (group.keys == null) return false;
 
@@ -268,7 +280,6 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         boolean hasDefault = expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty();
         boolean complete = !hasDefault && group.keys.size() == enumConstantCount(enumType);
 
-        Label defaultTarget = new Label();
         // a null selector matches no constant label; with no default it must
         // throw ISE, never the complete-enum ICCE
         Label nullTarget = complete ? new Label() : defaultTarget;
@@ -279,7 +290,7 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         operandStack.replace(ClassHelper.STRING_TYPE);
         int nameLocal = compileStack.defineTemporaryVariable("$switchEnumName", ClassHelper.STRING_TYPE, true);
 
-        emitStringIndexDispatch(nameLocal, group.keys, group.targets, defaultTarget);
+        emitStringHashDispatch(nameLocal, group.keys, group.targets, defaultTarget);
         finishArms(expression, group.targets, defaultTarget, selectorIndex, selectorType, complete);
         if (nullTarget != defaultTarget) {
             mv.visitLabel(nullTarget);
@@ -295,7 +306,7 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
      * jumping straight to the shared arm label. Fall-through keys already
      * share that label, so a second index tableswitch is unnecessary.
      */
-    private void emitStringIndexDispatch(final int stringLocal, final List<String> keys,
+    private void emitStringHashDispatch(final int stringLocal, final List<String> keys,
             final List<Label> targets, final Label defaultTarget) {
         Map<Integer, List<Integer>> hashToIndexes = new TreeMap<>();
         for (int i = 0; i < keys.size(); i += 1) {
@@ -322,8 +333,9 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
             for (int index : hashToIndexes.get(hashes[i])) {
                 operandStack.load(ClassHelper.STRING_TYPE, stringLocal);
                 mv.visitLdcInsn(keys.get(index));
+                operandStack.push(ClassHelper.STRING_TYPE);
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-                operandStack.replace(ClassHelper.boolean_TYPE);
+                operandStack.replace(ClassHelper.boolean_TYPE, 2);
                 Label next = operandStack.jump(IFEQ);
                 mv.visitJumpInsn(GOTO, targets.get(index));
                 mv.visitLabel(next);
@@ -334,10 +346,11 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
 
     /**
      * Forward pass extracts every constant key (or skips the optimizer).
-     * Backward pass gives empty colon prefixes the following body's label.
+     * Backward pass gives empty colon prefixes the following body's label,
+     * or {@code defaultTarget} when the empty suffix falls into default.
      */
     private <K> ArmGroup<K> groupArms(final List<CaseStatement> caseStatements,
-            final Function<CaseStatement, K> keyFn) {
+            final Function<CaseStatement, K> keyFn, final Label defaultTarget) {
         int n = caseStatements.size();
         if (n == 0) return ArmGroup.skip();
 
@@ -354,14 +367,10 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         }
 
         Label[] targets = new Label[n];
-        Label current = null;
+        Label current = defaultTarget;
         for (int i = n - 1; i >= 0; i -= 1) {
             if (!caseStatements.get(i).getCode().isEmpty()) {
                 current = new Label();
-            }
-            if (current == null) {
-                addError("the switch expression case does not complete with yield or throw", caseStatements.get(i));
-                return ArmGroup.error();
             }
             targets[i] = current;
         }
