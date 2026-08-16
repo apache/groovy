@@ -123,7 +123,7 @@ jobs:
         with:
           cache-disabled: true
       - name: "🔍 Setup TestLens"
-        uses: testlens-app/setup-testlens@3f82d2dc6cd5c03f02ce5f7885a21195d85f8d14 # v1.9.3
+        uses: testlens-app/setup-testlens@d29a2be31512b3aeda3adcef09fbe0d55af90c51 # v1.9.4
       # Pre-warm the @Grab artifact cache by fetching each unique Maven-shorthand
       # coordinate referenced in test sources via `mvn dependency:get`. Maven uses
       # Apache HttpClient (vs Ivy's java.net.URLConnection), so it currently
