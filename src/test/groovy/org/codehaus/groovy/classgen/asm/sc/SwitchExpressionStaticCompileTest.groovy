@@ -312,6 +312,182 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
     }
 
     @Test
+    void staticCommaArrowDenseIntUsesTableSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                switch (n) {
+                    case 6, 8, 10 -> 3
+                    default -> 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['TABLESWITCH'])
+        assert !bytecode.hasSequence(['LOOKUPSWITCH'])
+        assert findUnreachableInstructions(classBytes, 'm') == []
+    }
+
+    @Test
+    void staticColonFallThroughDenseIntUsesTableSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                return switch (n) {
+                    case 1:
+                    case 2:
+                        yield 12
+                    case 3:
+                        yield 3
+                    default:
+                        yield 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['TABLESWITCH'])
+        assert !bytecode.hasSequence(['LOOKUPSWITCH'])
+    }
+
+    @Test
+    void staticNegativeDenseIntUsesTableSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                switch (n) {
+                    case -1 -> -10
+                    case  0 -> 0
+                    case  1 -> 10
+                    default -> 99
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['TABLESWITCH'])
+        assert !bytecode.hasSequence(['LOOKUPSWITCH'])
+    }
+
+    @Test
+    void staticWideIntSpanUsesLookupSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                switch (n) {
+                    case -2000000000 -> -1
+                    case  2000000000 -> 1
+                    default -> 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['LOOKUPSWITCH'])
+        assert !bytecode.hasSequence(['TABLESWITCH'])
+    }
+
+    @Test
+    void staticManyStringCasesStillAvoidTableSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            String m(String s) {
+                switch (s) {
+                    case 'a' -> 'A'
+                    case 'b' -> 'B'
+                    case 'c' -> 'C'
+                    case 'd' -> 'D'
+                    case 'e' -> 'E'
+                    case 'f' -> 'F'
+                    case 'g' -> 'G'
+                    case 'h' -> 'H'
+                    default  -> 'z'
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['LOOKUPSWITCH'])
+        assert !bytecode.hasSequence(['TABLESWITCH'])
+    }
+
+    @Test
+    void staticStringHashCollisionUsesSingleLookupSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            String m(String s) {
+                switch (s) {
+                    case 'Aa' -> 'first'
+                    case 'BB' -> 'second'
+                    default   -> 'none'
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['LOOKUPSWITCH'])
+        assert !bytecode.hasSequence(['TABLESWITCH'])
+        assert bytecode.instructions.count { it.startsWith('INVOKEVIRTUAL java/lang/String.equals') } == 2
+    }
+
+    @Test
+    void staticColonEmptyCaseFallsIntoDefault() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                return switch (n) {
+                    case 1:
+                    case 2:
+                    default:
+                        yield 0
+                }
+            }
+            assert m(1) == 0
+            assert m(2) == 0
+            assert m(3) == 0
+        '''
+    }
+
+    @Test
+    void staticColonEmptyCaseThenDefaultUsesTableSwitch() {
+        def bytecode = compile(method: 'm', '''\
+            @groovy.transform.CompileStatic
+            int m(int n) {
+                return switch (n) {
+                    case 1:
+                    default:
+                        yield 0
+                }
+            }
+        ''')
+        assert bytecode.hasSequence(['TABLESWITCH'])
+        assert !bytecode.hasSequence(['LOOKUPSWITCH'])
+    }
+
+    @Test
+    void staticColonArmIfFallsThroughToCompletingDefault() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int m(int n, boolean cond) {
+                return switch (n) {
+                    case 1:
+                        if (cond) yield 10
+                    default:
+                        yield 0
+                }
+            }
+            assert m(1, true) == 10
+            assert m(1, false) == 0
+            assert m(2, false) == 0
+        '''
+    }
+
+    @Test
+    void staticStringColonEmptyCaseFallsIntoDefault() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(String s) {
+                return switch (s) {
+                    case 'a':
+                    default:
+                        yield 'd'
+                }
+            }
+            assert m('a') == 'd'
+            assert m('b') == 'd'
+        '''
+    }
+
+    @Test
     void staticDuplicateIntCaseIsError() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic
