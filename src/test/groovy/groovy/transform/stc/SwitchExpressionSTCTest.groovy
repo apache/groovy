@@ -112,6 +112,30 @@ class SwitchExpressionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     @Test
+    void testSwitchStatementNeedNotBeExhaustive() {
+        assertScript '''
+            int n = 0
+            switch (2) {
+                case 1:
+                    n = 1
+            }
+            assert n == 0
+        '''
+    }
+
+    @Test
+    void testTargetTypePushedIntoArms() {
+        assertScript '''
+            CharSequence cs = switch (1) {
+                case 1 -> 'hello'
+                default -> new StringBuilder('x')
+            }
+            assert cs instanceof CharSequence
+            assert cs.toString() == 'hello'
+        '''
+    }
+
+    @Test
     void testAssignmentToOuterLocal() {
         assertScript '''
             int acc = 0
