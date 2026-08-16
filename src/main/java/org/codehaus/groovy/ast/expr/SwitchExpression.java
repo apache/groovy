@@ -19,24 +19,10 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.stmt.AssertStatement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
-import org.codehaus.groovy.ast.stmt.CatchStatement;
-import org.codehaus.groovy.ast.stmt.ContinueStatement;
-import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.stmt.IfStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
-import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
-import org.codehaus.groovy.ast.stmt.ThrowStatement;
-import org.codehaus.groovy.ast.stmt.TryCatchStatement;
-import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.ast.stmt.YieldStatement;
 
 import java.util.ArrayList;
@@ -49,6 +35,11 @@ import java.util.List;
  * semantics (or a tableswitch / lookupswitch when the compiler can prove
  * that is equivalent). Each completing arm yields a value via
  * {@link YieldStatement}; the expression's result is that value.
+ * <p>
+ * Arms stay as {@link CaseStatement}s, the same way a
+ * {@link ClosureExpression} holds a statement body: the case label is an
+ * expression, the arm is a statement. {@link #transformExpression} therefore
+ * rewrites only the selector and case labels.
  *
  * @see SwitchStatement
  * @see YieldStatement
@@ -158,136 +149,47 @@ public class SwitchExpression extends Expression {
         return super.toString() + "[expression: " + expression + "; cases: " + caseStatements + "; default: " + defaultStatement + "]";
     }
 
+    /**
+     * Transforms the selector and each case-label expression. Arm bodies are
+     * statements and are shared, not copied. If {@code transformer} is also a
+     * {@link GroovyCodeVisitor}, those shared arms are then visited so nested
+     * expressions still run through resolve and rewrite.
+     */
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
         List<CaseStatement> transformedCases = new ArrayList<>(caseStatements.size());
         for (CaseStatement caseStatement : caseStatements) {
-            transformedCases.add(copyCase(caseStatement, transformer));
+            CaseStatement copy = new CaseStatement(
+                    transformer.transform(caseStatement.getExpression()),
+                    caseStatement.getCode());
+            copy.setArrow(caseStatement.isArrow());
+            copy.setSourcePosition(caseStatement);
+            copy.copyNodeMetaData(caseStatement);
+            copy.copyStatementLabels(caseStatement);
+            transformedCases.add(copy);
         }
         SwitchExpression ret = new SwitchExpression(
                 transformer.transform(expression),
                 transformedCases,
-                copyAndTransform(defaultStatement, transformer));
+                defaultStatement);
         ret.setSourcePosition(this);
         ret.copyNodeMetaData(this);
         ret.setType(getType());
+        // ExpressionTransformer does not walk statements. When the transformer
+        // is also a visitor (ResolveVisitor, ClassCodeExpressionTransformer,
+        // …) walk the shared arms so nested expressions still get rewritten.
+        // Arms are not copied.
+        if (transformer instanceof GroovyCodeVisitor visitor) {
+            for (CaseStatement caseStatement : ret.getCaseStatements()) {
+                caseStatement.getCode().visit(visitor);
+            }
+            ret.getDefaultStatement().visit(visitor);
+        }
         return ret;
     }
 
     @Override
     public void visit(final GroovyCodeVisitor visitor) {
         visitor.visitSwitchExpression(this);
-    }
-
-    private static CaseStatement copyCase(final CaseStatement caseStatement, final ExpressionTransformer transformer) {
-        CaseStatement copy = new CaseStatement(
-                transformer.transform(caseStatement.getExpression()),
-                copyAndTransform(caseStatement.getCode(), transformer));
-        copy.setArrow(caseStatement.isArrow());
-        copy.setSourcePosition(caseStatement);
-        copy.copyNodeMetaData(caseStatement);
-        copy.copyStatementLabels(caseStatement);
-        return copy;
-    }
-
-    /**
-     * Returns a structural copy of {@code statement} whose nested expressions
-     * have been passed through {@code transformer}. The original tree is not
-     * mutated. Unknown statement types are returned as-is.
-     */
-    private static Statement copyAndTransform(final Statement statement, final ExpressionTransformer transformer) {
-        if (statement == null || statement.isEmpty()) {
-            return statement;
-        }
-        Statement copy;
-        if (statement instanceof YieldStatement yieldStatement) {
-            copy = new YieldStatement(transformer.transform(yieldStatement.getExpression()));
-        } else if (statement instanceof ThrowStatement throwStatement) {
-            copy = new ThrowStatement(transformer.transform(throwStatement.getExpression()));
-        } else if (statement instanceof ExpressionStatement expressionStatement) {
-            copy = new ExpressionStatement(transformer.transform(expressionStatement.getExpression()));
-        } else if (statement instanceof ReturnStatement returnStatement) {
-            copy = new ReturnStatement(transformer.transform(returnStatement.getExpression()));
-        } else if (statement instanceof AssertStatement assertStatement) {
-            copy = new AssertStatement(
-                    transformBoolean(assertStatement.getBooleanExpression(), transformer),
-                    transformer.transform(assertStatement.getMessageExpression()));
-        } else if (statement instanceof BlockStatement blockStatement) {
-            List<Statement> copied = new ArrayList<>(blockStatement.getStatements().size());
-            for (Statement child : blockStatement.getStatements()) {
-                copied.add(copyAndTransform(child, transformer));
-            }
-            copy = new BlockStatement(copied, blockStatement.getVariableScope());
-        } else if (statement instanceof IfStatement ifStatement) {
-            copy = new IfStatement(
-                    transformBoolean(ifStatement.getBooleanExpression(), transformer),
-                    copyAndTransform(ifStatement.getIfBlock(), transformer),
-                    copyAndTransform(ifStatement.getElseBlock(), transformer));
-        } else if (statement instanceof WhileStatement whileStatement) {
-            copy = new WhileStatement(
-                    transformBoolean(whileStatement.getBooleanExpression(), transformer),
-                    copyAndTransform(whileStatement.getLoopBlock(), transformer));
-        } else if (statement instanceof DoWhileStatement doWhileStatement) {
-            copy = new DoWhileStatement(
-                    transformBoolean(doWhileStatement.getBooleanExpression(), transformer),
-                    copyAndTransform(doWhileStatement.getLoopBlock(), transformer));
-        } else if (statement instanceof ForStatement forStatement) {
-            Expression collection = transformer.transform(forStatement.getCollectionExpression());
-            ForStatement copiedFor;
-            if (collection instanceof ClosureListExpression classic) {
-                // C-style `for (;;)` stores a dummy value parameter that
-                // getValueVariable() hides; use the dedicated constructor.
-                copiedFor = new ForStatement(classic, copyAndTransform(forStatement.getLoopBlock(), transformer));
-            } else {
-                copiedFor = new ForStatement(
-                        forStatement.getIndexVariable(),
-                        forStatement.getValueVariable(),
-                        collection,
-                        copyAndTransform(forStatement.getLoopBlock(), transformer));
-            }
-            copiedFor.setVariableScope(forStatement.getVariableScope());
-            copy = copiedFor;
-        } else if (statement instanceof SynchronizedStatement synchronizedStatement) {
-            copy = new SynchronizedStatement(
-                    transformer.transform(synchronizedStatement.getExpression()),
-                    copyAndTransform(synchronizedStatement.getCode(), transformer));
-        } else if (statement instanceof TryCatchStatement tryCatchStatement) {
-            TryCatchStatement copied = new TryCatchStatement(
-                    copyAndTransform(tryCatchStatement.getTryStatement(), transformer),
-                    copyAndTransform(tryCatchStatement.getFinallyStatement(), transformer));
-            for (CatchStatement catchStatement : tryCatchStatement.getCatchStatements()) {
-                copied.addCatch(new CatchStatement(
-                        catchStatement.getVariable(),
-                        copyAndTransform(catchStatement.getCode(), transformer)));
-            }
-            for (ExpressionStatement resource : tryCatchStatement.getResourceStatements()) {
-                copied.addResource((ExpressionStatement) copyAndTransform(resource, transformer));
-            }
-            copy = copied;
-        } else if (statement instanceof SwitchStatement switchStatement) {
-            List<CaseStatement> cases = new ArrayList<>(switchStatement.getCaseStatements().size());
-            for (CaseStatement caseStatement : switchStatement.getCaseStatements()) {
-                cases.add(copyCase(caseStatement, transformer));
-            }
-            copy = new SwitchStatement(
-                    transformer.transform(switchStatement.getExpression()),
-                    cases,
-                    copyAndTransform(switchStatement.getDefaultStatement(), transformer));
-        } else if (statement instanceof BreakStatement breakStatement) {
-            copy = new BreakStatement(breakStatement.getLabel());
-        } else if (statement instanceof ContinueStatement continueStatement) {
-            copy = new ContinueStatement(continueStatement.getLabel());
-        } else {
-            return statement;
-        }
-        copy.setSourcePosition(statement);
-        copy.copyNodeMetaData(statement);
-        copy.copyStatementLabels(statement);
-        return copy;
-    }
-
-    private static BooleanExpression transformBoolean(final BooleanExpression expression, final ExpressionTransformer transformer) {
-        Expression transformed = transformer.transform(expression);
-        return transformed instanceof BooleanExpression bool ? bool : new BooleanExpression(transformed);
     }
 }

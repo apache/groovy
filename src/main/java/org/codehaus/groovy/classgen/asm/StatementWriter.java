@@ -731,7 +731,7 @@ public class StatementWriter {
 
         int i = 0;
         for (Iterator<CaseStatement> iter = caseStatements.iterator(); iter.hasNext(); i += 1) {
-            writeCaseStatement(iter.next(), statement, switchVariableIndex, labels[i], labels[i + 1]);
+            writeCaseStatement(iter.next(), statement, switchVariableIndex, exprType, labels[i], labels[i + 1]);
         }
 
         statement.getDefaultStatement().visit(controller.getAcg());
@@ -743,17 +743,11 @@ public class StatementWriter {
         compileStack.pop();
     }
 
-    private void writeCaseStatement(final CaseStatement caseStatement, final SwitchStatement switchStatement, final int switchVariableIndex, final Label thisLabel, final Label nextLabel) {
+    private void writeCaseStatement(final CaseStatement caseStatement, final SwitchStatement switchStatement, final int switchVariableIndex, final ClassNode switchType, final Label thisLabel, final Label nextLabel) {
         controller.getAcg().onLineNumber(caseStatement, "visitCaseStatement");
         MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
 
-        mv.visitVarInsn(ALOAD, switchVariableIndex);
-
-        caseStatement.getExpression().visit(controller.getAcg());
-        operandStack.box();
-        controller.getBinaryExpressionHelper().getIsCaseMethod().call(mv);
-        operandStack.replace(ClassHelper.boolean_TYPE);
+        controller.getBinaryExpressionHelper().writeIsCase(switchVariableIndex, switchType, caseStatement.getExpression());
 
         Label l0 = controller.getOperandStack().jump(IFEQ);
 

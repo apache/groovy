@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: mixing arrow (`->`) and colon (`:`) labels in one switch is illegal
 def a = 6
 switch(a) {
     case 6 -> 'a'

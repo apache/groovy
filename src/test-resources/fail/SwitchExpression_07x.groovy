@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: `break` cannot leave a switch expression (and `return` is also illegal there)
 def a = 7
 while (a-- > 0) {
     def r = switch(a) {

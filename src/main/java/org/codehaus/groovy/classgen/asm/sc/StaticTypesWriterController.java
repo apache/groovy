@@ -39,6 +39,7 @@ import org.codehaus.groovy.classgen.asm.InvocationWriter;
 import org.codehaus.groovy.classgen.asm.LambdaWriter;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.StatementWriter;
+import org.codehaus.groovy.classgen.asm.SwitchExpressionWriter;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.WriterController;
@@ -66,6 +67,7 @@ public class StaticTypesWriterController extends DelegatingController {
     private StaticInvocationWriter invocationWriter;
     private StaticTypesCallSiteWriter callSiteWriter;
     private StaticTypesStatementWriter statementWriter;
+    private StaticTypesSwitchExpressionWriter switchExpressionWriter;
     private UnaryExpressionHelper unaryExpressionHelper;
     private BinaryExpressionMultiTypeDispatcher binaryExpressionHelper;
     private MethodReferenceExpressionWriter methodReferenceExpressionWriter;
@@ -83,6 +85,7 @@ public class StaticTypesWriterController extends DelegatingController {
         super.init(asmClassGenerator, gcon, cv, cn);
         this.callSiteWriter = new StaticTypesCallSiteWriter(this);
         this.statementWriter = new StaticTypesStatementWriter(this);
+        this.switchExpressionWriter = new StaticTypesSwitchExpressionWriter(this);
         this.typeChooser = new StaticTypesTypeChooser();
         this.invocationWriter = new StaticInvocationWriter(this);
         this.closureWriter = new StaticTypesClosureWriter(this);
@@ -210,6 +213,15 @@ public class StaticTypesWriterController extends DelegatingController {
         } else {
             return super.getStatementWriter();
         }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public SwitchExpressionWriter getSwitchExpressionWriter() {
+        if (isInStaticallyCheckedMethod) {
+            return switchExpressionWriter;
+        }
+        return super.getSwitchExpressionWriter();
     }
 
     /** {@inheritDoc} */

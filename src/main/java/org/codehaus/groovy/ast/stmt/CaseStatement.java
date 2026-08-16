@@ -87,7 +87,7 @@ public class CaseStatement extends Statement {
     /**
      * Indicates whether this case uses an arrow label ({@code case L ->}) rather
      * than a colon label ({@code case L:}). Arrow labels do not fall through
-     * (GROOVY-12255 / JEP 361).
+     * (JEP 361).
      *
      * @return {@code true} if this case was written with {@code ->}
      * @since 6.0.0
@@ -97,8 +97,7 @@ public class CaseStatement extends Statement {
     }
 
     /**
-     * Marks this case as an arrow label ({@code case L ->}) or a colon label
-     * (GROOVY-12255).
+     * Marks this case as an arrow label ({@code case L ->}) or a colon label.
      *
      * @param arrow {@code true} if this case was written with {@code ->}
      * @since 6.0.0

@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: a multi-statement arrow arm must be a block `{ ... }`
 def a = 6
 def r = switch(a) {
     case 6 -> def x = 'a'; yield x

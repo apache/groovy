@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: `return` is not allowed inside a switch expression (use `yield`)
 def a = 6
 def r = switch(a) {
     case 6 : return 'a'

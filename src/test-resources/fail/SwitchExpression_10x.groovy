@@ -17,4 +17,5 @@
  *  under the License.
  */
 
+// fails: a switch expression must have at least one arm
 println switch (10) {}

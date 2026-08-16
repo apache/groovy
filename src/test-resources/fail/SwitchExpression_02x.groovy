@@ -17,6 +17,7 @@
  *  under the License.
  */
 
+// fails: an arrow label must have a body; `case 8 ->` is empty
 def a = 6
 switch(a) {
     case 8 ->

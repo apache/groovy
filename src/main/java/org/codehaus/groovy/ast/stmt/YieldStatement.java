@@ -26,8 +26,7 @@ import org.codehaus.groovy.ast.expr.SwitchExpression;
  * Represents a {@code yield} statement that produces the value of an enclosing
  * {@link SwitchExpression}. Unlike {@link ReturnStatement}, {@code yield} does
  * not return from the enclosing method; it completes the switch expression and
- * transfers the yielded value to the expression's join point (JEP 361 /
- * GROOVY-12255).
+ * transfers the yielded value to the expression's join point (JEP 361).
  *
  * @see SwitchExpression
  * @see ReturnStatement
