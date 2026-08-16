@@ -59,6 +59,78 @@ final class Groovy10381 {
     }
 
     @Test
+    void testDuplicateDefaultMethods_superclassProvidesMethod() {
+        assertScript '''
+            interface A {
+              default String m(String n) { n.toLowerCase() }
+            }
+            interface B {
+              default String m(String n) { n.toUpperCase() }
+            }
+            class Super {
+              String m(String n) { n }
+            }
+            class C extends Super implements A, B {
+            }
+            assert new C().m('Hi') == 'Hi'
+        '''
+    }
+
+    @Test
+    void testDuplicateDefaultMethods_interfaceProvidesOwnDefault() {
+        assertScript '''
+            interface A {
+              default String m(String n) { n.toLowerCase() }
+            }
+            interface B {
+              default String m(String n) { n.toUpperCase() }
+            }
+            interface C extends A, B {
+              default String m(String n) { n }
+            }
+            class D implements C {
+            }
+            assert new D().m('Hi') == 'Hi'
+        '''
+    }
+
+    @Test
+    void testDuplicateDefaultMethods_moreSpecificDefaultWins() {
+        assertScript '''
+            interface Base {
+              default String m(String n) { n }
+            }
+            interface A extends Base {
+              default String m(String n) { n.toLowerCase() }
+            }
+            interface B extends Base {
+            }
+            class C implements A, B {
+            }
+            assert new C().m('Hi') == 'hi'
+        '''
+    }
+
+    @Test
+    void testDuplicateDefaultMethods_interfaceRedeclaresAbstract() {
+        assertScript '''
+            interface A {
+              default String m(String n) { n.toLowerCase() }
+            }
+            interface B {
+              default String m(String n) { n.toUpperCase() }
+            }
+            interface C extends A, B {
+              String m(String n)
+            }
+            class D implements C {
+              String m(String n) { n }
+            }
+            assert new D().m('Hi') == 'Hi'
+        '''
+    }
+
+    @Test
     void testDuplicateDefaultMethodsFromGroovyClasses_implements1() {
         def err = shouldFail '''
             interface A {

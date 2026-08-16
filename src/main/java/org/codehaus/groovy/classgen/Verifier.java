@@ -88,7 +88,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
@@ -318,40 +317,67 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         checkFinalVariables(node);
     }
 
-    private static void checkForDuplicateDefaultMethods(ClassNode node) {
+    /**
+     * Rejects unrelated inherited default methods (JLS 8.4.8 / 9.4.1).
+     * Uses each interface's own methods; {@code getAllDeclaredMethods()} would
+     * rebuild a hierarchy map per type and revisit inherited defaults.
+     */
+    private static void checkForDuplicateDefaultMethods(final ClassNode node) {
         if (node.getInterfaces().length < 2) return;
 
-        Map<String, MethodNode> defaultMethods = new HashMap<>(8);
-        Set<String> declared = node.getAllDeclaredMethods().stream()
-            .filter(m -> !m.isDefault())
-            .map(MethodNodeUtils::methodDescriptorWithoutReturnType)
-            .collect(Collectors.toSet());
-        node.getAllInterfaces().stream()
-                .flatMap(i -> i.getAllDeclaredMethods().stream())
-                .filter(MethodNode::isDefault)
-                .forEach(m -> {
-                    String signature = MethodNodeUtils.methodDescriptorWithoutReturnType(m);
-                    if (declared.contains(signature)) {
-                        return;
-                    }
-                    MethodNode existing = defaultMethods.get(signature);
-                    if (existing == null) {
-                        defaultMethods.put(signature, m);
-                        return;
-                    }
+        Map<String, MethodNode> defaultMethods = null;
+        Set<String> declared = null;
+        for (ClassNode iface : node.getAllInterfaces()) {
+            for (MethodNode method : iface.getMethods()) {
+                if (!method.isDefault()) continue;
 
-                    ClassNode existingDeclaringClass = existing.getDeclaringClass();
-                    ClassNode currentDeclaringClass = m.getDeclaringClass();
-                    if (!(existingDeclaringClass.equals(currentDeclaringClass)
-                            || existingDeclaringClass.implementsInterface(currentDeclaringClass)
-                            || currentDeclaringClass.implementsInterface(existingDeclaringClass))) {
-                        throw new RuntimeParserException(
-                                (node.isInterface() ? "interface" : "class") +  " " + node.getName()
-                                        + " inherits unrelated defaults for " + MethodNodeUtils.methodDescriptor(m, true)
-                                        + " from types " + existingDeclaringClass.getName()
-                                        + " and " + currentDeclaringClass.getName(), node);
-                    }
-                });
+                String signature = MethodNodeUtils.methodDescriptorWithoutReturnType(method);
+                if (declared != null && declared.contains(signature)) continue;
+
+                if (defaultMethods == null) {
+                    defaultMethods = new HashMap<>(8);
+                }
+                MethodNode existing = defaultMethods.putIfAbsent(signature, method);
+                if (existing == null) continue;
+
+                ClassNode existingDeclaringClass = existing.getDeclaringClass();
+                ClassNode currentDeclaringClass = method.getDeclaringClass();
+                if (existingDeclaringClass.equals(currentDeclaringClass)
+                        || existingDeclaringClass.implementsInterface(currentDeclaringClass)
+                        || currentDeclaringClass.implementsInterface(existingDeclaringClass)) {
+                    continue;
+                }
+
+                if (declared == null) {
+                    declared = collectNonDefaultMethodSignatures(node);
+                    if (declared.contains(signature)) continue;
+                }
+
+                throw new RuntimeParserException(
+                        (node.isInterface() ? "interface" : "class") +  " " + node.getName()
+                                + " inherits unrelated defaults for " + MethodNodeUtils.methodDescriptor(method, true)
+                                + " from types " + existingDeclaringClass.getName()
+                                + " and " + currentDeclaringClass.getName(), node);
+            }
+        }
+    }
+
+    /**
+     * Signatures of methods declared on {@code node} or a superclass. These hide
+     * inherited interface defaults; abstracts on other interfaces do not.
+     */
+    private static Set<String> collectNonDefaultMethodSignatures(final ClassNode node) {
+        Set<String> declared = null;
+        for (ClassNode cn = node; cn != null && !isObjectType(cn); cn = cn.getSuperClass()) {
+            for (MethodNode method : cn.getMethods()) {
+                if (method.isDefault()) continue;
+                if (declared == null) {
+                    declared = new HashSet<>();
+                }
+                declared.add(MethodNodeUtils.methodDescriptorWithoutReturnType(method));
+            }
+        }
+        return declared == null ? Collections.emptySet() : declared;
     }
 
     private static final String[] INVALID_COMPONENTS = {"clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait"};
