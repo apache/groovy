@@ -23,10 +23,10 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 
 /**
- * Represents a case statement within a {@link SwitchStatement}.
- * A case statement consists of a pattern (expression) to match against the switch control expression
- * and the statement to execute if the pattern matches. In Groovy, case patterns support various
- * expression types for flexible matching behavior.
+ * Represents a case arm of a {@link SwitchStatement} or a
+ * {@link org.codehaus.groovy.ast.expr.SwitchExpression}.
+ * A case consists of a pattern (expression) to match against the switch
+ * selector and the statement to execute if the pattern matches.
  *
  * @see {@link SwitchStatement}
  * @see {@link Statement}

@@ -216,6 +216,9 @@ public class SwitchExpressionWriter {
         Statement defaultStatement = expression.getDefaultStatement();
         if (defaultStatement != null && !defaultStatement.isEmpty()) {
             defaultStatement.visit(controller.getAcg());
+            if (maybeFallsThrough(defaultStatement)) {
+                throwUnmatchedSelector(selectorIndex, selectorType);
+            }
             return;
         }
         if (completeEnum) {
@@ -324,12 +327,18 @@ public class SwitchExpressionWriter {
                 && property.getProperty() instanceof ConstantExpression name) {
             return name.getText();
         }
-        if (expression instanceof VariableExpression variable
-                && (variable.getAccessedVariable() == null || variable.getAccessedVariable() instanceof DynamicVariable)) {
-            // a real local or parameter named like a constant is not a constant label
-            FieldNode field = enumType.getField(variable.getName());
-            if (field != null && field.isEnum()) {
-                return variable.getName();
+        if (expression instanceof VariableExpression variable) {
+            var accessed = variable.getAccessedVariable();
+            if (accessed instanceof FieldNode field && field.isEnum()
+                    && (field.getDeclaringClass() == null || field.getDeclaringClass().equals(enumType))) {
+                return field.getName();
+            }
+            if (accessed == null || accessed instanceof DynamicVariable) {
+                // a real local or parameter named like a constant is not a constant label
+                FieldNode field = enumType.getField(variable.getName());
+                if (field != null && field.isEnum()) {
+                    return variable.getName();
+                }
             }
         }
         if (expression instanceof ConstantExpression constant && enumType.isResolved()

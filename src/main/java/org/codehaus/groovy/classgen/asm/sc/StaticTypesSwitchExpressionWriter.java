@@ -36,8 +36,8 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +53,6 @@ import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.ILOAD;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.ISTORE;
 
 /**
  * Static-compilation writer for {@link SwitchExpression}. Emits
@@ -132,7 +131,7 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         }
         MethodNode dgm = methods.get(0);
         // Object.equals-style isCase is not a substitute for runtime dispatch
-        if (isObjectObjectIsCase(dgm)) {
+        if (isGenericObjectIsCase(dgm)) {
             return null;
         }
         return dgm;
@@ -148,11 +147,23 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
             }
         }
         List<MethodNode> best = chooseBestMethod(caseType, candidates, switchArg);
-        return best.size() == 1 ? best.get(0) : null;
+        return best.size() == 1 && !isGenericObjectIsCase(best.get(0)) ? best.get(0) : null;
     }
 
-    private static boolean isObjectObjectIsCase(final MethodNode method) {
-        return ClassHelper.isObjectType(method.getDeclaringClass());
+    /**
+     * {@code isCase(Object)} / {@code isCase(Object,Object)} is equals-style and
+     * must not replace {@code ScriptBytecodeAdapter.isCase}.
+     */
+    private static boolean isGenericObjectIsCase(final MethodNode method) {
+        if (ClassHelper.isObjectType(method.getDeclaringClass())) {
+            return true;
+        }
+        var parameters = method.getParameters();
+        if (method.isStatic() && parameters.length == 2) {
+            return ClassHelper.isObjectType(parameters[0].getType())
+                    && ClassHelper.isObjectType(parameters[1].getType());
+        }
+        return parameters.length == 1 && ClassHelper.isObjectType(parameters[0].getType());
     }
 
     //--------------------------------------------------------------------------
@@ -166,28 +177,22 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         ArmGroup<Integer> group = groupArms(expression.getCaseStatements(),
                 cs -> intConstant(cs.getExpression()));
         if (group.error) return true;
-        if (group.dispatch == null) return false;
-        ArmDispatch<Integer> dispatch = group.dispatch;
+        if (group.keys == null) return false;
 
-        MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
         Label defaultTarget = new Label();
 
         int intSelector = selectorIndex;
         if (!primitive) {
-            operandStack.load(selectorType, selectorIndex);
-            operandStack.remove(1);
-            mv.visitJumpInsn(IFNULL, defaultTarget);
+            jumpIfNull(selectorIndex, selectorType, defaultTarget);
             operandStack.load(selectorType, selectorIndex);
             operandStack.doGroovyCast(ClassHelper.int_TYPE);
             intSelector = compileStack.defineTemporaryVariable("$switchInt", ClassHelper.int_TYPE, true);
         }
 
-        emitIntSwitch(mv, dispatch.sortedIntKeys(), dispatch.sortedIntTargets(), defaultTarget, intSelector);
-        emitArmCode(expression.getCaseStatements(), dispatch.targetsByArm);
-        mv.visitLabel(defaultTarget);
-        writeDefaultOrThrow(expression, selectorIndex, selectorType, false);
+        emitIntSwitch(group.keys, group.targets, defaultTarget, intSelector);
+        finishArms(expression, group.targets, defaultTarget, selectorIndex, selectorType, false);
 
         if (!primitive) {
             compileStack.removeVar(intSelector);
@@ -195,24 +200,31 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         return true;
     }
 
-    private static void emitIntSwitch(final MethodVisitor mv, final int[] keys,
-            final Label[] targets, final Label defaultTarget, final int intSelector) {
+    private void emitIntSwitch(final List<Integer> keys, final List<Label> targets,
+            final Label defaultTarget, final int intSelector) {
+        TreeMap<Integer, Label> sorted = new TreeMap<>();
+        for (int i = 0; i < keys.size(); i += 1) {
+            sorted.put(keys.get(i), targets.get(i));
+        }
+        int[] keyArray = sorted.keySet().stream().mapToInt(Integer::intValue).toArray();
+        Label[] targetArray = sorted.values().toArray(Label[]::new);
+        MethodVisitor mv = controller.getMethodVisitor();
         mv.visitVarInsn(ILOAD, intSelector);
-        int min = keys[0];
-        int max = keys[keys.length - 1];
+        int min = keyArray[0];
+        int max = keyArray[keyArray.length - 1];
         long span = (long) max - (long) min + 1L;
         // same size heuristic javac uses: tableswitch if it is no larger than lookupswitch
         long tableSize = 12L + 4L * span;
-        long lookupSize = 8L + 8L * keys.length;
+        long lookupSize = 8L + 8L * keyArray.length;
         if (tableSize <= lookupSize) {
             Label[] table = new Label[(int) span];
-            java.util.Arrays.fill(table, defaultTarget);
-            for (int i = 0; i < keys.length; i += 1) {
-                table[keys[i] - min] = targets[i];
+            Arrays.fill(table, defaultTarget);
+            for (int i = 0; i < keyArray.length; i += 1) {
+                table[keyArray[i] - min] = targetArray[i];
             }
             mv.visitTableSwitchInsn(min, max, defaultTarget, table);
         } else {
-            mv.visitLookupSwitchInsn(defaultTarget, keys, targets);
+            mv.visitLookupSwitchInsn(defaultTarget, keyArray, targetArray);
         }
     }
 
@@ -225,25 +237,12 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         ArmGroup<String> group = groupArms(expression.getCaseStatements(),
                 cs -> stringConstant(cs.getExpression()));
         if (group.error) return true;
-        if (group.dispatch == null) return false;
-        ArmDispatch<String> dispatch = group.dispatch;
+        if (group.keys == null) return false;
 
-        MethodVisitor mv = controller.getMethodVisitor();
-        CompileStack compileStack = controller.getCompileStack();
         Label defaultTarget = new Label();
-        int caseIndexLocal = compileStack.defineTemporaryVariable("$switchCase", ClassHelper.int_TYPE, false);
-
-        OperandStack operandStack = controller.getOperandStack();
-        operandStack.load(selectorType, selectorIndex);
-        operandStack.remove(1);
-        mv.visitJumpInsn(IFNULL, defaultTarget);
-
-        emitStringIndexDispatch(selectorIndex, caseIndexLocal, dispatch.keys, dispatch.targets, defaultTarget);
-        emitArmCode(expression.getCaseStatements(), dispatch.targetsByArm);
-        mv.visitLabel(defaultTarget);
-        writeDefaultOrThrow(expression, selectorIndex, selectorType, false);
-
-        compileStack.removeVar(caseIndexLocal);
+        jumpIfNull(selectorIndex, selectorType, defaultTarget);
+        emitStringIndexDispatch(selectorIndex, group.keys, group.targets, defaultTarget);
+        finishArms(expression, group.targets, defaultTarget, selectorIndex, selectorType, false);
         return true;
     }
 
@@ -260,59 +259,50 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         ArmGroup<String> group = groupArms(expression.getCaseStatements(),
                 cs -> enumConstantName(cs.getExpression(), enumType));
         if (group.error) return true;
-        if (group.dispatch == null) return false;
-        ArmDispatch<String> dispatch = group.dispatch;
+        if (group.keys == null) return false;
 
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
         CompileStack compileStack = controller.getCompileStack();
 
         boolean hasDefault = expression.getDefaultStatement() != null && !expression.getDefaultStatement().isEmpty();
-        boolean complete = !hasDefault && dispatch.keys.size() == enumConstantCount(enumType);
+        boolean complete = !hasDefault && group.keys.size() == enumConstantCount(enumType);
 
         Label defaultTarget = new Label();
         // a null selector matches no constant label; with no default it must
         // throw ISE, never the complete-enum ICCE
         Label nullTarget = complete ? new Label() : defaultTarget;
-        operandStack.load(selectorType, selectorIndex);
-        operandStack.remove(1);
-        mv.visitJumpInsn(IFNULL, nullTarget);
+        jumpIfNull(selectorIndex, selectorType, nullTarget);
 
         operandStack.load(selectorType, selectorIndex);
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Enum", "name", "()Ljava/lang/String;", false);
         operandStack.replace(ClassHelper.STRING_TYPE);
         int nameLocal = compileStack.defineTemporaryVariable("$switchEnumName", ClassHelper.STRING_TYPE, true);
-        int caseIndexLocal = compileStack.defineTemporaryVariable("$switchCase", ClassHelper.int_TYPE, false);
 
-        emitStringIndexDispatch(nameLocal, caseIndexLocal, dispatch.keys, dispatch.targets, defaultTarget);
-        emitArmCode(expression.getCaseStatements(), dispatch.targetsByArm);
-
-        mv.visitLabel(defaultTarget);
-        writeDefaultOrThrow(expression, selectorIndex, selectorType, complete);
+        emitStringIndexDispatch(nameLocal, group.keys, group.targets, defaultTarget);
+        finishArms(expression, group.targets, defaultTarget, selectorIndex, selectorType, complete);
         if (nullTarget != defaultTarget) {
             mv.visitLabel(nullTarget);
             throwUnmatchedSelector(selectorIndex, selectorType);
         }
 
-        compileStack.removeVar(caseIndexLocal);
         compileStack.removeVar(nameLocal);
         return true;
     }
 
     /**
-     * Emits the Java 7 two-switch string dispatch: {@code lookupswitch} on
-     * {@code hashCode()} plus {@code equals} to pick a stable case index, then
-     * {@code tableswitch} on that index onto the arm targets.
+     * Emits {@code lookupswitch} on {@code hashCode()} plus {@code equals},
+     * jumping straight to the shared arm label. Fall-through keys already
+     * share that label, so a second index tableswitch is unnecessary.
      */
-    private void emitStringIndexDispatch(final int stringLocal, final int caseIndexLocal,
-            final List<String> ordered, final List<Label> targets, final Label defaultTarget) {
+    private void emitStringIndexDispatch(final int stringLocal, final List<String> keys,
+            final List<Label> targets, final Label defaultTarget) {
         Map<Integer, List<Integer>> hashToIndexes = new TreeMap<>();
-        for (int i = 0; i < ordered.size(); i += 1) {
-            hashToIndexes.computeIfAbsent(ordered.get(i).hashCode(), h -> new ArrayList<>()).add(i);
+        for (int i = 0; i < keys.size(); i += 1) {
+            hashToIndexes.computeIfAbsent(keys.get(i).hashCode(), h -> new ArrayList<>()).add(i);
         }
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
-        Label secondSwitch = new Label();
 
         operandStack.load(ClassHelper.STRING_TYPE, stringLocal);
         operandStack.doGroovyCast(ClassHelper.STRING_TYPE);
@@ -331,123 +321,110 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
             mv.visitLabel(hashTargets[i]);
             for (int index : hashToIndexes.get(hashes[i])) {
                 operandStack.load(ClassHelper.STRING_TYPE, stringLocal);
-                mv.visitLdcInsn(ordered.get(index));
+                mv.visitLdcInsn(keys.get(index));
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
                 operandStack.replace(ClassHelper.boolean_TYPE);
                 Label next = operandStack.jump(IFEQ);
-                mv.visitLdcInsn(index);
-                mv.visitVarInsn(ISTORE, caseIndexLocal);
-                mv.visitJumpInsn(GOTO, secondSwitch);
+                mv.visitJumpInsn(GOTO, targets.get(index));
                 mv.visitLabel(next);
             }
             mv.visitJumpInsn(GOTO, defaultTarget);
         }
-
-        mv.visitLabel(secondSwitch);
-        mv.visitVarInsn(ILOAD, caseIndexLocal);
-        mv.visitTableSwitchInsn(0, ordered.size() - 1, defaultTarget, targets.toArray(Label[]::new));
     }
 
     /**
-     * Walks arms from the last completing one backward so empty colon cases
-     * share the following arm's jump target. A trailing empty group or a
-     * duplicate constant is a compilation error, not a silent isCase fallback.
+     * Forward pass extracts every constant key (or skips the optimizer).
+     * Backward pass gives empty colon prefixes the following body's label.
      */
     private <K> ArmGroup<K> groupArms(final List<CaseStatement> caseStatements,
             final Function<CaseStatement, K> keyFn) {
         int n = caseStatements.size();
         if (n == 0) return ArmGroup.skip();
 
-        List<K> rawKeys = new ArrayList<>(n);
+        List<K> keys = new ArrayList<>(n);
+        Set<K> seen = new HashSet<>();
         for (CaseStatement caseStatement : caseStatements) {
             K key = keyFn.apply(caseStatement);
             if (key == null) return ArmGroup.skip();
-            rawKeys.add(key);
+            if (!seen.add(key)) {
+                addError("Duplicate case label: " + key, caseStatement);
+                return ArmGroup.error();
+            }
+            keys.add(key);
         }
 
-        Label[] targetsByArm = new Label[n];
+        Label[] targets = new Label[n];
         Label current = null;
         for (int i = n - 1; i >= 0; i -= 1) {
-            CaseStatement caseStatement = caseStatements.get(i);
-            if (!caseStatement.getCode().isEmpty() || caseStatement.isArrow()) {
+            if (!caseStatements.get(i).getCode().isEmpty()) {
                 current = new Label();
             }
             if (current == null) {
-                addError("the switch expression case does not complete with yield or throw", caseStatement);
+                addError("the switch expression case does not complete with yield or throw", caseStatements.get(i));
                 return ArmGroup.error();
             }
-            targetsByArm[i] = current;
+            targets[i] = current;
         }
-
-        List<K> uniqueKeys = new ArrayList<>(n);
-        List<Label> uniqueTargets = new ArrayList<>(n);
-        Map<K, Label> keyToTarget = new LinkedHashMap<>();
-        for (int i = 0; i < n; i += 1) {
-            K key = rawKeys.get(i);
-            if (keyToTarget.put(key, targetsByArm[i]) != null) {
-                addError("Duplicate case label: " + key, caseStatements.get(i));
-                return ArmGroup.error();
-            }
-            uniqueKeys.add(key);
-            uniqueTargets.add(targetsByArm[i]);
-        }
-        return ArmGroup.of(new ArmDispatch<>(uniqueKeys, uniqueTargets, targetsByArm, keyToTarget));
+        return ArmGroup.of(keys, Arrays.asList(targets));
     }
 
-    private void emitArmCode(final List<CaseStatement> caseStatements, final Label[] targetsByArm) {
+    private void emitArmCode(final List<CaseStatement> caseStatements, final List<Label> targets) {
         AsmClassGenerator acg = controller.getAcg();
         MethodVisitor mv = controller.getMethodVisitor();
-        Set<Label> emitted = new HashSet<>();
         for (int i = 0; i < caseStatements.size(); i += 1) {
             CaseStatement caseStatement = caseStatements.get(i);
-            if (caseStatement.getCode().isEmpty() && !caseStatement.isArrow()) {
+            if (caseStatement.getCode().isEmpty()) {
                 continue;
             }
-            Label target = targetsByArm[i];
-            if (emitted.add(target)) {
-                mv.visitLabel(target);
-            }
+            mv.visitLabel(targets.get(i));
             caseStatement.getCode().visit(acg);
         }
+    }
+
+    private void finishArms(final SwitchExpression expression, final List<Label> targets,
+            final Label defaultTarget, final int selectorIndex, final ClassNode selectorType,
+            final boolean completeEnum) {
+        emitArmCode(expression.getCaseStatements(), targets);
+        controller.getMethodVisitor().visitLabel(defaultTarget);
+        writeDefaultOrThrow(expression, selectorIndex, selectorType, completeEnum);
+    }
+
+    private void jumpIfNull(final int selectorIndex, final ClassNode selectorType, final Label target) {
+        OperandStack operandStack = controller.getOperandStack();
+        operandStack.load(selectorType, selectorIndex);
+        operandStack.remove(1);
+        controller.getMethodVisitor().visitJumpInsn(IFNULL, target);
     }
 
     private void addError(final String message, final CaseStatement caseStatement) {
         controller.getSourceUnit().addError(new SyntaxException(message, caseStatement));
     }
 
+    /**
+     * {@code keys == null && !error} means "not a constant switch, try the next
+     * optimizer". {@code error} means a compile error was already reported.
+     */
     private static final class ArmGroup<K> {
-        final ArmDispatch<K> dispatch;
+        final List<K> keys;
+        final List<Label> targets;
         final boolean error;
 
-        private ArmGroup(final ArmDispatch<K> dispatch, final boolean error) {
-            this.dispatch = dispatch;
+        private ArmGroup(final List<K> keys, final List<Label> targets, final boolean error) {
+            this.keys = keys;
+            this.targets = targets;
             this.error = error;
         }
 
         static <K> ArmGroup<K> skip() {
-            return new ArmGroup<>(null, false);
+            return new ArmGroup<>(null, null, false);
         }
 
         static <K> ArmGroup<K> error() {
-            return new ArmGroup<>(null, true);
+            return new ArmGroup<>(null, null, true);
         }
 
-        static <K> ArmGroup<K> of(final ArmDispatch<K> dispatch) {
-            return new ArmGroup<>(dispatch, false);
-        }
-    }
-
-    private record ArmDispatch<K>(List<K> keys, List<Label> targets, Label[] targetsByArm, Map<K, Label> keyToTarget) {
-        int[] sortedIntKeys() {
-            return keyToTarget.keySet().stream().mapToInt(k -> (Integer) k).sorted().toArray();
-        }
-
-        Label[] sortedIntTargets() {
-            TreeMap<Integer, Label> sorted = new TreeMap<>();
-            for (Map.Entry<K, Label> entry : keyToTarget.entrySet()) {
-                sorted.put((Integer) entry.getKey(), entry.getValue());
-            }
-            return sorted.values().toArray(Label[]::new);
+        static <K> ArmGroup<K> of(final List<K> keys, final List<Label> targets) {
+            return new ArmGroup<>(keys, targets, false);
         }
     }
 }
