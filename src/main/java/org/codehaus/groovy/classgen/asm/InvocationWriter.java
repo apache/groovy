@@ -37,6 +37,9 @@ import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -752,6 +755,14 @@ public class InvocationWriter {
 
         String ownerDescriptor = prepareConstructorCall(ctor);
 
+        // Cast arguments carry their cast type in a wrapper only when the
+        // generated constructor delegates to super through the dynamic
+        // selection path, which unwraps them (GROOVY-6285, GROOVY-9244). A
+        // statically bound super call consumes its arguments with a plain
+        // cast, so a wrapper would reach that cast intact and fail there
+        // (GROOVY-12232).
+        boolean wrapCastArguments = delegatesToSuperDynamically(ctor);
+
         List<Expression> args = makeArgumentList(call.getArguments()).getExpressions();
         // if a this appears as parameter here, then it should be
         // not static, unless we are in a static method. But since
@@ -767,7 +778,7 @@ public class InvocationWriter {
                 loadVariableWithReference(var);
             } else {
                 arg.visit(controller.getAcg());
-                if (arg instanceof CastExpression && !isPrimitiveType(arg.getType())) {
+                if (wrapCastArguments && arg instanceof CastExpression && !isPrimitiveType(arg.getType())) {
                     controller.getAcg().loadWrapper(arg); // GROOVY-6285, GROOVY-9244
                 }
             }
@@ -776,6 +787,53 @@ public class InvocationWriter {
         controller.getCompileStack().popImplicitThis();
         finnishConstructorCall(ctor, ownerDescriptor, args.size());
         return true;
+    }
+
+    /**
+     * Whether the given generated constructor (of an anonymous inner class)
+     * will delegate to its super constructor through the dynamic
+     * {@code selectConstructorAndTransformArguments} path rather than a direct
+     * {@code invokespecial}. Mirrors the choice made when the constructor
+     * itself is compiled: {@link #makeDirectConstructorCall} binds directly
+     * only for a spread-free argument list with an arity-unique candidate.
+     */
+    private static boolean delegatesToSuperDynamically(final ConstructorNode ctor) {
+        // the generated constructor's super call is not necessarily the first
+        // statement (the this$0 assignment may precede it)
+        ConstructorCallExpression superCall = null;
+        Statement code = ctor.getCode();
+        List<Statement> statements = code instanceof BlockStatement block
+                ? block.getStatements() : List.of(code);
+        for (Statement statement : statements) {
+            if (statement instanceof ExpressionStatement es
+                    && es.getExpression() instanceof ConstructorCallExpression cce
+                    && cce.isSuperCall()) {
+                superCall = cce;
+                break;
+            }
+        }
+        if (superCall == null) {
+            return false; // no super delegation to select for
+        }
+        List<Expression> superArgs = makeArgumentList(superCall.getArguments()).getExpressions();
+        for (Expression arg : superArgs) {
+            if (arg instanceof SpreadExpression) return true;
+        }
+        int nArguments = superArgs.size();
+        ConstructorNode match = null, varg = null;
+        for (ConstructorNode constructor : ctor.getDeclaringClass().getSuperClass().getDeclaredConstructors()) {
+            int nParameters = constructor.getParameters().length;
+            if (nArguments == nParameters) {
+                if (match == null) match = constructor;
+                else return true; // ambiguous match
+            } else if (isVargs(constructor.getParameters())
+                    && (nArguments == nParameters - 1 || nArguments > nParameters)) {
+                if (varg == null) varg = constructor;
+                else return true; // ambiguous match
+            }
+        }
+        if (match == null) match = varg;
+        return match == null;
     }
 
     private void loadVariableWithReference(final VariableExpression var) {
