@@ -323,6 +323,43 @@ stub generation is done, for the joint compiler.
 
 However, overriding `CompilationUnit` is not recommended and should only be done if no other standard solution works.
 
+== Class loader release in managed environments
+
+Applications that load and discard Groovy repeatedly — a web container performing (parallel)
+redeployments with Groovy inside each web application, plugin systems, or any host that expects
+class loaders to be garbage collected — need one extra consideration.
+
+Groovy associates runtime metadata (`ClassInfo`) with every class it dispatches on, including
+JDK classes such as `String`. By default those associations use `java.lang.ClassValue`, which
+gives the fastest possible lookup, but a long-standing JVM issue
+(https://bugs.openjdk.org/browse/JDK-8136353[JDK-8136353]) prevents such associations on
+long-lived classes from ever releasing their value — and with it the Groovy class loader the
+value belongs to. In a container this shows up as metaspace growth on every redeployment, even
+after the old application is undeployed.
+
+Two supported measures release the class loader; either one suffices:
+
+* Start the JVM with `-Dgroovy.use.classvalue=false`. Groovy then stores the associations in a
+  weak-key map instead of `ClassValue`. The trade-off is a hash lookup where `ClassValue` has a
+  per-class fast path; for most applications the difference is not measurable.
+* Clean up explicitly when the application is discarded (for example from
+  `ServletContextListener#contextDestroyed`):
++
+[source,groovy]
+----
+import org.codehaus.groovy.reflection.ClassInfo
+
+for (ClassInfo ci : ClassInfo.getAllClassInfo()) {
+    Class<?> c = ci.theClass
+    if (c != null) ClassInfo.remove(c)
+}
+----
+
+NOTE: Groovy itself starts no non-terminating background threads, so no thread of Groovy's will
+pin the class loader. Threads started by user code (including via `Thread.start` from scripts, or
+executors created by scripts) capture the creating context and must be shut down by the
+application as usual.
+
 include::../../../subprojects/groovy-jsr223/src/spec/doc/_integrating-jsr223.adoc[leveloffset=+1]
 
 

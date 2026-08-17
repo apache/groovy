@@ -18,11 +18,24 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue;
 import org.codehaus.groovy.reflection.v7.GroovyClassValueJava7;
 
 class GroovyClassValueFactory {
+	/**
+	 * Escape hatch for deployments where {@code java.lang.ClassValue} pins
+	 * class loaders (JDK-8136353): associations on immortal classes never
+	 * release their value's loader, leaking every Groovy copy a container
+	 * deploys and undeploys (GROOVY-12142). Set
+	 * {@code -Dgroovy.use.classvalue=false} at JVM startup to use a weak-key
+	 * map instead; the default remains ClassValue for its per-Class fast path.
+	 */
+	private static final boolean USE_CLASSVALUE = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.use.classvalue", "true"));
+
 	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue) {
-		return new GroovyClassValueJava7<>(computeValue);
+		return (USE_CLASSVALUE)
+				? new GroovyClassValueJava7<>(computeValue)
+				: new GroovyClassValueMapBased<>(computeValue);
 	}
 }

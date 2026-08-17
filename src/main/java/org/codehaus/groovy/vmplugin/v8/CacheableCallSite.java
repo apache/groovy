@@ -19,7 +19,6 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import org.apache.groovy.util.SystemUtil;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
 import java.lang.invoke.MethodHandle;
@@ -29,11 +28,7 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.ref.SoftReference;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Represents a cacheable call site, which can reduce the cost of resolving methods
@@ -106,12 +101,18 @@ public class CacheableCallSite extends MutableCallSite {
         }
     }
 
+    /**
+     * Sweeps GC-cleared cache entries inline; both call sites already hold the
+     * {@code lruCache} monitor and the cache is bounded by {@code CACHE_SIZE},
+     * so the sweep is trivial. A background cleaner thread (the former
+     * {@code PIC-Cleaner} daemon) must not be used here: a never-terminating
+     * thread started from a static initializer keeps its defining class loader
+     * reachable for the life of the JVM — and captures the creating context's
+     * protection domains — leaking every container redeployment
+     * (GROOVY-12142).
+     */
     private void removeAllStaleEntriesOfLruCache() {
-        CACHE_CLEANER_QUEUE.offer(() -> {
-            synchronized (lruCache) {
-                lruCache.values().removeIf(v -> null == v.get());
-            }
-        });
+        lruCache.values().removeIf(v -> null == v.get());
     }
 
     public long incrementFallbackCount() {
@@ -147,21 +148,4 @@ public class CacheableCallSite extends MutableCallSite {
         return lookup;
     }
 
-    private static final BlockingQueue<Runnable> CACHE_CLEANER_QUEUE = new LinkedBlockingQueue<>();
-    static {
-        Thread cacheCleaner = new Thread(() -> {
-            while (true) {
-                try {
-                    CACHE_CLEANER_QUEUE.take().run();
-                } catch (Throwable ignore) {
-                    Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.finest(DefaultGroovyMethods.asString(ignore));
-                    }
-                }
-            }
-        }, "PIC-Cleaner");
-        cacheCleaner.setDaemon(true);
-        cacheCleaner.start();
-    }
 }
