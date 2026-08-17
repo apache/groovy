@@ -20,16 +20,10 @@ package org.apache.groovy.parser.antlr4.internal.atnmanager;
 
 import org.antlr.v4.runtime.atn.ATN;
 import org.apache.groovy.util.SystemUtil;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Manage ATN to avoid memory leak
@@ -40,8 +34,7 @@ public abstract class AtnManager {
     public static final ReentrantReadWriteLock.ReadLock READ_LOCK = RRWL.readLock();
     private static final String DFA_CACHE_THRESHOLD_OPT = "groovy.antlr4.cache.threshold";
     private static final long DFA_CACHE_THRESHOLD;
-    private final ReferenceQueue<AtnWrapper> atnWrapperReferenceQueue = new ReferenceQueue<>();
-    private AtnWrapperSoftReference atnWrapperSoftReference;
+    private SoftReference<AtnWrapper> atnWrapperSoftReference;
 
     static {
         long t = SystemUtil.getLongSafe(DFA_CACHE_THRESHOLD_OPT, 0L);
@@ -50,26 +43,6 @@ public abstract class AtnManager {
         }
 
         DFA_CACHE_THRESHOLD = t;
-    }
-
-    {
-        Thread cleanupThread = new Thread(() -> {
-            while (true) {
-                try {
-                    Reference<? extends AtnWrapper> reference = atnWrapperReferenceQueue.remove();
-                    if (reference instanceof AtnWrapperSoftReference atnWrapperSoftReference && shouldClearDfaCache() && isSmartCleanupEnabled()) {
-                        atnWrapperSoftReference.getAtnManager().getAtnWrapper(false).clearDFA();
-                    }
-                } catch (Throwable t) {
-                    Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
-                    if (logger.isLoggable(Level.WARNING)) {
-                        logger.warning(DefaultGroovyMethods.asString(t));
-                    }
-                }
-            }
-        }, "DFA-cache-cleaner[" + this.getClass().getSimpleName() + "]");
-        cleanupThread.setDaemon(true);
-        cleanupThread.start();
     }
 
     private static boolean isSmartCleanupEnabled() {
@@ -93,9 +66,22 @@ public abstract class AtnManager {
 
         AtnWrapper atnWrapper;
         synchronized (this) {
-            if (null == atnWrapperSoftReference || null == (atnWrapper = atnWrapperSoftReference.get())) {
+            if (null == atnWrapperSoftReference) {
                 atnWrapper = createAtnWrapper();
-                atnWrapperSoftReference = new AtnWrapperSoftReference(atnWrapper, this, atnWrapperReferenceQueue);
+                atnWrapperSoftReference = new SoftReference<>(atnWrapper);
+            } else if (null == (atnWrapper = atnWrapperSoftReference.get())) {
+                // The softly referenced wrapper is a GC canary: its collection
+                // signals memory pressure, so drop the shared DFA cache along
+                // with allocating the replacement. Detected here on the parse
+                // path rather than by a reference-queue thread — a cleanup
+                // thread per manager can never terminate and so pins the
+                // defining class loader for the life of the JVM, leaking every
+                // container redeployment (GROOVY-12142).
+                atnWrapper = createAtnWrapper();
+                if (shouldClearDfaCache() && isSmartCleanupEnabled()) {
+                    atnWrapper.clearDFA();
+                }
+                atnWrapperSoftReference = new SoftReference<>(atnWrapper);
             }
         }
         return atnWrapper;
@@ -132,19 +118,6 @@ public abstract class AtnManager {
             } finally {
                 WRITE_LOCK.unlock();
             }
-        }
-    }
-
-    private static class AtnWrapperSoftReference extends SoftReference<AtnWrapper> {
-        private final AtnManager atnManager;
-
-        public AtnWrapperSoftReference(AtnWrapper referent, AtnManager atnManager, ReferenceQueue<? super AtnWrapper> q) {
-            super(referent, q);
-            this.atnManager = atnManager;
-        }
-
-        public AtnManager getAtnManager() {
-            return atnManager;
         }
     }
 }
