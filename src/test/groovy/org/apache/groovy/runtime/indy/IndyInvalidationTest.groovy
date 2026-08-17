@@ -412,21 +412,28 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void setStrongMetaClass_firstInstall_bumpsVersionWithoutSwitchPoint() {
+    void setStrongMetaClass_firstInstall_bumpsVersionAndRetiresPreInstallGeneration() {
         def info = ClassInfo.getClassInfo(LocalGen)
         info.setStrongMetaClass(null)
         info.setWeakMetaClass(null)
         int versionBefore = info.version
 
+        // A site linked before the install guards the pre-install generation of
+        // the class domain; the install must retire it so that site re-links.
+        SwitchPoint preInstall = info.indySwitchPoint
+        assertFalse(preInstall.hasBeenInvalidated())
+
         def mc = new groovy.lang.MetaClassImpl(LocalGen)
         mc.initialize()
-        SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
-        assertFalse(sp.hasBeenInvalidated())
         info.setStrongMetaClass(mc)
 
         assertEquals(versionBefore + 1, info.version)
-        assertFalse(sp.hasBeenInvalidated(), 'first install must not invalidate MetaClass SwitchPoint')
-        assertSame(sp, info.indySwitchPoint)
+        assertTrue(preInstall.hasBeenInvalidated(), 'install must retire the pre-install generation')
+        SwitchPoint postInstall = info.indySwitchPoint
+        assertNotSame(preInstall, postInstall)
+        assertFalse(postInstall.hasBeenInvalidated())
+        assertSame(postInstall, IndyInvalidation.switchPointForMetaClass(mc),
+                'installed MetaClass shares the class domain')
         info.setStrongMetaClass(null)
     }
 
@@ -475,14 +482,14 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void newPendingInvalidator_createsIndependentDomain() {
-        def a = IndyInvalidation.newPendingInvalidator()
-        def b = IndyInvalidation.newPendingInvalidator()
-        SwitchPoint spa = a.switchPoint
-        SwitchPoint spb = b.switchPoint
-        a.invalidate()
+    void classDomains_areIndependentAcrossClasses() {
+        SwitchPoint spa = IndyInvalidation.classSwitchPointFor(ClassA)
+        SwitchPoint spb = IndyInvalidation.classSwitchPointFor(ClassB)
+        assertNotSame(spa, spb)
+        IndyInvalidation.invalidateClass(ClassA)
         assertTrue(spa.hasBeenInvalidated())
         assertFalse(spb.hasBeenInvalidated())
+        IndyInvalidation.invalidateClass(ClassB)
     }
 
     @Test
@@ -529,17 +536,95 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void hasClassLevelMetaClass_weakOnly_firstInstallDoesNotRetire() {
+    void setWeakMetaClass_firstInstall_retiresPreInstallGeneration() {
         def info = ClassInfo.getClassInfo(WeakOnlyHost)
         info.setStrongMetaClass(null)
         info.setWeakMetaClass(null)
+        SwitchPoint preInstall = info.indySwitchPoint
         def mc = new groovy.lang.MetaClassImpl(WeakOnlyHost)
         mc.initialize()
-        SwitchPoint sp = IndyInvalidation.switchPointForMetaClass(mc)
         info.setWeakMetaClass(mc)
-        assertFalse(sp.hasBeenInvalidated())
-        assertSame(sp, info.indySwitchPoint)
+        assertTrue(preInstall.hasBeenInvalidated())
+        assertSame(info.indySwitchPoint, IndyInvalidation.switchPointForMetaClass(mc),
+                'weak-installed MetaClass shares the class domain')
         info.setWeakMetaClass(null)
+    }
+
+    @Test
+    void invalidateClass_reachesDomainAfterMetaClassCollected() {
+        // The headline property of ClassInfo-owned domains: a site guarded on
+        // the class domain stays reachable by exact-class invalidation even
+        // after the MetaClass *object* has been collected (optimised POJO
+        // handles do not pin the MetaClass).
+        def info = ClassInfo.getClassInfo(CollectedMcHost)
+        def mc = new groovy.lang.MetaClassImpl(CollectedMcHost)
+        mc.initialize()
+        info.setWeakMetaClass(mc)
+        SwitchPoint linked = IndyInvalidation.classSwitchPointFor(CollectedMcHost)
+        assertFalse(linked.hasBeenInvalidated())
+
+        // Simulate the weak MetaClass being collected (deterministic: clear the ref).
+        def field = ClassInfo.getDeclaredField('weakMetaClass')
+        field.accessible = true
+        ((org.codehaus.groovy.util.ManagedReference) field.get(info)).clear()
+        assertEquals(null, info.metaClassForClass)
+
+        IndyInvalidation.invalidateClass(CollectedMcHost)
+        assertTrue(linked.hasBeenInvalidated(),
+                'exact-class invalidation must reach guards after MetaClass collection')
+    }
+
+    @Test
+    void discardedClassDomain_isReclaimedAfterClassCollected() {
+        def (SwitchPoint orphan, WeakReference clsRef) = linkThrowawayClass()
+        assertTrue(orphan != null && !orphan.hasBeenInvalidated())
+        boolean classCollected = false
+        boolean reclaimed = false
+        for (int i = 0; i < 200 && !reclaimed; i++) {
+            System.gc()
+            if (i == 20 && clsRef.get() != null) {
+                // The class is typically only softly reachable (CachedClass
+                // chain); soft refs are cleared under memory pressure, not by
+                // System.gc(), so apply pressure once.
+                forceSoftReferenceClearing()
+            }
+            // Managed-reference creation pumps the shared weak-bundle manager,
+            // which delivers the domain reclaim for the collected ClassInfo.
+            new org.codehaus.groovy.util.ManagedReference<Object>(
+                    org.codehaus.groovy.util.ReferenceBundle.getWeakBundle(), new Object())
+            classCollected = classCollected || clsRef.get() == null
+            reclaimed = orphan.hasBeenInvalidated()
+            if (!reclaimed) Thread.sleep(10)
+        }
+        assertTrue(reclaimed, classCollected
+                ? 'class was collected but its domain was never reclaimed'
+                : 'throwaway class was never collected (test-setup retention?)')
+    }
+
+    /** Allocates until OutOfMemoryError so the JVM clears soft references first. */
+    private static void forceSoftReferenceClearing() {
+        try {
+            def hog = []
+            while (true) {
+                hog << new byte[(int) Math.max(1024L, Runtime.runtime.freeMemory() >> 2)]
+            }
+        } catch (OutOfMemoryError expected) {
+            // soft refs are guaranteed cleared before OOME; discard the hog
+        }
+    }
+
+    /**
+     * Links a guard for a class from a throwaway classloader, then drops every
+     * reference WITHOUT {@code close()}: closing calls
+     * {@code InvokerHelper.removeClass}, which already retires the domain
+     * deterministically — the reclaim reference exists for loaders that are
+     * simply dropped.
+     */
+    private static List linkThrowawayClass() {
+        def gcl = new GroovyClassLoader()
+        Class<?> cls = gcl.parseClass('class ThrowawayDomainHost {}', 'ThrowawayDomainHost.groovy')
+        SwitchPoint sp = IndyInvalidation.classSwitchPointFor(cls)
+        return [sp, new WeakReference(cls)]
     }
 
     @Test
@@ -565,17 +650,17 @@ final class IndyInvalidationTest {
     }
 
     @Test
-    void classSwitchPointFor_pendingUntilMetaClassInstalled() {
+    void classSwitchPointFor_preInstallGenerationRetiredOnInstall() {
         def type = FreshMcHost
         def info = ClassInfo.getClassInfo(type)
         GroovySystem.metaClassRegistry.removeMetaClass(type)
-        SwitchPoint pending = IndyInvalidation.classSwitchPointFor(type)
-        assertSame(info.pendingIndySwitchPoint, pending)
-        assertFalse(pending.hasBeenInvalidated())
+        SwitchPoint preInstall = IndyInvalidation.classSwitchPointFor(type)
+        assertSame(info.indySwitchPoint, preInstall)
+        assertFalse(preInstall.hasBeenInvalidated())
         def mc = new groovy.lang.MetaClassImpl(type)
         mc.initialize()
         info.strongMetaClass = mc
-        assertTrue(pending.hasBeenInvalidated())
+        assertTrue(preInstall.hasBeenInvalidated())
         SwitchPoint post = IndyInvalidation.classSwitchPointFor(type)
         assertSame(IndyInvalidation.switchPointForMetaClass(mc), post)
         assertFalse(post.hasBeenInvalidated())
@@ -616,6 +701,7 @@ final class IndyInvalidationTest {
     private static final class LocalGenReplace {}
     private static final class LocalGenWeak {}
     private static final class WeakOnlyHost {}
+    private static final class CollectedMcHost {}
     private static final class ClearedIncVersionHost {}
     private static interface Marker {}
     private static final class MarkerImpl implements Marker {}

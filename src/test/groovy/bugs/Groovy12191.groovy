@@ -662,19 +662,19 @@ final class Groovy12191 {
      * MetaClass when present.
      */
     @Test
-    void metaClassOwnsSwitchPoint_singleDomainViaIdentityMap() {
+    void classOwnsSwitchPoint_singleDomainSharedByMetaClassGenerations() {
         def info = ClassInfo.getClassInfo(McOwnerHost)
         try {
             info.strongMetaClass = null
             info.weakMetaClass = null
             def mc = new MetaClassImpl(McOwnerHost)
             mc.initialize()
-            SwitchPoint onMc = IndyInvalidation.switchPointForMetaClass(mc)
             info.strongMetaClass = mc
-            assertSame(onMc, info.indySwitchPoint)
-            assertSame(onMc, IndyInvalidation.classSwitchPointFor(McOwnerHost))
+            SwitchPoint domainSp = IndyInvalidation.switchPointForMetaClass(mc)
+            assertSame(domainSp, info.indySwitchPoint)
+            assertSame(domainSp, IndyInvalidation.classSwitchPointFor(McOwnerHost))
             def custom = new groovy.lang.DelegatingMetaClass(mc) {}
-            assertSame(onMc, IndyInvalidation.switchPointForMetaClass(custom))
+            assertSame(domainSp, IndyInvalidation.switchPointForMetaClass(custom))
         } finally {
             GroovySystem.metaClassRegistry.removeMetaClass(McOwnerHost)
         }
