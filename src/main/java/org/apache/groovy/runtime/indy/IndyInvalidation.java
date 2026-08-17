@@ -24,9 +24,10 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassRegistryChangeEvent;
 import org.apache.groovy.util.SystemUtil;
-import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.util.ManagedReference;
+import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
@@ -41,11 +42,13 @@ import java.util.logging.Logger;
  * Scoped invokedynamic {@link SwitchPoint} invalidation for the Groovy MOP
  * (GROOVY-12191).
  * <p>
- * <b>Domain:</b> one SwitchPoint per {@link MetaClass} instance (weak identity
- * map here). When no class-level MetaClass is installed yet, sites use a
- * ClassInfo <em>pending</em> domain (retired on first install). Monomorphic
- * indy sites install a single {@code guardWithTest} on the class-level domain
- * observed at link time.
+ * <b>Domain:</b> one SwitchPoint domain per {@link Class}, owned by its
+ * {@link ClassInfo} and covering every MetaClass generation of that class
+ * (pre-MetaClass link included). The domain outlives the MetaClass
+ * <em>object</em>, so exact-class invalidation still reaches installed guards
+ * after a soft/weak MetaClass has been collected. Monomorphic indy sites
+ * install a single {@code guardWithTest} on the class-level domain observed
+ * at link time.
  *
  * <h2>Width policy (two axes only)</h2>
  * <ul>
@@ -88,24 +91,48 @@ public final class IndyInvalidation {
 
     private static final SwitchPoint[] EMPTY_SWITCH_POINTS = new SwitchPoint[0];
 
-    /**
-     * Weak identity map: each MetaClass instance → its SwitchPoint domain.
-     * Keys are weakly held so discarded MetaClasses do not pin domains.
-     */
-    private static final ManagedIdentityConcurrentMap<MetaClass, SwitchPointInvalidator> DOMAINS =
-            new ManagedIdentityConcurrentMap<>();
-
     private IndyInvalidation() {
     }
 
     /**
-     * Creates a SwitchPoint invalidator for a ClassInfo pending domain
-     * (pre-MetaClass link only).
+     * Anchors a reclaim reference for a ClassInfo-owned class domain: when the
+     * ClassInfo (and with it the class) becomes unreachable while the domain
+     * still has a live registered SwitchPoint, the reference is delivered by
+     * the shared {@link ReferenceBundle weak-bundle} manager and the domain is
+     * retired — installed guards keep only the SwitchPoint's internal invoker
+     * reachable, so retiring the orphan forces straggler sites to re-link,
+     * which is always safe.
+     * <p>
+     * Reachability: the live-SwitchPoint registry holds the invalidator
+     * strongly, and the invalidator holds the reclaim reference, so cleanup
+     * stays reachable exactly as long as there is something to clean; once the
+     * domain is retired the whole chain becomes collectable.
      *
-     * @return a new invalidator
+     * @param owner  the ClassInfo owning the domain (must not be {@code null})
+     * @param domain the class-level domain (must not be {@code null})
      */
-    public static SwitchPointInvalidator newPendingInvalidator() {
-        return new SwitchPointInvalidator();
+    public static void anchorClassDomain(final ClassInfo owner, final SwitchPointInvalidator domain) {
+        domain.setReclaimAnchor(new DomainReclaim(owner, domain));
+    }
+
+    /**
+     * Weak reference to a domain's owning ClassInfo whose collection retires
+     * the domain. Processed by the shared weak-bundle {@code ReferenceManager},
+     * which is pumped by managed-reference creation across the runtime.
+     */
+    private static final class DomainReclaim extends ManagedReference<ClassInfo> {
+        private final SwitchPointInvalidator domain;
+
+        DomainReclaim(final ClassInfo owner, final SwitchPointInvalidator domain) {
+            super(ReferenceBundle.getWeakBundle(), owner);
+            this.domain = domain;
+        }
+
+        @Override
+        public void finalizeReference() {
+            domain.invalidate();
+            super.finalizeReference();
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -147,7 +174,7 @@ public final class IndyInvalidation {
      * category state. No separate category SwitchPoint on the hot path.
      */
     public static void invalidateCategory() {
-        retireAllLoadedDomains();
+        retireLiveDomains();
         CATEGORY_INVALIDATIONS.incrementAndGet();
         if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
             LOG.fine("category bulk invalidation; total=" + CATEGORY_INVALIDATIONS.get());
@@ -160,7 +187,7 @@ public final class IndyInvalidation {
      * stock miss walk. Rare.
      */
     public static void invalidateBulk() {
-        retireAllLoadedDomains();
+        retireLiveDomains();
         BULK_INVALIDATIONS.incrementAndGet();
         if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
             LOG.fine("custom-MetaClass bulk invalidation; totalBulk=" + BULK_INVALIDATIONS.get());
@@ -172,7 +199,7 @@ public final class IndyInvalidation {
      * {@code Class} attribution.
      */
     public static void invalidateUnscoped() {
-        retireAllLoadedDomains();
+        retireLiveDomains();
         BULK_INVALIDATIONS.incrementAndGet();
         if (STATS_LOG && LOG.isLoggable(Level.FINE)) {
             LOG.fine("unscoped bulk invalidation; totalBulk=" + BULK_INVALIDATIONS.get());
@@ -180,15 +207,21 @@ public final class IndyInvalidation {
     }
 
     /**
-     * Detaches and invalidates every live class-level MetaClass / pending domain
-     * for loaded types. Shared implementation for all process-wide entries.
+     * Detaches and invalidates every live class domain via the live-SwitchPoint
+     * registry — O(live domains). Shared implementation for all process-wide
+     * entries.
+     * <p>
+     * Skipped entirely while the registry is empty, e.g. classic-only bytecode
+     * never installs indy MOP guards: registration precedes SwitchPoint
+     * publication, so an empty observation proves there was nothing to retire.
      */
-    private static void retireAllLoadedDomains() {
+    private static void retireLiveDomains() {
+        if (!SwitchPointInvalidator.hasLiveSwitchPoints()) {
+            return;
+        }
         List<SwitchPoint> batch = new ArrayList<>();
         try {
-            for (ClassInfo info : ClassInfo.getAllClassInfo()) {
-                info.collectLiveIndySwitchPoints(batch);
-            }
+            SwitchPointInvalidator.drainLive(batch);
         } finally {
             invalidateBatch(batch);
         }
@@ -282,45 +315,12 @@ public final class IndyInvalidation {
     }
 
     // -------------------------------------------------------------------------
-    // Domain map
+    // Domain access
     // -------------------------------------------------------------------------
 
     /**
-     * Domain key for a MetaClass (unwrapped adaptee when present).
-     */
-    private static MetaClass domainKey(final MetaClass mc) {
-        MetaClass unwrapped = unwrapMetaClass(mc);
-        return unwrapped != null ? unwrapped : mc;
-    }
-
-    private static SwitchPointInvalidator domainFor(final MetaClass key) {
-        return DOMAINS.applyIfAbsent(key, k -> new SwitchPointInvalidator());
-    }
-
-    /**
-     * Detaches the live SwitchPoint for {@code mc}'s domain (if any) into
-     * {@code out}. Does not allocate a domain when none exists yet.
-     *
-     * @param mc  MetaClass (may be {@code null})
-     * @param out destination list (must not be {@code null})
-     */
-    public static void collectLiveForMetaClass(final MetaClass mc, final List<SwitchPoint> out) {
-        if (mc == null) {
-            return;
-        }
-        SwitchPointInvalidator inv = DOMAINS.get(domainKey(mc));
-        if (inv == null) {
-            return;
-        }
-        SwitchPoint sp = inv.detachLive();
-        if (sp != null) {
-            out.add(sp);
-        }
-    }
-
-    /**
-     * Collects live SwitchPoint(s) for {@code type}: installed MetaClass domain
-     * and ClassInfo pending domain. Does not create a MetaClass.
+     * Collects the live SwitchPoint (if any) of {@code type}'s class domain.
+     * Does not create a MetaClass and does not allocate a domain generation.
      *
      * @param type class to inspect (must not be {@code null})
      * @param out  destination list
@@ -359,19 +359,23 @@ public final class IndyInvalidation {
     }
 
     /**
-     * Returns the SwitchPoint domain for a MetaClass instance (unwraps adapters).
+     * Returns the class-domain SwitchPoint for a MetaClass. The domain belongs
+     * to {@link MetaClass#getTheClass() the class}, not the MetaClass instance,
+     * so every generation (and every adapter wrapping) of a class's MetaClass
+     * shares one domain.
      *
      * @param mc MetaClass (must not be {@code null})
-     * @return the MetaClass-domain SwitchPoint
+     * @return the class-domain SwitchPoint
      */
     public static SwitchPoint switchPointForMetaClass(final MetaClass mc) {
         Objects.requireNonNull(mc, "mc");
-        return domainFor(domainKey(mc)).getSwitchPoint();
+        return classSwitchPointFor(mc.getTheClass());
     }
 
     /**
-     * Retires the SwitchPoint domain for {@code mc} (if one was allocated).
-     * Does not bump counters (local domain retire; width policy is separate).
+     * Retires the class domain of {@code mc}'s class (if a generation was
+     * allocated). Does not bump counters (local domain retire; width policy is
+     * separate).
      *
      * @param mc MetaClass (may be {@code null})
      */
@@ -380,7 +384,7 @@ public final class IndyInvalidation {
             return;
         }
         List<SwitchPoint> batch = new ArrayList<>(1);
-        collectLiveForMetaClass(mc, batch);
+        collectLiveForClass(mc.getTheClass(), batch);
         invalidateBatch(batch);
     }
 
@@ -395,20 +399,15 @@ public final class IndyInvalidation {
     }
 
     /**
-     * Returns the SwitchPoint for the given class at link time.
-     * Prefers the installed class-level MetaClass domain; if none is installed
-     * yet, uses the ClassInfo pending domain (defineClass-safe).
+     * Returns the SwitchPoint for the given class at link time: the current
+     * generation of the ClassInfo-owned class domain (defineClass-safe — does
+     * not create or consult a MetaClass).
      *
      * @param type the class (must not be {@code null})
      * @return the SwitchPoint for monomorphic MOP guards
      */
     public static SwitchPoint classSwitchPointFor(final Class<?> type) {
-        ClassInfo info = ClassInfo.getClassInfo(type);
-        MetaClass mc = info.getMetaClassForClass();
-        if (mc != null) {
-            return switchPointForMetaClass(mc);
-        }
-        return info.getPendingIndySwitchPoint();
+        return ClassInfo.getClassInfo(type).getIndySwitchPoint();
     }
 
     /**

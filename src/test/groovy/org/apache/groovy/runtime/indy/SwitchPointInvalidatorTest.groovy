@@ -185,6 +185,111 @@ final class SwitchPointInvalidatorTest {
     }
 
     @Test
+    void registry_tracksAllocationAndDetach() {
+        def inv = new SwitchPointInvalidator()
+        SwitchPoint sp = inv.switchPoint
+        assertTrue(SwitchPointInvalidator.isRegistered(sp))
+        assertTrue(SwitchPointInvalidator.hasLiveSwitchPoints())
+        inv.detachLive()
+        assertFalse(SwitchPointInvalidator.isRegistered(sp), 'detach deregisters')
+        SwitchPoint sp2 = inv.switchPoint
+        assertTrue(SwitchPointInvalidator.isRegistered(sp2), 'reallocation re-registers')
+        inv.invalidate()
+        assertFalse(SwitchPointInvalidator.isRegistered(sp2))
+    }
+
+    @Test
+    void detachIfCurrent_claimsExactlyOnce_andDeregisters() {
+        def inv = new SwitchPointInvalidator()
+        SwitchPoint sp = inv.switchPoint
+        assertTrue(inv.detachIfCurrent(sp))
+        assertFalse(SwitchPointInvalidator.isRegistered(sp))
+        assertEquals(1, inv.retirementCount)
+        assertFalse(inv.detachIfCurrent(sp), 'second claim must fail')
+        assertEquals(1, inv.retirementCount)
+        SwitchPoint sp2 = inv.switchPoint
+        assertFalse(inv.detachIfCurrent(sp), 'stale sp must not detach successor')
+        assertTrue(SwitchPointInvalidator.isRegistered(sp2), 'successor stays registered')
+    }
+
+    @Test
+    void drainLive_collectsOwnLiveSp_withoutInvalidating() {
+        def inv = new SwitchPointInvalidator()
+        SwitchPoint sp = inv.switchPoint
+        def batch = []
+        SwitchPointInvalidator.drainLive(batch)
+        assertTrue(batch.contains(sp), 'drain must claim the live SP')
+        assertFalse(sp.hasBeenInvalidated(), 'drain detaches; caller invalidates')
+        assertFalse(SwitchPointInvalidator.isRegistered(sp))
+        assertEquals(1, inv.retirementCount)
+        // honour the drain contract for everything claimed, including any
+        // bystander runtime domains drained alongside ours
+        SwitchPoint.invalidateAll(batch as SwitchPoint[])
+        def batch2 = []
+        SwitchPointInvalidator.drainLive(batch2)
+        assertFalse(batch2.contains(sp))
+        if (batch2) SwitchPoint.invalidateAll(batch2 as SwitchPoint[])
+    }
+
+    @Test
+    void concurrentAllocation_losersDeregisterTheirCasualties() {
+        def inv = new SwitchPointInvalidator()
+        int before = SwitchPointInvalidator.liveSwitchPointCount()
+        int threads = 16
+        def start = new CyclicBarrier(threads)
+        def workers = (0..<threads).collect {
+            Thread.start {
+                start.await()
+                50.times { inv.switchPoint }
+            }
+        }
+        workers*.join()
+        assertTrue(SwitchPointInvalidator.isRegistered(inv.switchPoint))
+        inv.invalidate()
+        // Exactly one winner per live generation: CAS losers must have removed
+        // their never-published registrations. Tolerance absorbs unrelated
+        // runtime domains churning in this shared JVM; a real leak here would
+        // be O(threads * rounds).
+        int leaked = SwitchPointInvalidator.liveSwitchPointCount() - before
+        assertTrue(Math.abs(leaked) < 10, "registry leaked ${leaked} entries")
+    }
+
+    @Test
+    void registryInvariant_underConcurrentGetDetachAndDrain() {
+        // Hammer get/detach/drain; afterwards any invalidator holding a live SP
+        // must still be registered (a drain must never strand a live SP).
+        def invs = (0..<8).collect { new SwitchPointInvalidator() }
+        int threads = 8
+        int rounds = 300
+        def start = new CyclicBarrier(threads)
+        def workers = (0..<threads).collect { i ->
+            Thread.start {
+                start.await()
+                def rnd = new Random(i)
+                rounds.times {
+                    def inv = invs[rnd.nextInt(invs.size())]
+                    switch (rnd.nextInt(3)) {
+                        case 0 -> inv.switchPoint
+                        case 1 -> SwitchPointInvalidator.invalidateIfLive(inv.detachLive())
+                        case 2 -> {
+                            def batch = []
+                            SwitchPointInvalidator.drainLive(batch)
+                            if (batch) SwitchPoint.invalidateAll(batch as SwitchPoint[])
+                        }
+                    }
+                }
+            }
+        }
+        workers*.join()
+        invs.each { inv ->
+            SwitchPoint live = inv.switchPoint // returns existing live SP or allocates
+            assertTrue(SwitchPointInvalidator.isRegistered(live),
+                'live SwitchPoint missing from registry — a drain stranded it')
+            assertFalse(live.hasBeenInvalidated())
+        }
+    }
+
+    @Test
     void concurrentGet_retryOnCasLoss() {
         // Hammer getSwitchPoint from many threads so some lose the CAS and retry.
         def inv = new SwitchPointInvalidator()
