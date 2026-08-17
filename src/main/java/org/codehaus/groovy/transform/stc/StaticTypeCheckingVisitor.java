@@ -2610,6 +2610,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     @Override
     public void visitProperty(final PropertyNode node) {
         boolean osc = typeCheckingContext.isInStaticContext;
+        typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12166: member scope
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentProperty = node;
@@ -2618,6 +2619,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             visitClassCodeContainer(node.getSetterBlock());
         } finally {
             currentProperty = null;
+            typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.isInStaticContext = osc;
         }
     }
@@ -2626,6 +2628,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     @Override
     public void visitField(final FieldNode node) {
         boolean osc = typeCheckingContext.isInStaticContext;
+        typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12166: member scope
         try {
             typeCheckingContext.isInStaticContext = node.isInStaticContext();
             currentField = node;
@@ -2633,6 +2636,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             visitInitialExpression(node.getInitialExpression(), new FieldExpression(node), node);
         } finally {
             currentField = null;
+            typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.isInStaticContext = osc;
         }
     }
@@ -3467,6 +3471,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         typeCheckingContext.pushEnclosingMethod(node);
+        // GROOVY-12166: statement-level instanceof narrowing (return, assert)
+        // records into the enclosing temporary-type-info frame; scope it to
+        // this member so narrowing keyed by a shared node (e.g. a FieldNode)
+        // cannot leak into members visited later
+        typeCheckingContext.pushTemporaryTypeInfo();
         final ClassNode returnType = node.getReturnType(); // GROOVY-10660: implicit return case
         if (!isConstructor && (isClosureWithType(returnType) || isFunctionalInterface(returnType))) {
             new ReturnAdder(returnStmt -> applyTargetType(returnType, returnStmt.getExpression())).visitMethod(node);
@@ -3486,6 +3495,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (node.getCode() != null) superCall.setSourcePosition(node.getCode());
             superCall.visit(this);
         }
+        typeCheckingContext.popTemporaryTypeInfo();
         typeCheckingContext.popEnclosingMethod();
     }
 
@@ -3527,7 +3537,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // GROOVY-5450: create fake constructor node so final field analysis can allow write within non-static initializer block(s)
         ConstructorNode init = new ConstructorNode(0, null, null, new BlockStatement(node.getObjectInitializerStatements(), null));
         typeCheckingContext.pushEnclosingMethod(init);
+        typeCheckingContext.pushTemporaryTypeInfo(); // GROOVY-12166: member scope
         super.visitObjectInitializerStatements(node);
+        typeCheckingContext.popTemporaryTypeInfo();
         typeCheckingContext.popEnclosingMethod();
     }
 
