@@ -45,6 +45,10 @@ public class JsonLexer implements Iterator<JsonToken> {
     private static final char UPPER_E  = 'E';
     private static final char ZERO     = '0';
     private static final char NINE     = '9';
+    /** The characters which may follow a backslash in a JSON string, other than {@code u}. */
+    private static final String SIMPLE_ESCAPES = "\"\\/bfnrt";
+    /** The digits a {@code \\u} escape may carry; deliberately ASCII only. */
+    private static final String HEX_DIGITS = "0123456789abcdefABCDEF";
 
     private final LineColumnReader reader;
 
@@ -107,18 +111,19 @@ public class JsonLexer implements Iterator<JsonToken> {
                 StringBuilder currentContent = new StringBuilder("\"");
                 // consume the first double quote starting the string
                 reader.read();
-                boolean isEscaped = false;
                 for (;;) {
                     int read = reader.read();
                     if (read == -1) return null;
 
-                    isEscaped = (!isEscaped && currentContent.charAt(currentContent.length() - 1) == '\\');
-
                     char charRead = (char) read;
                     currentContent.append(charRead);
 
-                    if (charRead == '"' && !isEscaped &&
-                            possibleTokenType.matching(currentContent.toString())) {
+                    if (charRead == '\\') {
+                        // Consume and check the escape sequence where it is read. Validating
+                        // here keeps the scan linear in the length of the token, and reports
+                        // the position of the offending escape rather than of the token end.
+                        readEscapeSequence(currentContent, possibleTokenType);
+                    } else if (charRead == '"') {
                         token.setEndLine(reader.getLine());
                         token.setEndColumn(reader.getColumn());
                         token.setText(unescape(currentContent.toString()));
@@ -160,6 +165,37 @@ public class JsonLexer implements Iterator<JsonToken> {
             return null;
         } catch (IOException ioe) {
             throw new JsonException("An IO exception occurred while reading the JSON payload", ioe);
+        }
+    }
+
+    /**
+     * Reads the remainder of an escape sequence whose backslash has already been consumed,
+     * appending it to the token content and rejecting anything RFC 8259 does not allow to
+     * follow a backslash.
+     *
+     * @param currentContent the token content read so far, ending in the backslash
+     * @param type the token type being matched, for the error message
+     * @throws IOException if reading fails
+     */
+    private void readEscapeSequence(StringBuilder currentContent, JsonTokenType type) throws IOException {
+        int escapeRead = reader.read();
+        if (escapeRead == -1) return; // unterminated; the caller stops at end of input
+        char escapeChar = (char) escapeRead;
+        currentContent.append(escapeChar);
+
+        if (escapeChar == 'u') {
+            for (int i = 0; i < 4; i += 1) {
+                int hexRead = reader.read();
+                if (hexRead == -1) return;
+                char hexChar = (char) hexRead;
+                currentContent.append(hexChar);
+                // Character.digit would accept non-ASCII digits, which JSON does not.
+                if (HEX_DIGITS.indexOf(hexChar) == -1) {
+                    throwJsonException(currentContent.toString(), type);
+                }
+            }
+        } else if (SIMPLE_ESCAPES.indexOf(escapeChar) == -1) {
+            throwJsonException(currentContent.toString(), type);
         }
     }
 
