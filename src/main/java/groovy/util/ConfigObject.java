@@ -30,10 +30,13 @@ import org.codehaus.groovy.syntax.Types;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -251,20 +254,20 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
 
                     if (configSize == 1 || DefaultGroovyMethods.asBoolean(dotsInKeys)) {
                         if (firstSize == 1 && firstValue instanceof ConfigObject) {
-                            key = KEYWORDS.contains(key) ? FormatHelper.inspect(key) : key;
-                            String writePrefix = prefix + key + "." + firstKey + ".";
+                            key = renderKey(key);
+                            String writePrefix = prefix + key + "." + renderKey(String.valueOf(firstKey)) + ".";
                             writeConfig(writePrefix, (ConfigObject) firstValue, out, tab, true);
                         } else if (!DefaultGroovyMethods.asBoolean(dotsInKeys) && firstValue instanceof ConfigObject) {
                             writeNode(key, space, tab, value, out);
                         } else {
                             for (Object j : value.keySet()) {
                                 Object v2 = value.get(j);
-                                Object k2 = ((String) j).indexOf('.') > -1 ? FormatHelper.inspect(j) : j;
+                                Object k2 = renderKey((String) j);
                                 if (v2 instanceof ConfigObject) {
-                                    key = KEYWORDS.contains(key) ? FormatHelper.inspect(key) : key;
+                                    key = renderKey(key);
                                     writeConfig(prefix + key, (ConfigObject) v2, out, tab, false);
                                 } else {
-                                    writeValue(key + "." + k2, space, prefix, v2, out);
+                                    writeValue(renderKey(key) + "." + k2, space, prefix, v2, out);
                                 }
                             }
                         }
@@ -273,28 +276,109 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
                     }
                 }
             } else {
-                writeValue(key, space, prefix, v, out);
+                writeValue(renderKey(key), space, prefix, v, out);
             }
         }
     }
 
-    private static void writeValue(String key, String space, String prefix, Object value, BufferedWriter out) throws IOException {
-//        key = key.indexOf('.') > -1 ? InvokerHelper.inspect(key) : key;
-        boolean isKeyword = KEYWORDS.contains(key);
-        key = isKeyword ? FormatHelper.inspect(key) : key;
-
-        if (!StringGroovyMethods.asBoolean(prefix) && isKeyword) prefix = "this.";
-        out.append(space).append(prefix).append(key).append('=').append(FormatHelper.inspect(value));
+    /**
+     * Writes one entry, given a key path whose components have already been rendered.
+     *
+     * @param keyPath the rendered key path, such as {@code foo} or {@code foo.'a b'}
+     */
+    private static void writeValue(String keyPath, String space, String prefix, Object value, BufferedWriter out) throws IOException {
+        // A quoted key cannot open a statement on its own, so it needs a receiver, exactly as a
+        // keyword key has always done. The statement opens with the prefix when there is one.
+        String statementStart = StringGroovyMethods.asBoolean(prefix) ? prefix : keyPath;
+        if (statementStart.startsWith("'")) prefix = "this." + prefix;
+        out.append(space).append(prefix).append(keyPath).append('=').append(renderValue(value));
         out.newLine();
     }
 
     private void writeNode(String key, String space, int tab, ConfigObject value, BufferedWriter out) throws IOException {
-        key = KEYWORDS.contains(key) ? FormatHelper.inspect(key) : key;
-        out.append(space).append(key).append(" {");
+        out.append(space).append(renderKey(key)).append(" {");
         out.newLine();
         writeConfig("", value, out, tab + 1, true);
         out.append(space).append('}');
         out.newLine();
+    }
+
+    /**
+     * Renders a key as it must appear in the written configuration: bare when it is a plain
+     * identifier, and as a quoted literal otherwise. A key which is not an identifier would
+     * otherwise be written as though it were source, and read back as whatever it happened to
+     * parse as.
+     *
+     * @param key the key to render
+     * @return the key as it should be written
+     */
+    private static String renderKey(String key) {
+        return isIdentifier(key) ? key : FormatHelper.inspect(key);
+    }
+
+    private static boolean isIdentifier(String key) {
+        if (key == null || key.isEmpty() || KEYWORDS.contains(key)) return false;
+        if (!Character.isJavaIdentifierStart(key.charAt(0))) return false;
+        for (int i = 1, n = key.length(); i < n; i += 1) {
+            if (!Character.isJavaIdentifierPart(key.charAt(i))) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Renders a value as a literal which reads back as the same data.
+     *
+     * @param value the value to render
+     * @return the value as it should be written
+     */
+    private static String renderValue(Object value) {
+        return FormatHelper.inspect(asWritableData(value));
+    }
+
+    /**
+     * Converts a value into something {@link FormatHelper#inspect} renders as inert data.
+     * <p>
+     * A {@link CharSequence} which is not a {@code String} is rendered as a double quoted
+     * literal, in which a dollar is live, so its text is carried over to a {@code String} and
+     * rendered single quoted instead. An array has no literal form, so it is carried over to a
+     * {@code List}, element by element, and reads back as one. A value of any other type
+     * without a literal form would be written as a bare {@code toString()}, which is not data
+     * at all, so its text is carried over in the same way. Numbers and booleans already write
+     * as themselves.
+     *
+     * @param value the value to convert
+     * @return a value whose rendering is data
+     */
+    private static Object asWritableData(Object value) {
+        if (value == null || value instanceof String || value instanceof Number || value instanceof Boolean) {
+            return value;
+        }
+        if (value instanceof CharSequence) {
+            return value.toString();
+        }
+        if (value instanceof Map<?, ?> map) {
+            Map<Object, Object> converted = new LinkedHashMap<>(map.size());
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                converted.put(asWritableData(entry.getKey()), asWritableData(entry.getValue()));
+            }
+            return converted;
+        }
+        if (value instanceof Collection<?> collection) {
+            List<Object> converted = new ArrayList<>(collection.size());
+            for (Object element : collection) {
+                converted.add(asWritableData(element));
+            }
+            return converted;
+        }
+        if (value.getClass().isArray()) {
+            int length = Array.getLength(value);
+            List<Object> converted = new ArrayList<>(length);
+            for (int i = 0; i < length; i += 1) {
+                converted.add(asWritableData(Array.get(value, i)));
+            }
+            return converted;
+        }
+        return value.toString();
     }
 
     private static Properties convertValuesToString(Map props) {
