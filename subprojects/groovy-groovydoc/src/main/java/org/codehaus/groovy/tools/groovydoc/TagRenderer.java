@@ -28,6 +28,7 @@ import org.codehaus.groovy.groovydoc.GroovyTag;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -477,6 +478,12 @@ final class TagRenderer {
      * GROOVY-11938 stage 2: look up a snippet file in the current package's
      * {@code snippet-files/} directory under any configured sourcepath and
      * return its contents, or {@code null} if not found.
+     * <p>
+     * The file name comes from a doc comment, so it is treated as relative to the package's
+     * {@code snippet-files/} directory and resolution is confined to it. An absolute name is
+     * refused, and a relative one which would escape the directory, whether by {@code ..}
+     * segments or by way of a symbolic link, resolves to nothing rather than to a file
+     * elsewhere on the machine running the tool.
      */
     private static String loadSnippetFile(String fileName, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc, boolean keepHeader) {
         if (classDoc == null || !(rootDoc instanceof SimpleGroovyRootDoc)) return null;
@@ -488,8 +495,8 @@ final class TagRenderer {
         int lastSlash = full.lastIndexOf('/');
         String pkgPath = lastSlash >= 0 ? full.substring(0, lastSlash) : "";
         for (String sourcepath : sourcepaths) {
-            Path path = Paths.get(sourcepath, pkgPath, "snippet-files", fileName);
-            if (Files.isRegularFile(path)) {
+            Path path = resolveWithinSnippetFiles(sourcepath, pkgPath, fileName);
+            if (path != null) {
                 try {
                     String text = Files.readString(path);
                     return keepHeader ? text : stripLicenseHeader(text);
@@ -499,6 +506,42 @@ final class TagRenderer {
             }
         }
         return null;
+    }
+
+    /**
+     * Resolves a doc-comment-supplied file name against one sourcepath's {@code snippet-files/}
+     * directory, returning the file only when it is a regular file genuinely inside that
+     * directory.
+     *
+     * @param sourcepath the sourcepath to resolve under
+     * @param pkgPath the package path of the class being documented
+     * @param fileName the file name taken from the doc comment
+     * @return the contained file, or {@code null} if there is no such file within the directory
+     */
+    private static Path resolveWithinSnippetFiles(String sourcepath, String pkgPath, String fileName) {
+        Path base;
+        Path candidate;
+        try {
+            Path name = Paths.get(fileName);
+            // JEP 413 treats the file attribute as relative to the snippet path. Rejecting an
+            // absolute name outright keeps that, and keeps a doc comment from depending on
+            // where the project happens to sit on disk: an absolute path that resolved on the
+            // author's machine would not resolve on a build agent.
+            if (name.isAbsolute()) return null;
+            base = Paths.get(sourcepath, pkgPath, "snippet-files").toAbsolutePath().normalize();
+            candidate = base.resolve(name).toAbsolutePath().normalize();
+        } catch (InvalidPathException e) {
+            return null;
+        }
+        if (!candidate.startsWith(base) || !Files.isRegularFile(candidate)) return null;
+        // Containment above is textual; re-check it after following any symbolic links so a
+        // link inside snippet-files cannot point out of it.
+        try {
+            if (!candidate.toRealPath().startsWith(base.toRealPath())) return null;
+        } catch (IOException e) {
+            return null;
+        }
+        return candidate;
     }
 
     /**
