@@ -1064,9 +1064,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * this class performs a static type check, it will be relatively
      * simple to bypass any disallowed list unless the disallowed receivers list contains, at
      * a minimum, Object, Script, GroovyShell, and Eval. Additionally,
-     * it is necessary to also have MethodPointerExpression in the
-     * disallowed expressions list for the disallowed receivers list to function
-     * as a security check.
+     * the disallowed expressions list must contain both
+     * {@link org.codehaus.groovy.ast.expr.MethodPointerExpression} and
+     * {@link org.codehaus.groovy.ast.expr.MethodReferenceExpression} for the disallowed
+     * receivers list to function as a security check. Both are needed because the expression
+     * lists are matched by exact class: naming a class does not name its subclasses, and the
+     * {@code ::} form of a method reference is a subclass of the {@code .&amp;} form.
      *
      * @param disallowedReceivers the list of refused classes, as fully qualified names
      */
