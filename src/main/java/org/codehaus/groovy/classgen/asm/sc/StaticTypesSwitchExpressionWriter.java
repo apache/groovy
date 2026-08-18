@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc;
 
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -46,9 +47,9 @@ import java.util.function.Function;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
@@ -56,8 +57,8 @@ import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 /**
  * Static-compilation writer for {@link SwitchExpression}. Emits
  * {@code tableswitch} / {@code lookupswitch} when the selector and labels are
- * constants of a type {@code javac} would switch on, and otherwise a resolved
- * {@code isCase} call rather than a forced dynamic adapter invocation.
+ * constants of a type {@code javac} would switch on, and otherwise the
+ * {@code isCase} method selected by the type checker as a direct call.
  *
  * @since 6.0.0
  */
@@ -90,16 +91,26 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
     }
 
     /**
-     * Prefers a statically resolved {@code isCase} (DGM overload or instance
-     * method) so Class / Collection / Pattern / Closure labels stay correct
-     * without going through {@code ScriptBytecodeAdapter}.
+     * Emits the {@code isCase} call selected by the type checker. A literal
+     * {@code case null} is identity, not {@code DGM.isCase(Object,Object)}
+     * (which NPEs). Any other arm must already carry
+     * {@link StaticTypesMarker#DIRECT_METHOD_CALL_TARGET} on the
+     * {@link CaseStatement}.
      */
     @Override
-    protected void writeIsCaseComparison(final Expression caseValue,
+    protected void writeIsCaseComparison(final CaseStatement caseStatement,
             final int selectorIndex, final ClassNode selectorType) {
-        MethodNode target = resolveIsCaseTarget(caseValue, selectorType);
+        Expression caseValue = caseStatement.getExpression();
+        if (ExpressionUtils.isNullConstant(caseValue)) {
+            writeNullIdentity(selectorIndex, selectorType);
+            return;
+        }
+        MethodNode target = caseStatement.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (target == null) {
-            super.writeIsCaseComparison(caseValue, selectorIndex, selectorType);
+            // Optimizer miss (e.g. inferred enum type but Object on the stack) or
+            // TypeCheckingMode.SKIP: keep ScriptBytecodeAdapter so the operand
+            // stack still has a boolean for the following IFEQ.
+            super.writeIsCaseComparison(caseStatement, selectorIndex, selectorType);
             return;
         }
         OperandStack operandStack = controller.getOperandStack();
@@ -109,60 +120,38 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         call.setMethodTarget(target);
         call.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, target);
         call.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, ClassHelper.boolean_TYPE);
+        if (caseStatement.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS) != null) {
+            call.putNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS,
+                    caseStatement.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS));
+        }
         call.setSourcePosition(caseValue);
         call.visit(controller.getAcg());
         operandStack.doGroovyCast(ClassHelper.boolean_TYPE);
     }
 
-    private MethodNode resolveIsCaseTarget(final Expression caseValue, final ClassNode selectorType) {
-        ClassNode caseType = controller.getTypeChooser().resolveType(caseValue, controller.getClassNode());
-        ClassNode switchArg = ClassHelper.isPrimitiveType(selectorType)
-                ? ClassHelper.getWrapper(selectorType) : selectorType;
-        MethodNode instance = chooseInstanceIsCase(caseType, switchArg);
-        if (instance != null) {
-            return instance;
-        }
-        ClassLoader loader = controller.getSourceUnit().getClassLoader();
-        List<MethodNode> methods = findDGMMethodsByNameAndArguments(
-                loader, caseType, "isCase", new ClassNode[]{switchArg});
-        if (methods.size() != 1) {
-            return null;
-        }
-        MethodNode dgm = methods.get(0);
-        // Object.equals-style isCase is not a substitute for runtime dispatch
-        if (isGenericObjectIsCase(dgm)) {
-            return null;
-        }
-        return dgm;
-    }
-
-    private static MethodNode chooseInstanceIsCase(final ClassNode caseType, final ClassNode switchArg) {
-        if (caseType == null) return null;
-        List<MethodNode> candidates = new ArrayList<>();
-        for (MethodNode method : caseType.getMethods("isCase")) {
-            if (!method.isStatic() && method.getParameters().length == 1
-                    && !ClassHelper.isObjectType(method.getDeclaringClass())) {
-                candidates.add(method);
-            }
-        }
-        List<MethodNode> best = chooseBestMethod(caseType, candidates, switchArg);
-        return best.size() == 1 && !isGenericObjectIsCase(best.get(0)) ? best.get(0) : null;
-    }
-
     /**
-     * {@code isCase(Object)} / {@code isCase(Object,Object)} is equals-style and
-     * must not replace {@code ScriptBytecodeAdapter.isCase}.
+     * {@code case null} is {@code selector == null}. A primitive selector
+     * can never be null, so the arm is a compile-time miss.
      */
-    private static boolean isGenericObjectIsCase(final MethodNode method) {
-        if (ClassHelper.isObjectType(method.getDeclaringClass())) {
-            return true;
+    private void writeNullIdentity(final int selectorIndex, final ClassNode selectorType) {
+        OperandStack operandStack = controller.getOperandStack();
+        MethodVisitor mv = controller.getMethodVisitor();
+        if (ClassHelper.isPrimitiveType(selectorType)) {
+            mv.visitInsn(ICONST_0);
+            operandStack.push(ClassHelper.boolean_TYPE);
+            return;
         }
-        var parameters = method.getParameters();
-        if (method.isStatic() && parameters.length == 2) {
-            return ClassHelper.isObjectType(parameters[0].getType())
-                    && ClassHelper.isObjectType(parameters[1].getType());
-        }
-        return parameters.length == 1 && ClassHelper.isObjectType(parameters[0].getType());
+        operandStack.load(selectorType, selectorIndex);
+        operandStack.remove(1);
+        Label isNull = new Label();
+        Label end = new Label();
+        mv.visitJumpInsn(IFNULL, isNull);
+        mv.visitInsn(ICONST_0);
+        mv.visitJumpInsn(GOTO, end);
+        mv.visitLabel(isNull);
+        mv.visitInsn(ICONST_1);
+        mv.visitLabel(end);
+        operandStack.push(ClassHelper.boolean_TYPE);
     }
 
     //--------------------------------------------------------------------------

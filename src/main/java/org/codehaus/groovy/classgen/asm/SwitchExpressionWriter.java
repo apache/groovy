@@ -18,16 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm;
 
+import org.apache.groovy.ast.tools.SwitchExpressionUtils;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.DynamicVariable;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SwitchExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.YieldStatement;
@@ -160,9 +156,9 @@ public class SwitchExpressionWriter {
      * Emits one {@code isCase} test. Shared with {@link StatementWriter} via
      * {@link BinaryExpressionHelper#writeIsCase}.
      */
-    protected void writeIsCaseComparison(final Expression caseValue,
+    protected void writeIsCaseComparison(final CaseStatement caseStatement,
             final int selectorIndex, final ClassNode selectorType) {
-        controller.getBinaryExpressionHelper().writeIsCase(selectorIndex, selectorType, caseValue);
+        controller.getBinaryExpressionHelper().writeIsCase(selectorIndex, selectorType, caseStatement.getExpression());
     }
 
     //--------------------------------------------------------------------------
@@ -190,7 +186,7 @@ public class SwitchExpressionWriter {
 
         acg.onLineNumber(caseStatement, "visitCaseStatement");
 
-        writeIsCaseComparison(caseStatement.getExpression(), selectorIndex, selectorType);
+        writeIsCaseComparison(caseStatement, selectorIndex, selectorType);
 
         Label miss = controller.getOperandStack().jump(IFEQ);
 
@@ -274,38 +270,23 @@ public class SwitchExpressionWriter {
     }
 
     protected static boolean isIntegralType(final ClassNode type) {
-        return ClassHelper.isPrimitiveInt(type) || ClassHelper.isPrimitiveByte(type)
-                || ClassHelper.isPrimitiveShort(type) || ClassHelper.isPrimitiveChar(type);
+        return SwitchExpressionUtils.isIntegralType(type);
     }
 
     protected static boolean isIntegralWrapper(final ClassNode type) {
-        return ClassHelper.isWrapperInteger(type) || ClassHelper.isWrapperByte(type)
-                || ClassHelper.isWrapperShort(type) || ClassHelper.isWrapperCharacter(type);
+        return SwitchExpressionUtils.isIntegralWrapper(type);
     }
 
     protected static Integer intConstant(final Expression expression) {
-        if (!(expression instanceof ConstantExpression constant)) return null;
-        Object value = constant.getValue();
-        if (value instanceof Integer || value instanceof Byte || value instanceof Short) {
-            return ((Number) value).intValue();
-        }
-        if (value instanceof Character) {
-            return (int) (Character) value;
-        }
-        return null;
+        return SwitchExpressionUtils.intConstant(expression);
     }
 
     protected static String stringConstant(final Expression expression) {
-        if (expression instanceof ConstantExpression constant && constant.getValue() instanceof String s) {
-            return s;
-        }
-        return null;
+        return SwitchExpressionUtils.stringConstant(expression);
     }
 
     protected static ClassNode unwrapEnumType(final ClassNode type) {
-        if (type == null) return null;
-        if (type.isEnum()) return type;
-        return type.redirect().isEnum() ? type.redirect() : null;
+        return SwitchExpressionUtils.unwrapEnumType(type);
     }
 
     protected static int enumConstantCount(final ClassNode enumType) {
@@ -321,34 +302,6 @@ public class SwitchExpressionWriter {
     }
 
     protected static String enumConstantName(final Expression expression, final ClassNode enumType) {
-        if (expression instanceof PropertyExpression property
-                && property.getObjectExpression() instanceof ClassExpression classExpression
-                && classExpression.getType().equals(enumType)
-                && property.getProperty() instanceof ConstantExpression name) {
-            return name.getText();
-        }
-        if (expression instanceof VariableExpression variable) {
-            var accessed = variable.getAccessedVariable();
-            if (accessed instanceof FieldNode field && field.isEnum()
-                    && (field.getDeclaringClass() == null || field.getDeclaringClass().equals(enumType))) {
-                return field.getName();
-            }
-            if (accessed == null || accessed instanceof DynamicVariable) {
-                // a real local or parameter named like a constant is not a constant label
-                FieldNode field = enumType.getField(variable.getName());
-                if (field != null && field.isEnum()) {
-                    return variable.getName();
-                }
-            }
-        }
-        if (expression instanceof ConstantExpression constant && enumType.isResolved()
-                && constant.getValue() instanceof Enum<?> e) {
-            Class<?> declaring = e.getDeclaringClass();
-            Class<?> enumClass = enumType.getTypeClass();
-            if (declaring == enumClass || enumClass.isAssignableFrom(declaring)) {
-                return e.name();
-            }
-        }
-        return null;
+        return SwitchExpressionUtils.enumConstantName(expression, enumType);
     }
 }

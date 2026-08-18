@@ -619,4 +619,41 @@ final class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         assert !customized.any { it.startsWith('Script') },
             'extension script should not inherit the enclosing compilation customizers'
     }
+
+    @Test
+    void testSwitchExpressionIsCaseMethodSelection() {
+        extension = 'groovy/transform/stc/SwitchExpressionIsCaseExtension.groovy'
+        shouldFailWithMessages '''
+            def m(Object o) {
+                switch (o) {
+                    case String -> 's'
+                    default -> 'd'
+                }
+            }
+        ''', 'isCase selected'
+
+        shouldFailWithMessages '''
+            def m(int n) {
+                switch (n) {
+                    case 1..10 -> 'in'
+                    default -> 'out'
+                }
+            }
+        ''', 'isCase selected'
+    }
+
+    @Test
+    void testSwitchExpressionIntrinsicIntDoesNotSelectIsCase() {
+        extension = 'groovy/transform/stc/SwitchExpressionIsCaseExtension.groovy'
+        assertScript '''
+            int m(int n) {
+                switch (n) {
+                    case 1 -> 10
+                    case 2 -> 20
+                    default -> 0
+                }
+            }
+            assert m(1) == 10
+        '''
+    }
 }

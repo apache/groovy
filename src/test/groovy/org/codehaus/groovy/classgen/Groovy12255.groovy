@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen
 
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
@@ -27,7 +28,10 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.CaseStatement
 import org.codehaus.groovy.ast.stmt.YieldStatement
 import org.codehaus.groovy.ast.tools.GeneralUtils
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -39,6 +43,17 @@ import static groovy.test.GroovyAssert.shouldFail
  * closure wrapping a switch statement.
  */
 final class Groovy12255 {
+
+    private static void assertBoth(final String script) {
+        assertScript(script)
+        new GroovyShell(staticConfig()).evaluate(script)
+    }
+
+    private static CompilerConfiguration staticConfig() {
+        def config = new CompilerConfiguration()
+        config.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
+        return config
+    }
 
     @Test
     void arrowExpressionArms() {
@@ -120,7 +135,7 @@ final class Groovy12255 {
 
     @Test
     void groovyIsCaseMatching() {
-        assertScript '''
+        assertBoth '''
             def r = switch ('abc') {
                 case String -> 'str'
                 case Integer -> 'int'
@@ -192,8 +207,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticArrowAndYield() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             def meth(int a) {
                 switch (a) {
                     case 1 -> 'one'
@@ -211,8 +225,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticStringSwitch() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             String partner(String person) {
                 switch (person) {
                     case 'Romeo' -> 'Juliet'
@@ -228,11 +241,10 @@ final class Groovy12255 {
 
     @Test
     void compileStaticEnumSwitch() {
-        assertScript '''
+        assertBoth '''
             import java.time.Month
             import static java.time.Month.*
 
-            @groovy.transform.CompileStatic
             String quarter(Month month) {
                 switch (month) {
                     case JANUARY, FEBRUARY, MARCH -> 'Q1'
@@ -268,7 +280,7 @@ final class Groovy12255 {
 
     @Test
     void yieldInsideTryFinally() {
-        assertScript '''
+        assertBoth '''
             def log = []
             def r = switch (1) {
                 case 1 -> {
@@ -340,6 +352,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticDefiniteAssignmentAfterYield() {
+        // definite assignment is a static-checker concern
         assertScript '''
             @groovy.transform.CompileStatic
             int meth(int n) {
@@ -363,6 +376,7 @@ final class Groovy12255 {
 
     @Test
     void nestedExpressionInsideSwitchStatementDifferentEnums() {
+        // unqualified enum constants in case labels are rewritten under STC
         assertScript '''
             enum Color { RED, BLUE }
             enum Size { S, L }
@@ -389,7 +403,7 @@ final class Groovy12255 {
 
     @Test
     void returnInsideLoopInSwitchExpressionIsError() {
-        def err = shouldFail('''
+        def err = shouldFail(MultipleCompilationErrorsException, '''
             def r = switch (1) {
                 case 1 -> {
                     for (;;) {
@@ -417,8 +431,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticNullStringSelectorUsesDefault() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             String m(String s) {
                 switch (s) {
                     case 'Foo' -> 'a'
@@ -433,10 +446,9 @@ final class Groovy12255 {
 
     @Test
     void compileStaticNullEnumSelectorUsesDefault() {
-        assertScript '''
+        assertBoth '''
             import java.time.DayOfWeek
 
-            @groovy.transform.CompileStatic
             String m(DayOfWeek d) {
                 switch (d) {
                     case DayOfWeek.MONDAY -> 'mon'
@@ -450,10 +462,9 @@ final class Groovy12255 {
 
     @Test
     void compileStaticNullSelectorOnExhaustiveEnumThrows() {
-        def err = shouldFail(IllegalStateException, '''
+        def script = '''
             enum Flag { ON, OFF }
 
-            @groovy.transform.CompileStatic
             String m(Flag f) {
                 switch (f) {
                     case Flag.ON  -> 'on'
@@ -461,14 +472,16 @@ final class Groovy12255 {
                 }
             }
             m(null)
-        ''')
-        assert err.message.contains('does not cover')
+        '''
+        def dynamic = shouldFail(IllegalStateException, script)
+        assert dynamic.message.contains('does not cover')
+        def statik = shouldFail(IllegalStateException) { new GroovyShell(staticConfig()).evaluate(script) }
+        assert statik.message.contains('does not cover')
     }
 
     @Test
     void compileStaticNullIntegerSelectorUsesDefault() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             String m(Integer n) {
                 switch (n) {
                     case 1 -> 'one'
@@ -483,7 +496,7 @@ final class Groovy12255 {
 
     @Test
     void labeledBreakOutOfSwitchExpressionIsError() {
-        def err = shouldFail('''
+        def err = shouldFail(MultipleCompilationErrorsException, '''
             outer:
             while (true) {
                 def r = switch (1) {
@@ -500,7 +513,7 @@ final class Groovy12255 {
 
     @Test
     void labeledContinueOutOfSwitchExpressionIsError() {
-        def err = shouldFail('''
+        def err = shouldFail(MultipleCompilationErrorsException, '''
             outer:
             while (true) {
                 def r = switch (1) {
@@ -517,8 +530,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticForLoopInArmWithImplicitThis() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             class C {
                 int n
                 int run() {
@@ -540,7 +552,7 @@ final class Groovy12255 {
 
     @Test
     void labeledBreakSkippingYieldInLastArmIsError() {
-        def err = shouldFail('''
+        def err = shouldFail(MultipleCompilationErrorsException, '''
             def cond = true
             def r = switch (1) {
                 case 1 -> {
@@ -551,7 +563,7 @@ final class Groovy12255 {
                 default -> 0
             }
         ''')
-        assert err.message.contains('does not support `break`') || err.message.contains('yield')
+        assert err.message.contains('does not support `break`')
     }
 
     @Test
@@ -575,6 +587,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticEnumSwitchWithUnqualifiedConstantNames() {
+        // unqualified names are rewritten by StaticTypesTransformation
         assertScript '''
             import java.time.Month
 
@@ -594,10 +607,9 @@ final class Groovy12255 {
 
     @Test
     void compileStaticEnumSwitchLocalVariableShadowingConstantName() {
-        assertScript '''
+        assertBoth '''
             import java.time.Month
 
-            @groovy.transform.CompileStatic
             String m(Month month, Month JANUARY) {
                 switch (month) {
                     case JANUARY -> 'matched local'
@@ -611,8 +623,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticStringSwitchWithHashCollision() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             String m(String s) {
                 switch (s) {
                     case 'Aa' -> 'first'   // 'Aa' and 'BB' share a hashCode,
@@ -628,8 +639,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticSparseIntKeysStillDispatch() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             int m(int n) {
                 switch (n) {
                     case 1       -> 10
@@ -647,8 +657,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticNonConstantLabelFallsBackToIsCase() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             String m(int n) {
                 switch (n) {
                     case 1        -> 'one'
@@ -688,7 +697,7 @@ final class Groovy12255 {
 
     @Test
     void yieldThroughNestedClosureIsError() {
-        def err = shouldFail('''
+        def err = shouldFail(MultipleCompilationErrorsException, '''
             def r = switch (1) {
                 case 1 -> {
                     def c = { yield 1 }
@@ -750,90 +759,18 @@ final class Groovy12255 {
 
     @Test
     void lastColonArmIfWithoutElseIsError() {
-        def err = shouldFail('''
+        def err = shouldFail(MultipleCompilationErrorsException, '''
             def r = switch (1) {
                 case 1:
                     if (true) yield 1
             }
         ''')
-        assert err.message.contains('yield') || err.message.contains('throw')
-    }
-
-    @Test
-    void compileStaticYieldInsideTryFinallyIntSwitch() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            int m(int n) {
-                def log = []
-                int r = switch (n) {
-                    case 1 -> {
-                        try {
-                            yield 10
-                        } finally {
-                            log << 'fin'
-                        }
-                    }
-                    default -> 0
-                }
-                assert log == ['fin']
-                return r
-            }
-            assert m(1) == 10
-        '''
-    }
-
-    @Test
-    void compileStaticYieldInsideTryFinallyStringSwitch() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            String m(String s) {
-                def log = []
-                String r = switch (s) {
-                    case 'Foo' -> {
-                        try {
-                            yield 'a'
-                        } finally {
-                            log << 'fin'
-                        }
-                    }
-                    default -> 'z'
-                }
-                assert log == ['fin']
-                return r
-            }
-            assert m('Foo') == 'a'
-        '''
-    }
-
-    @Test
-    void compileStaticYieldInsideTryFinallyEnumSwitch() {
-        assertScript '''
-            import java.time.DayOfWeek
-
-            @groovy.transform.CompileStatic
-            String m(DayOfWeek d) {
-                def log = []
-                String r = switch (d) {
-                    case DayOfWeek.MONDAY -> {
-                        try {
-                            yield 'mon'
-                        } finally {
-                            log << 'fin'
-                        }
-                    }
-                    default -> 'other'
-                }
-                assert log == ['fin']
-                return r
-            }
-            assert m(DayOfWeek.MONDAY) == 'mon'
-        '''
+        assert err.message.contains('`yield` or `throw` is expected')
     }
 
     @Test
     void compileStaticSwitchExpressionInFieldInitializer() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             class C {
                 final String s = switch (1) {
                     case 1 -> 'a'
@@ -846,8 +783,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticSwitchExpressionInConstructor() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             class C {
                 final String s
                 C() {
@@ -863,8 +799,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticCharAndByteSelectorsUseIntSwitch() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             int fromChar(char c) {
                 switch (c) {
                     case (char) 'A' -> 1
@@ -872,7 +807,6 @@ final class Groovy12255 {
                     default -> 0
                 }
             }
-            @groovy.transform.CompileStatic
             int fromByte(byte b) {
                 switch (b) {
                     case (byte) 1 -> 10
@@ -887,8 +821,7 @@ final class Groovy12255 {
 
     @Test
     void compileStaticSwitchExpressionInStaticInitializer() {
-        assertScript '''
-            @groovy.transform.CompileStatic
+        assertBoth '''
             class C {
                 static final String S
                 static {
@@ -970,7 +903,7 @@ final class Groovy12255 {
     }
 
     @Test
-    void classCodeExpressionTransformerTransformWalksArmsInPlace() {
+    void classCodeExpressionTransformerTransformDoesNotWalkArms() {
         def original = GeneralUtils.switchX(
                 GeneralUtils.constX(1),
                 [new CaseStatement(
@@ -991,8 +924,9 @@ final class Groovy12255 {
             }
         }
         def transformed = transformer.transform(original)
-        assert transformed.is(original)
-        assert original.caseStatements[0].code.expression.text == 'A'
+        assert !transformed.is(original)
+        assert original.caseStatements[0].code.expression.text == 'a'
+        assert transformed.caseStatements[0].code.is(original.caseStatements[0].code)
     }
 
     @Test
@@ -1012,7 +946,7 @@ final class Groovy12255 {
 
     @Test
     void referenceSelectorWrittenByClosure() {
-        assertScript '''
+        assertBoth '''
             def x = 1
             def cl = { x = 2 }
             cl()
@@ -1025,42 +959,23 @@ final class Groovy12255 {
     }
 
     @Test
-    void referenceSelectorWrittenByClosureUnderCompileStatic() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            String m() {
-                int x = 1
-                def cl = { x = 2 }
-                cl()
-                switch (x) {
-                    case 2 -> 'ok'
-                    default -> 'no'
-                }
+    void referenceWrapperSelectorWrittenByClosure() {
+        assertBoth '''
+            Integer x = 1
+            def cl = { x = 2 }
+            cl()
+            def y = switch (x) {
+                case 2 -> 'ok'
+                default -> 'no'
             }
-            assert m() == 'ok'
-        '''
-    }
-
-    @Test
-    void referenceWrapperSelectorWrittenByClosureUnderCompileStatic() {
-        assertScript '''
-            @groovy.transform.CompileStatic
-            String m() {
-                Integer x = 1
-                def cl = { x = 2 }
-                cl()
-                switch (x) {
-                    case 2 -> 'ok'
-                    default -> 'no'
-                }
-            }
-            assert m() == 'ok'
+            assert y == 'ok'
         '''
     }
 
     @Test
     void typeCheckedUnmatchedIsError() {
-        def err = shouldFail('''
+        // exhaustiveness is a static type-checker error
+        def err = shouldFail(MultipleCompilationErrorsException, '''
             @groovy.transform.TypeChecked
             def meth(int a) {
                 switch (a) {

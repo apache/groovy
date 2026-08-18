@@ -278,11 +278,20 @@ assumed a switch expression was a `MethodCallExpression` wrapping a
 `SwitchStatement` need to handle `SwitchExpression` and `YieldStatement`.
 `GroovyCodeVisitor` supplies default methods so existing visitors keep
 compiling. `SwitchExpression.transformExpression` rewrites the selector and
-case-label expressions only and does not copy arm statements. A
-`ClassCodeExpressionTransformer` (including `ResolveVisitor`) walks the
-node in place via `visitSwitchExpression`, so nested arm expressions still
-run through resolve and rewrite. A plain `ExpressionTransformer` leaves
-arm bodies untouched.
+case-label expressions only and does not copy arm statements.
+`ClassCodeExpressionTransformer.transform` stays generic — it
+delegates to `transformExpression`, the same way it treats
+`ClosureExpression`. `ResolveVisitor`, `StaticImportVisitor` and the static-compilation
+transformer visit the node from their own `transform` override so
+arm expressions still run through resolve, static-import rewrite
+and static compilation.
+A plain `ExpressionTransformer` leaves arm bodies untouched.
+
+Under `@CompileStatic`, a non-intrinsic `case` label is resolved as
+`label.isCase(selector)` and emitted as a direct method call. An
+`Object`-typed label therefore uses `isCase(Object, Object)` (equals),
+the same as a statically compiled `label.isCase(selector)` call. Dynamic
+Groovy still dispatches `isCase` on the label's runtime class.
 
 **What is *not* claimed.** Matching still uses Groovy `isCase` (Class, regex,
 Collection, Closure). `tableswitch` / `lookupswitch` are emitted only when

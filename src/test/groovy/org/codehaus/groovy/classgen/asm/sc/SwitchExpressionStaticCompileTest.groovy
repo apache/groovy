@@ -134,6 +134,8 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
             }
         ''')
         assert bytecode.toString().contains('isCase')
+        assert bytecode.toString().contains('DefaultGroovyMethods')
+        assert !bytecode.toString().contains('ScriptBytecodeAdapter.isCase')
     }
 
     @Test
@@ -243,7 +245,9 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
     }
 
     @Test
-    void staticObjectTypedClassLabelUsesRuntimeIsCase() {
+    void staticFlowTypedClassLabelSelectsClassIsCase() {
+        // `Object label = String` is flow-typed to Class, so method selection
+        // binds DGM.isCase(Class, Object) rather than equals.
         assertScript '''
             @groovy.transform.CompileStatic
             String m(Object o) {
@@ -255,6 +259,23 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
             }
             assert m('x') == 's'
             assert m(1) == 'd'
+        '''
+    }
+
+    @Test
+    void staticDeclaredObjectLabelUsesEqualsIsCase() {
+        // A parameter whose static type is Object has no more precise flow type,
+        // so isCase is DGM.isCase(Object, Object) — equals — matching `label.isCase(o)`.
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(Object o, Object label) {
+                switch (o) {
+                    case label -> 's'
+                    default -> 'd'
+                }
+            }
+            assert m('x', String) == 'd'
+            assert m(String, String) == 's'
         '''
     }
 
@@ -286,6 +307,67 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
             assert fromInt(3) == 'miss'
             assert fromString('s') == 'hit'
             assert fromString('x') == 'miss'
+        '''
+    }
+
+    @Test
+    void staticListGetAtStringSelectorStillDispatches() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(List<String> names) {
+                switch (names[0]) {
+                    case 'Foo' -> 'a'
+                    default    -> 'z'
+                }
+            }
+            assert m(['Foo']) == 'a'
+            assert m(['Bar']) == 'z'
+        '''
+    }
+
+    @Test
+    void staticListGetAtIntegerSelectorStillDispatches() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            int m(List<Integer> nums) {
+                switch (nums[0]) {
+                    case 1 -> 10
+                    default -> 0
+                }
+            }
+            assert m([1]) == 10
+            assert m([2]) == 0
+        '''
+    }
+
+    @Test
+    void staticMapGetAtStringSelectorStillDispatches() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(Map<String, String> names) {
+                switch (names['k']) {
+                    case 'Foo' -> 'a'
+                    default    -> 'z'
+                }
+            }
+            assert m([k: 'Foo']) == 'a'
+            assert m([k: 'Bar']) == 'z'
+        '''
+    }
+
+    @Test
+    void staticNullLabelOnPrimitiveSelectorNeverMatches() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            String m(int n) {
+                switch (n) {
+                    case null -> 'n'
+                    case 1    -> 'one'
+                    default   -> 'd'
+                }
+            }
+            assert m(1) == 'one'
+            assert m(0) == 'd'
         '''
     }
 

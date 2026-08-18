@@ -54,6 +54,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -969,6 +970,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             ret = transformMethodCallExpression((MethodCallExpression) exp);
         } else if (exp instanceof ClosureExpression) {
             ret = transformClosureExpression((ClosureExpression) exp);
+        } else if (exp instanceof SwitchExpression se) {
+            visitSwitchExpression(se);
+            ret = se;
         } else if (exp instanceof ConstructorCallExpression) {
             ret = transformConstructorCallExpression((ConstructorCallExpression) exp);
         } else if (exp instanceof AnnotationConstantExpression) {
