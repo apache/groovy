@@ -130,7 +130,7 @@ public class FormatHelper {
      * @return a formatted string representation
      */
     public static String format(Object arguments, boolean inspect, boolean escapeBackslashes) {
-        return format(arguments, inspect, -1);
+        return format(arguments, inspect, escapeBackslashes, -1);
     }
 
     /**
