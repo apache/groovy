@@ -56,6 +56,7 @@ import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -1466,11 +1467,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
             }
             grey.add(node);
             stack.push(new Marker(node));
-            for (final Object link : new Object[]{node.owner, node.delegate, node.thisObject}) {
+            final Object[] extra = Objects.requireNonNull(node.additionalReferences(),
+                    () -> node.getClass().getName() + ".additionalReferences() must not return null");
+            final Object[] links = concat(new Object[]{node.owner, node.delegate, node.thisObject}, extra);
+            for (final Object link : links) {
                 if (link instanceof Closure<?> child) {
                     if (grey.contains(child)) {
                         throw new InvalidObjectException(
-                                "Closure owner/delegate/thisObject references form a cycle; refusing to deserialize");
+                                "Closure references form a cycle; refusing to deserialize");
                     }
                     if (!black.contains(child)) {
                         stack.push(child);
@@ -1478,6 +1482,33 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                 }
             }
         }
+    }
+
+    private static Object[] concat(final Object[] first, final Object[] second) {
+        if (second.length == 0) return first;
+        final Object[] joined = new Object[first.length + second.length];
+        System.arraycopy(first, 0, joined, 0, first.length);
+        System.arraycopy(second, 0, joined, first.length, second.length);
+        return joined;
+    }
+
+    /**
+     * The closures this one calls through, beyond {@code owner}, {@code delegate} and
+     * {@code thisObject}, for the purposes of {@link #checkForReferenceCycle}.
+     * <p>
+     * A closure which wraps another and invokes it, as
+     * {@link org.codehaus.groovy.runtime.ComposedClosure} and {@code TrampolineClosure} do,
+     * recurses through its own fields rather than through the three the cycle check walks by
+     * default, so a forged graph would escape the check unless it declares them here.
+     * <p>
+     * Only fields the closure <em>calls</em> belong here. A merely captured closure is not a
+     * recursion edge, and declaring one would reject graphs which invoke perfectly well.
+     *
+     * @return the additional closures reached when this one is invoked; never {@code null}
+     * @since 6.0.0
+     */
+    protected Object[] additionalReferences() {
+        return EMPTY_OBJECT_ARRAY;
     }
 
     /** Sentinel pushed below a node's children during the {@link #checkForReferenceCycle} cycle check. */
