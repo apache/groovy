@@ -1246,6 +1246,24 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     /**
+     * Escapes text for use as the value of a quoted HTML attribute, so that text taken from a
+     * doc comment cannot close the attribute or the tag around it.
+     *
+     * @param text the text to escape
+     * @return the escaped text
+     */
+    public static String encodeAttribute(String text) {
+        if (text == null) return null;
+        // The ampersand is replaced first so that the entities introduced below are not
+        // themselves re-escaped.
+        return text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
+    /**
      * Stores the rendered class name including any type arguments.
      *
      * @param nameWithTypeArgs the rendered class name with type arguments
