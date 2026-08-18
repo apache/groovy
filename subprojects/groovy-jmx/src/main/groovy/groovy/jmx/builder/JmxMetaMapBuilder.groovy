@@ -389,6 +389,11 @@ class JmxMetaMapBuilder {
      * **************************************/
     /**
      * Returns a meta map of operations from given object.
+     * <p>
+     * Every public method reachable on the object is exported, inherited ones included, less
+     * the names in {@code OPS_EXCEPTION_LIST}. To export a narrower set, name the wanted
+     * operations explicitly in a descriptor rather than relying on this default.
+     *
      * @param object to profile
      * @return The meta map generated.
      */
@@ -396,11 +401,8 @@ class JmxMetaMapBuilder {
         def methods = object.metaClass.methods
         def ops = [:]
 
-        def declaredMethods = object.class.declaredMethods*.name
-
         methods.each { method ->
-            // avoid picking up extra methods from parents
-            if ((declaredMethods.contains(method.name) && !OPS_EXCEPTION_LIST.contains(method.name)) || (!OPS_EXCEPTION_LIST.contains(method.name))) {
+            if (!OPS_EXCEPTION_LIST.contains(method.name)) {
                 String mName = method.name
                 MetaProperty prop =
                         (mName.length() > 3 && (mName.startsWith("get") || mName.startsWith("set")) ||

@@ -341,6 +341,31 @@ class JmxMetaMapBuilderTest {
     }
 
     @Test
+    void testMetaClassAccessorsAreNotExportedAsOperations() {
+        // Not exported because getMetaClass/setMetaClass resolve to the metaClass MetaProperty
+        // and are dropped by the getter/setter filter, not because they are named in
+        // OPS_EXCEPTION_LIST. Pinned so that a change to that filter cannot quietly publish
+        // them as remotely invokable operations.
+        [new MockManagedObject(), new MockManagedGroovyObject()].each { object ->
+            def map = JmxMetaMapBuilder.buildOperationMapFrom(object)
+            assert !map."getMetaClass"
+            assert !map."setMetaClass"
+        }
+    }
+
+    @Test
+    void testInheritedOperationsRemainExported() {
+        // The default export deliberately spans the whole inheritance chain: JmxBuilder's own
+        // embedded-descriptor fixtures declare their operations on a base class, and
+        // 'operations: "*"' routes here and must mean all of them.
+        def map = JmxMetaMapBuilder.buildOperationMapFrom(new EmbeddedAllOps())
+
+        assert map."doNothing"
+        assert map."doTwoThings"
+        assert map."doThreeThings"
+    }
+
+    @Test
     void testBuildOperationFromDescriptorMap() {
         def object = new MockManagedObject()
         def map = JmxMetaMapBuilder.buildOperationMapFrom(object, "*")
