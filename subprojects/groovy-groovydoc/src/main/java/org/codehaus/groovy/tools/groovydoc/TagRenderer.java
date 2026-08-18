@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import groovy.util.regex.RegexGuard;
+import groovy.util.regex.RegexTimeoutException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -99,6 +102,13 @@ import java.util.regex.PatternSyntaxException;
  * instead of broken as a bogus block tag).
  */
 final class TagRenderer {
+
+    /**
+     * How long a single snippet markup directive may spend matching one line. A directive
+     * carries a regex written by the author of the documented source, so the budget bounds what
+     * a doc comment can cost the build rather than trying to decide which patterns are safe.
+     */
+    private static final long MATCH_TIMEOUT_MILLIS = 250L;
 
     /** Block-tag names that get merged under a single display heading. */
     static final Map<String, String> COLLATED_TAGS = new LinkedHashMap<>();
@@ -450,9 +460,15 @@ final class TagRenderer {
         // or hyperlinks.
         String processed = processSnippetMarkup(dedented, links, relPath, rootDoc, classDoc);
         out.append("<pre><code");
-        if (!combined.isEmpty()) out.append(" class=\"").append(combined).append('"');
+        // The class and id values come from snippet attributes, which the parser above lets
+        // carry a double quote when the attribute itself was single quoted or unquoted.
+        if (!combined.isEmpty()) {
+            out.append(" class=\"").append(SimpleGroovyClassDoc.encodeAttribute(combined)).append('"');
+        }
         String id = attrs.get("id");
-        if (id != null && !id.isEmpty()) out.append(" id=\"").append(id).append('"');
+        if (id != null && !id.isEmpty()) {
+            out.append(" id=\"").append(SimpleGroovyClassDoc.encodeAttribute(id)).append('"');
+        }
         out.append('>').append(processed).append("</code></pre>");
         return endPos - start;
     }
@@ -759,15 +775,28 @@ final class TagRenderer {
                                          GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
         Pattern pat = buildMatchPattern(d);
         if (pat == null) return escaped; // no match clause — nothing to do
-        Matcher m = pat.matcher(escaped);
+        // Both the pattern and the line it runs against come from the documented source, so a
+        // directive can otherwise pin the doc build on a few bytes. Give each directive a
+        // deadline rather than trying to judge which patterns are safe.
+        Matcher m;
+        try {
+            m = RegexGuard.matcher(pat, escaped, MATCH_TIMEOUT_MILLIS);
+        } catch (RegexTimeoutException e) {
+            return escaped;
+        }
         StringBuilder sb = new StringBuilder();
         int last = 0;
-        while (m.find()) {
-            sb.append(escaped, last, m.start());
-            String match = m.group();
-            String wrapped = wrapForDirective(match, d, links, relPath, rootDoc, classDoc);
-            sb.append(wrapped);
-            last = m.end();
+        try {
+            while (m.find()) {
+                sb.append(escaped, last, m.start());
+                String match = m.group();
+                String wrapped = wrapForDirective(match, d, links, relPath, rootDoc, classDoc);
+                sb.append(wrapped);
+                last = m.end();
+            }
+        } catch (RegexTimeoutException e) {
+            // Leave the line as it was rather than half annotated.
+            return escaped;
         }
         sb.append(escaped, last, escaped.length());
         return sb.toString();

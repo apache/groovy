@@ -252,6 +252,80 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 snip.contains("Licensed to the Apache"));
     }
 
+    // GROOVY-12275: snippet attribute values reach quoted HTML attributes. The attribute parser
+    // accepts a double quote inside a single-quoted or unquoted value, so an id could close the
+    // attribute and the tag around it.
+    public void testSnippetAttributeValuesCannotEscapeTheirAttribute() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("snippet-attr-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        Files.writeString(pkgDir.resolve("SnippetAttr.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * {@snippet id='x\"><img src=q onerror=\"alert(1)' class='y\"><b' :\n" +
+                " * def a = 1\n" +
+                " * }\n" +
+                " */\n" +
+                "class SnippetAttr {}\n");
+
+        String doc = renderSingle(tmp, pkg, "SnippetAttr");
+        assertNotNull(doc);
+        assertTrue("the snippet should still render in:\n" + doc, doc.contains("<pre><code"));
+        assertFalse("an attribute value closed its attribute in:\n" + doc,
+                doc.contains("<img src=q"));
+        assertFalse("an attribute value opened a tag in:\n" + doc, doc.contains("\"><b"));
+    }
+
+    // GROOVY-12275: a markup directive's regex is written by the author of the documented
+    // source and runs against lines they also wrote, so it must not be able to pin the build.
+    // Note the payload: on a current JDK the textbook nested-quantifier patterns are optimised
+    // away and finish instantly, while a backreference still backtracks exponentially.
+    public void testSnippetMarkupRegexCannotHangTheBuild() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("snippet-redos-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        String payload = "a".repeat(32);
+        Files.writeString(pkgDir.resolve("SnippetRedos.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * {@snippet lang=\"groovy\" :\n" +
+                " * " + payload + " // @highlight regex=\"(a+)+\\1b\" type=\"bold\"\n" +
+                " * }\n" +
+                " */\n" +
+                "class SnippetRedos {}\n");
+
+        long start = System.nanoTime();
+        String doc = renderSingle(tmp, pkg, "SnippetRedos");
+        long elapsedMs = (System.nanoTime() - start) / 1_000_000L;
+
+        assertNotNull(doc);
+        assertTrue("the snippet should still render in:\n" + doc, doc.contains("<pre><code"));
+        assertTrue("the snippet body should survive in:\n" + doc, doc.contains(payload));
+        // Unguarded this payload runs for minutes and grows exponentially with the line length;
+        // guarded it is bounded per directive. The threshold is loose so the test is about the
+        // bound existing, not about the speed of the machine.
+        assertTrue("rendering took " + elapsedMs + "ms, so the directive regex was not bounded",
+                elapsedMs < 30_000L);
+    }
+
+    /** Renders one class from a temporary source tree and returns its page. */
+    private String renderSingle(Path sourcePath, String pkg, String simpleName) throws Exception {
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src/main/resources"),
+                new String[]{sourcePath.toString()},
+                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                new ArrayList<>(), null, new Properties()
+        );
+        tool.add(List.of(pkg + "/" + simpleName + ".groovy"));
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+        return output.getText(MOCK_DIR + "/" + pkg + "/" + simpleName + ".html");
+    }
+
     // Auto-strip opt-out: {@snippet file="X" keepHeader=true} preserves the
     // file content verbatim, and lang is inferred from the file's extension
     // when no explicit lang= is given.
