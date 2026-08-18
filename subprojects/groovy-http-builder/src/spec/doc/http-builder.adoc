@@ -199,7 +199,108 @@ def http = HttpBuilder.http {
 ----
 
 The `clientConfig` closure receives the `HttpClient.Builder` before `build()`
-is called, so any JDK-supported configuration is available.
+is called, so any JDK-supported configuration is available — with one
+exception: the redirect policy is owned by `followRedirects` (see
+<<redirects,Redirects>>), so a policy set on the raw builder is overridden.
+
+[[redirects]]
+== Redirects
+
+Redirects are not followed by default: a 3xx response is returned to the
+caller, which can inspect its `Location` header and decide what to do.
+Opt in with `followRedirects true`:
+
+[source,groovy]
+----
+def http = HttpBuilder.http {
+    baseUri 'https://api.example.com'
+    followRedirects true
+    header 'Authorization', "Bearer ${token}"
+}
+----
+
+At most 5 hops are followed. Methods are rewritten the same way as the JDK's
+`HttpClient.Redirect.NORMAL` policy: `301` and `302` downgrade `POST` to
+`GET` (dropping the body), `303` downgrades everything except `HEAD` to
+`GET`, and `307`/`308` preserve the method and body.
+
+=== Headers do not leave their origin
+
+Headers configured on the builder or on an individual request are treated as
+intended for one origin only: the scheme, host, and port of the first
+request. Which of them hold credentials is not something `HttpBuilder` can
+know — a token may sit in `Authorization`, `Cookie`, `X-Api-Key`, or any
+custom header — so the policy does not name header names:
+
+* A hop that stays on the origin keeps every header.
+* A hop that leaves the origin sheds _all_ caller-supplied headers, builder
+  defaults and per-request headers alike, for the remainder of the chain.
+  Returning to the original origin later does not restore them: once another
+  server directs the chain, no hop gets the credentials back.
+* The one exception is `Content-Type` on a `307`/`308` hop, which forwards
+  the request body: the header describing that body travels with it, as in
+  browsers.
+* A hop from an `https` URL to a plain `http` URL is never followed
+  (matching `HttpClient.Redirect.NORMAL`); the 3xx is returned to the
+  caller.
+
+Note that the scheme is part of the origin, so a redirect from
+`http://api.example.com` to `https://api.example.com` also sheds headers.
+
+Streaming requests (`streamAsync` and friends) never follow redirects; a
+3xx is always returned as-is.
+
+=== Which settings for which scenario
+
+[cols="1,1"]
+|===
+| Scenario | What to configure
+
+| Same-origin API that occasionally redirects (`/old` → `/new`)
+| `followRedirects true` — headers survive every same-origin hop
+
+| API that redirects downloads to a CDN or pre-signed URL (e.g. an API host
+  redirecting to cloud storage)
+| `followRedirects true` — credentials are shed on the cross-origin hop,
+  which such targets expect (pre-signed URLs typically reject requests that
+  also carry an `Authorization` header)
+
+| Service that redirects to a sibling host which must receive your
+  credentials (e.g. a regional endpoint on another hostname)
+| Send the request to the final host directly; or leave `followRedirects`
+  off, read `Location` from the 3xx, and re-issue the request yourself — an
+  explicit decision to send credentials to the second origin
+
+| Server upgrades `http` to `https` with a redirect
+| Configure the `https` URL as the `baseUri` so no upgrade hop is needed
+
+| Requests (and redirect hops) must never leave the API at all
+| `confineToBaseUri true` — see below
+
+| Streaming a response served behind a redirect
+| Resolve the `Location` of the 3xx yourself and stream from the target
+|===
+
+=== Confining requests to the base URI
+
+When request URIs are built from untrusted input, `confineToBaseUri true`
+rejects any request — and any redirect hop — that resolves outside the
+`baseUri` namespace, whether to another origin or above the base path
+(e.g. via `..` segments or an absolute path). Violations throw
+`SecurityException` instead of executing. It requires `baseUri` to be set:
+
+[source,groovy]
+----
+def http = HttpBuilder.http {
+    baseUri 'https://api.example.com/v2/'
+    confineToBaseUri true
+    followRedirects true
+}
+
+http.get('items/42')              // ok: https://api.example.com/v2/items/42
+http.get('../admin')              // SecurityException: escapes /v2/
+http.get('https://evil.example')  // SecurityException: different origin
+----
 
 == Async Requests
 
@@ -363,7 +464,8 @@ interface MyApi {
 - `connectTimeout` -- how long to wait for the TCP connection (client-level, in seconds)
 - `requestTimeout` -- default request timeout applied to all methods (in seconds)
 - `@Timeout(value)` -- per-method override of the request timeout (in seconds)
-- `followRedirects` -- whether to follow HTTP redirects
+- `followRedirects` -- whether to follow HTTP redirects, with the
+  origin-confined header semantics described in <<redirects,Redirects>>
 
 Default `0` means no timeout.
 

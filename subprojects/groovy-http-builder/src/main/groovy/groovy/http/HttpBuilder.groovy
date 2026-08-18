@@ -34,6 +34,9 @@ import java.util.concurrent.CompletableFuture
 
 /**
  * Tiny DSL over JDK {@link HttpClient}.
+ * <p>
+ * Redirect following is opt-in; see {@link Config#followRedirects(boolean)} for the
+ * policy applied to headers when a redirect leaves the origin of the first request.
  *
  * @since 6.0.0
  */
@@ -46,7 +49,7 @@ final class HttpBuilder {
     private final boolean confineToBaseUri
     private final boolean followRedirectsManually
 
-    /** Maximum number of redirects followed when confinement handles them itself. */
+    /** Maximum number of redirects followed by the manual redirect loop. */
     private static final int MAX_REDIRECTS = 5
 
     private HttpBuilder(final Config config) {
@@ -54,20 +57,21 @@ final class HttpBuilder {
         if (config.connectTimeout != null) {
             clientBuilder.connectTimeout(config.connectTimeout)
         }
-        // When confinement is active we must see every 3xx ourselves so the base-URI
-        // gate can be applied to each hop; the JDK client would otherwise follow
-        // redirects internally, escaping confinement. Only the unconfined case
-        // delegates redirect-following to the JDK.
-        followRedirectsManually = config.confineToBaseUri && config.followRedirects
-        if (config.followRedirects && !followRedirectsManually) {
-            clientBuilder.followRedirects(HttpClient.Redirect.NORMAL)
-        }
+        // Every 3xx is seen here rather than followed inside the JDK client, so that each hop
+        // can be gated: a confined hop against the base URI, and any hop against the origin the
+        // caller's headers were set for.
+        followRedirectsManually = config.followRedirects
         if (config.clientConfigurer != null) {
             Closure<?> code = (Closure<?>) config.clientConfigurer.clone()
             code.resolveStrategy = Closure.DELEGATE_FIRST
             code.delegate = clientBuilder
             code.call(clientBuilder)
         }
+        // Redirect policy is owned by the followRedirects flag above. A redirect policy set on
+        // the raw builder (via clientConfig) would make the JDK client follow hops internally,
+        // where no hop can be gated and the caller's headers travel to whatever origin a
+        // Location names — so any such setting is overridden, after the configurer has run.
+        clientBuilder.followRedirects(HttpClient.Redirect.NEVER)
         client = clientBuilder.build()
         baseUri = config.baseUri
         defaultHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(config.headers))
@@ -217,7 +221,8 @@ final class HttpBuilder {
         if (followRedirectsManually) {
             future = future.thenCompose { HttpResponse<String> response ->
                 followRedirectsAsync(method, httpRequest.uri(), response, headers,
-                        requestSpec.body, requestSpec.timeout, requestSpec.bodyHandler, 0)
+                        requestSpec.body, requestSpec.timeout, requestSpec.bodyHandler, 0,
+                        httpRequest.uri(), false)
             }
         }
         return future.thenApply { HttpResponse<String> response -> new HttpResult(response) }
@@ -297,6 +302,10 @@ final class HttpBuilder {
      * <p>
      * Streaming always uses {@code HttpResponse.BodyHandlers.ofPublisher()};
      * any {@code bodyHandler} configured on the {@code RequestSpec} is ignored.
+     * <p>
+     * Streaming requests never follow redirects, whatever
+     * {@link Config#followRedirects} is set to: a 3xx response is returned
+     * as-is, and its {@code Location} header is left to the caller.
      *
      * @param method the HTTP method to use
      * @param uri the absolute or base-relative request URI
@@ -339,10 +348,10 @@ final class HttpBuilder {
     }
 
     private HttpRequest buildStreamRequest(final String method, final Object uri, final Closure<?> spec) {
-        // Note: streaming does not auto-follow redirects under confinement. Because
-        // the body is an unbuffered publisher, a 3xx is returned to the caller as-is
-        // rather than followed. This is safe (no bypass) but not transparent; callers
-        // who need confined streaming redirects should resolve the Location themselves.
+        // Note: streaming never auto-follows redirects. Because the response body is an
+        // unbuffered publisher, a 3xx is returned to the caller as-is rather than followed;
+        // callers who need streaming redirects should resolve the Location themselves. This
+        // also means no hop can escape the gates above, at the cost of transparency.
         RequestSpec requestSpec = evalSpec(spec)
         URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
         return buildHopRequest(method, resolvedUri, combinedHeaders(requestSpec), requestSpec.body, requestSpec.timeout)
@@ -393,14 +402,16 @@ final class HttpBuilder {
     }
 
     /**
-     * Synchronously follows redirects while confinement is active, applying
-     * {@link #enforceConfinement} to every hop. Because a confined hop must share
-     * the base URI's origin, a redirect to another host is rejected outright — so
-     * sensitive headers can never leak across origins here.
+     * Synchronously follows redirects, applying {@link #enforceConfinement} to every hop while
+     * confinement is active, and shedding the caller's headers on any hop that leaves the
+     * origin the request started from — keeping only {@code Content-Type} on a hop that
+     * forwards the body it describes.
      */
     private HttpResponse<String> followRedirects(String method, URI currentUri, HttpResponse<String> response,
                                                  Map<String, String> headers, Object body,
                                                  Duration timeout, HttpResponse.BodyHandler<String> bodyHandler) {
+        URI origin = currentUri
+        boolean leftOrigin = false
         int redirects = 0
         while (true) {
             URI target = redirectTarget(currentUri, response)
@@ -408,12 +419,16 @@ final class HttpBuilder {
                 return response
             }
             if (++redirects > MAX_REDIRECTS) {
-                throw new RuntimeException("Too many redirects (> " + MAX_REDIRECTS + ") for request confined to " + baseUri)
+                throw new RuntimeException("Too many redirects (> " + MAX_REDIRECTS + ") for request to " + origin)
             }
             String nextMethod = redirectMethod(method, response.statusCode())
             boolean sameMethod = nextMethod == method
             Object nextBody = sameMethod ? body : null
             Map<String, String> nextHeaders = sameMethod ? headers : withoutBodyHeaders(headers)
+            leftOrigin = leftOrigin || !sameOrigin(origin, target)
+            if (leftOrigin) {
+                nextHeaders = nextBody != null ? contentTypeOnly(nextHeaders) : [:]
+            }
             HttpRequest httpRequest = buildHopRequest(nextMethod, target, nextHeaders, nextBody, timeout)
             response = send(nextMethod, httpRequest, bodyHandler)
             currentUri = target
@@ -431,7 +446,7 @@ final class HttpBuilder {
     private CompletableFuture<HttpResponse<String>> followRedirectsAsync(
             String method, URI currentUri, HttpResponse<String> response,
             Map<String, String> headers, Object body, Duration timeout,
-            HttpResponse.BodyHandler<String> bodyHandler, int redirects) {
+            HttpResponse.BodyHandler<String> bodyHandler, int redirects, URI origin, boolean leftOrigin) {
         URI target = redirectTarget(currentUri, response)
         if (target == null) {
             return CompletableFuture.completedFuture(response)
@@ -439,24 +454,32 @@ final class HttpBuilder {
         if (redirects + 1 > MAX_REDIRECTS) {
             CompletableFuture<HttpResponse<String>> failed = new CompletableFuture<>()
             failed.completeExceptionally(
-                    new RuntimeException("Too many redirects (> " + MAX_REDIRECTS + ") for request confined to " + baseUri))
+                    new RuntimeException("Too many redirects (> " + MAX_REDIRECTS + ") for request to " + origin))
             return failed
         }
         String nextMethod = redirectMethod(method, response.statusCode())
         boolean sameMethod = nextMethod == method
         Object nextBody = sameMethod ? body : null
         Map<String, String> nextHeaders = sameMethod ? headers : withoutBodyHeaders(headers)
+        boolean nextLeftOrigin = leftOrigin || !sameOrigin(origin, target)
+        if (nextLeftOrigin) {
+            nextHeaders = nextBody != null ? contentTypeOnly(nextHeaders) : [:]
+        }
         HttpRequest httpRequest = buildHopRequest(nextMethod, target, nextHeaders, nextBody, timeout)
         return client.sendAsync(httpRequest, bodyHandler).thenCompose { HttpResponse<String> next ->
-            followRedirectsAsync(nextMethod, target, next, nextHeaders, nextBody, timeout, bodyHandler, redirects + 1)
+            followRedirectsAsync(nextMethod, target, next, nextHeaders, nextBody, timeout, bodyHandler,
+                    redirects + 1, origin, nextLeftOrigin)
         }
     }
 
     /**
      * Returns the confinement-checked redirect target for a response, or
-     * {@code null} if the response is not a followable redirect (non-3xx, or a
-     * 3xx with no {@code Location}). Throws {@link SecurityException} via
-     * {@link #enforceConfinement} if the target escapes the base URI.
+     * {@code null} if the response is not a followable redirect: non-3xx, a
+     * 3xx with no {@code Location}, or a hop from an https URL to a plain
+     * http one — which, matching {@link HttpClient.Redirect#NORMAL}, is
+     * returned to the caller rather than followed. Throws
+     * {@link SecurityException} via {@link #enforceConfinement} if the target
+     * escapes the base URI.
      */
     private URI redirectTarget(final URI currentUri, final HttpResponse<?> response) {
         int status = response.statusCode()
@@ -469,6 +492,9 @@ final class HttpBuilder {
         }
         URI target = currentUri.resolve(location).normalize()
         enforceConfinement(target)
+        if ('https'.equalsIgnoreCase(currentUri.scheme) && !'https'.equalsIgnoreCase(target.scheme)) {
+            return null
+        }
         return target
     }
 
@@ -489,6 +515,23 @@ final class HttpBuilder {
             default:
                 return method // 307/308 preserve method and body
         }
+    }
+
+    /**
+     * Keeps only the {@code Content-Type} header. Used on a cross-origin hop that forwards
+     * the request body (307/308): the header describes a payload that server receives
+     * anyway, while a body without it is rejected or misparsed by many servers — matching
+     * browsers, which strip credentials on a cross-origin redirect but send body-describing
+     * headers along with the body.
+     */
+    private static Map<String, String> contentTypeOnly(final Map<String, String> headers) {
+        Map<String, String> copy = new LinkedHashMap<>()
+        headers.each { String name, String value ->
+            if ('Content-Type'.equalsIgnoreCase(name)) {
+                copy.put(name, value)
+            }
+        }
+        return copy
     }
 
     private static Map<String, String> withoutBodyHeaders(final Map<String, String> headers) {
@@ -694,7 +737,10 @@ final class HttpBuilder {
          */
         Duration requestTimeout
         /**
-         * Whether redirects should be followed automatically.
+         * Whether redirects should be followed automatically. When enabled, a hop that
+         * leaves the origin of the first request sheds the caller's headers; see
+         * {@link #followRedirects(boolean)} for the full policy. Defaults to {@code false},
+         * returning any 3xx response to the caller as-is.
          */
         boolean followRedirects
         /**
@@ -742,7 +788,21 @@ final class HttpBuilder {
         }
 
         /**
-         * Enables or disables automatic redirect following.
+         * Enables or disables automatic redirect following. When enabled, at most five
+         * hops are followed, rewriting methods like {@link HttpClient.Redirect#NORMAL}:
+         * 301/302 downgrade {@code POST} to {@code GET} (dropping the body), 303
+         * downgrades everything except {@code HEAD} to {@code GET}, and 307/308 preserve
+         * the method and body.
+         * <p>
+         * Headers are treated as configured for one origin: the scheme, host, and
+         * effective port of the first request. A hop that stays on that origin keeps
+         * every header. A hop that leaves it sheds all caller-supplied headers — builder
+         * defaults and per-request headers alike — for the remainder of the chain,
+         * including any later hop back to the original origin. The one exception is
+         * {@code Content-Type}, which stays with a 307/308 hop that forwards the body it
+         * describes. A hop from an https URL to a plain http one is never followed; the
+         * 3xx is returned to the caller. Callers who need credentials sent to a redirect
+         * target on another origin should issue a request to that target directly.
          *
          * @param value {@code true} to follow redirects
          */
@@ -784,6 +844,10 @@ final class HttpBuilder {
         /**
          * Provides direct access to the underlying {@code HttpClient.Builder}
          * for advanced configuration (authenticator, SSL context, proxy, cookie handler, etc.).
+         * <p>
+         * Redirect policy is the exception: it is owned by {@link #followRedirects} so that
+         * every hop can be gated against confinement and against the origin the caller's
+         * headers were set for. A redirect policy set on the raw builder here is overridden.
          *
          * @param configurer a closure taking an {@code HttpClient.Builder}
          */
