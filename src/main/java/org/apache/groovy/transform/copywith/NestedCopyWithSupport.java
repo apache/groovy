@@ -20,6 +20,7 @@ package org.apache.groovy.transform.copywith;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -40,6 +41,7 @@ import java.util.Map;
  * @since 6.0.0
  */
 @Incubating
+@GroovyABI(since="6.0.0")
 public final class NestedCopyWithSupport {
 
     private NestedCopyWithSupport() {

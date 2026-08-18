@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.IntRange;
+import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.createSimi
  *
  * @since 6.0.0
  */
+@GroovyABI(since="6.0.0")
 public final class MultipleAssignmentSupport {
 
     private MultipleAssignmentSupport() {}

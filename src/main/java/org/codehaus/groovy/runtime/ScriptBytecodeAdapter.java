@@ -30,6 +30,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.lang.NumberRange;
 import groovy.lang.ObjectRange;
 import groovy.lang.Tuple;
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
@@ -52,6 +53,7 @@ import java.util.stream.BaseStream;
 /**
  * A static helper class to interface bytecode and runtime
  */
+@GroovyABI(since="1.0.0")
 public class ScriptBytecodeAdapter {
 
     /**
@@ -747,6 +749,7 @@ public class ScriptBytecodeAdapter {
         return (T) n;
     }
 
+    @GroovyABI(since = "1.0.0")
     public static MetaClass initMetaClass(final Object object) {
         return InvokerHelper.getMetaClass(object.getClass());
     }
@@ -1039,6 +1042,7 @@ public class ScriptBytecodeAdapter {
      *
      * @since 6.0.0
      */
+    @GroovyABI(since="6.0.0")
     public static Object compoundAssign(final Object receiver, final Object arg,
                                         final String assignName, final String baseName) throws Throwable {
         if (receiver != null) {
@@ -1071,6 +1075,7 @@ public class ScriptBytecodeAdapter {
      *
      * @since 6.0.0
      */
+    @GroovyABI(since="6.0.0")
     public static Closure<?> packedClosure(final Object owner, final Object dispatchers, final int id,
             final String method, final Object[] captured, final Class[] paramTypes,
             final boolean strict, final boolean implicit, final boolean vararg) {

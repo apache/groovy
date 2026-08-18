@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast.tools;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -97,6 +98,7 @@ public class ConstructorNodeUtils {
      * @param props the properties accepted by the constructor
      * @return a statement that performs the validation
      */
+    @GroovyABI(since="4.0.0")
     public static Statement checkPropNamesS(final VariableExpression namedArgs, final boolean pojo, final List<PropertyNode> props) {
         if (!pojo) {
             return stmt(callX(IMMUTABLE_TYPE, "checkPropNames", args(varX("this"), namedArgs)));

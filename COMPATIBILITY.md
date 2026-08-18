@@ -55,6 +55,33 @@ examples include `org.apache.groovy.internal.util.*`,
 `org.apache.groovy.internal.metaclass.*`, and
 `org.apache.groovy.parser.antlr4.internal.*`.
 
+## Compiler-referenced ABI (@GroovyABI)
+
+Some internals are not Public API, yet are still part of the compatibility
+contract because bytecode the compiler emits links against them directly
+(call sites, `ScriptBytecodeAdapter`, indy bootstraps, transform helpers).
+That surface is marked with
+`@org.apache.groovy.lang.annotation.GroovyABI`.
+
+- **Who is protected:** only the compiler↔runtime link, not user code.
+  `@GroovyABI` does not make something public API; it records that compiled
+  Groovy may outlive the compiler version that produced it.
+- **`since`:** mandatory, full three-part version form (`"1.0.0"`, not
+  `"1.0"`), giving the first release in which the element joined the ABI.
+- **Placement:** prefer the class level when every reachable member shares
+  the same `since`; annotate members when their `since` differs or only part
+  of the type is reachable.
+- **Retention:** `CLASS` — kept in published jars for build-time binary-
+  compatibility checks.
+- **Scope guidance:** the marked set must be complete for a stated scope
+  (e.g. the core always-emitted bridges) or explicitly work-in-progress, so
+  it stays a trustworthy signal. Don't extend it to a whole GDK-style class
+  unless those members are actually referenced by emitted bytecode.
+
+Removing or changing an `@GroovyABI`-marked element is a breaking change to
+compiled Groovy code, handled like any other break via the release-management
+process below.
+
 ## Incubating features
 
 `@Incubating` reduces the formal stability guarantee — it tells users
@@ -326,6 +353,11 @@ A few things to know about the check:
 - **It does not fail the build.** `failOnModification = false` —
   reports are produced, but a CI job has to read them and a human
   has to interpret them. The report is a guidance tool, not a gate.
+- **The `@GroovyABI`-marked subset can be gated.** Because the marker is
+  retained in class files, a stricter task variant can use
+  `annotationIncludes = ['@org.apache.groovy.lang.annotation.GroovyABI']`
+  with `failOnModification = true` to enforce the annotated subset while the
+  broad report stays advisory.
 - **`@Internal` is not what excludes a symbol from the check.**
   Exclusion is by package name (`**internal**`). The annotation is a
   documentation marker that helps Groovydoc, AST tools, and reviewers;

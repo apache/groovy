@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.io.ObjectStreamException;
 import java.io.Serial;
@@ -103,6 +104,7 @@ public final class CurriedClosure<V> extends Closure<V> {
         }
     }
 
+    @GroovyABI(since = "1.0.0")
     public CurriedClosure(final Closure<V> uncurriedClosure, final Object... arguments) {
         this(0, uncurriedClosure, arguments);
     }

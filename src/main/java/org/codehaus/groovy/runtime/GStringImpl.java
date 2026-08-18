@@ -22,6 +22,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.transform.Pure;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
+import org.apache.groovy.lang.annotation.GroovyABI;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -59,6 +60,7 @@ public class GStringImpl extends GString {
      * @param values  the value parts
      * @param strings the string parts
      */
+    @GroovyABI(since = "1.0.0")
     public GStringImpl(Object[] values, String[] strings) {
         this(values, strings, checkValuesStringConstant(values), null, false);
     }

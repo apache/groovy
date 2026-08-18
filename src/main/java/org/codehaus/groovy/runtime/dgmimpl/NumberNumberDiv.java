@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl;
 
+import org.apache.groovy.lang.annotation.GroovyABI;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
 public final class NumberNumberDiv extends NumberNumberMetaMethod {
@@ -41,6 +42,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
      * @param right another Number
      * @return a Number resulting of the divide operation
      */
+    @GroovyABI(since="2.0.0")
     public static Number div(Number left, Number right) {
         return NumberMath.divide(left, right);
     }
