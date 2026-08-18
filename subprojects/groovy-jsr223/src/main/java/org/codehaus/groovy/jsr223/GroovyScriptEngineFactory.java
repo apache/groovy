@@ -209,9 +209,16 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
 
     /**
      * Produces a Groovy statement that prints the supplied text.
+     * <p>
+     * The text is data, so it is rendered as a string literal with every character escaped
+     * that would otherwise change what the statement means: the quote and backslash that
+     * would end or re-escape the literal, the dollar that would make it an interpolating
+     * {@link groovy.lang.GString}, and the line terminators that would end the line. Other
+     * control characters are legal inside a Groovy string literal and are emitted as they
+     * are.
      *
      * @param toDisplay the text to render
-     * @return a {@code println} statement with embedded quotes and backslashes escaped
+     * @return a {@code println} statement which displays the text verbatim
      */
     @Override
     public String getOutputStatement(String toDisplay) {
@@ -226,6 +233,15 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
                     break;
                 case '\\':
                     buf.append("\\\\");
+                    break;
+                case '$':
+                    buf.append("\\$");
+                    break;
+                case '\n':
+                    buf.append("\\n");
+                    break;
+                case '\r':
+                    buf.append("\\r");
                     break;
                 default:
                     buf.append(ch);
