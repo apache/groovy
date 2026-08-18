@@ -23,7 +23,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 
+import static groovy.test.GroovyAssert.shouldFail
+
+import javax.management.remote.JMXAuthenticator
 import javax.management.remote.JMXConnector
+import javax.management.remote.JMXConnectorServer
 import javax.management.remote.JMXConnectorFactory
 import javax.management.remote.JMXServiceURL
 import javax.management.remote.rmi.RMIConnectorServer
@@ -46,6 +50,113 @@ class JmxServerConnectorFactoryTest {
     @AfterEach
     void tearDown() {
         JmxConnectorHelper.destroyRmiRegistry(rmi.registry)
+    }
+
+    // GROOVY-12270: authentication properties must land on the keys a connector server
+    // consumes, not on the JDK management agent's names, which it ignores.
+    @Test
+    void testAuthenticationPropertiesMapToConsumedKeys() {
+        def factory = new JmxServerConnectorFactory()
+        def env = factory.confiConnectorProperties('rmi', rmi.port,
+                [authenticate: true, passwordFile: 'pwd.properties', accessFile: 'access.properties'])
+
+        assert env['jmx.remote.x.password.file'] == 'pwd.properties'
+        assert env['jmx.remote.x.access.file'] == 'access.properties'
+        assert !env.containsKey('com.sun.management.jmxremote.password.file')
+        assert !env.containsKey('com.sun.management.jmxremote.access.file')
+    }
+
+    @Test
+    void testLoginConfigMapsToConsumedKey() {
+        def factory = new JmxServerConnectorFactory()
+        def env = factory.confiConnectorProperties('rmi', rmi.port,
+                [authenticate: true, loginConfig: 'MyLoginModule'])
+
+        assert env['jmx.remote.x.login.config'] == 'MyLoginModule'
+    }
+
+    // Credentials are only configured when authentication was actually asked for.
+    @Test
+    void testCredentialsIgnoredWhenAuthenticationNotRequested() {
+        def factory = new JmxServerConnectorFactory()
+        def env = factory.confiConnectorProperties('rmi', rmi.port,
+                [authenticate: false, passwordFile: 'pwd.properties'])
+
+        assert !env.containsKey('jmx.remote.x.password.file')
+    }
+
+    // Asking for authentication without any source of credentials would start an open
+    // connector, which is the failure this ticket is about, so it is rejected.
+    @Test
+    void testAuthenticationWithoutCredentialSourceIsRejected() {
+        def factory = new JmxServerConnectorFactory()
+        def ex = shouldFail(JmxBuilderException) {
+            factory.confiConnectorProperties('rmi', rmi.port, [authenticate: true])
+        }
+        assert ex.message.contains('passwordFile')
+        assert ex.message.contains('loginConfig')
+    }
+
+    // A caller may supply their own JMXAuthenticator instead of a password file; that is the
+    // standard JSR-160 route and must count as a source of credentials.
+    @Test
+    void testCallerSuppliedAuthenticatorSatisfiesAuthenticationRequest() {
+        def factory = new JmxServerConnectorFactory()
+        def authenticator = { env -> new javax.security.auth.Subject() } as JMXAuthenticator
+        def env = factory.confiConnectorProperties('rmi', rmi.port,
+                [authenticate: true, (JMXConnectorServer.AUTHENTICATOR): authenticator])
+
+        assert env[JMXConnectorServer.AUTHENTICATOR].is(authenticator)
+    }
+
+    // A present-but-null (or wrong-typed) authenticator entry is not a credential source; it must
+    // be rejected rather than pass the check on the key's presence alone and leave the connector
+    // unauthenticated.
+    @Test
+    void testNullAuthenticatorIsNotACredentialSource() {
+        def factory = new JmxServerConnectorFactory()
+        def ex = shouldFail(JmxBuilderException) {
+            factory.confiConnectorProperties('rmi', rmi.port,
+                    [authenticate: true, (JMXConnectorServer.AUTHENTICATOR): null])
+        }
+        assert ex.message.contains(JMXConnectorServer.AUTHENTICATOR)
+
+        shouldFail(JmxBuilderException) {
+            factory.confiConnectorProperties('rmi', rmi.port,
+                    [authenticate: true, (JMXConnectorServer.AUTHENTICATOR): 'not-an-authenticator'])
+        }
+    }
+
+    // End-to-end: a connector configured to authenticate must reject a credential-less client.
+    @Test
+    void testAuthenticatedConnectorRejectsAnonymousClient() {
+        File dir = File.createTempDir()
+        try {
+            File password = new File(dir, 'jmxremote.password')
+            password.text = 'probeuser probepass\n'
+            File access = new File(dir, 'jmxremote.access')
+            access.text = 'probeuser readwrite\n'
+            [password, access].each { it.setReadable(false, false); it.setReadable(true, true) }
+
+            def server = builder.serverConnector(port: rmi.port,
+                    properties: [authenticate: true, passwordFile: password.path, accessFile: access.path])
+            server.start()
+            try {
+                JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:${rmi.port}/jmxrmi")
+                shouldFail(SecurityException) {
+                    JMXConnectorFactory.connect(url, null).withCloseable { it.MBeanServerConnection.MBeanCount }
+                }
+                // ...and accept the configured one.
+                def creds = [(JMXConnector.CREDENTIALS): ['probeuser', 'probepass'] as String[]]
+                JMXConnectorFactory.connect(url, creds).withCloseable {
+                    assert it.MBeanServerConnection.MBeanCount > 0
+                }
+            } finally {
+                server.stop()
+            }
+        } finally {
+            dir.deleteDir()
+        }
     }
 
     @Test
@@ -81,8 +192,11 @@ class JmxServerConnectorFactoryTest {
         def env = factory.confiConnectorProperties('rmi', rmi.port, [authenticate: false])
 
         assert env != null : 'connector environment map must not be discarded'
-        // supplied/derived entries are present
-        assert env.containsKey('com.sun.management.jmxremote.authenticate')
+        // GROOVY-12270: the com.sun.management.jmxremote.* names belong to the JDK management
+        // agent and mean nothing in a connector environment, so they are no longer copied into
+        // it; authentication was not requested here, so nothing is configured for it.
+        assert !env.containsKey('com.sun.management.jmxremote.authenticate')
+        assert !env.containsKey('jmx.remote.x.password.file')
     }
 
     // GROOVY-12119: when SSL is requested the env map must carry the SSL socket factories
@@ -92,7 +206,8 @@ class JmxServerConnectorFactoryTest {
         def env = factory.confiConnectorProperties('rmi', rmi.port, [sslEnabled: true])
 
         assert env != null
-        assert env['com.sun.management.jmxremote.ssl']
+        // The socket factories are what actually enable SSL; see GROOVY-12270 for why the
+        // com.sun.management.jmxremote.ssl key itself is no longer placed in the environment.
         assert env[RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE] instanceof SslRMIServerSocketFactory
         assert env[RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE] instanceof SslRMIClientSocketFactory
     }
@@ -127,7 +242,7 @@ class JmxServerConnectorFactoryTest {
         def env = factory.confiConnectorProperties('rmi', rmi.port, ['com.sun.management.jmxremote.ssl': true])
 
         assert env != null
-        assert env['com.sun.management.jmxremote.ssl']
+        // Recognition is evidenced by the socket factories being configured from it.
         assert env[RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE] instanceof SslRMIServerSocketFactory
     }
 

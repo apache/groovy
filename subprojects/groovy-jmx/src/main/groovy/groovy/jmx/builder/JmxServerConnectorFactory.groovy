@@ -19,6 +19,7 @@
 package groovy.jmx.builder
 
 import javax.management.MBeanServer
+import javax.management.remote.JMXAuthenticator
 import javax.management.remote.JMXConnectorServer
 import javax.management.remote.JMXConnectorServerFactory
 import javax.management.remote.JMXServiceURL
@@ -42,11 +43,19 @@ import javax.rmi.ssl.SslRMIServerSocketFactory
  *            "authenticate":true|false,
  *            "passwordFile":"...",
  *            "accessFile":"...",
+ *            "loginConfig":"...",
  *            "sslEnabled" : true | false
  *         ...
  *        ]
  *     )
  * </pre>
+ * <p>
+ * When {@code authenticate} is true a source of credentials must be supplied, being one of
+ * {@code passwordFile}, {@code loginConfig}, or a {@code jmx.remote.authenticator} entry
+ * holding a {@link javax.management.remote.JMXAuthenticator}. A connector which was asked to
+ * authenticate but has none of these would start open, so that combination is rejected rather
+ * than accepted silently. Any other entry in {@code properties} is passed to the connector
+ * environment unaltered.
  *
  * @see javax.management.remote.JMXConnectorServer
  */
@@ -149,17 +158,36 @@ class JmxServerConnectorFactory extends AbstractFactory {
         if (!props) return null
         HashMap<String, Object> env = new HashMap<String, Object>()
 
-        // secure connection
+        // Authentication. The com.sun.management.jmxremote.* names belong to the JDK's
+        // out-of-the-box management agent, which translates them into the jmx.remote.x.*
+        // names a connector server actually consumes (see sun.management.jmxremote.
+        // ConnectorBootstrap). Nothing performs that translation here, so do it: putting the
+        // agent's names into a connector environment leaves the connector with no
+        // authenticator at all, and it accepts credential-less clients.
         def auth = props.remove("com.sun.management.jmxremote.authenticate") ?: props.remove("authenticate")
-        env.put("com.sun.management.jmxremote.authenticate", auth)
         def pFile = props.remove("com.sun.management.jmxremote.password.file") ?: props.remove("passwordFile")
-        env.put("com.sun.management.jmxremote.password.file", pFile)
         def aFile = props.remove("com.sun.management.jmxremote.access.file") ?: props.remove("accessFile")
-        env.put("com.sun.management.jmxremote.access.file", aFile)
+        def loginConfig = props.remove("com.sun.management.jmxremote.login.config") ?: props.remove("loginConfig")
+
+        if (Boolean.valueOf(auth?.toString())) {
+            // A caller may instead pass a JMXAuthenticator straight through, which is the
+            // standard JSR-160 route for custom authentication and is a credential source too.
+            // Validate the value, not just the key: a present-but-null (or wrong-typed) entry is
+            // not a credential source and would leave the connector unauthenticated.
+            boolean suppliedAuthenticator = props.get(JMXConnectorServer.AUTHENTICATOR) instanceof JMXAuthenticator
+            if (!pFile && !loginConfig && !suppliedAuthenticator) {
+                throw new JmxBuilderException("Connector authentication was requested but no source " +
+                        "of credentials was provided; supply 'passwordFile', 'loginConfig' or a " +
+                        "'${JMXConnectorServer.AUTHENTICATOR}' entry, otherwise the connector would " +
+                        "start unauthenticated.")
+            }
+            if (pFile) env.put("jmx.remote.x.password.file", pFile)
+            if (loginConfig) env.put("jmx.remote.x.login.config", loginConfig)
+            if (aFile) env.put("jmx.remote.x.access.file", aFile)
+        }
 
         // SSL connection
         def ssl = props.remove("com.sun.management.jmxremote.ssl") ?: props.remove("sslEnabled")
-        env.put("com.sun.management.jmxremote.ssl", ssl)
 
         // config other rmi props
         if (protocol == "rmi") {
