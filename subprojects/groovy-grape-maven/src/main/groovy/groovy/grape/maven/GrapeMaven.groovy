@@ -45,6 +45,7 @@ import org.eclipse.aether.resolution.ArtifactRequest
 import org.eclipse.aether.resolution.ArtifactResult
 import org.eclipse.aether.resolution.DependencyRequest
 import org.eclipse.aether.resolution.DependencyResolutionException
+import org.eclipse.aether.spi.connector.checksum.ChecksumPolicyProvider
 import org.eclipse.aether.supplier.RepositorySystemSupplier
 import org.eclipse.aether.transfer.AbstractTransferListener
 import org.eclipse.aether.transfer.TransferEvent
@@ -415,11 +416,11 @@ class GrapeMaven implements GrapeEngine {
      * @return the resolved artifact URIs
      */
     URI[] getDependencies(Map args, List depsInfo, MavenGrabRecord... grabRecords) {
-        try (RepositorySystem system = new RepositorySystemSupplier().get()) {
+        try (RepositorySystem system = new GrapeRepositorySystemSupplier().get()) {
             def localRepo = new LocalRepository(grapeCacheDir.toPath())
             String checksumPolicy = args.disableChecksums ?
                 RepositoryPolicy.CHECKSUM_POLICY_IGNORE :
-                RepositoryPolicy.CHECKSUM_POLICY_WARN
+                RepositoryPolicy.CHECKSUM_POLICY_FAIL
 
             // Extract exclusions from args if provided by @GrabExclude
             List<Map<String, String>> exclusions = (List<Map<String, String>>) args.get('excludes') ?: []
@@ -877,6 +878,18 @@ class GrapeMaven implements GrapeEngine {
         if (e instanceof RuntimeException) return (RuntimeException) e
         String msg = e.message ?: e.class.name
         return new RuntimeException("Error grabbing Grapes -- ${msg}", e)
+    }
+
+    /**
+     * Repository system supplier which installs Grape's own checksum policy provider in place
+     * of the stock one, so that {@code CHECKSUM_POLICY_FAIL} rejects mismatched artifacts
+     * without also rejecting artifacts that publish no checksum.
+     */
+    private static class GrapeRepositorySystemSupplier extends RepositorySystemSupplier {
+        @Override
+        protected ChecksumPolicyProvider createChecksumPolicyProvider() {
+            new GrapeChecksumPolicyProvider(super.createChecksumPolicyProvider())
+        }
     }
 
 }

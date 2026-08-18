@@ -19,6 +19,7 @@
 package groovy.grape.maven
 
 import groovy.grape.Grape
+import org.eclipse.aether.transfer.ChecksumFailureException
 import org.junit.jupiter.api.Test
 
 import java.nio.file.Files
@@ -148,6 +149,55 @@ ${depsXml}
         assert uris.any { it.toString().contains('root-artifact-1.0.0.jar') }
         assert uris.any { it.toString().contains('dep-required-1.0.0.jar') }
         assert !uris.any { it.toString().contains('dep-optional-1.0.0.jar') }
+    }
+
+    @Test
+    void testArtifactWithoutChecksumsResolves() {
+        File repoDir = new File(Files.createTempDirectory('grape-maven-nochecksum-test').toFile(), 'repo')
+
+        String g = 'dev.grape.nochecksum'
+        deleteCachedGroup(g)
+        publishArtifact(repoDir, g, 'plain', '1.0.0')
+
+        Grape.addResolver(name: 'local-nochecksum-test', root: repoDir.toURI().toString(), m2Compatible: true)
+        URI[] uris = Grape.resolve([autoDownload: true, classLoader: new GroovyClassLoader()],
+            [groupId: g, artifactId: 'plain', version: '1.0.0'])
+
+        // A repository that publishes no .sha1/.md5 must still resolve, matching the Ivy engine.
+        assert uris.any { it.toString().contains('plain-1.0.0.jar') }
+    }
+
+    @Test
+    void testArtifactWithMismatchedChecksumIsRejected() {
+        File repoDir = new File(Files.createTempDirectory('grape-maven-badchecksum-test').toFile(), 'repo')
+
+        String g = 'dev.grape.badchecksum'
+        deleteCachedGroup(g)
+        publishArtifact(repoDir, g, 'tampered', '1.0.0')
+
+        // Publish a checksum that does not describe the jar, as a tampered mirror would.
+        File artifactDir = new File(repoDir, g.replace('.', '/') + '/tampered/1.0.0')
+        new File(artifactDir, 'tampered-1.0.0.jar.sha1').text = '0' * 40
+
+        Grape.addResolver(name: 'local-badchecksum-test', root: repoDir.toURI().toString(), m2Compatible: true)
+        def ex = shouldFail {
+            Grape.resolve([autoDownload: true, classLoader: new GroovyClassLoader()],
+                [groupId: g, artifactId: 'tampered', version: '1.0.0'])
+        }
+
+        // Ensure it failed for the checksum, not for some unrelated resolution problem.
+        assert hasCauseOfType(ex, ChecksumFailureException)
+    }
+
+    private static boolean hasCauseOfType(Throwable t, Class<? extends Throwable> type) {
+        for (Throwable c = t; c != null; c = c.cause) {
+            if (type.isInstance(c)) return true
+            for (Throwable s : c.suppressed) {
+                if (hasCauseOfType(s, type)) return true
+            }
+            if (c.cause.is(c)) break
+        }
+        return false
     }
 
     @Test
