@@ -125,6 +125,17 @@ import java.util.Map;
  * out, but new language features are then implicitly also available and this may not be desirable.
  * The implication is that you might need to update your configuration with each new release.
  * <p>
+ * The statement and expression lists are matched by exact class, so naming a class does not name its
+ * subclasses. Several language constructs are modelled as a subclass of another: a lambda is a
+ * {@link org.codehaus.groovy.ast.expr.LambdaExpression}, which extends
+ * {@link org.codehaus.groovy.ast.expr.ClosureExpression}; the {@code ::} form of a method reference is
+ * a {@link org.codehaus.groovy.ast.expr.MethodReferenceExpression}, which extends
+ * {@link org.codehaus.groovy.ast.expr.MethodPointerExpression}; and attribute access is an
+ * {@link org.codehaus.groovy.ast.expr.AttributeExpression}, which extends
+ * {@link org.codehaus.groovy.ast.expr.PropertyExpression}. Each has to be listed in its own right.
+ * This is another reason to prefer allowed lists, which refuse an unlisted subclass rather than
+ * admitting one.
+ * <p>
  * If neither an allowed list nor a disallowed list is set, then everything is permitted.
  * <p>
  * Combinations of import and star import constraints are authorized as long as you use the same type of list for both.
@@ -219,6 +230,16 @@ import java.util.Map;
  *  fully-qualified reference such as {@code new java.lang.ProcessBuilder(...)}. The
  *  {@link #setIndirectImportCheckEnabled(boolean)} flag exists to catch some of those, but only
  *  within the code this customizer visits.
+ *  <p>
+ *  Where this customizer sits in the compilation explains both of the limitations above and one
+ *  more. It runs at {@link org.codehaus.groovy.control.CompilePhase#CANONICALIZATION}, which is after
+ *  the phases in which annotations that execute have already done so, and before the phase in which
+ *  types are inferred. So the type this customizer sees for an expression is the type the source
+ *  states, and for anything left to the runtime that is {@code java.lang.Object}: in
+ *  {@code def r = java.lang.Runtime; r.getRuntime()} the receiver of the call is {@code Object}, not
+ *  {@code Runtime}, and a receiver list naming {@code Runtime} does not match it. Compiling statically
+ *  does not change this, since {@code @CompileStatic} and {@code @TypeChecked} run at
+ *  {@link org.codehaus.groovy.control.CompilePhase#INSTRUCTION_SELECTION}, three phases later.
  *  <p>
  *  More fundamentally, <i>compiling</i> Groovy source is itself code execution, whether or not you
  *  subsequently run the result: global AST transforms found on the compile classpath,
