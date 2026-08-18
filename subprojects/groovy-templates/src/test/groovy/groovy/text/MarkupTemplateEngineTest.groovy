@@ -273,6 +273,72 @@ final class MarkupTemplateEngineTest {
         assert rendered.toString() == '<html><a href=\'foo.html\'>Link text</a><tagWithQuote attr=\'fo&apos;o\'/></html>'
     }
 
+    // GROOVY-12278: an attribute value is data, as element text is. yield() escapes all five XML
+    // metacharacters; the attribute path escaped only the delimiter in use, so an ampersand or a
+    // less-than in a value produced markup that is not well formed, and a greater-than was left
+    // unescaped where element text escapes it.
+    @Test
+    void testAttributeValuesAreEscapedLikeElementText() {
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def template = engine.createTemplate '''
+            html {
+                div(title: value)
+            }
+        '''
+        StringWriter rendered = new StringWriter()
+        template.make([value: 'a & b < c > d']).writeTo(rendered)
+        assert rendered.toString() == "<html><div title='a &amp; b &lt; c &gt; d'/></html>"
+    }
+
+    // The delimiter still cannot end the value, and the other quote is neither unsafe nor
+    // ill-formed inside one, so it is left as written.
+    @Test
+    void testAttributeValueCannotEndItsOwnAttribute() {
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def template = engine.createTemplate '''
+            html {
+                div(title: value)
+            }
+        '''
+        StringWriter rendered = new StringWriter()
+        template.make([value: "x' onmouseover='alert(1)"]).writeTo(rendered)
+        assert !rendered.toString().contains("onmouseover='alert")
+        assert rendered.toString().contains('&apos;')
+    }
+
+    // GROOVY-12278: a name has no escaped form, so a name taken from data which is not a name is
+    // refused rather than written out to introduce attributes of its own.
+    @Test
+    void testAttributeNameTakenFromDataMustBeAName() {
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def template = engine.createTemplate '''
+            html {
+                div(attrs)
+            }
+        '''
+        StringWriter rendered = new StringWriter()
+        def err = shouldFail(IllegalArgumentException) {
+            template.make([attrs: ["x='1' onmouseover='alert(1)'": 'y']]).writeTo(rendered)
+        }
+        assert err.message.contains('Invalid markup attribute name')
+    }
+
+    @Test
+    void testOrdinaryAttributeNamesStillRender() {
+        def engine = new MarkupTemplateEngine(new TemplateConfiguration())
+        def template = engine.createTemplate '''
+            html {
+                div('data-id': 1, 'xlink:href': 'a', _private: 2, 'a.b': 3)
+            }
+        '''
+        StringWriter rendered = new StringWriter()
+        template.make().writeTo(rendered)
+        assert rendered.toString().contains("data-id='1'")
+        assert rendered.toString().contains("xlink:href='a'")
+        assert rendered.toString().contains("_private='2'")
+        assert rendered.toString().contains("a.b='3'")
+    }
+
     @Test
     void testTagsWithAttributesAndDoubleQuotes() {
         def engine = new MarkupTemplateEngine(new TemplateConfiguration())
