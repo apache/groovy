@@ -310,6 +310,65 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 elapsedMs < 30_000L);
     }
 
+    // GROOVY-12271: the file attribute is relative to snippet-files/ per JEP 413, so an
+    // absolute name is refused even when it would land inside the directory. Otherwise a doc
+    // comment would resolve on the author's machine and not on a build agent.
+    public void testSnippetTagExternalFormRefusesAbsoluteFileName() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("snippet-absolute-");
+        Path pkgDir = tmp.resolve(pkg);
+        Path snippetDir = pkgDir.resolve("snippet-files");
+        Files.createDirectories(snippetDir);
+        String marker = "INSIDE_SNIPPET_FILES_MARKER";
+        Files.writeString(snippetDir.resolve("Inside.groovy"), marker + "\n");
+
+        Files.writeString(pkgDir.resolve("AbsoluteName.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * absolute: {@snippet file=\"" + snippetDir.resolve("Inside.groovy") + "\" keepHeader=true}\n" +
+                " * relative: {@snippet file=\"Inside.groovy\" keepHeader=true}\n" +
+                " */\n" +
+                "class AbsoluteName {}\n");
+
+        String doc = renderSingle(tmp, pkg, "AbsoluteName");
+        assertNotNull(doc);
+        // The relative form resolves, so exactly one of the two snippets rendered.
+        int first = doc.indexOf(marker);
+        assertTrue("Expected the relative form to resolve in:\n" + doc, first >= 0);
+        assertEquals("Absolute file name should not have resolved in:\n" + doc,
+                -1, doc.indexOf(marker, first + 1));
+    }
+
+    // GROOVY-12271: the file name comes from a doc comment, so snippet resolution is confined
+    // to the package's snippet-files/ directory. A name escaping it must resolve to nothing
+    // rather than to a file elsewhere on the machine running the tool.
+    public void testSnippetTagExternalFormCannotEscapeSnippetFiles() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("snippet-traversal-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        Files.createDirectories(pkgDir.resolve("snippet-files"));
+
+        // Something worth stealing, outside snippet-files but reachable by walking up.
+        String secretText = "TOP_SECRET_CREDENTIAL_VALUE";
+        Files.writeString(tmp.resolve("secret.txt"), secretText);
+
+        // Depth from snippet-files/ back up to tmp: package segments plus snippet-files itself.
+        String upToTmp = "../".repeat(pkg.split("/").length + 1);
+        Files.writeString(pkgDir.resolve("Traversal.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * relative: {@snippet file=\"" + upToTmp + "secret.txt\" keepHeader=true}\n" +
+                " * absolute: {@snippet file=\"" + tmp.resolve("secret.txt") + "\" keepHeader=true}\n" +
+                " */\n" +
+                "class Traversal {}\n");
+
+        String doc = renderSingle(tmp, pkg, "Traversal");
+        assertNotNull(doc);
+        assertFalse("Snippet file resolution escaped snippet-files/ in:\n" + doc,
+                doc.contains(secretText));
+    }
+
     /** Renders one class from a temporary source tree and returns its page. */
     private String renderSingle(Path sourcePath, String pkg, String simpleName) throws Exception {
         GroovyDocTool tool = new GroovyDocTool(
