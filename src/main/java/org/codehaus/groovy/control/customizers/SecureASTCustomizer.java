@@ -825,9 +825,14 @@ public class SecureASTCustomizer extends CompilationCustomizer {
     }
 
     /**
-     * Set this option to true if you want your import rules to be checked against every class node. This means that if
-     * someone uses a fully qualified class name, then it will also be checked against the import rules, preventing, for
-     * example, instantiation of classes without imports thanks to FQCN.
+     * Set this option to true to apply the import rules to types which appear in the source without an
+     * import statement, most usefully to prevent a class being instantiated by fully qualified name.
+     * <p>
+     * The rules are applied to the constructed type of a constructor call, and to the receiver type of a
+     * method call or a static method call. They are not applied to every class node: class literals,
+     * property and attribute access, cast and declaration types, and catch types are not examined. Note
+     * also that the receiver type is the static type of that expression, which for a dynamically typed
+     * receiver is {@code java.lang.Object} rather than the class the call reaches at runtime.
      *
      * @param indirectImportCheckEnabled set to true to enable indirect checks
      */
