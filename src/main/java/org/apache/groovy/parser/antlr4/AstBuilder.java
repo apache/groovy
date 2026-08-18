@@ -128,6 +128,7 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.ModuleImportHelper;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.transform.AsyncTransformHelper;
@@ -155,6 +156,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -2477,6 +2479,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         Expression baseExpr = (Expression) this.visit(ctx.expression());
 
+        // GROOVY-10355: "(name) in x" / "(name) as T" arrive as a cast of the keyword identifier
+        // plus an argument list; restore the binary reading
+        if (hasArgumentList && !hasCommandArgument && baseExpr instanceof CastExpression) {
+            String keyword = baseExpr.getNodeMetaData(CAST_OF_BINARY_KEYWORD);
+            if (keyword != null) {
+                Expression repaired = this.repairBinaryKeywordCast((CastExpression) baseExpr, keyword, ctx);
+                if (repaired != null) {
+                    return repaired;
+                }
+                // the argument shape has no faithful rewrite; should the cast's type fail to
+                // resolve, at least explain how the expression was read
+                String name = ((CastExpression) baseExpr).getType().getName();
+                baseExpr.putNodeMetaData(ResolveVisitor.CAST_RESOLVE_HINT,
+                        "; '(" + name + ") " + keyword + " ...' is parsed as a cast of '" + keyword
+                                + "' - the arguments cannot be read as the right-hand side of a binary '" + keyword + "'");
+            }
+        }
+
         if ((hasArgumentList || hasCommandArgument) && !isInsideParentheses(baseExpr)
                 && baseExpr instanceof BinaryExpression && !"[".equals(((BinaryExpression) baseExpr).getOperation().getText())) {
             throw createParsingFailedException("Unexpected input: '" + getOriginalText(ctx.expression()) + "'", ctx.expression());
@@ -2530,6 +2550,136 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                                 }
                         ),
                 ctx);
+    }
+
+    /**
+     * Rebuilds {@code (name) in x} as a binary {@code in} expression and {@code (name) as T}
+     * as a coercion, from the mis-parsed cast-plus-argument-list shape (GROOVY-10355).
+     * The whole command argument arrives as one expression, so the repaired reading is
+     * spliced in at relational precedence — {@code (x) in list && true} groups as
+     * {@code (x in list) && true}, matching the unparenthesized form.
+     * Returns {@code null} when the argument shape does not permit a faithful rewrite.
+     */
+    private Expression repairBinaryKeywordCast(final CastExpression cast, final String keyword, final CommandExpressionContext ctx) {
+        Expression argumentList = this.visitEnhancedArgumentListInPar(ctx.enhancedArgumentListInPar());
+        if (!(argumentList instanceof ArgumentListExpression)) return null;
+        List<Expression> arguments = ((ArgumentListExpression) argumentList).getExpressions();
+        if (arguments.size() != 1) return null;
+
+        Expression keywordSource = cast.getExpression();
+        Function<Expression, Expression> leafRepair;
+        if ("in".equals(keyword)) {
+            org.codehaus.groovy.syntax.Token inToken = new org.codehaus.groovy.syntax.Token(
+                    Types.KEYWORD_IN, keyword, keywordSource.getLineNumber(), keywordSource.getColumnNumber());
+            leafRepair = leaf -> {
+                Expression left = this.createParenNameExpression(cast.getType().getName(), ctx.expression());
+                return configureAST(new BinaryExpression(left, inToken, leaf), ctx, leaf);
+            };
+        } else {
+            leafRepair = leaf -> {
+                ClassNode coercionType = coercionTypeOf(leaf);
+                if (coercionType == null) return null;
+                Expression left = this.createParenNameExpression(cast.getType().getName(), ctx.expression());
+                return configureAST(CastExpression.asExpression(coercionType, left), ctx, leaf);
+            };
+        }
+        Expression repaired = this.spliceAtRelationalPrecedence(arguments.get(0), leafRepair);
+        return repaired == null ? null : configureAST(repaired, ctx);
+    }
+
+    /**
+     * Splices a relational-precedence reading into the left spine of {@code tree}: descends
+     * through operators binding no tighter than relational (equality, regex find/match,
+     * bitwise, logical, ternary/elvis, a further relational or coercion) and applies
+     * {@code leafRepair} to the tighter-bound expression found there. Returns {@code null}
+     * when {@code leafRepair} rejects the leaf.
+     */
+    private Expression spliceAtRelationalPrecedence(final Expression tree, final Function<Expression, Expression> leafRepair) {
+        if (!isInsideParentheses(tree)) {
+            if (tree instanceof BinaryExpression && bindsNoTighterThanRelational(((BinaryExpression) tree).getOperation().getType())) {
+                BinaryExpression binary = (BinaryExpression) tree;
+                Expression spliced = this.spliceAtRelationalPrecedence(binary.getLeftExpression(), leafRepair);
+                if (spliced == null) return null;
+                binary.setLeftExpression(spliced);
+                return configureAST(binary, spliced, binary.getRightExpression());
+            }
+            if (tree instanceof ElvisOperatorExpression) {
+                ElvisOperatorExpression elvis = (ElvisOperatorExpression) tree;
+                Expression spliced = this.spliceAtRelationalPrecedence(elvis.getTrueExpression(), leafRepair);
+                if (spliced == null) return null;
+                return configureAST(new ElvisOperatorExpression(spliced, elvis.getFalseExpression()), spliced, elvis.getFalseExpression());
+            }
+            if (tree instanceof TernaryExpression) {
+                TernaryExpression ternary = (TernaryExpression) tree;
+                Expression spliced = this.spliceAtRelationalPrecedence(ternary.getBooleanExpression().getExpression(), leafRepair);
+                if (spliced == null) return null;
+                BooleanExpression condition = configureAST(new BooleanExpression(spliced), spliced);
+                return configureAST(new TernaryExpression(condition, ternary.getTrueExpression(), ternary.getFalseExpression()), spliced, ternary.getFalseExpression());
+            }
+            if (tree instanceof CastExpression && ((CastExpression) tree).isCoerce()) {
+                CastExpression coercion = (CastExpression) tree;
+                Expression spliced = this.spliceAtRelationalPrecedence(coercion.getExpression(), leafRepair);
+                if (spliced == null) return null;
+                return configureAST(CastExpression.asExpression(coercion.getType(), spliced), spliced, coercion);
+            }
+        }
+        return leafRepair.apply(tree);
+    }
+
+    private static boolean bindsNoTighterThanRelational(final int opType) {
+        switch (opType) {
+          case Types.KEYWORD_IN: case Types.COMPARE_NOT_IN:
+          case Types.KEYWORD_INSTANCEOF: case Types.COMPARE_NOT_INSTANCEOF:
+          case Types.COMPARE_LESS_THAN: case Types.COMPARE_LESS_THAN_EQUAL:
+          case Types.COMPARE_GREATER_THAN: case Types.COMPARE_GREATER_THAN_EQUAL:
+          case Types.COMPARE_EQUAL: case Types.COMPARE_NOT_EQUAL: case Types.COMPARE_TO:
+          case Types.COMPARE_IDENTICAL: case Types.COMPARE_NOT_IDENTICAL:
+          case Types.FIND_REGEX: case Types.MATCH_REGEX:
+          case Types.BITWISE_AND: case Types.BITWISE_XOR: case Types.BITWISE_OR:
+          case Types.LOGICAL_AND: case Types.LOGICAL_OR:
+            return true;
+          default:
+            return false;
+        }
+    }
+
+    /**
+     * The coercion type an expression spells: a (qualified) class name, a class with
+     * type arguments, or an empty-subscript array of either, e.g. {@code String[]}.
+     */
+    private static ClassNode coercionTypeOf(final Expression expression) {
+        if (expression instanceof ClassExpression) { // e.g. List<String>
+            return expression.getType();
+        }
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression subscript = (BinaryExpression) expression;
+            if (Types.LEFT_SQUARE_BRACKET == subscript.getOperation().getType()
+                    && subscript.getRightExpression() instanceof ListExpression
+                    && ((ListExpression) subscript.getRightExpression()).getExpressions().isEmpty()) {
+                ClassNode elementType = coercionTypeOf(subscript.getLeftExpression());
+                return elementType == null ? null : elementType.makeArray();
+            }
+            return null;
+        }
+        String name = qualifiedNameOf(expression);
+        return name == null ? null : ClassHelper.make(name);
+    }
+
+    /** The dotted name an expression spells, when it is a plain variable/property chain. */
+    private static String qualifiedNameOf(final Expression expression) {
+        if (expression instanceof VariableExpression) {
+            return ((VariableExpression) expression).getName();
+        }
+        if (expression instanceof PropertyExpression) {
+            PropertyExpression property = (PropertyExpression) expression;
+            if (property.getProperty() instanceof ConstantExpression) {
+                String qualifier = qualifiedNameOf(property.getObjectExpression());
+                if (qualifier != null) {
+                    return qualifier + "." + property.getPropertyAsString();
+                }
+            }
+        }
+        return null;
     }
 
     /* Validate the following invalid cases:
@@ -3176,29 +3326,194 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public Expression visitUnaryNotExprAlt(final UnaryNotExprAltContext ctx) {
+        Expression expression = (Expression) this.visit(ctx.expression());
+
+        // GROOVY-10355: the unary operator applies to the leading operand of a repaired
+        // "(name) +/- x" binary, not to the whole binary
+        if (isRepairedParenNameBinary(expression) && !isInsideParentheses(expression)) {
+            BinaryExpression repaired = (BinaryExpression) expression;
+            Expression leading = repaired.getLeftExpression();
+            Expression wrapped = asBoolean(ctx.NOT())
+                    ? new NotExpression(leading)
+                    : new BitwiseNegationExpression(leading);
+            repaired.setLeftExpression(configureAST(wrapped, ctx, leading));
+            return configureAST(repaired, ctx);
+        }
+
         if (asBoolean(ctx.NOT())) {
-            return configureAST(
-                    new NotExpression((Expression) this.visit(ctx.expression())),
-                    ctx);
+            return configureAST(new NotExpression(expression), ctx);
         }
 
         if (asBoolean(ctx.BITNOT())) {
-            return configureAST(
-                    new BitwiseNegationExpression((Expression) this.visit(ctx.expression())),
-                    ctx);
+            return configureAST(new BitwiseNegationExpression(expression), ctx);
         }
 
         throw createParsingFailedException("Unsupported unary expression: " + ctx.getText(), ctx);
     }
 
     @Override
-    public CastExpression visitCastExprAlt(final CastExprAltContext ctx) {
+    public Expression visitCastExprAlt(final CastExprAltContext ctx) {
+        String bareName = this.bareCastTypeName(ctx.castParExpression());
+
+        // GROOVY-10355: "(name) + x" / "(name) - x" — class names start with an uppercase letter
+        // by convention, so a bare name whose final segment starts any other way ("foo", "_foo",
+        // "$foo") reads as a value, and we build the binary expression the syntax visually
+        // suggests instead of a cast of a unary expression
+        if (bareName != null && hasValueConventionFinalSegment(bareName) && ctx.expression() instanceof UnaryAddExprAltContext) {
+            UnaryAddExprAltContext uctx = (UnaryAddExprAltContext) ctx.expression();
+            int opType = uctx.op.getType();
+            if (ADD == opType || SUB == opType) {
+                Expression left = this.createParenNameExpression(bareName, ctx.castParExpression());
+                Expression right = (Expression) this.visit(uctx.expression());
+                Expression repaired = this.combineRebalancing(left, this.createGroovyToken(uctx.op), right, opType);
+                repaired.putNodeMetaData(REPAIRED_PAREN_NAME_BINARY, Boolean.TRUE);
+                return configureAST(repaired, ctx);
+            }
+        }
+
+        // GROOVY-10355: "(name) in [x, y]" / "(name) in [k: v]" — the collection literal is
+        // captured as a subscript on the keyword identifier; restore the binary reading
+        if (bareName != null) {
+            Expression subscriptRepair = this.tryRepairKeywordCastSubscript(bareName, ctx);
+            if (subscriptRepair != null) {
+                return subscriptRepair;
+            }
+        }
+
         Expression expr = (Expression) this.visit(ctx.expression());
         if (expr instanceof VariableExpression && ((VariableExpression) expr).isSuperExpression()) {
             throw this.createParsingFailedException("Cannot cast or coerce `super`", ctx); // GROOVY-9391
         }
-        CastExpression cast = new CastExpression(this.visitCastParExpression(ctx.castParExpression()), expr);
+        ClassNode type = this.visitCastParExpression(ctx.castParExpression());
+
+        // GROOVY-10355: "(name) in x" / "(name) as T" — the binary-only keyword is captured as the
+        // cast operand identifier; mark it so visitCommandExpression can restore the binary reading
+        if (bareName != null && expr instanceof VariableExpression) {
+            String operandName = ((VariableExpression) expr).getName();
+            if ("in".equals(operandName) || "as".equals(operandName)) {
+                CastExpression keywordCast = new CastExpression(type, expr);
+                keywordCast.putNodeMetaData(CAST_OF_BINARY_KEYWORD, operandName);
+                return configureAST(keywordCast, ctx);
+            }
+        }
+
+        // GROOVY-10355: "(int)(name) + 10" — the operand was repaired to a binary expression, so
+        // the cast applies to that expression's leftmost operand, not to the whole binary
+        if (isRepairedParenNameBinary(expr) && !isInsideParentheses(expr)) {
+            BinaryExpression repaired = (BinaryExpression) expr;
+            Expression leading = repaired.getLeftExpression();
+            repaired.setLeftExpression(configureAST(new CastExpression(type, leading), ctx, leading));
+            return configureAST(repaired, ctx);
+        }
+
+        CastExpression cast = new CastExpression(type, expr);
+        if (bareName != null && isAmbiguousCastOperand(expr)) {
+            // GROOVY-10355: should the type fail to resolve, the error explains the shape. A map
+            // literal is the one operand with no alternative value reading — a subscript may not
+            // contain map entries either — so its hint states that instead of suggesting the
+            // double-parentheses workaround, which for that shape only leads to the same dead end.
+            String hint = expr instanceof MapExpression
+                    ? "; '(" + bareName + ")' followed by a map literal is a coercion, which requires '" + bareName
+                            + "' to be a class - map entries are not allowed in a plain subscript"
+                    : "; '(" + bareName + ")' followed by an operand is parsed as a cast - if '" + bareName
+                            + "' was meant as a value, wrap it in a second set of parentheses, e.g. ((" + bareName + "))";
+            cast.putNodeMetaData(ResolveVisitor.CAST_RESOLVE_HINT, hint);
+        }
         return configureAST(cast, ctx);
+    }
+
+    /**
+     * The content of the parentheses when it is a bare, possibly-qualified class-or-variable
+     * name — no primitives, generics, array dimensions, annotations or intersections.
+     */
+    private String bareCastTypeName(final CastParExpressionContext ctx) {
+        String text = ctx.intersectionType().getText();
+        if (!BARE_NAME_PATTERN.matcher(text).matches()) return null;
+        if (ClassHelper.isPrimitiveType(ClassHelper.make(text))) return null;
+        return text;
+    }
+
+    /** True when the final segment does not start with an uppercase letter, the class naming convention. */
+    private static boolean hasValueConventionFinalSegment(final String name) {
+        return !Character.isUpperCase(name.codePointAt(name.lastIndexOf('.') + 1));
+    }
+
+    private Expression createParenNameExpression(final String qualifiedName, final GroovyParserRuleContext ctx) {
+        String[] parts = qualifiedName.split("\\.");
+        Expression expression = new VariableExpression(parts[0]);
+        for (int i = 1; i < parts.length; i += 1) {
+            expression = new PropertyExpression(expression, parts[i]);
+        }
+        return configureAST(expression, ctx);
+    }
+
+    private static boolean isRepairedParenNameBinary(final Expression expression) {
+        return expression instanceof BinaryExpression && expression.getNodeMetaData(REPAIRED_PAREN_NAME_BINARY) != null;
+    }
+
+    /**
+     * Rebuilds {@code (name) in [x, y]} / {@code (name) in [k: v]} as a binary {@code in}
+     * expression. The collection literal after {@code in} parses as a subscript on the
+     * keyword identifier, so the literal is rebuilt from the subscript arguments (GROOVY-10355).
+     */
+    private Expression tryRepairKeywordCastSubscript(final String bareName, final CastExprAltContext ctx) {
+        if (!(ctx.expression() instanceof PostfixExprAltContext)) return null;
+        PostfixExpressionContext postfixCtx = ((PostfixExprAltContext) ctx.expression()).postfixExpression();
+        if (postfixCtx.op != null) return null;
+        PathExpressionContext pathCtx = postfixCtx.pathExpression();
+        if (!(pathCtx.primary() instanceof IdentifierPrmrAltContext) || pathCtx.pathElement().size() != 1) return null;
+        IdentifierPrmrAltContext identifierCtx = (IdentifierPrmrAltContext) pathCtx.primary();
+        if (identifierCtx.typeArguments() != null || !"in".equals(identifierCtx.identifier().getText())) return null;
+
+        PathElementContext elementCtx = pathCtx.pathElement(0);
+        Expression right;
+        if (elementCtx.indexPropertyArgs() != null && elementCtx.indexPropertyArgs().LBRACK() != null) {
+            IndexPropertyArgsContext indexCtx = elementCtx.indexPropertyArgs();
+            List<Expression> elements = indexCtx.expressionList() == null
+                    ? new ArrayList<>() : this.visitExpressionList(indexCtx.expressionList());
+            right = configureAST(new ListExpression(elements), indexCtx);
+        } else if (elementCtx.namedPropertyArgs() != null && elementCtx.namedPropertyArgs().LBRACK() != null) {
+            NamedPropertyArgsContext namedCtx = elementCtx.namedPropertyArgs();
+            right = configureAST(new MapExpression(this.visitNamedPropertyArgs(namedCtx)), namedCtx);
+        } else {
+            return null;
+        }
+
+        Expression left = this.createParenNameExpression(bareName, ctx.castParExpression());
+        org.codehaus.groovy.syntax.Token inToken = new org.codehaus.groovy.syntax.Token(Types.KEYWORD_IN, "in",
+                identifierCtx.getStart().getLine(), identifierCtx.getStart().getCharPositionInLine() + 1);
+        return configureAST(new BinaryExpression(left, inToken, right), ctx);
+    }
+
+    /**
+     * Composes {@code left op right} preserving textual left-to-right grouping when either operand
+     * is a repaired "(name) +/- x" binary whose leading operand should bind with this operator first:
+     * {@code L op (name +/- x)} becomes {@code (L op name) +/- x} when {@code op} binds at least as
+     * tightly as +/-, and {@code (name +/- x) op R} becomes {@code name +/- (x op R)} when
+     * {@code op} binds more tightly.
+     */
+    private Expression combineRebalancing(final Expression left, final org.codehaus.groovy.syntax.Token op, final Expression right, final int opType) {
+        boolean atLeastAdditive = POWER == opType || MUL == opType || DIV == opType || MOD == opType || ADD == opType || SUB == opType;
+        if (atLeastAdditive && isRepairedParenNameBinary(right) && !isInsideParentheses(right)) {
+            BinaryExpression repaired = (BinaryExpression) right;
+            repaired.setLeftExpression(this.combineRebalancing(left, op, repaired.getLeftExpression(), opType));
+            return configureAST(repaired, repaired.getLeftExpression(), repaired.getRightExpression());
+        }
+        boolean tighterThanAdditive = POWER == opType || MUL == opType || DIV == opType || MOD == opType;
+        if (tighterThanAdditive && isRepairedParenNameBinary(left) && !isInsideParentheses(left)) {
+            BinaryExpression repaired = (BinaryExpression) left;
+            repaired.setRightExpression(this.combineRebalancing(repaired.getRightExpression(), op, right, opType));
+            return configureAST(repaired, repaired.getLeftExpression(), repaired.getRightExpression());
+        }
+        return configureAST(new BinaryExpression(left, op, right), left, right);
+    }
+
+    private boolean isAmbiguousCastOperand(final Expression expr) {
+        return expr instanceof UnaryPlusExpression || expr instanceof UnaryMinusExpression
+                || expr instanceof PrefixExpression || expr instanceof ListExpression
+                || expr instanceof MapExpression || expr instanceof ClosureExpression
+                || expr instanceof MethodCallExpression // e.g. "(x) in (y)" — a call of "in" on the cast
+                || isInsideParentheses(expr);
     }
 
     @Override
@@ -3234,6 +3549,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public Expression visitUnaryAddExprAlt(final UnaryAddExprAltContext ctx) {
         Expression expression = (Expression) this.visit(ctx.expression());
+
+        // GROOVY-10355: the unary operator applies to the leading operand of a repaired
+        // "(name) +/- x" binary, not to the whole binary
+        if (isRepairedParenNameBinary(expression) && !isInsideParentheses(expression)) {
+            BinaryExpression repaired = (BinaryExpression) expression;
+            Expression leading = repaired.getLeftExpression();
+            Expression wrapped;
+            switch (ctx.op.getType()) {
+              case ADD: wrapped = new UnaryPlusExpression(leading); break;
+              case SUB: wrapped = new UnaryMinusExpression(leading); break;
+              default:  wrapped = new PrefixExpression(this.createGroovyToken(ctx.op), leading); break;
+            }
+            repaired.setLeftExpression(configureAST(wrapped, ctx, leading));
+            return configureAST(repaired, ctx);
+        }
+
         switch (ctx.op.getType()) {
           case ADD:
             if (this.isNonStringConstantOutsideParentheses(expression)) {
@@ -4779,7 +5110,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private BinaryExpression createBinaryExpression(final ExpressionContext left, final Token op, final ExpressionContext right) {
-        return new BinaryExpression((Expression) this.visit(left), this.createGroovyToken(op), (Expression) this.visit(right));
+        return (BinaryExpression) this.combineRebalancing((Expression) this.visit(left), this.createGroovyToken(op), (Expression) this.visit(right), op.getType());
     }
 
     private BinaryExpression createBinaryExpression(final ExpressionContext left, final Token op, final ExpressionContext right, final ExpressionContext ctx) {
@@ -5145,6 +5476,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private static final String PACKAGE_INFO = "package-info";
     private static final String PACKAGE_INFO_FILE_NAME = PACKAGE_INFO + ".groovy";
+
+    // GROOVY-10355: a binary expression rebuilt from a "(name) +/- x" cast mis-parse; parents
+    // re-associate it so the textual left-to-right grouping is preserved
+    private static final String REPAIRED_PAREN_NAME_BINARY = "_REPAIRED_PAREN_NAME_BINARY";
+
+    // GROOVY-10355: a cast whose operand is the binary-only keyword identifier "in" or "as"
+    private static final String CAST_OF_BINARY_KEYWORD = "_CAST_OF_BINARY_KEYWORD";
+
+    private static final Pattern BARE_NAME_PATTERN = Pattern.compile("[A-Za-z_$][A-Za-z0-9_$]*(\\.[A-Za-z_$][A-Za-z0-9_$]*)*");
 
     private static final String CLASS_NAME = "_CLASS_NAME";
     private static final String INSIDE_PARENTHESES_LEVEL = "_INSIDE_PARENTHESES_LEVEL";
