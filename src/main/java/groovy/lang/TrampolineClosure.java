@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import java.io.ObjectStreamException;
 import java.io.Serial;
 
 /**
@@ -41,6 +42,25 @@ final class TrampolineClosure<V> extends Closure<V> {
     TrampolineClosure(final Closure<V> original) {
         super(original.getOwner(), original.getDelegate());
         this.original = original;
+    }
+
+    /**
+     * A trampoline calls through the closure it wraps, so {@code original} is a recursion edge
+     * in addition to the three the cycle check walks by default.
+     */
+    @Override
+    protected Object[] additionalReferences() {
+        return new Object[]{original};
+    }
+
+    /**
+     * Rejects a deserialized trampoline whose references form a cycle, which would otherwise
+     * recurse indefinitely on invocation. See {@link Closure#checkForReferenceCycle}.
+     */
+    @Serial
+    private Object readResolve() throws ObjectStreamException {
+        Closure.checkForReferenceCycle(this);
+        return this;
     }
 
     /**

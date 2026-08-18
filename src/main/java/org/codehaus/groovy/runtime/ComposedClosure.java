@@ -129,4 +129,13 @@ public final class ComposedClosure<V> extends Closure<V> {
         Closure.checkForReferenceCycle(this);
         return this;
     }
+
+    /**
+     * A composed closure calls through {@code first} and then {@code second}, so those are
+     * recursion edges in addition to the three the cycle check walks by default.
+     */
+    @Override
+    protected Object[] additionalReferences() {
+        return new Object[]{first, second};
+    }
 }
