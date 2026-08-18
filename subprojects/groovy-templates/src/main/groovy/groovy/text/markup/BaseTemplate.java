@@ -168,7 +168,8 @@ public abstract class BaseTemplate implements Writable {
         out.write("<?xml ");
         writeAttribute("version", "1.0");
         if (configuration.getDeclarationEncoding() != null) {
-            writeAttribute(" encoding", configuration.getDeclarationEncoding());
+            out.write(' ');
+            writeAttribute("encoding", configuration.getDeclarationEncoding());
         }
         out.write("?>");
         out.write(configuration.getNewLineString());
@@ -213,11 +214,54 @@ public abstract class BaseTemplate implements Writable {
     }
 
     private void writeAttribute(String attName, String value) throws IOException {
+        checkAttributeName(attName);
         out.write(attName);
         out.write("=");
         writeQt();
-        out.write(escapeQuotes(value));
+        out.write(escapeAttributeValue(value));
         writeQt();
+    }
+
+    /**
+     * Escapes an attribute value. The delimiter in use would otherwise end the value; the
+     * ampersand and less-than are not well formed inside an attribute value; and the
+     * greater-than, though well formed there, is escaped too so a value is treated exactly as
+     * element text is. The other quote character, being neither the delimiter nor ill formed,
+     * is left as written.
+     *
+     * @param str the attribute value
+     * @return the escaped value
+     */
+    private String escapeAttributeValue(final String str) {
+        String quote = configuration.isUseDoubleQuotes() ? "\"" : "'";
+        String escape = configuration.isUseDoubleQuotes() ? "&quot;" : "&apos;";
+        // The ampersand goes first so the entities introduced after it are not re-escaped.
+        return str.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace(quote, escape);
+    }
+
+    /**
+     * Rejects an attribute name which is not a name.
+     * <p>
+     * A name has no escaped form: escaping one yields a different name rather than a safe
+     * version of the same one, and writing it unaltered lets a name taken from data introduce
+     * further attributes of its own. So an unusable name is refused instead.
+     *
+     * @param attName the attribute name to check
+     * @throws IllegalArgumentException if the name cannot be written as an attribute name
+     */
+    private static void checkAttributeName(final String attName) {
+        boolean usable = attName != null && !attName.isEmpty()
+                && (Character.isLetter(attName.charAt(0)) || attName.charAt(0) == '_' || attName.charAt(0) == ':');
+        for (int i = 1; usable && i < attName.length(); i += 1) {
+            char c = attName.charAt(i);
+            usable = Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == '.' || c == ':';
+        }
+        if (!usable) {
+            throw new IllegalArgumentException("Invalid markup attribute name: " + attName);
+        }
     }
 
     private void writeQt() throws IOException {
@@ -235,11 +279,6 @@ public abstract class BaseTemplate implements Writable {
         }
     }
 
-    private String escapeQuotes(String str) {
-        String quote = configuration.isUseDoubleQuotes() ? "\"" : "'";
-        String escape = configuration.isUseDoubleQuotes() ? "&quot;" : "&apos;";
-        return str.replace(quote, escape);
-    }
 
     /**
      * This is the main method responsible for writing a tag and its attributes.
