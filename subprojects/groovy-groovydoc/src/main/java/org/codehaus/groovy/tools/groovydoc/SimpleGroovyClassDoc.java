@@ -658,7 +658,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         }
 
         if (type.startsWith("#"))
-            return "<a href='" + resolveMethodArgs(rootDoc, classDoc, type) + "'>" + (label == null ? type.substring(1) : label) + "</a>";
+            // The target and label both come from the doc comment, so they are encoded for the
+            // context each lands in: the href is an attribute value, the label is element text.
+            return "<a href='" + encodeAttribute(resolveMethodArgs(rootDoc, classDoc, type)) + "'>"
+                    + encodeAngleBrackets(label == null ? type.substring(1) : label) + "</a>";
 
         if (type.endsWith("[]")) {
             String componentType = type.substring(0, type.length() - 2);
@@ -738,7 +741,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
                 ? target[0].replace('$', '.')
                 : target[0].replace('.', '/').replace('$', '.');
         String url = relativeRoot + targetPath + ".html" + (target.length > 1 ? "#" + target[1] : "");
-        return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
+        return "<a href='" + encodeAttribute(url) + "' title='" + encodeAttribute(shortClassName) + "'>"
+                + encodeAngleBrackets(shortClassName) + "</a>";
     }
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
