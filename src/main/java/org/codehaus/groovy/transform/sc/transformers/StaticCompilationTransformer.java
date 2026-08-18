@@ -37,6 +37,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.asm.sc.StaticTypesTypeChooser;
@@ -164,6 +165,10 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         }
         if (expr instanceof ClosureExpression) {
             return closureExpressionTransformer.transformClosureExpression((ClosureExpression) expr);
+        }
+        if (expr instanceof SwitchExpression se) {
+            se.visit(this);
+            return se;
         }
         if (expr instanceof BooleanExpression) {
             return booleanExpressionTransformer.transformBooleanExpression((BooleanExpression) expr);

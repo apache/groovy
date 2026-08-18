@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -100,8 +101,9 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
 
             @Override
             public Expression transform(final Expression expression) {
-                if (expression instanceof org.codehaus.groovy.ast.expr.SwitchExpression) {
-                    return expression.transformExpression(this);
+                if (expression instanceof SwitchExpression se) {
+                    se.visit(this);
+                    return se;
                 }
                 if (expression instanceof ClosureExpression) {
                     expression.visit(this);

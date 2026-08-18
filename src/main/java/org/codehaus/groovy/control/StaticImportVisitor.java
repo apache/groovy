@@ -44,6 +44,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.SwitchExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -161,6 +162,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         }
         if (exp instanceof ClosureExpression) {
             return transformClosureExpression((ClosureExpression) exp);
+        }
+        if (exp instanceof SwitchExpression se) {
+            visitSwitchExpression(se);
+            return se;
         }
         if (clazz == ConstructorCallExpression.class) {
             return transformConstructorCallExpression((ConstructorCallExpression) exp);

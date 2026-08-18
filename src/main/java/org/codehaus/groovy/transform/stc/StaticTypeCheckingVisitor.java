@@ -154,6 +154,8 @@ import java.util.stream.IntStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isIntegralType;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isOptimizedIntSwitch;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -4881,9 +4883,10 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
-     * Type-checks a switch expression: visits the selector and each arm, unifies
-     * the yielded types (JEP 361 poly expression), and reports a non-exhaustive
-     * switch when the selector type is statically known (GROOVY-12255).
+     * Type-checks a switch expression: visits the selector and each arm, selects
+     * an {@code isCase} target for non-intrinsic arms, unifies the yielded types
+     * (JEP 361 poly expression), and reports a non-exhaustive switch when the
+     * selector type is statically known.
      *
      * @since 6.0.0
      */
@@ -4912,10 +4915,51 @@ trying: for (ClassNode[] signature : signatures) {
             storeType(expression, resultType);
             expression.setType(resultType);
 
+            typeCheckSwitchExpressionIsCase(expression);
             checkSwitchExpressionExhaustiveness(expression);
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
             typeCheckingContext.popEnclosingSwitchExpression();
+        }
+    }
+
+    /**
+     * Resolves {@code isCase} for every non-null label so type-checking
+     * extensions see the call and codegen can emit a direct call. Primitive
+     * int constant switches skip this: their stack type cannot erase, so
+     * tableswitch is guaranteed. Wrapper, String and enum selectors can
+     * erase to {@code Object} (list {@code getAt}, etc.).
+     */
+    private void typeCheckSwitchExpressionIsCase(final SwitchExpression expression) {
+        Expression selector = expression.getExpression();
+        ClassNode selectorType = getType(selector);
+        if (isIntegralType(selectorType)
+                && isOptimizedIntSwitch(selectorType, expression.getCaseStatements())) {
+            return;
+        }
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            Expression caseValue = caseStatement.getExpression();
+            if (isNullConstant(caseValue)) {
+                continue;
+            }
+            ClassNode caseType = getType(caseValue);
+            VariableExpression dummyReceiver = varX("#case", caseType);
+            dummyReceiver.setSourcePosition(caseValue);
+            VariableExpression dummySelector = varX("#selector", getWrapper(selectorType));
+            dummySelector.setSourcePosition(selector);
+            MethodCallExpression call = callX(dummyReceiver, "isCase", args(dummySelector));
+            call.setImplicitThis(false);
+            call.setSourcePosition(caseValue);
+            visitMethodCallExpression(call);
+            MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+            if (target == null) {
+                continue;
+            }
+            caseStatement.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, target);
+            Object privateAccess = call.getNodeMetaData(PV_METHODS_ACCESS);
+            if (privateAccess != null) {
+                caseStatement.putNodeMetaData(PV_METHODS_ACCESS, privateAccess);
+            }
         }
     }
 

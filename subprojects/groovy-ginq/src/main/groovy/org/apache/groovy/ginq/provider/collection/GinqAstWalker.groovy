@@ -66,6 +66,7 @@ import org.codehaus.groovy.ast.expr.LambdaExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.expr.SwitchExpression
 import org.codehaus.groovy.ast.expr.TupleExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.query.AstQuery
@@ -1333,7 +1334,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         expr = ((ListExpression) (new ListExpression(Collections.singletonList(expr)).transformExpression(new ClassCodeExpressionTransformer() {
             @Override
             Expression transform(Expression expression) {
-                if (expression instanceof ClosureExpression) {
+                if (expression instanceof ClosureExpression || expression instanceof SwitchExpression) {
                     expression.visit(this)
                     return expression
                 }

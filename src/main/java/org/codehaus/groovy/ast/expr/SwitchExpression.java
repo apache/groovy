@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
@@ -39,10 +38,8 @@ import java.util.List;
  * <p>
  * Arms stay as {@link CaseStatement}s, the same way a
  * {@link ClosureExpression} holds a statement body: the case label is an
- * expression, the arm is a statement. A plain {@link ExpressionTransformer}
- * rewrites only the selector and case labels. A
- * {@link ClassCodeExpressionTransformer} walks the tree in place via
- * {@link ClassCodeExpressionTransformer#visitSwitchExpression}.
+ * expression, the arm is a statement. {@link #transformExpression} rewrites
+ * the selector and case labels only and shares the arm statements.
  *
  * @see SwitchStatement
  * @see YieldStatement
@@ -153,18 +150,12 @@ public class SwitchExpression extends Expression {
     }
 
     /**
-     * A {@link ClassCodeExpressionTransformer} walks this node in place through
-     * {@link ClassCodeExpressionTransformer#visitSwitchExpression}, the same
-     * pattern {@link ClosureExpression} uses so resolve, static-import and
-     * similar rewrites still see nested arm expressions. Any other transformer
-     * gets a copy of the selector and case labels; arm statements are shared.
+     * Returns a copy whose selector and case labels have been rewritten.
+     * Arm statements are shared: an {@link ExpressionTransformer} does not
+     * walk statements.
      */
     @Override
     public Expression transformExpression(final ExpressionTransformer transformer) {
-        if (transformer instanceof ClassCodeExpressionTransformer visitor) {
-            visitor.visitSwitchExpression(this);
-            return this;
-        }
         List<CaseStatement> transformedCases = new ArrayList<>(caseStatements.size());
         for (CaseStatement caseStatement : caseStatements) {
             CaseStatement copy = new CaseStatement(
