@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786950374841,
+  "lastUpdate": 1787038096747,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2272,6 +2272,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.hidden",
             "value": 876,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1504,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "c32090ecda146c5ce262e7c547cc42be921b6bee",
+          "message": "minor refactor: one flag accidentally dropped",
+          "timestamp": "2026-08-18T05:13:28Z",
+          "url": "https://github.com/apache/groovy/commit/c32090ecda146c5ce262e7c547cc42be921b6bee"
+        },
+        "date": 1787038095796,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4008,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 453,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 874,
             "unit": "classes"
           },
           {
