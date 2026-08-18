@@ -72,7 +72,10 @@
         (t.isStatic()?"static&nbsp;":"")
     }
     def annotations = { t, sepChar ->
-        t.annotations() ? t.annotations().collect{ it.isTypeAvailable()?'@'+linkable(it.type().typeName())+it.description():'@'+it.name()+it.description()}.join(sepChar) + sepChar : ''
+        // An annotation's name and description are source text, not markup: description()
+        // re-embeds the annotation's arguments verbatim. Only linkable() produces HTML here.
+        def encode = { org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.encodeAngleBrackets(it ?: '') }
+        t.annotations() ? t.annotations().collect{ it.isTypeAvailable()?'@'+linkable(it.type().typeName())+encode(it.description()):'@'+encode(it.name())+encode(it.description())}.join(sepChar) + sepChar : ''
     }
     def elementTypes = [
         "required":"true",

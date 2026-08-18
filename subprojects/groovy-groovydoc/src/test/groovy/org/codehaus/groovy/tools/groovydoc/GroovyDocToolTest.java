@@ -385,6 +385,81 @@ public class GroovyDocToolTest extends GroovyTestCase {
         return output.getText(MOCK_DIR + "/" + pkg + "/" + simpleName + ".html");
     }
 
+    // GROOVY-12277: a {@link} label and target are doc-comment text that groovydoc puts into
+    // the href and title of an anchor it builds itself, so they must be encoded for those
+    // contexts. This is groovydoc's own construction, not the documented raw-HTML passthrough
+    // of a comment body.
+    public void testLinkTagCannotBreakOutOfTheAnchorItBuilds() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("linktag-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        Files.writeString(pkgDir.resolve("Helper.groovy"),
+                "package " + pkg.replace('/', '.') + "\nclass Helper { void go() {} }\n");
+        // The label of the resolved-class link ('Helper ...') lands in the title attribute of the
+        // anchor buildUrl constructs; the target of the method link ('#go(...)') lands in its href.
+        // Each payload closes its ' delimiter, so if written unencoded the title/href ends early
+        // and the trailing text becomes a live attribute of the anchor.
+        Files.writeString(pkgDir.resolve("LinkTag.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * See {@link Helper TITLEPWN' onbreak='x(1)}\n" +
+                " * and {@link #go(a' onmouseover='alert(2)) L}\n" +
+                " */\n" +
+                "class LinkTag {}\n");
+
+        // Both files must be rendered together so 'Helper' resolves and the class-link path
+        // (buildUrl) is actually exercised; rendering LinkTag alone drops the unresolved link.
+        String doc = renderTogether(tmp, pkg, List.of("Helper", "LinkTag"), "LinkTag");
+        assertNotNull(doc);
+        // A broken title reads title='TITLEPWN' onbreak=...; the encoded one keeps the quote as
+        // &#39; so the marker is never immediately followed by a closing quote. (The label also
+        // appears as harmless element text, so key on the title= context, not the bare marker.)
+        assertFalse("a resolved-class link label broke out of its title attribute in:\n" + doc,
+                doc.contains("title='TITLEPWN'"));
+        assertFalse("a method link target broke out of its href attribute in:\n" + doc,
+                doc.contains("onmouseover='alert"));
+    }
+
+    private String renderTogether(Path sourcePath, String pkg, List<String> simpleNames, String target) throws Exception {
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src/main/resources"),
+                new String[]{sourcePath.toString()},
+                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                new ArrayList<>(), null, new Properties()
+        );
+        List<String> paths = new ArrayList<>();
+        for (String name : simpleNames) {
+            paths.add(pkg + "/" + name + ".groovy");
+        }
+        tool.add(paths);
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+        return output.getText(MOCK_DIR + "/" + pkg + "/" + target + ".html");
+    }
+
+    // GROOVY-12277: an annotation's name and description are source text re-embedded verbatim
+    // into the declaration block, so unlike a doc comment they carry no passthrough licence.
+    public void testAnnotationTextIsEncodedInDeclarations() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("annotation-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        Files.writeString(pkgDir.resolve("Meta.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "@interface Meta { String value() }\n");
+        Files.writeString(pkgDir.resolve("Annotated.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "@Meta('<img src=q onerror=alert(1)>')\n" +
+                "class Annotated {}\n");
+
+        String doc = renderSingle(tmp, pkg, "Annotated");
+        assertNotNull(doc);
+        assertFalse("annotation text was emitted as markup in:\n" + doc, doc.contains("<img src=q"));
+    }
+
     // Auto-strip opt-out: {@snippet file="X" keepHeader=true} preserves the
     // file content verbatim, and lang is inferred from the file's extension
     // when no explicit lang= is given.
