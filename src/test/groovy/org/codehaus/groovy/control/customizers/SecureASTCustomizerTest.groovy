@@ -336,6 +336,45 @@ final class SecureASTCustomizerTest {
         }
     }
 
+    // GROOVY-12279: a method pointer's own type is fixed to groovy.lang.Closure, so the
+    // indirect import check was asking about Closure rather than about the class the pointer
+    // is taken on. In deny mode that let the pointer through; in allow mode it rejected every
+    // pointer, since Closure is never in an allow list.
+    @Test
+    void testIndirectImportCheckUsesMethodPointerTargetWhenDenied() {
+        customizer.disallowedImports = ['java.util.LinkedList']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException {
+            shell.evaluate('return java.util.LinkedList.&size')
+        }
+        assert hasSecurityException {
+            shell.evaluate('return java.util.LinkedList::size')
+        }
+        // The constructor form was already checked, and stays checked.
+        assert hasSecurityException {
+            shell.evaluate('return new java.util.LinkedList()')
+        }
+    }
+
+    @Test
+    void testIndirectImportCheckUsesMethodPointerTargetWhenAllowed() {
+        customizer.allowedImports = ['java.util.ArrayList']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        // Permitted because the target is allowed. Previously refused, because the type being
+        // asked about was Closure, which no allow list names.
+        shell.evaluate('return java.util.ArrayList.&size')
+        shell.evaluate('return java.util.ArrayList::size')
+        // A target which is not allowed is still refused, in both pointer and reference form.
+        assert hasSecurityException {
+            shell.evaluate('return java.util.LinkedList.&size')
+        }
+        assert hasSecurityException {
+            shell.evaluate('return java.util.LinkedList::size')
+        }
+    }
+
     @Test
     void testAllowedIndirectImports() {
         customizer.allowedImports = ['java.util.ArrayList']

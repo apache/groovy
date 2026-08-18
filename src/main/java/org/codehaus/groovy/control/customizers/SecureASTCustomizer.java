@@ -849,8 +849,9 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * Set this option to true to apply the import rules to types which appear in the source without an
      * import statement, most usefully to prevent a class being instantiated by fully qualified name.
      * <p>
-     * The rules are applied to the constructed type of a constructor call, and to the receiver type of a
-     * method call or a static method call. They are not applied to every class node: class literals,
+     * The rules are applied to the constructed type of a constructor call, to the receiver type of a
+     * method call or a static method call, and to the type a method pointer or method reference is
+     * taken on. They are not applied to every class node: class literals,
      * property and attribute access, cast and declaration types, and catch types are not examined. Note
      * also that the receiver type is the static type of that expression, which for a dynamically typed
      * receiver is {@code java.lang.Object} rather than the class the call reaches at runtime.
@@ -1537,9 +1538,14 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getMethod(), typename);
                     } else if (expression instanceof MethodPointerExpression expr) {
-                        final String typename = expr.getType().getName();
+                        // A method pointer's own type is fixed to groovy.lang.Closure by its
+                        // constructor, so the class the import rules are about is the one the
+                        // pointer is taken on, and the member is the method it names.
+                        final String typename = getExpressionType(expr.getExpression().getType()).getName();
                         assertImportIsAllowed(typename);
-                        assertStaticImportIsAllowed(expr.getText(), typename);
+                        Expression methodName = expr.getMethodName();
+                        assertStaticImportIsAllowed(methodName instanceof ConstantExpression
+                                ? methodName.getText() : null, typename);
                     }
                 } catch (SecurityException e) {
                     throw new SecurityException("Indirect import checks prevents usage of expression", e);
