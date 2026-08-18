@@ -269,6 +269,10 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create an object input stream for this input stream using the given class loader.
+     * <p>
+     * Classes named in the stream are resolved without running their static initializers,
+     * matching how {@link ObjectInputStream} resolves them itself. A class that is actually
+     * deserialized is still initialized when its instance is created.
      *
      * @param inputStream an input stream
      * @param classLoader the class loader to use when loading the class
@@ -280,8 +284,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         return new ObjectInputStream(inputStream) {
             @Override
             protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-                return Class.forName(desc.getName(), true, classLoader);
-
+                return Class.forName(desc.getName(), false, classLoader);
             }
         };
     }
