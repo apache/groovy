@@ -133,6 +133,50 @@ class JsonSlurperMalformedStringTest {
         assertValidUnicodeEscapes('JsonSlurperClassic') { String doc -> slurper.parseText(doc).k }
     }
 
+    /**
+     * GROOVY-12272: the lexer used to re-validate the whole accumulated token at every unescaped
+     * quote, so a string holding an invalid escape followed by many quotes cost O(n^2). The
+     * escape is now checked where it is read, which both bounds the work and reports the
+     * position of the offending escape rather than of the end of the document.
+     */
+    @Test
+    void testInvalidEscapeFollowedByManyQuotesStaysLinear() {
+        def document = { int quotes -> '{"k":"\\q' + ('"' * quotes) + '"}' }
+
+        // Warm up so the measurement is not dominated by class loading and JIT.
+        3.times { parseIgnoringFailure(document(2000)) }
+
+        long small = timeParse(document(4000))
+        long large = timeParse(document(16000))
+
+        // Four times the input. Quadratic cost would be about sixteen times the work; allow a
+        // wide margin so the test is about the growth curve, not the absolute speed.
+        assert large < Math.max(small, 5) * 8,
+                "parse time grew from ${small}ms to ${large}ms for a 4x larger document"
+    }
+
+    @Test
+    void testInvalidEscapeIsReportedWhereItOccurs() {
+        def e = shouldFail(JsonException) {
+            new JsonSlurperClassic().parseText('{"k":"a\\qb"}')
+        }
+        // The report names the escape, not the whole remaining document.
+        assert e.message.contains('\\q')
+    }
+
+    private static void parseIgnoringFailure(String text) {
+        try {
+            new JsonSlurperClassic().parseText(text)
+        } catch (JsonException ignored) {
+        }
+    }
+
+    private static long timeParse(String text) {
+        long start = System.nanoTime()
+        parseIgnoringFailure(text)
+        (System.nanoTime() - start) / 1_000_000L
+    }
+
     private static void assertRejected(String context, String description, Closure parse) {
         def thrown = null
         try {
