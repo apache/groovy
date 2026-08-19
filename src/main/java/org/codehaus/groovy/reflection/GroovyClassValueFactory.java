@@ -31,10 +31,16 @@ class GroovyClassValueFactory {
 	 * {@code -Dgroovy.use.classvalue=false} at JVM startup to use a weak-key
 	 * map instead; the default remains ClassValue for its per-Class fast path.
 	 */
-	private static final boolean USE_CLASSVALUE = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.use.classvalue", "true"));
+	private static final String CLASSVALUE_MODE = SystemUtil.getSystemPropertySafe("groovy.use.classvalue", "true");
 
 	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue) {
-		return (USE_CLASSVALUE)
+		// GROOVY-12281 investigation prototype: "hybrid" routes platform-loader keys to the
+		// weak-key map and everything else to ClassValue, so immortal platform keys never
+		// pin the value's loader while user classes keep the per-class fast path.
+		if ("hybrid".equalsIgnoreCase(CLASSVALUE_MODE)) {
+			return new GroovyClassValueHybrid<>(computeValue);
+		}
+		return Boolean.parseBoolean(CLASSVALUE_MODE)
 				? new GroovyClassValueJava7<>(computeValue)
 				: new GroovyClassValueMapBased<>(computeValue);
 	}
