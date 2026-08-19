@@ -4924,11 +4924,13 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     /**
-     * Resolves {@code isCase} for every non-null label so type-checking
-     * extensions see the call and codegen can emit a direct call. Primitive
-     * int constant switches skip this: their stack type cannot erase, so
-     * tableswitch is guaranteed. Wrapper, String and enum selectors can
-     * erase to {@code Object} (list {@code getAt}, etc.).
+     * Resolves {@code isCase} for every non-null label by running method
+     * selection on a dummy call. Type-checking extensions, instance methods,
+     * DGM and other extensions all see that call. A selected target is stored
+     * on the {@link CaseStatement} for {@code writeDirectMethodCall}; no target
+     * is a compilation error. Primitive int constant switches skip this: their
+     * stack type cannot erase, so tableswitch is guaranteed. Wrapper, String
+     * and enum selectors can erase to {@code Object} (list {@code getAt}, etc.).
      */
     private void typeCheckSwitchExpressionIsCase(final SwitchExpression expression) {
         Expression selector = expression.getExpression();
@@ -4953,6 +4955,10 @@ trying: for (ClassNode[] signature : signatures) {
             visitMethodCallExpression(call);
             MethodNode target = call.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
             if (target == null) {
+                MethodNode enclosing = typeCheckingContext.getEnclosingMethod();
+                if (enclosing == null || !isSkipMode(enclosing)) {
+                    addNoMatchingMethodError(caseType, "isCase", new ClassNode[]{getWrapper(selectorType)}, caseValue);
+                }
                 continue;
             }
             caseStatement.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, target);

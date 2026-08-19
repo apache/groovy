@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
 
@@ -39,16 +40,23 @@ final class Jep361SwitchExpressionTest {
     }
 
     private static void shouldFailBoth(final String script, final String snippet) {
-        def dynamic = shouldFail(script)
-        assert dynamic.message.contains(snippet)
-        def statik = shouldFail { new GroovyShell(staticConfig()).evaluate(script) }
-        assert statik.message.contains(snippet)
+        shouldFailBoth(MultipleCompilationErrorsException, script, snippet)
     }
 
     private static void shouldFailBoth(final Class<? extends Throwable> type,
             final String script) {
         shouldFail(type, script)
         shouldFail(type) { new GroovyShell(staticConfig()).evaluate(script) }
+    }
+
+    private static void shouldFailBoth(final Class<? extends Throwable> type,
+            final String script, final String snippet) {
+        def dynamic = shouldFail(type, script)
+        assert type.isInstance(dynamic)
+        assert dynamic.message.contains(snippet)
+        def statik = shouldFail(type) { new GroovyShell(staticConfig()).evaluate(script) }
+        assert type.isInstance(statik)
+        assert statik.message.contains(snippet)
     }
 
     private static CompilerConfiguration staticConfig() {
@@ -498,7 +506,7 @@ final class Jep361SwitchExpressionTest {
 
     @Test
     void staticNonExhaustiveIsCompileError() {
-        def err = shouldFail {
+        def err = shouldFail(MultipleCompilationErrorsException) {
             new GroovyShell(staticConfig()).evaluate('''
                 def r = switch (99) {
                     case 1 -> 1
