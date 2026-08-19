@@ -958,4 +958,80 @@ final class SecureASTCustomizerTest {
         '''
         // no error means success
     }
+
+    // GROOVY-12283: a cast whose operand is a list/map/closure literal, and a named-argument
+    // subscript, construct an instance of the named type rather than converting a value, so the
+    // indirect import check applies to them exactly as it does to a constructor call.
+
+    @Test
+    void testIndirectImportCheckBlocksCastAndAsListCoercion() {
+        customizer.allowedImports = ['java.lang.String']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        // the constructor form is blocked already; the coercion forms build the same File
+        assert hasSecurityException { shell.evaluate("new java.io.File('/etc/passwd')") }
+        assert hasSecurityException { shell.evaluate("(java.io.File) ['/etc/passwd']") }
+        assert hasSecurityException { shell.evaluate("['/etc/passwd'] as java.io.File") }
+    }
+
+    @Test
+    void testIndirectImportCheckBlocksClosureCoercion() {
+        customizer.allowedImports = ['java.lang.String']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        assert hasSecurityException { shell.evaluate("(Runnable) { }") }
+        assert hasSecurityException { shell.evaluate("{ -> } as Runnable") }
+    }
+
+    @Test
+    void testIndirectImportCheckBlocksNamedArgConstruction() {
+        customizer.disallowedImports = ['org.codehaus.groovy.control.customizers.SecGadget']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        String g = 'org.codehaus.groovy.control.customizers.SecGadget'
+        // entry-only and explicit-cast forms coerce to a cast of a map literal (the cast branch)
+        assert hasSecurityException { shell.evaluate("${g}[a: 1]") }
+        assert hasSecurityException { shell.evaluate("(${g}) [a: 1]") }
+        // an entry mixed with a spread stays a subscript BinaryExpression (the subscript branch)
+        assert hasSecurityException { shell.evaluate("def m = [b: 2]; ${g}[a: 1, *: m]") }
+    }
+
+    @Test
+    void testIndirectImportCheckAllowsCoercionToPermittedType() {
+        customizer.allowedImports = ['java.io.File', 'java.lang.Runnable']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        // the target types are permitted, so the coercions are permitted
+        shell.evaluate("(java.io.File) ['/tmp/x']")
+        shell.evaluate("['/tmp/x'] as java.io.File")
+        shell.evaluate("(Runnable) { }")
+    }
+
+    @Test
+    void testIndirectImportCheckLeavesInertCastsUnexamined() {
+        // a plain (converting) cast does not construct, so it is not checked even when its type
+        // is not on the allow list — this pins the slice boundary
+        customizer.allowedImports = ['java.util.ArrayList']
+        customizer.indirectImportCheckEnabled = true
+        def shell = new GroovyShell(configuration)
+        shell.evaluate("(CharSequence) 'hello'")     // operand is a value, not a literal coercion
+        shell.evaluate("def n = 1; (Number) n")
+        // and a genuine positional subscript is untouched
+        shell.evaluate("def list = [10, 20]; list[1]")
+        // a primitive-array coercion has no class name to check, so it is not blocked
+        shell.evaluate("(int[]) [1, 2, 3]")
+        shell.evaluate("[1, 2, 3] as int[]")
+        // a pure spread subscript coerces to `m as Foo` — a variable operand, the same
+        // non-literal coercion residual as `var as Foo`, so it is not examined (and constructs)
+        shell.evaluate("def m = [x: 1]; org.codehaus.groovy.control.customizers.SecGadget[*: m]")
+    }
+}
+
+/**
+ * Helper for {@link SecureASTCustomizerTest}: a class with a map constructor, referenced by
+ * fully qualified name so the indirect import check applies (GROOVY-12283).
+ */
+class SecGadget {
+    String tag
+    SecGadget(Map m) { tag = "map:$m" }
 }

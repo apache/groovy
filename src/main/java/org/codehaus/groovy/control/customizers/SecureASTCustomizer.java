@@ -19,6 +19,7 @@
 package org.codehaus.groovy.control.customizers;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -850,9 +851,12 @@ public class SecureASTCustomizer extends CompilationCustomizer {
      * import statement, most usefully to prevent a class being instantiated by fully qualified name.
      * <p>
      * The rules are applied to the constructed type of a constructor call, to the receiver type of a
-     * method call or a static method call, and to the type a method pointer or method reference is
-     * taken on. They are not applied to every class node: class literals,
-     * property and attribute access, cast and declaration types, and catch types are not examined. Note
+     * method call or a static method call, to the type a method pointer or method reference is taken
+     * on, and to the constructed type of a construction by coercion &mdash; a cast whose operand is a
+     * list, map or closure literal ({@code (Foo) [..]}, {@code [..] as Foo}, {@code (Foo) { .. }})
+     * and a named-argument subscript ({@code Foo[a: 1]}), both of which build an instance of the
+     * named type. They are not applied to every class node: class literals, property and attribute
+     * access, plain (converting) cast and declaration types, and catch types are not examined. Note
      * also that the receiver type is the static type of that expression, which for a dynamically typed
      * receiver is {@code java.lang.Object} rather than the class the call reaches at runtime.
      *
@@ -1546,9 +1550,23 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                         Expression methodName = expr.getMethodName();
                         assertStaticImportIsAllowed(methodName instanceof ConstantExpression
                                 ? methodName.getText() : null, typename);
+                    } else if (expression instanceof CastExpression expr && constructsByCoercion(expr)) {
+                        // GROOVY-12283: a cast whose operand is a list, map or closure literal
+                        // constructs an instance of the cast type (list/map -> constructor,
+                        // closure -> SAM proxy) rather than converting an existing value, so it
+                        // is checked like a constructor call. Covers `(Foo) [..]` and `[..] as Foo`.
+                        ClassNode target = getExpressionType(expr.getType()); // array -> component
+                        if (!ClassHelper.isPrimitiveType(target)) { // e.g. (int[]) [1, 2] has no class to check
+                            assertImportIsAllowed(target.getName());
+                        }
+                    } else if (expression instanceof BinaryExpression expr && isNamedArgConstruction(expr)) {
+                        // GROOVY-12283: `Foo[name: 'x', ..]` is a named-argument construction of
+                        // Foo, not a subscript (map entries are not valid in a real subscript). The
+                        // receiver type is dynamic here, so the class is named by its source text.
+                        assertImportIsAllowed(expr.getLeftExpression().getText());
                     }
                 } catch (SecurityException e) {
-                    throw new SecurityException("Indirect import checks prevents usage of expression", e);
+                    throw new SecurityException("Indirect import checks prevent usage of expression: " + e.getMessage(), e);
                 }
             }
         }
@@ -1561,6 +1579,49 @@ public class SecureASTCustomizer extends CompilationCustomizer {
          */
         protected ClassNode getExpressionType(ClassNode objectExpressionType) {
             return objectExpressionType.isArray() ? getExpressionType(objectExpressionType.getComponentType()) : objectExpressionType;
+        }
+
+        /**
+         * Whether a cast constructs an instance of its type by coercing a literal operand — a list
+         * or map (invoking a constructor) or a closure (creating a SAM proxy) — as opposed to
+         * converting a value that already exists. Such a cast is treated like a constructor call by
+         * the indirect import check (GROOVY-12283).
+         *
+         * @param cast the cast expression
+         * @return {@code true} if the cast materialises a new instance of its type
+         */
+        private static boolean constructsByCoercion(final CastExpression cast) {
+            Expression operand = cast.getExpression();
+            return operand instanceof ListExpression
+                    || operand instanceof MapExpression
+                    || operand instanceof ClosureExpression;
+        }
+
+        /**
+         * Whether a subscript is a named-argument construction such as
+         * {@code Foo[name: 'x', *: extra]} rather than an ordinary index access. Map entries are
+         * not valid in a real subscript, so their presence uniquely marks the construction form
+         * (GROOVY-12283).
+         * <p>
+         * A construction with only map entries or a bare spread ({@code Foo[a: 1]}, {@code Foo[*: m]})
+         * reaches the customizer already coerced to a {@link CastExpression} and is handled there;
+         * only a form mixing entries with a spread stays a subscript, so a {@link ListExpression}
+         * of arguments is the case to detect here.
+         *
+         * @param expression the binary expression
+         * @return {@code true} if the expression constructs by named arguments
+         */
+        private static boolean isNamedArgConstruction(final BinaryExpression expression) {
+            if (!"[".equals(expression.getOperation().getText())
+                    || !(expression.getRightExpression() instanceof ListExpression)) {
+                return false;
+            }
+            for (Expression element : ((ListExpression) expression.getRightExpression()).getExpressions()) {
+                if (element instanceof MapEntryExpression || element instanceof SpreadMapExpression) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
