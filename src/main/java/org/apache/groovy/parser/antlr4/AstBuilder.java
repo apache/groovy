@@ -1041,10 +1041,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
 
             // Last group must complete: every path yields or throws (JEP 361).
-            // Intermediate colon groups may still fall through.
+            // Intermediate colon groups may still fall through. Arrow arms
+            // are independent: any arm that completes normally is incomplete.
+            // Statement-position switches with an incomplete arrow block are
+            // rewritten to SwitchStatement in visitCommandExprAlt.
             Statement lastArm = last(statementList);
-            Statement lastCode = lastArm instanceof CaseStatement cs ? cs.getCode() : lastArm;
-            if (mayCompleteNormally(lastCode)) {
+            if (switchArmsIncomplete(statementList) && !isSwitchUsedAsStatement(ctx)) {
                 throw createParsingFailedException("`yield` or `throw` is expected", lastArm);
             }
 
@@ -1102,6 +1104,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         BlockStatement block = this.visitBlockStatements(ctx.blockStatements());
         List<Statement> statements = block.getStatements();
         if (statements.isEmpty()) {
+            if (arrow && isEnclosingSwitchUsedAsStatement()) {
+                return block;
+            }
             throw createParsingFailedException("`yield` is expected", ctx.blockStatements());
         }
         if (!arrow) {
@@ -1120,7 +1125,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     createBlockStatement(configureAST(yieldS(expressionStatement.getExpression()), body)),
                     body);
         }
-        if (mayCompleteNormally(body)) {
+        if (mayCompleteNormally(body) && !isEnclosingSwitchUsedAsStatement()) {
             throw createParsingFailedException("`yield` or `throw` is expected", body);
         }
         return configureAST(createBlockStatement(body), body);
@@ -1156,6 +1161,132 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return block.getStatements().get(0);
         }
         return statement;
+    }
+
+    /**
+     * True when this {@code switch} is a statement (value discarded), not the
+     * value of an enclosing switch-expression arm. Nested
+     * {@code case L -> switch (...)} is the latter: the inner switch is an
+     * expression even though the parser sees it as an expression-statement.
+     */
+    private boolean isSwitchUsedAsStatement(final SwitchExpressionContext ctx) {
+        ParserRuleContext p = ctx;
+        while (p != null && !(p instanceof CommandExprAltContext)) {
+            p = p.getParent();
+        }
+        if (!(p instanceof CommandExprAltContext command)
+                || !(command.getParent() instanceof ExpressionStmtAltContext stmtAlt)) {
+            return false;
+        }
+        ParserRuleContext blockStatement = stmtAlt.getParent();
+        ParserRuleContext blockStatements = blockStatement != null ? blockStatement.getParent() : null;
+        ParserRuleContext group = blockStatements != null ? blockStatements.getParent() : null;
+        return !(group instanceof SwitchBlockStatementExpressionGroupContext);
+    }
+
+    private boolean isEnclosingSwitchUsedAsStatement() {
+        ParserRuleContext ctx = switchExpressionRuleContextStack.peek();
+        return ctx instanceof SwitchExpressionContext seCtx && isSwitchUsedAsStatement(seCtx);
+    }
+
+    private static boolean switchArmsIncomplete(final List<Statement> statementList) {
+        boolean arrow = false;
+        for (Statement statement : statementList) {
+            if (statement instanceof CaseStatement cs && cs.isArrow()) {
+                arrow = true;
+                break;
+            }
+        }
+        if (arrow) {
+            for (Statement statement : statementList) {
+                Statement code = statement instanceof CaseStatement cs ? cs.getCode() : statement;
+                // Comma-separated `case 1, 2 ->` desugars to empty prefixes
+                // that fall through into the shared arm; those are not incomplete.
+                if (!code.isEmpty() && mayCompleteNormally(code)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        Statement last = last(statementList);
+        Statement lastCode = last instanceof CaseStatement cs ? cs.getCode() : last;
+        return mayCompleteNormally(lastCode);
+    }
+
+    private static boolean switchExpressionHasIncompleteArm(final SwitchExpression expression) {
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            Statement code = caseStatement.getCode();
+            if (!code.isEmpty() && mayCompleteNormally(code)) {
+                return true;
+            }
+        }
+        Statement dflt = expression.getDefaultStatement();
+        return dflt != null && !dflt.isEmpty() && mayCompleteNormally(dflt);
+    }
+
+    /**
+     * Desugars a statement-position switch expression to a switch statement:
+     * unwrap {@code yield} (value is discarded) and insert {@code break} after
+     * each arrow arm that would otherwise fall through.
+     */
+    private SwitchStatement switchExpressionAsStatement(final SwitchExpression expression) {
+        List<CaseStatement> cases = new ArrayList<>(expression.getCaseStatements().size());
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            Statement code = armCodeAsStatement(caseStatement.getCode());
+            if (caseStatement.isArrow() && !code.isEmpty() && mayCompleteNormally(code)) {
+                code = appendBreak(code);
+            }
+            CaseStatement copy = new CaseStatement(caseStatement.getExpression(), code);
+            copy.setArrow(caseStatement.isArrow());
+            copy.setSourcePosition(caseStatement);
+            cases.add(copy);
+        }
+        Statement dflt = armCodeAsStatement(expression.getDefaultStatement());
+        SwitchStatement statement = new SwitchStatement(
+                expression.getExpression(),
+                cases,
+                dflt != null ? dflt : EmptyStatement.INSTANCE);
+        statement.setSourcePosition(expression);
+        return statement;
+    }
+
+    private Statement armCodeAsStatement(final Statement code) {
+        if (code == null || code.isEmpty()) {
+            return code;
+        }
+        if (code instanceof YieldStatement ys) {
+            ExpressionStatement es = new ExpressionStatement(ys.getExpression());
+            es.setSourcePosition(ys);
+            return es;
+        }
+        if (code instanceof BlockStatement block) {
+            block.getStatements().replaceAll(this::armCodeAsStatement);
+            return block;
+        }
+        if (code instanceof IfStatement iff) {
+            iff.setIfBlock(armCodeAsStatement(iff.getIfBlock()));
+            iff.setElseBlock(armCodeAsStatement(iff.getElseBlock()));
+            return iff;
+        }
+        if (code instanceof TryCatchStatement tcs) {
+            tcs.setTryStatement(armCodeAsStatement(tcs.getTryStatement()));
+            tcs.setFinallyStatement(armCodeAsStatement(tcs.getFinallyStatement()));
+            tcs.getCatchStatements().forEach(cs -> cs.setCode(armCodeAsStatement(cs.getCode())));
+            return tcs;
+        }
+        if (code instanceof SynchronizedStatement ss) {
+            ss.setCode(armCodeAsStatement(ss.getCode()));
+            return ss;
+        }
+        return code;
+    }
+
+    private static Statement appendBreak(final Statement code) {
+        if (code instanceof BlockStatement block) {
+            block.addStatement(new BreakStatement());
+            return block;
+        }
+        return block(code, new BreakStatement());
     }
 
     /**
@@ -2318,8 +2449,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public ExpressionStatement visitCommandExprAlt(final CommandExprAltContext ctx) {
-        return configureAST(new ExpressionStatement(this.visitCommandExpression(ctx.commandExpression())), ctx);
+    public Statement visitCommandExprAlt(final CommandExprAltContext ctx) {
+        Expression expr = this.visitCommandExpression(ctx.commandExpression());
+        // Statement-position `switch` with `->` is parsed as a SwitchExpression
+        // (switchStatement is colon-only). If an arrow block does not yield,
+        // rewrite it to SwitchStatement so the block need not yield (JEP 361
+        // statement rules). Expression-position incomplete arms already errored.
+        if (expr instanceof SwitchExpression se
+                && ctx.getParent() instanceof ExpressionStmtAltContext
+                && switchExpressionHasIncompleteArm(se)) {
+            return configureAST(switchExpressionAsStatement(se), ctx);
+        }
+        return configureAST(new ExpressionStatement(expr), ctx);
     }
 
     @Override

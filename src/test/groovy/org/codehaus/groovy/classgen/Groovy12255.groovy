@@ -190,6 +190,77 @@ final class Groovy12255 {
     }
 
     @Test
+    void arrowBlockUsedAsStatementDoesNotRequireYield() {
+        assertBoth '''
+            def log = []
+            switch (2) {
+                case 1 -> log << 'one'
+                case 2 -> {
+                    log << 'two'
+                    if (true) {
+                        log << 'done'
+                    }
+                }
+            }
+            assert log == ['two', 'done']
+        '''
+    }
+
+    @Test
+    void statementArrowBlockDoesNotFallThrough() {
+        assertBoth '''
+            def log = []
+            switch (1) {
+                case 1 -> {
+                    log << 'one'
+                }
+                case 2 -> log << 'two'
+                default -> log << 'dflt'
+            }
+            assert log == ['one']
+        '''
+    }
+
+    @Test
+    void nestedStatementSwitchInsideExpressionArmBlock() {
+        assertBoth '''
+            def log = []
+            def r = switch (1) {
+                case 1 -> {
+                    switch (2) {
+                        case 1 -> log << 'one'
+                        case 2 -> {
+                            log << 'inner'
+                            if (true) {
+                                log << 'done'
+                            }
+                        }
+                    }
+                    yield 'ok'
+                }
+                default -> 'x'
+            }
+            assert r == 'ok'
+            assert log == ['inner', 'done']
+        '''
+    }
+
+    @Test
+    void expressionPositionIncompleteArrowBlockIsError() {
+        def err = shouldFail(MultipleCompilationErrorsException, '''
+            def r = switch (1) {
+                case 1 -> {
+                    if (true) {
+                        def x = 1
+                    }
+                }
+                default -> 0
+            }
+        ''')
+        assert err.message.contains('yield') || err.message.contains('throw')
+    }
+
+    @Test
     void assignToOuterLocal() {
         assertScript '''
             int acc = 0

@@ -91,11 +91,14 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
     }
 
     /**
-     * Emits the {@code isCase} call selected by the type checker. A literal
-     * {@code case null} is identity, not {@code DGM.isCase(Object,Object)}
+     * Emits the {@code isCase} call selected by the type checker as a direct
+     * method call via {@link AsmClassGenerator#visitMethodCallExpression},
+     * which reaches {@code StaticInvocationWriter.writeDirectMethodCall}.
+     * A literal {@code case null} is identity, not {@code DGM.isCase(Object,Object)}
      * (which NPEs). Any other arm must already carry
      * {@link StaticTypesMarker#DIRECT_METHOD_CALL_TARGET} on the
-     * {@link CaseStatement}.
+     * {@link CaseStatement}; missing targets are a type-checking error except
+     * under {@code TypeCheckingMode.SKIP}.
      */
     @Override
     protected void writeIsCaseComparison(final CaseStatement caseStatement,
@@ -107,9 +110,8 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         }
         MethodNode target = caseStatement.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         if (target == null) {
-            // Optimizer miss (e.g. inferred enum type but Object on the stack) or
-            // TypeCheckingMode.SKIP: keep ScriptBytecodeAdapter so the operand
-            // stack still has a boolean for the following IFEQ.
+            // TypeCheckingMode.SKIP (and any residual miss): SBA keeps a boolean
+            // on the operand stack for the following IFEQ.
             super.writeIsCaseComparison(caseStatement, selectorIndex, selectorType);
             return;
         }
