@@ -22,6 +22,7 @@ import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.FlowPublisherAdapter;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
+import java.lang.ref.SoftReference;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -51,7 +52,31 @@ public final class AwaitableAdapterRegistry {
 
     private static final List<AwaitableAdapter> adapters = new CopyOnWriteArrayList<>();
 
-    private static volatile ClassValue<AwaitableAdapter> awaitableCache = buildAwaitableCache();
+    /**
+     * Marks a type no adapter supports, so that a cache entry whose {@link SoftReference}
+     * was cleared can be told apart from a type that resolved to no adapter.
+     */
+    private static final AwaitableAdapter NO_ADAPTER = new AwaitableAdapter() {
+        @Override
+        public boolean supportsAwaitable(Class<?> type) {
+            return false;
+        }
+
+        @Override
+        public <T> Awaitable<T> toAwaitable(Object source) {
+            throw new IllegalStateException("NO_ADAPTER cannot adapt");
+        }
+    };
+
+    /**
+     * Adapter lookups cached per source class. A {@code ClassValue} association lives as
+     * long as its key class, and the common keys here are platform classes such as
+     * {@link CompletableFuture}, so the value is held through a {@link SoftReference}:
+     * the association then strongly reaches only {@code java.base} objects and never pins
+     * the adapter's class loader (GROOVY-12280). A cleared reference is re-resolved from
+     * {@link #adapters} on the next lookup.
+     */
+    private static volatile ClassValue<SoftReference<AwaitableAdapter>> awaitableCache = buildAwaitableCache();
 
     static {
         // Load SPI adapters
@@ -104,13 +129,45 @@ public final class AwaitableAdapterRegistry {
         }
         if (source instanceof Awaitable) return (Awaitable<T>) source;
         Class<?> type = source.getClass();
-        AwaitableAdapter adapter = awaitableCache.get(type);
+        AwaitableAdapter adapter = adapterFor(type);
         if (adapter != null) {
             return adapter.toAwaitable(source);
         }
         throw new IllegalArgumentException(
                 "No Awaitable adapter found for type: " + type.getName()
                         + ". Register an AwaitableAdapter via ServiceLoader or AwaitableAdapterRegistry.register().");
+    }
+
+    /**
+     * The adapter for the given type, or {@code null} when none supports it.
+     * <p>
+     * A cleared cache reference is removed and recomputed once; should the fresh
+     * reference already be cleared as well, the answer comes from an uncached scan,
+     * so the lookup terminates under any memory pressure.
+     */
+    private static AwaitableAdapter adapterFor(Class<?> type) {
+        ClassValue<SoftReference<AwaitableAdapter>> cache = awaitableCache;
+        AwaitableAdapter adapter = cache.get(type).get();
+        if (adapter == null) {
+            cache.remove(type);
+            adapter = cache.get(type).get();
+            if (adapter == null) {
+                adapter = resolveAdapter(type);
+            }
+        }
+        return adapter == NO_ADAPTER ? null : adapter;
+    }
+
+    /**
+     * Resolves the first adapter supporting the supplied type, or {@link #NO_ADAPTER}.
+     */
+    private static AwaitableAdapter resolveAdapter(Class<?> type) {
+        for (AwaitableAdapter adapter : adapters) {
+            if (adapter.supportsAwaitable(type)) {
+                return adapter;
+            }
+        }
+        return NO_ADAPTER;
     }
 
     /**
@@ -132,25 +189,14 @@ public final class AwaitableAdapterRegistry {
                         + ". Register an AwaitableAdapter via ServiceLoader or AwaitableAdapterRegistry.register().");
     }
 
-    private static ClassValue<AwaitableAdapter> buildAwaitableCache() {
-        /**
-         * Cache of awaitable adapters by source type.
-         */
+    // Keep this method static and the ClassValue below free of any enclosing-instance reference:
+    // capturing one would let the association hold this registry, its class and its loader, undoing
+    // the loader-unloading this class exists to allow (GROOVY-12280).
+    private static ClassValue<SoftReference<AwaitableAdapter>> buildAwaitableCache() {
         return new ClassValue<>() {
-            /**
-             * Resolves the first adapter supporting the supplied type.
-             *
-             * @param type the source type
-             * @return the matching adapter, or {@code null} if none match
-             */
             @Override
-            protected AwaitableAdapter computeValue(Class<?> type) {
-                for (AwaitableAdapter adapter : adapters) {
-                    if (adapter.supportsAwaitable(type)) {
-                        return adapter;
-                    }
-                }
-                return null;
+            protected SoftReference<AwaitableAdapter> computeValue(Class<?> type) {
+                return new SoftReference<>(resolveAdapter(type));
             }
         };
     }
