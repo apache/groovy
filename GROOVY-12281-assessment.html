@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<!--
+     Licensed to the Apache Software Foundation (ASF) under one
+     or more contributor license agreements.  See the NOTICE file
+     distributed with this work for additional information
+     regarding copyright ownership.  The ASF licenses this file
+     to you under the Apache License, Version 2.0 (the
+     "License"); you may not use this file except in compliance
+     with the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an
+     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+     specific language governing permissions and limitations
+     under the License.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GROOVY-12281 Assessment — ClassInfo.globalClassValue Loader Pinning</title>
+<style>
+  :root {
+    --bg: #fdfdfd;
+    --fg: #222;
+    --accent: #2563eb;
+    --accent-light: #dbeafe;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --gray: #64748b;
+    --gray-light: #f1f5f9;
+    --border: #e2e8f0;
+    --code-bg: #f8fafc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.65;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+  h1 { font-size: 1.75rem; margin-bottom: .25rem; }
+  h2 { font-size: 1.35rem; margin-top: 2.5rem; margin-bottom: .75rem; border-bottom: 2px solid var(--accent); padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: .5rem; }
+  p, li { margin-bottom: .5rem; }
+  ul, ol { padding-left: 1.5rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: .1em .35em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.5;
+    margin: .75rem 0 1rem;
+  }
+  pre code { border: none; padding: 0; background: none; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: .75rem 0 1rem;
+    font-size: .9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: .45rem .6rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { background: var(--gray-light); font-weight: 600; }
+  td.c, th.c { text-align: center; }
+  td.ok { color: var(--green); font-weight: 600; text-align: center; }
+  td.bad { color: var(--red); font-weight: 600; text-align: center; }
+  .badge {
+    display: inline-block;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border-radius: 4px;
+    padding: .15em .55em;
+    vertical-align: middle;
+  }
+  .badge.pursue { background: var(--green-light); color: var(--green); }
+  .badge.evaluate { background: var(--amber-light); color: var(--amber); }
+  .badge.decline { background: var(--red-light); color: var(--red); }
+  .badge.pending { background: var(--amber-light); color: var(--amber); }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-light);
+    border-radius: 0 6px 6px 0;
+    padding: .75rem 1rem;
+    margin: 1rem 0;
+  }
+  .callout.warn { border-left-color: var(--amber); background: var(--amber-light); }
+  .verdict {
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    background: var(--accent-light);
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0 1.5rem;
+  }
+  .verdict h2 { border: none; margin-top: 0; padding-bottom: 0; }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: .85rem;
+    color: var(--gray);
+  }
+</style>
+</head>
+<body>
+
+<h1>GROOVY-12281 Assessment — <code>ClassInfo.globalClassValue</code> Loader Pinning</h1>
+<p class="subtitle" style="color:var(--gray)">Investigation follow-up from GROOVY-12142 review · Assessment date: 19 August 2026 · Status: <span class="badge pending">proposed pending team review</span></p>
+
+<div class="verdict">
+<h2>Verdict</h2>
+<p><strong>The SoftReference-value strategy — in any gating, including "soft while pristine" — is not viable for <code>globalClassValue</code>.</strong> The investigation found two independent, code-grounded correctness failures for every drop-and-recompute scheme, one of which also nullifies the pristine-gated variant's entire benefit. The viable path is the <em>per-key policy</em> from the GROOVY-12142 review discussion, in a semantics-preserving form that never recomputes anything:</p>
+<ul>
+  <li><strong>Option B — hybrid store</strong> <span class="badge decline">Decline after measurement</span>: measured (§5), the hybrid tracks the map — not <code>ClassValue</code> — on macro dispatch, because dynamic code cannot avoid platform receivers (String, boxed numbers, DGM) and those are exactly the keys the hybrid maps. Its extra complexity buys a micro-only win that never surfaces.</li>
+  <li><strong>Option D — flip the default to map-based</strong> <span class="badge decline">Decline after measurement</span>: the compiler gate passed (+1.0%, noise — §5.1) but the runtime JMH gate <strong>failed decisively</strong> (§5.2): geomean <strong>+4.8%</strong> across 57 classic dispatch benchmarks, with 12 statistically significant regressions including a 18–38% band on platform-receiver-heavy idioms (<code>asToString</code> 1.38×, elvis 1.32×, range iteration 1.32×, safe navigation 1.31×, map property access 1.23×, <code>in</code> operator 1.20×). This is far outside any "not measurable" claim and exactly the profile the synthetic micro results predicted.</li>
+</ul>
+<p><strong>Final recommendation: status quo, deliberately.</strong> Recompute-based options are illegal on correctness; B and D are declined on measurement. <code>java.lang.ClassValue</code> stays the default for its measured dispatch advantage, and the container pin remains addressed by the two remedies GROOVY-12142 already ships and documents — <code>-Dgroovy.use.classvalue=false</code> (whose cost is now quantified here: ~5% geomean on classic dispatch idioms, +1% compile) and explicit <code>ClassInfo.remove()</code> cleanup on undeploy. GROOVY-12281 closes as "investigated: no default change; escape-hatch cost quantified", with this document as the record. The integration guide's "for most applications the difference is not measurable" sentence should be tempered to reflect §5.2 (dispatch-heavy dynamic code can see mid-single-digit percent, with hot idioms up to ~1.4×).</p>
+</div>
+
+<h2>1. Scope and the chain rule</h2>
+<p>From the GROOVY-12142 review analysis: a <code>ClassValue</code> realizes <em>key class → association → value → everything reachable</em>, and the association lives as long as the key class (JDK-8136353, working as intended). A Groovy-loaded key dies with its loader — fine; an immortal platform key (e.g. <code>String</code>) holds a Groovy-loaded value, and with it the whole Groovy class loader, forever. <code>ClassInfo.globalClassValue</code> (<code>ClassInfo.java:113</code>) is static with unknown keys including platform classes, so the default path pins; the only current remedy is the global <code>groovy.use.classvalue=false</code> escape hatch, which gives up the fast path for every key. GROOVY-12280 fixed the analogous problem in <code>AwaitableAdapterRegistry</code> with soft values — legitimately, because that cache's recomputation is a pure, cheap scan. This assessment answers whether <code>globalClassValue</code> can do the same. It cannot.</p>
+
+<h2>2. What a ClassInfo actually holds</h2>
+<p>Recompute-legality is a property of the value's state. The inventory:</p>
+<table>
+<tr><th>Field</th><th class="c">Recomputable?</th><th>Written by / consumed by</th></tr>
+<tr><td><code>classRef</code>, <code>cachedClassRef</code>, <code>artifactClassLoader</code></td><td class="ok">yes</td><td>Lazy caches (<code>ClassInfo.java:78-79,131-135</code>); pure derivations of the class.</td></tr>
+<tr><td><code>version</code></td><td class="bad">no</td><td>Guard stamp. Classic call sites capture the <code>ClassInfo</code>/<code>MetaClassImpl</code> <em>instance</em> at link time and validate <code>version == classInfo.getVersion()</code> against that captured instance (<code>groovy-callsite</code>: <code>StaticMetaClassSite.java:39-44</code>, <code>MetaClassConstructorSite.java:39-46</code>, <code>ConstructorMetaMethodSite.java:38,53</code>; core: <code>MetaClassImpl.java:3832</code>).</td></tr>
+<tr><td><code>indySwitchPointDomain</code></td><td class="c">partly</td><td>Per-class indy guard domain (<code>ClassInfo.java:92</code>). Collection of a <code>ClassInfo</code> retires its domain via <code>DomainReclaim</code> (<code>IndyInvalidation.java:114-137</code>) — but only after actual GC plus reference processing, leaving a two-live-instances window.</td></tr>
+<tr><td><code>strongMetaClass</code>, <code>perInstanceMetaClassMap</code></td><td class="bad">no</td><td>User state: EMC modifications, per-instance metaclasses (<code>ClassInfo.java:101,105</code>).</td></tr>
+<tr><td><code>dgmMetaMethods</code>, <code>newMetaMethods</code></td><td class="bad">no</td><td><strong>Written once, externally</strong>: DGM and extension-module method arrays are pushed into the <code>ClassInfo</code> by <code>CachedClass.updateSetNewMopMethods</code> (<code>CachedClass.java:566-575</code>) during registry initialization and extension-module registration. There is no re-registration hook a recomputed instance could invoke.</td></tr>
+</table>
+
+<h2>3. Why every recompute scheme fails <span class="badge decline">Decline Option A (soft values, any gating)</span></h2>
+<h3>Failure 1 — irreversible DGM/extension-method loss</h3>
+<p>A recomputed <code>ClassInfo</code> starts with empty <code>dgmMetaMethods</code>/<code>newMetaMethods</code>. For <code>String</code> that means a subsequently created <code>MetaClassImpl</code> without DGM methods — core dispatch breaks — and there is no path by which recomputation could re-run the one-time registry/extension-module registration. This failure also destroys the pristine-gated variant's purpose: the platform classes are exactly the ones that are <em>never</em> pristine, because the registry writes DGM state into their <code>ClassInfo</code>s at startup. Gating softness on pristineness would exclude <code>String</code>, <code>Integer</code>, <code>Object</code>… — precisely the immortal keys the mitigation exists for — so the scheme would carry all its complexity while unpinning nothing.</p>
+<h3>Failure 2 — split-brain guard stamps</h3>
+<p>Between a value being dropped and its old instance being collected, two <code>ClassInfo</code>s exist for one class. Classic call sites hold the old instance and its version, which will never change again, so their guards accept forever — blind to any metaclass installed on the fresh instance: silently wrong dispatch, not a performance blip. The indy side is only partially protected: <code>DomainReclaim</code> retires an orphaned domain at reference-processing time, not at drop time, so the same window exists there until GC catches up. (Whether <code>IndyInvalidation</code>'s live-registry reaches both domains during the window is a verification item, §6 — but the classic-path failure alone is disqualifying while <code>groovy-callsite</code> is supported.)</p>
+<div class="callout warn"><strong>Net:</strong> the GROOVY-12280 pattern generalizes only where the value is stateless and externally reproducible. <code>ClassInfo</code> is neither — it is an identity-bearing registry node that other subsystems write into and guard against. This sharpens the ticket's premise: recompute is not merely "risky under memory pressure", it is structurally illegal here.</div>
+
+<h2>4. The viable options — never recompute; move the association instead</h2>
+<h3>Option B — hybrid per-key store <span class="badge decline">Decline (measured, §5)</span></h3>
+<p>Split by the key-origin rule, mechanically: keys whose loader is the bootstrap (<code>null</code>) or platform loader are stored in a weak-identity-key, strong-value map (the exact mechanics of <code>GroovyClassValueMapBased</code>, <code>GroovyClassValueMapBased.java:39-56</code>); every other key uses <code>java.lang.ClassValue</code>. Chain analysis: a platform key's entry now lives in a map <em>owned by Groovy's loader</em> — the platform class holds nothing, and map-entry-→-<code>ClassInfo</code> dies with Groovy itself; a user key's <code>ClassValue</code> association dies with the user class's loader, which is the webapp loader in the container topology. Both halves preserve today's semantics exactly: values are strong, live as long as their class, and are never recomputed — failures 1 and 2 cannot arise.</p>
+<ul>
+  <li><strong>Implementation:</strong> a third <code>GroovyClassValue</code> implementation (~40 lines) selected by <code>GroovyClassValueFactory</code> as the new default; <code>groovy.use.classvalue=false</code> keeps forcing the full map, and a <code>true</code>-style opt-out could force pure <code>ClassValue</code> for anyone who wants today's exact behavior.</li>
+  <li><strong>Cost:</strong> one loader check per <code>get</code> (cacheable per call site is overkill; <code>getClassLoader()</code> on a hot path is cheap but must be measured), and map lookups for platform-class receivers — which include the hottest dispatch targets (<code>String</code>). This is the measurement gate.</li>
+  <li><strong>Memory:</strong> platform-key entries live until Groovy's loader dies — identical to today's <code>ClassValue</code> lifetime, bounded by loaded platform classes.</li>
+</ul>
+<h3>Option D — default flip to map-based <span class="badge decline">Decline (measured, §5.2)</span></h3>
+<p>Make <code>GroovyClassValueMapBased</code> the default and <code>ClassValue</code> the opt-in. One-line change, uniform semantics, kills the pin for all keys. Both gates were run: the compiler harness <strong>passed</strong> (+1.0%, within noise — §5.1), but the runtime JMH classic-dispatch gate <strong>failed</strong> (+4.8% geomean, 12 significant regressions up to 1.38× — §5.2). The decision rule set in advance was "within noise → flip; otherwise status quo" — so D is declined and the escape hatch remains the remedy, now with its cost quantified for the documentation.</p>
+<h3>Option C — split ClassInfo into recomputable/stateful parts <span class="badge decline">Decline</span></h3>
+<p>A deep refactor of an identity-bearing class that half the MOP writes into, to enable a recompute scheme that B and D make unnecessary. All of the risk, none of the unique benefit.</p>
+
+<h2>5. Measurement (executed) — B loses to D</h2>
+<p>A hybrid prototype (<code>GroovyClassValueHybrid</code>, selected via <code>-Dgroovy.use.classvalue=hybrid</code>) was implemented on the investigation branch and measured against pure <code>ClassValue</code> and pure map. Harness: hand-rolled fresh-JVM-per-config driver (not JMH — treat as indicative), JDK 17, fixed 512&nbsp;MB heap, medians of 7 in-JVM rounds × 3 JVMs per config. Micro = <code>getClassInfo</code> hot loop; macro = dynamic Groovy loops (200k iterations each: a String-DGM loop and a POGO method-call loop).</p>
+<table>
+<tr><th>ns/op (median)</th><th class="c">ClassValue (today)</th><th class="c">Map (Option D)</th><th class="c">Hybrid (Option B)</th></tr>
+<tr><td>lookup, platform key (<code>String</code>)</td><td class="c">1</td><td class="c">4–5</td><td class="c">4</td></tr>
+<tr><td>lookup, user key</td><td class="c">1</td><td class="c">3–4</td><td class="c">2</td></tr>
+<tr><td>lookup, mixed keys</td><td class="c">1</td><td class="c">5</td><td class="c">4–5</td></tr>
+<tr><td>loader predicate (per check)</td><td class="c" colspan="3">~0.5–0.7 — negligible</td></tr>
+<tr><td>dispatch/iter, String-heavy loop</td><td class="c">58–92 (noisy)</td><td class="c">67–81</td><td class="c">68–82</td></tr>
+<tr><td>dispatch/iter, POGO loop (tight)</td><td class="c">28–30</td><td class="c">33–38</td><td class="c">33–38</td></tr>
+</table>
+<p><strong>The finding that settles B-vs-D:</strong> hybrid tracks the <em>map</em>, not <code>ClassValue</code>, on both macro benchmarks — including the POGO loop built to favor it. The reason is structural, not an artifact: dynamic Groovy code cannot avoid platform receivers — every string concatenation, boxed-integer operation and DGM call dispatches on a platform key — and those are exactly the keys the hybrid routes to the map. B preserves the fast path only for user-class keys, whose lookups are the minority of hot <code>getClassInfo</code> traffic even in POGO-centric code. B's micro win on user keys (2&nbsp;ns vs 3–4&nbsp;ns) never surfaces at macro level.</p>
+<p><strong>Cost of D vs today:</strong> roughly +15% on the tight synthetic POGO loop (~29→~34&nbsp;ns/iter over several dynamic ops), indistinguishable from noise on the wider String loop. Synthetic tight loops overstate the relative cost for real applications, consistent with the integration guide's "not measurable for most applications" — but a default flip should still be gated on the heavyweight macro suites, which this indicative harness does not replace.</p>
+<h3>5.1 Compiler-performance harness (executed) — gate passes</h3>
+<p>The standard harness (<code>org.apache.groovy.perf.CompilerPerformanceTest</code>, 50 warmup + 300 measured rounds compiling the 4-file corpus, run directly per the established repro method: fresh JVM, <code>-Xms512m -Xmx512m</code>, JDK 17, idle machine, modes alternated per round to cancel drift):</p>
+<table>
+<tr><th>Mode</th><th class="c">Run means (ms)</th><th class="c">Overall</th><th class="c">vs ClassValue</th></tr>
+<tr><td>ClassValue (today)</td><td class="c">304.3 / 307.9 / 313.6</td><td class="c">≈ 308.6</td><td class="c">—</td></tr>
+<tr><td>Map (Option D)</td><td class="c">302.7 / 316.0 / 316.8</td><td class="c">≈ 311.8</td><td class="c"><strong>+1.0%</strong></td></tr>
+<tr><td>Hybrid (Option B)</td><td class="c">304.3 (1 run)</td><td class="c">≈ 304</td><td class="c">≈ parity</td></tr>
+</table>
+<p>Paired per-round deltas (−1.6 / +8.1 / +3.2&nbsp;ms against per-run σ of 13–21&nbsp;ms) put the map's central estimate at +1%, inside the ~2% gate and statistically indistinguishable from noise at this sample size. This is the expected shape: the compiler is Java code whose <code>ClassInfo</code> traffic is modest, unlike the dynamic-dispatch runtime path.</p>
+
+<h3>5.2 Runtime JMH classic-dispatch gate (executed) — gate fails</h3>
+<p>Method: the repo's JMH suite (<code>subprojects/performance/src/jmh</code>) built as the classic (<code>-Pindy=false</code>) fat jar; 57 benchmarks across <code>MethodInvocationBench</code>, <code>OperatorBench</code>, <code>PropertyAccessBench</code>, <code>GroovyIdiomBench</code>, and grails <code>DynamicDispatchBench</code>; annotation defaults (2 forks × 3 warmup + 5 measurement × 2s); one full sweep per mode with <code>-jvmArgsAppend -Dgroovy.use.classvalue=…</code> so the property reaches forked JVMs; significance = disjoint 99.9% CIs.</p>
+<table>
+<tr><th>Map vs ClassValue</th><th class="c">Result</th></tr>
+<tr><td>Geomean over 57 benchmarks</td><td class="bad">+4.8%</td></tr>
+<tr><td>Significant regressions (&gt;2%, CIs disjoint)</td><td class="bad">12</td></tr>
+<tr><td>Worst band (platform-receiver idioms)</td><td class="bad">1.20×–1.38×</td></tr>
+<tr><td>Significant improvements</td><td class="c">11, all ≤&nbsp;9% (mostly ~3%)</td></tr>
+</table>
+<p>The regression tail is exactly the predicted profile — platform-receiver-heavy idioms: <code>asToString</code> 1.38×, <code>elvisEmptyString</code> 1.32×, <code>rangeIteration</code> 1.32×, <code>safeNavNonNull</code> 1.31×, <code>mapDotPropertyAccess</code> 1.23×, <code>propertyMissingReadWrite</code> 1.23×, <code>inOperator</code> 1.20×, <code>dynamicTypedPropertyAccess</code> 1.11×. Caveat: one sweep per mode (though 2 JMH forks each); the 20–38% band dwarfs run-to-run noise and matches both the synthetic micro results and the mechanism, so the verdict is robust. <strong>Gate failed → Option D declined per the pre-set decision rule.</strong> Raw results: <code>jmh-cv-final.json</code> (session scratchpad).</p>
+
+<h2>6. Risks and verification items</h2>
+<ul>
+  <li>Platform-key predicate: <code>loader == null || loader == ClassLoader.getPlatformClassLoader()</code> — confirm this classifies JDK-internal loaders acceptably and costs nothing measurable per lookup.</li>
+  <li><code>ManagedIdentityConcurrentMap</code> contention on the hottest keys (<code>String</code>) under B/D — covered by the JMH plan; if contended, a striped or read-optimized map is a contained fix.</li>
+  <li><code>ClassInfo.remove(Class)</code> (<code>ClassInfo.java:328-330</code>) works identically against both stores; the hybrid must route removes by the same predicate.</li>
+  <li>Verification item from §3: whether <code>IndyInvalidation</code>'s live-domain registry reaches both domains while two instances coexist — moot for the chosen options (no recompute), but worth confirming while in the area, since it bounds the blast radius of any future recompute proposal.</li>
+  <li>Relationship to GROOVY-12280: related, not dependent — shared strategy vocabulary, no shared code; a common helper is a non-goal (the <code>groovy-concurrent-java</code> extraction constraint vs layering inversion, as recorded on both tickets).</li>
+</ul>
+
+<footer>
+<p><strong>Sources.</strong> GROOVY-12142 review discussion (chain model, key-origin rule, per-key policy suggestion); <code>ClassInfo.java:78-135</code> (state, <code>globalClassValue</code>, <code>GlobalClassSet</code> weak membership <code>:741-761</code>), <code>:566-575</code> of <code>CachedClass.java</code> (one-time DGM/extension writes), <code>IndyInvalidation.java:114-167</code> (<code>DomainReclaim</code>, <code>invalidateClass</code>), <code>groovy-callsite</code> version stamps (<code>StaticMetaClassSite</code>, <code>MetaClassConstructorSite</code>, <code>ConstructorMetaMethodSite</code>), <code>MetaClassImpl.java:3832</code>, <code>GroovyClassValueMapBased.java</code>, <code>GroovyClassValueFactory.java:27-40</code>. Companion work: GROOVY-12280 (PR #2818), GROOVY-12282-class documentation ticket. All recommendations <span class="badge pending">proposed pending team review</span>.</p>
+</footer>
+
+</body>
+</html>
