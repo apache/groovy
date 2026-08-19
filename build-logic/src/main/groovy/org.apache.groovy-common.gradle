@@ -59,6 +59,8 @@ tasks.named('rat') {
                 'artifactory.properties',  // potential file on CI server
                 'gradle.properties',  // artifactory release plugin removes header when bumping version
                 'gradle/verification-keyring.keys', // PGP keyring for dependency verification
+                'gradle/verification-keyring.dryrun.keys', // dry-run variant of the above
+                '.claude/**', // local AI-assistant session state
                 '**/build/**', '**/target/**', 'licenses/**', 'notices/**',
                 'out/**', '*.ipr', '**/*.iml', '*.iws', '.idea/**', // Intellij files
                 '**/style.css', // MIT license as per NOTICE/LICENSE files
