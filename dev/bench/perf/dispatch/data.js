@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787038096747,
+  "lastUpdate": 1787123648927,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2329,6 +2329,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1504,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "34ed575b0c4cbf03df8b7e13801c80cef552af82",
+          "message": "minor refactor: rat exclude tweaks",
+          "timestamp": "2026-08-19T04:18:59Z",
+          "url": "https://github.com/apache/groovy/commit/34ed575b0c4cbf03df8b7e13801c80cef552af82"
+        },
+        "date": 1787123647363,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4002,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 452,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 871,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1501,
             "unit": "classes"
           },
           {
