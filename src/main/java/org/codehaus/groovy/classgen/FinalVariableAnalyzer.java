@@ -60,6 +60,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Analyzes variable assignments to determine if variables are effectively final,
@@ -361,73 +362,45 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * {@link YieldStatement} completes the expression normally, so only
+     * {@code throw}/{@code return} skip the join after it (GROOVY-12255).
      */
     @Override
     public void visitSwitchExpression(final SwitchExpression expression) {
-        expression.getExpression().visit(this);
-        List<Statement> branches = new ArrayList<>(expression.getCaseStatements());
-        if (!(expression.getDefaultStatement() instanceof EmptyStatement)) {
-            branches.add(expression.getDefaultStatement());
-        }
-        List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
-
-        int lastIndex = branches.size() - 1;
-        for (int i = 0; i <= lastIndex; i++) {
-            pushState();
-            boolean done = false;
-            boolean leavesExpression = false;
-            for (int j = i; !done; j++) {
-                Statement branch = branches.get(j);
-                Statement block = branch;
-                if (branch instanceof CaseStatement caseS) {
-                    block = caseS.getCode();
-                    caseS.getExpression().visit(this);
-                }
-                block.visit(this);
-                done = j == lastIndex || !fallsThrough(block);
-                if (done) {
-                    // GROOVY-12255: yield completes the expression normally;
-                    // only throw/return fail to reach the code after it
-                    leavesExpression = completesWithoutReachingAfterExpression(block);
-                }
-            }
-            if (!leavesExpression) {
-                afterStates.add(getState());
-            }
-            popState();
-        }
-        if (afterStates.isEmpty()) {
-            return;
-        }
-
-        Map<Variable, VariableState> beforeState = getState();
-        Set<Variable> allVars = new HashSet<>(beforeState.keySet());
-        for (Map<Variable, VariableState> map : afterStates) {
-            allVars.addAll(map.keySet());
-        }
-        for (Variable var : allVars) {
-            VariableState beforeValue = beforeState.get(var);
-            if (beforeValue != null) {
-                final VariableState merged = afterStates.get(0).get(var);
-                if (merged != null) {
-                    if (afterStates.stream().allMatch(state -> merged.equals(state.get(var)))) {
-                        beforeState.put(var, merged);
-                    } else {
-                        VariableState different = beforeValue == VariableState.is_uninitialized ? VariableState.is_ambiguous : VariableState.is_var;
-                        beforeState.put(var, different);
-                    }
-                }
-            }
-        }
+        visitSwitchBranches(expression.getExpression(), expression.getCaseStatements(),
+                expression.getDefaultStatement(), this::completesWithoutReachingAfterExpression);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void visitSwitch(SwitchStatement switchS) {
+    public void visitSwitch(final SwitchStatement switchS) {
         visitStatement(switchS);
-        switchS.getExpression().visit(this);
-        List<Statement> branches = new ArrayList<>(switchS.getCaseStatements());
-        if (!(switchS.getDefaultStatement() instanceof EmptyStatement)) {
-            branches.add(switchS.getDefaultStatement());
+        visitSwitchBranches(switchS.getExpression(), switchS.getCaseStatements(),
+                switchS.getDefaultStatement(), this::returningBlock);
+    }
+
+    /**
+     * Path-sensitive analysis shared by {@link SwitchStatement} and
+     * {@link SwitchExpression}. Each case is a possible entry; fall-through
+     * into later arms is followed until a terminator or the last arm. Paths
+     * for which {@code leavesJoin} is true are dropped; the rest are merged
+     * into the enclosing assignment state.
+     *
+     * @param selector the switch selector
+     * @param caseStatements case arms in source order
+     * @param defaultStatement default arm; {@link EmptyStatement} means none
+     * @param leavesJoin {@code true} when the completed arm does not reach
+     *                   the code after the switch
+     */
+    private void visitSwitchBranches(final Expression selector, final List<CaseStatement> caseStatements,
+            final Statement defaultStatement, final Predicate<Statement> leavesJoin) {
+        selector.visit(this);
+        List<Statement> branches = new ArrayList<>(caseStatements);
+        if (!(defaultStatement instanceof EmptyStatement)) {
+            branches.add(defaultStatement);
         }
         List<Map<Variable, VariableState>> afterStates = new ArrayList<>();
 
@@ -436,7 +409,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         for (int i = 0; i <= lastIndex; i++) {
             pushState();
             boolean done = false;
-            boolean returning = false;
+            boolean leaves = false;
             for (int j = i; !done; j++) {
                 Statement branch = branches.get(j);
                 Statement block = branch; // default branch
@@ -447,10 +420,10 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
                 block.visit(this);
                 done = j == lastIndex || !fallsThrough(block);
                 if (done) {
-                    returning = returningBlock(block);
+                    leaves = leavesJoin.test(block);
                 }
             }
-            if (!returning) {
+            if (!leaves) {
                 afterStates.add(getState());
             }
             popState();
