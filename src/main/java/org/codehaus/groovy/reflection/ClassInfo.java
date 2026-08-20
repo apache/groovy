@@ -61,6 +61,8 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -109,6 +111,29 @@ public class ClassInfo implements Finalizable {
 
     private static final ManagedConcurrentLinkedQueue<ClassInfo> modifiedExpandos =
             new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
+
+    /**
+     * Whether {@link #globalClassValue} stores its values softly with
+     * resurrection ({@code -Dgroovy.use.classvalue=soft}, GROOVY-12281
+     * investigation prototype). Soft mode needs two cooperating pieces here:
+     * strong roots for non-reconstructible state ({@link #nonReclaimableRoots})
+     * and per-Class indy domain continuity (see {@link #indyDomain()}).
+     */
+    private static final boolean SOFT_CLASS_VALUES = GroovyClassValueFactory.isSoftMode();
+
+    /**
+     * Soft-mode strong roots for ClassInfos whose state could not be
+     * reconstructed if the instance were soft-collected and later recreated:
+     * an installed class-level MetaClass ({@link #setStrongMetaClass}),
+     * per-instance MetaClasses, or registry-written DGM/extension method
+     * arrays ({@link CachedClass#setNewMopMethods}/{@code addNewMopMethods}).
+     * The set itself is Groovy-loaded, so it contributes no foreign-loader
+     * pinning: everything in it dies with Groovy's own loader, which is the
+     * lifetime every ClassInfo has today under the default strong ClassValue.
+     * {@code null} unless soft mode is active.
+     */
+    private static final Set<ClassInfo> nonReclaimableRoots =
+            SOFT_CLASS_VALUES ? ConcurrentHashMap.newKeySet() : null;
 
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
         /**
@@ -190,6 +215,34 @@ public class ClassInfo implements Finalizable {
     }
 
     /**
+     * Resolves the SwitchPoint domain all indy guard operations act on.
+     * <p>
+     * Default mode: the instance-owned {@link #indySwitchPointDomain}, whose
+     * lifetime equals this ClassInfo's — sound because the strong ClassValue
+     * keeps the instance alive as long as its class.
+     * <p>
+     * Soft mode (GROOVY-12281): the per-Class domain from
+     * {@link IndyInvalidation#classDomainFor}, seeded with the local domain on
+     * first touch. Domain identity then survives ClassInfo recreation: a
+     * successor instance adopts its predecessor's domain, so a MetaClass
+     * change applied through the successor deterministically retires guards
+     * that were linked under the predecessor (POJO direct-dispatch guards
+     * capture only the SwitchPoint invoker, never this instance, so they can
+     * outlive it — the lazy {@code DomainReclaim} pump alone would leave an
+     * unbounded stale-guard window). When the class itself has been collected
+     * no receiver can reach any guard, so the local domain suffices.
+     */
+    private SwitchPointInvalidator indyDomain() {
+        if (SOFT_CLASS_VALUES) {
+            Class<?> type = getTheClass();
+            if (type != null) {
+                return IndyInvalidation.classDomainFor(type, indySwitchPointDomain);
+            }
+        }
+        return indySwitchPointDomain;
+    }
+
+    /**
      * Returns the SwitchPoint for monomorphic indy MOP guards on this class:
      * the current generation of the class-level domain, which covers both the
      * pre-MetaClass link window and installed MetaClass generations.
@@ -199,11 +252,22 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public SwitchPoint getIndySwitchPoint() {
+        SwitchPointInvalidator domain = indyDomain();
         if (!indyDomainAnchored) {
-            IndyInvalidation.anchorClassDomain(this, indySwitchPointDomain);
+            if (SOFT_CLASS_VALUES) {
+                // Soft mode retires domains when the Class dies, not when a
+                // ClassInfo instance does: instances are replaceable (their
+                // successor adopts the same domain), classes are not.
+                Class<?> type = getTheClass();
+                if (type != null) {
+                    IndyInvalidation.anchorClassDomainToClass(type, domain);
+                }
+            } else {
+                IndyInvalidation.anchorClassDomain(this, indySwitchPointDomain);
+            }
             indyDomainAnchored = true;
         }
-        return indySwitchPointDomain.getSwitchPoint();
+        return domain.getSwitchPoint();
     }
 
     /**
@@ -215,7 +279,7 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public void invalidateIndySwitchPoint() {
-        indySwitchPointDomain.invalidate();
+        indyDomain().invalidate();
     }
 
     /**
@@ -227,7 +291,7 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public void collectLiveIndySwitchPoints(final List<SwitchPoint> out) {
-        SwitchPoint live = indySwitchPointDomain.detachLive();
+        SwitchPoint live = indyDomain().detachLive();
         if (live != null) {
             out.add(live);
         }
@@ -242,7 +306,7 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public SwitchPoint detachLiveIndySwitchPoint() {
-        return indySwitchPointDomain.detachLive();
+        return indyDomain().detachLive();
     }
 
     /**
@@ -326,6 +390,15 @@ public class ClassInfo implements Finalizable {
      *            from cache
      */
     public static void remove(Class<?> cls) {
+        if (SOFT_CLASS_VALUES && globalClassValue instanceof GroovyClassValueSoft) {
+            // A hard detach must also unroot the detached instance, or an
+            // undeployed class's ClassInfo would stay pinned by its own
+            // non-reclaimable root — the exact leak remove() exists to break.
+            ClassInfo current = ((GroovyClassValueSoft<ClassInfo>) globalClassValue).getIfPresent(cls);
+            if (current != null) {
+                nonReclaimableRoots.remove(current);
+            }
+        }
         globalClassValue.remove(cls);
     }
 
@@ -400,6 +473,31 @@ public class ClassInfo implements Finalizable {
         }
 
         replaceWeakMetaClassRef(null);
+        updateReclaimability();
+    }
+
+    /**
+     * Soft-mode bookkeeping (GROOVY-12281): keeps this ClassInfo strongly
+     * rooted while it carries state that could not be reconstructed after
+     * soft collection — an installed class-level MetaClass, per-instance
+     * MetaClasses, or registry-written DGM/extension method arrays. The DGM
+     * condition also enforces the registry-rooting invariant by construction
+     * rather than by audit: any instance holding non-empty MOP arrays is
+     * non-collectible, so a recreated instance never needs to rebuild them.
+     * Removal is conservative: lingering weak entries in the per-instance map
+     * merely delay unrooting, which is the safe direction (today's default
+     * roots every ClassInfo forever). No-op unless soft mode is active.
+     */
+    void updateReclaimability() {
+        if (!SOFT_CLASS_VALUES) return;
+        if (strongMetaClass != null
+                || (perInstanceMetaClassMap != null && !perInstanceMetaClassMap.isEmpty())
+                || dgmMetaMethods.length != 0
+                || newMetaMethods.length != 0) {
+            nonReclaimableRoots.add(this);
+        } else {
+            nonReclaimableRoots.remove(this);
+        }
     }
 
     /**
@@ -431,6 +529,7 @@ public class ClassInfo implements Finalizable {
             newRef = new ManagedReference<MetaClass> (softBundle,answer);
         }
         replaceWeakMetaClassRef(newRef);
+        updateReclaimability();
     }
 
     private void replaceWeakMetaClassRef(ManagedReference<MetaClass> newRef) {
@@ -688,6 +787,7 @@ public class ClassInfo implements Finalizable {
               perInstanceMetaClassMap.remove(obj);
             }
         }
+        updateReclaimability();
     }
 
     /**
