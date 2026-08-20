@@ -31,10 +31,27 @@ class GroovyClassValueFactory {
 	 * {@code -Dgroovy.use.classvalue=false} at JVM startup to use a weak-key
 	 * map instead; the default remains ClassValue for its per-Class fast path.
 	 */
-	private static final boolean USE_CLASSVALUE = Boolean.parseBoolean(SystemUtil.getSystemPropertySafe("groovy.use.classvalue", "true"));
+	private static final String CLASSVALUE_MODE = SystemUtil.getSystemPropertySafe("groovy.use.classvalue", "true");
+
+	/**
+	 * GROOVY-12281: whether values are stored behind
+	 * {@link java.lang.ref.SoftReference}s with resurrection semantics
+	 * ({@code -Dgroovy.use.classvalue=soft}). Soft mode needs cooperation from
+	 * {@link ClassInfo} (strong roots for non-reconstructible state, per-Class
+	 * indy domain continuity), which is why it is exposed package-wide rather
+	 * than kept local to {@link #createGroovyClassValue}.
+	 */
+	static boolean isSoftMode() {
+		return "soft".equalsIgnoreCase(CLASSVALUE_MODE);
+	}
 
 	public static <T> GroovyClassValue<T> createGroovyClassValue(ComputeValue<T> computeValue) {
-		return (USE_CLASSVALUE)
+		// GROOVY-12281: "soft" keeps ClassValue for all keys but holds values softly with
+		// resurrection, so immortal keys hold no strong chain to the value's loader.
+		if (isSoftMode()) {
+			return new GroovyClassValueSoft<>(computeValue);
+		}
+		return Boolean.parseBoolean(CLASSVALUE_MODE)
 				? new GroovyClassValueJava7<>(computeValue)
 				: new GroovyClassValueMapBased<>(computeValue);
 	}
