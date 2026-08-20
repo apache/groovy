@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787123648927,
+  "lastUpdate": 1787209473888,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2381,6 +2381,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1501,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "c30b8945322b68640abcdbef14e0f64203187e9f",
+          "message": "GROOVY-12255: Treat statement-position arrow blocks as SwitchStatement\n\nA switch used as a statement whose -> block arms do not yield is\nrewritten to SwitchStatement so those blocks need not yield; the same\nsyntax in expression position remains a SwitchExpression. Report a\ncompilation error when isCase method selection finds no target.",
+          "timestamp": "2026-08-19T17:04:59Z",
+          "url": "https://github.com/apache/groovy/commit/c30b8945322b68640abcdbef14e0f64203187e9f"
+        },
+        "date": 1787209472366,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4009,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 455,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 874,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1505,
             "unit": "classes"
           },
           {
