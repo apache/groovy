@@ -61,8 +61,6 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -112,29 +110,6 @@ public class ClassInfo implements Finalizable {
     private static final ManagedConcurrentLinkedQueue<ClassInfo> modifiedExpandos =
             new ManagedConcurrentLinkedQueue<ClassInfo>(weakBundle);
 
-    /**
-     * Whether {@link #globalClassValue} stores its values softly with
-     * resurrection ({@code -Dgroovy.use.classvalue=soft}, GROOVY-12281
-     * investigation prototype). Soft mode needs two cooperating pieces here:
-     * strong roots for non-reconstructible state ({@link #nonReclaimableRoots})
-     * and per-Class indy domain continuity (see {@link #indyDomain()}).
-     */
-    private static final boolean SOFT_CLASS_VALUES = GroovyClassValueFactory.isSoftMode();
-
-    /**
-     * Soft-mode strong roots for ClassInfos whose state could not be
-     * reconstructed if the instance were soft-collected and later recreated:
-     * an installed class-level MetaClass ({@link #setStrongMetaClass}),
-     * per-instance MetaClasses, or registry-written DGM/extension method
-     * arrays ({@link CachedClass#setNewMopMethods}/{@code addNewMopMethods}).
-     * The set itself is Groovy-loaded, so it contributes no foreign-loader
-     * pinning: everything in it dies with Groovy's own loader, which is the
-     * lifetime every ClassInfo has today under the default strong ClassValue.
-     * {@code null} unless soft mode is active.
-     */
-    private static final Set<ClassInfo> nonReclaimableRoots =
-            SOFT_CLASS_VALUES ? ConcurrentHashMap.newKeySet() : null;
-
     private static final GroovyClassValue<ClassInfo> globalClassValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<ClassInfo>(){
         /**
          * Creates a new {@code ClassInfo} for the given class type.
@@ -150,6 +125,16 @@ public class ClassInfo implements Finalizable {
             return ret;
         }
     });
+
+    /**
+     * Whether {@link #globalClassValue} can collect a ClassInfo while its
+     * class is still alive ({@code -Dgroovy.use.classvalue=soft}, GROOVY-12281
+     * investigation prototype). Reclaimable values need two cooperating pieces
+     * here: ephemeron pinning of instances carrying non-reconstructible state
+     * ({@link #updateReclaimability()}) and per-Class indy domain continuity
+     * (see {@link #indyDomain()}).
+     */
+    private static final boolean RECLAIMABLE_CLASS_VALUES = globalClassValue.valuesReclaimable();
 
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
@@ -221,7 +206,7 @@ public class ClassInfo implements Finalizable {
      * lifetime equals this ClassInfo's — sound because the strong ClassValue
      * keeps the instance alive as long as its class.
      * <p>
-     * Soft mode (GROOVY-12281): the per-Class domain from
+     * Reclaimable values (GROOVY-12281, soft mode): the per-Class domain from
      * {@link IndyInvalidation#classDomainFor}, seeded with the local domain on
      * first touch. Domain identity then survives ClassInfo recreation: a
      * successor instance adopts its predecessor's domain, so a MetaClass
@@ -233,7 +218,7 @@ public class ClassInfo implements Finalizable {
      * no receiver can reach any guard, so the local domain suffices.
      */
     private SwitchPointInvalidator indyDomain() {
-        if (SOFT_CLASS_VALUES) {
+        if (RECLAIMABLE_CLASS_VALUES) {
             Class<?> type = getTheClass();
             if (type != null) {
                 return IndyInvalidation.classDomainFor(type, indySwitchPointDomain);
@@ -254,10 +239,10 @@ public class ClassInfo implements Finalizable {
     public SwitchPoint getIndySwitchPoint() {
         SwitchPointInvalidator domain = indyDomain();
         if (!indyDomainAnchored) {
-            if (SOFT_CLASS_VALUES) {
-                // Soft mode retires domains when the Class dies, not when a
-                // ClassInfo instance does: instances are replaceable (their
-                // successor adopts the same domain), classes are not.
+            if (RECLAIMABLE_CLASS_VALUES) {
+                // Reclaimable values retire domains when the Class dies, not
+                // when a ClassInfo instance does: instances are replaceable
+                // (their successor adopts the same domain), classes are not.
                 Class<?> type = getTheClass();
                 if (type != null) {
                     IndyInvalidation.anchorClassDomainToClass(type, domain);
@@ -390,15 +375,9 @@ public class ClassInfo implements Finalizable {
      *            from cache
      */
     public static void remove(Class<?> cls) {
-        if (SOFT_CLASS_VALUES && globalClassValue instanceof GroovyClassValueSoft) {
-            // A hard detach must also unroot the detached instance, or an
-            // undeployed class's ClassInfo would stay pinned by its own
-            // non-reclaimable root — the exact leak remove() exists to break.
-            ClassInfo current = ((GroovyClassValueSoft<ClassInfo>) globalClassValue).getIfPresent(cls);
-            if (current != null) {
-                nonReclaimableRoots.remove(current);
-            }
-        }
+        // A hard detach drops the whole association — including any pin the
+        // detached instance held there — so undeploy semantics need no
+        // store-specific handling.
         globalClassValue.remove(cls);
     }
 
@@ -477,26 +456,34 @@ public class ClassInfo implements Finalizable {
     }
 
     /**
-     * Soft-mode bookkeeping (GROOVY-12281): keeps this ClassInfo strongly
-     * rooted while it carries state that could not be reconstructed after
-     * soft collection — an installed class-level MetaClass, per-instance
-     * MetaClasses, or registry-written DGM/extension method arrays. The DGM
-     * condition also enforces the registry-rooting invariant by construction
-     * rather than by audit: any instance holding non-empty MOP arrays is
-     * non-collectible, so a recreated instance never needs to rebuild them.
+     * Reclaimability bookkeeping (GROOVY-12281): while this ClassInfo carries
+     * state that could not be reconstructed after collection — an installed
+     * class-level MetaClass, per-instance MetaClasses, or registry-written
+     * DGM/extension method arrays — it is pinned <em>inside its own
+     * association</em> ({@link GroovyClassValue#pin}), so it lives exactly as
+     * long as its class: an immortal platform key retains it (it must — the
+     * state is not reconstructible), while a dropped script class releases it
+     * together with its loader. A global strong root would get the second half
+     * wrong, extending dirty script classes (and their loaders) to the
+     * runtime's lifetime — the "reverse" leak raised in review of PR #2820.
+     * The DGM condition also enforces the registry-rooting invariant by
+     * construction rather than by audit: any instance holding non-empty MOP
+     * arrays is pinned, so a recreated instance never needs to rebuild them.
      * Removal is conservative: lingering weak entries in the per-instance map
-     * merely delay unrooting, which is the safe direction (today's default
-     * roots every ClassInfo forever). No-op unless soft mode is active.
+     * merely delay unpinning, which is the safe direction (today's default
+     * retains every ClassInfo for its class's lifetime). No-op unless the
+     * value store reclaims values ({@link GroovyClassValue#valuesReclaimable}).
      */
     void updateReclaimability() {
-        if (!SOFT_CLASS_VALUES) return;
+        Class<?> type = getTheClass();
+        if (type == null) return;
         if (strongMetaClass != null
                 || (perInstanceMetaClassMap != null && !perInstanceMetaClassMap.isEmpty())
                 || dgmMetaMethods.length != 0
                 || newMetaMethods.length != 0) {
-            nonReclaimableRoots.add(this);
+            globalClassValue.pin(type, this);
         } else {
-            nonReclaimableRoots.remove(this);
+            globalClassValue.unpin(type, this);
         }
     }
 
