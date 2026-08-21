@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787209473888,
+  "lastUpdate": 1787295941045,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2433,6 +2433,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.groovyRuntime",
             "value": 1505,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "committer": {
+            "name": "Daniel Sun",
+            "username": "daniellansun",
+            "email": "sunlan@apache.org"
+          },
+          "id": "e801df39580ab480249e561e90cf661ce86917f5",
+          "message": "Trivial refactor: Extract shared switch analysis in FinalVariableAnalyzer\n\nvisitSwitch and visitSwitchExpression differed only in how a completed\narm is judged to leave the join; share the path-sensitive walk and pass\nthat predicate.",
+          "timestamp": "2026-08-20T15:50:56Z",
+          "url": "https://github.com/apache/groovy/commit/e801df39580ab480249e561e90cf661ce86917f5"
+        },
+        "date": 1787295940344,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4008,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 453,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 873,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1506,
             "unit": "classes"
           },
           {
