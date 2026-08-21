@@ -23,6 +23,7 @@ import groovy.lang.DelegatingMetaClass;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassRegistryChangeEvent;
+import groovy.transform.Internal;
 import org.apache.groovy.util.SystemUtil;
 import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.ClassInfo;
@@ -73,8 +74,22 @@ import java.util.logging.Logger;
  * Production guards: {@code IndyInterface.applyMopSwitchPoints}; tests may use
  * {@link #guardWithMopSwitchPoints}.
  *
+ * <h2>Layering</h2>
+ * This class is the <em>policy</em> half of a two-level subsystem:
+ * {@link SwitchPointInvalidator} is the mechanism (one domain's SwitchPoint
+ * lifecycle plus the process-wide live registry) and makes no policy
+ * decisions; this class decides invalidation width, labels the reasons, owns
+ * reclaim anchoring and — when the global ClassValue store reclaims values
+ * (GROOVY-12281 soft mode) — per-Class domain continuity. The only other
+ * supported consumer of the mechanism is {@link ClassInfo}, which owns domain
+ * instances and performs the local operations (allocate, invalidate, detach)
+ * directly. No other code should construct or invalidate
+ * {@link SwitchPointInvalidator} instances; both classes are internal and may
+ * change incompatibly.
+ *
  * @since 6.0.0
  */
+@Internal
 public final class IndyInvalidation {
 
     private static final Logger LOG = Logger.getLogger(IndyInvalidation.class.getName());

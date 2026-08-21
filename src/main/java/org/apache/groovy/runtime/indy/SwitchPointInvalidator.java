@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.runtime.indy;
 
+import groovy.transform.Internal;
+
 import java.lang.invoke.SwitchPoint;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,8 +55,21 @@ import java.util.concurrent.atomic.AtomicReference;
  * not the SwitchPoint object, so the registry entry is what keeps a
  * still-installed guard retirable until its domain is explicitly retired.
  *
+ * <h2>Layering</h2>
+ * This is the <em>mechanism</em> half of the MOP invalidation subsystem and
+ * makes no policy decisions. It has exactly two supported consumers:
+ * {@link org.codehaus.groovy.reflection.ClassInfo}, which owns domain
+ * instances (allocation, local invalidate, detach), and
+ * {@link IndyInvalidation}, which owns invalidation width policy, reclaim
+ * anchoring and per-Class domain continuity. On its own this class guarantees
+ * only the single-domain lifecycle documented above (single-use SwitchPoints;
+ * registration precedes publication); guarantees about domain identity across
+ * ClassInfo recreation exist only under {@link IndyInvalidation}'s
+ * management. It is not an extension point and may change incompatibly.
+ *
  * @since 6.0.0
  */
+@Internal
 public final class SwitchPointInvalidator {
 
     /**

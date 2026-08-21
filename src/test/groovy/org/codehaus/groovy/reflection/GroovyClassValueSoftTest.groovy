@@ -51,12 +51,27 @@ final class GroovyClassValueSoftTest {
         } as GroovyClassValue.ComputeValue<Holder>)
     }
 
-    /** Clears the memoized SoftReference for {@code type}, as a GC would. */
-    private static void forceClear(GroovyClassValueSoft<?> subject, Class<?> type) {
+    /** The current slot content for {@code type}: a SoftReference (reclaimable) or the value itself (pinned). */
+    private static Object slotContent(GroovyClassValueSoft<?> subject, Class<?> type) {
         def storeField = GroovyClassValueSoft.getDeclaredField('store')
         storeField.accessible = true
         ClassValue store = storeField.get(subject)
-        ((SoftReference) store.get(type)).clear()
+        store.get(type).get()
+    }
+
+    /** Clears the memoized SoftReference for {@code type}, as a GC would. A pinned slot has none. */
+    private static void forceClear(GroovyClassValueSoft<?> subject, Class<?> type) {
+        def content = slotContent(subject, type)
+        assert content instanceof SoftReference : 'a pinned (strong) slot cannot be cleared by GC'
+        ((SoftReference) content).clear()
+    }
+
+    private static boolean survivesGc(WeakReference<?> ref) {
+        for (int i = 0; i < 5 && ref.get() != null; i++) {
+            System.gc()
+            Thread.sleep(10)
+        }
+        return ref.get() != null
     }
 
     private static boolean awaitCollected(WeakReference<?> ref) {
@@ -120,6 +135,58 @@ final class GroovyClassValueSoftTest {
         def fresh = subject.get(String)
         assertNotSame(old, fresh, 'remove() must forget identity (undeploy semantics)')
         assertEquals(2, counter.get())
+    }
+
+    @Test
+    void valuesAreReclaimableByContract() {
+        assertTrue(newSubject(new AtomicInteger()).valuesReclaimable())
+    }
+
+    @Test
+    void pinHoldsTheValueInItsOwnSlotUntilUnpin() {
+        def counter = new AtomicInteger()
+        def subject = newSubject(counter)
+        def value = subject.get(String)
+        subject.pin(String, value)
+        assertSame(value, slotContent(subject, String), 'a pinned slot holds the value itself, not a wrapper')
+
+        def weak = new WeakReference<Holder>(value)
+        value = null
+        assertTrue(survivesGc(weak), 'a pinned value must not be collected')
+        def pinned = weak.get()
+        assertSame(pinned, subject.get(String))
+        assertEquals(1, counter.get(), 'pin must not disturb identity or recompute')
+
+        subject.unpin(String, pinned)
+        assertTrue(slotContent(subject, String) instanceof SoftReference, 'unpin restores the reclaimable wrapper')
+        assertSame(pinned, subject.get(String), 'unpin keeps the same live instance')
+        pinned = null
+        forceClear(subject, String)
+        assertTrue(awaitCollected(weak), 'an unpinned value is reclaimable again')
+    }
+
+    @Test
+    void removeReleasesThePin() {
+        def counter = new AtomicInteger()
+        def subject = newSubject(counter)
+        def value = subject.get(String)
+        subject.pin(String, value)
+        def weak = new WeakReference<Holder>(value)
+        value = null
+        subject.remove(String)
+        assertTrue(awaitCollected(weak), 'remove() must drop the pin with the association')
+        subject.get(String)
+        assertEquals(2, counter.get())
+    }
+
+    @Test
+    void unpinOfAForeignValueIsANoop() {
+        def counter = new AtomicInteger()
+        def subject = newSubject(counter)
+        def value = subject.get(String)
+        subject.pin(String, value)
+        subject.unpin(String, new Holder(String))   // not the pinned value
+        assertSame(value, slotContent(subject, String), 'foreign unpin must not downgrade the slot')
     }
 
     @Test

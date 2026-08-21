@@ -19,12 +19,15 @@
 package org.codehaus.groovy.reflection
 
 import groovy.lang.GroovySystem
+import groovy.transform.CompileStatic
+import org.codehaus.groovy.runtime.InvokerHelper
 
 import java.lang.invoke.SwitchPoint
 import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
 import java.util.zip.Adler32
 import java.util.zip.CRC32
+import java.util.zip.Deflater
 import java.util.zip.Inflater
 
 /**
@@ -43,8 +46,11 @@ final class ClassInfoSoftModeProbe {
         def ping() { 'pong' }
     }
 
-    /** Clears the global store's memoized SoftReference for {@code type}. */
-    private static void clearSoft(Class<?> type) {
+    /**
+     * The global store's slot content for {@code type}: a SoftReference for a
+     * reclaimable value, or the ClassInfo itself when pinned (dirty state).
+     */
+    private static Object slotContent(Class<?> type) {
         def gcvField = ClassInfo.getDeclaredField('globalClassValue')
         gcvField.accessible = true
         def gcv = gcvField.get(null)
@@ -52,7 +58,23 @@ final class ClassInfoSoftModeProbe {
         def storeField = GroovyClassValueSoft.getDeclaredField('store')
         storeField.accessible = true
         ClassValue store = storeField.get(gcv)
-        ((SoftReference) store.get(type)).clear()
+        store.get(type).get()
+    }
+
+    /** Clears the global store's memoized SoftReference for {@code type}. A pinned slot has none. */
+    private static void clearSoft(Class<?> type) {
+        def content = slotContent(type)
+        assert content instanceof SoftReference : "a pinned slot cannot be cleared by GC (${type.name})"
+        ((SoftReference) content).clear()
+    }
+
+    /**
+     * Asserts the strongest statement available about non-reclaimable state:
+     * the slot holds the ClassInfo itself, so no GC schedule can clear it —
+     * while the class lives, exactly like the default strong ClassValue.
+     */
+    private static void assertPinned(Class<?> type) {
+        assert slotContent(type) instanceof ClassInfo : "ClassInfo for ${type.name} should be pinned in its association"
     }
 
     private static boolean awaitCollected(WeakReference<?> ref) {
@@ -67,69 +89,93 @@ final class ClassInfoSoftModeProbe {
         return ref.get() == null
     }
 
+    /**
+     * Applies real memory pressure: the collector clears soft references
+     * before throwing {@link OutOfMemoryError}, so generic soft caches
+     * (for example {@code ClassInfo}'s lazy CachedClass/loader references)
+     * release their referents — the "on memory pressure" premise of the
+     * reverse scenario. Mild GC alone retains them in every mode.
+     */
+    private static void applySevereMemoryPressure() {
+        def hold = []
+        try {
+            while (true) { hold << new byte[1 << 20] }
+        } catch (OutOfMemoryError expected) {
+            hold = null
+        }
+    }
+
     static void main(String[] args) {
         resurrectionPreservesIdentityAndVersion()
-        dgmTargetClassInfoIsRooted()
-        strongMetaClassSurvivesClear()
-        perInstanceMetaClassSurvivesClear()
+        dgmTargetClassInfoIsPinned()
+        strongMetaClassPinsAndUnpinsWithItsState()
+        perInstanceMetaClassPinsClassInfo()
         pristineClassInfoIsCollectedAndRecreatedWorking()
         classicCallSiteStaysSoundAcrossClearAndRelinksOnChange()
         indyDomainContinuityAcrossRecreation()
+        dirtyScriptClassDiesWithItsLoader()
         println 'OK'
     }
 
     /**
      * The split-brain check: a ClassInfo captured by any holder must be
-     * returned as-is after the ClassValue's soft reference clears, with its
-     * version untouched, so captured version guards stay sound.
+     * returned as-is after the slot's soft reference clears, with its
+     * version untouched, so captured version guards stay sound. Uses a class
+     * with no registry-written DGM arrays, whose slot is therefore soft.
      */
     private static void resurrectionPreservesIdentityAndVersion() {
-        ClassInfo before = ClassInfo.getClassInfo(String)   // strong local ref: "captured by a call site"
+        ClassInfo before = ClassInfo.getClassInfo(Deflater)   // strong local ref: "captured by a call site"
         int version = before.version
-        clearSoft(String)
-        ClassInfo after = ClassInfo.getClassInfo(String)
+        clearSoft(Deflater)
+        ClassInfo after = ClassInfo.getClassInfo(Deflater)
         assert after.is(before) : 'live ClassInfo must be resurrected, not replaced'
         assert after.version == version : 'resurrection must not disturb the version guard stamp'
     }
 
     /**
      * The enforced E3 invariant: a ClassInfo holding registry-written DGM/extension
-     * method arrays is strongly rooted, so it can never be soft-collected and a
-     * recreated instance never needs to rebuild those arrays.
+     * method arrays is pinned inside its own association — the slot holds the
+     * instance itself, so no GC schedule can clear it while the class lives and
+     * a recreated instance never needs to rebuild those arrays.
      */
-    private static void dgmTargetClassInfoIsRooted() {
+    private static void dgmTargetClassInfoIsPinned() {
         def weak = new WeakReference<ClassInfo>(ClassInfo.getClassInfo(String))
-        clearSoft(String)
+        assertPinned(String)
         System.gc()
-        assert weak.get() != null : 'DGM-target ClassInfo must be rooted (non-reclaimable)'
+        assert weak.get() != null : 'DGM-target ClassInfo must be pinned (non-reclaimable)'
         assert ClassInfo.getClassInfo(String).is(weak.get())
         assert 'abc'.reverse() == 'cba' : 'String DGM dispatch intact'
     }
 
-    /** User metaclass customizations must survive value clearing (dirty root). */
-    private static void strongMetaClassSurvivesClear() {
+    /**
+     * User metaclass customizations are non-reconstructible: installing one
+     * pins the ClassInfo in its association; removing it unpins, restoring
+     * reclaimability — the pin follows the state, not the class.
+     */
+    private static void strongMetaClassPinsAndUnpinsWithItsState() {
         CRC32.metaClass.twiddle = { -> 42 }
         try {
             def weak = new WeakReference<ClassInfo>(ClassInfo.getClassInfo(CRC32))
-            clearSoft(CRC32)
+            assertPinned(CRC32)
             System.gc()
-            assert weak.get() != null : 'ClassInfo with installed MetaClass must be rooted'
-            assert new CRC32().twiddle() == 42 : 'EMC customization must survive the clear'
+            assert weak.get() != null : 'ClassInfo with installed MetaClass must be pinned'
+            assert new CRC32().twiddle() == 42 : 'EMC customization must survive GC'
         } finally {
             GroovySystem.metaClassRegistry.removeMetaClass(CRC32)
         }
+        assert slotContent(CRC32) instanceof SoftReference : 'removing the MetaClass must unpin the ClassInfo'
     }
 
     /** Per-instance metaclasses are equally non-reconstructible state. */
-    private static void perInstanceMetaClassSurvivesClear() {
+    private static void perInstanceMetaClassPinsClassInfo() {
         def receiver = new Adler32()
         receiver.metaClass.spin = { -> 7 }
         try {
             def weak = new WeakReference<ClassInfo>(ClassInfo.getClassInfo(Adler32))
-            clearSoft(Adler32)
+            assertPinned(Adler32)
             System.gc()
-            assert weak.get() != null : 'ClassInfo with per-instance MetaClass must be rooted'
-            assert receiver.spin() == 7 : 'per-instance customization must survive the clear'
+            assert weak.get() != null : 'ClassInfo with per-instance MetaClass must be pinned'
+            assert receiver.spin() == 7 : 'per-instance customization must survive GC'
         } finally {
             receiver.metaClass = null
         }
@@ -158,26 +204,29 @@ final class ClassInfoSoftModeProbe {
      * version at link time. Resurrection keeps that capture sound across a
      * clear, and a later MetaClass change must still be observed via the
      * version guard on the same instance. Without resurrection the stale site
-     * would answer 'cba' forever.
+     * would answer the original result forever. The receiver is a POJO with no
+     * registry-written DGM arrays, so its slot is soft (clearable); a pinned
+     * receiver like {@code String} can never be cleared in the first place.
      */
     private static void classicCallSiteStaysSoundAcrossClearAndRelinksOnChange() {
         // groovy-callsite is runtime-only for core (as for legacy-compiled jars
         // in the wild), so drive it reflectively
         def csaClass = Class.forName('org.codehaus.groovy.runtime.callsite.CallSiteArray')
-        def csa = csaClass.getConstructor(Class, String[]).newInstance(ClassInfoSoftModeProbe, ['reverse'] as String[])
+        def csa = csaClass.getConstructor(Class, String[]).newInstance(ClassInfoSoftModeProbe, ['toString'] as String[])
         def noparam = csaClass.NOPARAM
-        assert csa.array[0].call('abc', noparam) == 'cba'
-        // the linked site (csa.array[0] after the first call) now captures ClassInfo(String)+version
-        clearSoft(String)
+        def joiner = new StringJoiner('-')
+        assert csa.array[0].call(joiner, noparam) == ''
+        // the linked site (csa.array[0] after the first call) now captures ClassInfo(StringJoiner)+version
+        clearSoft(StringJoiner)
         System.gc()
-        assert csa.array[0].call('abc', noparam) == 'cba' : 'linked site stays correct across the clear'
-        String.metaClass.reverse = { -> 'emc' }
+        assert csa.array[0].call(joiner, noparam) == '' : 'linked site stays correct across the clear'
+        StringJoiner.metaClass.toString = { -> 'emc' }
         try {
-            assert csa.array[0].call('abc', noparam) == 'emc' : 'version guard on the resurrected instance must observe the change'
+            assert csa.array[0].call(joiner, noparam) == 'emc' : 'version guard on the resurrected instance must observe the change'
         } finally {
-            GroovySystem.metaClassRegistry.removeMetaClass(String)
+            GroovySystem.metaClassRegistry.removeMetaClass(StringJoiner)
         }
-        assert csa.array[0].call('abc', noparam) == 'cba'
+        assert csa.array[0].call(joiner, noparam) == ''
     }
 
     /**
@@ -199,5 +248,54 @@ final class ClassInfoSoftModeProbe {
         ClassInfo successor = ClassInfo.getClassInfo(IndyHost)
         successor.incVersion()
         assert sp.hasBeenInvalidated() : "predecessor's SwitchPoint must be retired by a mutation through the successor"
+    }
+
+    /** Installs an EMC method statically, replicating {@code cls.metaClass.extra = { -> 42 }}. */
+    @CompileStatic
+    private static void installExtra(Class<?> cls) {
+        def emc = new ExpandoMetaClass(cls, true, true)
+        emc.initialize()
+        emc.setProperty('extra', { -> 42 })
+        GroovySystem.metaClassRegistry.setMetaClass(cls, emc)
+    }
+
+    /**
+     * The "reverse" scenario (Jochen, PR #2820 review): the Groovy runtime
+     * stays alive while script loaders come and go, and a script installs an
+     * EMC on a class it created. The pin lives inside the class's own
+     * association, so on memory pressure dropping the loader must release the
+     * class, its ClassInfo, the EMC and the loader itself — exactly as the
+     * default strong ClassValue does. A global strong root would fail this:
+     * it would extend every EMC-dirty script class to the runtime's lifetime.
+     * <p>
+     * Compiled statically on purpose: a dynamic call in this long-lived probe
+     * class would link its invokedynamic call-site guards against the script
+     * classes, retaining them from the call site — a receiver-side inline-cache
+     * effect present in every mode, not the association lifetime this scenario
+     * isolates. Locals are nulled for the same reason: the last iteration's
+     * frame slots stay reachable through the collection loop below.
+     */
+    @CompileStatic
+    private static void dirtyScriptClassDiesWithItsLoader() {
+        List<WeakReference<ClassLoader>> loaderRefs = []
+        List<WeakReference<Class>> classRefs = []
+        for (int i = 0; i < 3; i++) {
+            def gcl = new GroovyClassLoader()
+            Class cls = gcl.parseClass("class ReverseScripted${i} { def hi() { 'hi' } }")
+            installExtra(cls)
+            def obj = cls.getDeclaredConstructor().newInstance()
+            assert InvokerHelper.invokeMethod(obj, 'extra', null) == 42 : 'EMC on the script-created class must dispatch'
+            assertPinned(cls)
+            loaderRefs << new WeakReference<ClassLoader>(gcl)
+            classRefs << new WeakReference<Class>(cls)
+            obj = null; cls = null; gcl = null
+        }
+        applySevereMemoryPressure()
+        loaderRefs.each { WeakReference<ClassLoader> ref ->
+            assert awaitCollected(ref) : 'dropped script loader with an EMC-dirty class must be collectable (reverse scenario)'
+        }
+        classRefs.each { WeakReference<Class> ref ->
+            assert ref.get() == null : 'the script class must go with its loader'
+        }
     }
 }

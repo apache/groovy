@@ -37,6 +37,7 @@ final class ClassInfoSoftModeTest {
         def cp = System.getProperty('java.class.path')
         def pb = new ProcessBuilder(
                 javaBin,
+                '-Xmx256m',   // bounded heap: the reverse scenario fills it to apply real memory pressure
                 '-Dgroovy.use.classvalue=soft',
                 '-cp', cp,
                 'org.codehaus.groovy.reflection.ClassInfoSoftModeProbe')
