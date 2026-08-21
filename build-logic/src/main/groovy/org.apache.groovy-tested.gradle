@@ -92,6 +92,13 @@ tasks.withType(Test).configureEach {
     if (closurePack) {
         systemProperty 'groovy.target.closure.pack', closurePack
     }
+    // Forward the global ClassValue mode (GROOVY-12142/GROOVY-12281: false = weak-key map,
+    // soft = soft values with resurrection) to the test JVM so whole suites can be run
+    // against a non-default mode, e.g. -Pgroovy.use.classvalue=soft. Set only when present.
+    def classValueMode = findProperty('groovy.use.classvalue') ?: System.getProperty('groovy.use.classvalue')
+    if (classValueMode) {
+        systemProperty 'groovy.use.classvalue', classValueMode
+    }
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperty 'groovy.testdb.props', testdb

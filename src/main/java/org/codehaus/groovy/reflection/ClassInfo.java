@@ -126,6 +126,16 @@ public class ClassInfo implements Finalizable {
         }
     });
 
+    /**
+     * Whether {@link #globalClassValue} can collect a ClassInfo while its
+     * class is still alive ({@code -Dgroovy.use.classvalue=soft}, GROOVY-12281
+     * investigation prototype). Reclaimable values need two cooperating pieces
+     * here: ephemeron pinning of instances carrying non-reconstructible state
+     * ({@link #updateReclaimability()}) and per-Class indy domain continuity
+     * (see {@link #indyDomain()}).
+     */
+    private static final boolean RECLAIMABLE_CLASS_VALUES = globalClassValue.valuesReclaimable();
+
     private static final GlobalClassSet globalClassSet = new GlobalClassSet();
 
     ClassInfo(Class klazz) {
@@ -190,6 +200,34 @@ public class ClassInfo implements Finalizable {
     }
 
     /**
+     * Resolves the SwitchPoint domain all indy guard operations act on.
+     * <p>
+     * Default mode: the instance-owned {@link #indySwitchPointDomain}, whose
+     * lifetime equals this ClassInfo's — sound because the strong ClassValue
+     * keeps the instance alive as long as its class.
+     * <p>
+     * Reclaimable values (GROOVY-12281, soft mode): the per-Class domain from
+     * {@link IndyInvalidation#classDomainFor}, seeded with the local domain on
+     * first touch. Domain identity then survives ClassInfo recreation: a
+     * successor instance adopts its predecessor's domain, so a MetaClass
+     * change applied through the successor deterministically retires guards
+     * that were linked under the predecessor (POJO direct-dispatch guards
+     * capture only the SwitchPoint invoker, never this instance, so they can
+     * outlive it — the lazy {@code DomainReclaim} pump alone would leave an
+     * unbounded stale-guard window). When the class itself has been collected
+     * no receiver can reach any guard, so the local domain suffices.
+     */
+    private SwitchPointInvalidator indyDomain() {
+        if (RECLAIMABLE_CLASS_VALUES) {
+            Class<?> type = getTheClass();
+            if (type != null) {
+                return IndyInvalidation.classDomainFor(type, indySwitchPointDomain);
+            }
+        }
+        return indySwitchPointDomain;
+    }
+
+    /**
      * Returns the SwitchPoint for monomorphic indy MOP guards on this class:
      * the current generation of the class-level domain, which covers both the
      * pre-MetaClass link window and installed MetaClass generations.
@@ -199,11 +237,22 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public SwitchPoint getIndySwitchPoint() {
+        SwitchPointInvalidator domain = indyDomain();
         if (!indyDomainAnchored) {
-            IndyInvalidation.anchorClassDomain(this, indySwitchPointDomain);
+            if (RECLAIMABLE_CLASS_VALUES) {
+                // Reclaimable values retire domains when the Class dies, not
+                // when a ClassInfo instance does: instances are replaceable
+                // (their successor adopts the same domain), classes are not.
+                Class<?> type = getTheClass();
+                if (type != null) {
+                    IndyInvalidation.anchorClassDomainToClass(type, domain);
+                }
+            } else {
+                IndyInvalidation.anchorClassDomain(this, indySwitchPointDomain);
+            }
             indyDomainAnchored = true;
         }
-        return indySwitchPointDomain.getSwitchPoint();
+        return domain.getSwitchPoint();
     }
 
     /**
@@ -215,7 +264,7 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public void invalidateIndySwitchPoint() {
-        indySwitchPointDomain.invalidate();
+        indyDomain().invalidate();
     }
 
     /**
@@ -227,7 +276,7 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public void collectLiveIndySwitchPoints(final List<SwitchPoint> out) {
-        SwitchPoint live = indySwitchPointDomain.detachLive();
+        SwitchPoint live = indyDomain().detachLive();
         if (live != null) {
             out.add(live);
         }
@@ -242,7 +291,7 @@ public class ClassInfo implements Finalizable {
      */
     @Internal
     public SwitchPoint detachLiveIndySwitchPoint() {
-        return indySwitchPointDomain.detachLive();
+        return indyDomain().detachLive();
     }
 
     /**
@@ -326,6 +375,9 @@ public class ClassInfo implements Finalizable {
      *            from cache
      */
     public static void remove(Class<?> cls) {
+        // A hard detach drops the whole association — including any pin the
+        // detached instance held there — so undeploy semantics need no
+        // store-specific handling.
         globalClassValue.remove(cls);
     }
 
@@ -400,6 +452,39 @@ public class ClassInfo implements Finalizable {
         }
 
         replaceWeakMetaClassRef(null);
+        updateReclaimability();
+    }
+
+    /**
+     * Reclaimability bookkeeping (GROOVY-12281): while this ClassInfo carries
+     * state that could not be reconstructed after collection — an installed
+     * class-level MetaClass, per-instance MetaClasses, or registry-written
+     * DGM/extension method arrays — it is pinned <em>inside its own
+     * association</em> ({@link GroovyClassValue#pin}), so it lives exactly as
+     * long as its class: an immortal platform key retains it (it must — the
+     * state is not reconstructible), while a dropped script class releases it
+     * together with its loader. A global strong root would get the second half
+     * wrong, extending dirty script classes (and their loaders) to the
+     * runtime's lifetime — the "reverse" leak raised in review of PR #2820.
+     * The DGM condition also enforces the registry-rooting invariant by
+     * construction rather than by audit: any instance holding non-empty MOP
+     * arrays is pinned, so a recreated instance never needs to rebuild them.
+     * Removal is conservative: lingering weak entries in the per-instance map
+     * merely delay unpinning, which is the safe direction (today's default
+     * retains every ClassInfo for its class's lifetime). No-op unless the
+     * value store reclaims values ({@link GroovyClassValue#valuesReclaimable}).
+     */
+    void updateReclaimability() {
+        Class<?> type = getTheClass();
+        if (type == null) return;
+        if (strongMetaClass != null
+                || (perInstanceMetaClassMap != null && !perInstanceMetaClassMap.isEmpty())
+                || dgmMetaMethods.length != 0
+                || newMetaMethods.length != 0) {
+            globalClassValue.pin(type, this);
+        } else {
+            globalClassValue.unpin(type, this);
+        }
     }
 
     /**
@@ -431,6 +516,7 @@ public class ClassInfo implements Finalizable {
             newRef = new ManagedReference<MetaClass> (softBundle,answer);
         }
         replaceWeakMetaClassRef(newRef);
+        updateReclaimability();
     }
 
     private void replaceWeakMetaClassRef(ManagedReference<MetaClass> newRef) {
@@ -688,6 +774,7 @@ public class ClassInfo implements Finalizable {
               perInstanceMetaClassMap.remove(obj);
             }
         }
+        updateReclaimability();
     }
 
     /**

@@ -572,6 +572,8 @@ public class CachedClass {
         }
         else
             classInfo.newMetaMethods = classInfo.dgmMetaMethods;
+        // GROOVY-12281 soft mode: MOP-array writes make the ClassInfo non-reclaimable
+        classInfo.updateReclaimability();
     }
 
     /**
@@ -622,6 +624,8 @@ public class CachedClass {
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
         classInfo.newMetaMethods = res.toArray(MetaMethod.EMPTY_ARRAY);
+        // GROOVY-12281 soft mode: MOP-array writes make the ClassInfo non-reclaimable
+        classInfo.updateReclaimability();
         var theClass = classInfo.getCachedClass().getTheClass();
         if (theClass == Closure.class || theClass == Class.class) {
             ClosureMetaClass.resetCachedMetaClasses();

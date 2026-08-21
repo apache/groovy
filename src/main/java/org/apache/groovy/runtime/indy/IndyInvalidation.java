@@ -23,7 +23,9 @@ import groovy.lang.DelegatingMetaClass;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassRegistryChangeEvent;
+import groovy.transform.Internal;
 import org.apache.groovy.util.SystemUtil;
+import org.apache.groovy.util.concurrent.ManagedIdentityConcurrentMap;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.util.ManagedReference;
@@ -72,8 +74,22 @@ import java.util.logging.Logger;
  * Production guards: {@code IndyInterface.applyMopSwitchPoints}; tests may use
  * {@link #guardWithMopSwitchPoints}.
  *
+ * <h2>Layering</h2>
+ * This class is the <em>policy</em> half of a two-level subsystem:
+ * {@link SwitchPointInvalidator} is the mechanism (one domain's SwitchPoint
+ * lifecycle plus the process-wide live registry) and makes no policy
+ * decisions; this class decides invalidation width, labels the reasons, owns
+ * reclaim anchoring and — when the global ClassValue store reclaims values
+ * (GROOVY-12281 soft mode) — per-Class domain continuity. The only other
+ * supported consumer of the mechanism is {@link ClassInfo}, which owns domain
+ * instances and performs the local operations (allocate, invalidate, detach)
+ * directly. No other code should construct or invalidate
+ * {@link SwitchPointInvalidator} instances; both classes are internal and may
+ * change incompatibly.
+ *
  * @since 6.0.0
  */
+@Internal
 public final class IndyInvalidation {
 
     private static final Logger LOG = Logger.getLogger(IndyInvalidation.class.getName());
@@ -124,6 +140,76 @@ public final class IndyInvalidation {
         private final SwitchPointInvalidator domain;
 
         DomainReclaim(final ClassInfo owner, final SwitchPointInvalidator domain) {
+            super(ReferenceBundle.getWeakBundle(), owner);
+            this.domain = domain;
+        }
+
+        @Override
+        public void finalizeReference() {
+            domain.invalidate();
+            super.finalizeReference();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Soft ClassValue mode: per-Class domain continuity (GROOVY-12281)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Per-Class domain map used only when {@code groovy.use.classvalue=soft}.
+     * In soft mode a ClassInfo instance is replaceable — it can be soft-collected
+     * and a successor created for the same class — while POJO direct-dispatch
+     * guards capture only the SwitchPoint's internal invoker, never the
+     * ClassInfo. Keying the domain by the {@code Class} (weak identity keys,
+     * strong domain values) makes domain identity survive instance turnover:
+     * the successor adopts its predecessor's domain, so an invalidation applied
+     * through the successor deterministically retires guards linked under the
+     * predecessor, with no dependency on lazy reference-queue processing.
+     * <p>
+     * The map holds no classes alive (weak keys) and no foreign loaders
+     * (values reference nothing owner-ward); entries for dead classes are
+     * purged by the map, and their domains retired by the Class-keyed reclaim
+     * ({@link #anchorClassDomainToClass}) so the live-SwitchPoint registry
+     * cannot accumulate zombies.
+     */
+    private static final ManagedIdentityConcurrentMap<Class<?>, SwitchPointInvalidator> CLASS_DOMAINS =
+            new ManagedIdentityConcurrentMap<>();
+
+    /**
+     * Returns the canonical domain for {@code type}, seeding the per-Class map
+     * with {@code candidate} on first touch. Soft-mode only (callers gate).
+     *
+     * @param type      the class whose domain is requested (must not be {@code null})
+     * @param candidate the caller-owned domain to install if none is mapped yet
+     * @return the canonical per-Class domain
+     */
+    public static SwitchPointInvalidator classDomainFor(final Class<?> type, final SwitchPointInvalidator candidate) {
+        return CLASS_DOMAINS.getOrPut(type, candidate);
+    }
+
+    /**
+     * Anchors a reclaim reference keyed to the {@code Class} rather than a
+     * ClassInfo instance: soft mode retires a domain only when the class dies
+     * (no receiver can reach an installed guard afterwards), because ClassInfo
+     * instances are replaceable and their successors adopt the same domain.
+     *
+     * @param owner  the class owning the domain (must not be {@code null})
+     * @param domain the class-level domain (must not be {@code null})
+     */
+    public static void anchorClassDomainToClass(final Class<?> owner, final SwitchPointInvalidator domain) {
+        domain.setReclaimAnchor(new ClassDomainReclaim(owner, domain));
+    }
+
+    /**
+     * Weak reference to a domain's owning {@code Class} whose collection
+     * retires the domain (soft ClassValue mode). Mirrors {@link DomainReclaim}
+     * with the owner lifetime moved from the replaceable ClassInfo instance to
+     * the stable per-Class identity.
+     */
+    private static final class ClassDomainReclaim extends ManagedReference<Class<?>> {
+        private final SwitchPointInvalidator domain;
+
+        ClassDomainReclaim(final Class<?> owner, final SwitchPointInvalidator domain) {
             super(ReferenceBundle.getWeakBundle(), owner);
             this.domain = domain;
         }

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<!--
+     Licensed to the Apache Software Foundation (ASF) under one
+     or more contributor license agreements.  See the NOTICE file
+     distributed with this work for additional information
+     regarding copyright ownership.  The ASF licenses this file
+     to you under the Apache License, Version 2.0 (the
+     "License"); you may not use this file except in compliance
+     with the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing,
+     software distributed under the License is distributed on an
+     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+     specific language governing permissions and limitations
+     under the License.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GROOVY-12281 Assessment v2 — ClassInfo.globalClassValue Loader Pinning</title>
+<style>
+  :root {
+    --bg: #fdfdfd;
+    --fg: #222;
+    --accent: #2563eb;
+    --accent-light: #dbeafe;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --gray: #64748b;
+    --gray-light: #f1f5f9;
+    --border: #e2e8f0;
+    --code-bg: #f8fafc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    line-height: 1.65;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+  h1 { font-size: 1.75rem; margin-bottom: .25rem; }
+  h2 { font-size: 1.35rem; margin-top: 2.5rem; margin-bottom: .75rem; border-bottom: 2px solid var(--accent); padding-bottom: .3rem; }
+  h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: .5rem; }
+  p, li { margin-bottom: .5rem; }
+  ul, ol { padding-left: 1.5rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: .1em .35em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: .85rem;
+    line-height: 1.5;
+    margin: .75rem 0 1rem;
+  }
+  pre code { border: none; padding: 0; background: none; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: .75rem 0 1rem;
+    font-size: .9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: .45rem .6rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { background: var(--gray-light); font-weight: 600; }
+  td.c, th.c { text-align: center; }
+  td.ok { color: var(--green); font-weight: 600; text-align: center; }
+  td.bad { color: var(--red); font-weight: 600; text-align: center; }
+  .badge {
+    display: inline-block;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border-radius: 4px;
+    padding: .15em .55em;
+    vertical-align: middle;
+  }
+  .badge.pursue { background: var(--green-light); color: var(--green); }
+  .badge.evaluate { background: var(--amber-light); color: var(--amber); }
+  .badge.decline { background: var(--red-light); color: var(--red); }
+  .badge.pending { background: var(--amber-light); color: var(--amber); }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-light);
+    border-radius: 0 6px 6px 0;
+    padding: .75rem 1rem;
+    margin: 1rem 0;
+  }
+  .callout.warn { border-left-color: var(--amber); background: var(--amber-light); }
+  .verdict {
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    background: var(--accent-light);
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0 1.5rem;
+  }
+  .verdict h2 { border: none; margin-top: 0; padding-bottom: 0; }
+  footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: .85rem;
+    color: var(--gray);
+  }
+</style>
+</head>
+<body>
+
+<h1>GROOVY-12281 Assessment v2 — <code>ClassInfo.globalClassValue</code> Loader Pinning</h1>
+<p class="subtitle" style="color:var(--gray)">Investigation follow-up from GROOVY-12142 review · v1: 19 August 2026 (recompute declined) · v2: 20 August 2026, reopened on review by Jochen Theodorou · v3: 21 August 2026, revised on his PR #2820 review (§12: ephemeron pinning replaces the root set) · Status: <span class="badge pending">proposed pending team review</span></p>
+
+<div class="verdict">
+<h2>Verdict (v2)</h2>
+<p><strong>v1's blanket claim that every drop-and-recompute scheme is "structurally illegal" is withdrawn.</strong> Re-grounding each of its two failure arguments in the code — prompted by the review's six questions — shows Failure&nbsp;1 (DGM loss) cannot occur for any collectible <code>ClassInfo</code>, and Failure&nbsp;2 (split-brain guards) is real but preventable by construction. The result is a new candidate the v1 option list missed:</p>
+<p><strong>Option E — soft values + resurrection + dirty roots + per-Class indy domains</strong> <span class="badge pursue">prototyped &amp; measured</span><br>
+<code>-Dgroovy.use.classvalue=soft</code>: <code>java.lang.ClassValue</code> keeps the per-<code>Class</code> fast path for <em>all</em> keys, but each association stores a bootstrap-loaded <code>SoftReference</code> to the <code>ClassInfo</code>, cutting the only strong chain from immortal platform classes to Groovy's loader. Identity is owned by a weak side map (<em>resurrection</em>): a value still reachable anywhere is re-associated, never replaced, so a fresh instance can exist only when no guard can still observe the old one. Non-reconstructible state (installed MetaClasses, per-instance MetaClasses, MOP method arrays) <em>pins</em> its <code>ClassInfo</code> inside its own association (v3 — the association's slot flips from soft to strong, an ephemeron: the instance then lives exactly as long as its class, no longer), and indy SwitchPoint domains are keyed by <code>Class</code> so invalidation deterministically reaches guards linked under a collected predecessor.</p>
+<p><strong>Measured:</strong> the container-undeploy acceptance test — which no earlier option had actually demonstrated — shows the dropped loader is <em>pinned forever</em> under today's default and <em>collected</em> under soft mode; dispatch and compilation are at parity within noise, with the only measurable cost ≈+0.6&nbsp;ns on a raw <code>getClassInfo</code> lookup (the map escape hatch costs ≈+3.5&nbsp;ns and 5% dispatch geomean). All correctness suites pass in both modes.</p>
+<p><strong>Recommendation:</strong> land Option E as an <em>opt-in</em> mode alongside the existing escape hatch, gather soak experience, and revisit the default with the team (the full 57-benchmark idiom sweep from the v1 Option-D gate should be re-run before any default flip). v1's measured declines of Option B (hybrid) and Option D (map default) stand unchanged.</p>
+</div>
+
+<h2>1. What the review changed</h2>
+<p>The v1 record closed the recomputation avenue on two claimed correctness failures. The review (JIRA, 19 Aug 2026) argued the assessment conflated "the current implementation does not do X" with "X is impossible", and posed six questions. Each is answered below with code evidence; three of the review's positions are conceded outright, one is sharpened into the concrete failure sequence the review asked for, and two become design inputs of the prototype.</p>
+
+<table>
+<tr><th>Review point</th><th>v2 finding</th><th>Where</th></tr>
+<tr><td>1. ClassInfo is not intrinsically immortal</td><td><strong>Conceded.</strong> The reference graph confirms it: everything outside the identity residue is already soft/weak managed, and <code>DomainReclaim</code> treats ClassInfo death as an anticipated event.</td><td>§2</td></tr>
+<tr><td>2. The split-brain argument needs a concrete reachable-object sequence</td><td><strong>Provided — and it is sharper than v1's version.</strong> Classic sites are held via a <em>soft</em> chain (<code>$callSiteArray</code>), clearing is per-referent, and linked sites bypass the ClassValue, so its reference goes LRU-stale while sites are hot. Naive soft values are therefore genuinely unsafe; resurrection makes the sequence impossible by construction.</td><td>§4</td></tr>
+<tr><td>3. Indy must be analysed separately from legacy call sites</td><td><strong>Done.</strong> Indy resolves and invalidates through the canonical instance, but installed guards keep only the SwitchPoint's internal invoker alive; POJO direct-dispatch guards capture no Groovy object and can outlive their ClassInfo.</td><td>§5</td></tr>
+<tr><td>4. "Pristine"/DGM state needs precision: written-once ≠ non-reconstructible</td><td><strong>Conceded, and it resolves better than reconstruction:</strong> every registration path strongly roots the very ClassInfo it writes into, so collectible ⇒ empty MOP arrays. The prototype turns this from an audited fact into an enforced invariant.</td><td>§3</td></tr>
+<tr><td>5. MetaClass/CachedClass state is deliberately recreated already</td><td><strong>Conceded.</strong> Default MetaClasses are soft-held and recreated today; the identity residue is only <code>version</code>, the strong/per-instance MetaClass slots, and the MOP arrays.</td><td>§2, §6</td></tr>
+<tr><td>6. Should <code>indySwitchPointDomain</code> be owned by a stable per-Class identity?</td><td><strong>Yes — implemented (soft mode).</strong> Domains are adopted from a weak-Class-keyed map, so a successor ClassInfo shares its predecessor's domain and invalidation reaches straggler guards deterministically.</td><td>§5</td></tr>
+</table>
+
+<h2>2. Reference-graph census — who holds a <code>ClassInfo</code>, and how hard</h2>
+<table>
+<tr><th>#</th><th>Holder → path to ClassInfo</th><th>Strength</th><th>Lifetime / consequence</th></tr>
+<tr><td>1</td><td><code>globalClassValue</code> association: <code>Class</code> → per-Class <code>ClassValueMap</code> entry value → ClassInfo (<code>GroovyClassValueJava7</code>)</td><td><strong>strong</strong> (default mode)</td><td>Key-class lifetime — immortal for platform keys: <em>this is the pin</em> (JDK-8136353). Soft mode replaces this edge with a bootstrap <code>SoftReference</code>; the JDK-17 entry otherwise references the defining ClassValue only weakly (<code>ClassValue.Entry extends WeakReference&lt;Version&gt;</code>, value strong, <code>Identity</code> key is a bootstrap object — <code>java.base/java/lang/ClassValue.java:264,304,324</code>), so no strong edge from an immortal key to the Groovy island remains.</td></tr>
+<tr><td>2</td><td>Classic call site: caller class → <code>static SoftReference $callSiteArray</code> (<code>CallSiteWriter.java:105-106,173-190</code>) → <code>CallSiteArray</code> → site's <code>final ClassInfo classInfo</code> + <code>final int version</code> (<code>PojoMetaClassSite.java:33-39</code>, same shape in <code>StaticMetaClassSite</code>, <code>MetaClassConstructorSite</code>, …)</td><td>strong from the site, but the whole chain is <strong>soft</strong></td><td>Guard reads <code>version == classInfo.getVersion()</code> from the <em>captured instance</em> — the fast path never touches the ClassValue (§4). Dies with the caller class or when the array's own soft ref clears.</td></tr>
+<tr><td>3</td><td>Registry method inventory: <code>GroovySystem</code> → <code>MetaClassRegistryImpl.instanceMethods/staticMethods</code> (never pruned, <code>MetaClassRegistryImpl.java:83-84</code>) → each <code>MetaMethod</code>'s declaring <code>CachedClass</code> → <code>CachedClass.classInfo</code> (strong, <code>CachedClass.java:231</code>)</td><td><strong>strong</strong></td><td>Groovy-loader lifetime. Roots every DGM/extension <em>declaring target</em> (String, Object, Collection, …): §3. Contributes no foreign pinning — it all dies with Groovy itself.</td></tr>
+<tr><td>4</td><td>Any strongly-held MetaClass: <code>MetaClassImpl</code> → <code>theCachedClass</code> → <code>classInfo</code></td><td>strong from the MC</td><td>Whoever holds a MetaClass holds its ClassInfo — includes indy guards that bind <code>mc</code> (§5).</td></tr>
+<tr><td>5</td><td>User-state registries: <code>modifiedExpandos</code> (<code>ClassInfo.java</code>, weak bundle), <code>MetaClassRegistryImpl.metaClassInfo</code> (weak bundle)</td><td><strong>weak</strong></td><td>Neither roots anything: under the default mode a user-modified ClassInfo survives only via holder #1. This is the silent-loss hazard naive soft values would create, and what the dirty-root set (§6) covers.</td></tr>
+<tr><td>6</td><td>Indy installed guard chains: hold the SwitchPoint's <em>internal invoker</em> only, never the SwitchPoint object or its owner (<code>SwitchPointInvalidator.java</code> class javadoc); GroovyObject/MOP paths additionally bind <code>mc</code> (<code>Selector.java:1257</code> <code>SAME_MC.bindTo(mc)</code>, MOP handles <code>bindTo(mc)</code>), POJO direct paths bind only <code>Class</code> objects (<code>Selector.java:1289-1321</code>)</td><td>none → strong, path-dependent</td><td>A POJO direct-dispatch guard can outlive its ClassInfo — the indy-specific hazard §5 addresses.</td></tr>
+<tr><td>7</td><td><code>GlobalClassSet</code> (<code>ClassInfo.java</code>), <code>DomainReclaim</code> owner ref</td><td>weak</td><td>Enumeration and post-mortem cleanup only.</td></tr>
+<tr><td>8</td><td><em>(soft mode)</em> resurrection side map in <code>GroovyClassValueSoft</code>: weak identity keys, weak values</td><td><strong>weak/weak</strong></td><td>Identity authority that keeps nothing alive by itself.</td></tr>
+<tr><td>9</td><td><em>(soft mode, v3)</em> pinned association slot: <code>Class</code> → entry → slot (bootstrap <code>AtomicReference</code>) → ClassInfo (was <code>ClassInfo.nonReclaimableRoots</code>, a global strong set, until §12); <code>IndyInvalidation.CLASS_DOMAINS</code> (weak Class keys → strong domains, no ClassInfo refs)</td><td>strong <em>from the key class only</em> (ephemeron)</td><td>§5, §6, §12. A pinned instance lives exactly as long as its class — an immortal platform key retains it, a dropped script class releases it with its loader. The v2 global set got the second half wrong (§12).</td></tr>
+</table>
+<p>Also verified: category state lives in <code>GroovyCategorySupport</code> thread-locals keyed by method name, <em>not</em> in ClassInfo — the ticket description's "category data" concern does not add identity-bearing state.</p>
+<p><strong>POGO self-pinning (found by the stress probe's liveness check):</strong> generated Groovy classes root their own ClassInfo while the class lives — each POGO instance holds its MetaClass in an instance field and the generated <code>$staticMetaClass</code> field holds it from the <code>Class</code> — chaining strongly through <code>CachedClass.classInfo</code>. So under soft mode the genuinely collectible population is <em>Java/platform-class</em> ClassInfos (plus dead-Class Groovy islands, which is the container-undeploy case itself). This shrinks the recreate-risk surface further: live Groovy classes are never subject to collection/recreation at all.</p>
+
+<h2>3. Review Q1/Q4/Q6 — the registry-rooting invariant kills Failure 1</h2>
+<p>v1's Failure 1: a recomputed ClassInfo for String would lack its one-time DGM arrays. The review asked whether that state is <em>fundamentally</em> non-reconstructible. The answer is that the question never arises, because of an invariant v1 missed:</p>
+<div class="callout"><strong>Any ClassInfo with non-empty <code>dgmMetaMethods</code>/<code>newMetaMethods</code> is permanently strongly rooted by the registry, and therefore can never be soft-collected.</strong> Collectible ⇒ empty MOP arrays ⇒ nothing to reconstruct; a fresh instance is complete as created (inherited DGM methods come from the rooted ancestor/interface ClassInfos through the normal hierarchy walk).</div>
+<p>Evidence, per registration path — in each case the object retained forever in <code>instanceMethods</code>/<code>staticMethods</code> strongly holds <em>the same <code>CachedClass</code> instance</em> the methods are written into (via <code>ReflectionCache.getCachedClass</code>, which canonicalizes through <code>ClassInfo.getCachedClass()</code>):</p>
+<ul>
+<li>DGM records: <code>GeneratedMetaMethod.Proxy</code> stores <code>declaringClass</code> = the registration map key (<code>MetaClassRegistryImpl.java:285-295</code>, <code>GeneratedMetaMethod.java:43</code>).</li>
+<li>Reflection-registered instance/static methods: <code>NewInstanceMetaMethod</code>/<code>NewStaticMetaMethod</code> keep <code>bytecodeParameterTypes[0]</code>, which is the map key (<code>MetaClassRegistryImpl.java:306-321</code>, <code>NewMetaMethod.java:35-60</code>).</li>
+<li>Additional DGM impls hold their target in <code>static final CachedClass</code> fields (e.g. <code>NumberNumberMetaMethod.NUMBER_CLASS</code>, <code>ArrayMetaMethod.INTEGER_CLASS</code>).</li>
+<li>Extension modules (including runtime registration via Grab) register through the same <code>MetaMethod.getDeclaringClass()</code> objects (<code>MetaClassRegistryImpl.DefaultModuleListener</code>).</li>
+</ul>
+<p><strong>Enforced, not just audited:</strong> a third-party <code>ExtensionModule</code> could theoretically supply a MetaMethod whose <code>getDeclaringClass()</code> recomputes. The prototype therefore roots on the write itself: <code>CachedClass.updateSetNewMopMethods</code>/<code>updateAddNewMopMethods</code> call <code>ClassInfo.updateReclaimability()</code>, which adds any ClassInfo holding non-empty MOP arrays to the strong root set. The invariant holds by construction for every possible registration path.</p>
+<p>This also inverts v1's pristine-gating objection: the never-pristine platform classes don't <em>need</em> collection protection through the association — they are rooted Groovy-side either way, and that rooting ends with Groovy's loader, which is exactly the lifetime the container fix requires.</p>
+
+<h2>4. Review Q2/Q3 — the split-brain sequence, and why resurrection ends it</h2>
+<p>The review argued: if a live call site strongly retains ClassInfo A, then A is strongly reachable, so GC cannot clear a soft reference to it — making v1's Failure 2 unconvincing as stated. That objection misses one link, and fixing it produces the concrete sequence the review asked for:</p>
+<ol>
+<li>A caller links a classic site capturing ClassInfo A and its version (<code>PojoMetaClassSite.java:33-39</code>). The site is reachable <em>only</em> through the caller's <code>static SoftReference $callSiteArray</code> — so "retention by a live call site" is itself only <strong>soft</strong> reachability.</li>
+<li>Steady-state calls run through the linked site, whose guard reads <code>classInfo.getVersion()</code> from the captured instance (<code>PojoMetaClassSite.java:58</code>) — the ClassValue is never touched, so under naive soft values its <code>SoftReference&lt;A&gt;</code> goes LRU-stale precisely while the site is hottest.</li>
+<li>Soft-reference clearing is per-referent: the collector may clear the stale <code>SoftReference&lt;A&gt;</code> while keeping the fresh <code>SoftReference&lt;CallSiteArray&gt;</code> (touched every caller invocation).</li>
+<li>Any other code path calls <code>getClassInfo(String)</code> → fresh B is created.</li>
+<li>A user installs an EMC — the registry resolves B, bumps <em>B's</em> version, retires <em>B's</em> domain.</li>
+<li>The surviving site still guards A, whose version never changes again: it accepts forever, silently dispatching pre-EMC behaviour.</li>
+</ol>
+<p>So naive soft values are indeed unsafe — v1's conclusion, now with the demonstration it lacked. The structural fix:</p>
+<div class="callout"><strong>Resurrection.</strong> <code>GroovyClassValueSoft</code> stores values behind bootstrap <code>SoftReference</code>s but owns identity in a weak-key/weak-value side map. <code>computeValue</code> consults the map first: a value still reachable <em>anywhere</em> (the site chain above is weak-visible) is re-associated as-is. A fresh instance can only be created once the old one is <em>weakly unreachable</em> — a state in which no guard, cache, or call site can ever observe it again. Two live generations of one association cannot arise; version continuity is automatic; step 4 above returns A and steps 5–6 behave exactly as today. The cleared-wrapper retry uses the GROOVY-12280 pattern (one remove-and-recompute, then an identity-safe uncached fallback served from the side map). <code>ClassInfo.remove(Class)</code> remains a hard detach — it purges the identity entry (and the dirty root), preserving the documented undeploy semantics.</div>
+<p>The forced-clear tests exercise a superset of GC behaviour (a collector never clears a reference to a strongly reachable object; the tests do), so the passing probe covers every clearing schedule, including the sequence above — <code>ClassInfoSoftModeProbe.classicCallSiteStaysSoundAcrossClearAndRelinksOnChange</code> is that sequence verbatim, and fails without resurrection.</p>
+
+<h2>5. Review Q3/Q5 — indy: capture audit and per-Class domain continuity</h2>
+<p><strong>Capture audit</strong> (<code>Selector.setGuards</code>, <code>Selector.java:1249-1328</code>): GroovyObject receivers install <code>SAME_MC.bindTo(mc)</code> and MOP fallbacks bind <code>mc</code>/<code>method</code> — those chains strongly reach the ClassInfo (holder #4/#6). But POJO direct dispatch — exactly the platform-receiver traffic this ticket is about — installs a bare direct MethodHandle guarded by <code>Class</code>-binding tests plus the class-domain SwitchPoint, and an installed guard keeps only the SwitchPoint's <em>internal invoker</em> reachable, not the SwitchPoint object or its owner (<code>SwitchPointInvalidator</code> javadoc, LIVE-registry design). Conclusion: <em>an indy site can outlive its ClassInfo</em>, confirming the review's request to analyse indy separately.</p>
+<p>Under soft values that would reopen a window v1 only half-identified: A dies, its domain's retirement waits on the lazy weak-bundle pump (<code>DomainReclaim</code>), successor B gets a fresh domain, and a mutation through B never reaches the straggler guard until the pump runs — unbounded stale dispatch.</p>
+<p><strong>Fix (implemented, soft mode only): domain re-homing.</strong> The domain becomes a per-<code>Class</code> object: <code>ClassInfo.indyDomain()</code> resolves through <code>IndyInvalidation.classDomainFor(type, localDomain)</code> (weak identity <code>Class</code> keys → strong domains; the map holds no classes and no ClassInfos). The first ClassInfo seeds it; a successor <em>adopts</em> it; every invalidation path already funnels through the canonical instance's four domain methods, so a mutation through B deterministically retires guards linked under A. Domain retirement moves from ClassInfo-death to Class-death (<code>ClassDomainReclaim</code>), because instances are replaceable and classes are not — which also keeps the LIVE SwitchPoint registry free of zombies. <code>ClassInfoSoftModeProbe.indyDomainContinuityAcrossRecreation</code> verifies the predecessor's SwitchPoint is invalidated by a mutation through the successor; it fails without re-homing.</p>
+<p><em>Classic-callsite deprecation path:</em> this improvement is deliberately indy-only. Classic sites need no equivalent machinery — resurrection preserves the very instance their guards captured — so nothing breaks when legacy-compiled jars put <code>groovy-callsite</code> on the classpath, and indy design is not constrained by the deprecated path.</p>
+
+<h2>6. Review Q1 residue — the dirty-root set for genuinely non-reconstructible state</h2>
+<p>What remains identity-bound after §3–§5: an installed class-level MetaClass (<code>strongMetaClass</code> — user EMCs land <em>only</em> there; <code>modifiedExpandos</code> is weak, and the registry keeps no strong side map — <code>MetaClassRegistryImpl.setMetaClass</code>) and per-instance MetaClasses (<code>perInstanceMetaClassMap</code>, whose instances do not back-reference the ClassInfo). Losing either to soft collection would silently discard user customizations — the ticket description's core caveat, confirmed.</p>
+<p><strong>Fix (implemented; revised in v3 — §12):</strong> <code>ClassInfo.updateReclaimability()</code> evaluates the condition <em>strongMetaClass set ∨ per-instance MetaClasses present ∨ non-empty MOP arrays</em> on every mutation of those slots (<code>setStrongMetaClass</code>, <code>setWeakMetaClass</code>, <code>setPerInstanceMetaClass</code>, the two <code>CachedClass</code> MOP writers, and <code>finalizeReference</code>/<code>clearModifiedExpandos</code> via <code>setStrongMetaClass(null)</code>) and <em>pins or unpins the instance inside its own association</em> (<code>GroovyClassValue.pin/unpin</code>): the association's slot flips between a bootstrap <code>SoftReference</code> and the value itself. Because the strong hold lives in the entry — an ephemeron — a pinned instance has exactly a plain ClassValue association's lifetime: an immortal platform key retains it (it must — the state is not reconstructible), a dropped script class releases it together with its loader. v2's global strong root set got that second half wrong (the "reverse" leak, §12). Removal is conservative (lingering weak per-instance entries only delay unpinning — the safe direction). Weak-held default MetaClasses are <em>not</em> pinned: they are soft-collectible and recreated on demand today, so soft mode changes nothing for them — the review's point 5 exactly.</p>
+
+<h2>7. Option E design summary</h2>
+<table>
+<tr><th>Piece</th><th>Where</th><th>Role</th></tr>
+<tr><td><code>GroovyClassValueSoft</code></td><td><code>org.codehaus.groovy.reflection</code> (new)</td><td>ClassValue of per-Class <em>slots</em> (bootstrap <code>AtomicReference</code> holding a bootstrap <code>SoftReference</code>, or the value itself when pinned — v3); weak/weak canonical side map; striped creation locks (the map's <code>putIfAbsent</code> reports success without storing over a collected-value entry, so the miss path double-checks under a lock and uses an unconditional <code>put</code>); <code>getIfPresent</code> for non-creating inspection.</td></tr>
+<tr><td>Mode selection + capability</td><td><code>GroovyClassValueFactory</code>, <code>GroovyClassValue</code></td><td><code>groovy.use.classvalue=soft</code>; consumers never ask the factory for the mode (v3) — they query the created store's capability (<code>valuesReclaimable()</code>, default <code>false</code>) and use the default-no-op <code>pin</code>/<code>unpin</code> contract.</td></tr>
+<tr><td>Ephemeron pinning (ex "dirty roots")</td><td><code>ClassInfo.updateReclaimability()</code> → <code>GroovyClassValue.pin/unpin</code>; hooks in <code>CachedClass</code></td><td>§3 invariant enforcement + §6 user-state protection, held inside the association (v3, §12). <code>ClassInfo.remove()</code> drops the pin with the association — no store-specific handling.</td></tr>
+<tr><td>Domain continuity</td><td><code>ClassInfo.indyDomain()</code>; <code>IndyInvalidation.classDomainFor / anchorClassDomainToClass / ClassDomainReclaim / CLASS_DOMAINS</code></td><td>§5. Default mode keeps today's per-instance domain + <code>DomainReclaim</code> unchanged.</td></tr>
+</table>
+<p>Default-mode behaviour is byte-identical except for no-op hook calls; all soft-mode structures are unallocated or unpopulated unless the flag is set.</p>
+
+<h2>8. Results</h2>
+<h3>8.1 Correctness</h3>
+<ul>
+<li><code>GroovyClassValueSoftTest</code> (9 tests, v3): memoization; resurrection identity without recompute; fresh-after-true-death; hard-detach <code>remove()</code>; non-creating <code>getIfPresent</code>; the <code>valuesReclaimable</code> capability; pin holds the value in its own slot until unpin; <code>remove()</code> releases the pin; foreign unpin is a no-op.</li>
+<li><code>ClassInfoSoftModeTest</code> → child-JVM <code>ClassInfoSoftModeProbe</code> (8 scenarios under <code>-Dgroovy.use.classvalue=soft</code>, v3): resurrection identity + version continuity; DGM-target pinned in its slot; EMC pins and its removal unpins; per-instance MetaClass pins; pristine ClassInfo truly collected then recreated with working dispatch; classic <code>CallSiteArray</code> soundness across clear + EMC change (the §4 sequence, on a clean POJO receiver — a pinned receiver has no clearable reference); predecessor SwitchPoint retirement across recreation (the §5 window); the reverse scenario — an EMC-dirty script class dies with its loader under memory pressure (§12).</li>
+<li>Regression (default mode): reflection + indy + vmplugin suites (159), groovy-callsite (18), <code>groovy.lang</code> MOP suite (1070) — all pass.</li>
+<li>Soak (<strong>soft mode</strong>): the full core <code>:test</code> suite run with <code>-Pgroovy.use.classvalue=soft</code> (forwarded to test JVMs by the build-logic change on this branch) — <strong>16,800 passed, 66 skipped, 0 failed</strong>.</li>
+<li>Real-GC concurrency stress (<code>ClassInfoSoftModeStressTest</code> → child-JVM <code>ClassInfoSoftModeStressProbe</code>, 128&nbsp;MB heap, <code>-XX:SoftRefLRUPolicyMSPerMB=0</code> so every collection clears unprotected soft references): 20&nbsp;s of concurrent indy + classic dispatch racing the collector — 2 POGO dispatchers (megamorphic site over 100 Groovy classes), 1 Java-receiver dispatcher (36 platform classes), 2 indy + 1 classic dispatcher on an EMC-mutated platform class through 129 generations, plus allocation pressure. Result: <strong>66.6M dispatches, 33/36 Java-receiver ClassInfos genuinely collected and recreated mid-run, zero invariant violations</strong> — no lost customization, per-thread generation monotonicity held, the dirty-rooted ClassInfo kept its identity throughout, and every dispatcher (classic included) converged on the final generation under continuing pressure. Unlike the deterministic probe, this exercises clearing at collector-chosen instants against the resurrection lock, reclaimability updates and domain adoption.</li>
+</ul>
+<h3>8.2 Acceptance — container-undeploy loader collection (<code>Groovy12281LoaderSpike.java</code>, on the branch)</h3>
+<p>Groovy loaded in a child <code>URLClassLoader</code>, platform-receiver-heavy script run, loader dropped; JDK 17, <code>-Xmx256m</code>. "After pressure" = allocate-to-OOME so soft references are cleared (their contract); residual soft-reachable paths (e.g. the category thread-local) delay collection until pressure in <em>all</em> modes, so pressure is the correct acceptance condition.</p>
+<table>
+<tr><th>Mode</th><th class="c">Collected after plain GC</th><th class="c">Collected after soft-clearing pressure</th></tr>
+<tr><td><code>true</code> — default ClassValue (today)</td><td class="bad">no</td><td class="bad">no — pinned forever (reproduces GROOVY-12142)</td></tr>
+<tr><td><code>soft</code> — Option E</td><td class="c">no</td><td class="ok">yes — unpinned</td></tr>
+<tr><td><code>false</code> — map escape hatch</td><td class="c">no</td><td class="ok">yes — unpinned (control)</td></tr>
+</table>
+<h3>8.3 Cost (JDK 17, fixed 512&nbsp;MB heap, idle machine; fresh JVM per run; medians)</h3>
+<p>Indicative harness (<code>Groovy12281PerfSpike.groovy</code>, on the branch; 3 JVMs × 7 rounds, indy codegen):</p>
+<table>
+<tr><th>ns/op (median of run-medians)</th><th class="c">ClassValue (today)</th><th class="c">soft (E)</th><th class="c">map (escape hatch)</th></tr>
+<tr><td>micro: <code>getClassInfo(String)</code> hot loop</td><td class="c">1.18</td><td class="c">1.74 (+0.56)</td><td class="c">4.70</td></tr>
+<tr><td>micro: <code>getClassInfo</code>, 5 mixed keys</td><td class="c">44.5</td><td class="c">49.4 (+11%, loop-dominated)</td><td class="c">49.3</td></tr>
+<tr><td>macro: String-heavy dynamic loop</td><td class="c">90.7</td><td class="c">85.5 (parity/noise)</td><td class="c">102.9 (+13%)</td></tr>
+<tr><td>macro: POGO dynamic loop</td><td class="c">8.95</td><td class="c">8.50 (parity/noise)</td><td class="c">9.03</td></tr>
+</table>
+<p>Compiler-performance harness (4-file corpus pleac02–04 + script.groovy, 50 warmup + 300 rounds, modes alternated per run, 3 runs each): ClassValue ≈ 19.56&nbsp;ms overall vs soft ≈ 19.54&nbsp;ms — <strong>+0.0%, parity</strong> (per-run means 21.98/18.12/18.57 vs 21.40/18.52/18.71, σ ≈ 3–5&nbsp;ms).</p>
+<p>JMH classic-bytecode dispatch gate (<code>-Pindy=false</code> fat jar; Callsite/Fibo/DynamicDispatchCold benchmarks; annotation defaults; <code>-jvmArgsAppend -Dgroovy.use.classvalue=…</code>; significance = disjoint 99.9% CIs, the same pre-set rule that declined Option D):</p>
+<table>
+<tr><th>soft vs ClassValue (classic bytecode)</th><th class="c">Result</th></tr>
+<tr><td>Geomean over 37 benchmarks (16 dispatch-cold, 10 Fibo, 11 call-site dispatch)</td><td class="c">+1.7%</td></tr>
+<tr><td>Statistically significant deltas (disjoint CIs)</td><td class="ok">0 of 37 — gate passes (Option D failed this rule with 12, worst 1.38×)</td></tr>
+<tr><td>Noise floor evidence</td><td class="c">pure-Java benchmarks (mode-independent) moved up to ±10% between sweeps</td></tr>
+<tr><td>Focused re-measurement of the two directional outliers (poly/mega classic dispatch): one 4-fork paired run showed poly +17% significant but mega −7% (contradicting a systematic mechanism), so poly was re-run as three alternating 2-fork pairs</td><td class="c">poly pooled <strong>+3.7%</strong> (per-pair +0.3% / +8.1% / +3.0%, all CIs overlapping); consistent with one <code>SoftReference.get</code> per classic inline-cache miss (~42 misses per 64-dispatch op). A low-single-digit cost on classic <em>polymorphic</em> miss traffic is plausible and should be re-checked in the idiom-suite sweep before any default flip; irrelevant to indy bytecode, whose linked sites do not call <code>getClassInfo</code> per miss.</td></tr>
+</table>
+<p>Memory: one bootstrap <code>SoftReference</code> per association, one weak/weak side-map entry per touched class, root-set entries bounded by classes with user MetaClass state or MOP arrays (≈ hundreds) — all Groovy-owned.</p>
+
+<h2>9. The resulting option landscape (if adopted as opt-in)</h2>
+<p>What Groovy 6 would offer in this area, consolidated for the adoption discussion:</p>
+<table>
+<tr><th></th><th><code>true</code> — default</th><th><code>soft</code> — new opt-in (Option E)</th><th><code>false</code> — map escape hatch</th></tr>
+<tr><td>Store</td><td><code>java.lang.ClassValue</code>, strong values</td><td>ClassValue fast path; <code>SoftReference</code> values + resurrection + dirty roots + per-Class indy domains</td><td>weak-key identity map, strong values</td></tr>
+<tr><td>Groovy loader unpinned on undeploy</td><td class="bad">no — leaks per redeploy (JDK-8136353)</td><td class="ok">yes — collected under memory pressure</td><td class="ok">yes — structurally (no platform-key association)</td></tr>
+<tr><td>Release promptness</td><td class="c">n/a (never)</td><td class="c">pressure-driven (soft-reference contract; <code>-XX:SoftRefLRUPolicyMSPerMB</code> tunes it)</td><td class="c">at loader death</td></tr>
+<tr><td>Raw <code>getClassInfo</code></td><td class="c">1.2 ns</td><td class="c">1.7 ns</td><td class="c">4.7 ns</td></tr>
+<tr><td>ClassInfo ever collected/recreated?</td><td class="c">never</td><td class="c">only pristine platform-class ClassInfos and dead-Class islands (POGOs self-pin §2; user MetaClass state dirty-rooted §6; DGM targets registry-rooted §3)</td><td class="c">never</td></tr>
+</table>
+<p>Orthogonal to the mode: <code>ClassInfo.remove(Class)</code> remains the programmatic <em>prompt</em> detach for undeploy hooks, with identical semantics in all three modes (in soft mode the pin travels with the association, so <code>remove()</code> needs no store-specific handling). The <code>hybrid</code> selector stays a declined prototype on this branch — not a shipped option.</p>
+<h3>9.1 Cost by code style</h3>
+<ul>
+<li><strong>Static (<code>@CompileStatic</code>) code:</strong> direct invocations — all three modes perf-indistinguishable (compile +0.0% soft / +1% map). Mode choice is lifecycle-only, and it still matters: the registry writes DGM state into platform-class ClassInfos at startup, so even a fully static app pins under <code>true</code>.</li>
+<li><strong>Dynamic + indy bytecode</strong> (the modern default): linked sites never touch the store on the hot path (§5); cost surfaces at link/relink and MetaClass operations. Measured: soft = parity (0/37 significant, macro loops within noise); map = +13% on the String-heavy macro loop, POGO parity.</li>
+<li><strong>Dynamic + classic bytecode</strong> (legacy-compiled jars via <code>groovy-callsite</code>): the linked-site fast path is identical in all modes — the version guard reads the captured instance, not the store (§2 holder #2). Miss/relink traffic pays: soft ≈ +3.7% pooled on polymorphic sites (below the significance gate, §8.3); map = the v1 verdict (+4.8% geomean, platform-receiver idioms to 1.38×). Correctness under soft is carried by resurrection and verified by the classic dispatchers in both probes — the deprecation path for classic call sites is not constrained by, and does not constrain, the soft design.</li>
+</ul>
+<h3>9.2 Guidance sketch (for the integration guide, once the mode's fate is decided)</h3>
+<ul>
+<li>Standalone apps / CLI / Groovy dies with the JVM → default <code>true</code>.</li>
+<li>Container with Groovy inside the webapp, few redeploys → default <code>true</code>, optionally <code>ClassInfo.remove()</code> on undeploy for promptness.</li>
+<li>Redeploy-heavy containers, shared-lib Groovy, long-lived JVMs hosting many Groovy loaders → <code>soft</code>: essentially default performance, unpins under pressure.</li>
+<li>Must release promptly, or zero tolerance for pressure-timed recreation of platform-class ClassInfos → <code>false</code> (cost quantified above) plus <code>remove()</code>.</li>
+</ul>
+<p>The guide itself is deliberately not touched on this branch; this section is the draft content for it.</p>
+
+<h2>10. Residual risks and review questions</h2>
+<ul>
+<li><strong>JDK dependence of the entry shape:</strong> the no-strong-edge argument (§2 holder #1) is verified against JDK 17, 21 and 23 sources (<code>Entry&lt;T&gt; extends WeakReference&lt;Version&lt;T&gt;&gt;</code> in all three) and confirmed empirically by the §8.2 spike on all three (default PINNED / soft UNPINNED in each). Re-check on 25 via CI when the branch gets a PR; the shape is load-bearing, so any future JDK rewrite of <code>ClassValue</code> internals (e.g. the JEP for ClassValue improvements, if revived) should re-trigger this verification.</li>
+<li><strong>Soft lingering:</strong> soft references clear under pressure, not promptly — the undeployed island lingers until then (identical to the GROOVY-12280 trade). <code>ClassInfo.remove()</code> remains the prompt remedy and its semantics are unchanged.</li>
+<li><strong>Collection of live-but-idle pristine ClassInfos:</strong> under heap pressure an idle class's ClassInfo (and its soft-held MetaClassImpl — already collectible today) may be collected and later recreated, costing re-initialization, never correctness (§3, §4). Same LRU trade every SoftReference cache makes.</li>
+<li><strong>Default-flip gate:</strong> the v1 Option-D decision used a 57-benchmark idiom sweep not kept in-repo; re-run that suite (or adopt it into <code>subprojects/performance</code>) for soft-vs-ClassValue before proposing any default change. The in-repo gates above are necessary but not sufficient.</li>
+<li><strong>Adoption path (team question):</strong> opt-in third mode now (recommended), or fold into the integration guide as the preferred container remedy over <code>=false</code> once soaked. Guide update deliberately deferred until the mode's fate is decided.</li>
+<li><strong>weakMetaClass is not pinned by design:</strong> mutations on a weak-held EMC (global EMC mode without registration) are already collectible today; soft mode neither improves nor worsens that.</li>
+<li><strong>Map escape hatch fails the reverse scenario on master (separate ticket):</strong> the §12 probe shows <code>=false</code> at 0/20 loaders collected on current master while released 5.0.6 and 6.0.0-beta-2 collect 20/20 — the GROOVY-12142 escape-hatch rework's weak-key/strong-value map is not an ephemeron, so a value reaching its own key (ClassInfo → installed MetaClass → <code>theClass</code>) revives the key forever. Pre-existing relative to PR #2820; JIRA text drafted, to be filed against the 12142 change.</li>
+</ul>
+
+<h2>11. Relationship to companion work</h2>
+<p>Unchanged from v1: GROOVY-12280 is the worked SoftReference example this design's retry loop borrows in shape (sentinel-free here since <code>ClassValue</code> memoizes the wrapper; one remove-and-recompute then an uncached identity-safe fallback); no shared helper, per the groovy-concurrent-java layering constraint recorded on both tickets. Options B (hybrid) and D (map default) remain declined on the v1 measurements; the hybrid prototype stays on the branch as the measured artifact.</p>
+
+<h2>12. Review round 2 — PR #2820 (Jochen, 20 Aug 2026) and response (v3)</h2>
+<p>Jochen's <a href="https://github.com/apache/groovy/pull/2820#pullrequestreview-4983046936">PR review</a> posed one scenario question ("the reverse memory pressure test") and six inline comments. The scenario question found a real leak; three of the inline comments share one structural answer with it.</p>
+
+<h3>12.1 The reverse scenario — a real leak, found and fixed</h3>
+<p><em>The question:</em> spin up many GroovyShells whose scripts set an EMC on classes they create; on memory pressure the old script instances and their metaclasses should be collectable while the Groovy runtime stays alive (the "reverse" of the §8.2 acceptance test, where the runtime itself is dropped).</p>
+<p><em>The finding:</em> under the v2 design the expectation <strong>failed</strong>. The probe (20 × GroovyClassLoader → parseClass → install EMC → drop → pressure → GC):</p>
+<table>
+<tr><th>Configuration</th><th class="c">Loaders collected</th></tr>
+<tr><td>default <code>true</code> (branch and released)</td><td class="ok">20/20</td></tr>
+<tr><td><code>soft</code>, v2 (global root set)</td><td class="bad">0/20</td></tr>
+<tr><td><code>soft</code>, v2, no EMC installed (clean classes)</td><td class="ok">20/20</td></tr>
+<tr><td><code>soft</code>, v2, EMC + explicit <code>ClassInfo.remove()</code></td><td class="ok">20/20</td></tr>
+<tr><td><code>soft</code>, <strong>v3 (ephemeron pinning)</strong></td><td class="ok">20/20</td></tr>
+<tr><td><code>false</code> on current master (and on the branch)</td><td class="bad">0/20 — pre-existing, separate ticket (§10)</td></tr>
+<tr><td><code>false</code> on released 5.0.6 / 6.0.0-beta-2</td><td class="ok">20/20</td></tr>
+</table>
+<p><em>The diagnosis:</em> v2's <code>nonReclaimableRoots</code> was a <strong>global</strong> strong set. Its justifying comment — "everything in it dies with Groovy's own loader, which is the lifetime every ClassInfo has today" — is true for immortal platform keys but <strong>false for collectible keys</strong>: a script class's today-lifetime is <em>its class's</em> lifetime, because the default ClassValue association is an ephemeron (it dies with its key). The set therefore extended every EMC-dirty script class — root → ClassInfo → <code>strongMetaClass</code> → <code>MetaClassImpl.theClass</code> (strong final) → class → loader — to the runtime's lifetime. The clean-class and <code>remove()</code> rows isolate the cause exactly.</p>
+<p><em>The fix:</em> move the pin <em>into the association</em>. The store's per-Class slot (a bootstrap <code>AtomicReference</code>) holds either a bootstrap <code>SoftReference</code> (reclaimable) or the value itself (pinned); <code>pin</code>/<code>unpin</code> flip it (pin retries across a concurrent remove-and-recompute; unpin is a CAS so a foreign value cannot downgrade the slot). The strong hold is then reachable only <em>from the key class</em> — exactly a plain ClassValue association's lifetime, which is what §6's protection always meant. The bootstrap-loading constraint is preserved: an unpinned association on an immortal key still keeps nothing Groovy-loaded strongly reachable.</p>
+<p><em>Test-construction findings</em> (worth recording for future GC probes): the in-probe scenario initially failed for two reasons unrelated to the mode — the probe class's own invokedynamic call-site guards retain the first-linked argument class (receiver-side inline caching, present identically in every mode; the scenario is now <code>@CompileStatic</code> so no such sites exist), and the loop frame's stale local slots retain the last iteration's loader through the collection loop (locals now nulled). Both retainers were located by ablation against a driver harness; neither involves the association machinery. Collection is asserted <em>after allocate-to-OOME pressure</em>, since generic soft caches (lazy CachedClass/loader references) legitimately retain the island under mild GC in every mode — which is also precisely the "on memory pressure" phrasing of the review question.</p>
+
+<h3>12.2 Inline comments</h3>
+<table>
+<tr><th>Comment</th><th class="c">Position</th><th>Response (implemented)</th></tr>
+<tr><td><code>IndyInvalidation</code> vs <code>SwitchPointInvalidator</code>: which is the abstraction boundary? Document, or hide the mechanism.</td><td class="c">Agreed — layered, now explicit</td><td>They are one layered subsystem: <code>SwitchPointInvalidator</code> is the policy-free <em>mechanism</em> (one domain's SwitchPoint lifecycle + the live registry), <code>IndyInvalidation</code> the <em>policy</em> layer (width, reasons, anchoring, per-Class continuity), with <code>ClassInfo</code> the only other supported consumer (domain owner; local operations). Java visibility cannot enforce this across packages, so both classes now carry a "Layering" javadoc section naming the supported consumers and the guarantees each level provides alone, and both are annotated <code>@Internal</code>. (Most of the machinery is GROOVY-12191's; the question spans both changes.)</td></tr>
+<tr><td><code>ClassInfo.isSoftMode()</code> is suspicious — why is ClassValue+SoftReference a "soft mode" but the ManagedMap version not?</td><td class="c">Agreed — wrong abstraction</td><td>The property <code>ClassInfo</code> actually depends on is <em>"can a value be collected while its key class is still alive?"</em> — false for the strong ClassValue <em>and</em> for the map (whose values die with their class), true only for soft. <code>GroovyClassValue</code> now exposes it as a capability (<code>valuesReclaimable()</code>, default false) plus the default-no-op <code>pin</code>/<code>unpin</code> contract; <code>ClassInfo</code> queries its own store and the factory's <code>isSoftMode()</code> is gone.</td></tr>
+<tr><td>"What happens if we always do that and not only in soft mode?" — either always (missing abstraction) or simplify</td><td class="c">Agreed — abstraction was missing</td><td>With <code>pin</code>/<code>unpin</code> on the interface, <code>ClassInfo.updateReclaimability()</code> now runs unconditionally in every mode (no-ops elsewhere), and <code>ClassInfo.remove()</code> lost its store-specific unroot branch entirely. Always maintaining the v2 <em>set</em> in all modes would have been wrong: in <code>=false</code> mode it would add pinning that mode exists to avoid; in default mode, pure overhead.</td></tr>
+<tr><td>Why not store soft mode as a boolean?</td><td class="c">Agreed</td><td>The factory now stores parsed booleans; the per-call <code>equalsIgnoreCase</code> is gone, and the mode string never leaves the factory.</td></tr>
+<tr><td>Boolean or provider-style selection for hybrid too</td><td class="c">Noted — low stakes</td><td>Hybrid is a declined investigation artifact not intended to land (the PR lands only the soft commit), so the shipped factory has three arms; provider-style is fine if preferred on the landing commit.</td></tr>
+<tr><td>Does the ClassInfo case really need <code>SoftReference</code>, or would <code>WeakReference</code> do? Should strength be decided at this level? ("could stay like this for now")</td><td class="c">Soft is deliberate</td><td>Weak values would be cleared at every minor GC whenever nothing else references the instance (the canonical side map is weak-valued too), so platform-receiver ClassInfos would churn through recreation between collections — losing the cache behaviour the mode exists to preserve. Soft approximates "collect only under pressure", the ticket's acceptance criterion. With the v3 slot design the strength choice is localized in <code>GroovyClassValueSoft</code> and could become a policy parameter later if ever needed.</td></tr>
+</table>
+
+<footer>
+<p><strong>Sources.</strong> JIRA GROOVY-12281 review comment (J. Theodorou, 19 Aug 2026); <a href="https://github.com/apache/groovy/pull/2820#pullrequestreview-4983046936">PR #2820 review</a> (J. Theodorou, 20 Aug 2026 — §12); ClassInfo.java (globalClassValue, GlobalClassSet, modifiedExpandos, indyDomain, updateReclaimability), GroovyClassValue.java (valuesReclaimable/pin/unpin, v3), GroovyClassValueSoft.java, GroovyClassValueFactory.java, CachedClass.java:231 &amp; updateSet/AddNewMopMethods, MetaClassRegistryImpl.java:83-84,285-337,654-659, GeneratedMetaMethod.java:43, NewMetaMethod.java:35-60, CallSiteWriter.java:105-106,173-190, PojoMetaClassSite.java:33-58, SwitchPointInvalidator.java, IndyInvalidation.java (DomainReclaim, classDomainFor, ClassDomainReclaim, classSwitchPointFor), Selector.java:947,1249-1328, IndyInterface.java:321-323, JDK 17.0.20 java.lang.ClassValue:264-325. §12 reverse-probe matrix run 21 Aug 2026 against a branch build, current master, and released 5.0.6 / 6.0.0-alpha-1 / 6.0.0-beta-2. Artifacts on branch groovy12281: GroovyClassValueSoftTest, ClassInfoSoftModeProbe/Test (incl. the reverse scenario), Groovy12281LoaderSpike.java, Groovy12281PerfSpike.groovy, GroovyClassValueHybrid (v1). All recommendations proposed pending team review.</p>
+</footer>
+
+</body>
+</html>
