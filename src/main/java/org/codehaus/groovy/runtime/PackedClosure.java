@@ -24,6 +24,8 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
+
 /**
  * The shared {@link Closure} adapter family for {@code @PackedClosures} compact closure
  * compilation.
@@ -61,6 +63,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  */
 public abstract class PackedClosure extends Closure<Object> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
     private static final Object[] EMPTY = new Object[0];
 
@@ -78,6 +81,7 @@ public abstract class PackedClosure extends Closure<Object> {
      * lanes, which do not allocate for these shapes.
      */
     public static final class Fixed0 extends PackedClosure implements GeneratedClosure {
+        @Serial
         private static final long serialVersionUID = 1L;
         public Fixed0(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -86,6 +90,7 @@ public abstract class PackedClosure extends Closure<Object> {
     }
 
     public static final class Fixed1 extends PackedClosure implements GeneratedClosure {
+        @Serial
         private static final long serialVersionUID = 1L;
         public Fixed1(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -100,6 +105,7 @@ public abstract class PackedClosure extends Closure<Object> {
      * overloads (GROOVY-10905) — so this member declares the same pair.
      */
     public static final class FixedIt extends PackedClosure implements GeneratedClosure {
+        @Serial
         private static final long serialVersionUID = 1L;
         public FixedIt(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -109,6 +115,7 @@ public abstract class PackedClosure extends Closure<Object> {
     }
 
     public static final class Fixed2 extends PackedClosure implements GeneratedClosure {
+        @Serial
         private static final long serialVersionUID = 1L;
         public Fixed2(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -117,6 +124,7 @@ public abstract class PackedClosure extends Closure<Object> {
     }
 
     public static final class Fixed3 extends PackedClosure implements GeneratedClosure {
+        @Serial
         private static final long serialVersionUID = 1L;
         public Fixed3(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -125,6 +133,7 @@ public abstract class PackedClosure extends Closure<Object> {
     }
 
     public static final class Fixed4 extends PackedClosure implements GeneratedClosure {
+        @Serial
         private static final long serialVersionUID = 1L;
         public Fixed4(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -144,6 +153,7 @@ public abstract class PackedClosure extends Closure<Object> {
      * it feeds the trailing array of a classed vararg {@code doCall}.
      */
     public static final class FixedN extends PackedClosure implements GeneratedClosure {
+        @Serial
         private static final long serialVersionUID = 1L;
         public FixedN(final Object owner, final GeneratedDispatcher.Bundle dispatchers, final int id, final String method, final Object[] captured, final Class[] visibleTypes, final boolean strict) {
             super(owner, dispatchers, id, method, captured, visibleTypes, strict);
@@ -286,6 +296,7 @@ public abstract class PackedClosure extends Closure<Object> {
      * closure's route to serializability — does not help a packed closure: the dispatch fields
      * remain, so opting the declaring scope out of packing is the remedy.
      */
+    @Serial
     private void writeObject(final java.io.ObjectOutputStream out) throws java.io.IOException {
         Object owner = getOwner();
         String where = (owner == null) ? ""

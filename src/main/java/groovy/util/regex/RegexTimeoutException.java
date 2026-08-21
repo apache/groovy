@@ -20,6 +20,8 @@ package groovy.util.regex;
 
 import org.apache.groovy.lang.annotation.Incubating;
 
+import java.io.Serial;
+
 /**
  * Thrown when a regular expression evaluation guarded by {@link RegexGuard}
  * exceeds its configured deadline. Being unchecked, it distinguishes a
@@ -32,6 +34,7 @@ import org.apache.groovy.lang.annotation.Incubating;
 @Incubating
 public class RegexTimeoutException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 5023185918011980029L;
 
     public RegexTimeoutException(String message) {
