@@ -656,4 +656,27 @@ final class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             assert m(1) == 10
         '''
     }
+
+    @Test // GROOVY-12289
+    void testSwitchExpressionDuplicateLabelEscapeHatch() {
+        String dsl = '''
+            def dsl(int x) {
+                def r = switch (x) {
+                    case 1 -> 'a'
+                    case 1 -> 'b'
+                    default -> 'c'
+                }
+                r
+            }
+        '''
+        shouldFailWithMessages dsl, 'Duplicate case label: 1'
+
+        // an extension that opts DSL-style methods out of type checking
+        // restores dynamic first-match-wins semantics for them
+        extension = 'groovy/transform/stc/Groovy12289Extension.groovy'
+        assertScript dsl + '''
+            assert dsl(1) == 'a'
+            assert dsl(9) == 'c'
+        '''
+    }
 }

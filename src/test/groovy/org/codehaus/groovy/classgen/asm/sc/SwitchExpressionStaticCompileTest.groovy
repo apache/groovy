@@ -581,6 +581,30 @@ final class SwitchExpressionStaticCompileTest extends AbstractBytecodeTestCase {
                 }
             }
         '''
-        assert err.message.contains('Duplicate case label')
+        // GROOVY-12289: reported by the type checker, so @TypeChecked fails identically
+        assert err.message.contains('[Static type checking] - Duplicate case label: 1')
+    }
+
+    // GROOVY-12289: with type checking bypassed, the optimizers cannot represent
+    // the duplicate key, so the writer falls back to sequential dispatch with
+    // dynamic first-match-wins semantics instead of reporting a late error.
+    @Test
+    void staticSkipModeDuplicateCaseFallsBackToSequentialDispatch() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                @groovy.transform.CompileStatic(groovy.transform.TypeCheckingMode.SKIP)
+                def m(int x) {
+                    def r = switch (x) {
+                        case 1 -> 'a'
+                        case 1 -> 'b'
+                        default -> 'c'
+                    }
+                    r
+                }
+            }
+            assert new C().m(1) == 'a'
+            assert new C().m(9) == 'c'
+        '''
     }
 }

@@ -154,8 +154,12 @@ import java.util.stream.IntStream;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.enumConstantName;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.intConstant;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isIntegralType;
 import static org.apache.groovy.ast.tools.SwitchExpressionUtils.isOptimizedIntSwitch;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.stringConstant;
+import static org.apache.groovy.ast.tools.SwitchExpressionUtils.unwrapEnumType;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -4928,6 +4932,7 @@ trying: for (ClassNode[] signature : signatures) {
             expression.setType(resultType);
 
             typeCheckSwitchExpressionIsCase(expression);
+            checkSwitchExpressionDuplicateLabels(expression);
             checkSwitchExpressionExhaustiveness(expression);
         } finally {
             typeCheckingContext.popTemporaryTypeInfo();
@@ -4977,6 +4982,38 @@ trying: for (ClassNode[] signature : signatures) {
             Object privateAccess = call.getNodeMetaData(PV_METHODS_ACCESS);
             if (privateAccess != null) {
                 caseStatement.putNodeMetaData(PV_METHODS_ACCESS, privateAccess);
+            }
+        }
+    }
+
+    /**
+     * Reports a repeated constant case label in a switch expression. Sequential
+     * {@code isCase} semantics make the second arm dead code, and the optimized
+     * {@code tableswitch}/{@code lookupswitch} forms cannot represent it at all,
+     * so it is rejected here, uniformly for type-checked and statically-compiled
+     * code (GROOVY-12289). Labels compared are the same ones the optimizers key
+     * on: int-family, String and enum constants; anything else (GStrings, calls,
+     * regex or collection labels) cannot be proven duplicated statically and is
+     * left to sequential first-match-wins dispatch.
+     *
+     * @since 6.0.0
+     */
+    private void checkSwitchExpressionDuplicateLabels(final SwitchExpression expression) {
+        ClassNode enumType = unwrapEnumType(getType(expression.getExpression()));
+        Set<Object> seen = new HashSet<>();
+        for (CaseStatement caseStatement : expression.getCaseStatements()) {
+            Expression label = caseStatement.getExpression();
+            Object key = null;
+            if (enumType != null && enumType.isEnum()) {
+                String name = enumConstantName(label, enumType);
+                // keyed by type and name so an enum constant never collides with
+                // a string label of the same spelling (a distinct, legal label)
+                if (name != null) key = Map.entry(enumType, name);
+            }
+            if (key == null) key = intConstant(label);
+            if (key == null) key = stringConstant(label);
+            if (key != null && !seen.add(key)) {
+                addStaticTypeError("Duplicate case label: " + label.getText(), label);
             }
         }
     }

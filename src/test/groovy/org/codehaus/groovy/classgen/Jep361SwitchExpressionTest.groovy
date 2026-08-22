@@ -601,4 +601,85 @@ final class Jep361SwitchExpressionTest {
             }
         ''', 'cannot be used together'
     }
+
+    //--------------------------------------------------------------------------
+    // Duplicate case labels (GROOVY-12289)
+
+    @Test
+    void duplicateConstantLabelDynamicFirstMatchWins() {
+        assertScript '''
+            def m(x) { def r = switch (x) { case 1 -> 'a'; case 1 -> 'b'; default -> 'c' }; r }
+            assert m(1) == 'a'
+            assert m(9) == 'c'
+        '''
+    }
+
+    @Test
+    void duplicateConstantLabelIsTypeCheckingError() {
+        for (mode in ['@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            for (dup in [
+                    [decl: 'int x',    arms: "case 1 -> 'a'; case 1 -> 'b'",         label: '1'],
+                    [decl: 'String x', arms: 'case "a" -> 1; case "a" -> 2',         label: 'a'],
+                    [decl: 'int x',    arms: "case 1 -> 'a'; case 1 -> 'b'; case f() -> 'd'", label: '1']]) {
+                def err = shouldFail MultipleCompilationErrorsException, """
+                    class C {
+                        def f() { 5 }
+                        $mode
+                        def m(${dup.decl}) { def r = switch (x) { ${dup.arms}; default -> 'z' }; r }
+                    }
+                """
+                assert err.message.contains('[Static type checking] - Duplicate case label: ' + dup.label)
+            }
+        }
+    }
+
+    @Test
+    void duplicateEnumLabelIsTypeCheckingError() {
+        for (mode in ['@groovy.transform.TypeChecked', '@groovy.transform.CompileStatic']) {
+            def err = shouldFail MultipleCompilationErrorsException, """
+                enum E { X, Y }
+                class C {
+                    $mode
+                    def m(E e) { def r = switch (e) { case E.X -> 1; case E.X -> 2; default -> 0 }; r }
+                }
+            """
+            assert err.message.contains('Duplicate case label: E.X')
+        }
+    }
+
+    @Test
+    void duplicateNonConstantLabelIsNotAnError() {
+        assertBoth '''
+            def m(String x, String y) {
+                def r = switch (x) { case "${y}" -> 1; case "${y}" -> 2; default -> 0 }
+                r
+            }
+            assert m('a', 'a') == 1
+            assert m('b', 'a') == 0
+        '''
+    }
+
+    // an enum constant and a string label with the same spelling are distinct
+    // labels, not duplicates (the string arm simply never matches an enum)
+    @Test
+    void enumAndStringLabelsWithSameNameAreNotDuplicates() {
+        assertBoth '''
+            enum E { X, Y }
+            def m(E e) {
+                def r = switch (e) { case E.X -> 1; case 'X' -> 2; default -> 0 }
+                r
+            }
+            assert m(E.X) == 1
+            assert m(E.Y) == 0
+        '''
+    }
+
+    @Test
+    void duplicateLabelInSwitchStatementIsNotAnError() {
+        assertBoth '''
+            def m(int x) { switch (x) { case 1: return 'a'; case 1: return 'b'; default: return 'c' } }
+            assert m(1) == 'a'
+            assert m(9) == 'c'
+        '''
+    }
 }
