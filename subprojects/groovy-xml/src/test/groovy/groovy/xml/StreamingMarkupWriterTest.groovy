@@ -86,6 +86,6 @@ class StreamingMarkupWriterTest {
     @Test
     void loneHighSurrogateIsRejected() {
         def w = new StreamingMarkupWriter(new StringWriter())
-        assertThrows(IOException) { w.write('\uD835' + 'A') }
+        assertThrows(IOException) { w.write('\uD835A') }
     }
 }
