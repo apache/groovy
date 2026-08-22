@@ -273,17 +273,18 @@ public abstract class StaticTypeCheckingSupport {
     protected static final ExtensionMethodCache EXTENSION_METHOD_CACHE = ExtensionMethodCache.INSTANCE;
 
     /**
-     * Clears cached extension methods for the supplied class loader.
+     * Drops cached extension methods for the supplied class loader,
+     * including the per-receiver name index and the preemptive-name set.
      */
     public static void clearExtensionMethodCache(final ClassLoader loader) {
-        EXTENSION_METHOD_CACHE.cache.remove(loader);
+        EXTENSION_METHOD_CACHE.invalidate(loader);
     }
 
     /**
-     * Clears all cached extension methods.
+     * Drops all cached extension methods and derived indexes.
      */
     public static void clearExtensionMethodCache() {
-        EXTENSION_METHOD_CACHE.cache.clearAll();
+        EXTENSION_METHOD_CACHE.invalidateAll();
     }
 
     /**
@@ -341,6 +342,8 @@ public abstract class StaticTypeCheckingSupport {
 
     /**
      * Returns extension methods with the supplied name for the receiver hierarchy.
+     * Uses the name-indexed extension-method cache; repeated lookups of the same
+     * name on the same type do not rescan that type's DGM methods.
      */
     public static Set<MethodNode> findDGMMethodsForClassNode(final ClassLoader loader, final ClassNode clazz, final String name) {
         TreeSet<MethodNode> accumulator = new TreeSet<>(DGM_METHOD_NODE_COMPARATOR);
@@ -358,14 +361,11 @@ public abstract class StaticTypeCheckingSupport {
 
     /**
      * Collects extension methods with the supplied name for the receiver hierarchy.
+     * Named lookup uses the per-receiver index built when the loader's extension
+     * methods were scanned, so it does not walk every DGM method on the type.
      */
     protected static void findDGMMethodsForClassNode(final ClassLoader loader, final ClassNode clazz, final String name, final TreeSet<MethodNode> accumulator) {
-        List<MethodNode> fromDGM = EXTENSION_METHOD_CACHE.get(loader).get(clazz.getName());
-        if (fromDGM != null) {
-            for (MethodNode node : fromDGM) {
-                if (node.getName().equals(name)) accumulator.add(node);
-            }
-        }
+        accumulator.addAll(EXTENSION_METHOD_CACHE.get(loader, clazz.getName(), name));
         for (ClassNode node : clazz.getInterfaces()) {
             findDGMMethodsForClassNode(loader, node, name, accumulator);
         }
@@ -1100,19 +1100,7 @@ public abstract class StaticTypeCheckingSupport {
         // phase 1: argument-parameter distance classifier
         int bestDist = Integer.MAX_VALUE;
         for (MethodNode method : methods) {
-            Parameter[] parameters = method.getParameters();
-            int nParameters = parameters.length;
-            if (nParameters > 0) {
-                parameters = parameters.clone();
-                for (int i = 0; i < nParameters; i += 1) {
-                    Parameter p = parameters[i];
-                    ClassNode t = p.getOriginType();
-                    if (t.isGenericsPlaceHolder() || isUsingGenericsOrIsArrayUsingGenerics(t))
-                        parameters[i] = new Parameter(GenericsUtils.nonGeneric(t), p.getName());
-                }
-            }
-
-            int dist = measureParametersAndArgumentsDistance(parameters, argumentTypes);
+            int dist = measureParametersAndArgumentsDistance(parametersForDistance(method), argumentTypes);
             if (dist >= 0 && dist <= bestDist) {
                 if (dist < bestDist) {
                     bestDist = dist;
@@ -1168,6 +1156,43 @@ public abstract class StaticTypeCheckingSupport {
         return bestMethods;
     }
 
+    /**
+     * Distance measurement treats generic parameters as their erasure so a
+     * {@code List<T>} parameter does not reject a {@code List} argument.
+     * <p>
+     * <b>PERFORMANCE &amp; SAFETY CONTRACT:</b> To avoid redundant array allocations during
+     * overload resolution, this method reuses and returns {@link MethodNode#getParameters()}
+     * directly whenever no generic erasure is needed. The returned array is a cloned copy
+     * <i>only</i> when one or more parameters require generic erasure.
+     * <p>
+     * <b>CRITICAL MUTATION WARNING:</b> Callers of this method and all downstream methods in
+     * the distance measurement chain (e.g. {@link #measureParametersAndArgumentsDistance(Parameter[], ClassNode[])})
+     * <b>MUST NEVER</b> mutate the returned {@code Parameter[]} array or its elements in place.
+     * In-place mutation would silently corrupt the {@link MethodNode}'s parameter definitions
+     * for all subsequent compilation phases across the compiler.
+     */
+    private static Parameter[] parametersForDistance(final MethodNode method) {
+        Parameter[] parameters = method.getParameters();
+        Parameter[] erased = null;
+        for (int i = 0, n = parameters.length; i < n; i += 1) {
+            ClassNode t = parameters[i].getOriginType();
+            if (t.isGenericsPlaceHolder() || isUsingGenericsOrIsArrayUsingGenerics(t)) {
+                if (erased == null) {
+                    erased = parameters.clone();
+                }
+                erased[i] = new Parameter(GenericsUtils.nonGeneric(t), parameters[i].getName());
+            }
+        }
+        // WARNING: Returning the un-cloned `parameters` array here is safe ONLY because all callers
+        // in the distance-measurement chain treat the array as strictly read-only.
+        return erased == null ? parameters : erased;
+    }
+
+    /**
+     * Measures parameter-to-argument distance. Note: The supplied {@code parameters} array
+     * may be the internal backing array of a {@link MethodNode} (see {@link #parametersForDistance(MethodNode)});
+     * this method and all helper methods it calls must treat {@code parameters} as strictly read-only.
+     */
     @SuppressWarnings("removal")
     private static int measureParametersAndArgumentsDistance(final Parameter[] parameters, final ClassNode[] argumentTypes) {
         int dist = -1;
