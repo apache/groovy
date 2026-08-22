@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787295941045,
+  "lastUpdate": 1787382291981,
   "repoUrl": "https://github.com/apache/groovy",
   "entries": {
     "Dispatch Metrics": [
@@ -2470,6 +2470,58 @@ window.BENCHMARK_DATA = {
           {
             "name": "classes.loaded.total",
             "value": 4008,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.lambdaForms",
+            "value": 453,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.hidden",
+            "value": 873,
+            "unit": "classes"
+          },
+          {
+            "name": "classes.groovyRuntime",
+            "value": 1506,
+            "unit": "classes"
+          },
+          {
+            "name": "bytecode.corpus.bytes",
+            "value": 194226,
+            "unit": "bytes"
+          },
+          {
+            "name": "bytecode.corpus.classes",
+            "value": 57,
+            "unit": "classes"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "committer": {
+            "name": "Paul King",
+            "username": "paulk-asert",
+            "email": "paulk@asert.com.au"
+          },
+          "id": "f6bc5a511c3ea79e51afe0eb26e494e544da06c1",
+          "message": "GROOVY-10355: restore binary reading of (name) +/- x and (name) in/as x (design sketch)\n\nA parenthesized bare name whose final segment starts lowercase is by\nconvention a value, not a class, so a cast mis-parse of the ambiguous\nshapes is rebuilt in AstBuilder as the binary expression the syntax\nvisually suggests, preserving textual left-to-right grouping across\nprecedence levels. The binary-only keywords in/as captured as cast\noperand identifiers are restored to their relational reading for any\ncapitalization. Unresolvable bare-name cast types now carry a hint\nexplaining the ambiguity and the ((name)) workaround.\n\nThe grammar is unchanged: a predicate-gated castExprAlt is not viable\nbecause adaptive prediction under the me.sunlan antlr4 fork only\nconsults semantic predicates when a decision conflict is registered,\nwhich this decision never produces, so the predicate would only fire\nas a parse-time FailedPredicateException.",
+          "timestamp": "2026-08-18T22:35:09Z",
+          "url": "https://github.com/apache/groovy/commit/f6bc5a511c3ea79e51afe0eb26e494e544da06c1"
+        },
+        "date": 1787382290992,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "classes.loaded.total",
+            "value": 4010,
             "unit": "classes"
           },
           {
