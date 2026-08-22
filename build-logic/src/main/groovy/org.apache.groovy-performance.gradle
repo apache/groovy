@@ -20,6 +20,7 @@
 import org.apache.groovy.gradle.DispatchMetricsSummary
 import org.apache.groovy.gradle.PerformanceTestsExtension
 import org.apache.groovy.gradle.PerformanceTestSummary
+import org.gradle.api.attributes.Attribute
 
 plugins {
     id 'groovy'
@@ -50,7 +51,14 @@ var indy = (project.findProperty('indy') ?: 'true').toBoolean()
 
 dependencies {
     implementation project(':')
-    jmh project(':')
+    // Do not add project(':') to the unattributed `jmh` configuration. That
+    // configuration is the JMH engine (jmh-core + bytecode generator). With
+    // no variant attributes it resolves the root project's internal
+    // runtimeElements — groovy-raw — while jmhRuntimeClasspath (java-runtime)
+    // resolves the published shaded groovy jar. Putting both on a process
+    // classpath duplicates groovy.concurrent.AsyncScope and trips
+    // MetaClassRegistryImpl.checkForDuplicateConcurrentModule. Groovy is
+    // already on the jmh source set via implementation above.
     testImplementation project(':')
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit6}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit6}"
@@ -61,6 +69,18 @@ dependencies {
     if (!indy) {
         implementation projects.groovyCallsite
         jmh projects.groovyCallsite
+    }
+}
+
+// compileClasspath / testCompileClasspath are tagged org.apache.groovy.internal
+// (see org.apache.groovy-internal) so they resolve groovy-raw, matching the
+// bootstrap compiler on groovyClasspath. The jmh plugin's extra source set is
+// not tagged, so jmhCompileClasspath would otherwise pick the published
+// shaded groovy jar and groovyc would load AsyncScope from both jars.
+def internalPublication = Attribute.of('org.apache.groovy.internal', Boolean)
+configurations.named('jmhCompileClasspath') {
+    attributes {
+        attribute(internalPublication, true)
     }
 }
 
@@ -171,6 +191,27 @@ tasks.named('test') {
 tasks.named('jmh') {
     inputs.property('benchInclude', project.findProperty('benchInclude') ?: '')
     dependsOn tasks.named('jmhClasses')
+    // me.champeau.jmh's JMHTask concatenates (jmh config) + jmhJar +
+    // jmhRuntimeClasspath. jmhJar already fat-jars jmhRuntimeClasspath
+    // (the shaded groovy jar). Leaving the extra collections in place
+    // puts groovy-raw, the fat jar, and groovy.jar on one ClassLoader —
+    // three copies of groovy.concurrent.AsyncScope. Run from the fat
+    // jar alone; it already has Main-Class org.openjdk.jmh.Main.
+    jmhClasspath.setFrom([])
+    testRuntimeClasspath.setFrom([])
+}
+
+// includeTests also appends testRuntimeClasspath (groovy-raw, internal
+// variant) onto the jmh source set, which the bytecode generator then
+// puts on its process classpath next to jmhRuntimeClasspath (shaded
+// groovy). Keep test *classes* so benches under src/test still generate;
+// drop the test runtime jars so Groovy is loaded only from the shaded jar.
+tasks.named('jmhRunBytecodeGenerator') {
+    runtimeClasspath.setFrom(
+            configurations.jmhRuntimeClasspath,
+            sourceSets.jmh.output,
+            sourceSets.main.output,
+            sourceSets.test.output)
 }
 
 tasks.named('jmhJar') {
