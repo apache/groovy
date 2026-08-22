@@ -102,7 +102,7 @@ jobs:
 
       - name: JMH (${{ matrix.suite }} ${{ matrix.indy }})
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} ${{ matrix.indyFlag }} -PjmhResultFormat=JSON
-        timeout-minutes: 60
+        timeout-minutes: 90
 
       # Dashboards index: https://apache.github.io/groovy/
       # Data is appended to dev/bench/jmh/<suite>/<indy>/data.js on the gh-pages branch.
