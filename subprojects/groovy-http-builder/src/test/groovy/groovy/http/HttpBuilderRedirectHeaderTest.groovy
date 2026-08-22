@@ -60,12 +60,14 @@ class HttpBuilderRedirectHeaderTest {
 
         // The redirect target is passed as the query so one handler serves every case.
         origin.createContext('/redirect') { HttpExchange exchange ->
+            drainRequestBody(exchange)
             exchange.responseHeaders.add('Location', exchange.requestURI.query)
             exchange.sendResponseHeaders(302, -1)
             exchange.close()
         }
         // 307 variant: the method and body are preserved across the hop.
         origin.createContext('/redirect307') { HttpExchange exchange ->
+            drainRequestBody(exchange)
             exchange.responseHeaders.add('Location', exchange.requestURI.query)
             exchange.sendResponseHeaders(307, -1)
             exchange.close()
@@ -82,6 +84,7 @@ class HttpBuilderRedirectHeaderTest {
         }
         // Second hop for the return-to-origin case.
         elsewhere.createContext('/bounce') { HttpExchange exchange ->
+            drainRequestBody(exchange)
             exchange.responseHeaders.add('Location', URLDecoder.decode(exchange.requestURI.query, 'UTF-8'))
             exchange.sendResponseHeaders(302, -1)
             exchange.close()
@@ -101,6 +104,12 @@ class HttpBuilderRedirectHeaderTest {
         received.clear()
         arrivals.set(0)
         receivedBody = null
+    }
+
+    private static void drainRequestBody(HttpExchange exchange) {
+        exchange.requestBody.withCloseable { InputStream body ->
+            body.transferTo(OutputStream.nullOutputStream())
+        }
     }
 
     private static void record(HttpExchange exchange) {

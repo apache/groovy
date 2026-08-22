@@ -95,6 +95,7 @@ class HttpBuilderTest {
             exchange.responseBody.withCloseable { it.write(bytes) }
         }
         server.createContext('/redirect-me') { exchange ->
+            drainRequestBody(exchange)
             exchange.responseHeaders.add('Location', '/redirect-target')
             exchange.sendResponseHeaders(302, -1)
             exchange.close()
@@ -572,9 +573,22 @@ class HttpBuilderTest {
 
     private void redirect(String path, int status, String location) {
         server.createContext(path) { exchange ->
+            // Consume the body first. HttpServer's sendResponseHeaders(status, -1)
+            // closes the exchange immediately; if the request body was never read,
+            // that close drops the TCP connection without sending Connection: close.
+            // JDK HttpClient then reuses the dead connection for the next hop and
+            // does not retry PUT/POST/PATCH — producing a flaky
+            // "HTTP/1.1 header parser received no bytes" / Broken pipe failure.
+            drainRequestBody(exchange)
             exchange.responseHeaders.add('Location', location)
             exchange.sendResponseHeaders(status, -1)
             exchange.close()
+        }
+    }
+
+    private static void drainRequestBody(exchange) {
+        exchange.requestBody.withCloseable { InputStream body ->
+            body.transferTo(OutputStream.nullOutputStream())
         }
     }
 

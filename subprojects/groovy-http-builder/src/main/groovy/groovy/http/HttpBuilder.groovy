@@ -28,9 +28,12 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.net.http.HttpTimeoutException
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
+import java.util.concurrent.ExecutionException
 
 /**
  * Tiny DSL over JDK {@link HttpClient}.
@@ -217,7 +220,7 @@ final class HttpBuilder {
         URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
         Map<String, String> headers = combinedHeaders(requestSpec)
         HttpRequest httpRequest = buildHopRequest(method, resolvedUri, headers, requestSpec.body, requestSpec.timeout)
-        CompletableFuture<HttpResponse<String>> future = client.sendAsync(httpRequest, requestSpec.bodyHandler)
+        CompletableFuture<HttpResponse<String>> future = sendAsync(httpRequest, requestSpec.bodyHandler)
         if (followRedirectsManually) {
             future = future.thenCompose { HttpResponse<String> response ->
                 followRedirectsAsync(method, httpRequest.uri(), response, headers,
@@ -317,7 +320,7 @@ final class HttpBuilder {
                                                     @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
                                                     final Closure<?> spec = null) {
         HttpRequest httpRequest = buildStreamRequest(method, uri, spec)
-        return client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofPublisher())
+        return sendAsync(httpRequest, HttpResponse.BodyHandlers.ofPublisher())
                 .thenApply { HttpResponse response -> new HttpStreamResult(response) }
     }
 
@@ -392,13 +395,77 @@ final class HttpBuilder {
     private <T> HttpResponse<T> send(final String method, final HttpRequest httpRequest,
                                      final HttpResponse.BodyHandler<T> bodyHandler) {
         try {
-            return client.send(httpRequest, bodyHandler)
+            try {
+                return client.send(httpRequest, bodyHandler)
+            } catch (IOException first) {
+                // JDK HttpClient retries GET/HEAD on a stale keep-alive socket, but not
+                // PUT/POST/PATCH. Retry once so a peer that already closed the connection
+                // (common after a 3xx that did not send Connection: close) does not fail
+                // the follow-up hop, or the next call on the same builder.
+                if (!isRetryableConnectionFailure(first)) {
+                    throw first
+                }
+                try {
+                    return client.send(httpRequest, bodyHandler)
+                } catch (IOException second) {
+                    second.addSuppressed(first)
+                    throw second
+                }
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt()
             throw new RuntimeException("HTTP request " + method + " " + httpRequest.uri() + " was interrupted", e)
         } catch (IOException e) {
             throw new RuntimeException("I/O error during HTTP request " + method + " " + httpRequest.uri(), e)
         }
+    }
+
+    private <T> CompletableFuture<HttpResponse<T>> sendAsync(
+            final HttpRequest httpRequest,
+            final HttpResponse.BodyHandler<T> bodyHandler) {
+        return client.sendAsync(httpRequest, bodyHandler).handle { HttpResponse<T> response, Throwable error ->
+            if (error == null) {
+                return CompletableFuture.completedFuture(response)
+            }
+            if (isRetryableConnectionFailure(error)) {
+                return client.sendAsync(httpRequest, bodyHandler)
+            }
+            CompletableFuture<HttpResponse<T>> failed = new CompletableFuture<>()
+            failed.completeExceptionally(error)
+            return failed
+        }.thenCompose { it }
+    }
+
+    /**
+     * True when the JDK client failed before reading any response bytes because the
+     * TCP connection was already gone — the case it retries for GET/HEAD but not
+     * for methods with a body.
+     */
+    private static boolean isRetryableConnectionFailure(final Throwable error) {
+        Throwable t = error
+        while ((t instanceof CompletionException || t instanceof ExecutionException) && t.cause != null) {
+            t = t.cause
+        }
+        for (Throwable cur = t; cur != null && cur != cur.cause; cur = cur.cause) {
+            if (cur instanceof InterruptedException || cur instanceof HttpTimeoutException) {
+                return false
+            }
+        }
+        for (Throwable cur = t; cur != null && cur != cur.cause; cur = cur.cause) {
+            String msg = cur.message
+            if (msg == null) {
+                continue
+            }
+            String m = msg.toLowerCase(Locale.ROOT)
+            if (m.contains('header parser received no bytes')
+                    || m.contains('broken pipe')
+                    || m.contains('connection reset')
+                    || m.contains('forcibly closed')
+                    || m.contains('connection was aborted')) {
+                return true
+            }
+        }
+        return false
     }
 
     /**
@@ -466,7 +533,7 @@ final class HttpBuilder {
             nextHeaders = nextBody != null ? contentTypeOnly(nextHeaders) : [:]
         }
         HttpRequest httpRequest = buildHopRequest(nextMethod, target, nextHeaders, nextBody, timeout)
-        return client.sendAsync(httpRequest, bodyHandler).thenCompose { HttpResponse<String> next ->
+        return sendAsync(httpRequest, bodyHandler).thenCompose { HttpResponse<String> next ->
             followRedirectsAsync(nextMethod, target, next, nextHeaders, nextBody, timeout, bodyHandler,
                     redirects + 1, origin, nextLeftOrigin)
         }
