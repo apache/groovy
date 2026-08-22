@@ -31,7 +31,6 @@ import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.SwitchExpressionWriter;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -167,7 +166,6 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         Label defaultTarget = new Label();
         ArmGroup<Integer> group = groupArms(expression.getCaseStatements(),
                 cs -> intConstant(cs.getExpression()), defaultTarget);
-        if (group.error) return true;
         if (group.keys == null) return false;
 
         OperandStack operandStack = controller.getOperandStack();
@@ -239,7 +237,6 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         Label defaultTarget = new Label();
         ArmGroup<String> group = groupArms(expression.getCaseStatements(),
                 cs -> stringConstant(cs.getExpression()), defaultTarget);
-        if (group.error) return true;
         if (group.keys == null) return false;
 
         jumpIfNull(selectorIndex, selectorType, defaultTarget);
@@ -261,7 +258,6 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         Label defaultTarget = new Label();
         ArmGroup<String> group = groupArms(expression.getCaseStatements(),
                 cs -> enumConstantName(cs.getExpression(), enumType), defaultTarget);
-        if (group.error) return true;
         if (group.keys == null) return false;
 
         MethodVisitor mv = controller.getMethodVisitor();
@@ -339,6 +335,10 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
      * Forward pass extracts every constant key (or skips the optimizer).
      * Backward pass gives empty colon prefixes the following body's label,
      * or {@code defaultTarget} when the empty suffix falls into default.
+     * Duplicate keys also skip the optimizer: the type checker reports them
+     * as an error (GROOVY-12289), so reaching here with one means checking
+     * was bypassed ({@code TypeCheckingMode.SKIP} or an extension), where
+     * sequential first-match-wins dispatch preserves dynamic semantics.
      */
     private <K> ArmGroup<K> groupArms(final List<CaseStatement> caseStatements,
             final Function<CaseStatement, K> keyFn, final Label defaultTarget) {
@@ -349,11 +349,7 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         Set<K> seen = new HashSet<>();
         for (CaseStatement caseStatement : caseStatements) {
             K key = keyFn.apply(caseStatement);
-            if (key == null) return ArmGroup.skip();
-            if (!seen.add(key)) {
-                addError("Duplicate case label: " + key, caseStatement);
-                return ArmGroup.error();
-            }
+            if (key == null || !seen.add(key)) return ArmGroup.skip();
             keys.add(key);
         }
 
@@ -396,35 +392,25 @@ public class StaticTypesSwitchExpressionWriter extends SwitchExpressionWriter {
         controller.getMethodVisitor().visitJumpInsn(IFNULL, target);
     }
 
-    private void addError(final String message, final CaseStatement caseStatement) {
-        controller.getSourceUnit().addError(new SyntaxException(message, caseStatement));
-    }
-
     /**
-     * {@code keys == null && !error} means "not a constant switch, try the next
-     * optimizer". {@code error} means a compile error was already reported.
+     * {@code keys == null} means "not an optimizable constant switch, try the
+     * next optimizer (or fall back to sequential dispatch)".
      */
     private static final class ArmGroup<K> {
         final List<K> keys;
         final List<Label> targets;
-        final boolean error;
 
-        private ArmGroup(final List<K> keys, final List<Label> targets, final boolean error) {
+        private ArmGroup(final List<K> keys, final List<Label> targets) {
             this.keys = keys;
             this.targets = targets;
-            this.error = error;
         }
 
         static <K> ArmGroup<K> skip() {
-            return new ArmGroup<>(null, null, false);
-        }
-
-        static <K> ArmGroup<K> error() {
-            return new ArmGroup<>(null, null, true);
+            return new ArmGroup<>(null, null);
         }
 
         static <K> ArmGroup<K> of(final List<K> keys, final List<Label> targets) {
-            return new ArmGroup<>(keys, targets, false);
+            return new ArmGroup<>(keys, targets);
         }
     }
 }
