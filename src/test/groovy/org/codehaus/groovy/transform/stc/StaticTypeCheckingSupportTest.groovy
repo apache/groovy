@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc
 
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.junit.jupiter.api.Test
@@ -26,8 +27,11 @@ import org.junit.jupiter.api.Test
 import java.lang.reflect.Modifier
 
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod
 
 final class StaticTypeCheckingSupportTest {
@@ -53,5 +57,108 @@ final class StaticTypeCheckingSupportTest {
 
             assert candidates == [am, bm]
         }
+    }
+
+    @Test
+    void testChooseBestMethodDoesNotMutateNonGenericParameters() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        MethodNode exact = method(owner, 'm', STRING_TYPE, new Parameter(STRING_TYPE, 's'))
+        MethodNode fallback = method(owner, 'm', OBJECT_TYPE, new Parameter(OBJECT_TYPE, 's'))
+        Parameter[] before = exact.parameters
+        ClassNode typeBefore = before[0].type
+
+        def chosen = chooseBestMethod(owner, [exact, fallback], STRING_TYPE)
+
+        assert chosen == [exact]
+        assert exact.parameters.is(before)
+        assert before[0].type.is(typeBefore)
+    }
+
+    @Test
+    void testChooseBestMethodErasesGenericParametersWithoutMutatingTheMethod() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode listOfString = parameterized(LIST_TYPE, STRING_TYPE)
+        MethodNode generic = method(owner, 'm', VOID_TYPE, new Parameter(listOfString, 'xs'))
+        MethodNode fallback = method(owner, 'm', VOID_TYPE, new Parameter(OBJECT_TYPE, 'xs'))
+        Parameter[] before = generic.parameters
+        ClassNode originBefore = before[0].originType
+        ClassNode typeBefore = before[0].type
+
+        def chosen = chooseBestMethod(owner, [generic, fallback], LIST_TYPE)
+
+        assert chosen == [generic]
+        assert generic.parameters.is(before)
+        assert before[0].originType.is(originBefore)
+        assert before[0].type.is(typeBefore)
+        assert before[0].type.isUsingGenerics()
+    }
+
+    @Test
+    void testChooseBestMethodErasesMixedAndPlaceholderParameters() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode t = placeholder('T')
+        MethodNode mixed = method(owner, 'm', VOID_TYPE,
+                new Parameter(STRING_TYPE, 's'),
+                new Parameter(parameterized(LIST_TYPE, STRING_TYPE), 'xs'))
+        MethodNode id = method(owner, 'id', t, new Parameter(t, 'x'))
+        Parameter[] mixedBefore = mixed.parameters
+        Parameter[] idBefore = id.parameters
+
+        def chosenMixed = chooseBestMethod(owner, [mixed], STRING_TYPE, LIST_TYPE)
+        def chosenId = chooseBestMethod(owner, [id], STRING_TYPE)
+
+        assert chosenMixed == [mixed]
+        assert chosenId == [id]
+        assert mixed.parameters.is(mixedBefore)
+        assert mixedBefore[0].type.is(STRING_TYPE)
+        assert mixedBefore[1].type.isUsingGenerics()
+        assert id.parameters.is(idBefore)
+        assert idBefore[0].originType.isGenericsPlaceHolder()
+    }
+
+    @Test
+    void testChooseBestMethodErasesGenericArrayAndVarargsParameters() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode listOfString = parameterized(LIST_TYPE, STRING_TYPE)
+        MethodNode arrayParam = method(owner, 'm', VOID_TYPE, new Parameter(listOfString.makeArray(), 'xss'))
+        MethodNode vargs = method(owner, 'v', VOID_TYPE, new Parameter(listOfString.makeArray(), 'xs'))
+        Parameter[] arrayBefore = arrayParam.parameters
+        Parameter[] vargsBefore = vargs.parameters
+
+        def chosenArray = chooseBestMethod(owner, [arrayParam], LIST_TYPE.makeArray())
+        def chosenVargs = chooseBestMethod(owner, [vargs], LIST_TYPE)
+
+        assert chosenArray == [arrayParam]
+        assert chosenVargs == [vargs]
+        assert arrayParam.parameters.is(arrayBefore)
+        assert vargs.parameters.is(vargsBefore)
+        assert arrayBefore[0].type.isArray()
+        assert arrayBefore[0].type.componentType.isUsingGenerics()
+    }
+
+    @Test
+    void testChooseBestMethodEmptyAndNullCandidates() {
+        assert chooseBestMethod(OBJECT_TYPE, [], STRING_TYPE).isEmpty()
+        assert chooseBestMethod(OBJECT_TYPE, null, STRING_TYPE).isEmpty()
+    }
+
+    private static MethodNode method(ClassNode owner, String name, ClassNode returnType, Parameter... params) {
+        owner.addMethod(name, Modifier.PUBLIC, returnType, params, ClassNode.EMPTY_ARRAY, null)
+    }
+
+    private static ClassNode parameterized(ClassNode raw, ClassNode... typeArgs) {
+        ClassNode cn = raw.getPlainNodeReference()
+        cn.usingGenerics = true
+        cn.genericsTypes = typeArgs.collect { it.asGenericsType() } as GenericsType[]
+        return cn
+    }
+
+    private static ClassNode placeholder(String name) {
+        ClassNode t = makeWithoutCaching(name)
+        t.setRedirect(OBJECT_TYPE)
+        t.genericsPlaceHolder = true
+        t.usingGenerics = true
+        t.genericsTypes = [t.asGenericsType()] as GenericsType[]
+        return t
     }
 }
