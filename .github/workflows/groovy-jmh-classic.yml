@@ -80,7 +80,7 @@ jobs:
           cache-disabled: true
       - name: JMH (${{ matrix.suite }} classic)
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} -Pindy=false -PjmhResultFormat=JSON
-        timeout-minutes: 60
+        timeout-minutes: 90
       - name: Rename JMH result file
         run: |
           mv subprojects/performance/build/results/jmh/results.json \

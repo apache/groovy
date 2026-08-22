@@ -68,7 +68,7 @@ jobs:
           cache-disabled: true
       - name: Compiler performance comparison
         run: ./gradlew perf:performanceTests
-        timeout-minutes: 60
+        timeout-minutes: 90
 
       # Deterministic dispatch metrics (class-loading and bytecode-size
       # counters). Unlike the timing benchmarks these are exact for a given
