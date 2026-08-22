@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.stc
 
 import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.junit.jupiter.api.Test
@@ -26,8 +27,11 @@ import org.junit.jupiter.api.Test
 import java.lang.reflect.Modifier
 
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE
+import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.chooseBestMethod
 
 final class StaticTypeCheckingSupportTest {
@@ -53,5 +57,172 @@ final class StaticTypeCheckingSupportTest {
 
             assert candidates == [am, bm]
         }
+    }
+
+    @Test
+    void testChooseBestMethodDoesNotMutateNonGenericParameters() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        MethodNode exact = method(owner, 'm', STRING_TYPE, new Parameter(STRING_TYPE, 's'))
+        MethodNode fallback = method(owner, 'm', OBJECT_TYPE, new Parameter(OBJECT_TYPE, 's'))
+        Parameter[] exactBefore = exact.parameters
+        Parameter exactParamBefore = exactBefore[0]
+        ClassNode exactTypeBefore = exactParamBefore.type
+        ClassNode exactOriginBefore = exactParamBefore.originType
+
+        Parameter[] fallbackBefore = fallback.parameters
+        Parameter fallbackParamBefore = fallbackBefore[0]
+        ClassNode fallbackTypeBefore = fallbackParamBefore.type
+        ClassNode fallbackOriginBefore = fallbackParamBefore.originType
+
+        def chosen = chooseBestMethod(owner, [exact, fallback], STRING_TYPE)
+
+        assert chosen == [exact]
+        // Array references must remain identical
+        assert exact.parameters.is(exactBefore)
+        assert fallback.parameters.is(fallbackBefore)
+        // Parameter instances within the array must remain identical and unmutated
+        assert exact.parameters[0].is(exactParamBefore)
+        assert exact.parameters[0].type.is(exactTypeBefore)
+        assert exact.parameters[0].originType.is(exactOriginBefore)
+        assert exact.parameters[0].name == 's'
+
+        assert fallback.parameters[0].is(fallbackParamBefore)
+        assert fallback.parameters[0].type.is(fallbackTypeBefore)
+        assert fallback.parameters[0].originType.is(fallbackOriginBefore)
+        assert fallback.parameters[0].name == 's'
+    }
+
+    @Test
+    void testParameterElementsAreNeverMutatedDuringResolution() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode listOfString = parameterized(LIST_TYPE, STRING_TYPE)
+
+        MethodNode m1 = method(owner, 'dispatch', VOID_TYPE,
+                new Parameter(STRING_TYPE, 's'),
+                new Parameter(Integer_TYPE, 'i'),
+                new Parameter(OBJECT_TYPE, 'o'))
+        MethodNode m2 = method(owner, 'dispatch', VOID_TYPE,
+                new Parameter(STRING_TYPE, 's'),
+                new Parameter(listOfString, 'list'),
+                new Parameter(OBJECT_TYPE.makeArray(), 'vargs'))
+
+        Parameter[] m1Params = m1.parameters
+        Parameter[] m1ParamCopies = m1Params.clone()
+        ClassNode[] m1Types = m1Params.collect { it.type } as ClassNode[]
+        ClassNode[] m1OriginTypes = m1Params.collect { it.originType } as ClassNode[]
+
+        Parameter[] m2Params = m2.parameters
+        Parameter[] m2ParamCopies = m2Params.clone()
+        ClassNode[] m2Types = m2Params.collect { it.type } as ClassNode[]
+        ClassNode[] m2OriginTypes = m2Params.collect { it.originType } as ClassNode[]
+
+        // Perform multiple resolutions (matching m1, matching m2, and ambiguous/mismatched calls)
+        chooseBestMethod(owner, [m1, m2], STRING_TYPE, Integer_TYPE, OBJECT_TYPE)
+        chooseBestMethod(owner, [m1, m2], STRING_TYPE, LIST_TYPE, OBJECT_TYPE.makeArray())
+        chooseBestMethod(owner, [m1, m2], STRING_TYPE, STRING_TYPE, OBJECT_TYPE)
+
+        // Verify m1 parameter array and all parameter elements
+        assert m1.parameters.is(m1Params)
+        for (int i = 0; i < m1Params.length; i += 1) {
+            assert m1.parameters[i].is(m1ParamCopies[i])
+            assert m1.parameters[i].type.is(m1Types[i])
+            assert m1.parameters[i].originType.is(m1OriginTypes[i])
+        }
+
+        // Verify m2 parameter array and all parameter elements
+        assert m2.parameters.is(m2Params)
+        for (int i = 0; i < m2Params.length; i += 1) {
+            assert m2.parameters[i].is(m2ParamCopies[i])
+            assert m2.parameters[i].type.is(m2Types[i])
+            assert m2.parameters[i].originType.is(m2OriginTypes[i])
+        }
+    }
+
+    @Test
+    void testChooseBestMethodErasesGenericParametersWithoutMutatingTheMethod() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode listOfString = parameterized(LIST_TYPE, STRING_TYPE)
+        MethodNode generic = method(owner, 'm', VOID_TYPE, new Parameter(listOfString, 'xs'))
+        MethodNode fallback = method(owner, 'm', VOID_TYPE, new Parameter(OBJECT_TYPE, 'xs'))
+        Parameter[] before = generic.parameters
+        ClassNode originBefore = before[0].originType
+        ClassNode typeBefore = before[0].type
+
+        def chosen = chooseBestMethod(owner, [generic, fallback], LIST_TYPE)
+
+        assert chosen == [generic]
+        assert generic.parameters.is(before)
+        assert before[0].originType.is(originBefore)
+        assert before[0].type.is(typeBefore)
+        assert before[0].type.isUsingGenerics()
+    }
+
+    @Test
+    void testChooseBestMethodErasesMixedAndPlaceholderParameters() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode t = placeholder('T')
+        MethodNode mixed = method(owner, 'm', VOID_TYPE,
+                new Parameter(STRING_TYPE, 's'),
+                new Parameter(parameterized(LIST_TYPE, STRING_TYPE), 'xs'))
+        MethodNode id = method(owner, 'id', t, new Parameter(t, 'x'))
+        Parameter[] mixedBefore = mixed.parameters
+        Parameter[] idBefore = id.parameters
+
+        def chosenMixed = chooseBestMethod(owner, [mixed], STRING_TYPE, LIST_TYPE)
+        def chosenId = chooseBestMethod(owner, [id], STRING_TYPE)
+
+        assert chosenMixed == [mixed]
+        assert chosenId == [id]
+        assert mixed.parameters.is(mixedBefore)
+        assert mixedBefore[0].type.is(STRING_TYPE)
+        assert mixedBefore[1].type.isUsingGenerics()
+        assert id.parameters.is(idBefore)
+        assert idBefore[0].originType.isGenericsPlaceHolder()
+    }
+
+    @Test
+    void testChooseBestMethodErasesGenericArrayAndVarargsParameters() {
+        ClassNode owner = new ClassNode('C', Modifier.PUBLIC, OBJECT_TYPE)
+        ClassNode listOfString = parameterized(LIST_TYPE, STRING_TYPE)
+        MethodNode arrayParam = method(owner, 'm', VOID_TYPE, new Parameter(listOfString.makeArray(), 'xss'))
+        MethodNode vargs = method(owner, 'v', VOID_TYPE, new Parameter(listOfString.makeArray(), 'xs'))
+        Parameter[] arrayBefore = arrayParam.parameters
+        Parameter[] vargsBefore = vargs.parameters
+
+        def chosenArray = chooseBestMethod(owner, [arrayParam], LIST_TYPE.makeArray())
+        def chosenVargs = chooseBestMethod(owner, [vargs], LIST_TYPE)
+
+        assert chosenArray == [arrayParam]
+        assert chosenVargs == [vargs]
+        assert arrayParam.parameters.is(arrayBefore)
+        assert vargs.parameters.is(vargsBefore)
+        assert arrayBefore[0].type.isArray()
+        assert arrayBefore[0].type.componentType.isUsingGenerics()
+    }
+
+    @Test
+    void testChooseBestMethodEmptyAndNullCandidates() {
+        assert chooseBestMethod(OBJECT_TYPE, [], STRING_TYPE).isEmpty()
+        assert chooseBestMethod(OBJECT_TYPE, null, STRING_TYPE).isEmpty()
+    }
+
+    private static MethodNode method(ClassNode owner, String name, ClassNode returnType, Parameter... params) {
+        owner.addMethod(name, Modifier.PUBLIC, returnType, params, ClassNode.EMPTY_ARRAY, null)
+    }
+
+    private static ClassNode parameterized(ClassNode raw, ClassNode... typeArgs) {
+        ClassNode cn = raw.getPlainNodeReference()
+        cn.usingGenerics = true
+        cn.genericsTypes = typeArgs.collect { it.asGenericsType() } as GenericsType[]
+        return cn
+    }
+
+    private static ClassNode placeholder(String name) {
+        ClassNode t = makeWithoutCaching(name)
+        t.setRedirect(OBJECT_TYPE)
+        t.genericsPlaceHolder = true
+        t.usingGenerics = true
+        t.genericsTypes = [t.asGenericsType()] as GenericsType[]
+        return t
     }
 }

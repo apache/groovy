@@ -140,6 +140,10 @@ verbatim keeps the reference precise; paraphrasing tends to drift.
 - Extensible from user code via type-checking extension scripts; see
   `src/spec/doc/_type-checking-extensions.adoc` for the user-facing
   documentation of that mechanism.
+- Extension methods consulted during checking are cached per class
+  loader (`ExtensionMethodCache`). Each receiver's method list is
+  indexed by name so a lookup does not scan every DGM method on types
+  such as `Object` or `Collection`.
 
 ### Class generation (phase 7)
 
