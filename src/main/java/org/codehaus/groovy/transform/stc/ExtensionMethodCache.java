@@ -35,7 +35,8 @@ import static org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl.EXTENS
  * This class is used to make extension methods lookup faster. Basically, it will only
  * collect the list of extension methods (see {@link ExtensionModule}) if the list of
  * extension modules has changed. It avoids recomputing the whole list each time we perform
- * a method lookup.
+ * a method lookup. Cached lists are indexed by method name so the static type checker can
+ * collect DGM candidates without a linear scan of every method on the receiver type.
  */
 public class ExtensionMethodCache extends AbstractExtensionMethodCache {
     /** Shared cache instance used by static type checking. */
